@@ -1,0 +1,117 @@
+{
+  "date": "2026-10-18",
+  "scope": "Synthetic syntax and Java language/API portability probe; not a complete semantic INTERLIS compiler or conformance result.",
+  "versions": {
+    "jdk": "Eclipse Temurin 25.0.4.1+1, javac --release 25",
+    "maven": "3.9.16",
+    "antlr_generator": "4.13.2",
+    "antlr_runtime": "4.13.2",
+    "teavm": "0.16.0",
+    "node": "24.19.0"
+  },
+  "pins": {
+    "grammar_repository": "https://github.com/geostandards-ch/interlis-antlr4",
+    "grammar_commit": "f8f97238c2540a49915f8bb97ee99bbf434b74da",
+    "teavm_release": "https://github.com/konsoletyper/teavm/releases/tag/0.16.0",
+    "temurin_release": "https://github.com/adoptium/temurin25-binaries/releases/tag/jdk-25.0.4.1%2B1",
+    "temurin_archive": "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jdk_x64_linux_hotspot_25.0.4.1_1.tar.gz",
+    "maven_archive": "https://dlcdn.apache.org/maven/maven-3/3.9.16/binaries/apache-maven-3.9.16-bin.tar.gz",
+    "graal_documentation_commit": "c40ade41d719578019e26b44a24c0c1c28f70ef1"
+  },
+  "build": {
+    "status": "success",
+    "grammar_warning": "ANTLR 154: viewDef optional block can match empty input, InterlisParser.g4:517:0",
+    "wasm_compiled_classes": 732,
+    "wasm_compiled_methods": 7284,
+    "js_compiled_classes": 700,
+    "js_compiled_methods": 7101
+  },
+  "runs": {
+    "jvm": {
+      "exit_code": 0,
+      "stdout": [
+        "CHECKS PASS: parser23 parser24 recovery eof records sealed record-pattern-switch BigDecimal BigInteger Unicode-regex Unicode-offsets",
+        "23 {\"models\":[\"Sample:1\"],\"errors\":0,\"eof\":true}",
+        "24 {\"models\":[\"Sample:1\"],\"errors\":0,\"eof\":true}",
+        "broken {\"models\":[\"Sample:1\"],\"errors\":1,\"eof\":true}",
+        "decimal 9007199254740993.0010"
+      ]
+    },
+    "wasm_gc_node": {
+      "exit_code": 0,
+      "stdout": [
+        "CHECKS PASS: parser23 parser24 recovery eof records sealed record-pattern-switch BigDecimal BigInteger Unicode-regex Unicode-offsets",
+        "23 {\"models\":[\"Sample:1\"],\"errors\":0,\"eof\":true}",
+        "24 {\"models\":[\"Sample:1\"],\"errors\":0,\"eof\":true}",
+        "broken {\"models\":[\"Sample:1\"],\"errors\":1,\"eof\":true}",
+        "decimal 9007199254740993.0010",
+        "export {\"models\":[\"FromJS:0\"],\"errors\":0,\"eof\":true}"
+      ],
+      "flags": [
+        "--experimental-wasm-exnref"
+      ]
+    },
+    "javascript_node": {
+      "exit_code": 0,
+      "stdout": [
+        "CHECKS PASS: parser23 parser24 recovery eof records sealed record-pattern-switch BigDecimal BigInteger Unicode-regex Unicode-offsets",
+        "23 {\"models\":[\"Sample:1\"],\"errors\":0,\"eof\":true}",
+        "24 {\"models\":[\"Sample:1\"],\"errors\":0,\"eof\":true}",
+        "broken {\"models\":[\"Sample:1\"],\"errors\":1,\"eof\":true}",
+        "decimal 9007199254740993.0010",
+        "export {\"models\":[\"FromJS:0\"],\"errors\":0,\"eof\":true}"
+      ]
+    }
+  },
+  "common_output_identical": true,
+  "artifacts_not_bundled": {
+    "wasm/interlis.wasm": {
+      "bytes": 686741,
+      "sha256": "b3441c09a3e5c8480a01bd154c19b9916b06fdf45dca8c2634e7d9ce1709bde9"
+    },
+    "wasm/classes.wasm-runtime.js": {
+      "bytes": 17268,
+      "sha256": "4fa1e0e0d686cc6e0a0d111e606cb876f7168bd695d9e3d639e7d5684453089b"
+    },
+    "js/interlis.js": {
+      "bytes": 749532,
+      "sha256": "67c47e7e3b245b569f7ab288ae770580333a3357a78353c6c55eec41a357bcd1"
+    }
+  },
+  "checksums": {
+    "temurin25_archive": {
+      "sha256": "dbb698396d478e7fa2b1e50f4103324b2a99b90569ee27c33f2261f9215cf41e",
+      "bytes": 141329719
+    },
+    "maven_archive": {
+      "sha256": "80ffca22aed9e8b9713a232f3394fd81d7f20322df75efdb2b047dbd3e3a23bb",
+      "bytes": 9278065
+    },
+    "antlr4_runtime": {
+      "sha256": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+      "bytes": 326307
+    },
+    "teavm_core": {
+      "sha256": "c94539912c1b951fa741aecfcb6b4acad75c2e2360dc8859b1edd0c44175608a",
+      "bytes": 3031056
+    },
+    "grammar_lexer": {
+      "sha256": "2195c39cd41a8f114b6a9d97da69b6d3b42abedb1cb2679d3f081c008c1a38b2",
+      "bytes": 5402
+    },
+    "grammar_parser": {
+      "sha256": "3d1c88045934f48375e64b9193baf17b2bb32cce6cbc6044cb9d1bb60049e37a",
+      "bytes": 17521
+    }
+  },
+  "not_tested": [
+    "GraalVM Web Image build",
+    "Browser execution: Chrome, Firefox, Safari",
+    "Full semantic compiler and metamodel",
+    "Complete 2.3/2.4 language conformance",
+    "Version-specific keyword and grammar gating",
+    "Cross-model linking and repository loading",
+    "Incremental semantic analysis and cancellation",
+    "Large real model performance and memory"
+  ]
+}

@@ -1,0 +1,13 @@
+INTERLIS 2.3;
+!! Grüezi, 😀. Unicode comments and literals.
+MODEL Sample AT "https://interlis.guru/Grüezi😀" VERSION "2026-10-18" =
+  DOMAIN
+    Count = 0..999;
+    Decimal = -12.300..45.670;
+  TOPIC Data =
+    CLASS Item =
+      label : TEXT*100
+      count : Count;
+    END Item;
+  END Data;
+END Sample.
