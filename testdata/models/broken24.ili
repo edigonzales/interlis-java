@@ -1,0 +1,13 @@
+INTERLIS 2.4;
+
+MODEL Broken
+  AT "https://example.interlis.ch"
+  VERSION "1.0" =
+
+  TOPIC Data =
+    CLASS BrokenClass =
+      missingType :
+    END BrokenClass;
+  END Data;
+
+END Broken.

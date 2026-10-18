@@ -1,0 +1,16 @@
+INTERLIS 2.3;
+
+MODEL Legacy
+  AT "https://example.interlis.ch"
+  VERSION "1.0" =
+
+  TOPIC Data =
+
+    CLASS Item =
+      label : TEXT*30;
+      count : 0..100;
+    END Item;
+
+  END Data;
+
+END Legacy.

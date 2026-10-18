@@ -1,0 +1,8 @@
+INTERLIS 2.4;
+
+MODEL Trailing
+  AT "https://example.interlis.ch"
+  VERSION "1.0" =
+END Trailing.
+
+GARBAGE

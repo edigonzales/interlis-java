@@ -1,0 +1,109 @@
+{
+  "tool": "ili2c",
+  "version": "5.6.9",
+  "source": "https://downloads.interlis.ch/ili2c/ili2c-5.6.9.zip",
+  "sourceSha256": "0d6fc5dc739a490ef6b027072d58281bb0731c932f03d95662f83d20dc07c8ee",
+  "java": [
+    "openjdk version \"25.0.2\" 2026-01-20 LTS",
+    "OpenJDK Runtime Environment Temurin-25.0.2+10 (build 25.0.2+10-LTS)",
+    "OpenJDK 64-Bit Server VM Temurin-25.0.2+10 (build 25.0.2+10-LTS, mixed mode, sharing)"
+  ],
+  "date": "2026-10-18",
+  "scope": "Small pinned 2.3/2.4 P1 fixture profile, not the historical 610-case suite.",
+  "results": [
+    {
+      "id": "base-survey-24",
+      "phase": "P1",
+      "files": [
+        "testdata/models/base24.ili",
+        "testdata/models/survey24.ili"
+      ],
+      "extraArgs": [],
+      "expectedExit": 0,
+      "expectation": "Der gepinnte ili2c akzeptiert die importierte 2.4-Modellmenge mit Vererbung, Override und EXTERNAL-Rolle.",
+      "command": "java -jar <cache>/ili2c.jar testdata/models/base24.ili testdata/models/survey24.ili",
+      "actualExit": 0,
+      "status": "PASS",
+      "stdout": "",
+      "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/models/base24.ili>\nInfo: ilifile <testdata/models/survey24.ili>\nInfo: ...compiler run done 2026-10-18 13:41:53\n",
+      "fixtureSha256": {
+        "testdata/models/base24.ili": "8e7c6a9efb93240d44b5bc7b320faa06cb626035614b9b1831e63312599a80f5",
+        "testdata/models/survey24.ili": "0970aaf76bf4d20c98ac91ae1cc4d782f1f7e28733da1268f99c0ef597ee004e"
+      }
+    },
+    {
+      "id": "legacy-23",
+      "phase": "P1",
+      "files": [
+        "testdata/models/legacy23.ili"
+      ],
+      "extraArgs": [],
+      "expectedExit": 0,
+      "expectation": "Der gepinnte ili2c akzeptiert das ausgewählte 2.3-Modell.",
+      "command": "java -jar <cache>/ili2c.jar testdata/models/legacy23.ili",
+      "actualExit": 0,
+      "status": "PASS",
+      "stdout": "",
+      "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/models/legacy23.ili>\nInfo: ...compiler run done 2026-10-18 13:41:54\n",
+      "fixtureSha256": {
+        "testdata/models/legacy23.ili": "3310e02146f9806da46bd6baecc99a276fd0c63b333759dc3fe94dc5a005d381"
+      }
+    },
+    {
+      "id": "broken-24",
+      "phase": "P1",
+      "files": [
+        "testdata/models/broken24.ili"
+      ],
+      "extraArgs": [],
+      "expectedExit": 1,
+      "expectation": "Der gepinnte ili2c lehnt die fehlende Attributtyp-Deklaration ab.",
+      "command": "java -jar <cache>/ili2c.jar testdata/models/broken24.ili",
+      "actualExit": 1,
+      "status": "PASS",
+      "stdout": "",
+      "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/models/broken24.ili>\ntestdata/models/broken24.ili:10:unexpected token: END\ntestdata/models/broken24.ili:11:CLASS Broken.Data.BrokenClass should end with \"END BrokenClass\", but \"END Data\" was found.\ntestdata/models/broken24.ili:13:TOPIC Broken.Data should end with \"END Data\", but \"END Broken\" was found.\ntestdata/models/broken24.ili:13:expecting ';', found '.'\ntestdata/models/broken24.ili:14:expecting \"END\", found 'null'\ntestdata/models/broken24.ili:14:expecting '.', found 'null'\n...compiler run failed 2026-10-18 13:41:54\n",
+      "fixtureSha256": {
+        "testdata/models/broken24.ili": "a26ddb75646f1ed4fd635adfa0f86a2415061669c670238a8581fd89d4058097"
+      }
+    },
+    {
+      "id": "trailing-24",
+      "phase": "P1",
+      "files": [
+        "testdata/models/trailing24.ili"
+      ],
+      "extraArgs": [],
+      "expectedExit": 1,
+      "expectation": "Der gepinnte ili2c lehnt nachlaufenden Text nach dem Modell ab.",
+      "command": "java -jar <cache>/ili2c.jar testdata/models/trailing24.ili",
+      "actualExit": 1,
+      "status": "PASS",
+      "stdout": "",
+      "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/models/trailing24.ili>\ntestdata/models/trailing24.ili:8:expecting EOF, found 'GARBAGE'\n...compiler run failed 2026-10-18 13:41:54\n",
+      "fixtureSha256": {
+        "testdata/models/trailing24.ili": "a66f97cbed408c3326cfb469d59740cbf4b1e3cbe1dbe83152635066c15709a9"
+      }
+    },
+    {
+      "id": "missing-import",
+      "phase": "P1",
+      "files": [
+        "testdata/models/survey24.ili"
+      ],
+      "extraArgs": [
+        "--no-auto"
+      ],
+      "expectedExit": 1,
+      "expectation": "Der gepinnte ili2c meldet den fehlenden Import ohne automatische Suche.",
+      "command": "java -jar <cache>/ili2c.jar --no-auto testdata/models/survey24.ili",
+      "actualExit": 1,
+      "status": "PASS",
+      "stdout": "",
+      "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\ntestdata/models/survey24.ili:7:There is no model \"Base\".\ntestdata/models/survey24.ili:10:There is no topic \"Common\" in MODEL Base.\ntestdata/models/survey24.ili:12:There is no class or structure \"BaseBuilding\" in TOPIC Base.Common.\ntestdata/models/survey24.ili:13:There is no attribute \"height\" in CLASS Survey.Data.Building which could be extended.\ntestdata/models/survey24.ili:13:There is no domain \"Count\" in MODEL Base.\ntestdata/models/survey24.ili:15:incompatible datatypes\n...compiler run failed 2026-10-18 13:41:54\n",
+      "fixtureSha256": {
+        "testdata/models/survey24.ili": "0970aaf76bf4d20c98ac91ae1cc4d782f1f7e28733da1268f99c0ef597ee004e"
+      }
+    }
+  ]
+}

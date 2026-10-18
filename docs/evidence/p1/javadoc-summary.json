@@ -1,0 +1,13 @@
+{
+  "command": "./gradlew javadoc --rerun-tasks",
+  "date": "2026-10-18",
+  "warningCount": 258,
+  "categories": {
+    "no comment": 133,
+    "no @param": 71,
+    "no @return": 39,
+    "use of default constructor, which does not provide a comment": 15
+  },
+  "status": "partial",
+  "note": "API-003 review is not complete. Parameter tags and comments were added for source/core model/compiler/workspace/projection records, getters, compact constructors and public enum constants; remaining warnings are mainly public methods and sealed-interface members. This baseline is evidence, not a waiver."
+}

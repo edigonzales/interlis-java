@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "browser": "Safari",
+  "result": {
+    "status": "ok",
+    "capabilities": "0.1.0-SNAPSHOT",
+    "compiledOutcome": "succeeded",
+    "rejectedOutcome": "rejected",
+    "analyzeRevision": "1",
+    "exactDecimal": true,
+    "workerRestartOutcome": "succeeded",
+    "diagramNodes": 2,
+    "diagnostics": 0
+  },
+  "driverStderr": ""
+}

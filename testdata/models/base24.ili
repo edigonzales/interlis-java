@@ -1,0 +1,20 @@
+INTERLIS 2.4;
+
+MODEL Base
+  AT "https://example.interlis.ch"
+  VERSION "1.0" =
+
+  DOMAIN
+    Count = 0..999;
+    Label = TEXT*40;
+
+  TOPIC Common =
+
+    CLASS BaseBuilding =
+      height : Count;
+      label : Label;
+    END BaseBuilding;
+
+  END Common;
+
+END Base.

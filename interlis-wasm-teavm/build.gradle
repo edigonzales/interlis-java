@@ -1,0 +1,105 @@
+plugins {
+    id 'java'
+    id 'org.teavm' version '0.16.0'
+}
+apply from: rootProject.file('gradle/java-conventions.gradle')
+
+dependencies {
+    implementation project(':interlis-wasm-bridge')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-projection')
+    implementation project(':interlis-model')
+    implementation teavm.libs.jso
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+tasks.matching { it.name in ['generateWasmGC', 'generateJavaScript'] }.configureEach {
+    dependsOn ':interlis-compiler:generateTestGrammarSource'
+}
+
+teavm {
+    all {
+        mainClass = 'guru.interlis.wasm.teavm.TeaVmEntryPoint'
+    }
+    wasmGC {
+        targetFileName = 'interlis-compiler.wasm'
+        copyRuntime = true
+        modularRuntime = false
+    }
+    js {
+        targetFileName = 'interlis-compiler.js'
+    }
+}
+
+tasks.register('wasmContractTest') {
+    group = 'verification'
+    description = 'Runs the built TeaVM WasmGC module under the pinned Node runtime.'
+    dependsOn 'buildWasmGC'
+    doLast {
+        providers.exec {
+            workingDir = projectDir
+            commandLine 'node', '--experimental-wasm-exnref', 'wasm-contract.cjs'
+            ignoreExitValue = true
+        }.result.get()
+        def report = file('build/wasm-contract-result.json')
+        if (!report.exists()) {
+            throw new GradleException('Wasm contract did not produce a result manifest')
+        }
+        def result = new groovy.json.JsonSlurper().parse(report)
+        if (result.status != 'passed') {
+            throw new GradleException('Wasm contract failed: ' + result)
+        }
+    }
+}
+
+tasks.register('prepareBrowserHarness', Copy) {
+    group = 'verification'
+    description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
+    dependsOn 'buildWasmGC'
+    from 'src/main/web'
+    from(layout.buildDirectory.dir('generated/teavm/wasm-gc')) {
+        include 'interlis-compiler.wasm'
+        include 'interlis-compiler.wasm-runtime.js'
+    }
+    into layout.buildDirectory.dir('web')
+}
+
+tasks.register('jsContractTest') {
+    group = 'verification'
+    description = 'Runs the TeaVM JavaScript backend under the pinned Node runtime.'
+    dependsOn 'generateJavaScript'
+    doLast {
+        providers.exec {
+            workingDir = projectDir
+            commandLine 'node', 'js-contract.cjs'
+            ignoreExitValue = true
+        }.result.get()
+        def report = file('build/js-contract-result.json')
+        if (!report.exists()) {
+            throw new GradleException('JavaScript contract did not produce a result manifest')
+        }
+        def result = new groovy.json.JsonSlurper().parse(report)
+        if (result.status != 'passed') {
+            throw new GradleException('JavaScript contract failed: ' + result)
+        }
+    }
+}
+
+tasks.register('browserContractTest', Exec) {
+    group = 'verification'
+    description = 'Runs the browser matrix through Playwright (Chromium, Firefox, WebKit).'
+    dependsOn 'prepareBrowserHarness'
+    workingDir = projectDir
+    commandLine 'node', 'browser-contract.cjs'
+}
+
+tasks.register('safariContractTest', Exec) {
+    group = 'verification'
+    description = 'Attempts a real Safari WebDriver contract; fails visibly when remote automation is unavailable.'
+    dependsOn 'prepareBrowserHarness'
+    workingDir = projectDir
+    commandLine 'node', 'safari-contract.cjs'
+}

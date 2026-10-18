@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-18",
+  "scope": "New Gradle implementation of interlis-java P0/P1; not the historical Maven spike.",
+  "pins": {
+    "gradle": "9.8.1",
+    "gradle_distribution_sha256": "dce76f55f8e251a3a1f130eb120f30b3d271de2b76c9b0729d316b5a1b6dc01f",
+    "java": "Eclipse Temurin 25.0.2+10",
+    "java_release": "25",
+    "antlr_generator": "4.13.2",
+    "antlr_runtime": "4.13.2",
+    "grammar_commit": "f8f97238c2540a49915f8bb97ee99bbf434b74da",
+    "teavm": "0.16.0",
+    "node": "22.23.1",
+    "junit": "5.11.4",
+    "lsp4j": "0.23.1",
+    "playwright": "1.64.1",
+    "chromium_playwright_revision": "1243",
+    "firefox_playwright_revision": "1543",
+    "webkit_playwright_revision": "2359",
+    "graalvm": "Oracle GraalVM 25.4.4.1.1+1.1 (native-image 25.0.4.1.1)",
+    "binaryen": "133",
+    "wasm_node_flags": [
+      "--experimental-wasm-exnref"
+    ],
+    "ili2c_reference": "5.6.9",
+    "ili2c_zip_sha256": "0d6fc5dc739a490ef6b027072d58281bb0731c932f03d95662f83d20dc07c8ee",
+    "gson": "2.14.0"
+  },
+  "artifacts_bytes": {
+    "teavm_wasm_gc": 2371498,
+    "teavm_wasm_gc_runtime_js": 17268,
+    "teavm_javascript": 1173230,
+    "webimage_js": 110592,
+    "webimage_wasm": 10331085
+  }
+}

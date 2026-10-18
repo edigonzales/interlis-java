@@ -1,0 +1,14 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories { mavenCentral() }
+}
+
+rootProject.name = 'interlis-java'
+include('interlis-model', 'interlis-compiler', 'interlis-workspace', 'interlis-projection', 'interlis-repository', 'interlis-cli', 'interlis-lsp', 'interlis-wasm-bridge', 'interlis-wasm-teavm', 'interlis-wasm-webimage')

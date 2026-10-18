@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>interlis-java Web Image probe</title>
+<body>
+<h1>GraalVM Web Image</h1>
+<pre id="out">loading…</pre>
+<script src="interlis-compiler.js"></script>
+<script>
+window.webImageProbe = (async () => {
+  for (let i = 0; i < 200 && typeof globalThis.interlisCompilerHandle !== 'function'; i++) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+  if (typeof globalThis.interlisCompilerHandle !== 'function') {
+    return {status: 'no-handle'};
+  }
+  const call = (operation, sessionId, params) => JSON.parse(
+      globalThis.interlisCompilerHandle(JSON.stringify({
+        protocol: 'interlis.compiler', protocolVersion: '1.0',
+        requestId: 'webimage-' + operation,
+        ...(sessionId ? {sessionId} : {}),
+        operation, params: params || {}
+      })));
+  const capabilities = call('capabilities');
+  const opened = call('openSession');
+  const sessionId = opened.result.sessionId;
+  const model = `INTERLIS 2.4;
+MODEL WebImage AT "https://example.interlis.ch" VERSION "1.0" =
+  TOPIC Data =
+    CLASS Item =
+      height : 0..999;
+    END Item;
+  END Data;
+END WebImage.
+`;
+  const update = call('updateSource', sessionId, {
+    sourceId: 'memory:/webimage.ili', expectation: {kind: 'absent'},
+    change: {kind: 'replace', text: model}
+  });
+  const compile = call('compile', sessionId, {
+    expectedWorkspaceRevision: update.result.workspaceRevision,
+    roots: [{kind: 'byName', modelName: 'WebImage'}]
+  });
+  document.getElementById('out').textContent = JSON.stringify(compile, null, 2);
+  return {status: capabilities.status,
+    tool: capabilities.result && capabilities.result.toolVersion,
+    outcome: compile.result && compile.result.outcome};
+})();
+</script>
+</body>

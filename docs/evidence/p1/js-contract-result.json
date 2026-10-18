@@ -1,0 +1,7 @@
+{
+  "status": "passed",
+  "tool": "0.1.0-SNAPSHOT",
+  "outcome": "succeeded",
+  "runtime": "teavm-js",
+  "node": "v22.23.1"
+}

@@ -1,0 +1,32 @@
+[
+  {
+    "browser": "chromium",
+    "runtime": "graalvm-web-image",
+    "status": "passed",
+    "result": {
+      "status": "ok",
+      "tool": "0.1.0-SNAPSHOT",
+      "outcome": "succeeded"
+    }
+  },
+  {
+    "browser": "firefox",
+    "runtime": "graalvm-web-image",
+    "status": "passed",
+    "result": {
+      "status": "ok",
+      "tool": "0.1.0-SNAPSHOT",
+      "outcome": "succeeded"
+    }
+  },
+  {
+    "browser": "webkit",
+    "runtime": "graalvm-web-image",
+    "status": "passed",
+    "result": {
+      "status": "ok",
+      "tool": "0.1.0-SNAPSHOT",
+      "outcome": "succeeded"
+    }
+  }
+]

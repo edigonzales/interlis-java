@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "tool": "0.1.0-SNAPSHOT",
+  "nodes": 2,
+  "outcome": "succeeded",
+  "runtime": "teavm-wasm-gc",
+  "node": "v22.23.1"
+}

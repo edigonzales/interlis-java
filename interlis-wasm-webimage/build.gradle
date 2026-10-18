@@ -1,0 +1,102 @@
+plugins { id 'java-library' }
+apply from: rootProject.file('gradle/java-conventions.gradle')
+
+dependencies {
+    implementation project(':interlis-wasm-bridge')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-projection')
+    implementation project(':interlis-model')
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+def graalHome = providers.gradleProperty('graalVmHome')
+        .orElse(providers.environmentVariable('GRAALVM_HOME'))
+        .orElse('')
+def binaryenHome = providers.gradleProperty('binaryenHome')
+        .orElse(providers.environmentVariable('BINARYEN_HOME'))
+        .orElse('')
+
+tasks.register('compileWebImageProbe', JavaCompile) {
+    group = 'verification'
+    description = 'Compiles the Web Image bootstrap against the external GraalVM jmods.'
+    source = fileTree('src/webImage/java')
+    classpath = configurations.runtimeClasspath
+    destinationDirectory = layout.buildDirectory.dir('classes/webImage')
+    options.release = 25
+    options.encoding = 'UTF-8'
+    doFirst {
+        if (!graalHome.get()) {
+            throw new GradleException('webImageProbe requires -PgraalVmHome or GRAALVM_HOME')
+        }
+        options.compilerArgs += ['--module-path', "${graalHome.get()}/jmods",
+                                 '--add-modules', 'org.graalvm.webimage.api']
+    }
+    dependsOn configurations.runtimeClasspath
+}
+
+tasks.register('webImageBuild', Exec) {
+    group = 'verification'
+    description = 'Builds the same compiler bridge with the GraalVM Web Image backend.'
+    dependsOn 'compileWebImageProbe'
+    doFirst {
+        if (!graalHome.get()) {
+            throw new GradleException('webImageProbe requires -PgraalVmHome or GRAALVM_HOME')
+        }
+        if (!binaryenHome.get()) {
+            throw new GradleException('webImageProbe requires -PbinaryenHome or BINARYEN_HOME')
+        }
+        def out = layout.buildDirectory.dir('webimage').get().asFile
+        out.mkdirs()
+        def cp = configurations.runtimeClasspath.asPath + File.pathSeparator +
+                layout.buildDirectory.dir('classes/webImage').get().asFile.absolutePath
+        environment 'PATH', "${binaryenHome.get()}/bin:" + System.getenv('PATH')
+        commandLine "${graalHome.get()}/bin/native-image", '--tool:svm-wasm',
+                '--no-fallback', '-cp', cp,
+                'guru.interlis.wasm.webimage.WebImageEntryPoint',
+                '-o', new File(out, 'interlis-compiler').absolutePath
+    }
+}
+
+tasks.register('webImagePrepareBrowser', Copy) {
+    group = 'verification'
+    description = 'Stages the Web Image browser harness.'
+    dependsOn 'webImageBuild'
+    from 'src/web'
+    from(layout.buildDirectory.dir('webimage')) {
+        include 'interlis-compiler.js'
+        include 'interlis-compiler.js.wasm'
+    }
+    into layout.buildDirectory.dir('webimage-browser')
+}
+
+tasks.register('webImageBrowserTest', Exec) {
+    group = 'verification'
+    description = 'Runs the Web Image build in Chromium, Firefox and Playwright-WebKit.'
+    dependsOn 'webImagePrepareBrowser'
+    workingDir = projectDir
+    commandLine 'node', 'browser-contract.cjs'
+}
+
+tasks.register('webImageProbe') {
+    group = 'verification'
+    description = 'Runs the built Web Image module under Node and records the comparison result.'
+    dependsOn 'webImageBuild'
+    doLast {
+        providers.exec {
+            workingDir = projectDir
+            commandLine 'node', 'webimage-contract.cjs'
+            ignoreExitValue = true
+        }.result.get()
+        def report = file('build/webimage/result.json')
+        if (!report.exists()) {
+            throw new GradleException('Web Image probe did not produce a result manifest')
+        }
+        def result = new groovy.json.JsonSlurper().parse(report)
+        if (result.status != 'ok') {
+            throw new GradleException('Web Image probe failed: ' + result)
+        }
+    }
+}

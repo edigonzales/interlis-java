@@ -1,0 +1,12 @@
+{
+  "name": "interlis-wasm-teavm-browser-contract",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Browser contract harness for the portable compiler",
+  "scripts": {
+    "test": "node browser-contract.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

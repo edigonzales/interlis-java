@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>interlis-java portable compiler</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 2rem; max-width: 70rem; }
+    textarea { width: 100%; height: 18rem; font-family: ui-monospace, monospace; }
+    pre { background: #f4f4f4; padding: 1rem; overflow: auto; max-height: 24rem; }
+    button { margin-right: .5rem; }
+  </style>
+</head>
+<body>
+  <h1>interlis-java portable compiler</h1>
+  <p>TeaVM WasmGC in a worker. No server-side compiler is used.</p>
+  <textarea id="source">!! Grüezi 😀
+INTERLIS 2.4;
+MODEL Browser AT "https://example.interlis.ch" VERSION "1.0" =
+  DOMAIN Big = 9007199254740993.0010..9007199254740993.0010;
+  TOPIC Data =
+    CLASS Item =
+      height : 0..999;
+      exact : Big;
+    END Item;
+  END Data;
+END Browser.
+</textarea>
+  <p>
+    <button id="analyze">Analyze</button>
+    <button id="compile">Compile</button>
+    <button id="diagram">Diagram</button>
+  </p>
+  <pre id="output"></pre>
+  <script src="client.js"></script>
+</body>
+</html>

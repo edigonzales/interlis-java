@@ -1,0 +1,19 @@
+plugins {
+    id 'application'
+}
+apply from: rootProject.file('gradle/java-conventions.gradle')
+
+dependencies {
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-repository')
+    implementation project(':interlis-projection')
+    implementation project(':interlis-model')
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+application {
+    mainClass = 'guru.interlis.cli.Main'
+}

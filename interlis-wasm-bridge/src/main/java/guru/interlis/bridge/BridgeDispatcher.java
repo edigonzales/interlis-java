@@ -1,0 +1,120 @@
+package guru.interlis.bridge;
+
+import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.workspace.UpdateRejectedException;
+
+import java.util.Objects;
+import java.util.Optional;
+
+/** Synchronous protocol dispatcher used by TeaVM, Web Image and tests. */
+public final class BridgeDispatcher {
+    private final BridgeCodec codec = new BridgeCodec();
+    private final SessionRegistry sessions;
+
+    /** Creates a dispatcher with its own session registry. */
+    public BridgeDispatcher() {
+        this(new SessionRegistry());
+    }
+
+    /**
+     * Creates a dispatcher over an explicit session registry.
+     *
+     * @param sessions session registry owned by the host
+     */
+    public BridgeDispatcher(SessionRegistry sessions) {
+        this.sessions = Objects.requireNonNull(sessions, "sessions");
+    }
+
+    /**
+     * Handles one JSON request synchronously and returns one JSON envelope.
+     *
+     * <p>Transport/protocol errors, modelled rejections, cancellation and internal
+     * failures are represented by distinct status/error fields.</p>
+     *
+     * @param requestJson one protocol request
+     * @return one protocol response envelope
+     */
+    public String handle(String requestJson) {
+        BridgeRequest request;
+        try {
+            request = codec.decode(requestJson);
+        } catch (BridgeException failure) {
+            return errorEnvelope("unknown", "unknown", failure.code(),
+                    failure.getMessage(), failure.details());
+        }
+        Optional<String> sessionId = request.sessionId();
+        try {
+            if ("capabilities".equals(request.operation())) {
+                return codec.success(request, Optional.empty(), codec.capabilities());
+            }
+            if ("openSession".equals(request.operation())) {
+                JsonValue.JsonObject opened = sessions.open(request.params());
+                String id = BridgeCodec.string(opened, "sessionId");
+                return codec.success(request, Optional.of(id), opened);
+            }
+            if (sessionId.isEmpty()) {
+                throw new BridgeException("INVALID_REQUEST", "sessionId required");
+            }
+            CompilerSessionFacade session = sessions.require(sessionId.get());
+            return switch (request.operation()) {
+                case "updateSource" -> codec.success(request, sessionId,
+                        session.updateSource(request.params()));
+                case "updateSources" -> codec.success(request, sessionId,
+                        session.updateSources(request.params()));
+                case "removeSource" -> codec.success(request, sessionId,
+                        session.removeSource(request.params()));
+                case "setConfiguration" -> codec.success(request, sessionId,
+                        session.setConfiguration(request.params()));
+                case "analyze" -> codec.success(request, sessionId,
+                        session.analyze(request.params()));
+                case "compile" -> codec.success(request, sessionId,
+                        session.compile(request.params()));
+                case "query" -> codec.success(request, sessionId,
+                        session.query(request.params()));
+                case "diagram" -> codec.success(request, sessionId,
+                        session.diagram(request.params()));
+                case "releaseSnapshot" -> {
+                    session.releaseSnapshot(BridgeCodec.string(request.params(), "snapshotId"));
+                    yield codec.success(request, sessionId,
+                            JsonValues.object("released", JsonValues.bool(true)));
+                }
+                case "closeSession" -> {
+                    sessions.close(sessionId.get());
+                    yield codec.success(request, sessionId,
+                            JsonValues.object("closed", JsonValues.bool(true)));
+                }
+                default -> throw new BridgeException("UNSUPPORTED_OPERATION",
+                        "unknown operation " + request.operation());
+            };
+        } catch (BridgeException failure) {
+            return codec.error(request, sessionId, failure.code(), failure.getMessage(),
+                    failure.details());
+        } catch (UpdateRejectedException failure) {
+            return codec.error(request, sessionId, "VERSION_CONFLICT", failure.getMessage(),
+                    JsonValues.object("updateCode", JsonValues.string(failure.code().name())));
+        } catch (OperationCancelledException cancelled) {
+            return codec.cancelled(request, sessionId, cancelled.reason());
+        } catch (IllegalArgumentException failure) {
+            return codec.error(request, sessionId, "INVALID_REQUEST",
+                    failure.getMessage() == null ? "invalid request" : failure.getMessage(),
+                    new JsonValue.JsonObject(java.util.Map.of()));
+        } catch (RuntimeException failure) {
+            return codec.error(request, sessionId, "INTERNAL_FAILURE",
+                    failure.getClass().getSimpleName(),
+                    new JsonValue.JsonObject(java.util.Map.of()));
+        }
+    }
+
+    private static String errorEnvelope(String requestId, String sessionId, String code,
+                                        String message, JsonValue.JsonObject details) {
+        return Json.write(JsonValues.object(
+                "protocol", JsonValues.string(BridgeCodec.PROTOCOL),
+                "protocolVersion", JsonValues.string(BridgeCodec.PROTOCOL_VERSION),
+                "requestId", JsonValues.string(requestId),
+                "sessionId", JsonValues.string(sessionId),
+                "status", JsonValues.string("error"),
+                "error", JsonValues.object("code", JsonValues.string(code),
+                        "messageKey", JsonValues.string(message),
+                        "details", details)));
+    }
+}

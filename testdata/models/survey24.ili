@@ -1,0 +1,25 @@
+INTERLIS 2.4;
+
+MODEL Survey
+  AT "https://example.interlis.ch"
+  VERSION "1.0" =
+
+  IMPORTS Base;
+
+  TOPIC Data =
+    DEPENDS ON Base.Common;
+
+    CLASS Building EXTENDS Base.Common.BaseBuilding =
+      height (EXTENDED) : Base.Count;
+      ownerName : TEXT*40;
+      MANDATORY CONSTRAINT height > 0;
+    END Building;
+
+    ASSOCIATION OwnerLink =
+      building -- {0..1} Building;
+      ownerRole (EXTERNAL) -- {1} Base.Common.BaseBuilding;
+    END OwnerLink;
+
+  END Data;
+
+END Survey.

@@ -1,0 +1,7 @@
+{
+  "status": "ok",
+  "tool": "0.1.0-SNAPSHOT",
+  "outcome": "succeeded",
+  "runtime": "graalvm-web-image",
+  "node": "v22.23.1"
+}

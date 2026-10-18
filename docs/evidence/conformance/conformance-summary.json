@@ -1,0 +1,34 @@
+{
+  "overallResult": "FAIL",
+  "exitCode": 1,
+  "summary": {
+    "TOTAL": 593,
+    "XFAIL": 0,
+    "PASS": 386,
+    "ERROR": 0,
+    "FAIL": 207,
+    "XPASS": 0
+  },
+  "reportJson": "report.json",
+  "reportJunit": "report.junit.xml",
+  "reportHtml": "report.html",
+  "suite": {
+    "url": "https://codeberg.org/edigonzales/interlis-compiler-testsuite/archive/88576ffc4cd491dd72d2375eb897ea9f3f55d2c3.tar.gz",
+    "commit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+    "sha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe"
+  },
+  "filter": "^(ili23|ili24)\\.",
+  "selection": {
+    "languageVersions": [
+      "2.3",
+      "2.4"
+    ],
+    "suiteCaseCount": 610,
+    "selectedCaseCount": 593,
+    "excludedCaseCount": 17,
+    "excludedVersions": [
+      "1.0"
+    ]
+  },
+  "cli": "interlis-cli/build/install/interlis-cli/bin/interlis-cli"
+}

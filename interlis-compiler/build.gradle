@@ -1,0 +1,45 @@
+plugins {
+    id 'java-library'
+    id 'antlr'
+}
+apply from: rootProject.file('gradle/java-conventions.gradle')
+
+dependencies {
+    api project(':interlis-model')
+    antlr libs.antlr.tool
+    implementation libs.antlr.runtime
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+def sdkExampleOutput = layout.buildDirectory.dir('sdk-example')
+
+tasks.register('compileSdkExample', JavaCompile) {
+    source = rootProject.file('examples/sdk/SdkExample.java')
+    classpath = files(tasks.named('jar'), project(':interlis-model').tasks.named('jar')) +
+            configurations.runtimeClasspath
+    destinationDirectory = sdkExampleOutput
+    options.release = 25
+    options.encoding = 'UTF-8'
+}
+
+tasks.register('sdkExampleTest', JavaExec) {
+    group = 'verification'
+    description = 'Compiles and runs the public SDK example against the built jars.'
+    dependsOn 'compileSdkExample', 'jar', ':interlis-model:jar'
+    classpath = files(sdkExampleOutput) +
+            files(tasks.named('jar'), project(':interlis-model').tasks.named('jar')) +
+            configurations.runtimeClasspath
+    mainClass = 'SdkExample'
+}
+
+tasks.named('check') {
+    dependsOn 'sdkExampleTest'
+}
+
+generateGrammarSource {
+    arguments += ['-package', 'guru.interlis.compiler.internal.antlr', '-visitor', '-no-listener']
+}
+
+sourceSets.main.java.srcDir layout.buildDirectory.dir('generated-src/antlr/main')
