@@ -1,31 +1,12 @@
 {
   "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
-  "fails": 3,
+  "fails": 1,
   "entries": [
     {
       "testId": "ili23.Attribute10Test.attributeComplete",
       "inputs": [
         "test/data/ili23/translation/attribute10Complete_de.ili",
         "test/data/ili23/translation/attribute10Complete_fr.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      }
-    },
-    {
-      "testId": "ili23.InterlisManual23Test.ilimanual_CoordSys",
-      "inputs": [
-        "test/data/ili23/interlismanual/ilimanual_CoordSys.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      }
-    },
-    {
-      "testId": "ili23.InterlisManual23Test.ilimanual_CoordSysAppendix",
-      "inputs": [
-        "test/data/ili23/interlismanual/coordsys/ilimanual_CoordSysAppendix.ili",
-        "test/data/ili23/interlismanual/coordsys/ilimanual_CoordSysAppendixEx.ili"
       ],
       "expected": {
         "outcome": "accept"

@@ -1,0 +1,11 @@
+{
+  "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+  "ilimanual_CoordSys": "PASS",
+  "ilimanual_CoordSysAppendix": "PASS",
+  "falseAccepts": 0,
+  "overall": {
+    "PASS": 592,
+    "FAIL": 1,
+    "ERROR": 0
+  }
+}

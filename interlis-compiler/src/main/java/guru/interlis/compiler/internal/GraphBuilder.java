@@ -3811,6 +3811,10 @@ final class GraphBuilder {
                 continue;
             }
             Optional<SymbolId> member = findMember(currentScope, text);
+            if (member.isEmpty() && "Name".equals(text) && isRefsystemEntity(currentScope)) {
+                currentType = builtinText();
+                continue;
+            }
             if (member.isEmpty()) {
                 unresolved(name);
                 TypeId errorType = errorType(ownerSource(owner), name.range(), "PATH");
@@ -3853,6 +3857,11 @@ final class GraphBuilder {
                 syntax.range(), List.of(), path);
         expressions.put(id, expression);
         return new ExpressionResult(id, currentType, error);
+    }
+
+    private boolean isRefsystemEntity(SymbolId owner) {
+        DeclInfo decl = index.byId(owner).orElse(null);
+        return decl != null && declarationText(decl).contains("EXTENDS INTERLIS.REFSYSTEM");
     }
 
     private Optional<SymbolId> findMember(SymbolId owner, String name) {
