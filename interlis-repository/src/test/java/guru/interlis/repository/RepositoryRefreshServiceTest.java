@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -30,6 +33,26 @@ class RepositoryRefreshServiceTest {
               </DATASECTION>
             </TRANSFER>
             """;
+
+    @Test
+    void concurrentRefreshesShareNoMutableCatalogState() throws Exception {
+        Map<String, String> indexes = new HashMap<>();
+        indexes.put("https://repo.example/ilimodels.xml", INDEX);
+        RepositoryConfig config = new RepositoryConfig(List.of(
+                new RepositorySource(new RepositoryBase(URI.create("https://repo.example/")),
+                        new SourceLocator("https://repo.example/ilimodels.xml"))),
+                FetchPolicy.defaults());
+        RepositoryRefreshService refresh = new RepositoryRefreshService(
+                new RepositoryClient(new MapLoader(indexes), new RepositoryIndexReader()));
+        Set<String> revisions = ConcurrentHashMap.newKeySet();
+        try (var executor = Executors.newFixedThreadPool(4)) {
+            for (int i = 0; i < 8; i++) {
+                executor.submit(() -> revisions.add(refresh.refresh(config, Optional.empty(),
+                        CancellationToken.none()).revision()));
+            }
+        }
+        assertEquals(1, revisions.size());
+    }
 
     @Test
     void returnsStableRevisionAndDoesNotMutatePreviousCatalog() {

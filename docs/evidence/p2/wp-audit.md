@@ -11,7 +11,7 @@ goal; it is not a declaration that P2 is complete.
 | WP-23 | views and derivations | `view-summary.json` (19/19 accept, 0/20 false accepts) | none known; keep under audit |
 | WP-24 | translations and metaattributes | `translation-summary.json` (36/36 accept, 0 false accepts), XML/metaobject summary | none known; keep under audit |
 | WP-25 | GENERIC/DEFERRED/CONTEXT | `generic-summary.json` (16/16) | none known; keep under audit |
-| WP-26 | repository index, HTTP, offline/lock profiles | file/HTTP loaders with offline/limit/cancel tests; standard 09/20 index reader; `RepositoryClient`; digest-verified `ContentStore`; immutable `RepositoryCatalog`/refresh with stable revision | none known; lock profile is no global lock plus immutable catalog |
+| WP-26 | repository index, HTTP, offline/lock profiles | **VERIFIED**: file/HTTP loaders with offline/limit/cancel tests; standard 09/20 index reader; `RepositoryClient`; digest-verified `ContentStore`; immutable `RepositoryCatalog`/refresh with stable revision; concurrent refresh test; `repository-summary.json` | none |
 | WP-27 | norm/feature/test-suite balance | pinned conformance suite and this audit | complete requirement-to-implementation matrix without silent gaps |
 
 ## Version profile matrix

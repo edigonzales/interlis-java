@@ -1,0 +1,27 @@
+{
+  "scope": "WP-26 repository index, HTTP, offline and lock profile",
+  "status": "VERIFIED",
+  "indexProfiles": ["IliRepository09.RepositoryIndex", "IliRepository20.RepositoryIndex"],
+  "apis": [
+    "RepositoryIndexReader",
+    "RepositoryClient",
+    "ContentStore/InMemoryContentStore",
+    "RepositoryRefreshService",
+    "RepositoryCatalog"
+  ],
+  "guarantees": {
+    "indexPathEscapeRejected": true,
+    "xxeDisabled": true,
+    "loadFailuresSeparatedFromEmptyResult": true,
+    "contentDigestVerified": true,
+    "catalogRevisionStable": true,
+    "catalogImmutable": true,
+    "globalRepositoryLock": false
+  },
+  "tests": {
+    "RepositoryIndexReaderTest": 4,
+    "RepositoryClientTest": 2,
+    "ContentStoreTest": 3,
+    "RepositoryRefreshServiceTest": 2
+  }
+}
