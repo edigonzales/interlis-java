@@ -6,6 +6,8 @@ public enum CliTermination {
     SUCCESS,
     /** The {@code SOURCE_REJECTED} constant. */
     SOURCE_REJECTED,
+    /** Formatting completed but at least one file would change. */
+    FORMAT_CHECK_FAILED,
     /** The {@code USAGE_ERROR} constant. */
     USAGE_ERROR,
     /** The {@code OPERATIONAL_FAILURE} constant. */

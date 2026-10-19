@@ -253,5 +253,5 @@ Die Tests vergleichen zuerst DiagramDocument-Strukturen. Reine Pixelvergleiche k
 
 **P2:** Alle unterstützten Sprachkonzepte der Projektion abdecken, einschliesslich komplexer Assoziationen, Domänen, Views und Übersetzungen. Bestehende Diagrammfixtures des Java-LSP und geeignete GeoWerkstatt-Fälle als fachliche Vergleichseingaben prüfen; übernommene Dateien nur unter Beachtung ihrer Lizenz übernehmen.
 
-**P3:** Rendererparität, Layoutstabilität und Performance mit realen Modellbeständen vervollständigen. Native C++- beziehungsweise TypeScript-Adapter aus dem bisherigen Ökosystem werden anhand ihrer tatsächlich gepinnten Schemas angebunden. Ein neues Java-Wasm-Modul ersetzt keine C-ABI und keinen nativen iox-Verbraucher ohne ausdrücklich implementierte Schnittstelle.
+**P3:** Rendererparität, Layoutstabilität und Performance mit realen Modellbeständen vervollständigen. Der TypeScript-Diagrammadapter wird an das tatsächlich gepinnte Browser-/Diagrammschema angebunden; Feldnamenähnlichkeit allein begründet keine Kompatibilität. Native C++-/C-ABI-/iox-Adapter sind **nicht Bestandteil von P3**; sie gehören zu P4 oder einem eigenen Adapterauftrag. Ein neues Java-Wasm-Modul ersetzt keine C-ABI und keinen nativen iox-Verbraucher.
 

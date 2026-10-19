@@ -49,15 +49,15 @@ Diese Signaturen sind normative Rollenverträge. Implementierungen sind final, s
 
 `CliParseOutcome` unterscheidet `ParsedCommand`, `HelpRequested`, `VersionRequested` und `InvalidCommandLine`. Eine Hilfe-/Versionsanforderung benötigt weder Modellserver noch Compilerinitialisierung, sofern das Referenzprofil dies nicht anders verlangt. Kompatibilitätsdetails werden empirisch erfasst.
 
-`CliExecutionResult` enthält mindestens `CliTermination`, konkreten Exitcode, optionalen RunId, strukturierte Diagnosen und Artefaktinformationen. `CliTermination` unterscheidet `SUCCESS`, `SOURCE_REJECTED`, `USAGE_ERROR`, `OPERATIONAL_FAILURE`, `INCOMPLETE_ANALYSIS`, `INPUT_UNRESOLVED`, `WARNINGS_REJECTED`, `CANCELLED`, `INTERNAL_FAILURE`. Diese internen Status sind keine Behauptung bestimmter bisheriger numerischer Exitcodes. `CliOutcomeMapper.classify` verwendet die vom CompilationGate gelieferte RejectionSummary. ENVIRONMENT_FAILURE ergibt OPERATIONAL_FAILURE, INCOMPLETE_SUPPORT ergibt INCOMPLETE_ANALYSIS, MISSING_INPUT oder AMBIGUOUS_INPUT ergibt INPUT_UNRESOLVED, SOURCE_ERRORS ergibt SOURCE_REJECTED, eine alleinige WARNINGS_REJECTED-Ablehnung ergibt den gleichnamigen CLI-Status. Bei mehreren Gründen gilt diese Reihenfolge als Standardpriorität; alle Gründe bleiben im strukturierten Ergebnis erhalten. Ein Legacyprofil kann seine belegte Exitcodezuordnung darüberlegen. Der Adapter implementiert keine zweite Root-/Coverage-/Warnungsprüfung. Die endgültige SUCCESS-Einstufung erfolgt erst nach sämtlichen verpflichtenden Exporten und deren erfolgreichem Flush. Ein Fehler in dieser Abschlussphase ergibt OPERATIONAL_FAILURE und nennt gegebenenfalls bereits entstandene Teilartefakte.
+`CliExecutionResult` enthält mindestens `CliTermination`, konkreten Exitcode, optionalen RunId, strukturierte Diagnosen und Artefaktinformationen. `CliTermination` unterscheidet `SUCCESS`, `SOURCE_REJECTED`, `USAGE_ERROR`, `OPERATIONAL_FAILURE`, `INCOMPLETE_ANALYSIS`, `INPUT_UNRESOLVED`, `WARNINGS_REJECTED`, `CANCELLED`, `INTERNAL_FAILURE`. Diese internen Status sind keine Behauptung bestimmter bisheriger numerischer Exitcodes. `CliOutcomeMapper.classify` verwendet die vom CompilationGate gelieferte RejectionSummary. ENVIRONMENT_FAILURE ergibt OPERATIONAL_FAILURE, INCOMPLETE_SUPPORT ergibt INCOMPLETE_ANALYSIS, MISSING_INPUT oder AMBIGUOUS_INPUT ergibt INPUT_UNRESOLVED, SOURCE_ERRORS ergibt SOURCE_REJECTED, eine alleinige WARNINGS_REJECTED-Ablehnung ergibt den gleichnamigen CLI-Status. Bei mehreren Gründen gilt diese Reihenfolge als Standardpriorität; alle Gründe bleiben im strukturierten Ergebnis erhalten. Ein Legacyprofil kann seine belegte Exitcodezuordnung darüberlegen. Der Adapter implementiert keine zweite Root-/Coverage-/Warnungsprüfung. Die endgültige SUCCESS-Einstufung erfolgt erst nach der vollständigen Ausgabe beziehungsweise Formatierung und deren erfolgreichem Flush. Ein Fehler in dieser Abschlussphase ergibt OPERATIONAL_FAILURE und nennt gegebenenfalls bereits entstandene Teilartefakte.
 
 ## 3. Methodenverträge
 
 ### 3.1 CliApplication.run
 
-**Vorbedingungen:** Argumente und Umgebung sind nullfrei; Streams sind offen; Profile sind geladen oder reproduzierbar ladbar. **Wirkung:** Darf über explizite Hostdienste Dateien/Repositories lesen und gewünschte Artefakte schreiben. **Nachbedingungen:** Liefert genau einen Abschlussstatus; strukturierter Laufstatus, Textmeldung und Exitcode stimmen überein. Die Methode ruft kein `System.exit` auf. **Besitz:** Sie schliesst keine vom Aufrufer bereitgestellten Standardstreams. Eigene Dateien/Responses werden geschlossen. **Abbruch:** laufende Beschaffung/Analyse/Export wird kontrolliert beendet; ein nur teilweise geschriebenes Artefakt wird nicht als vollständige Ausgabe angekündigt.
+**Vorbedingungen:** Argumente und Umgebung sind nullfrei; Streams sind offen; Profile sind geladen oder reproduzierbar ladbar. **Wirkung:** Darf über explizite Hostdienste Dateien/Repositories lesen und gewünschte Artefakte schreiben. **Nachbedingungen:** Liefert genau einen Abschlussstatus; strukturierter Laufstatus, Textmeldung und Exitcode stimmen überein. Die Methode ruft kein `System.exit` auf. **Besitz:** Sie schliesst keine vom Aufrufer bereitgestellten Standardstreams. Eigene Dateien/Responses werden geschlossen. **Abbruch:** laufende Beschaffung/Analyse/Ausgabe wird kontrolliert beendet; ein nur teilweise geschriebenes Artefakt wird nicht als vollständige Ausgabe angekündigt.
 
-Die CLI erzeugt über ihre injizierte `RunContextFactory` einen Elternkontext für den gesamten angenommenen Aufruf. Vor der Engineausführung erzeugt sie `createChild(parent)` und verwendet `compile(request, reuse, child, token)`. Nur die Engine startet und beendet diesen Compilerkindlauf. Beschaffung und Export gehören zum Elternlauf oder erhalten bei Bedarf eigene klar zugeordnete Kinder. Der Elternlauf endet erst nach der verbindlichen Ausgabe und deren Flush; ein zuvor erfolgreicher Compilerkindlauf darf den späteren Exportfehler nicht verdecken. Hilfe und Version benötigen keinen künstlichen Compilerkindlauf. Kontextweitergabe erfolgt explizit gemäss Kapitel 09.
+Die CLI erzeugt über ihre injizierte `RunContextFactory` einen Elternkontext für den gesamten angenommenen Aufruf. Vor der Engineausführung erzeugt sie `createChild(parent)` und verwendet `compile(request, reuse, child, token)`. Nur die Engine startet und beendet diesen Compilerkindlauf. Beschaffung und Ausgabe gehören zum Elternlauf oder erhalten bei Bedarf eigene klar zugeordnete Kinder. Der Elternlauf endet erst nach der verbindlichen Ausgabe und deren Flush; ein zuvor erfolgreicher Compilerkindlauf darf den späteren Ausgabefehler nicht verdecken. Hilfe und Version benötigen keinen künstlichen Compilerkindlauf. Kontextweitergabe erfolgt explizit gemäss Kapitel 09.
 
 Ungültiger Quelltext ist ein regulärer `SOURCE_REJECTED`-Fall. Eine nicht lesbare Quelldatei ist ein IO-/Auflösungsfehler. Eine interne Invariante erzeugt `INTERNAL_FAILURE` und FailureId; die Anwenderdiagnose bleibt von technischem Stacktrace getrennt. Der technische Bericht kann auf ausdrücklichem Diagnoselevel den Stacktrace enthalten.
 
@@ -71,7 +71,7 @@ Der neue explizite Standard ist CLI-Argument vor expliziter Konfigurationsdatei 
 
 ### 3.4 OutputPlanner.plan
 
-Der Planner trennt Fachartefakt, fachliche Diagnostik und Betriebsereignisse. Er erkennt kollidierende Dateipfade und unvereinbare stdout-Nutzung vor dem Schreiben. Ein Fehler darf nicht ein bereits vorhandenes Nutzerartefakt mit einer leeren Datei ersetzen. Soweit das Ausgabeformat atomar erzeugbar ist, wird zunächst eine temporäre Datei im Zielverzeichnis geschrieben und anschliessend ersetzt; Ausnahmen für Streaming werden im konkreten Exportvertrag dokumentiert.
+Der Planner trennt Fachartefakt, fachliche Diagnostik und Betriebsereignisse. Er erkennt kollidierende Dateipfade und unvereinbare stdout-Nutzung vor dem Schreiben. Ein Fehler darf nicht ein bereits vorhandenes Nutzerartefakt mit einer leeren Datei ersetzen. Soweit das Ausgabeformat atomar erzeugbar ist, wird zunächst eine temporäre Datei im Zielverzeichnis geschrieben und anschliessend ersetzt; Ausnahmen für Streaming werden im konkreten Ausgabevertrag dokumentiert.
 
 ## 4. Legacyprofil als prüfbare Eingabe
 
@@ -84,7 +84,7 @@ Der Agent inventarisiert mindestens:
 - mehrere Dateien und mehrere Modelle pro Datei;
 - Modellnamenauswahl und Modellverzeichnisse/Repositories;
 - Warnungen, stille/ausführliche Modi und Fehlerlimits;
-- Generator-/Modellinformationsausgaben;
+- Formatierungsoptionen und der `format`-Befehl;
 - nicht lesbare Quelle, fehlender Import und unbeschreibbares Ausgabeziel;
 - Abbruch und internes Scheitern soweit kontrolliert reproduzierbar;
 - Leerzeichen, Umlaute und plattformtypische Pfade.
@@ -95,7 +95,7 @@ Die bisherige Mainklasse und ihre Konfiguration sind eine Referenz für diesen V
 
 Strukturierte Ausgabe ist eine Erweiterung, deren Namen im CLI-Schema festzulegen sind. Vorgeschlagen sind getrennte Optionen für Diagnoseformat (`legacy`, `json`) und Betriebslogformat (`text`, `json`). Ihre exakten Namen dürfen nicht mit bestehenden Optionen kollidieren und müssen in Hilfe/Tests erscheinen.
 
-JSON-Diagnostik und JSON-Logs besitzen jeweils ein dokumentiertes Schema. Falls beide denselben Stream verwenden sollen, müssen alle Zeilen einen eindeutigen Ereignistyp tragen und dieselbe NDJSON-Rahmung verwenden. Andernfalls verlangt der OutputPlan getrennte Senken. Ein generierter Modell-XML-/JSON-Export darf nicht mit Laufereignissen vermischt werden. Bei LSP bleiben die Regeln von Kapitel 07 massgeblich; CLI-Logging darf dessen stdout-Protokoll nicht verschmutzen.
+JSON-Diagnostik und JSON-Logs besitzen jeweils ein dokumentiertes Schema. Falls beide denselben Stream verwenden sollen, müssen alle Zeilen einen eindeutigen Ereignistyp tragen und dieselbe NDJSON-Rahmung verwenden. Andernfalls verlangt der OutputPlan getrennte Senken. Formatierte Quellausgaben dürfen nicht mit Laufereignissen vermischt werden. Bei LSP bleiben die Regeln von Kapitel 07 massgeblich; CLI-Logging darf dessen stdout-Protokoll nicht verschmutzen.
 
 Meldungsähnlichkeit wird über einen profilabhängigen Renderer erreicht. Diagnosecode und fachliche Ursache werden nicht aus einem Textvergleich abgeleitet. Zusätzliche Spalten-/Bereichsinformationen können strukturiert verfügbar sein, selbst wenn die Legacydarstellung nur Datei und Zeile ausgibt.
 
@@ -107,36 +107,50 @@ Die endgültigen Signaturen stehen in Kapitel 06/16. Beispielabläufe müssen im
 
 SDK-Versionierung unterscheidet Binär-/Quellkompatibilität der Java-API, semantische Verhaltensänderungen, Diagnosekatalog und Serialisierungs-/Bridgeversionen. Interne Packages `*.internal` sind nicht Teil des SDK-Vertrags. Selbst bei unveränderter Methodensignatur ist eine geänderte Attributreihenfolge oder Fehlersemantik eine relevante Verhaltensänderung. Vor stabiler Version 1.0 können API-Änderungen häufiger sein, benötigen aber Migrationshinweis und aktualisierte Beispiele.
 
-## 6.1 Modell- und Schemaexporte
+## 6.1 Quellformatierung
 
-Modellinformationen und andere zugesagte ili2c-Generatorausgaben sind eigenständige Verbraucher. Die reine Prüfung einer Quelldatei erfüllt diese Ausgabeverträge nicht. Ihre gemeinsame Rolle liegt in `interlis-projection` unter `guru.interlis.projection.export`:
+Die Formatierung ist kein Modellgenerator und kein Ersatz für die semantische Prüfung. Sie arbeitet auf einer bereits gelesenen `SourceText`-Revision und verändert ausschliesslich die Darstellung, nicht die fachliche Bedeutung. Die öffentliche API liegt im Compiler-Modul unter `guru.interlis.format` und führt keine IO aus:
 
 ```java
-public interface ModelExporter {
-    ExportFormat format();
-    ExportCapabilities capabilities();
-    ExportOutcome export(CompiledSchema schema, ExportOptions options,
+public interface ModelFormatter {
+    FormatOutcome format(SourceText source, FormatOptions options,
                          CancellationToken cancellation);
 }
 ```
 
-`ExportOptions` enthält Format-/Profilversion, explizite Modell-/Themenauswahl, Sprach-/Übersetzungsoptionen und fachliche Formatparameter. Es enthält keinen offen gehaltenen Dateistream und keine versteckten globalen Einstellungen. `ExportOutcome` unterscheidet `Produced(ExportDocument, List<ProjectionNotice>)`, `Unsupported(List<UnsupportedFeature>)`, `Cancelled(CancellationReason)` und `Failed(FailureId)`. Unvollständige oder semantisch nicht unterstützte Ausgabe darf nicht als Produced erscheinen. `ExportDocument` enthält Medienformat, Zeichensatz, geordnete logische Ausgabeteile und Quell-/Profilprovenienz. Dateischreiben übernimmt die CLI-/Hostschicht. Für grosse mehrteilige Exporte kann eine explizite Streaming-Variante ergänzt werden; sie darf Fehlerstatus und Ressourcenbesitz nicht verschleiern.
+`FormattingNotice` ist ein unveränderlicher Hinweis mit Code, sicherem Text und
+optionalem `SourceRange`; er ist kein Sprachfehler. `FormatOutcome` unterscheidet
+mindestens `Formatted(String text, List<FormattingNotice>)`,
+`Rejected(List<Diagnostic>)` und `Cancelled`. `FormatOptions` enthält mindestens
+Einrückung, Zeilenende und die Regel für den finalen Zeilenumbruch. Dateisystemzugriffe
+und das Schreiben von Dateien bleiben Hostaufgabe.
 
-`ModelExporters.forFormat(ExportFormat format, ExportProfile profile)` liefert `ExporterSelection`. Diese sealed Variante besitzt `Available(ModelExporter exporter)` und `UnsupportedFormat(ExportFormat format, ExportProfile profile, UnsupportedReason reason)`. Alle Argumente und Werte sind nullfrei. Die Auswahl führt keine Modellanalyse, keine Dateisuche und keine Ausgabe aus. Eine vorhandene Registryfähigkeit garantiert die Unterstützung der Format-/Profilkombination; konkrete fehlende Modellfeatures werden weiterhin durch `export` anhand des Schemas als `ExportOutcome.Unsupported` ausgewiesen. Ein vollständig beendeter Export erzeugt genau eine Ergebnisvariante; ein unbekanntes Format wird nicht durch einen ähnlich benannten Standardexporter ersetzt.
+Die Formatierung MUSS:
 
-Eine kleine explizite Registry genügt; es besteht keine Reflection-/ServiceLoader-Pflicht. `ExportFormat` enthält mindestens die vorgesehenen IlisMeta07- und IlisMeta16-Modellaustauschziele. Andere im freigegebenen ili2c-Profil tatsächlich genutzte Generatorformate, einschliesslich gegebenenfalls XSD-/Modelltextausgaben, werden in WP-30 inventarisiert und konkret ergänzt. Die Inventarliste muss jedes bestehende Format als zugesagt, bewusst ausserhalb des Profils oder mit begründeter Abweichung ausweisen; ein fehlender Eintrag ist keine implizite Scopeeinschränkung.
+- Kommentare, Zeichenketten, Unicode und die fachliche Tokenfolge erhalten;
+- deterministisch und idempotent sein;
+- syntaktisch fehlerhafte Quellen ohne Teilprodukt ablehnen;
+- die formatierte Quelle wieder parsebar machen;
+- keine zweite Compilersemantik ausführen.
 
-IlisMeta07 und IlisMeta16 sind die offiziellen Modellinformationsformate für 2.3 beziehungsweise 2.4: [INTERLIS-Metamodell](https://www.interlis.ch/modelle/metamodell). Die interne IDE-Syntax wird nicht einfach als deren XML serialisiert. Ein `IlisMeta07Exporter` beziehungsweise `IlisMeta16Exporter` projiziert das geprüfte semantische Modell, hält Referenzen/Reihenfolgen und Versionen korrekt und meldet Unsupported-Features vor Ausgabe.
+Die CLI bietet:
 
-Zu jedem zugesagten Format gehören ein positives semantisches Golden, ein Negativ-/Unsupported-Fall, ein Fall mit Importen/Übersetzung und ein Roundtrip beziehungsweise ein externer formatgerechter Leser, soweit das Format dies zulässt. Ein Bytevergleich darf nur tatsächlich irrelevante dokumentierte Metadaten normalisieren. Die Methode export führt keine erneute Compilersemantik aus.
+```text
+interlis-cli format [--check] [--write] [--indent N] [--line-ending lf|crlf] <files...>
+```
 
-## 7. Optionaler Adapter für alte Java-Anwendungen
+Ohne Ausgabemodus geht das Ergebnis nach stdout. `--write` schreibt atomar in die
+Quelldatei; `--check` schreibt nicht und signalisiert Änderungsbedarf über den
+Exitcode. Bei Syntaxfehlern entsteht keine Zieldatei. Der Befehl verwendet dieselbe
+Formatter-API wie das SDK.
 
-Eine ähnliche Klasse mit `getName()` erfüllt keine binärkompatible `TransferDescription`. Der optionale Adapter muss einen konsistenten Objektgraphen mit den tatsächlichen bisherigen Typen, Beziehungen, Reihenfolgen und fachlichen Methoden liefern oder einen eindeutig kleineren unterstützten Umfang dokumentieren.
+## 7. Zurückgestellter Legacy-Adapter
 
-`LegacyTransferDescriptionAdapter.materialize(CompiledSchema schema, LegacyApiProfile profile)` erzeugt, falls dieser Auftrag erteilt ist, das Legacyobjekt in einer isolierten Abhängigkeitsschicht. Vorbedingungen sind gültiges Schema und unterstützte Features; Ergebnis ist ein eigener alter Objektgraph. Eine Mutation dieses Graphen darf das neue immutable Schema nicht verändern. Ununterstützte Konstrukte werden vor Auslieferung des Graphen gemeldet.
-
-Der Adapter darf alte Bibliotheken nur im dafür vorgesehenen Modul referenzieren. Er muss gegen echte Verbraucher wie ausgewählte iox-ili-/ili2db-Funktionen getestet werden. Classloader-/Package-/Artefaktkonflikte werden ausdrücklich geprüft. Ein alleiniger Methodennamenvergleich oder erfolgreiches Parsen genügt nicht. Der Kern bleibt auch ohne diesen Adapter nutzbar.
+Ein Adapter für die alte mutierbare Java-API (`TransferDescription` und verwandte
+Alttypen) ist **nicht Bestandteil von P3**. Die frühere Anforderung bleibt als
+zurückgestellt dokumentiert; eine spätere Wiederaufnahme benötigt einen eigenen
+Auftrag, echte Verbrauchertests und eine isolierte Abhängigkeitsschicht. Der Kern
+bleibt ohne diesen Adapter nutzbar.
 
 ## 8. Anforderungen
 
@@ -147,14 +161,18 @@ Der Adapter darf alte Bibliotheken nur im dafür vorgesehenen Modul referenziere
 | CLI-003 | Bestehende Optionen MÜSSEN erfasst und entweder unterstützt oder explizit abgelehnt werden. | P3 | Referenzmatrix; kein stilles Ignorieren. |
 | CLI-004 | Exitcodes, Streams und Meldungen MÜSSEN zum freigegebenen Profil passen. | P3 | Prozessvergleich auf zugesagten Plattformen. |
 | CLI-005 | Konfigurationspräzedenz MUSS eindeutig und erklärbar sein. | P1/P3 | Konfliktfälle und Herkunftsreport. |
-| CLI-006 | Fachartefakte, Diagnostik und Betriebslogs MÜSSEN eindeutig getrennt bzw. gerahmt sein. | P1 | XML-/JSON-Export bleibt parsebar; NDJSON ohne Fremdtext. |
+| CLI-006 | Fachartefakte, Diagnostik und Betriebslogs MÜSSEN eindeutig getrennt bzw. gerahmt sein. | P1 | Formatierte Quellausgaben und Diagnostik bleiben trennbar; NDJSON ohne Fremdtext. |
 | CLI-007 | Ein fehlgeschlagener Lauf DARF kein unvollständiges Artefakt als Erfolg ausweisen. | P1/P3 | IO-Fehler/Abbruch mit vorhandener Zieldatei. |
 | SDK-001 | Der SDK-Grundfall MUSS rein aus Strings und expliziten Optionen ausführbar sein. | P1 | Kompilierender Beispiel-/Vertragstest ohne Dateisystem. |
 | SDK-002 | Öffentliche SDK-Beispiele MÜSSEN mit den ausgelieferten Artefakten getestet werden. | P1/P3 | Beispielkompilierung in CI. |
 | SDK-003 | API-, Diagnose- und Protokollversionen MÜSSEN getrennt nachvollziehbar sein. | P3 | Versionsmanifest/Migrationsfall. |
-| SDK-004 | Zugesagte Modellgeneratoren MÜSSEN einen konkreten Exportervertrag und eine vollständige Format-/Capabilityliste besitzen. | P3 | Formatgoldens, Unsupported-Fälle und Referenzvergleich je freigegebenem Format. |
-| LEGACY-001 | Alte Java-API-Kompatibilität MUSS als eigener geprüfter Adapterumfang ausgewiesen werden. | optional/P3 | Echte Verbraucher benutzen materialisierten Graphen. |
-| LEGACY-002 | Ein alter mutabler Objektgraph DARF das neue Schema nicht verändern. | optional/P3 | Mutations-/Isolationstest. |
+| SDK-004 | Modellgeneratoren sind nicht Bestandteil von P3; die Anforderung ist durch die Formatierungsanforderungen FMT-001..004 ersetzt. | entfällt (P3-Scope-Entscheidung) | Keine Generator-API; Entscheidung und Ersatz sind dokumentiert. |
+| FMT-001 | Die Formatierung MUSS als deterministische, idempotente öffentliche API ohne IO verfügbar sein. | P3 | API-Vertrag, Wiederholungslauf und Unveränderlichkeit der fachlichen Tokenfolge. |
+| FMT-002 | Die Formatierung MUSS Kommentare, Zeichenketten, Unicode und die fachliche Bedeutung erhalten und fehlerhafte Quellen ohne Teilprodukt ablehnen. | P3 | Positive/negative Formatfixtures, Re-Parse und semantischer Vergleich. |
+| FMT-003 | Die CLI MUSS `format` mit stdout, `--write`, `--check` und dokumentierten Exitcodes anbieten. | P3 | Prozessfixtures für Ausgabe, In-Place-Schreiben und Check-Modus. |
+| FMT-004 | In-Place-Formatierung MUSS atomar sein und bei Fehlern die vorhandene Datei unverändert lassen. | P3 | IO-Fehler-/Abbruchtest mit vorhandener Zieldatei. |
+| LEGACY-001 | Ein Legacy-Java-API-Adapter ist derzeit nicht Bestandteil von P3. | zurückgestellt (nicht P3) | Eigener Auftrag mit echten Verbrauchertests erforderlich. |
+| LEGACY-002 | Ein alter mutabler Objektgraph DARF das neue Schema nicht verändern. | zurückgestellt (nicht P3) | Gilt erst bei Wiederaufnahme des Adapterauftrags. |
 
 ## 9. Erweiterbarkeit für weitere Einbettungen
 

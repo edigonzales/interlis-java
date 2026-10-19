@@ -8,7 +8,7 @@ Das Modul `interlis-model` enthält das eigene fachliche Modell sowie die kleine
 
 Die bisherigen Verbraucher sind wichtige Vergleichsquellen. [iox-ili/Validator.java](https://github.com/claeis/iox-ili/blob/2807992c45bb10d18f44ea4a882fc19f6dd1e4cb/src/main/java/ch/interlis/iox_j/validator/Validator.java) und [ili2c/Viewable.java](https://github.com/claeis/ili2c/blob/cbccff35fc98fdfa370e42e3bb39bb4edd70a658/ili2c-core/src/main/java/ch/interlis/ili2c/metamodel/Viewable.java) zeigen, dass unter anderem aufgelöste Typen, Vererbung und effektive Attribut-/Rollenreihenfolgen fachlich gebraucht werden. Diese Informationen dürfen nicht erst in jedem Verbraucher neu interpretiert werden.
 
-IlisMeta07 und IlisMeta16 werden als standardisierte fachliche Referenz und mögliche Exportziele berücksichtigt. Sie ersetzen nicht die zusätzlichen Zustände für Fehler, Herkunft, Referenzsegmente und Analysedeckung. Primärquelle: [INTERLIS-Metamodell](https://www.interlis.ch/modelle/metamodell).
+IlisMeta07 und IlisMeta16 werden als standardisierte fachliche Referenz berücksichtigt; sie sind in P3 keine Exportziele. Sie ersetzen nicht die zusätzlichen Zustände für Fehler, Herkunft, Referenzsegmente und Analysedeckung. Primärquelle: [INTERLIS-Metamodell](https://www.interlis.ch/modelle/metamodell).
 
 ## 2. Normativer Katalog
 

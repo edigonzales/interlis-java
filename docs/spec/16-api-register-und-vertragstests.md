@@ -16,6 +16,7 @@ Java-Blöcke in der Spezifikation zeigen Signaturen und Varianten; Bodies und Im
 | model | `guru.interlis.diagnostics` | `Diagnostic`, `DiagnosticId`, `DiagnosticCode`, `DiagnosticArgument`, `RelatedLocation`, `Severity`, `Phase`, Katalogverträge | [09](09-diagnostik-logging-und-telemetrie.md) |
 | model | `guru.interlis.execution` | `CancellationToken`, `CancellationReason`, `OperationCancelledException`, `RunObserver`, `RunEvent`, `RunId`, `RunContext`, `RunContextFactory`, `RunLifecycle`, `FailureId`, `ClockSource` | [09](09-diagnostik-logging-und-telemetrie.md), Ergebnisverwendung [06](06-kompilierung-und-semantik.md) |
 | compiler | `guru.interlis.syntax` | `SyntaxServices`, `SyntaxService`, `ParseOptions`, `ParseMode`, `SyntaxSnapshot` und eigene Syntaxknoten | [04](04-quelltext-syntax-und-parser.md) |
+| compiler | `guru.interlis.format` | `ModelFormatters`, `ModelFormatter`, `FormatOptions`, `FormatOutcome`, `FormattingNotice` | [18](18-cli-sdk-und-kompatibilitaetsadapter.md) |
 | compiler | `guru.interlis.compiler` | `CompilerEngines`, `CompilerServices`, `CompilerEngine`, `CompilationRequest`, `CompilerOptions`, `AnalysisBudget`, `AnalysisSnapshot`, `AnalysisCoverage`, `AnalysisReuse`, `CompilationOutcome`, `RejectionSummary`, `RejectionReason` | [06](06-kompilierung-und-semantik.md) |
 | compiler | `guru.interlis.compiler` | `ModelSelector`, `SourceSet`, `ImportSite`, `ImportBinding`, `ImportResolution`, `ModelLocation`, `ResolutionProblem`, `ResolutionFingerprint` | [06](06-kompilierung-und-semantik.md), [08](08-modellaufloesung-und-repositories.md) |
 | compiler | `guru.interlis.compiler.query` | `LanguageQueries`, Completion-/Hover-/Definition-/Rename-Verträge | [07](07-workspace-inkrementalitaet-und-lsp.md) |
@@ -23,7 +24,6 @@ Java-Blöcke in der Spezifikation zeigen Signaturen und Varianten; Bodies und Im
 | workspace | `guru.interlis.workspace.resolution` | `SourceProvider`, `SourceInventory`, `ModelResolutionService`, `ResolutionRequest`, `ResolutionOutcome`, `PreparedClosure`, Kandidaten/Closure/Trace | [08](08-modellaufloesung-und-repositories.md) |
 | repository | `guru.interlis.repository` | `RepositoryClient`, `SourceLoader`, `LoadedSource`, `FetchPolicy`, `ContentStore`, Index-/Refreshdienste | [08](08-modellaufloesung-und-repositories.md) |
 | projection | `guru.interlis.projection` und Unterpackages | `DiagramProjectors`, `DiagramProjector`, `DiagramOptions`, `DiagramDocument`, Diagramm-/Notice-Typen | [11](11-visualisierung-und-projektionen.md) |
-| projection | `guru.interlis.projection.export` | `ModelExporter`, `ModelExporters`, `ExporterSelection`, `ExportFormat`, `ExportProfile`, `ExportOptions`, `ExportOutcome`, `ExportDocument` | [18](18-cli-sdk-und-kompatibilitaetsadapter.md) |
 | Hostadapter | werkzeugspezifisch | `PublicationController`, LSP-Adapter, Beobachtungssenken | [07](07-workspace-inkrementalitaet-und-lsp.md), [09](09-diagnostik-logging-und-telemetrie.md) |
 | CLI | `guru.interlis.cli` | `CliApplication`, `CliExecutionResult`, `CliTermination`, `CliOutcomeMapper`, `CommandLineParser`, `ExitCodePolicy`, `OutputPlanner` | [18](18-cli-sdk-und-kompatibilitaetsadapter.md) |
 
@@ -41,7 +41,7 @@ Die Foundation enthält keine `AnalysisSnapshot`-Referenzen. Eine Abbruchausnahm
 | Laufkontext | `RunContextFactory.defaults()`; `createRoot()`; `createRoot(attributes)`; `createChild(parent)` | frische unveränderliche Root-/Kindmetadaten; die Factory startet keinen Lauf |
 | Workspace | `Workspaces.create(CompilerEngine, WorkspaceConfiguration)`; `WorkspaceConfiguration.defaults()` | leerer Workspace, Revision 0, keine Modellbeschaffung beim Erzeugen |
 | Diagramm | `DiagramProjectors.create()`; `DiagramOptions.defaults(selection)` | verwendet expliziten Snapshot beziehungsweise Schema und eine konkrete Auswahl; kein aktueller globaler Workspace |
-| Modellexport | `ModelExporters.forFormat(format, profile)` | konkrete Registryauswahl mit explizit ausgewiesenem nicht unterstütztem Format |
+| Formatierung | `ModelFormatter.format(source, options, token)` | deterministische Quellformatierung ohne IO; kein Modellgenerator |
 | CLI | `CliApplication.run(arguments,environment,token)` | Bibliotheksaufruf ohne System.exit |
 | Browser | `CompilerClient` gemäss Kapitel 10 | versioniertes Promise-/Sessionprotokoll und explizite Abbruchoptionen |
 

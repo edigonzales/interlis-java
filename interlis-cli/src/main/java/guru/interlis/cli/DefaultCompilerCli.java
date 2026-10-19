@@ -6,6 +6,10 @@ import guru.interlis.compiler.ModelSelector;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.format.FormatOptions;
+import guru.interlis.format.FormatOutcome;
+import guru.interlis.format.ModelFormatter;
+import guru.interlis.format.ModelFormatters;
 import guru.interlis.model.CompiledSchema;
 import guru.interlis.projection.DiagramDocument;
 import guru.interlis.projection.DiagramInput;
@@ -39,6 +43,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 /** Default CLI implementation using the same CompilerEngine as the SDK. */
 public final class DefaultCompilerCli implements CliApplication {
@@ -59,6 +67,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 case "check", "compile" -> compile(arguments, environment, token);
                 case "analyze" -> analyze(arguments, environment, token);
                 case "diagram" -> diagram(arguments, environment, token);
+                case "format" -> format(arguments, environment, token);
                 default -> usage(environment, "unknown command: " + command);
             };
         } catch (OperationCancelledException cancelled) {
@@ -67,6 +76,8 @@ public final class DefaultCompilerCli implements CliApplication {
         } catch (SourceLoadException failure) {
             return result(CliTermination.USAGE_ERROR, List.of(),
                     "source load failed: " + failure.reason());
+        } catch (CliUsageException usage) {
+            return usage(environment, usage.getMessage());
         } catch (RuntimeException failure) {
             return result(CliTermination.INTERNAL_FAILURE, List.of(),
                     "internal failure: " + failure.getClass().getSimpleName());
@@ -85,11 +96,11 @@ public final class DefaultCompilerCli implements CliApplication {
     private CliExecutionResult capabilities(CliEnvironment environment) {
         String output = "{\"tool\":\"interlis-java\",\"version\":\"0.1.0-SNAPSHOT\","
                 + "\"languages\":[\"2.3\",\"2.4\"],"
-                + "\"features\":[\"MODEL\",\"TOPIC\",\"CLASS\",\"STRUCTURE\",\"DOMAIN\","
+                + "\"features\":[\"MODEL\",\"TOPIC\",\"CLASS\",\"STRUCTURE\",\"DOMAIN\",\"FORMAT\","
                 + "\"ATTRIBUTE\",\"INHERITANCE\",\"ASSOCIATION_ROLE\",\"MANDATORY_CONSTRAINT\","
                 + "\"IMPORTS\",\"COORD\",\"MULTICOORD\"],"
                 + "\"notImplemented\":[\"VIEW\",\"GRAPHIC\",\"FUNCTION\",\"UNIT\",\"CONTEXT\","
-                + "\"METAOBJECT\",\"TRANSLATION\",\"DEFERRED_GENERICS\",\"FORMAT\",\"OID\","
+                + "\"METAOBJECT\",\"TRANSLATION\",\"DEFERRED_GENERICS\",\"OID\","
                 + "\"BLACKBOX\",\"TEMPORAL\",\"ENUMTREEVAL\",\"EXTERNAL_CONSTRAINTS\"],"
                 + "\"protocol\":\"interlis.compiler/1.0\"}";
         environment.out().println(output);
@@ -98,7 +109,7 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private CliExecutionResult compile(List<String> args, CliEnvironment environment,
                                        CancellationToken token) {
-        ParsedArguments parsed = parseFiles(args);
+        ParsedArguments parsed = parseFiles(args, false);
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
         }
@@ -116,7 +127,7 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private CliExecutionResult analyze(List<String> args, CliEnvironment environment,
                                        CancellationToken token) {
-        ParsedArguments parsed = parseFiles(args);
+        ParsedArguments parsed = parseFiles(args, false);
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
         }
@@ -130,9 +141,12 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private CliExecutionResult diagram(List<String> args, CliEnvironment environment,
                                        CancellationToken token) {
-        ParsedArguments parsed = parseFiles(args);
+        ParsedArguments parsed = parseFiles(args, true);
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
+        }
+        if (parsed.json()) {
+            return usage(environment, "--json is not supported by diagram; use --format json");
         }
         Loaded loaded = load(parsed.files(), environment, token);
         Workspace workspace = workspace(loaded);
@@ -167,6 +181,169 @@ public final class DefaultCompilerCli implements CliApplication {
         return result(CliTermination.SUCCESS, List.of(), text);
     }
 
+    private CliExecutionResult format(List<String> args, CliEnvironment environment,
+                                      CancellationToken token) {
+        FormatArguments parsed = parseFormat(args);
+        if (parsed.error() != null) {
+            return usage(environment, parsed.error());
+        }
+        if (parsed.files().isEmpty()) {
+            return usage(environment, "no source files");
+        }
+        if (parsed.check() && parsed.write()) {
+            return usage(environment, "--check and --write are mutually exclusive");
+        }
+        FileSourceLoader loader = new FileSourceLoader(environment.workingDirectory());
+        Map<SourceId, SourceText> sources = new LinkedHashMap<>();
+        List<FormatInput> inputs = new ArrayList<>();
+        for (String file : parsed.files()) {
+            LoadedSource loaded = loader.load(new SourceLocator(file), FetchPolicy.defaults(),
+                    token);
+            SourceText source = new SourceText(loaded.sourceId(), new SourceRevision(1),
+                    loaded.text());
+            sources.put(source.id(), source);
+            inputs.add(new FormatInput(source, Path.of(file), environment.workingDirectory()));
+        }
+        ModelFormatter formatter = ModelFormatters.create();
+        List<FormatOutput> outputs = new ArrayList<>();
+        for (FormatInput input : inputs) {
+            FormatOutcome outcome = formatter.format(input.source(), parsed.options(), token);
+            if (outcome instanceof FormatOutcome.Rejected rejected) {
+                ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
+                for (Diagnostic diagnostic : rejected.diagnostics()) {
+                    environment.err().println(renderer.render(diagnostic, sources));
+                }
+                return result(CliTermination.SOURCE_REJECTED, rejected.diagnostics(),
+                        "format rejected");
+            }
+            if (outcome instanceof FormatOutcome.Cancelled cancelled) {
+                return result(CliTermination.CANCELLED, List.of(),
+                        "cancelled: " + cancelled.reason());
+            }
+            FormatOutcome.Formatted formatted = (FormatOutcome.Formatted) outcome;
+            outputs.add(new FormatOutput(input, formatted.text()));
+        }
+        if (parsed.check()) {
+            List<String> changed = outputs.stream()
+                    .filter(output -> !output.text().equals(output.input().source().text()))
+                    .map(output -> output.input().file().toString()).toList();
+            if (!changed.isEmpty()) {
+                changed.forEach(path -> environment.err().println("would format: " + path));
+                return result(CliTermination.FORMAT_CHECK_FAILED, List.of(),
+                        String.join("\n", changed));
+            }
+            return result(CliTermination.SUCCESS, List.of(), "");
+        }
+        if (parsed.write()) {
+            try {
+                for (FormatOutput output : outputs) {
+                    writeAtomically(output.input().resolved(environment), output.text());
+                }
+            } catch (java.io.IOException failure) {
+                return result(CliTermination.OPERATIONAL_FAILURE, List.of(),
+                        "format write failed: " + failure.getMessage());
+            }
+            return result(CliTermination.SUCCESS, List.of(), "");
+        }
+        String text = outputs.stream().map(FormatOutput::text)
+                .collect(java.util.stream.Collectors.joining());
+        environment.out().print(text);
+        return result(CliTermination.SUCCESS, List.of(), text);
+    }
+
+    private static void writeAtomically(Path target, String text) throws java.io.IOException {
+        Path parent = target.toAbsolutePath().normalize().getParent();
+        if (parent == null) {
+            throw new java.io.IOException("target has no parent");
+        }
+        Path temp = Files.createTempFile(parent, ".interlis-format-", ".ili");
+        try {
+            Files.writeString(temp, text, StandardCharsets.UTF_8);
+            try {
+                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException unsupported) {
+                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } finally {
+            Files.deleteIfExists(temp);
+        }
+    }
+
+    private static FormatArguments parseFormat(List<String> args) {
+        boolean check = false;
+        boolean write = false;
+        int indent = 2;
+        FormatOptions.LineEnding lineEnding = FormatOptions.LineEnding.PRESERVE;
+        List<String> files = new ArrayList<>();
+        for (int i = 1; i < args.size(); i++) {
+            String arg = args.get(i);
+            switch (arg) {
+                case "--check" -> check = true;
+                case "--write" -> write = true;
+                case "--indent" -> {
+                    if (i + 1 >= args.size()) {
+                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
+                                "--indent needs a value");
+                    }
+                    try {
+                        indent = Integer.parseInt(args.get(++i));
+                    } catch (NumberFormatException failure) {
+                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
+                                "invalid --indent value");
+                    }
+                    if (indent < 0 || indent > 16) {
+                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
+                                "--indent must be between 0 and 16");
+                    }
+                }
+                case "--line-ending" -> {
+                    if (i + 1 >= args.size()) {
+                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
+                                "--line-ending needs a value");
+                    }
+                    String value = args.get(++i);
+                    lineEnding = switch (value) {
+                        case "lf" -> FormatOptions.LineEnding.LF;
+                        case "crlf" -> FormatOptions.LineEnding.CRLF;
+                        default -> null;
+                    };
+                    if (lineEnding == null) {
+                        return new FormatArguments(List.of(), check, write, indent,
+                                FormatOptions.LineEnding.PRESERVE,
+                                "--line-ending must be lf or crlf");
+                    }
+                }
+                default -> {
+                    if (arg.startsWith("-")) {
+                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
+                                "unsupported option: " + arg);
+                    }
+                    files.add(arg);
+                }
+            }
+        }
+        FormatOptions options = new FormatOptions(indent, lineEnding, true);
+        return new FormatArguments(List.copyOf(files), check, write, options, null);
+    }
+
+    private record FormatArguments(List<String> files, boolean check, boolean write,
+                                   FormatOptions options, String error) {
+        private FormatArguments(List<String> files, boolean check, boolean write,
+                                int indent, FormatOptions.LineEnding lineEnding, String error) {
+            this(files, check, write, new FormatOptions(indent, lineEnding, true), error);
+        }
+    }
+
+    private record FormatInput(SourceText source, Path file, Path workingDirectory) {
+        Path resolved(CliEnvironment environment) {
+            return file.isAbsolute() ? file : environment.workingDirectory().resolve(file);
+        }
+    }
+
+    private record FormatOutput(FormatInput input, String text) {
+    }
+
     private static Workspace workspace(Loaded loaded) {
         Workspace workspace = Workspaces.create(CompilerEngines.create(),
                 WorkspaceConfiguration.defaults());
@@ -177,27 +354,36 @@ public final class DefaultCompilerCli implements CliApplication {
         return workspace;
     }
 
-    private static ParsedArguments parseFiles(List<String> args) {
+    private static ParsedArguments parseFiles(List<String> args, boolean allowFormat) {
         List<String> files = new ArrayList<>();
         List<String> roots = new ArrayList<>();
         boolean json = false;
         String format = "mermaid";
         for (int i = 1; i < args.size(); i++) {
-            switch (args.get(i)) {
+            String arg = args.get(i);
+            switch (arg) {
                 case "--json" -> json = true;
                 case "--root" -> {
                     if (i + 1 >= args.size()) {
-                        throw new IllegalArgumentException("--root needs a value");
+                        throw new CliUsageException("--root needs a value");
                     }
                     roots.add(args.get(++i));
                 }
                 case "--format" -> {
+                    if (!allowFormat) {
+                        throw new CliUsageException("--format is only supported by diagram");
+                    }
                     if (i + 1 >= args.size()) {
-                        throw new IllegalArgumentException("--format needs a value");
+                        throw new CliUsageException("--format needs a value");
                     }
                     format = args.get(++i);
                 }
-                default -> files.add(args.get(i));
+                default -> {
+                    if (arg.startsWith("-")) {
+                        throw new CliUsageException("unsupported option: " + arg);
+                    }
+                    files.add(arg);
+                }
             }
         }
         return new ParsedArguments(files, roots, json, format);
@@ -260,7 +446,7 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private static CliExecutionResult usage(CliEnvironment environment, String message) {
         environment.err().println("usage: interlis-java "
-                + "<version|capabilities|check|compile|analyze|diagram> [options] [files]");
+                + "<version|capabilities|check|compile|analyze|diagram|format> [options] [files]");
         environment.err().println(message);
         return result(CliTermination.USAGE_ERROR, List.of(), message);
     }

@@ -34,7 +34,7 @@ Alle übrigen hier definierten Ergebnisse sind geplante Abnahmekriterien. Ein Ag
 | COMPAT-001 | Kompatibilität MUSS getrennt für Sprache, CLI, Diagnostik, Metamodell, Transfer, Java-API und DB ausgewiesen werden. | P0 | Benannte Profile und Matrix; kein pauschaler Kompatibilitätsclaim. |
 | COMPAT-002 | CLI-Exitcodes und Ausgabekanäle MÜSSEN vom Referenztool erfasst werden; dieser Katalog darf keine unbekannten Werte fest erfinden. | P3 | Getrennte stdout-/stderr-/Exitcode-Fixtures. |
 | COMPAT-003 | Ein semantischer Unterschied zum Altcompiler MUSS gegen Norm und Verbraucherwirkung bewertet werden. | P2 | Dokumentierte Entscheidung: Regression, bewusste Normkorrektur oder offener Fall. |
-| COMPAT-004 | Ein optionaler Legacy-Java-Adapter MUSS echte verwendete Objektgraph- und gegebenenfalls API-/ABI-Verträge prüfen. | P3/P4 | Integration mit gepinnten Verbrauchern; blosse Gettergleichheit genügt nicht. |
+| COMPAT-004 | Ein Legacy-Java-Adapter ist derzeit nicht Bestandteil von P3/P4; bei Wiederaufnahme MUSS er echte verwendete Objektgraph- und gegebenenfalls API-/ABI-Verträge prüfen. | zurückgestellt (nicht P3/P4) | Eigener Auftrag mit gepinnten Verbrauchern; blosse Gettergleichheit genügt nicht. |
 | COMPAT-005 | Datenbankkompatibilität MUSS bidirektionale Operationen gegen das bisherige Werkzeug umfassen. | P5 | Alt→Neu und Neu→Alt pro unterstütztem DB-Profil. |
 | COMPAT-006 | Ein Profilwechsel MUSS ausdrücklich getestet und dokumentiert werden; bestehende Datenbanken dürfen nicht still einem neuen Profil zugeordnet werden. | P5 | Mehrdeutigkeits- und Migrationsfälle mit alten Metadaten. |
 | COMPAT-007 | Nicht unterstützte Verbrauchermerkmale MÜSSEN als fehlende Fähigkeit sichtbar bleiben und dürfen nicht still aus Goldens entfernt werden. | P1/P4 | Gültiges Schema mit absichtlich begrenzter Projektion. |
@@ -180,7 +180,7 @@ Konkrete Fälle und Normabschnitte werden mit der Implementierung einer Regel er
 
 `SourceOrderDeterminismTest` übergibt dieselben Quellen in verschieden aufgebauten Maps. Die kanonische Verarbeitung und Diagnoseordnung verwendet `SourceId.value()` nach `String.compareTo`, also lexikografisch nach UTF-16-Codeeinheiten ohne Locale-Kollation. Ergebnisse bleiben gleich. Fachliche Deklarations-/Transferreihenfolgen innerhalb eines Modells werden durch diese Sortierung nicht umgeordnet; eine abweichende historische CLI-Darstellung ist ein gesonderter Profilvertrag.
 
-`RunContextPropagationTest` verwendet eine injizierte Factory und einen aufzeichnenden Observer. Kurze und volle Engine-Aufrufe erzeugen jeweils genau einen Lauf. Ein Workspace-Adapter emittiert unter der weitergereichten Engine-RunId keine zusätzliche Start-/Endfolge. Zwei parallele Host-Eltern mit jeweils frischen Enginekind-Kontexten behalten Parent-ID, Korrelationsattribute und lauflokale Ereignisreihenfolge. Eine erfolgreiche Kompilierung und ein anschliessender Exportfehler dürfen korrekt einen erfolgreichen Kindlauf und fehlgeschlagenen Elternlauf ergeben. ThreadLocal- beziehungsweise globale aktuelle Kontexte sind kein zulässiger Implementierungstrick.
+`RunContextPropagationTest` verwendet eine injizierte Factory und einen aufzeichnenden Observer. Kurze und volle Engine-Aufrufe erzeugen jeweils genau einen Lauf. Ein Workspace-Adapter emittiert unter der weitergereichten Engine-RunId keine zusätzliche Start-/Endfolge. Zwei parallele Host-Eltern mit jeweils frischen Enginekind-Kontexten behalten Parent-ID, Korrelationsattribute und lauflokale Ereignisreihenfolge. Eine erfolgreiche Kompilierung und ein anschliessender Ausgabe-/Formatierungsfehler dürfen korrekt einen erfolgreichen Kindlauf und fehlgeschlagenen Elternlauf ergeben. ThreadLocal- beziehungsweise globale aktuelle Kontexte sind kein zulässiger Implementierungstrick.
 
 Ein Gettertest für jeden Record ist nicht erforderlich. Geprüft werden die tatsächlichen Grenzen: defensive Ownership, ID-Zugehörigkeit, Graphkonsistenz, geordnete Eigenschaften und Gate-Zugriff.
 
@@ -213,9 +213,9 @@ Die Paritätsmatrix enthält mindestens den JVM-Lauf und den aktiv entwickelten 
 
 Browserberichte nennen Browsername, Version, Betriebssystem, verwendete Wasm-Funktionen und Startoptionen. Ein Node-Test beweist keine Safari- oder Firefox-Unterstützung. Ebenso belegt ein Parserbeispiel nicht, dass alle verwendeten späteren Klassenbibliotheksfunktionen funktionieren.
 
-Pflichtbereiche sind exakte grosse Zahlen, Dezimalpräzision, Unicode, strukturierte Exporte, Importe als bereitgestellte Quellen, Fehlerdiagnostik, getypte Semantik und wiederholte Sitzungsänderungen. Zusatztests gelten für Workerabbruch, Speicherfreigabe, abgelaufene Snapshots und ungültige Protokolleingaben.
+Pflichtbereiche sind exakte grosse Zahlen, Dezimalpräzision, Unicode, strukturierte Ausgaben, Importe als bereitgestellte Quellen, Fehlerdiagnostik, getypte Semantik und wiederholte Sitzungsänderungen. Zusatztests gelten für Workerabbruch, Speicherfreigabe, abgelaufene Snapshots und ungültige Protokolleingaben.
 
-Performanceprofile messen Kaltstart einschliesslich Laden/Initialisieren getrennt von warmer Analyse. Downloadgrösse wird komprimiert und unkomprimiert angegeben. Messungen auf kleinen Testmodellen dürfen nicht als vollständige Produktionswerte präsentiert werden.
+Performanceprofile messen Kaltstart einschliesslich Laden/Initialisieren getrennt von warmer Analyse. Downloadgrösse wird komprimiert und unkomprimiert angegeben. Der P3-Referenzkorpus ist der gepinnte Index `https://geo.so.ch/models/ilimodels.xml` samt ausgewählten 2.3/2.4-Modellen. Messungen auf kleinen Testmodellen dürfen nicht als vollständige Produktionswerte präsentiert werden.
 
 ## 9. Fuzzing, Ressourcen und Robustheit
 
@@ -243,9 +243,9 @@ Ressourcenlimits sind zunächst bewusst konservativ und konfigurierbar. Konkrete
 
 `CliCompatibilityComparator.compare(RecordedCliResult legacy, RecordedCliResult replacement, CliComparisonPolicy policy)` liefert Unterschiede je Kanal und Datei. Erlaubte Normalisierungen sind einzeln begründet, etwa ein temporärer absoluter Arbeitsordner. Sie dürfen keine Diagnoseposition, keinen Modellnamen, keine Reihenfolge oder fachlich relevante Meldung entfernen.
 
-`CliOutcomeMappingTest` prüft die Abbildung der vom Compiler gelieferten `RejectionSummary` auf die internen CLI-Zustände und anschliessend auf profilierte Exitcodes. Fehlende Implementierung und abgelehnte Warnungen dürfen nicht als nachgewiesener ungültiger Quelltext ausgegeben werden. Ein erfolgreicher Compile mit anschliessendem Export- oder Flushfehler ergibt keinen erfolgreichen Gesamtaufruf. Bei mehreren Ablehnungsgründen gilt die in Kapitel 18 ausdrücklich festgelegte Priorität, während alle Gründe im strukturierten Resultat erhalten bleiben.
+`CliOutcomeMappingTest` prüft die Abbildung der vom Compiler gelieferten `RejectionSummary` auf die internen CLI-Zustände und anschliessend auf profilierte Exitcodes. Fehlende Implementierung und abgelehnte Warnungen dürfen nicht als nachgewiesener ungültiger Quelltext ausgegeben werden. Ein erfolgreicher Compile mit anschliessendem Ausgabe-, Formatierungs- oder Flushfehler ergibt keinen erfolgreichen Gesamtaufruf. Bei mehreren Ablehnungsgründen gilt die in Kapitel 18 ausdrücklich festgelegte Priorität, während alle Gründe im strukturierten Resultat erhalten bleiben.
 
-Zu erfassen sind mindestens gültiger Compile, Syntaxfehler, Semantikfehler, fehlende Datei, fehlender Import, ungültige Option, Hilfe-/Versionsaufruf und mehrere Eingabedateien. Optionale Generatoren erhalten eigene Profile und Fixtures; ein nicht implementierter Generator darf nicht still als vorhandener CLI-Umfang gelten.
+Zu erfassen sind mindestens gültiger Compile, Syntaxfehler, Semantikfehler, fehlende Datei, fehlender Import, ungültige Option, Hilfe-/Versionsaufruf und mehrere Eingabedateien. Formatierungsoptionen erhalten eigene Profile und Fixtures; ein nicht implementierter Formatierungsmodus darf nicht still als vorhandener CLI-Umfang gelten.
 
 Die strukturierte neue Ausgabe erhält unabhängig davon Schema- und Roundtriptests. Legacytext kann bei gleicher fachlicher Diagnose anders gerendert werden. Gleichheit von Text allein beweist keine Gleichheit der zugrunde liegenden Typ-/Referenzinformation.
 
@@ -276,7 +276,7 @@ Für P5 gilt diese Mindestmatrix pro ausdrücklich unterstütztem DB-Profil:
 | P0 | Gradle-Reproduzierbarkeit, Modulgrenzen, gepinnte Grundlagen, dokumentierter aktueller WASM-Versuch | Vollständiger Compiler oder Browserreife |
 | P1 | Durchgängige semantische Strecke, beide Sprachprofile für implementierte Fälle, dirty Editorstände, frische/inkrementelle Gleichheit, JVM-/WASM-Parität | Vollständige 2.3-/2.4-Abdeckung |
 | P2 | Gesamte zugesagte Sprachabdeckung, ausgewählte externe Suite, originale und zusätzliche Semantiktests, reale eingefrorene Korpora | Datenbankkompatibilität oder vollständige Validatorabdeckung |
-| P3 | CLI-Profile, LSP-/Diagrammintegration, Performance- und Browserberichte, publizierbare API-Verträge | Ungetestete Plattform-/Backendzusagen |
+| P3 | CLI-Profile, Quellformatierung, LSP-/Diagrammintegration, Performance auf dem Geo-Korpus und Browserberichte, publizierbare API-Verträge | Ungetestete Plattform-/Backendzusagen |
 | P4 | Transfer-/Validierungspläne und Laufzeit, bidirektionale Transferfälle, Coverage- und Ressourcenberichte | Gesamte historische ili2db-Schemafamilie |
 | P5 | Benannte DB-Profile mit bidirektionalen Operationen, DDL-/Metadatenvergleich, Abbruch-/Fehlerfälle | Nicht ausgeführte historische Versionen oder Backends |
 

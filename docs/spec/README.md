@@ -59,7 +59,7 @@ Ant/Ivy ist technisch möglich, wird für dieses Projekt aber nicht gewählt. De
 | [15-entscheidungen-risiken-und-quellen.md](15-entscheidungen-risiken-und-quellen.md) | ADRs, Risiken, überprüfte Quellen, Commitpins und Evidenzgrenzen |
 | [16-api-register-und-vertragstests.md](16-api-register-und-vertragstests.md) | kanonische Typen/Methoden/Packages und gemeinsame Vertragstests |
 | [17-abdeckungsmatrix-und-review.md](17-abdeckungsmatrix-und-review.md) | Abdeckung der Nutzeranforderungen, vollständiger Anforderungsindex und Dokumentprüfung |
-| [18-cli-sdk-und-kompatibilitaetsadapter.md](18-cli-sdk-und-kompatibilitaetsadapter.md) | CLI-/SDK-Einstiege, Konfiguration, Exporter, Exitcodes und optionale alte Java-API |
+| [18-cli-sdk-und-kompatibilitaetsadapter.md](18-cli-sdk-und-kompatibilitaetsadapter.md) | CLI-/SDK-Einstiege, Konfiguration, Quellformatierung, Exitcodes und zurückgestellte alte Java-API |
 | [STARTPROMPT.md](STARTPROMPT.md) | direkt verwendbarer Startauftrag für den Coding-Agenten |
 
 ## 4. Wie die Detailtiefe zu lesen ist
@@ -80,4 +80,4 @@ Die beigefügte Probe hat denselben kleinen Java-/ANTLR-Code auf JVM, TeaVM-Wasm
 
 Zwei Modelldateien mit Import, Domänen, Klassenvererbung, Attributen/Rollen und typisiertem Constraint. Derselbe fachliche Stand ist über SDK/CLI und Browser verwendbar; ein unvollständiger Editorzwischenstand bleibt analysierbar. Navigation und Diagramm kommen aus demselben Modell. JVM-/portable Resultate werden mit echten Referenz- und Negativfällen verglichen.
 
-Dieser Abschnitt entscheidet über die Tragfähigkeit der Architektur. Danach folgen die vollständige 2.3/2.4-Semantik, die freigegebenen CLI-/Exportprofile und später Transfer, Validierung und DB. Die Spezifikation enthält deren Verträge bereits, damit der Compiler keine später benötigten Informationen verliert.
+Dieser Abschnitt entscheidet über die Tragfähigkeit der Architektur. Danach folgen die vollständige 2.3/2.4-Semantik, die freigegebenen CLI-/Formatierungsprofile und später Transfer, Validierung und DB. Die Spezifikation enthält deren Verträge bereits, damit der Compiler keine später benötigten Informationen verliert.

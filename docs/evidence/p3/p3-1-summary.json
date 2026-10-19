@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1.0",
+  "goal": "P3-1 formatting and ili2c CLI profile",
+  "status": "VERIFIED",
+  "requirements": [
+    "FMT-001",
+    "FMT-002",
+    "FMT-003",
+    "FMT-004"
+  ],
+  "api": "guru.interlis.format",
+  "cli": "interlis-cli format",
+  "modelGenerators": false,
+  "ilisMetaExporters": false,
+  "tests": {
+    "FormatterContractTest": 3,
+    "CliApplicationTest": 8
+  },
+  "gates": {
+    "check": "SUCCESS",
+    "checkPortable": "SUCCESS",
+    "checkBrowser": "SUCCESS",
+    "releaseCheck": "SUCCESS",
+    "conformanceCheck": "PASS"
+  }
+}

@@ -26,7 +26,10 @@ Nicht dadurch bewiesen sind vollständige INTERLIS 2.3/2.4-Semantik, Modellaufl�
 | ADR-012 | neutrale Diagrammprojektion und vorhandene Renderer | gemeinsame Fachsemantik, bestehende Arbeit nutzbar | konkretem Rendering-/Interaktionsbedarf |
 | ADR-013 | Transfer-/Validation-/SchemaPlan | Verbraucher erhalten explizite kompakte Laufzeitverträge | fachlicher neuer Verbraucheranforderung |
 | ADR-014 | DB-Profile und gespeicherte Zuordnungen massgeblich | Drop-in-Datenbankkompatibilität | expliziter Migration mit entsprechender Freigabe |
-| ADR-015 | alte Java-Binärkompatibilität optional isolieren | saubere neue API und kontrollierbare Übergangskosten | konkreter Bestandsanwendung mit unveränderbarem API-Bedarf |
+| ADR-015 | alte Java-Binärkompatibilität **zurückgestellt** | kein Legacy-Adapter im aktuellen P3-Umfang; saubere neue API bleibt vorrangig | konkretem Bestandsanwendung-Auftrag mit unveränderbarem API-Bedarf |
+| ADR-016 | P3 ohne Modellgeneratoren; Quellformatierung als API/CLI | IlisMeta07/16 und Generatorformate sind nicht Produktziel; Formatierung ist ein eigenständiger, testbarer Verbraucher | neuem Generator-/Exportauftrag mit Format-/Capabilitymatrix |
+| ADR-017 | P3-Diagrammintegration TypeScript-only; C++/C-ABI/iox nicht P3 | bestehende Browser-/Diagrammschemas sind der konkrete Integrationspunkt; native iox-/C-ABI-Verbraucher gehören zu P4 oder einem eigenen Auftrag | gepinntem C++/C-ABI-Verbraucherauftrag |
+| ADR-018 | Performance-Korpus `https://geo.so.ch/models` | realer, öffentlich verfügbarer INTERLIS-Modellbestand; Index und Modelle werden per SHA-256 gepinnt | nicht reproduzierbarem oder lizenzrechtlich ungeeignetem Korpus |
 
 ADR-001 ist eine Namensfestlegung dieses Entwurfs; eine Namens-/Domainregistrierung oder Repositoryanlage wurde nicht vorgenommen. `ilinext` bleibt die benannte Alternative, wird aber nicht parallel in Java-Packages verwendet.
 
@@ -75,7 +78,7 @@ Ein Quellcommit allein identifiziert noch kein ausführbares Legacy-CLI-Artefakt
 | Thema | Quelle | Verwendung |
 |---|---|---|
 | INTERLIS 2.3/2.4 | [Offizielle Dokumentation](https://www.interlis.ch/dokumentation/interlis-2) | Sprachfassungen und normative Regeln |
-| Metamodelle | [IlisMeta07/IlisMeta16](https://www.interlis.ch/modelle/metamodell) | semantische Vollständigkeit und standardisierter Modellaustausch |
+| Metamodelle | [IlisMeta07/IlisMeta16](https://www.interlis.ch/modelle/metamodell) | semantische Vollständigkeit; kein P3-Exportziel |
 | Externe Compilersuite | [Codeberg-Suite](https://codeberg.org/edigonzales/interlis-compiler-testsuite), [ilic-CI](https://github.com/edigonzales/ilic-fork/blob/c601f1c9d88eb68f67991fd05fc4653884d104c7/.github/workflows/ci.yml) | gepinnte Akzeptanzfälle |
 | Suitebewertung | [ilic-Conformance](https://github.com/edigonzales/ilic-fork/blob/c601f1c9d88eb68f67991fd05fc4653884d104c7/docs/conformance.md) | 610 Gesamtfälle inkl. 1.0; dokumentierter Stand 599 PASS / 11 XFAIL, hier nicht neu getestet |
 | ANTLR 4 | [Release 4.13.2](https://github.com/antlr/antlr4/releases/tag/4.13.2), [DefaultErrorStrategy](https://www.antlr.org/api/Java/org/antlr/v4/runtime/DefaultErrorStrategy.html) | Toolpin und Recoverymechanismen |

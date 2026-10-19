@@ -15,8 +15,8 @@ public final class ExitCodePolicy {
     public int exitCode(CliTermination termination) {
         return switch (termination) {
             case SUCCESS -> 0;
-            case SOURCE_REJECTED, INCOMPLETE_ANALYSIS, INPUT_UNRESOLVED,
-                    WARNINGS_REJECTED, OPERATIONAL_FAILURE -> 1;
+            case SOURCE_REJECTED, FORMAT_CHECK_FAILED, INCOMPLETE_ANALYSIS,
+                    INPUT_UNRESOLVED, WARNINGS_REJECTED, OPERATIONAL_FAILURE -> 1;
             case USAGE_ERROR -> 2;
             case INTERNAL_FAILURE -> 3;
             case CANCELLED -> 4;

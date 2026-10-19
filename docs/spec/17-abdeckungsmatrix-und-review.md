@@ -2,7 +2,7 @@
 
 ## 1. Zweck und Prüfstatus
 
-Dieses Kapitel verbindet die ursprünglichen Ziele mit den konkreten Fachverträgen, Arbeitspaketen und Abnahmen. Es enthält den vollständigen Index der **285 eindeutig nummerierten Anforderungen** des Pakets. Die erläuternden Klassen-, Methoden-, Fachregel- und Testverträge in den jeweiligen Kapiteln gehören zusätzlich zur Spezifikation; ihre Verbindlichkeit hängt nicht davon ab, ob jeder einzelne Satz eine eigene ID besitzt.
+Dieses Kapitel verbindet die ursprünglichen Ziele mit den konkreten Fachverträgen, Arbeitspaketen und Abnahmen. Es enthält den vollständigen Index der **289 eindeutig nummerierten Anforderungen** des Pakets. Die erläuternden Klassen-, Methoden-, Fachregel- und Testverträge in den jeweiligen Kapiteln gehören zusätzlich zur Spezifikation; ihre Verbindlichkeit hängt nicht davon ab, ob jeder einzelne Satz eine eigene ID besitzt.
 
 Die hier dokumentierte Prüfung betrifft das **Spezifikationspaket**. Sie ist kein Nachweis, dass der neue Compiler oder die späteren Werkzeuge bereits implementiert sind. Die tatsächlich ausgeführte kleine Syntax-/WASM-Probe ist separat unter `evidence/wasm-spike/` dokumentiert. Ihr Umfang wird in Kapitel 10 ausdrücklich von den noch auszuführenden Compiler-, Browser- und Web-Image-Abnahmen abgegrenzt.
 
@@ -15,7 +15,7 @@ Die Kapitel 00 bis 18 sind die 19 Fach- und Steuerungsdokumente. Zusammen mit RE
 | Java-Stack von Grund auf erneuern | Neue Modul- und Datenverträge; vorhandene Implementierungen als Referenzen für Verhalten und Fachsemantik | [01](01-zielbild-und-anforderungen.md), [02](02-architektur-und-modulgrenzen.md), [15](15-entscheidungen-risiken-und-quellen.md) | Architekturgrenzen ab G0/G1; Funktionsumfang bis G5 |
 | Fähigkeiten von ili2c, iox-ili, ilivalidator und ili2db erhalten | Gemeinsames semantisches Modell; getrennte Compiler-, Transfer-, Validierungs- und DB-Dienste | [05](05-metamodell-und-typensystem.md), [12](12-transfer-validierung-und-datenbanken.md) | Compiler G2/G3, Transfer und Validierung G4, Datenbanken G5 |
 | Mit dem Compiler beginnen und das Gesamtziel behalten | Vollständige P0/P1-Strecke, anschliessend fachliche P2-Familien; spätere Verbraucheranforderungen bleiben verbindlich | [00](00-auftrag-und-agentenregeln.md), [14](14-implementierungsplan-und-arbeitspakete.md), [STARTPROMPT](STARTPROMPT.md) | WP-00 bis WP-17 mit belegtem Status; keine leeren Zukunftsmodule |
-| Benutzer sollen wenig Veränderung bemerken | Benannte CLI-/Diagnose-/Exportprofile, gemessene Exitcodes und Streams, nachvollziehbare Abweichungen | [09](09-diagnostik-logging-und-telemetrie.md), [13](13-tests-kompatibilitaet-und-qualitaet.md), [18](18-cli-sdk-und-kompatibilitaetsadapter.md) | Reale Prozess- und Exportvergleiche in G3 |
+| Benutzer sollen wenig Veränderung bemerken | Benannte CLI-/Diagnose-/Formatierungsprofile, gemessene Exitcodes und Streams, nachvollziehbare Abweichungen | [09](09-diagnostik-logging-und-telemetrie.md), [13](13-tests-kompatibilitaet-und-qualitaet.md), [18](18-cli-sdk-und-kompatibilitaetsadapter.md) | Reale Prozess- und Ausgabevergleiche in G3 |
 | ili2db-Tabellen und Schemen müssen kompatibel bleiben | Historische Namen, Mappingstrategien und gespeicherte Metadaten sind explizite Verträge; vorhandene Zuordnungen sind massgeblich | [12](12-transfer-validierung-und-datenbanken.md), [13](13-tests-kompatibilitaet-und-qualitaet.md) | Alt→Neu und Neu→Alt mit echten Operationen auf derselben Datenbank in G5 |
 | Elaboriertes strukturiertes Logging | Unveränderliche Diagnosen, stabile Codes und Ursachen; davon getrennte RunEvents, explizite Eltern-/Kindkontexte, JSON-/Legacyrenderer | [09](09-diagnostik-logging-und-telemetrie.md), [16](16-api-register-und-vertragstests.md) | Ursachen-, Reihenfolge-, Observer- und Lifecycle-Vertragstests ab G1 |
 | Nur INTERLIS 2.3 und 2.4 | Gemeinsame LanguageVersion; versionsspezifische Syntax, Builtins, Semantik und Capabilitymatrix | [04](04-quelltext-syntax-und-parser.md), [05](05-metamodell-und-typensystem.md), [06](06-kompilierung-und-semantik.md) | Positive und negative Versionsfälle; vollständige Featurematrix in G2 |
@@ -55,7 +55,7 @@ Der Querreview hat insbesondere die Übergänge zwischen den Fachkapiteln geprü
 | Abbruch und fehlende Implementierung | Ressourcenlimit, Nutzerabbruch, fehlende Implementierung und ungültige Sprache bleiben verschiedene Ursachen | Budget-, Coverage- und Outcome-Vertragstests |
 | Overlays | SemanticOverlays des Compilers und verbraucherspezifische SchemaOverlays besitzen getrennte Eingaben und Fingerprints | Overlay-/Plan- und Parallelverwendungstests |
 | Projektion und Auswahl | DiagramOptions.defaults benötigt eine konkrete selection; Renderer greifen auf denselben fachlichen Graphen zu | DiagramProjectionContractTest |
-| Generatoren und CLI-Erfolg | Zusagte Modellformate besitzen ModelExporter-Verträge; CLI-Erfolg entsteht erst nach Export und Flush | ModelExportContractTest und CliCompletionAfterExportTest |
+| Formatierung und CLI-Erfolg | Die Format-API besitzt deterministische, idempotente Verträge; CLI-Erfolg entsteht erst nach vollständiger Ausgabe und Flush. Modellgeneratoren sind nicht P3. | Formatter-Vertragstests und CliCompletionAfterFormatTest |
 | Gradle und Plattformgates | Node-Vertragstests, reale Browserprüfung und Web-Image-Untersuchung sind unterschiedliche Aufgaben mit eigenem Ergebnis | checkPortable, checkBrowser und phasenspezifisches releaseCheck |
 | Agentenregeln und aktueller Auftrag | Rootregeln gelten für das Repository, zusätzliche Spezifikationsregeln für dessen Dokumentpflege; Lesen aktiviert keine Implementierung | Scope- und Hierarchiereview beider AGENTS-Dateien mit Kapitel 00 und STARTPROMPT |
 
@@ -67,13 +67,13 @@ Für die Auslieferung werden die folgenden Eigenschaften des Pakets geprüft:
 
 - Alle 21 Hauptdokumente sind als UTF-8 lesbar und im Inhaltsverzeichnis aufgeführt beziehungsweise als Einstieg erkennbar.
 - Die zwei zusätzlichen AGENTS-Dateien haben eindeutige Zielpfade und Zuständigkeiten. Ihre Regeln sind mit Kapitel 00, den Fachverträgen und dem ausdrücklich zu aktivierenden Startprompt vereinbar.
-- Alle 285 Anforderungsdefinitionen haben eine eindeutige ID sowie ausgefüllte Phase und Abnahme. Verweise auf Anforderungs-IDs lösen auf vorhandene Definitionen auf.
+- Alle 289 Anforderungsdefinitionen haben eine eindeutige ID sowie ausgefüllte Phase und Abnahme. Verweise auf Anforderungs-IDs lösen auf vorhandene Definitionen auf.
 - Relative Markdown-Dateiverweise zeigen auf vorhandene Dateien. Verweise auf die Syntaxevidenz bleiben nach der beschriebenen Übernahme nach `docs/spec/` und `docs/evidence/` gültig.
 - Codeblöcke sind geschlossen. Die vollständigen JSON-Beispiele sind syntaktisch parsebar. Java-Signaturblöcke mit bewusst ausgelassenen Bodies oder Imports werden nicht als bereits kompilierter Produktcode ausgegeben.
 - Das API-Register, die Fachkapitel und die Arbeitspakete verwenden die vereinbarten gemeinsamen Typen und die zuletzt beschriebenen Lifecycle-/Capture-/Gate-Verträge.
 - Die ZIP-Ausgabe enthält die Hauptdokumente, beide AGENTS-Dateien und die Referenzevidenz; interne Erstellungsdateien und Uploadhilfen gehören nicht zum Lieferumfang. Die Archivintegrität wird separat geprüft.
 
-Nicht durch einen Markdownreview nachweisbar sind Sprachkonformität, korrekte Recovery bei allen Fehlern, Threadingverhalten, Speicherverbrauch, Browserkompatibilität, reale Exporttreue oder Datenbankinteroperabilität. Dafür existieren die konkreten Implementierungsaufträge und Tests. Auch die hier vorgeschlagenen Ressourcenstartwerte sind keine gemessenen Leistungszusagen.
+Nicht durch einen Markdownreview nachweisbar sind Sprachkonformität, korrekte Recovery bei allen Fehlern, Threadingverhalten, Speicherverbrauch, Browserkompatibilität, reale Ausgabetreue oder Datenbankinteroperabilität. Dafür existieren die konkreten Implementierungsaufträge und Tests. Auch die hier vorgeschlagenen Ressourcenstartwerte sind keine gemessenen Leistungszusagen.
 
 Die referenzierten Upstreamstände sind in Kapitel 15 festgehalten. Die Spezifikation bildet ihre ausgewerteten Eigenschaften und die daraus getroffenen Entwurfsentscheidungen ab. Sie behauptet keine erneute Ausführung sämtlicher fremder CI-Pipelines oder eine vollständige Prüfung aller Versionen dieser Projekte.
 
@@ -81,13 +81,13 @@ Die referenzierten Upstreamstände sind in Kapitel 15 festgehalten. Die Spezifik
 
 Der Coding-Agent führt den tatsächlichen Umsetzungsstatus ausserhalb dieses statischen Inhaltsindex nach den Regeln von Kapitel 00 und 13. Eine sinnvolle Statuszeile enthält Anforderungs-ID, Status, zugehöriges Arbeitspaket, Implementierungsstelle, konkrete Fälle, zuletzt ausgeführten Befehl und Ergebnisnachweis. Ein Anforderungsindex allein ist kein Erfüllungsnachweis.
 
-Teilweise erfüllte Anforderungen mit mehreren Phasen bleiben als solche erkennbar. Beispielsweise kann die Overlaygrenze in P1 korrekt sein, während die vollständige Verbraucherplanung erst P4 liefert. Die Angabe `P1/P4` bedeutet nicht, dass nach dem ersten Teil sämtliche zukünftigen Verpflichtungen erledigt sind. `optional/P3` bezeichnet den ausdrücklich optionalen alten Java-API-Adapter, nicht eine optionale allgemeine CLI-/Datenbankkompatibilität.
+Teilweise erfüllte Anforderungen mit mehreren Phasen bleiben als solche erkennbar. Beispielsweise kann die Overlaygrenze in P1 korrekt sein, während die vollständige Verbraucherplanung erst P4 liefert. Die Angabe `P1/P4` bedeutet nicht, dass nach dem ersten Teil sämtliche zukünftigen Verpflichtungen erledigt sind. `zurückgestellt (nicht P3)` bezeichnet den derzeit nicht verfolgten Legacy-Java-API-Adapter, nicht eine optionale allgemeine CLI-/Datenbankkompatibilität.
 
 Bei einer neuen Anforderung wird eine neue freie ID ihres Bereichs vergeben. Bestehende IDs werden nicht für andere Bedeutungen wiederverwendet. Entfällt eine Anforderung aufgrund einer bewussten Scopeentscheidung, bleiben Entscheidung, Begründung und Auswirkungen nachverfolgbar. Ein Agent darf keinen offenen Nachweis durch Löschen der Anforderung oder Umdeuten eines Fehlerfalls in einen Erfolg beseitigen.
 
 ## 6. Vollständiger Anforderungsindex
 
-Der Index gruppiert die 285 Anforderungen nach ihrem fachlichen Besitzer. Die verlinkten Fachkapitel enthalten jeweils den vollständigen normativen Text und die Methodenverträge. Die nachstehende Abnahmespalte ist eine lesbare Wiederholung des ursprünglichen Abnahmehinweises; im Fall einer späteren Änderung ist die Definition im Fachkapitel massgeblich und der Index wird synchronisiert. Die Einträge sind Anforderungen an die Umsetzung, keine Aussagen über bereits bestandene Tests.
+Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die verlinkten Fachkapitel enthalten jeweils den vollständigen normativen Text und die Methodenverträge. Die nachstehende Abnahmespalte ist eine lesbare Wiederholung des ursprünglichen Abnahmehinweises; im Fall einer späteren Änderung ist die Definition im Fachkapitel massgeblich und der Index wird synchronisiert. Die Einträge sind Anforderungen an die Umsetzung, keine Aussagen über bereits bestandene Tests.
 
 <!-- REQUIREMENT-INDEX:START -->
 
@@ -492,7 +492,7 @@ Der Index gruppiert die 285 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [COMPAT-001](13-tests-kompatibilitaet-und-qualitaet.md) | P0 | Benannte Profile und Matrix; kein pauschaler Kompatibilitätsclaim. |
 | [COMPAT-002](13-tests-kompatibilitaet-und-qualitaet.md) | P3 | Getrennte stdout-/stderr-/Exitcode-Fixtures. |
 | [COMPAT-003](13-tests-kompatibilitaet-und-qualitaet.md) | P2 | Dokumentierte Entscheidung: Regression, bewusste Normkorrektur oder offener Fall. |
-| [COMPAT-004](13-tests-kompatibilitaet-und-qualitaet.md) | P3/P4 | Integration mit gepinnten Verbrauchern; blosse Gettergleichheit genügt nicht. |
+| [COMPAT-004](13-tests-kompatibilitaet-und-qualitaet.md) | zurückgestellt (nicht P3/P4) | Eigener Legacy-Adapterauftrag; gepinnte Verbraucher erforderlich. |
 | [COMPAT-005](13-tests-kompatibilitaet-und-qualitaet.md) | P5 | Alt→Neu und Neu→Alt pro unterstütztem DB-Profil. |
 | [COMPAT-006](13-tests-kompatibilitaet-und-qualitaet.md) | P5 | Mehrdeutigkeits- und Migrationsfälle mit alten Metadaten. |
 | [COMPAT-007](13-tests-kompatibilitaet-und-qualitaet.md) | P1/P4 | Gültiges Schema mit absichtlich begrenzter Projektion. |
@@ -521,10 +521,10 @@ Der Index gruppiert die 285 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [CLI-003](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Referenzmatrix; kein stilles Ignorieren. |
 | [CLI-004](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Prozessvergleich auf zugesagten Plattformen. |
 | [CLI-005](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1/P3 | Konfliktfälle und Herkunftsreport. |
-| [CLI-006](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1 | XML-/JSON-Export bleibt parsebar; NDJSON ohne Fremdtext. |
+| [CLI-006](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1 | Formatierte Quellausgaben und Diagnostik bleiben trennbar; NDJSON ohne Fremdtext. |
 | [CLI-007](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1/P3 | IO-Fehler/Abbruch mit vorhandener Zieldatei. |
 
-### SDK – Java-SDK und Modellgeneratoren
+### SDK – Java-SDK
 
 4 Anforderungen; Definitionen in [18-cli-sdk-und-kompatibilitaetsadapter.md](18-cli-sdk-und-kompatibilitaetsadapter.md).
 
@@ -533,15 +533,26 @@ Der Index gruppiert die 285 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [SDK-001](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1 | Kompilierender Beispiel-/Vertragstest ohne Dateisystem. |
 | [SDK-002](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1/P3 | Beispielkompilierung in CI. |
 | [SDK-003](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Versionsmanifest/Migrationsfall. |
-| [SDK-004](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Formatgoldens, Unsupported-Fälle und Referenzvergleich je freigegebenem Format. |
+| [SDK-004](18-cli-sdk-und-kompatibilitaetsadapter.md) | entfällt (P3-Scope) | Keine Generator-API; durch FMT-001..004 ersetzt. |
 
-### LEGACY – Optionaler alter Java-API-Adapter
+### FMT – Quellformatierung
+
+4 Anforderungen; Definitionen in [18-cli-sdk-und-kompatibilitaetsadapter.md](18-cli-sdk-und-kompatibilitaetsadapter.md).
+
+| ID | Phase | Abnahmehinweis |
+|---|---|---|
+| [FMT-001](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Deterministische, idempotente API ohne IO. |
+| [FMT-002](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Kommentare/Strings/Unicode/Semantik erhalten; Fehler ohne Teilprodukt. |
+| [FMT-003](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | stdout/`--write`/`--check`/Exitcodes. |
+| [FMT-004](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Atomisches Schreiben; vorhandene Datei bleibt bei Fehler unverändert. |
+
+### LEGACY – Zurückgestellter alter Java-API-Adapter
 
 2 Anforderungen; Definitionen in [18-cli-sdk-und-kompatibilitaetsadapter.md](18-cli-sdk-und-kompatibilitaetsadapter.md).
 
 | ID | Phase | Abnahmehinweis |
 |---|---|---|
-| [LEGACY-001](18-cli-sdk-und-kompatibilitaetsadapter.md) | optional/P3 | Echte Verbraucher benutzen materialisierten Graphen. |
-| [LEGACY-002](18-cli-sdk-und-kompatibilitaetsadapter.md) | optional/P3 | Mutations-/Isolationstest. |
+| [LEGACY-001](18-cli-sdk-und-kompatibilitaetsadapter.md) | zurückgestellt (nicht P3) | Eigener Auftrag mit echten Verbrauchertests. |
+| [LEGACY-002](18-cli-sdk-und-kompatibilitaetsadapter.md) | zurückgestellt (nicht P3) | Gilt erst bei Wiederaufnahme des Adapterauftrags. |
 
 <!-- REQUIREMENT-INDEX:END -->

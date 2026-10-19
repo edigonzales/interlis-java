@@ -7,14 +7,20 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CliApplicationTest {
     private static final Path TESTDATA = Path.of(System.getProperty("testdata.dir"));
+
+    @TempDir
+    Path tempDir;
 
     @Test
     void versionAndCapabilities() {
@@ -56,6 +62,59 @@ class CliApplicationTest {
         assertEquals(0, run.result().exitCode(), run.err());
         assertTrue(run.out().contains("classDiagram"));
         assertTrue(run.out().contains("Building"));
+    }
+
+    @Test
+    void formatWritesStdoutChecksAndWritesAtomically() throws Exception {
+        Path file = tempDir.resolve("model.ili");
+        String input = "INTERLIS 2.4;\nMODEL M AT \"x\" VERSION \"1\" =\nTOPIC T =\n"
+                + "CLASS C =\nvalue : TEXT*10;\nEND C;\nEND T;\nEND M.\n";
+        Files.writeString(file, input);
+
+        Run stdout = run("format", "--indent", "4", "--line-ending", "lf", file.toString());
+        assertEquals(0, stdout.result().exitCode(), stdout.err());
+        assertTrue(stdout.out().contains("    TOPIC T ="));
+        assertFalse(stdout.out().contains("\r"));
+
+        Run check = run("format", "--check", file.toString());
+        assertEquals(1, check.result().exitCode());
+        assertEquals(CliTermination.FORMAT_CHECK_FAILED, check.result().termination());
+        assertEquals(input, Files.readString(file));
+
+        Run write = run("format", "--write", file.toString());
+        assertEquals(0, write.result().exitCode(), write.err());
+        assertTrue(Files.readString(file).contains("  TOPIC T ="));
+        assertTrue(Files.readString(file).contains("      value: TEXT*10;"));
+
+        Run clean = run("format", "--check", file.toString());
+        assertEquals(0, clean.result().exitCode(), clean.err());
+    }
+
+    @Test
+    void unsupportedGeneratorAndUnknownOptionsAreRejected() {
+        Run generator = run("check", "--export", "XSD",
+                TESTDATA.resolve("models/base24.ili").toString());
+        assertEquals(2, generator.result().exitCode());
+        assertEquals(CliTermination.USAGE_ERROR, generator.result().termination());
+        assertTrue(generator.err().contains("unsupported option"));
+
+        Run diagram = run("diagram", "--json",
+                TESTDATA.resolve("models/base24.ili").toString());
+        assertEquals(2, diagram.result().exitCode());
+
+        Run format = run("format", "--unknown",
+                TESTDATA.resolve("models/base24.ili").toString());
+        assertEquals(2, format.result().exitCode());
+    }
+
+    @Test
+    void formatDoesNotWriteInvalidSource() throws Exception {
+        Path file = tempDir.resolve("broken.ili");
+        String input = "INTERLIS 2.4;\nMODEL M AT \"x\" VERSION \"1\" =\n";
+        Files.writeString(file, input);
+        Run check = run("format", "--write", file.toString());
+        assertEquals(1, check.result().exitCode());
+        assertEquals(input, Files.readString(file));
     }
 
     @Test
