@@ -29,8 +29,13 @@ CLI-Distribution und LSP-Adaptertest.
 
 Die P1-Abnahme ist abgeschlossen. **Akzeptierte Restlücke:** 258
 Javadoc-Warnungen (API-003), vom Nutzer am 2026-10-18 ausdrücklich als
-dokumentierte Restlücke akzeptiert. **Nicht bestanden** ist die 610er-Suite im
-gewählten 2.3/2.4-Umfang (592 PASS/1 FAIL/0 ERROR); das ist der P2-Backlog.
+dokumentierte Restlücke akzeptiert. **INTERLIS 1 ist out of scope:** Der
+verbleibende FAIL `Attribute10Test.attributeComplete` benötigt
+`TRANSFER INTERLIS1;`/`TABLE`-Syntax; diese Entscheidung ist in
+`docs/evidence/conformance/scope-decision-interlis1.md` festgehalten. Im
+gewählten 2.3/2.4-Umfang stehen **592 PASS / 1 FAIL / 0 ERROR**; in-scope sind
+damit **592 von 592** Fällen PASS, der einzelne FAIL ist der out-of-scope
+INTERLIS1-Transferfall.
 Ebenfalls offen: vollständige 2.3/2.4-Semantik (P2) und Performancebudgets. Die
 Plattform-Gates JVM, Node, Chromium, Firefox, Playwright-WebKit und echtes Safari
 sind ausgeführt und bestanden.
@@ -158,7 +163,7 @@ referenzierten JSON-Dateien.
 | `./gradlew check` | **BUILD SUCCESSFUL**, 134 Tests, 0 Fehler |
 | `./gradlew :interlis-compiler:sdkExampleTest` | **SDK PASS**, Beispiel gegen gebaute JARs kompiliert und ausgeführt |
 | `python3 tools/reference/reference_check.py` | **5/5 PASS** gegen ili2c 5.6.9; kleiner gepinnter P1-Fallkorpus |
-| `./gradlew conformanceCheck` | **FAIL (erwartet)**: 593 2.3/2.4-Fälle, 592 PASS/1 FAIL/0 ERROR; separater P2-Backlog |
+| `./gradlew conformanceCheck` | **FAIL (erwartet)**: 593 ausgewählte Fälle, 592 PASS/1 FAIL/0 ERROR; der FAIL ist der out-of-scope INTERLIS1-Transferfall |
 | `./gradlew javadoc` | **BUILD SUCCESSFUL**; 258 Warnungen, als API-003-Restlücke akzeptiert |
 | `./gradlew checkPortable` | **SUCCESS**, JVM plus WasmGC-/JS-Node-Verträge |
 | `./gradlew :interlis-wasm-teavm:browserContractTest` | **SUCCESS** für Chromium, Firefox, WebKit |
@@ -192,9 +197,11 @@ referenzierten JSON-Dateien.
    Dezimalzahl und Worker-Neustart. `checkBrowser` und `releaseCheck` sind grün.
 2. **Referenz-/Konformitätsumfang.** Das kleine Fünf-Fall-Profil ist P1-grün.
    Die gepinnte 610er-Suite ist für 2.3/2.4 integriert (593 Fälle; 17×1.0
-   ausgeschlossen), aber mit 592 PASS/1 FAIL/0 ERROR noch nicht bestanden.
-   Dieser Stand ist der P2-Kompatibilitätsbacklog; „vollständig konform“ wird
-   nicht behauptet.
+   ausgeschlossen). Ergebnis: **592 PASS / 1 FAIL / 0 ERROR**. Der einzelne FAIL
+   (`Attribute10Test.attributeComplete`) ist der out-of-scope INTERLIS1-Transfer;
+   in-scope sind **592 von 592** Fällen PASS. Der `conformanceCheck` bleibt
+   absichtlich rot, solange die Suite den out-of-scope Fall enthält; „vollständig
+   konform“ wird nicht behauptet.
 3. **Web Image und Safari.** Der Web-Image-Pfad wurde unter Node und in
    Chromium, Firefox und Playwright-WebKit ausgeführt. TeaVM wurde zusätzlich in
    echtem Safari geprüft; der Web-Image-Safari-Pfad ist nicht separat gelaufen.

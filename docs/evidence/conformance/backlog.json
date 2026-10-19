@@ -10,7 +10,9 @@
       ],
       "expected": {
         "outcome": "accept"
-      }
+      },
+      "scope": "out-of-scope",
+      "scopeReason": "INTERLIS 1 transfer syntax; compiler supports 2.3/2.4"
     }
   ]
 }
