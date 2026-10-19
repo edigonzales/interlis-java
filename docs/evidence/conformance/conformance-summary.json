@@ -3,11 +3,11 @@
   "exitCode": 0,
   "summary": {
     "TOTAL": 593,
-    "XFAIL": 1,
-    "PASS": 592,
-    "ERROR": 0,
+    "XPASS": 0,
     "FAIL": 0,
-    "XPASS": 0
+    "ERROR": 0,
+    "PASS": 592,
+    "XFAIL": 1
   },
   "reportJson": "report.json",
   "reportJunit": "report.junit.xml",

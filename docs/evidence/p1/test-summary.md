@@ -65,6 +65,7 @@ Command: `./gradlew check`
 | `guru.interlis.compiler.internal.antlr.VersionScannerTest` | 1 | 0 |
 | `guru.interlis.repository.FileSourceLoaderTest` | 3 | 0 |
 | `guru.interlis.repository.HttpSourceLoaderTest` | 3 | 0 |
+| `guru.interlis.repository.RepositoryIndexReaderTest` | 4 | 0 |
 | `guru.interlis.workspace.WorkspaceTest` | 5 | 0 |
 | `guru.interlis.workspace.WorkspaceIsolationTest` | 1 | 0 |
 | `guru.interlis.projection.DiagramProjectionTest` | 4 | 0 |
@@ -75,7 +76,7 @@ Command: `./gradlew check`
 | `guru.interlis.lsp.LspProtocolCancellationTest` | 1 | 0 |
 | `guru.interlis.lsp.LspErrorContractTest` | 1 | 0 |
 | `guru.interlis.cli.CliApplicationTest` | 5 | 0 |
-| **Total** | **141** | **0** |
+| **Total** | **145** | **0** |
 
 The Gradle test reports are generated under `<module>/build/test-results/test/`.
 

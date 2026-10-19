@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Own compact fixture for the IliRepository09.RepositoryIndex profile. -->
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <DATASECTION>
+    <IliRepository09.RepositoryIndex BID="fixture.b1">
+      <IliRepository09.RepositoryIndex.ModelMetadata TID="1">
+        <Name>LegacyModel</Name>
+        <SchemaLanguage>ili2_3</SchemaLanguage>
+        <File>models/LegacyModel.ili</File>
+        <Version>2009-12-01</Version>
+        <md5>00000000000000000000000000000000</md5>
+      </IliRepository09.RepositoryIndex.ModelMetadata>
+    </IliRepository09.RepositoryIndex>
+  </DATASECTION>
+</TRANSFER>
