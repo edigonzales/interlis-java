@@ -17,7 +17,9 @@
     "performance-browser.json"
   ],
   "gaps": [
-    "browser 2.4 model and two WebKit models exceed current WasmGC stack limit and are recorded as skipped",
-    "queue/backpressure and abort-under-load are not yet measured"
-  ]
+    "larger production corpus not yet measured",
+    "browser 2.4/WebKit subset skipped on WasmGC stack limit"
+  ],
+  "queue": "BoundedObservationQueue capacity 1024; 100k-event load test; drop statistics",
+  "abort": "CancelledAnalysisTest"
 }

@@ -22,7 +22,7 @@ vollständiger Closure und vollständiger Coverage ein `CompiledSchema` aus.
 Nicht implementierte Sprachkonstrukte werden als `NOT_IMPLEMENTED` sichtbar und
 blockieren den Compile.
 
-Verifiziert sind: **167 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
+Verifiziert sind: **170 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
 Node, Chromium/Firefox/WebKit über Playwright, ein tatsächlich ausgeführter
 GraalVM-Web-Image-Build samt Node- und Browservertrag (Chromium/Firefox/WebKit),
 CLI-Distribution und LSP-Adaptertest.
@@ -161,7 +161,7 @@ referenzierten JSON-Dateien.
 
 | Kommando | Ergebnis |
 |---|---|
-| `./gradlew check` | **BUILD SUCCESSFUL**, 167 Tests, 0 Fehler |
+| `./gradlew check` | **BUILD SUCCESSFUL**, 170 Tests, 0 Fehler |
 | `./gradlew :interlis-compiler:sdkExampleTest` | **SDK PASS**, Beispiel gegen gebaute JARs kompiliert und ausgeführt |
 | `python3 tools/reference/reference_check.py` | **5/5 PASS** gegen ili2c 5.6.9; kleiner gepinnter P1-Fallkorpus |
 | `./gradlew conformanceCheck` | **PASS**: 593 ausgewählte Fälle, 592 PASS/1 XFAIL/0 FAIL/0 ERROR; der XFAIL ist der out-of-scope INTERLIS1-Transferfall |
@@ -227,7 +227,7 @@ referenzierten JSON-Dateien.
 ## 9a. P2-Abschluss (WP-20..27, 2026-10-19)
 
 - Conformance: **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR** von 593 ausgewählten 2.3/2.4-Fällen.
-- JVM: **167 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
+- JVM: **170 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
 - Umgesetzt: Typfamilien (Temporal, OID/Blackbox/Alignment, FORMAT, CLASS/STRUCTURE-Werte), UNIT/unitRef, Domain-Enumerationen, Domain-Extends, Rollen-/Assoziationsregeln, Attribut-Overrides, Namens-/Endnamen-Regeln, Geometry-Typen und -Regeln, View-Deklarationen mit Alias-/Attributprüfungen, externe Constraint-Blöcke, UNIQUE-/SET-/Plausibility-Constraints, Enum-/Klassenkonstanten.
 - **WP-24 Translation:** Guard entfernt; Quellmodell/Version, Modellkopf, Imports, Token-/Namenskorrespondenz, Constraints, Modellreferenzen, Einheiten und Koordinaten werden validiert. **36/36 Single-Feature-Translation-Accept-Fälle PASS**, **0** Translation-Reject-False-Accepts; Nachweis in `docs/evidence/conformance/translation-summary.json`.
 - **P3-4 Performance/Geo-Korpus (PARTIAL):** gepinnter Index und 13 reale Modelle; JVM-Compile/Format, TeaVM-WasmGC-Compile und Playwright-Compile gemessen; Evidence `docs/evidence/p3/performance-summary.md`; offen sind größerer Produktionskorpus, Queue-/Abbruchmessung und Browser-2.4/WebKit-Subset.

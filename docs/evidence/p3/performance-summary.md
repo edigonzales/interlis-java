@@ -31,10 +31,14 @@ Commands:
 ./gradlew performanceCheck
 ```
 
+## Queue and abort
+
+- `BoundedObservationQueue` capacity 1024; a 100,000-event load test verifies bounded retention and drop statistics (`BoundedObservationQueueTest`).
+- `CancelledAnalysisTest` verifies a pre-cancelled analysis terminates without a schema.
+
 ## Open measurement gaps
 
 - No large production corpus yet; the current selection is a real but small
   baseline.
-- Queue/backpressure and abort-under-load are not yet measured.
 - The browser 2.4 model and two WebKit models exceed the current browser WasmGC
   stack limit and are recorded as `skipped`; they are measured on JVM/WasmGC.
