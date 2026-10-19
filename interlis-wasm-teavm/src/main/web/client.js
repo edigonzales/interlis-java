@@ -39,7 +39,7 @@
 
   const output = document.getElementById('output');
   const source = document.getElementById('source');
-  const state = {sessionId: null, revision: '0', snapshotId: null, schemaId: null, hasSource: false};
+  const state = {sessionId: null, revision: '0', snapshotId: null, schemaId: null, hasSource: false, diagramView: null};
 
   function resetState() {
     state.sessionId = null;
@@ -136,6 +136,9 @@
     const response = await call(envelope('diagram', state.sessionId, {
       schemaId: state.schemaId
     }));
+    if (response.status === 'ok' && window.interlisDiagramAdapter) {
+      state.diagramView = window.interlisDiagramAdapter.adapt(response.result);
+    }
     output.textContent = JSON.stringify(response, null, 2);
     return response;
   }
@@ -174,6 +177,16 @@
     if (!diagramText.includes('9007199254740993.0010')) {
       throw new Error('exact decimal literal missing from diagram');
     }
+    if (!window.interlisDiagramAdapter) throw new Error('diagram TypeScript adapter missing');
+    const diagramView = window.interlisDiagramAdapter.adapt(diagram.result);
+    if (diagramView.snapshotId !== diagram.result.snapshotId) {
+      throw new Error('diagram adapter snapshot mismatch');
+    }
+    if (window.interlisDiagramAdapter.isStale(diagramView, 'stale-snapshot')) {
+      // expected stale; no-op branch keeps the check explicit
+    } else {
+      throw new Error('diagram adapter stale check failed');
+    }
     const restarted = await restartWorker();
     return {
       status: 'ok',
@@ -182,6 +195,8 @@
       rejectedOutcome: rejected.result ? rejected.result.outcome : rejected.status,
       compiledOutcome: succeeded.result.outcome,
       diagramNodes: diagram.result.nodes.length,
+      diagramEdges: diagramView.edges.length,
+      diagramAssociations: diagramView.associations.size,
       diagnostics: succeeded.result.diagnostics.length,
       exactDecimal: true,
       workerRestartOutcome: restarted.result ? restarted.result.outcome : restarted.status

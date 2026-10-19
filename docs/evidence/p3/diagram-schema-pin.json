@@ -1,0 +1,7 @@
+{
+  "schema": "DiagramDocument 1.0",
+  "file": "interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json",
+  "sha256": "77d43e84dc2af22edc5c298ba414c390db8dfc2f5ae670267c2399d8688f06d6",
+  "typescriptDeclaration": "interlis-wasm-teavm/src/main/web/diagram-adapter.d.ts",
+  "adapter": "interlis-wasm-teavm/src/main/web/diagram-adapter.js"
+}

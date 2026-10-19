@@ -88,10 +88,17 @@ tasks.register('jsContractTest') {
     }
 }
 
+tasks.register('diagramAdapterTest', Exec) {
+    group = 'verification'
+    description = 'Tests the TypeScript-contract diagram adapter without a browser.'
+    workingDir = projectDir
+    commandLine 'node', 'src/main/web/diagram-adapter.test.cjs'
+}
+
 tasks.register('browserContractTest', Exec) {
     group = 'verification'
     description = 'Runs the browser matrix through Playwright (Chromium, Firefox, WebKit).'
-    dependsOn 'prepareBrowserHarness'
+    dependsOn 'prepareBrowserHarness', 'diagramAdapterTest'
     workingDir = projectDir
     commandLine 'node', 'browser-contract.cjs'
 }

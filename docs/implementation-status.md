@@ -230,6 +230,7 @@ referenzierten JSON-Dateien.
 - JVM: **167 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
 - Umgesetzt: Typfamilien (Temporal, OID/Blackbox/Alignment, FORMAT, CLASS/STRUCTURE-Werte), UNIT/unitRef, Domain-Enumerationen, Domain-Extends, Rollen-/Assoziationsregeln, Attribut-Overrides, Namens-/Endnamen-Regeln, Geometry-Typen und -Regeln, View-Deklarationen mit Alias-/Attributprüfungen, externe Constraint-Blöcke, UNIQUE-/SET-/Plausibility-Constraints, Enum-/Klassenkonstanten.
 - **WP-24 Translation:** Guard entfernt; Quellmodell/Version, Modellkopf, Imports, Token-/Namenskorrespondenz, Constraints, Modellreferenzen, Einheiten und Koordinaten werden validiert. **36/36 Single-Feature-Translation-Accept-Fälle PASS**, **0** Translation-Reject-False-Accepts; Nachweis in `docs/evidence/conformance/translation-summary.json`.
+- **P3-3 TypeScript-Diagrammadapter:** **VERIFIED** – gepinntes DiagramDocument-1.0-Schema, TypeScript-Deklaration, JS-Adapter mit n-ary-Gruppierung, Source-Anchors und Stale-Prüfung; Browservertrag Chromium/Firefox/WebKit und Adapter-Unit-Test; Nachweis in `docs/evidence/p3/p3-3-summary.json`.
 - **P3-2 LSP:** **VERIFIED** – References, `prepareRename`, Multi-File-Rename mit Kollisions-/Stale-/Read-only-Pfaden, Endnamen, Format-CodeAction, Semantik-Tokens, Folding, Watched Files, Konfigurationsrefresh und Capability-Snapshot; Multi-File-, Read-only-, Missing-Source-, Kollisions- und Stale-Tests; Nachweis in `docs/evidence/p3/p3-2-summary.json`.
 - **P3-1 Formatierung/CLI:** `ModelFormatter`/`FormatOptions`/`FormatOutcome` und `interlis-cli format` mit stdout, `--write`, `--check`, `--indent` und `--line-ending`; Optionsinventar in `docs/evidence/p3/cli-options.md`, Abnahme in `p3-1-summary.json`; keine Generator-/IlisMeta-API.
 - **P2-Modellkopf:** `NOINCREMENTALTRANSFER`, `CHARSET` und `XMLNS` blockieren den Compile nicht mehr; `P2HeaderOptionsTest` deckt den 2.4-Modellkopf ab.
@@ -247,8 +248,8 @@ referenzierten JSON-Dateien.
 
 P2 ist für den Compiler-Scope WP-20..27 abgeschlossen. **P3-1 (Formatierung und
 ili2c-CLI-Profil) und P3-2 (LSP-Vertiefung) sind VERIFIED.** Die weiteren
-P3-Goals sind offen: TypeScript-Diagrammadapter, Performance auf dem gepinnten
-Geo-Korpus `https://geo.so.ch/models` und SDK-/CLI-Releases. Ein
+P3-Goals sind offen: Performance auf dem gepinnten Geo-Korpus
+`https://geo.so.ch/models` und SDK-/CLI-Releases. Ein
 Legacy-Java-API-Adapter ist derzeit nicht Bestandteil von P3.
 Vor jedem neuen Feature: positiven, negativen, Metamodell-/Query- und
 Portabilitätsfall gemeinsam ergänzen; `AnalysisCoverage`-Feature erst entfernen,

@@ -1,0 +1,53 @@
+[
+  {
+    "browser": "chromium",
+    "status": "passed",
+    "result": {
+      "status": "ok",
+      "capabilities": "0.1.0-SNAPSHOT",
+      "analyzeRevision": "1",
+      "rejectedOutcome": "rejected",
+      "compiledOutcome": "succeeded",
+      "diagramNodes": 2,
+      "diagramEdges": 0,
+      "diagramAssociations": 0,
+      "diagnostics": 0,
+      "exactDecimal": true,
+      "workerRestartOutcome": "succeeded"
+    }
+  },
+  {
+    "browser": "firefox",
+    "status": "passed",
+    "result": {
+      "status": "ok",
+      "capabilities": "0.1.0-SNAPSHOT",
+      "analyzeRevision": "1",
+      "rejectedOutcome": "rejected",
+      "compiledOutcome": "succeeded",
+      "diagramNodes": 2,
+      "diagramEdges": 0,
+      "diagramAssociations": 0,
+      "diagnostics": 0,
+      "exactDecimal": true,
+      "workerRestartOutcome": "succeeded"
+    }
+  },
+  {
+    "browser": "webkit",
+    "status": "passed",
+    "result": {
+      "status": "ok",
+      "capabilities": "0.1.0-SNAPSHOT",
+      "analyzeRevision": "1",
+      "rejectedOutcome": "rejected",
+      "compiledOutcome": "succeeded",
+      "diagramNodes": 2,
+      "diagramEdges": 0,
+      "diagramAssociations": 0,
+      "diagnostics": 0,
+      "exactDecimal": true,
+      "workerRestartOutcome": "succeeded"
+    }
+  }
+]
