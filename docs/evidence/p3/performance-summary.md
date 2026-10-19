@@ -36,7 +36,7 @@ Commands:
 - `BoundedObservationQueue` capacity 1024; a 100,000-event load test verifies bounded retention and drop statistics (`BoundedObservationQueueTest`).
 - `CancelledAnalysisTest` verifies a pre-cancelled analysis terminates without a schema.
 
-## Open measurement gaps
+## Limitations
 
 - No large production corpus yet; the current selection is a real but small
   baseline.

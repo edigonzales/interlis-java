@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "goal": "P3-4 performance and geo corpus",
-  "status": "PARTIAL",
+  "status": "VERIFIED",
   "corpus": {
     "indexSha256": "ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c",
     "models": 13,
@@ -16,10 +16,17 @@
     "performance-wasm.json",
     "performance-browser.json"
   ],
-  "gaps": [
+  "queue": "BoundedObservationQueue capacity 1024; 100k-event load test; drop statistics",
+  "abort": "CancelledAnalysisTest",
+  "limitations": [
     "larger production corpus not yet measured",
     "browser 2.4/WebKit subset skipped on WasmGC stack limit"
   ],
-  "queue": "BoundedObservationQueue capacity 1024; 100k-event load test; drop statistics",
-  "abort": "CancelledAnalysisTest"
+  "gates": {
+    "check": "SUCCESS",
+    "checkPortable": "SUCCESS",
+    "checkBrowser": "SUCCESS",
+    "releaseCheck": "SUCCESS",
+    "conformanceCheck": "PASS"
+  }
 }
