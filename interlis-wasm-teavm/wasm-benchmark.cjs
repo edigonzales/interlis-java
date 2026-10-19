@@ -40,6 +40,7 @@ function wasmPath() {
   const sessionId = open.result.sessionId;
   const models = [];
   for (const entry of manifest.models) {
+    if (!entry.runtimes.includes('wasm')) continue;
     const file = path.join(cache, entry.file.replaceAll('/', '__'));
     const text = fs.readFileSync(file, 'utf8');
     const sourceId = 'memory:/bench/' + entry.model + '.ili';
@@ -78,7 +79,7 @@ function wasmPath() {
   fs.writeFileSync(path.join(root, 'docs/evidence/p3/performance-wasm.json'),
     JSON.stringify(result, null, 2) + '\n');
   console.log('WASM_BENCHMARK_PASS ' + JSON.stringify({models: models.length}));
-  process.exit(0);
+  process.kill(process.pid, 'SIGKILL');
 })().catch(error => {
   console.error('WASM_BENCHMARK_FAIL', error);
   process.exit(1);

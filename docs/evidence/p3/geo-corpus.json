@@ -13,7 +13,12 @@
       "language": "2.3",
       "url": "https://geo.so.ch/models/AGI/SO_FunctionsExt.ili",
       "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
-      "bytes": 3168
+      "bytes": 3168,
+      "runtimes": [
+        "jvm",
+        "wasm",
+        "browser"
+      ]
     },
     {
       "file": "AGI/SO_AGI_GWR_20241118.ili",
@@ -22,7 +27,12 @@
       "language": "2.3",
       "url": "https://geo.so.ch/models/AGI/SO_AGI_GWR_20241118.ili",
       "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
-      "bytes": 5419
+      "bytes": 5419,
+      "runtimes": [
+        "jvm",
+        "wasm",
+        "browser"
+      ]
     },
     {
       "file": "AGI/SO_AGI_STAC_20230426.ili",
@@ -31,7 +41,12 @@
       "language": "2.3",
       "url": "https://geo.so.ch/models/AGI/SO_AGI_STAC_20230426.ili",
       "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
-      "bytes": 2474
+      "bytes": 2474,
+      "runtimes": [
+        "jvm",
+        "wasm",
+        "browser"
+      ]
     },
     {
       "file": "AGI/contrib/IliValidGwr_V1_0.ili",
@@ -40,9 +55,122 @@
       "language": "2.4",
       "url": "https://geo.so.ch/models/AGI/contrib/IliValidGwr_V1_0.ili",
       "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
-      "bytes": 4284
+      "bytes": 4284,
+      "runtimes": [
+        "jvm",
+        "wasm",
+        "browser"
+      ]
+    },
+    {
+      "file": "AGI/SO_AGI_Metadata_20230304.ili",
+      "model": "SO_AGI_Metadata_20230304",
+      "version": "2023-03-04",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AGI/SO_AGI_Metadata_20230304.ili",
+      "sha256": "1dd1c4fbfcabfb9966478e51b062178bf22a36206210126c1ae263ea3807200d",
+      "bytes": 3575,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "AGI/SO_AGI_MOCheckSO_20200715.ili",
+      "model": "SO_AGI_MOCheckSO_20200715",
+      "version": "2020-07-15",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AGI/SO_AGI_MOCheckSO_20200715.ili",
+      "sha256": "1e5eb124b198ea6209964a05c720935188bd5a3e4f72bda090cabd27f00eddbb",
+      "bytes": 1670,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "AGI/SO_AGI_Suchindex_20250226.ili",
+      "model": "SO_AGI_Suchindex_20250226",
+      "version": "2025-02-26",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AGI/SO_AGI_Suchindex_20250226.ili",
+      "sha256": "9ffb84b18f250caed684edcce5c73cdae885014c041cc009c05108dd0b9d90bf",
+      "bytes": 3197,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "HBA/SO_HBA_Immobilienportfolio_Grundstuecke_20260713.ili",
+      "model": "SO_HBA_Immobilienportfolio_Grundstuecke_20260713",
+      "version": "2026-07-13",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/HBA/SO_HBA_Immobilienportfolio_Grundstuecke_20260713.ili",
+      "sha256": "3f1fdb61aa7cb2de48991be85aaf4cc2f548c3ce391957610178d701ac6d5d07",
+      "bytes": 1837,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "HBA/SO_HBA_Immobilienportfolio_Gebaeude_20260713.ili",
+      "model": "SO_HBA_Immobilienportfolio_Gebaeude_20260713",
+      "version": "2026-07-13",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/HBA/SO_HBA_Immobilienportfolio_Gebaeude_20260713.ili",
+      "sha256": "1de5ceed3ad852c443cf507c87077d77f081492e81f812d661abee72d4283293",
+      "bytes": 2521,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "AFU/SO_AFU_Stoffe_Messung_20250908.ili",
+      "model": "SO_AFU_Stoffe_Messung_20250908",
+      "version": "2025-08-12",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AFU/SO_AFU_Stoffe_Messung_20250908.ili",
+      "sha256": "fc59e9cf21b34588727330e570a6b137f49b1421ed34625fe18c5b9eae137ee1",
+      "bytes": 2964,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "AFU/NGK_SO_FunctionsExt_23.ili",
+      "model": "NGK_SO_FunctionsExt",
+      "version": "2024-02-26",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AFU/NGK_SO_FunctionsExt_23.ili",
+      "sha256": "9160e23b7d1975d682b524bcc8630a8ce29328632a1eb8e90af1b08f5f3c837e",
+      "bytes": 897,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "AWJF/SO_AWJF_Gesuchsteller_20210202.ili",
+      "model": "SO_AWJF_Gesuchsteller_20210202",
+      "version": "2021-02-02",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AWJF/SO_AWJF_Gesuchsteller_20210202.ili",
+      "sha256": "8f363a179dc03397776f98874143533a76a37602a0ca6724b5ecd78e478efbfe",
+      "bytes": 1301,
+      "runtimes": [
+        "jvm"
+      ]
+    },
+    {
+      "file": "ARP/SO_Nutzungsplanung_Planregister_Publikation_20221115.ili",
+      "model": "SO_Nutzungsplanung_Planregister_Publikation_20221115",
+      "version": "2022-11-15",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/ARP/SO_Nutzungsplanung_Planregister_Publikation_20221115.ili",
+      "sha256": "bbc132b90517f8f7964117fbdeede3f7b41908b88238cdc1b82a40b3c7599f37",
+      "bytes": 2804,
+      "runtimes": [
+        "jvm"
+      ]
     }
   ],
-  "selection": "four standalone, compilable 2.3/2.4 models",
+  "selection": "thirteen standalone, compilable 2.3/2.4 models; WASM/browser subset flagged per model",
   "note": "Model bytes are cached outside the repository; the manifest pins them."
 }

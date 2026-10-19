@@ -4,9 +4,12 @@
   "status": "PARTIAL",
   "corpus": {
     "indexSha256": "ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c",
-    "models": 4,
-    "2.3": 3,
-    "2.4": 1
+    "models": 13,
+    "2.3": 12,
+    "2.4": 1,
+    "jvmModels": 13,
+    "wasmModels": 4,
+    "browserModels": 3
   },
   "measurements": [
     "performance-jvm.json",
@@ -14,8 +17,7 @@
     "performance-browser.json"
   ],
   "gaps": [
-    "large production corpus not yet measured",
-    "queue/backpressure and abort-under-load not measured",
-    "browser 2.4/WebKit subset skipped on WasmGC stack limit"
+    "browser 2.4 model and two WebKit models exceed current WasmGC stack limit and are recorded as skipped",
+    "queue/backpressure and abort-under-load are not yet measured"
   ]
 }

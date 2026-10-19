@@ -16,11 +16,11 @@
           "bytes": 3168,
           "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
           "compileMs": [
-            3.399999976158142,
-            2.699999988079071,
-            3.300000011920929
+            3.899999976158142,
+            3.199999988079071,
+            3.5
           ],
-          "compileMedianMs": 3.300000011920929
+          "compileMedianMs": 3.5
         },
         {
           "model": "SO_AGI_GWR_20241118",
@@ -28,11 +28,11 @@
           "bytes": 5419,
           "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
           "compileMs": [
-            9.400000035762787,
-            8,
-            6.800000011920929
+            10.699999988079071,
+            9.599999964237213,
+            8
           ],
-          "compileMedianMs": 8
+          "compileMedianMs": 9.599999964237213
         },
         {
           "model": "SO_AGI_STAC_20230426",
@@ -40,11 +40,11 @@
           "bytes": 2474,
           "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
           "compileMs": [
-            13,
-            6.399999976158142,
-            4.800000011920929
+            7.600000023841858,
+            10.599999964237213,
+            5.299999952316284
           ],
-          "compileMedianMs": 6.399999976158142
+          "compileMedianMs": 7.600000023841858
         },
         {
           "model": "IliValidGwr_V1_0",
@@ -53,6 +53,114 @@
           "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
           "status": "skipped",
           "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AGI_Metadata_20230304",
+          "language": "2.3",
+          "bytes": 3575,
+          "sha256": "1dd1c4fbfcabfb9966478e51b062178bf22a36206210126c1ae263ea3807200d",
+          "compileMs": [
+            12.199999988079071,
+            8.700000047683716,
+            8.599999964237213
+          ],
+          "compileMedianMs": 8.700000047683716
+        },
+        {
+          "model": "SO_AGI_MOCheckSO_20200715",
+          "language": "2.3",
+          "bytes": 1670,
+          "sha256": "1e5eb124b198ea6209964a05c720935188bd5a3e4f72bda090cabd27f00eddbb",
+          "compileMs": [
+            4.600000023841858,
+            5.5,
+            6.199999988079071
+          ],
+          "compileMedianMs": 5.5
+        },
+        {
+          "model": "SO_AGI_Suchindex_20250226",
+          "language": "2.3",
+          "bytes": 3197,
+          "sha256": "9ffb84b18f250caed684edcce5c73cdae885014c041cc009c05108dd0b9d90bf",
+          "compileMs": [
+            4.800000011920929,
+            4.199999988079071,
+            5.399999976158142
+          ],
+          "compileMedianMs": 4.800000011920929
+        },
+        {
+          "model": "SO_HBA_Immobilienportfolio_Grundstuecke_20260713",
+          "language": "2.3",
+          "bytes": 1837,
+          "sha256": "3f1fdb61aa7cb2de48991be85aaf4cc2f548c3ce391957610178d701ac6d5d07",
+          "compileMs": [
+            5.899999976158142,
+            3.899999976158142,
+            3.800000011920929
+          ],
+          "compileMedianMs": 3.899999976158142
+        },
+        {
+          "model": "SO_HBA_Immobilienportfolio_Gebaeude_20260713",
+          "language": "2.3",
+          "bytes": 2521,
+          "sha256": "1de5ceed3ad852c443cf507c87077d77f081492e81f812d661abee72d4283293",
+          "compileMs": [
+            5.5,
+            5.100000023841858,
+            4.900000035762787
+          ],
+          "compileMedianMs": 5.100000023841858
+        },
+        {
+          "model": "SO_AFU_Stoffe_Messung_20250908",
+          "language": "2.3",
+          "bytes": 2964,
+          "sha256": "fc59e9cf21b34588727330e570a6b137f49b1421ed34625fe18c5b9eae137ee1",
+          "compileMs": [
+            4.100000023841858,
+            5,
+            3.5
+          ],
+          "compileMedianMs": 4.100000023841858
+        },
+        {
+          "model": "NGK_SO_FunctionsExt",
+          "language": "2.3",
+          "bytes": 897,
+          "sha256": "9160e23b7d1975d682b524bcc8630a8ce29328632a1eb8e90af1b08f5f3c837e",
+          "compileMs": [
+            2.5,
+            3.5,
+            1.399999976158142
+          ],
+          "compileMedianMs": 2.5
+        },
+        {
+          "model": "SO_AWJF_Gesuchsteller_20210202",
+          "language": "2.3",
+          "bytes": 1301,
+          "sha256": "8f363a179dc03397776f98874143533a76a37602a0ca6724b5ecd78e478efbfe",
+          "compileMs": [
+            3.599999964237213,
+            2.900000035762787,
+            3
+          ],
+          "compileMedianMs": 3
+        },
+        {
+          "model": "SO_Nutzungsplanung_Planregister_Publikation_20221115",
+          "language": "2.3",
+          "bytes": 2804,
+          "sha256": "bbc132b90517f8f7964117fbdeede3f7b41908b88238cdc1b82a40b3c7599f37",
+          "compileMs": [
+            5.300000011920929,
+            6.100000023841858,
+            4.200000047683716
+          ],
+          "compileMedianMs": 5.300000011920929
         }
       ]
     },
@@ -67,10 +175,10 @@
           "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
           "compileMs": [
             7,
-            6,
-            6
+            7,
+            11
           ],
-          "compileMedianMs": 6
+          "compileMedianMs": 7
         },
         {
           "model": "SO_AGI_GWR_20241118",
@@ -78,11 +186,11 @@
           "bytes": 5419,
           "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
           "compileMs": [
-            18,
-            16,
-            13
+            22,
+            19,
+            14
           ],
-          "compileMedianMs": 16
+          "compileMedianMs": 19
         },
         {
           "model": "SO_AGI_STAC_20230426",
@@ -90,11 +198,11 @@
           "bytes": 2474,
           "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
           "compileMs": [
-            13,
-            13,
-            12
+            16,
+            14,
+            14
           ],
-          "compileMedianMs": 13
+          "compileMedianMs": 14
         },
         {
           "model": "IliValidGwr_V1_0",
@@ -103,6 +211,114 @@
           "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
           "status": "skipped",
           "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AGI_Metadata_20230304",
+          "language": "2.3",
+          "bytes": 3575,
+          "sha256": "1dd1c4fbfcabfb9966478e51b062178bf22a36206210126c1ae263ea3807200d",
+          "compileMs": [
+            21,
+            22,
+            31
+          ],
+          "compileMedianMs": 22
+        },
+        {
+          "model": "SO_AGI_MOCheckSO_20200715",
+          "language": "2.3",
+          "bytes": 1670,
+          "sha256": "1e5eb124b198ea6209964a05c720935188bd5a3e4f72bda090cabd27f00eddbb",
+          "compileMs": [
+            10,
+            9,
+            10
+          ],
+          "compileMedianMs": 10
+        },
+        {
+          "model": "SO_AGI_Suchindex_20250226",
+          "language": "2.3",
+          "bytes": 3197,
+          "sha256": "9ffb84b18f250caed684edcce5c73cdae885014c041cc009c05108dd0b9d90bf",
+          "compileMs": [
+            11,
+            8,
+            9
+          ],
+          "compileMedianMs": 9
+        },
+        {
+          "model": "SO_HBA_Immobilienportfolio_Grundstuecke_20260713",
+          "language": "2.3",
+          "bytes": 1837,
+          "sha256": "3f1fdb61aa7cb2de48991be85aaf4cc2f548c3ce391957610178d701ac6d5d07",
+          "compileMs": [
+            9,
+            9,
+            8
+          ],
+          "compileMedianMs": 9
+        },
+        {
+          "model": "SO_HBA_Immobilienportfolio_Gebaeude_20260713",
+          "language": "2.3",
+          "bytes": 2521,
+          "sha256": "1de5ceed3ad852c443cf507c87077d77f081492e81f812d661abee72d4283293",
+          "compileMs": [
+            11,
+            14,
+            11
+          ],
+          "compileMedianMs": 11
+        },
+        {
+          "model": "SO_AFU_Stoffe_Messung_20250908",
+          "language": "2.3",
+          "bytes": 2964,
+          "sha256": "fc59e9cf21b34588727330e570a6b137f49b1421ed34625fe18c5b9eae137ee1",
+          "compileMs": [
+            7,
+            7,
+            8
+          ],
+          "compileMedianMs": 7
+        },
+        {
+          "model": "NGK_SO_FunctionsExt",
+          "language": "2.3",
+          "bytes": 897,
+          "sha256": "9160e23b7d1975d682b524bcc8630a8ce29328632a1eb8e90af1b08f5f3c837e",
+          "compileMs": [
+            3,
+            4,
+            2
+          ],
+          "compileMedianMs": 3
+        },
+        {
+          "model": "SO_AWJF_Gesuchsteller_20210202",
+          "language": "2.3",
+          "bytes": 1301,
+          "sha256": "8f363a179dc03397776f98874143533a76a37602a0ca6724b5ecd78e478efbfe",
+          "compileMs": [
+            5,
+            4,
+            3
+          ],
+          "compileMedianMs": 4
+        },
+        {
+          "model": "SO_Nutzungsplanung_Planregister_Publikation_20221115",
+          "language": "2.3",
+          "bytes": 2804,
+          "sha256": "bbc132b90517f8f7964117fbdeede3f7b41908b88238cdc1b82a40b3c7599f37",
+          "compileMs": [
+            10,
+            8,
+            11
+          ],
+          "compileMedianMs": 10
         }
       ]
     },
@@ -117,7 +333,7 @@
           "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
           "compileMs": [
             7,
-            7,
+            9,
             4
           ],
           "compileMedianMs": 7
@@ -143,6 +359,78 @@
           "language": "2.4",
           "bytes": 4284,
           "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AGI_Metadata_20230304",
+          "language": "2.3",
+          "bytes": 3575,
+          "sha256": "1dd1c4fbfcabfb9966478e51b062178bf22a36206210126c1ae263ea3807200d",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AGI_MOCheckSO_20200715",
+          "language": "2.3",
+          "bytes": 1670,
+          "sha256": "1e5eb124b198ea6209964a05c720935188bd5a3e4f72bda090cabd27f00eddbb",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AGI_Suchindex_20250226",
+          "language": "2.3",
+          "bytes": 3197,
+          "sha256": "9ffb84b18f250caed684edcce5c73cdae885014c041cc009c05108dd0b9d90bf",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_HBA_Immobilienportfolio_Grundstuecke_20260713",
+          "language": "2.3",
+          "bytes": 1837,
+          "sha256": "3f1fdb61aa7cb2de48991be85aaf4cc2f548c3ce391957610178d701ac6d5d07",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_HBA_Immobilienportfolio_Gebaeude_20260713",
+          "language": "2.3",
+          "bytes": 2521,
+          "sha256": "1de5ceed3ad852c443cf507c87077d77f081492e81f812d661abee72d4283293",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AFU_Stoffe_Messung_20250908",
+          "language": "2.3",
+          "bytes": 2964,
+          "sha256": "fc59e9cf21b34588727330e570a6b137f49b1421ed34625fe18c5b9eae137ee1",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "NGK_SO_FunctionsExt",
+          "language": "2.3",
+          "bytes": 897,
+          "sha256": "9160e23b7d1975d682b524bcc8630a8ce29328632a1eb8e90af1b08f5f3c837e",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AWJF_Gesuchsteller_20210202",
+          "language": "2.3",
+          "bytes": 1301,
+          "sha256": "8f363a179dc03397776f98874143533a76a37602a0ca6724b5ecd78e478efbfe",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_Nutzungsplanung_Planregister_Publikation_20221115",
+          "language": "2.3",
+          "bytes": 2804,
+          "sha256": "bbc132b90517f8f7964117fbdeede3f7b41908b88238cdc1b82a40b3c7599f37",
           "status": "skipped",
           "reason": "browser WasmGC stack limit; measured on JVM/WASM"
         }

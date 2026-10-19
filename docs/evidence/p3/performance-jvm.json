@@ -23,19 +23,19 @@
       "bytes": 3168,
       "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
       "checkMs": [
-        149.286583,
-        147.84225,
-        150.07
+        147.316042,
+        147.629083,
+        146.204125
       ],
-      "checkMedianMs": 149.286583,
+      "checkMedianMs": 147.316042,
       "formatMs": [
-        105.871875,
-        106.174042,
-        107.004667
+        105.778417,
+        106.179625,
+        106.731166
       ],
-      "formatMedianMs": 106.174042,
+      "formatMedianMs": 106.179625,
       "outputStableAcrossRuns": true,
-      "maxRssKb": 89882624
+      "maxRssKb": 90177536
     },
     {
       "model": "SO_AGI_GWR_20241118",
@@ -44,19 +44,19 @@
       "bytes": 5419,
       "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
       "checkMs": [
-        181.297208,
-        182.111542,
-        179.321917
+        185.178125,
+        186.793084,
+        180.9855
       ],
-      "checkMedianMs": 181.297208,
+      "checkMedianMs": 185.178125,
       "formatMs": [
-        120.318042,
-        119.58925,
-        122.405416
+        125.673208,
+        123.805834,
+        124.174875
       ],
-      "formatMedianMs": 120.318042,
+      "formatMedianMs": 124.174875,
       "outputStableAcrossRuns": true,
-      "maxRssKb": 112361472
+      "maxRssKb": 112050176
     },
     {
       "model": "SO_AGI_STAC_20230426",
@@ -65,19 +65,19 @@
       "bytes": 2474,
       "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
       "checkMs": [
-        174.739209,
-        187.190542,
-        178.937292
+        173.999,
+        174.975833,
+        175.874417
       ],
-      "checkMedianMs": 178.937292,
+      "checkMedianMs": 174.975833,
       "formatMs": [
-        125.467042,
-        127.462833,
-        123.433417
+        122.281667,
+        126.487583,
+        121.458167
       ],
-      "formatMedianMs": 125.467042,
+      "formatMedianMs": 122.281667,
       "outputStableAcrossRuns": true,
-      "maxRssKb": 112361472
+      "maxRssKb": 112050176
     },
     {
       "model": "IliValidGwr_V1_0",
@@ -86,19 +86,208 @@
       "bytes": 4284,
       "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
       "checkMs": [
-        189.58625,
-        179.099375,
-        179.912
+        175.213167,
+        171.957334,
+        174.463375
       ],
-      "checkMedianMs": 179.912,
+      "checkMedianMs": 174.463375,
       "formatMs": [
-        132.060041,
-        121.115167,
-        122.081916
+        121.257667,
+        121.122625,
+        120.687167
       ],
-      "formatMedianMs": 122.081916,
+      "formatMedianMs": 121.122625,
       "outputStableAcrossRuns": true,
-      "maxRssKb": 112361472
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_AGI_Metadata_20230304",
+      "file": "AGI/SO_AGI_Metadata_20230304.ili",
+      "language": "2.3",
+      "bytes": 3575,
+      "sha256": "1dd1c4fbfcabfb9966478e51b062178bf22a36206210126c1ae263ea3807200d",
+      "checkMs": [
+        196.71675,
+        191.528541,
+        191.560666
+      ],
+      "checkMedianMs": 191.560666,
+      "formatMs": [
+        138.267792,
+        127.901208,
+        125.726583
+      ],
+      "formatMedianMs": 127.901208,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_AGI_MOCheckSO_20200715",
+      "file": "AGI/SO_AGI_MOCheckSO_20200715.ili",
+      "language": "2.3",
+      "bytes": 1670,
+      "sha256": "1e5eb124b198ea6209964a05c720935188bd5a3e4f72bda090cabd27f00eddbb",
+      "checkMs": [
+        155.893042,
+        155.160125,
+        155.401667
+      ],
+      "checkMedianMs": 155.401667,
+      "formatMs": [
+        115.264667,
+        114.629334,
+        110.792458
+      ],
+      "formatMedianMs": 114.629334,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_AGI_Suchindex_20250226",
+      "file": "AGI/SO_AGI_Suchindex_20250226.ili",
+      "language": "2.3",
+      "bytes": 3197,
+      "sha256": "9ffb84b18f250caed684edcce5c73cdae885014c041cc009c05108dd0b9d90bf",
+      "checkMs": [
+        154.935125,
+        165.995,
+        161.289208
+      ],
+      "checkMedianMs": 161.289208,
+      "formatMs": [
+        107.961875,
+        125.076625,
+        107.690833
+      ],
+      "formatMedianMs": 107.961875,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_HBA_Immobilienportfolio_Grundstuecke_20260713",
+      "file": "HBA/SO_HBA_Immobilienportfolio_Grundstuecke_20260713.ili",
+      "language": "2.3",
+      "bytes": 1837,
+      "sha256": "3f1fdb61aa7cb2de48991be85aaf4cc2f548c3ce391957610178d701ac6d5d07",
+      "checkMs": [
+        183.202125,
+        170.856167,
+        166.204417
+      ],
+      "checkMedianMs": 170.856167,
+      "formatMs": [
+        122.967458,
+        116.509167,
+        120.608
+      ],
+      "formatMedianMs": 120.608,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_HBA_Immobilienportfolio_Gebaeude_20260713",
+      "file": "HBA/SO_HBA_Immobilienportfolio_Gebaeude_20260713.ili",
+      "language": "2.3",
+      "bytes": 2521,
+      "sha256": "1de5ceed3ad852c443cf507c87077d77f081492e81f812d661abee72d4283293",
+      "checkMs": [
+        170.679125,
+        169.744708,
+        167.594792
+      ],
+      "checkMedianMs": 169.744708,
+      "formatMs": [
+        117.997584,
+        118.9175,
+        118.630791
+      ],
+      "formatMedianMs": 118.630791,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_AFU_Stoffe_Messung_20250908",
+      "file": "AFU/SO_AFU_Stoffe_Messung_20250908.ili",
+      "language": "2.3",
+      "bytes": 2964,
+      "sha256": "fc59e9cf21b34588727330e570a6b137f49b1421ed34625fe18c5b9eae137ee1",
+      "checkMs": [
+        158.698375,
+        164.143625,
+        156.682667
+      ],
+      "checkMedianMs": 158.698375,
+      "formatMs": [
+        119.234834,
+        113.476375,
+        122.713
+      ],
+      "formatMedianMs": 119.234834,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "NGK_SO_FunctionsExt",
+      "file": "AFU/NGK_SO_FunctionsExt_23.ili",
+      "language": "2.3",
+      "bytes": 897,
+      "sha256": "9160e23b7d1975d682b524bcc8630a8ce29328632a1eb8e90af1b08f5f3c837e",
+      "checkMs": [
+        136.693208,
+        137.139833,
+        136.137291
+      ],
+      "checkMedianMs": 136.693208,
+      "formatMs": [
+        101.187916,
+        100.388084,
+        101.032167
+      ],
+      "formatMedianMs": 101.032167,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_AWJF_Gesuchsteller_20210202",
+      "file": "AWJF/SO_AWJF_Gesuchsteller_20210202.ili",
+      "language": "2.3",
+      "bytes": 1301,
+      "sha256": "8f363a179dc03397776f98874143533a76a37602a0ca6724b5ecd78e478efbfe",
+      "checkMs": [
+        148.833459,
+        155.005792,
+        153.88025
+      ],
+      "checkMedianMs": 153.88025,
+      "formatMs": [
+        109.135792,
+        113.835,
+        109.080666
+      ],
+      "formatMedianMs": 109.135792,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
+    },
+    {
+      "model": "SO_Nutzungsplanung_Planregister_Publikation_20221115",
+      "file": "ARP/SO_Nutzungsplanung_Planregister_Publikation_20221115.ili",
+      "language": "2.3",
+      "bytes": 2804,
+      "sha256": "bbc132b90517f8f7964117fbdeede3f7b41908b88238cdc1b82a40b3c7599f37",
+      "checkMs": [
+        159.05175,
+        171.189875,
+        175.152458
+      ],
+      "checkMedianMs": 171.189875,
+      "formatMs": [
+        114.414375,
+        113.864334,
+        115.085417
+      ],
+      "formatMedianMs": 114.414375,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112050176
     }
   ],
   "notes": "Wall-clock subprocess measurements; warmup excluded. No production claim."
