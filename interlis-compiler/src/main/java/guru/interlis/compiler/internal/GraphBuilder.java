@@ -1562,6 +1562,12 @@ final class GraphBuilder {
                     emitRule(attributeDecl, "extended attribute changes TRANSIENT mode",
                             "ATTRIBUTE_OVERRIDE_TRANSIENT");
                 }
+                if (types.get(baseAttribute.declaredType()) instanceof DomainReferenceType baseDomainRef
+                        && types.get(attribute.declaredType()) instanceof DomainReferenceType derivedDomainRef
+                        && !domainExtends(derivedDomainRef.targetDomain(), baseDomainRef.targetDomain())) {
+                    emitRule(attributeDecl, "extended attribute changes domain",
+                            "ATTRIBUTE_OVERRIDE_TYPE");
+                }
                 TypeDescriptor baseType = effectiveDescriptor(baseAttribute.declaredType());
                 TypeDescriptor derivedType = effectiveDescriptor(attribute.declaredType());
                 if (baseType != null && derivedType != null) {
@@ -1593,6 +1599,18 @@ final class GraphBuilder {
             current = baseOf.get(current);
         }
         return null;
+    }
+
+    private boolean domainExtends(SymbolId derived, SymbolId base) {
+        SymbolId current = derived;
+        int guard = 0;
+        while (current != null && guard++ < 32) {
+            if (current.equals(base)) {
+                return true;
+            }
+            current = baseOf.get(current);
+        }
+        return false;
     }
 
     private String overrideProblem(TypeDescriptor base, TypeDescriptor derived) {

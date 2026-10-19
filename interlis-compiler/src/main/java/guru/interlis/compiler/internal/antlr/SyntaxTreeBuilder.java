@@ -503,6 +503,10 @@ final class SyntaxTreeBuilder {
             return buildFunction(context.functionDef());
         }
         if (context.unitDef() != null) {
+            String unitText = context.unitDef().getText();
+            if (unitText.contains("=(") && !unitText.contains("[")) {
+                return buildDomainFromUnit(context.unitDef());
+            }
             return buildUnit(context.unitDef());
         }
         if (context.metaDataBasketDef() != null) {
@@ -516,6 +520,41 @@ final class SyntaxTreeBuilder {
                     Optional.empty(), false, Optional.empty(), "");
         }
         return unsupportedDeclaration(context, "DECLARATION", "unknown declaration");
+    }
+
+    private DomainDeclarationSyntax buildDomainFromUnit(InterlisParser.UnitDefContext context) {
+        String text = context.getText();
+        int eq = text.indexOf('=');
+        String header = eq < 0 ? text : text.substring(0, eq);
+        int extendsIndex = header.toUpperCase(java.util.Locale.ROOT).indexOf("EXTENDS");
+        String name = header;
+        Optional<NameSyntax> base = Optional.empty();
+        if (extendsIndex >= 0) {
+            name = header.substring(0, extendsIndex).trim();
+            String baseText = header.substring(extendsIndex + "EXTENDS".length()).trim();
+            List<NameSyntax.NameSegmentSyntax> segments = new ArrayList<>();
+            for (String part : baseText.split("\\.")) {
+                segments.add(new NameSyntax.NameSegmentSyntax(part, range(context)));
+            }
+            base = Optional.of(new NameSyntax(new SyntaxNodeId(
+                    "domain-base-" + context.getStart().getTokenIndex()), range(context), segments));
+        }
+        int open = text.indexOf('(', eq + 1);
+        int close = text.lastIndexOf(')');
+        List<EnumerationTypeSyntax.EnumerationValueSyntax> values = new ArrayList<>();
+        if (open >= 0 && close > open) {
+            for (String value : text.substring(open + 1, close).split(",")) {
+                String trimmed = value.trim();
+                if (!trimmed.isEmpty()) {
+                    values.add(new EnumerationTypeSyntax.EnumerationValueSyntax(
+                            trimmed, range(context), false));
+                }
+            }
+        }
+        EnumerationTypeSyntax type = new EnumerationTypeSyntax(nextId(), range(context),
+                values, false, false);
+        return new DomainDeclarationSyntax(nextId(), range(context), name.strip(),
+                Optional.empty(), Set.of(), base, type, List.of());
     }
 
     private ClassDeclarationSyntax buildClass(InterlisParser.ClassDefContext context) {

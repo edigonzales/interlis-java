@@ -2,12 +2,12 @@
   "overallResult": "FAIL",
   "exitCode": 1,
   "summary": {
-    "FAIL": 4,
-    "XPASS": 0,
-    "TOTAL": 593,
     "XFAIL": 0,
-    "PASS": 589,
-    "ERROR": 0
+    "TOTAL": 593,
+    "XPASS": 0,
+    "FAIL": 3,
+    "ERROR": 0,
+    "PASS": 590
   },
   "reportJson": "report.json",
   "reportJunit": "report.junit.xml",

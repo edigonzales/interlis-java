@@ -120,7 +120,7 @@ model, trailing content and a missing import. See
 Command: `./gradlew conformanceCheck`
 
 The pinned 610-case suite is integrated for INTERLIS 2.3/2.4 only: **593
-selected, 17 INTERLIS 1.0 excluded**. Current result: **589 PASS, 4 FAIL, 0
+selected, 17 INTERLIS 1.0 excluded**. Current result: **590 PASS, 3 FAIL, 0
 ERROR, 0 XFAIL, 0 XPASS** (`conformance-summary.json`). This is an honest P2
 compatibility backlog, not a P1 release gate. The former `text_List` internal
 error is fixed and covered by `CollectionTypeContractTest`. The failure
