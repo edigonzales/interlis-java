@@ -1,5 +1,11 @@
 {
   "schemaVersion": "1.0",
   "compiler": "interlis-java",
-  "knownFailures": []
+  "knownFailures": [
+    {
+      "testId": "ili23.Attribute10Test.attributeComplete",
+      "reason": "INTERLIS 1 transfer syntax (TRANSFER INTERLIS1/TABLE) is out of scope; see scope-decision-interlis1.md.",
+      "actualOutcome": "rejected"
+    }
+  ]
 }

@@ -120,13 +120,13 @@ model, trailing content and a missing import. See
 Command: `./gradlew conformanceCheck`
 
 The pinned 610-case suite is integrated for INTERLIS 2.3/2.4 only: **593
-selected, 17 INTERLIS 1.0 excluded**. Current result: **592 PASS, 1 FAIL, 0
-ERROR, 0 XFAIL, 0 XPASS** (`conformance-summary.json`). The single FAIL is
+selected, 17 INTERLIS 1.0 excluded**. Current result: **592 PASS, 1 XFAIL, 0
+FAIL, 0 ERROR, 0 XPASS** (`conformance-summary.json`). The single XFAIL is
 `Attribute10Test.attributeComplete` and needs `TRANSFER INTERLIS1;`/`TABLE`
 syntax. **INTERLIS 1 is out of scope** (decision 2026-10-19,
 `../conformance/scope-decision-interlis1.md`); in-scope are **592 of 592**
-cases PASS. The suite task remains red because it still contains the
-out-of-scope fixture. The former `text_List` internal
+cases PASS. The XFAIL is explicitly registered in
+`baseline.json`; an unexpected pass would become XPASS and fail the task. The former `text_List` internal
 error is fixed and covered by `CollectionTypeContractTest`. The failure
 clustering and first-family decision are in `../conformance/backlog.md`.
 

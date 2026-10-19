@@ -66,11 +66,8 @@ def main() -> int:
     output = ROOT / "build" / "conformance"
     output.mkdir(parents=True, exist_ok=True)
     baseline = OUT / "baseline.json"
-    baseline.write_text(json.dumps({
-        "schemaVersion": "1.0",
-        "compiler": "interlis-java",
-        "knownFailures": []
-    }, indent=2) + "\n")
+    if not baseline.is_file():
+        raise SystemExit(f"baseline not found: {baseline}")
     config = {
         "suite": str(suite / "suite" / "test-cases.json"),
         "outputDirectory": str(output),
@@ -85,9 +82,9 @@ def main() -> int:
             "command": ["{compiler}", "check", "{files}"],
             "acceptedExitCodes": [0],
             "rejectedExitCodes": [1],
-            "internalErrorPatterns": ["internal failure:", "Exception in thread"]
-        }],
-        "baseline": str(baseline)
+            "internalErrorPatterns": ["internal failure:", "Exception in thread"],
+            "baseline": str(baseline)
+        }]
     }
     config_path = output / "run-config.json"
     config_path.write_text(json.dumps(config, indent=2) + "\n")

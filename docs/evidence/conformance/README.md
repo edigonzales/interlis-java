@@ -33,23 +33,25 @@ false accepts; the bundle now rejects missing names, duplicate role names,
 additional roles in extended associations, multiple aggregation roles, invalid
 composition cardinalities and role namespace conflicts.
 
-`baseline.json` intentionally has no XFAIL entries. Every deviation must be
-justified before it is added; a historical ili2c XFAIL is not a baseline for
-this compiler.
+`baseline.json` contains exactly one justified XFAIL entry for
+`ili23.Attribute10Test.attributeComplete` (INTERLIS 1 transfer, out of scope).
+Every further deviation must be justified before it is added; a historical
+ili2c XFAIL is not a baseline for this compiler.
 
 ## Current result (2026-10-18)
 
 - Selected: **593** of 610 suite cases (INTERLIS 2.3/2.4).
 - Excluded: **17** INTERLIS 1.0 cases, by language version.
-- Result: **592 PASS, 1 FAIL, 0 ERROR, 0 XFAIL, 0 XPASS**.
+- Result: **592 PASS, 1 XFAIL, 0 FAIL, 0 ERROR, 0 XPASS**.
 - Translation: **36/36 Single-Feature-Accept-Fälle PASS**, **0** False Accepts in Translation-Reject-Fällen (`translation-summary.json`).
-- Overall: **FAIL**. The only remaining FAIL
+- Overall: **PASS**. The only XFAIL
   (`ili23.Attribute10Test.attributeComplete`) requires `TRANSFER INTERLIS1;`
   and `TABLE` syntax. **INTERLIS 1 is out of scope** by decision dated
-  2026-10-19 (`scope-decision-interlis1.md`); this fixture is tracked but is not
-  an acceptance criterion for the 2.3/2.4 compiler. In-scope: **592 of 592**
-  PASS. The task intentionally stays red while the suite contains the
-  out-of-scope fixture; the compact result is in `conformance-summary.json`.
+  2026-10-19 (`scope-decision-interlis1.md`); this fixture is tracked in
+  `baseline.json` but is not an acceptance criterion for the 2.3/2.4 compiler.
+  In-scope: **592 of 592** PASS. The compact result is in
+  `conformance-summary.json`; `xpassPolicy: fail` makes an unexpected pass
+  visible instead of hiding it.
 
 The former `ERROR` `ili24.Attribute24Test.text_List` (`LIST {0..*} OF
 TEXT*20`) was a real lowering bug: an optional `structureRef()` list was

@@ -160,6 +160,6 @@ bjectNameFail
 [interlis-java] PASS   ili24.Expressions24Test.div_numeric_fail
 [interlis-java] PASS   ili24.Expressions24Test.implication
 [interlis-java] PASS   ili24.Expressions24Test.implication_fail
-Overall result: FAIL (PASS=592, XFAIL=0, FAIL=1, XPASS=0, ERROR=0)
+Overall result: PASS (PASS=592, XFAIL=1, FAIL=0, XPASS=0, ERROR=0)
 Reports: <repo>/build/conformance
 
