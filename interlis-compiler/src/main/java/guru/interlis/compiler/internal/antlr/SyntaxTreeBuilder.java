@@ -311,15 +311,6 @@ final class SyntaxTreeBuilder {
                 unsupportedFeatures.add("DUPLICATE_PARAMETER");
             }
         }
-        if (context.NOINCREMENTALTRANSFER() != null) {
-            unsupportedFeatures.add("NOINCREMENTALTRANSFER");
-        }
-        if (context.CHARSET() != null) {
-            unsupportedFeatures.add("CHARSET");
-        }
-        if (context.XMLNS() != null) {
-            unsupportedFeatures.add("XMLNS");
-        }
         members.sort(Comparator.comparingInt(Member::index));
         return members.stream().map(Member::node).toList();
     }
