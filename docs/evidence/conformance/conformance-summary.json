@@ -2,11 +2,11 @@
   "overallResult": "FAIL",
   "exitCode": 1,
   "summary": {
-    "PASS": 585,
-    "XFAIL": 0,
-    "TOTAL": 593,
+    "FAIL": 4,
     "XPASS": 0,
-    "FAIL": 8,
+    "TOTAL": 593,
+    "XFAIL": 0,
+    "PASS": 589,
     "ERROR": 0
   },
   "reportJson": "report.json",

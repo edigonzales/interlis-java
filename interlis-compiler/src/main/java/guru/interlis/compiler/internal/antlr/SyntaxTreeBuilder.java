@@ -460,7 +460,9 @@ final class SyntaxTreeBuilder {
     }
 
     private SyntaxNode buildDefinition(InterlisParser.DefinitionsContext context) {
-        if (context.DOMAIN() != null || context.UNIT() != null || context.CONTEXT() != null) {
+        if ((context.DOMAIN() != null && context.domainDef() == null)
+                || (context.UNIT() != null && context.unitDef() == null)
+                || (context.CONTEXT() != null && context.contextDef() == null)) {
             // The grammar has standalone keyword alternatives and the real
             // declarations; the actual declaration is emitted separately.
             return new guru.interlis.syntax.RecoveredSyntax(nextId(), range(context),
@@ -985,8 +987,8 @@ final class SyntaxTreeBuilder {
             return lineType(context.lineType());
         }
         if (context.STRING() != null && context.STRING().size() >= 2) {
-            unsupportedFeatures.add("STRING_RANGE");
-            return unsupportedType(context, "STRING_RANGE", "string range type");
+            return new TextTypeSyntax(nextId(), range(context),
+                    guru.interlis.model.TextKind.TEXT, java.util.OptionalInt.empty());
         }
         unsupportedFeatures.add("UNSUPPORTED_TYPE");
         return unsupportedType(context, "UNSUPPORTED_TYPE", "unsupported type");
@@ -1246,7 +1248,9 @@ final class SyntaxTreeBuilder {
             return;
         }
         Token first = names.getFirst();
-        String path = prefix.isEmpty() ? first.getText() : prefix + "." + first.getText();
+        String ownPath = names.stream().map(Token::getText)
+                .collect(java.util.stream.Collectors.joining("."));
+        String path = prefix.isEmpty() ? ownPath : prefix + "." + ownPath;
         boolean nested = context.enumeration() != null
                 && (!context.enumeration().enumElement().isEmpty()
                 || context.enumeration().FINAL() != null);
@@ -1279,6 +1283,11 @@ final class SyntaxTreeBuilder {
             element = new ReferenceTypeSyntax(nextId(), range(restricted),
                     nameFromContext(restricted.referenceAttr().restrictedClassOrAssRef()),
                     restricted.referenceAttr().EXTERNAL() != null);
+        } else if (restricted.enumeration() != null) {
+            if (language == LanguageVersion.ILI23) {
+                unsupportedFeatures.add("ENUM_COLLECTION_ILI23");
+            }
+            element = enumerationType(restricted.enumeration());
         } else {
             element = new UnsupportedTypeSyntax(nextId(), range(restricted),
                     "ANYSTRUCTURE", "ANYSTRUCTURE element");

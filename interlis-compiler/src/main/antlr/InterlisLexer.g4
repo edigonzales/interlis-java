@@ -234,7 +234,7 @@ SingleLineComment : '!!' ~[\r\n]* -> channel(HIDDEN); // ignore comments
 
 // 3.2.8.2 Bloc de commentaire - Blockkommentar
 
-BlockComment : '/*' .*? '*/' -> channel(HIDDEN); // ignore comments
+BlockComment : '/*' (BlockComment | .)*? '*/' -> channel(HIDDEN); // ignore comments
 
 // Ignore whitespace
 

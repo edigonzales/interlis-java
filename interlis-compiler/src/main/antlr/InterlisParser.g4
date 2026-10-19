@@ -103,8 +103,8 @@ attributeDef : CONTINUOUS? SUBDIVISION?
                COLON (attrTypeDef | lineType)
                (ASSIGN expression (COMMA expression)*)? SEMI;
 
-attrTypeDef : MANDATORY? (attrType 
-            | enumeration 
+attrTypeDef : MANDATORY? (enumeration 
+            | attrType 
             | (numeric (CIRCULAR)? (LSBR unitRef RSBR)?)
             | (NUMERIC (LSBR unitRef RSBR)))
             | (BAG | LIST) cardinality? OF restrictedStructureRef
@@ -122,7 +122,7 @@ restrictedClassOrAssRef : (classOrAssociationRef | ANYCLASS)
 
 classOrAssociationRef : classRef | associationRef;
 
-restrictedStructureRef : (structureRef | type | referenceAttr | ANYSTRUCTURE)
+restrictedStructureRef : (structureRef | type | referenceAttr | enumeration | ANYSTRUCTURE)
                        (RESTRICTION LPAR structureRef ((COMMA | SEMI) structureRef)* RPAR)?;
 
 restrictedClassOrStructureRef

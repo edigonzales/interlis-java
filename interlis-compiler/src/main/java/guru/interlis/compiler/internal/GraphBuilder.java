@@ -406,8 +406,17 @@ final class GraphBuilder {
         if (!unitDefinitionsEquivalent(sourceUnits, targetUnits, unitNames)) {
             return false;
         }
-        List<String> sourceTokens = modelTokens(source, Map.of(), sourceNames, false);
-        List<String> targetTokens = modelTokens(target, names, targetNames, true);
+        List<String> sourceTokens = new ArrayList<>(
+                modelTokens(source, Map.of(), sourceNames, false));
+        List<String> targetTokens = new ArrayList<>(
+                modelTokens(target, names, targetNames, true));
+        if (!withGroupsEquivalent(sourceTokens, targetTokens)) {
+            return false;
+        }
+        sourceTokens = normalizeWithGroups(sourceTokens);
+        targetTokens = normalizeWithGroups(targetTokens);
+        sourceTokens.removeAll(sourceForms);
+        targetTokens.removeAll(targetForms);
         if (sourceTokens.isEmpty() || sourceTokens.size() != targetTokens.size()) {
             return false;
         }
@@ -420,6 +429,76 @@ final class GraphBuilder {
             }
         }
         return true;
+    }
+
+    private boolean withGroupsEquivalent(List<String> source, List<String> target) {
+        List<List<String>> sourceGroups = withGroups(source);
+        List<List<String>> targetGroups = withGroups(target);
+        if (sourceGroups.size() != targetGroups.size()) {
+            return false;
+        }
+        for (int i = 0; i < sourceGroups.size(); i++) {
+            if (!sourceGroups.get(i).equals(targetGroups.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<List<String>> withGroups(List<String> tokens) {
+        List<List<String>> result = new ArrayList<>();
+        for (int i = 0; i < tokens.size(); i++) {
+            if (!tokens.get(i).endsWith(":WITH")) {
+                continue;
+            }
+            int depth = 0;
+            List<String> elements = new ArrayList<>();
+            for (int j = i + 1; j < tokens.size(); j++) {
+                String token = tokens.get(j);
+                if (token.endsWith(":(")) {
+                    depth++;
+                    continue;
+                }
+                if (token.endsWith(":)")) {
+                    depth--;
+                    if (depth == 0) {
+                        break;
+                    }
+                    continue;
+                }
+                if (depth > 0 && !token.endsWith(":,")) {
+                    elements.add(token);
+                }
+            }
+            elements.sort(String::compareTo);
+            result.add(elements);
+        }
+        return result;
+    }
+
+    private List<String> normalizeWithGroups(List<String> tokens) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < tokens.size(); i++) {
+            if (tokens.get(i).endsWith(":WITH")) {
+                int depth = 0;
+                int j = i + 1;
+                while (j < tokens.size()) {
+                    if (tokens.get(j).endsWith(":(")) {
+                        depth++;
+                    } else if (tokens.get(j).endsWith(":)")) {
+                        depth--;
+                        if (depth == 0) {
+                            break;
+                        }
+                    }
+                    j++;
+                }
+                i = j;
+                continue;
+            }
+            result.add(tokens.get(i));
+        }
+        return result;
     }
 
     private boolean unitDefinitionsEquivalent(List<UnitSymbol> sourceUnits,
@@ -2503,8 +2582,20 @@ final class GraphBuilder {
         }
         TypeId type = buildType(syntax.type(), decl.id(), decl.sourceId());
         declaredTypes.put(decl.id(), type);
-        Optional<SymbolId> base = syntax.baseDomain().flatMap(name ->
-                resolve(decl, name, Set.of(SymbolKind.DOMAIN)));
+        Optional<SymbolId> base = syntax.baseDomain().flatMap(name -> {
+            Optional<SymbolId> resolved = tryResolve(decl, name, Set.of(SymbolKind.DOMAIN));
+            if (resolved.isEmpty()) {
+                String simple = lastSegment(name.text());
+                List<SymbolId> matches = symbols.values().stream()
+                        .filter(DomainSymbol.class::isInstance).map(DomainSymbol.class::cast)
+                        .filter(domain -> domain.name().value().equals(simple))
+                        .map(DomainSymbol::id).toList();
+                if (matches.size() == 1) {
+                    return Optional.of(matches.getFirst());
+                }
+            }
+            return resolved;
+        });
         base.ifPresent(id -> baseOf.put(decl.id(), id));
         if (base.isPresent() && syntax.type() instanceof EnumerationTypeSyntax derived
                 && symbols.get(base.orElseThrow()) instanceof DomainSymbol baseSymbol
@@ -3294,6 +3385,18 @@ final class GraphBuilder {
                 }
                 NameResolver.Resolution resolution = resolver.resolve(context, reference.name(),
                         Set.of(SymbolKind.DOMAIN, SymbolKind.STRUCTURE));
+                if (resolution.status() != NameResolver.Status.BOUND) {
+                    String simple = lastSegment(reference.name().text());
+                    List<SymbolId> matches = symbols.values().stream()
+                            .filter(symbol -> symbol instanceof DomainSymbol
+                                    || symbol instanceof StructureSymbol)
+                            .filter(symbol -> symbol.name().value().equals(simple))
+                            .map(Symbol::id).toList();
+                    if (matches.size() == 1) {
+                        resolution = new NameResolver.Resolution(NameResolver.Status.BOUND,
+                                Optional.of(matches.getFirst()), List.of());
+                    }
+                }
                 if (resolution.status() == NameResolver.Status.BOUND) {
                     SymbolId targetId = resolution.target().orElseThrow();
                     Symbol targetSymbol = symbols.get(targetId);
@@ -3391,6 +3494,23 @@ final class GraphBuilder {
                 ? resolution.target() : Optional.empty();
     }
 
+    private guru.interlis.syntax.NameSyntax stripModelPrefix(SymbolId context,
+                                                             guru.interlis.syntax.NameSyntax name) {
+        if (name.segments().size() < 2) {
+            return name;
+        }
+        SymbolId modelId = index.modelOfSymbol(context).orElse(null);
+        if (modelId == null || !(symbols.get(modelId) instanceof ModelSymbol model)) {
+            return name;
+        }
+        if (!name.segments().getFirst().text().equals(model.name().value())) {
+            return name;
+        }
+        List<guru.interlis.syntax.NameSyntax.NameSegmentSyntax> segments =
+                new ArrayList<>(name.segments().subList(1, name.segments().size()));
+        return new guru.interlis.syntax.NameSyntax(name.id(), name.range(), segments);
+    }
+
     private Optional<SymbolId> resolve(DeclInfo context, guru.interlis.syntax.NameSyntax name,
                                        Set<SymbolKind> expected) {
         return resolveName(context.id(), name, expected, context.sourceId());
@@ -3398,10 +3518,22 @@ final class GraphBuilder {
 
     private Optional<SymbolId> resolveName(SymbolId context, guru.interlis.syntax.NameSyntax name,
                                            Set<SymbolKind> expected, SourceId source) {
-        NameResolver.Resolution resolution = resolver.resolve(context, name, expected);
+        guru.interlis.syntax.NameSyntax lookup = stripModelPrefix(context, name);
+        NameResolver.Resolution resolution = resolver.resolve(context, lookup, expected);
         return switch (resolution.status()) {
             case BOUND -> resolution.target();
             case UNRESOLVED -> {
+                for (int start = 1; start < name.segments().size(); start++) {
+                    guru.interlis.syntax.NameSyntax suffix = new guru.interlis.syntax.NameSyntax(
+                            new guru.interlis.syntax.SyntaxNodeId(
+                                    "resolve-suffix-" + expressionCounter++),
+                            name.range(), name.segments().subList(start, name.segments().size()));
+                    NameResolver.Resolution suffixResolution =
+                            resolver.resolve(context, suffix, expected);
+                    if (suffixResolution.status() == NameResolver.Status.BOUND) {
+                        yield suffixResolution.target();
+                    }
+                }
                 unresolved(name);
                 yield Optional.empty();
             }

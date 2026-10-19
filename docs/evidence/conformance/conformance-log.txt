@@ -128,7 +128,7 @@ bjectNameFail
 [interlis-java] PASS   ili24.Constraints24Test.compile_fail
 [interlis-java] PASS   ili24.Attribute24Test.attributeRef_RefAttrInClass
 [interlis-java] PASS   ili24.Attribute24Test.text_List
-[interlis-java] FAIL   ili24.Attribute24Test.enum_List
+[interlis-java] PASS   ili24.Attribute24Test.enum_List
 [interlis-java] PASS   ili24.Attribute24Test.dateTime
 [interlis-java] PASS   ili24.Attribute24Test.multiCoord
 [interlis-java] PASS   ili24.Attribute24Test.multiPolyline
@@ -160,6 +160,6 @@ bjectNameFail
 [interlis-java] PASS   ili24.Expressions24Test.div_numeric_fail
 [interlis-java] PASS   ili24.Expressions24Test.implication
 [interlis-java] PASS   ili24.Expressions24Test.implication_fail
-Overall result: FAIL (PASS=585, XFAIL=0, FAIL=8, XPASS=0, ERROR=0)
+Overall result: FAIL (PASS=589, XFAIL=0, FAIL=4, XPASS=0, ERROR=0)
 Reports: <repo>/build/conformance
 
