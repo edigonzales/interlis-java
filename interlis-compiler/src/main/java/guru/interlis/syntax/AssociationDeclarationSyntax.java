@@ -22,6 +22,7 @@ import java.util.Set;
  * @param roles role identifiers
  * @param attributes attribute identifiers
  * @param constraints the {@code constraints} component
+ * @param oidRule optional raw OID rule
  */
 public record AssociationDeclarationSyntax(SyntaxNodeId id, SourceRange range, String name,
                                            Optional<SourceRange> nameRange,
@@ -30,7 +31,8 @@ public record AssociationDeclarationSyntax(SyntaxNodeId id, SourceRange range, S
                                            Set<Modifier> modifiers,
                                            List<RoleDeclarationSyntax> roles,
                                            List<AttributeDeclarationSyntax> attributes,
-                                           List<ConstraintDeclarationSyntax> constraints)
+                                           List<ConstraintDeclarationSyntax> constraints,
+                                           Optional<String> oidRule)
         implements DeclarationSyntax {
     /** Creates a validated instance. */
     public AssociationDeclarationSyntax {
@@ -44,6 +46,7 @@ public record AssociationDeclarationSyntax(SyntaxNodeId id, SourceRange range, S
         roles = List.copyOf(Objects.requireNonNull(roles, "roles"));
         attributes = List.copyOf(Objects.requireNonNull(attributes, "attributes"));
         constraints = List.copyOf(Objects.requireNonNull(constraints, "constraints"));
+        oidRule = Objects.requireNonNull(oidRule, "oidRule");
     }
 
     @Override

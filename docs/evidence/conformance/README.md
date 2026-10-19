@@ -41,7 +41,8 @@ this compiler.
 
 - Selected: **593** of 610 suite cases (INTERLIS 2.3/2.4).
 - Excluded: **17** INTERLIS 1.0 cases, by language version.
-- Result: **386 PASS, 207 FAIL, 0 ERROR, 0 XFAIL, 0 XPASS**.
+- Result: **567 PASS, 26 FAIL, 0 ERROR, 0 XFAIL, 0 XPASS**.
+- Translation: **36/36 Single-Feature-Accept-Fälle PASS**, **0** False Accepts in Translation-Reject-Fällen (`translation-summary.json`).
 - Overall: **FAIL**. This is the expected P2 compatibility backlog, not a P1
   release gate. The task intentionally fails while the suite is red; the
   compact result is in `conformance-summary.json`.

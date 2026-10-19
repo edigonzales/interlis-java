@@ -13,13 +13,13 @@
   "candidate": {
     "graalvm": "Oracle GraalVM 25.4.4.1.1+1.1 (native-image 25.0.4.1.1)",
     "js_bytes": 110592,
-    "wasm_bytes": 10331085,
+    "wasm_bytes": 10647043,
     "node": "passed",
     "browser": "chromium/firefox/webkit passed"
   },
   "delta": {
     "js_bytes": 15633,
-    "wasm_bytes": 2620791
+    "wasm_bytes": 2936749
   },
   "notes": [
     "Both versions produced successful Node and browser contracts.",

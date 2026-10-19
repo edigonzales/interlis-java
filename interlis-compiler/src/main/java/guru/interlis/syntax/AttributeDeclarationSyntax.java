@@ -19,12 +19,15 @@ import java.util.Set;
  * @param mandatory mandatory marker
  * @param transientAttribute transient marker
  * @param assigned whether an ASSIGN expression is present
+ * @param continuous CONTINUOUS marker
+ * @param subdivision SUBDIVISION marker
  * @param modifiers modifiers
  * @param type type reference
  */
 public record AttributeDeclarationSyntax(SyntaxNodeId id, SourceRange range, String name,
                                          Optional<SourceRange> nameRange, boolean mandatory,
                                          boolean transientAttribute, boolean assigned,
+                                         boolean continuous, boolean subdivision,
                                          Set<Modifier> modifiers, TypeSyntax type)
         implements DeclarationSyntax {
     /** Creates a validated instance. */

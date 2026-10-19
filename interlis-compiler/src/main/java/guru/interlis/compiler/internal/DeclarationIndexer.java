@@ -16,6 +16,8 @@ import guru.interlis.syntax.ClassDeclarationSyntax;
 import guru.interlis.syntax.ConstraintDeclarationSyntax;
 import guru.interlis.syntax.DeclarationSyntax;
 import guru.interlis.syntax.DomainDeclarationSyntax;
+import guru.interlis.syntax.ExternalConstraintSyntax;
+import guru.interlis.syntax.FunctionDeclarationSyntax;
 import guru.interlis.syntax.EnumerationTypeSyntax;
 import guru.interlis.syntax.ModelSyntax;
 import guru.interlis.syntax.RecoveredSyntax;
@@ -24,6 +26,8 @@ import guru.interlis.syntax.StructureDeclarationSyntax;
 import guru.interlis.syntax.SyntaxNode;
 import guru.interlis.syntax.SyntaxSnapshot;
 import guru.interlis.syntax.TopicSyntax;
+import guru.interlis.syntax.UnitDeclarationSyntax;
+import guru.interlis.syntax.ViewDeclarationSyntax;
 import guru.interlis.syntax.TypeSyntax;
 import guru.interlis.syntax.UnsupportedDeclarationSyntax;
 
@@ -159,6 +163,30 @@ final class DeclarationIndexer {
             }
             return;
         }
+        if (node instanceof ViewDeclarationSyntax view) {
+            DeclInfo declaration = create(SymbolKind.VIEW, view.name(), Optional.of(owner.id()),
+                    view.range(), view.nameRange(), language, view.modifiers(), view, sourceId,
+                    owner.qualifiedName() + "." + view.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id());
+            return;
+        }
+        if (node instanceof FunctionDeclarationSyntax function) {
+            DeclInfo declaration = create(SymbolKind.FUNCTION, function.name(),
+                    Optional.of(owner.id()), function.range(), function.nameRange(), language,
+                    Set.of(), function, sourceId,
+                    owner.qualifiedName() + "." + function.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id());
+            return;
+        }
+        if (node instanceof UnitDeclarationSyntax unit) {
+            DeclInfo declaration = create(SymbolKind.UNIT, unit.name(), Optional.of(owner.id()),
+                    unit.range(), unit.nameRange(), language,
+                    unit.abstractUnit() ? Set.of(Modifier.ABSTRACT) : Set.of(), unit,
+                    sourceId, owner.qualifiedName() + "." + unit.name(),
+                    Optional.empty(), 0);
+            register(sourceId, declaration, owner.id());
+            return;
+        }
         if (node instanceof DomainDeclarationSyntax domain) {
             DeclInfo declaration = create(SymbolKind.DOMAIN, domain.name(), Optional.of(owner.id()),
                     domain.range(), domain.nameRange(), language, domain.modifiers(), domain,
@@ -192,6 +220,15 @@ final class DeclarationIndexer {
             DeclInfo declaration = create(SymbolKind.ROLE, role.name(), Optional.of(owner.id()),
                     role.range(), role.nameRange(), language, role.modifiers(), role, sourceId,
                     owner.qualifiedName() + "." + role.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id());
+            return;
+        }
+        if (node instanceof ExternalConstraintSyntax external) {
+            String name = external.constraint().name().orElse(
+                    "constraint@" + external.range().startOffset());
+            DeclInfo declaration = create(SymbolKind.CONSTRAINT, name, Optional.of(owner.id()),
+                    external.range(), Optional.empty(), language, Set.of(), external, sourceId,
+                    owner.qualifiedName() + "#" + name, Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
             return;
         }

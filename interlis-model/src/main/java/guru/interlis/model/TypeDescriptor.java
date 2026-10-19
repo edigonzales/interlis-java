@@ -3,7 +3,7 @@ package guru.interlis.model;
 /** Closed type descriptor hierarchy. */
 public sealed interface TypeDescriptor permits TextType, BooleanType, AlignmentType,
         NumericType, EnumerationType, CoordinateType, TemporalType, BlackboxType, OidType,
-        ReferenceType, DomainReferenceType, StructureValueType, CollectionType, GenericType,
+        ReferenceType, DomainReferenceType, StructureValueType, CollectionType, FormattedType, GeometryType, ClassValueType, GenericType,
         DeferredTypeBinding, ErrorType, PendingType {
 
     /**

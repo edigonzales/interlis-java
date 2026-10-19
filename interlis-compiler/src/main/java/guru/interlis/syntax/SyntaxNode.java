@@ -7,7 +7,7 @@ import java.util.List;
 /** Own lossless syntax representation; ANTLR types never cross this boundary. */
 public sealed interface SyntaxNode permits DocumentSyntax, ModelSyntax, TopicSyntax,
         ImportSyntax, DeclarationSyntax, TypeSyntax, ExpressionSyntax, NameSyntax,
-        ErrorSyntax, RecoveredSyntax, SkippedSyntax {
+        ErrorSyntax, RecoveredSyntax, SkippedSyntax, ExistenceConstraintSyntax {
 
     SyntaxNodeId id();
 

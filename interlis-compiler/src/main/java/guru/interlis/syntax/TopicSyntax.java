@@ -19,11 +19,13 @@ import java.util.Set;
  * @param baseTopic the {@code baseTopic} component
  * @param dependencies the {@code dependencies} component
  * @param members member identifiers
+ * @param oidRule optional raw OID rule
  */
 public record TopicSyntax(SyntaxNodeId id, SourceRange range, String name,
                           Set<Modifier> modifiers, Optional<String> endName,
                           Optional<NameSyntax> baseTopic,
-                          List<NameSyntax> dependencies, List<SyntaxNode> members)
+                          List<NameSyntax> dependencies, List<SyntaxNode> members,
+                          Optional<String> oidRule)
         implements SyntaxNode {
     /** Creates a validated instance. */
     public TopicSyntax {
@@ -35,6 +37,7 @@ public record TopicSyntax(SyntaxNodeId id, SourceRange range, String name,
         baseTopic = Objects.requireNonNull(baseTopic, "baseTopic");
         dependencies = List.copyOf(Objects.requireNonNull(dependencies, "dependencies"));
         members = List.copyOf(Objects.requireNonNull(members, "members"));
+        oidRule = Objects.requireNonNull(oidRule, "oidRule");
     }
 
     @Override

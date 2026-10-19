@@ -18,6 +18,8 @@ public enum BinaryOperator {
     AND,
     /** The {@code OR} constant. */
     OR,
+    /** The {@code IMPLIES} constant. */
+    IMPLIES,
     /** The {@code PLUS} constant. */
     PLUS,
     /** The {@code MINUS} constant. */

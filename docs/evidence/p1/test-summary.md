@@ -27,7 +27,30 @@ Command: `./gradlew check`
 | `guru.interlis.compiler.CollectionTypeContractTest` | 1 | 0 |
 | `guru.interlis.compiler.ModifierContractTest` | 1 | 0 |
 | `guru.interlis.compiler.AssociationRulesContractTest` | 2 | 0 |
-| `guru.interlis.compiler.ConformanceRulesContractTest` | 3 | 0 |
+| `guru.interlis.compiler.ConformanceRulesContractTest` | 6 | 0 |
+| `guru.interlis.compiler.FunctionContractTest` | 1 | 0 |
+| `guru.interlis.compiler.CoordinateReferenceSystemContractTest` | 1 | 0 |
+| `guru.interlis.compiler.AssociationAttributeContractTest` | 1 | 0 |
+| `guru.interlis.compiler.GeometryTypeContractTest` | 1 | 0 |
+| `guru.interlis.compiler.ViewContractTest` | 2 | 0 |
+| `guru.interlis.compiler.ExternalConstraintContractTest` | 1 | 0 |
+| `guru.interlis.compiler.UniqueConstraintContractTest` | 1 | 0 |
+| `guru.interlis.compiler.ViewBaseExtensionContractTest` | 1 | 0 |
+| `guru.interlis.compiler.TranslationMetadataContractTest` | 1 | 0 |
+| `guru.interlis.compiler.TranslationMappingContractTest` | 3 | 0 |
+| `guru.interlis.compiler.ViewFormationSemanticsContractTest` | 3 | 0 |
+| `guru.interlis.compiler.ExpressionConstraintContractTest` | 2 | 0 |
+| `guru.interlis.compiler.DomainEnumerationContractTest` | 1 | 0 |
+| `guru.interlis.compiler.DuplicateNameContractTest` | 3 | 0 |
+| `guru.interlis.compiler.GeometryConstraintContractTest` | 2 | 0 |
+| `guru.interlis.compiler.EnumerationConstantContractTest` | 1 | 0 |
+| `guru.interlis.compiler.EqualityFamilyContractTest` | 4 | 0 |
+| `guru.interlis.compiler.TemporalTypeContractTest` | 1 | 0 |
+| `guru.interlis.compiler.TypeFamilyContractTest` | 1 | 0 |
+| `guru.interlis.compiler.FormattedTypeContractTest` | 1 | 0 |
+| `guru.interlis.compiler.UnitTypeContractTest` | 1 | 0 |
+| `guru.interlis.compiler.OidRuleContractTest` | 2 | 0 |
+| `guru.interlis.compiler.AttributeModifierContractTest` | 1 | 0 |
 | `guru.interlis.compiler.EngineContractTest` | 4 | 0 |
 | `guru.interlis.compiler.ImportBindingContractTest` | 1 | 0 |
 | `guru.interlis.compiler.ImportDiagnosticContractTest` | 1 | 0 |
@@ -50,7 +73,7 @@ Command: `./gradlew check`
 | `guru.interlis.lsp.LspProtocolCancellationTest` | 1 | 0 |
 | `guru.interlis.lsp.LspErrorContractTest` | 1 | 0 |
 | `guru.interlis.cli.CliApplicationTest` | 5 | 0 |
-| **Total** | **90** | **0** |
+| **Total** | **134** | **0** |
 
 The Gradle test reports are generated under `<module>/build/test-results/test/`.
 
@@ -97,7 +120,7 @@ model, trailing content and a missing import. See
 Command: `./gradlew conformanceCheck`
 
 The pinned 610-case suite is integrated for INTERLIS 2.3/2.4 only: **593
-selected, 17 INTERLIS 1.0 excluded**. Current result: **386 PASS, 207 FAIL, 0
+selected, 17 INTERLIS 1.0 excluded**. Current result: **567 PASS, 26 FAIL, 0
 ERROR, 0 XFAIL, 0 XPASS** (`conformance-summary.json`). This is an honest P2
 compatibility backlog, not a P1 release gate. The former `text_List` internal
 error is fixed and covered by `CollectionTypeContractTest`. The failure

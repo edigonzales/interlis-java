@@ -2,6 +2,7 @@ package guru.interlis.model;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Coordinate/MULTICOORD type with exact per-axis ranges.
@@ -11,9 +12,11 @@ import java.util.Objects;
  * @param dimensions the {@code dimensions} component
  * @param axes the {@code axes} component
  * @param multiCoordinate the {@code multiCoordinate} component
+ * @param referenceSystem optional reference system literal
  */
 public record CoordinateType(TypeId id, Origin origin, int dimensions,
-                             List<NumericRange> axes, boolean multiCoordinate)
+                             List<NumericRange> axes, boolean multiCoordinate,
+                             Optional<String> referenceSystem)
         implements TypeDescriptor {
     /** Creates a validated instance. */
     public CoordinateType {
@@ -26,6 +29,7 @@ public record CoordinateType(TypeId id, Origin origin, int dimensions,
         if (axes.size() != dimensions) {
             throw new IllegalArgumentException("axis count must match dimensions");
         }
+        referenceSystem = Objects.requireNonNull(referenceSystem, "referenceSystem");
     }
 
     @Override

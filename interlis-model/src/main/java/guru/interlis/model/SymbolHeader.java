@@ -20,12 +20,14 @@ import java.util.Set;
  * @param documentation the {@code documentation} component
  * @param metaAttributes the {@code metaAttributes} component
  * @param modifiers modifiers
+ * @param oidRule optional raw OID rule declaration
  */
 public record SymbolHeader(SymbolId id, SymbolKind kind, DeclaredName name,
                            Optional<SymbolId> owner, int declarationOrder,
                            Origin origin, Optional<SourceRange> nameRange,
                            LanguageVersion languageVersion, Documentation documentation,
-                           MetaAttributeSet metaAttributes, Set<Modifier> modifiers) {
+                           MetaAttributeSet metaAttributes, Set<Modifier> modifiers,
+                           Optional<String> oidRule) {
     /** Creates a validated instance. */
     public SymbolHeader {
         Objects.requireNonNull(id, "id");
@@ -41,6 +43,7 @@ public record SymbolHeader(SymbolId id, SymbolKind kind, DeclaredName name,
         Objects.requireNonNull(documentation, "documentation");
         Objects.requireNonNull(metaAttributes, "metaAttributes");
         modifiers = Set.copyOf(Objects.requireNonNull(modifiers, "modifiers"));
+        oidRule = Objects.requireNonNull(oidRule, "oidRule");
         if (owner.filter(id::equals).isPresent()) {
             throw new IllegalArgumentException("symbol cannot own itself");
         }

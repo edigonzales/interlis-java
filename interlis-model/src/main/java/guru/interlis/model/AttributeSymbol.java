@@ -10,10 +10,13 @@ import java.util.Optional;
  * @param declaredType the {@code declaredType} component
  * @param mandatory mandatory marker
  * @param transientAttribute transient marker
+ * @param continuous CONTINUOUS marker
+ * @param subdivision SUBDIVISION marker
  * @param overrides the {@code overrides} component
  */
 public record AttributeSymbol(SymbolHeader header, TypeId declaredType,
                               boolean mandatory, boolean transientAttribute,
+                              boolean continuous, boolean subdivision,
                               Optional<SymbolId> overrides) implements Symbol {
     /** Creates a validated instance. */
     public AttributeSymbol {

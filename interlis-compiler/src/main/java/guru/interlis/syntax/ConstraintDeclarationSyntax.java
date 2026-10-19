@@ -14,10 +14,16 @@ import java.util.Optional;
  * @param name declared name
  * @param constraintKind the {@code constraintKind} component
  * @param expression the {@code expression} component
+ * @param uniqueKeys raw key names for UNIQUE constraints
+ * @param existence optional existence-constraint payload
+ * @param localUniqueness whether UNIQUE is LOCAL
  */
 public record ConstraintDeclarationSyntax(SyntaxNodeId id, SourceRange range,
                                           Optional<String> name, ConstraintKind constraintKind,
-                                          Optional<ExpressionSyntax> expression)
+                                          Optional<ExpressionSyntax> expression,
+                                          List<NameSyntax> uniqueKeys,
+                                          Optional<ExistenceConstraintSyntax> existence,
+                                          boolean localUniqueness)
         implements DeclarationSyntax {
     /** Creates a validated instance. */
     public ConstraintDeclarationSyntax {
@@ -26,6 +32,8 @@ public record ConstraintDeclarationSyntax(SyntaxNodeId id, SourceRange range,
         name = Objects.requireNonNull(name, "name");
         Objects.requireNonNull(constraintKind, "constraintKind");
         expression = Objects.requireNonNull(expression, "expression");
+        uniqueKeys = List.copyOf(Objects.requireNonNull(uniqueKeys, "uniqueKeys"));
+        existence = Objects.requireNonNull(existence, "existence");
     }
 
     @Override

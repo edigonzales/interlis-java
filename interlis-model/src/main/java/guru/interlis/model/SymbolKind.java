@@ -22,6 +22,10 @@ public enum SymbolKind {
     CONSTRAINT,
     /** The {@code ENUM_ELEMENT} constant. */
     ENUM_ELEMENT,
+    /** The {@code UNIT} constant. */
+    UNIT,
+    /** The {@code FUNCTION} constant. */
+    FUNCTION,
     /** The {@code VIEW} constant. */
     VIEW,
     /** The {@code UNSUPPORTED} constant. */

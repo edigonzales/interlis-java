@@ -4,5 +4,6 @@ package guru.interlis.syntax;
 public sealed interface TypeSyntax extends SyntaxNode permits TextTypeSyntax,
         NumericTypeSyntax, BooleanTypeSyntax, EnumerationTypeSyntax,
         DomainReferenceSyntax, ReferenceTypeSyntax, CollectionTypeSyntax,
-        CoordinateTypeSyntax, UnsupportedTypeSyntax {
+        CoordinateTypeSyntax, TemporalTypeSyntax, OidTypeSyntax, BlackboxTypeSyntax,
+        AlignmentTypeSyntax, FormattedTypeSyntax, GenericTypeSyntax, EnumTreeValueSyntax, LineTypeSyntax, ClassValueTypeSyntax, UnsupportedTypeSyntax {
 }

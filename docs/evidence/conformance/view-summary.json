@@ -1,0 +1,19 @@
+{
+  "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+  "viewAcceptTotal": 19,
+  "viewAcceptPass": 19,
+  "viewRejectTotal": 20,
+  "viewRejectFalseAccept": 0,
+  "targetCases": {
+    "ili23.View23Test.abstractView_AbstractBaseInConcretViewDef": "PASS",
+    "ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef": "PASS",
+    "ili23.View23Test.view_AcceptSimpleBaseExtentionInView": "PASS",
+    "ili23.ViewDef23Test.viewProjectionComplete": "PASS",
+    "ili23.Topic23Test.topicComplete": "PASS"
+  },
+  "overall": {
+    "PASS": 490,
+    "FAIL": 103,
+    "ERROR": 0
+  }
+}

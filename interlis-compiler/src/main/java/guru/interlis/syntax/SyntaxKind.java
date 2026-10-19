@@ -16,6 +16,14 @@ public enum SyntaxKind {
     STRUCTURE,
     /** The {@code DOMAIN} constant. */
     DOMAIN,
+    /** The {@code UNIT} constant. */
+    UNIT,
+    /** The {@code FUNCTION} constant. */
+    FUNCTION,
+    /** The {@code EXTERNAL_CONSTRAINT} constant. */
+    EXTERNAL_CONSTRAINT,
+    /** The {@code VIEW} constant. */
+    VIEW,
     /** The {@code ASSOCIATION} constant. */
     ASSOCIATION,
     /** The {@code ATTRIBUTE} constant. */
@@ -38,10 +46,35 @@ public enum SyntaxKind {
     TYPE_DOMAIN_REFERENCE,
     /** The {@code TYPE_REFERENCE} constant. */
     TYPE_REFERENCE,
+    /** The {@code TYPE_OID} constant. */
+    TYPE_OID,
+
+    /** The {@code TYPE_BLACKBOX} constant. */
+    TYPE_BLACKBOX,
+
+    /** The {@code TYPE_ALIGNMENT} constant. */
+    TYPE_ALIGNMENT,
+
+    /** The {@code TYPE_TEMPORAL} constant. */
+    TYPE_TEMPORAL,
+
+    /** The {@code TYPE_CLASS_VALUE} constant. */
+    TYPE_CLASS_VALUE,
+
+    /** The {@code TYPE_LINE} constant. */
+    TYPE_LINE,
+
+    /** The {@code TYPE_FORMATTED} constant. */
+    TYPE_FORMATTED,
+
     /** The {@code TYPE_COLLECTION} constant. */
     TYPE_COLLECTION,
     /** The {@code TYPE_COORDINATE} constant. */
     TYPE_COORDINATE,
+    /** The {@code TYPE_ENUM_TREE} constant. */
+    TYPE_ENUM_TREE,
+    /** The {@code TYPE_GENERIC} constant. */
+    TYPE_GENERIC,
     /** The {@code TYPE_UNSUPPORTED} constant. */
     TYPE_UNSUPPORTED,
     /** The {@code EXPRESSION_LITERAL} constant. */
@@ -50,6 +83,16 @@ public enum SyntaxKind {
     EXPRESSION_PATH,
     /** The {@code EXPRESSION_BINARY} constant. */
     EXPRESSION_BINARY,
+    /** The {@code EXPRESSION_GENERIC_CONSTANT} constant. */
+    EXPRESSION_GENERIC_CONSTANT,
+    /** The {@code EXPRESSION_CLASS_CONSTANT} constant. */
+    EXPRESSION_CLASS_CONSTANT,
+    /** The {@code EXPRESSION_ENUM_CONSTANT} constant. */
+    EXPRESSION_ENUM_CONSTANT,
+    /** The {@code EXPRESSION_BUILTIN} constant. */
+    EXPRESSION_BUILTIN,
+    /** The {@code EXPRESSION_FUNCTION_CALL} constant. */
+    EXPRESSION_FUNCTION_CALL,
     /** The {@code EXPRESSION_UNARY} constant. */
     EXPRESSION_UNARY,
     /** The {@code EXPRESSION_DEFINED} constant. */

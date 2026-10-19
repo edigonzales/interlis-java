@@ -4,5 +4,7 @@ package guru.interlis.syntax;
 public sealed interface ExpressionSyntax extends SyntaxNode permits LiteralExpressionSyntax,
         PathExpressionSyntax, BinaryExpressionSyntax, UnaryExpressionSyntax,
         DefinedExpressionSyntax, ConstantExpressionSyntax, UndefinedExpressionSyntax,
-        ParenthesizedExpressionSyntax, UnsupportedExpressionSyntax {
+        ParenthesizedExpressionSyntax, FunctionCallExpressionSyntax, BuiltinFunctionExpressionSyntax,
+        EnumerationConstantExpressionSyntax, ClassConstantExpressionSyntax, GenericConstantExpressionSyntax,
+        UnsupportedExpressionSyntax {
 }

@@ -17,11 +17,13 @@ import java.util.Optional;
  * @param maximum the {@code maximum} component
  * @param circular the {@code circular} component
  * @param direction the {@code direction} component
+ * @param unit optional unit reference
  */
 public record NumericTypeSyntax(SyntaxNodeId id, SourceRange range,
                                 Optional<DecimalLiteral> minimum,
                                 Optional<DecimalLiteral> maximum,
-                                boolean circular, NumericDirection direction)
+                                boolean circular, NumericDirection direction,
+                                Optional<NameSyntax> unit)
         implements TypeSyntax {
     /** Creates a validated instance. */
     public NumericTypeSyntax {
@@ -30,6 +32,7 @@ public record NumericTypeSyntax(SyntaxNodeId id, SourceRange range,
         minimum = Objects.requireNonNull(minimum, "minimum");
         maximum = Objects.requireNonNull(maximum, "maximum");
         Objects.requireNonNull(direction, "direction");
+        unit = Objects.requireNonNull(unit, "unit");
         if (minimum.isPresent() && maximum.isPresent()
                 && minimum.get().exactValue().compareTo(maximum.get().exactValue()) > 0) {
             throw new IllegalArgumentException("numeric syntax minimum exceeds maximum");

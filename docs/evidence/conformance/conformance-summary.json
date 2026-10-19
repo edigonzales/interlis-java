@@ -4,9 +4,9 @@
   "summary": {
     "TOTAL": 593,
     "XFAIL": 0,
-    "PASS": 386,
+    "PASS": 567,
     "ERROR": 0,
-    "FAIL": 207,
+    "FAIL": 26,
     "XPASS": 0
   },
   "reportJson": "report.json",

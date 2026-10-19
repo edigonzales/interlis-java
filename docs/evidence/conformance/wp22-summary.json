@@ -1,0 +1,31 @@
+{
+  "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+  "groups": {
+    "ILI 2.3 \u2013 Constraints und Ausdr\u00fccke": {
+      "total": 103,
+      "pass": 103
+    },
+    "ILI 2.3 \u2013 Funktionen": {
+      "total": 6,
+      "pass": 6
+    },
+    "ILI 2.4 \u2013 Constraints": {
+      "total": 2,
+      "pass": 2
+    },
+    "ILI 2.4 \u2013 Domain Constraints": {
+      "total": 2,
+      "pass": 2
+    },
+    "ILI 2.4 \u2013 Ausdr\u00fccke": {
+      "total": 10,
+      "pass": 10
+    }
+  },
+  "falseAcceptsInWp22": 0,
+  "overall": {
+    "PASS": 534,
+    "FAIL": 59,
+    "ERROR": 0
+  }
+}

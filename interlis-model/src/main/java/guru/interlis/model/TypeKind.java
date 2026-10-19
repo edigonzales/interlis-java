@@ -2,6 +2,12 @@ package guru.interlis.model;
 
 /** Closed type-family classification. */
 public enum TypeKind {
+    /** The {@code CLASS_VALUE} constant. */
+    CLASS_VALUE,
+    /** The {@code GEOMETRY} constant. */
+    GEOMETRY,
+    /** The {@code FORMATTED} constant. */
+    FORMATTED,
     /** The {@code TEXT} constant. */
     TEXT,
     /** The {@code BOOLEAN} constant. */

@@ -13,15 +13,24 @@ import java.util.Objects;
  * @param id stable identifier
  * @param range source range
  * @param name declared name
+ * @param modelKind model kind
+ * @param contracted whether the CONTRACTED header flag is set
  * @param modelVersion model version
  * @param issuer issuer URI
  * @param languageVersion the {@code languageVersion} component
+ * @param language optional translation language
+ * @param translationSource optional canonical source model
+ * @param translationVersion optional canonical source version
  * @param endName optional name after END
  * @param imports model imports
  * @param members member identifiers
  */
 public record ModelSyntax(SyntaxNodeId id, SourceRange range, String name,
+                          guru.interlis.model.ModelKind modelKind, boolean contracted,
                           String modelVersion, String issuer, LanguageVersion languageVersion,
+                          java.util.Optional<String> language,
+                          java.util.Optional<NameSyntax> translationSource,
+                          java.util.Optional<String> translationVersion,
                           java.util.Optional<String> endName,
                           List<ImportSyntax> imports, List<SyntaxNode> members)
         implements SyntaxNode {
@@ -33,6 +42,9 @@ public record ModelSyntax(SyntaxNodeId id, SourceRange range, String name,
         Objects.requireNonNull(modelVersion, "modelVersion");
         Objects.requireNonNull(issuer, "issuer");
         Objects.requireNonNull(languageVersion, "languageVersion");
+        language = Objects.requireNonNull(language, "language");
+        translationSource = Objects.requireNonNull(translationSource, "translationSource");
+        translationVersion = Objects.requireNonNull(translationVersion, "translationVersion");
         endName = Objects.requireNonNull(endName, "endName");
         imports = List.copyOf(Objects.requireNonNull(imports, "imports"));
         members = List.copyOf(Objects.requireNonNull(members, "members"));

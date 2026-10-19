@@ -4,5 +4,6 @@ package guru.interlis.syntax;
 public sealed interface DeclarationSyntax extends SyntaxNode permits ClassDeclarationSyntax,
         StructureDeclarationSyntax, DomainDeclarationSyntax, AssociationDeclarationSyntax,
         AttributeDeclarationSyntax, RoleDeclarationSyntax, ConstraintDeclarationSyntax,
+        UnitDeclarationSyntax, FunctionDeclarationSyntax, ViewDeclarationSyntax, ExternalConstraintSyntax,
         UnsupportedDeclarationSyntax {
 }

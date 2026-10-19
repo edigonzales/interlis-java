@@ -7,7 +7,8 @@ import java.util.Optional;
 /** Closed semantic symbol hierarchy. */
 public sealed interface Symbol permits ModelSymbol, TopicSymbol, ClassSymbol,
         StructureSymbol, AssociationSymbol, AttributeSymbol, RoleSymbol, DomainSymbol,
-        ConstraintSymbol, EnumElementSymbol, ViewSymbol, UnsupportedSymbol {
+        ConstraintSymbol, EnumElementSymbol, UnitSymbol, FunctionSymbol, ViewSymbol,
+        UnsupportedSymbol {
 
     /**
      * Returns the {@code header} value.

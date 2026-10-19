@@ -170,28 +170,27 @@ class CompilerEngineTest {
     }
 
     @Test
-    void unsupportedViewIsVisibleAndRejects() {
+    void viewDeclarationIsNoLongerUnsupported() {
         SourceText source = CompilerTestSupport.source("memory:/view.ili", """
                 INTERLIS 2.4;
                 MODEL ViewModel AT "https://example.interlis.ch" VERSION "1.0" =
                   TOPIC Data =
-    DEPENDS ON Base.Common;
-                    VIEW V = PROJECTION OF Building;
                     CLASS Building =
                       name : TEXT*20;
                     END Building;
+                    VIEW V
+                      PROJECTION OF Building;
+                      =
+                      ATTRIBUTE
+                        ALL OF Building;
+                    END V;
                   END Data;
                 END ViewModel.
                 """);
-        SyntaxSnapshot syntax = CompilerTestSupport.parse(source);
         CompilationRequest request = CompilerTestSupport.request(List.of("ViewModel"),
                 Map.of(source.id(), source), List.of(), CompilerOptions.defaults());
         CompilationOutcome outcome = CompilerEngines.create().compile(request, CancellationToken.none());
-        CompilationOutcome.Rejected rejected = assertInstanceOf(
-                CompilationOutcome.Rejected.class, outcome, () -> describe(outcome));
-        assertTrue(rejected.rejection().reasons().contains(RejectionReason.INCOMPLETE_SUPPORT),
-                () -> rejected.rejection().toString());
-        assertFalse(rejected.rejection().unsupportedFeatureIds().isEmpty());
+        assertInstanceOf(CompilationOutcome.Succeeded.class, outcome, () -> describe(outcome));
     }
 
     private static String diagnostics(List<Diagnostic> diagnostics) {

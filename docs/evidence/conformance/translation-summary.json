@@ -1,0 +1,16 @@
+{
+  "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+  "singleFeatureTranslationAcceptTotal": 36,
+  "singleFeatureTranslationAcceptPass": 36,
+  "translationAcceptTotal": 61,
+  "translationAcceptPass": 36,
+  "translationAcceptBlockedByOtherFeatures": 25,
+  "translationRejectTotal": 191,
+  "translationRejectFalseAccept": 0,
+  "overall": {
+    "PASS": 490,
+    "FAIL": 103,
+    "ERROR": 0
+  },
+  "measurementBasis": "single-feature list captured before enabling WP-24; all 36 now PASS"
+}

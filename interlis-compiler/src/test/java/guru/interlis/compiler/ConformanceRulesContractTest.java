@@ -34,6 +34,45 @@ class ConformanceRulesContractTest {
     }
 
     @Test
+    void classEndNameMustMatch() {
+        assertRejected("""
+                INTERLIS 2.3;
+                MODEL M AT "https://example.interlis.ch" VERSION "1.0" =
+                  TOPIC T =
+                    CLASS C = END Other;
+                  END T;
+                END M.
+                """);
+    }
+
+    @Test
+    void extendingTopicMustStayAbstractWhenBaseIsAbstract() {
+        assertRejected("""
+                INTERLIS 2.3;
+                MODEL M AT "https://example.interlis.ch" VERSION "1.0" =
+                  TOPIC Base (ABSTRACT) =
+                    CLASS C (ABSTRACT) = END C;
+                  END Base;
+                  TOPIC Derived EXTENDS Base =
+                  END Derived;
+                END M.
+                """);
+    }
+
+    @Test
+    void extendedClassCannotBeUsedAsBase() {
+        assertRejected("""
+                INTERLIS 2.3;
+                MODEL M AT "https://example.interlis.ch" VERSION "1.0" =
+                  TOPIC T =
+                    CLASS Base (EXTENDED) = END Base;
+                    CLASS Derived EXTENDS Base = END Derived;
+                  END T;
+                END M.
+                """);
+    }
+
+    @Test
     void extendedTextMayNotWidenMaximumLength() {
         assertRejected("""
                 INTERLIS 2.3;

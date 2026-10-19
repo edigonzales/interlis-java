@@ -39,8 +39,9 @@ public record EnumerationTypeSyntax(SyntaxNodeId id, SourceRange range,
      *
      * @param path name path
      * @param range source range
+     * @param hasChildren whether the value declares nested enumeration values
      */
-    public record EnumerationValueSyntax(String path, SourceRange range) {
+    public record EnumerationValueSyntax(String path, SourceRange range, boolean hasChildren) {
         /** Creates a validated instance. */
         public EnumerationValueSyntax {
             Objects.requireNonNull(path, "path");
