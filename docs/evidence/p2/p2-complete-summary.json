@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0",
+  "scope": "compiler P2 WP-20..27",
+  "status": "VERIFIED",
+  "workPackages": {
+    "WP-20": "VERIFIED",
+    "WP-21": "VERIFIED",
+    "WP-22": "VERIFIED",
+    "WP-23": "VERIFIED",
+    "WP-24": "VERIFIED",
+    "WP-25": "VERIFIED",
+    "WP-26": "VERIFIED",
+    "WP-27": "VERIFIED"
+  },
+  "tests": 153,
+  "conformance": {
+    "total": 593,
+    "pass": 592,
+    "xfail": 1,
+    "fail": 0,
+    "error": 0,
+    "falseAccepts": 0
+  },
+  "outOfScope": ["P3", "P4", "P5", "INTERLIS 1"]
+}

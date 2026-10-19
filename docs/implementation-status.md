@@ -2,7 +2,7 @@
 
 Stand: **18. Oktober 2026**. Auftrag: Erstimplementierung **P0 und P1** gemäss
 `docs/spec/STARTPROMPT.md`, Arbeitspakete WP-00 bis WP-03 und WP-10 bis WP-17.
-P2 bis P5 bleiben Zielanforderungen und sind **nicht** als erfüllt markiert.
+P2 ist für den Compiler-Scope WP-20..27 abgeschlossen; P3 bis P5 bleiben Zielanforderungen und sind **nicht** als erfüllt markiert.
 
 Statuslegende: **PLANNED** = geplant, **IMPLEMENTED** = Logik vorhanden,
 **VERIFIED** = bezeichnete Abnahme tatsächlich ausgeführt und bestanden,
@@ -36,7 +36,8 @@ verbleibende **XFAIL** `Attribute10Test.attributeComplete` benötigt
 gewählten 2.3/2.4-Umfang stehen **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR**;
 in-scope sind damit **592 von 592** Fällen PASS, der einzelne XFAIL ist der
 out-of-scope INTERLIS1-Transferfall.
-Ebenfalls offen: vollständige 2.3/2.4-Semantik (P2) und Performancebudgets. Die
+P2 ist für den Compiler-Scope WP-20..27 abgeschlossen; Performancebudgets und
+P3–P5 bleiben offen. Die
 Plattform-Gates JVM, Node, Chromium, Firefox, Playwright-WebKit und echtes Safari
 sind ausgeführt und bestanden.
 
@@ -90,7 +91,7 @@ die generierten Quellen liegen ausschliesslich unter `build/generated-src`.
 | WP | Anforderungen | Status | Umfang und Evidenz |
 |---|---|---|---|
 | WP-00 Repository/Gradle | BUILD-001..004, 009; AGENT-001/008/010; ARCH-001/009; NFR-009/010 | VERIFIED | Wrapper, Groovy-DSL, JDK 25, Module, zyklusfreier Graph; `./gradlew check` grün. |
-| WP-01 Referenzen/Fallkorpus | TEST-/COMPAT-Grundlagen; GOAL-012 | **VERIFIED (P1-Profil; 610er-Suite separat)** | Eigene Fixtures unter `testdata/models`; ili2c 5.6.9 mit Quell-URL und SHA-256 gepinnt. Fünf explizite Fälle (2.4-Import/Vererbung, 2.3, defekt, trailing, fehlender Import) laufen gegen das Referenzwerkzeug. Zusätzlich ist die gepinnte 610er-Suite als separater `conformanceCheck` für 2.3/2.4 integriert: 593 von 610 Fällen (17×1.0 ausgeschlossen), aktuell 592 PASS/1 XFAIL/0 FAIL/0 ERROR. Der XFAIL-Stand ist P2-Kompatibilitätsbacklog, kein P1-Releasegate; Clustering in `docs/evidence/conformance/backlog.md`. |
+| WP-01 Referenzen/Fallkorpus | TEST-/COMPAT-Grundlagen; GOAL-012 | **VERIFIED (P1-Profil; 610er-Suite separat)** | Eigene Fixtures unter `testdata/models`; ili2c 5.6.9 mit Quell-URL und SHA-256 gepinnt. Fünf explizite Fälle (2.4-Import/Vererbung, 2.3, defekt, trailing, fehlender Import) laufen gegen das Referenzwerkzeug. Zusätzlich ist die gepinnte 610er-Suite als separater `conformanceCheck` für 2.3/2.4 integriert: 593 von 610 Fällen (17×1.0 ausgeschlossen), aktuell 592 PASS/1 XFAIL/0 FAIL/0 ERROR. Der XFAIL ist eine dokumentierte out-of-scope-Ausnahme, kein P1-Releasegate; Details in `docs/evidence/conformance/backlog.md`. |
 | WP-02 Syntaxspike nach Gradle | BUILD-005/006/010; SYN-012; WASM-001/002 | VERIFIED | Grammatik unverändert, ANTLR 4.13.2, bekannte Warnung 154 zu `viewDef` reproduziert; JVM, WasmGC-Node und JS-Node laufen. |
 | WP-03 Diagnostik/Laufkontext | DIAG-001..005/007..009; LOG-001..004/007/010 | VERIFIED (P1-Kern) | Strukturierte Diagnosen, Katalog inklusive Doppelcode-/Argument-/Phasenprüfung, Collector, kanonische Ordnung, Cause-Suppression, RunContext/Lifecycle mit genau einem Abschlussversuch, Observer-Isolierung, Abbruch/Budget und LSP-stdout-Reinheit sind getestet. Ein produktiver Telemetrie-/Dateisink bleibt P3. |
 
@@ -98,7 +99,7 @@ die generierten Quellen liegen ausschliesslich unter `build/generated-src`.
 
 | WP | Anforderungen | Status | Umfang und Evidenz |
 |---|---|---|---|
-| WP-10 Quellen/Syntax/Positionen | SRC-001..007; SYN-001..009/011/013/014 | VERIFIED (P1-Teil) | UTF-16-Halbintervalle, CRLF/LF/CR (auch einzelnes CR und Leerzeilen), Emoji, LineMap, eigene verlustfreie Syntax, Tokens/Trivia, EOF, Trailing-Content, EDITOR-Recovery, Versionserkennung. Fragmentanalyse ist P2 und wirft explizit `UnsupportedOperationException`. |
+| WP-10 Quellen/Syntax/Positionen | SRC-001..007; SYN-001..009/011/013/014 | VERIFIED (P1-Teil) | UTF-16-Halbintervalle, CRLF/LF/CR (auch einzelnes CR und Leerzeilen), Emoji, LineMap, eigene verlustfreie Syntax, Tokens/Trivia, EOF, Trailing-Content, EDITOR-Recovery, Versionserkennung. Fragmentanalyse ist mit `parseFragment` implementiert und durch `FragmentParserTest` abgedeckt. |
 | WP-11 Metamodell/Deklarationen | META-001..005/008/009/011/014; API-001/003 | VERIFIED (P1; API-003-Restlücke akzeptiert) | Immutable Graph, Modell/Topic/Klasse/Struktur/Domäne/Assoziation/Attribut/Rolle/Constraint, exakte Dezimalwerte inklusive `9007199254740993.0010`, Origin, stabile IDs. `ArchitectureBoundaryTest` prüft, dass öffentliche Modell-/Compiler-APIs keine ANTLR-, LSP-, HTTP-, JDBC-, UI- oder internen Typen leaken; `SnapshotOwnershipTest` prüft Copy-on-Construction, `CanonicalSourceOrderTest` die Unabhängigkeit von der Source-Map-Einfügereihenfolge, `PublicSdkConstructionTest` den minimalen String-SDK-Fall. Javadoc-Paketverträge sind für alle öffentlichen Pakete ergänzt; der geprüfte Kernvertrag steht in `docs/evidence/p1/api-review.md`. Die verbleibenden 258 Javadoc-Warnungen sind als dokumentierte Restlücke vom Nutzer akzeptiert (Entscheidung 2026-10-18) und blockieren die P1-Abnahme nicht. |
 | WP-12 Importe/Bindung | RES-001..008/012; SEM-001/008 | VERIFIED (P1-Teil) | ByName/BySource-Selektoren, In-Memory-Closure, explizite Bindings, fehlender Import mit `ILI-RES`-Diagnose, Mehrdeutigkeit, negative Abhängigkeit und späteres Erscheinen einer Quelle. Kein implizites HTTP in der Engine. |
 | WP-13 Typprüfung/Gate | SEM-002..005/007/009/011..015/018/019; META-010; ARCH-004 | VERIFIED (P1-Teil) | Outcome-Trennung (`Succeeded`/`Rejected`/`Cancelled`), deterministische Compilation-Fingerprints, Typauflösung, Domänen-Aliase, Vererbung/Override, effektive Reihenfolge, typisierte Constraints, Fehlerfortpflanzung, Gate, Closure-Auswahl, kein Schema bei Fehler/NOT_IMPLEMENTED. `CompiledSchemaSelectionTest` bestätigt, dass ein unabhängig defektes Modell außerhalb der gewählten Closure den Erfolg nicht verhindert. |
@@ -129,7 +130,7 @@ Schema veröffentlicht.
 
 `Coord`/`MULTICOORD` wird als Typ im P1-Umfang akzeptiert; für INTERLIS 2.3 wird
 `MULTICOORD` als versionswidrig abgelehnt. Eine vollständige versionsabhängige
-Keyword-Matrix ist P2 (SYN-004).
+Keyword-Matrix ist über `LanguageProfile` und `LanguageProfileContractTest` umgesetzt (SYN-004).
 
 ## 6. Öffentliche API und bewusste Ergänzungen
 
@@ -205,10 +206,10 @@ referenzierten JSON-Dateien.
 3. **Web Image und Safari.** Der Web-Image-Pfad wurde unter Node und in
    Chromium, Firefox und Playwright-WebKit ausgeführt. TeaVM wurde zusätzlich in
    echtem Safari geprüft; der Web-Image-Safari-Pfad ist nicht separat gelaufen.
-4. **P2-Semantik.** Der P2-Audit (WP-20..27) läuft in
-   `docs/evidence/p2/wp-audit.md`; die historische Sammelaussage zu fehlenden
-   Typ-/View-/Metaobject-Familien ist nicht mehr aktuell und wird im
-   P2-Abschluss durch eine belastbare WP-Matrix ersetzt.
+4. **P2-Semantik.** **Abgeschlossen für den Compiler-Scope WP-20..27.** Die
+   WP-/Requirement-Matrix steht in `docs/evidence/p2/wp-audit.md`, die
+   kompakte Abnahme in `docs/evidence/p2/p2-complete-summary.json`. P3–P5
+   bleiben ausdrücklich offen.
 5. **Fragmentanalyse:** `parseFragment` ist implementiert und mit
    `FragmentParserTest` für Ausdruck, Objektpfad, Attributdeklaration,
    Originalkoordinaten und Trailing-Content abgedeckt.
@@ -223,7 +224,7 @@ referenzierten JSON-Dateien.
    Restlücke am 2026-10-18 als dokumentiert akzeptiert; die Baseline steht in
    `docs/evidence/p1/javadoc-summary.json`.
 
-## 9a. P2-Zwischenstand (WP-23/WP-24 abgeschlossen, 2026-10-18)
+## 9a. P2-Abschluss (WP-20..27, 2026-10-19)
 
 - Conformance: **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR** von 593 ausgewählten 2.3/2.4-Fällen.
 - JVM: **153 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
@@ -238,18 +239,16 @@ referenzierten JSON-Dateien.
 - **Generic/Deferred/Context:** **16/16 Fälle PASS**, **0** False Accepts; Nachweis in `docs/evidence/conformance/generic-summary.json`.
 - **WP-23 View-Formation:** **19/19 View-Accept-Fälle PASS**, **0/20 View-Reject-False-Accepts**; ABSTRACT-/BASIS-/Alias-/Topic-View-Regeln und View-Base-Extensions sind validiert. Nachweis in `docs/evidence/conformance/view-summary.json`.
 - **WP-22 Objektpfade/Funktionen/Constraints:** alle 25 Constraint-/Ausdrucksfälle, alle 3 Funktionsfälle und die 2.4-Constraint-/Domain-Fälle PASS; **0** neue False Accepts. Nachweis in `docs/evidence/conformance/wp22-summary.json`.
-- 25 weitere Translation-Accept-Fälle scheitern noch an anderen P2-Features (u. a. vollständige Line- und Metaobject-Semantik), nicht an Translation.
-- Das Goal „P2 vollständig“ bleibt offen; der 490er-Stand ist der P2-Kompatibilitätsbacklog.
+- **P2-WP-20..27: VERIFIED**; Matrix in `docs/evidence/p2/wp-audit.md`, Abnahme in `p2-complete-summary.json`. In-Scope: 592/592 PASS, 1 dokumentierter INTERLIS1-XFAIL, 0 False Accepts, 0 ERROR.
 
-## 9. Nächster Arbeitsschritt (P2)
+## 9. Nächster Arbeitsschritt (P3)
 
-Beginne mit den verbleibenden Typ-/Ausdrucksfamilien und der vollständigen Line-/Metaobject-Semantik. WP-23 und WP-24 sind abgeschlossen. Historischer Hinweis: WP-20 (vollständige Typfamilien, numerische Genauigkeit,
-Einheiten, Geometrietypen) und der versionierten Feature-/Keyword-Matrix aus
-Kapitel 04. Vor jedem neuen Feature: positiven, negativen, Metamodell-/Query-
-und Portabilitätsfall gemeinsam ergänzen; `AnalysisCoverage`-Feature entfernen,
-erst wenn der Fall im Gate und in JVM/Node/Browser grün ist. Die kleine
-ili2c-Referenzprofilprüfung ist erledigt; eine breitere Legacy-Suite bleibt eine
-optionale Vertiefung. Die Plattformmatrix ist mit echtem Safari grün.
+P2 ist für den Compiler-Scope WP-20..27 abgeschlossen. P3 (ili2c-Ersatz,
+ModelExporter/IlisMeta, vollständige LSP-Fähigkeiten, Performance und Release)
+ist noch nicht begonnen; die P3-Ziele werden vor dem Start separat geschärft.
+Vor jedem neuen Feature: positiven, negativen, Metamodell-/Query- und
+Portabilitätsfall gemeinsam ergänzen; `AnalysisCoverage`-Feature erst entfernen,
+wenn der Fall im Gate und in JVM/Node/Browser grün ist.
 
 ## 10. Fortsetzung ohne Chatkontext
 
@@ -258,5 +257,5 @@ optionale Vertiefung. Die Plattformmatrix ist mit echtem Safari grün.
 3. `./gradlew check` und `./gradlew checkPortable` ausführen.
 4. Für portable Änderungen zusätzlich `:interlis-wasm-teavm:browserContractTest`
    und die Web-Image-Probe mit den dokumentierten Properties ausführen.
-5. Offene Punkte aus Abschnitt 8 zuerst bearbeiten; keine P2-Fähigkeit als
+5. Offene Punkte aus Abschnitt 8 zuerst bearbeiten; keine P3+-Fähigkeit als
    erfüllt markieren, solange Coverage-/Negativ-/Plattformnachweise fehlen.
