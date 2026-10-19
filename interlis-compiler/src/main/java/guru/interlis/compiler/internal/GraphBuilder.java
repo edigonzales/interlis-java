@@ -202,6 +202,7 @@ final class GraphBuilder {
         for (IndexedDeclarations.ModelEntry entry : index.models()) {
             buildModel(entry);
         }
+        validateGenericSystem();
         resolveOverridesAndEffectiveMembers();
         buildEffectiveTypes();
         buildReferences();
@@ -1746,6 +1747,244 @@ final class GraphBuilder {
         }
     }
 
+
+    private void validateGenericSystem() {
+        String all = sourceSet.sources().values().stream()
+                .map(guru.interlis.source.SourceText::text)
+                .collect(java.util.stream.Collectors.joining("\n"));
+        String text = all.replaceAll("(?s)/\\*.*?\\*/", " ")
+                .replaceAll("(?m)!!.*$", " ");
+        Map<String, DomainDef> domains = genericDomains(text);
+        Set<String> genericNames = new LinkedHashSet<>();
+        java.util.regex.Matcher genericNameMatcher = java.util.regex.Pattern
+                .compile("(?i)([A-Za-z_][A-Za-z0-9_]*)\\s*\\(GENERIC\\)")
+                .matcher(text);
+        while (genericNameMatcher.find()) {
+            genericNames.add(genericNameMatcher.group(1));
+        }
+        domains.replaceAll((name, definition) -> genericNames.contains(name)
+                ? new DomainDef(name, true, definition.base(), definition.body())
+                : definition);
+        Map<String, List<String>> contexts = genericContexts(text);
+        Set<String> deferred = genericDeferred(text);
+        Set<String> used = genericUsages(text, domains);
+        DeclInfo modelDecl = index.models().isEmpty() ? null
+                : index.models().getFirst().declaration();
+        if (modelDecl == null) {
+            return;
+        }
+        for (String name : deferred) {
+            if (!domains.containsKey(name) || !domains.get(name).generic()) {
+                emitRule(modelDecl, "DEFERRED GENERICS references a non-generic domain",
+                        "GENERIC_DEFERRED_UNKNOWN");
+            }
+            if (!contexts.containsKey(name)) {
+                emitRule(modelDecl, "DEFERRED GENERICS domain has no CONTEXT",
+                        "GENERIC_CONTEXT_MISSING");
+            }
+            if (!used.contains(name)) {
+                emitRule(modelDecl, "DEFERRED GENERICS domain is unused",
+                        "GENERIC_DEFERRED_UNUSED");
+            }
+        }
+        for (String name : used) {
+            if (!contexts.containsKey(name) && !deferred.contains(name)) {
+                emitRule(modelDecl, "generic domain is used without CONTEXT or DEFERRED",
+                        "GENERIC_CONTEXT_MISSING");
+            }
+        }
+        for (Map.Entry<String, List<String>> entry : contexts.entrySet()) {
+            String genericName = entry.getKey();
+            if (!domains.containsKey(genericName) || !domains.get(genericName).generic()) {
+                emitRule(modelDecl, "CONTEXT domain must be GENERIC", "CONTEXT_GENERIC");
+                continue;
+            }
+            List<String> targets = entry.getValue();
+            if (targets.size() > 1 && used.contains(genericName)
+                    && !deferred.contains(genericName)) {
+                emitRule(modelDecl, "multiple CONTEXT alternatives require DEFERRED GENERICS",
+                        "GENERIC_DEFERRED_REQUIRED");
+            }
+            DomainDef genericDomain = domains.get(genericName);
+            for (String targetName : targets) {
+                String simple = lastSegment(targetName);
+                DomainDef target = domains.get(simple);
+                if (target == null) {
+                    continue;
+                }
+                int genericDimensions = coordinateDimensions(genericDomain.body());
+                int targetDimensions = coordinateDimensions(target.body());
+                if (target.base() == null && genericDimensions > 0 && targetDimensions > 0
+                        && genericDimensions != targetDimensions) {
+                    emitRule(modelDecl, "CONTEXT target dimensions differ",
+                            "GENERIC_DIMENSIONS");
+                }
+                if (target.base() == null && genericDimensions > 0
+                        && targetDimensions == genericDimensions
+                        && !rangesFit(genericDomain.body(), target.body())) {
+                    emitRule(modelDecl, "CONTEXT target range exceeds generic range",
+                            "GENERIC_RANGE");
+                }
+                if (target.base() != null && targets.size() > 1) {
+                    String base = lastSegment(target.base());
+                    if (!targets.stream().map(this::lastSegment).toList().contains(base)
+                            && base.equals(genericName)
+                            && target.base().contains(".")) {
+                        emitRule(modelDecl, "CONTEXT target must extend an existing alternative",
+                                "GENERIC_CONTEXT_EXTENDS");
+                    }
+                }
+            }
+        }
+    }
+
+    private Map<String, DomainDef> genericDomains(String text) {
+        Map<String, DomainDef> result = new LinkedHashMap<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(?is)([A-Za-z_][A-Za-z0-9_]*)\\s*(\\([^)]*\\))?\\s*"
+                        + "(?:EXTENDS\\s+([A-Za-z_][A-Za-z0-9_.]*)\\s*)?=\\s*"
+                        + "((?:COORD|TEXT|NUMERIC|BOOLEAN|CLASS|STRUCTURE|FORMAT|OID)\\b[^;]*);")
+                .matcher(text);
+        while (matcher.find()) {
+            String name = matcher.group(1);
+            boolean generic = matcher.group(2) != null
+                    && matcher.group(2).toUpperCase(java.util.Locale.ROOT).contains("(GENERIC)");
+            if (!name.startsWith("default")) {
+                result.put(name, new DomainDef(name, generic, matcher.group(3),
+                        matcher.group(4).trim()));
+            }
+        }
+        return result;
+    }
+
+    private Map<String, List<String>> genericContexts(String text) {
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        java.util.regex.Matcher block = java.util.regex.Pattern
+                .compile("(?is)\\bCONTEXT\\b(.*?)(?=\\bTOPIC\\b|\\bMODEL\\b|\\bEND\\b|$)")
+                .matcher(text);
+        while (block.find()) {
+            java.util.regex.Matcher entry = java.util.regex.Pattern
+                    .compile("(?is)([A-Za-z_][A-Za-z0-9_.]*)\\s*=\\s*"
+                            + "([A-Za-z_][A-Za-z0-9_.]*)\\s*=\\s*([^;]+);")
+                    .matcher(block.group(1));
+            while (entry.find()) {
+                String name = lastSegment(entry.group(2));
+                List<String> targets = new ArrayList<>();
+                for (String part : entry.group(3).split("(?i)\\bOR\\b")) {
+                    String target = part.trim();
+                    if (!target.isEmpty()) {
+                        targets.add(target);
+                    }
+                }
+                result.computeIfAbsent(name, ignored -> new ArrayList<>()).addAll(targets);
+            }
+        }
+        return result;
+    }
+
+    private Set<String> genericDeferred(String text) {
+        Set<String> result = new LinkedHashSet<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(?is)\\bDEFERRED\\s+GENERICS\\s+([^;]+);").matcher(text);
+        while (matcher.find()) {
+            for (String part : matcher.group(1).split(",")) {
+                String name = part.trim();
+                if (!name.isEmpty()) {
+                    result.add(lastSegment(name));
+                }
+            }
+        }
+        return result;
+    }
+
+    private Set<String> genericUsages(String text, Map<String, DomainDef> domains) {
+        Set<String> result = new LinkedHashSet<>();
+        for (String name : domains.keySet()) {
+            if (!domains.get(name).generic()) {
+                continue;
+            }
+            java.util.regex.Pattern usage = java.util.regex.Pattern.compile(
+                    "(?is)(?::|\\bVERTEX\\b)\\s*(?:[A-Za-z_][A-Za-z0-9_]*\\.)?"
+                            + java.util.regex.Pattern.quote(name) + "\\b");
+            if (usage.matcher(text).find()) {
+                result.add(name);
+            }
+        }
+        return result;
+    }
+
+    private int coordinateDimensions(String body) {
+        String upper = body.toUpperCase(java.util.Locale.ROOT);
+        int coord = upper.indexOf("COORD");
+        if (coord < 0) {
+            return 0;
+        }
+        String rest = body.substring(coord + "COORD".length());
+        List<String> axes = new ArrayList<>();
+        for (String part : rest.split(",")) {
+            String trimmed = part.trim();
+            if (trimmed.toUpperCase(java.util.Locale.ROOT).startsWith("ROTATION")) {
+                break;
+            }
+            if (!trimmed.isEmpty()) {
+                axes.add(trimmed);
+            }
+        }
+        return axes.size();
+    }
+
+    private boolean rangesFit(String genericBody, String targetBody) {
+        List<java.math.BigDecimal[]> genericRanges = axisRanges(genericBody);
+        List<java.math.BigDecimal[]> targetRanges = axisRanges(targetBody);
+        if (genericRanges.size() != targetRanges.size()) {
+            return true;
+        }
+        for (int i = 0; i < genericRanges.size(); i++) {
+            java.math.BigDecimal[] generic = genericRanges.get(i);
+            java.math.BigDecimal[] target = targetRanges.get(i);
+            if (generic == null || target == null) {
+                continue;
+            }
+            if (target[0].compareTo(generic[0]) < 0 || target[1].compareTo(generic[1]) > 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private List<java.math.BigDecimal[]> axisRanges(String body) {
+        String upper = body.toUpperCase(java.util.Locale.ROOT);
+        int coord = upper.indexOf("COORD");
+        if (coord < 0) {
+            return List.of();
+        }
+        List<java.math.BigDecimal[]> result = new ArrayList<>();
+        for (String part : body.substring(coord + "COORD".length()).split(",")) {
+            String trimmed = part.trim();
+            if (trimmed.toUpperCase(java.util.Locale.ROOT).startsWith("ROTATION")) {
+                break;
+            }
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("([-+]?[0-9.]+)\\s*\\.\\.\\s*([-+]?[0-9.]+)")
+                    .matcher(trimmed);
+            if (matcher.find()) {
+                result.add(new java.math.BigDecimal[]{new java.math.BigDecimal(matcher.group(1)),
+                        new java.math.BigDecimal(matcher.group(2))});
+            } else {
+                result.add(null);
+            }
+        }
+        return result;
+    }
+
+    private String lastSegment(String name) {
+        int dot = name.lastIndexOf('.');
+        return dot < 0 ? name : name.substring(dot + 1);
+    }
+
+    private record DomainDef(String name, boolean generic, String base, String body) {
+    }
+
     private void buildModel(IndexedDeclarations.ModelEntry entry) {
         DeclInfo decl = entry.declaration();
         guru.interlis.syntax.ModelSyntax modelSyntax = entry.model().syntax();
@@ -1770,30 +2009,6 @@ final class GraphBuilder {
             }
         }
         String modelText = declarationText(decl);
-        Set<String> genericDomains = new LinkedHashSet<>();
-        java.util.regex.Matcher genericMatcher = java.util.regex.Pattern
-                .compile("(?i)([A-Za-z_][A-Za-z0-9_]*)\\s*\\(GENERIC\\)")
-                .matcher(modelText);
-        while (genericMatcher.find()) {
-            genericDomains.add(genericMatcher.group(1));
-        }
-        java.util.regex.Matcher contextMatcher = java.util.regex.Pattern
-                .compile("(?is)CONTEXT\\s+[A-Za-z_][A-Za-z0-9_]*\\s*=(.*?)(?:\\bEND\\b|\\bTOPIC\\b|\\bMODEL\\b|$)")
-                .matcher(modelText);
-        while (contextMatcher.find()) {
-            java.util.regex.Matcher entryMatcher = java.util.regex.Pattern
-                    .compile("([A-Za-z_][A-Za-z0-9_.]*)\\s*=")
-                    .matcher(contextMatcher.group(1));
-            while (entryMatcher.find()) {
-                String domain = entryMatcher.group(1).contains(".")
-                        ? entryMatcher.group(1).substring(entryMatcher.group(1).lastIndexOf('.') + 1)
-                        : entryMatcher.group(1);
-                if (!genericDomains.contains(domain)
-                        && !genericDomains.contains(entryMatcher.group(1))) {
-                    emitRule(decl, "CONTEXT domain must be GENERIC", "CONTEXT_GENERIC");
-                }
-            }
-        }
         Set<String> importedModels = new LinkedHashSet<>();
         for (guru.interlis.syntax.ImportSyntax site : modelSyntax.imports()) {
             importedModels.add(site.modelName());

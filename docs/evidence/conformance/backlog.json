@@ -1,6 +1,6 @@
 {
   "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
-  "fails": 31,
+  "fails": 20,
   "entries": [
     {
       "testId": "ili23.Assoc23Test.assocComplete",
@@ -19,54 +19,6 @@
       ],
       "exitCode": 1,
       "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/assocComplete.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=ASSOCIATION_CARDINALITY, construct=ASSOCIATION_CARDINALITY)\n"
-    },
-    {
-      "testId": "ili23.Association23Test.association_AssociationAsTarget",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Assoziationen und Rollen",
-      "inputs": [
-        "test/data/ili23/association/association_AssociationAsTarget.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/association/association_AssociationAsTarget.ili:23:10: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=a2b)\n"
-    },
-    {
-      "testId": "ili23.Association23Test.association_RoleRefToAnyClass",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Assoziationen und Rollen",
-      "inputs": [
-        "test/data/ili23/association/association_RoleRefToAnyClass.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/association/association_RoleRefToAnyClass.ili:12:9: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=<missing-name>)\n"
-    },
-    {
-      "testId": "ili23.Association23Test.association_SameRolenameInDiffExtTopics",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Assoziationen und Rollen",
-      "inputs": [
-        "test/data/ili23/association/association_SameRolenameInDiffExtTopics.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/association/association_SameRolenameInDiffExtTopics.ili:18:8: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=a)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/association/association_SameRolenameInDiffExtTopics.ili:30:8: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=a)\n"
     },
     {
       "testId": "ili23.Attribute10Test.attributeComplete",
@@ -100,22 +52,6 @@
       "features": [],
       "exitCode": 1,
       "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attributeComplete.ili:24:27: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=ClassA1.ClassA3)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attributeComplete.ili:64:27: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=ClassB1.ClassB3)\n"
-    },
-    {
-      "testId": "ili23.Classes23Test.classExtension_AcceptingClassSpecOfExtClass",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Topics, Klassen und Strukturen",
-      "inputs": [
-        "test/data/ili23/class/classExtension_AcceptingClassSpecOfExtClass.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/class/classExtension_AcceptingClassSpecOfExtClass.ili:15:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Base, rule=EXTENDED class conflicts with a specialized base class/EXTENDED_CLASS_CONFLICT)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/class/classExtension_AcceptingClassSpecOfExtClass.ili:18:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Extends, rule=cannot extend a class marked EXTENDED/EXTENDED_BASE_CLASS)\n"
     },
     {
       "testId": "ili23.CoordType23Test.coordTypeComplete",
@@ -279,22 +215,6 @@
       "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/numericTypeComplete.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=METAOBJECT)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/numericTypeComplete.ili:17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=unsupported@308)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/numericTypeComplete.ili:48:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=unsupported@949)\n"
     },
     {
-      "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Metamodel-Fixtures als Compilerinput",
-      "inputs": [
-        "test/data/metamodel/ViewableGetAttributesAndRoles2.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/metamodel/ViewableGetAttributesAndRoles2.ili:24:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClassB, rule=EXTENDED class conflicts with a specialized base class/EXTENDED_CLASS_CONFLICT)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/metamodel/ViewableGetAttributesAndRoles2.ili:29:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClassC, rule=EXTENDED class conflicts with a specialized base class/EXTENDED_CLASS_CONFLICT)\n"
-    },
-    {
       "testId": "ili23.XMLGenerator23Test.association_GenerateXMLForAssocToEmbedTopic",
       "languageVersion": "2.3",
       "group": "ILI 2.3 \u2013 Zus\u00e4tzliche Compile-Fixtures",
@@ -308,7 +228,7 @@
       "primaryFeature": "UNCLASSIFIED",
       "features": [],
       "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/association/association_GenerateXMLForAssocToEmbedTopic.ili:18:28: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=A)\n"
+      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/association/association_GenerateXMLForAssocToEmbedTopic.ili:18:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a_embeddedInC, rule=cross-topic role requires EXTERNAL/ROLE_EXTERNAL)\n"
     },
     {
       "testId": "ili23.XMLGenerator23Test.association_GenerateXMLForAssocToNotEmbeddTopic",
@@ -324,7 +244,7 @@
       "primaryFeature": "UNCLASSIFIED",
       "features": [],
       "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/association/association_GenerateXMLForAssocToNotEmbeddTopic.ili:26:16: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=A)\n"
+      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/association/association_GenerateXMLForAssocToNotEmbeddTopic.ili:26:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a, rule=cross-topic role requires EXTERNAL/ROLE_EXTERNAL)\n"
     },
     {
       "testId": "ili23.XMLGenerator23Test.enumeration_GenerateXMLSchemaWithEnum",
@@ -409,118 +329,6 @@
       ],
       "exitCode": 1,
       "stderr": "fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:26: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=(, expected=<unknown>)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:27: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=a)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:28: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=,, expected=':=',';')\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:29: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=missing attribute type)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:30: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=,, expected='(',':')\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:31: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=missing attribute type)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:32: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=), expected='(',':')\n"
-    },
-    {
-      "testId": "ili24.GenericValueRanges24Test.contextInDifferentModel",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Generische Wertebereiche",
-      "inputs": [
-        "test/data/ili24/genericValueRanges/contextInDifferentModel.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "DEFERRED_GENERICS",
-      "features": [
-        "DEFERRED_GENERICS",
-        "GENERIC_DOMAIN"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInDifferentModel.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=DEFERRED_GENERICS, construct=DEFERRED_GENERICS)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInDifferentModel.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GENERIC_DOMAIN, construct=GENERIC_DOMAIN)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInDifferentModel.ili:16:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ModelB, rule=CONTEXT domain must be GENERIC/CONTEXT_GENERIC)\n"
-    },
-    {
-      "testId": "ili24.GenericValueRanges24Test.contextInSameModel",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Generische Wertebereiche",
-      "inputs": [
-        "test/data/ili24/genericValueRanges/contextInSameModel.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "DEFERRED_GENERICS",
-      "features": [
-        "DEFERRED_GENERICS",
-        "GENERIC_DOMAIN"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInSameModel.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=DEFERRED_GENERICS, construct=DEFERRED_GENERICS)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInSameModel.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GENERIC_DOMAIN, construct=GENERIC_DOMAIN)\n"
-    },
-    {
-      "testId": "ili24.GenericValueRanges24Test.genericInStructAttr",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Generische Wertebereiche",
-      "inputs": [
-        "test/data/ili24/genericValueRanges/GenericInStructAttr.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "DEFERRED_GENERICS",
-      "features": [
-        "DEFERRED_GENERICS",
-        "GENERIC_DOMAIN"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=DEFERRED_GENERICS, construct=DEFERRED_GENERICS)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GENERIC_DOMAIN, construct=GENERIC_DOMAIN)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr.ili:10:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ModelB, rule=CONTEXT domain must be GENERIC/CONTEXT_GENERIC)\n"
-    },
-    {
-      "testId": "ili24.GenericValueRanges24Test.multipleContexts",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Generische Wertebereiche",
-      "inputs": [
-        "test/data/ili24/genericValueRanges/multipleContexts.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "GENERIC_DOMAIN",
-      "features": [
-        "GENERIC_DOMAIN"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContexts.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GENERIC_DOMAIN, construct=GENERIC_DOMAIN)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContexts.ili:3:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ModelA, rule=CONTEXT domain must be GENERIC/CONTEXT_GENERIC)\n"
-    },
-    {
-      "testId": "ili24.GenericValueRanges24Test.multipleContextsB",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Generische Wertebereiche",
-      "inputs": [
-        "test/data/ili24/genericValueRanges/multipleContextsB.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "GENERIC_DOMAIN",
-      "features": [
-        "GENERIC_DOMAIN"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsB.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GENERIC_DOMAIN, construct=GENERIC_DOMAIN)\n"
-    },
-    {
-      "testId": "ili24.GenericValueRanges24Test.multipleContextsExtending",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Generische Wertebereiche",
-      "inputs": [
-        "test/data/ili24/genericValueRanges/multipleContextsExtending.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "DEFERRED_GENERICS",
-      "features": [
-        "DEFERRED_GENERICS",
-        "GENERIC_DOMAIN"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsExtending.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=DEFERRED_GENERICS, construct=DEFERRED_GENERICS)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsExtending.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GENERIC_DOMAIN, construct=GENERIC_DOMAIN)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsExtending.ili:33:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ModelB, rule=CONTEXT domain must be GENERIC/CONTEXT_GENERIC)\n"
     },
     {
       "testId": "ili24.Refhb24Test.roadsExgm2ien",

@@ -435,9 +435,6 @@ final class SyntaxTreeBuilder {
         Token nameToken = context.Name().isEmpty() ? null : context.Name(0).getSymbol();
         String name = nameToken == null ? "<missing-topic>" : nameToken.getText();
         Set<Modifier> modifiers = directModifiers(context);
-        if (context.DEFERRED() != null) {
-            unsupportedFeatures.add("DEFERRED_GENERICS");
-        }
         if (context.VIEW() != null) {
             modifiers.add(Modifier.VIEW);
         }
@@ -1599,9 +1596,6 @@ final class SyntaxTreeBuilder {
     private Set<Modifier> modifiers(ParserRuleContext context) {
         Set<Modifier> result = directModifiers(context);
         if (result.contains(Modifier.OID)) {
-        }
-        if (result.contains(Modifier.GENERIC)) {
-            unsupportedFeatures.add("GENERIC_DOMAIN");
         }
         return result;
     }

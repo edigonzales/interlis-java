@@ -134,21 +134,21 @@ jectNameFail
 [interlis-java] PASS   ili24.Attribute24Test.multiPolyline
 [interlis-java] PASS   ili24.Attribute24Test.multiSurface
 [interlis-java] PASS   ili24.Attribute24Test.multiArea
-[interlis-java] FAIL   ili24.GenericValueRanges24Test.contextInSameModel
-[interlis-java] FAIL   ili24.GenericValueRanges24Test.contextInDifferentModel
+[interlis-java] PASS   ili24.GenericValueRanges24Test.contextInSameModel
+[interlis-java] PASS   ili24.GenericValueRanges24Test.contextInDifferentModel
 [interlis-java] PASS   ili24.GenericValueRanges24Test.missingContext
 [interlis-java] PASS   ili24.GenericValueRanges24Test.invalidDimensions
 [interlis-java] PASS   ili24.GenericValueRanges24Test.invalidRange
 [interlis-java] PASS   ili24.GenericValueRanges24Test.contextDomainNotGeneric
-[interlis-java] FAIL   ili24.GenericValueRanges24Test.multipleContexts
-[interlis-java] FAIL   ili24.GenericValueRanges24Test.multipleContextsB
-[interlis-java] FAIL   ili24.GenericValueRanges24Test.multipleContextsExtending
+[interlis-java] PASS   ili24.GenericValueRanges24Test.multipleContexts
+[interlis-java] PASS   ili24.GenericValueRanges24Test.multipleContextsB
+[interlis-java] PASS   ili24.GenericValueRanges24Test.multipleContextsExtending
 [interlis-java] PASS   ili24.GenericValueRanges24Test.multipleContextsNotExtending
 [interlis-java] PASS   ili24.GenericValueRanges24Test.deferredDomainNoContext
 [interlis-java] PASS   ili24.GenericValueRanges24Test.invalidDeferredDomain
 [interlis-java] PASS   ili24.GenericValueRanges24Test.deferredMissing
 [interlis-java] PASS   ili24.GenericValueRanges24Test.deferredUnusedType
-[interlis-java] FAIL   ili24.GenericValueRanges24Test.genericInStructAttr
+[interlis-java] PASS   ili24.GenericValueRanges24Test.genericInStructAttr
 [interlis-java] PASS   ili24.GenericValueRanges24Test.genericInStructAttr_MissignDeferred_Fail
 [interlis-java] PASS   ili24.Expressions24Test.plus_numeric
 [interlis-java] PASS   ili24.Expressions24Test.plus_numeric_fail
@@ -160,6 +160,6 @@ jectNameFail
 [interlis-java] PASS   ili24.Expressions24Test.div_numeric_fail
 [interlis-java] PASS   ili24.Expressions24Test.implication
 [interlis-java] PASS   ili24.Expressions24Test.implication_fail
-Overall result: FAIL (PASS=567, XFAIL=0, FAIL=26, XPASS=0, ERROR=0)
+Overall result: FAIL (PASS=573, XFAIL=0, FAIL=20, XPASS=0, ERROR=0)
 Reports: <repo>/build/conformance
 
