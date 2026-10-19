@@ -22,7 +22,7 @@ vollständiger Closure und vollständiger Coverage ein `CompiledSchema` aus.
 Nicht implementierte Sprachkonstrukte werden als `NOT_IMPLEMENTED` sichtbar und
 blockieren den Compile.
 
-Verifiziert sind: **159 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
+Verifiziert sind: **164 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
 Node, Chromium/Firefox/WebKit über Playwright, ein tatsächlich ausgeführter
 GraalVM-Web-Image-Build samt Node- und Browservertrag (Chromium/Firefox/WebKit),
 CLI-Distribution und LSP-Adaptertest.
@@ -161,7 +161,7 @@ referenzierten JSON-Dateien.
 
 | Kommando | Ergebnis |
 |---|---|
-| `./gradlew check` | **BUILD SUCCESSFUL**, 159 Tests, 0 Fehler |
+| `./gradlew check` | **BUILD SUCCESSFUL**, 164 Tests, 0 Fehler |
 | `./gradlew :interlis-compiler:sdkExampleTest` | **SDK PASS**, Beispiel gegen gebaute JARs kompiliert und ausgeführt |
 | `python3 tools/reference/reference_check.py` | **5/5 PASS** gegen ili2c 5.6.9; kleiner gepinnter P1-Fallkorpus |
 | `./gradlew conformanceCheck` | **PASS**: 593 ausgewählte Fälle, 592 PASS/1 XFAIL/0 FAIL/0 ERROR; der XFAIL ist der out-of-scope INTERLIS1-Transferfall |
@@ -227,9 +227,10 @@ referenzierten JSON-Dateien.
 ## 9a. P2-Abschluss (WP-20..27, 2026-10-19)
 
 - Conformance: **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR** von 593 ausgewählten 2.3/2.4-Fällen.
-- JVM: **159 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
+- JVM: **164 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
 - Umgesetzt: Typfamilien (Temporal, OID/Blackbox/Alignment, FORMAT, CLASS/STRUCTURE-Werte), UNIT/unitRef, Domain-Enumerationen, Domain-Extends, Rollen-/Assoziationsregeln, Attribut-Overrides, Namens-/Endnamen-Regeln, Geometry-Typen und -Regeln, View-Deklarationen mit Alias-/Attributprüfungen, externe Constraint-Blöcke, UNIQUE-/SET-/Plausibility-Constraints, Enum-/Klassenkonstanten.
 - **WP-24 Translation:** Guard entfernt; Quellmodell/Version, Modellkopf, Imports, Token-/Namenskorrespondenz, Constraints, Modellreferenzen, Einheiten und Koordinaten werden validiert. **36/36 Single-Feature-Translation-Accept-Fälle PASS**, **0** Translation-Reject-False-Accepts; Nachweis in `docs/evidence/conformance/translation-summary.json`.
+- **P3-2 LSP (PARTIAL):** References, `prepareRename`, Multi-File-Rename-Planung mit Kollisions-/Stale-Pfaden, Endnamen, Format-CodeAction, Semantik-Tokens, Folding, Watched Files, Konfigurationsrefresh und Capability-Snapshot; offen sind belastbare Multi-File-External-Reference-, Read-only- und Missing-Source-Fixtures; Nachweis in `docs/evidence/p3/p3-2-summary.json`.
 - **P3-1 Formatierung/CLI:** `ModelFormatter`/`FormatOptions`/`FormatOutcome` und `interlis-cli format` mit stdout, `--write`, `--check`, `--indent` und `--line-ending`; Optionsinventar in `docs/evidence/p3/cli-options.md`, Abnahme in `p3-1-summary.json`; keine Generator-/IlisMeta-API.
 - **P2-Modellkopf:** `NOINCREMENTALTRANSFER`, `CHARSET` und `XMLNS` blockieren den Compile nicht mehr; `P2HeaderOptionsTest` deckt den 2.4-Modellkopf ab.
 - **WP-26 Repository:** **VERIFIED** – Standard-`ilimodels.xml`-Reader für 09/20-Profile, sichere relative URI-Auflösung, Pfad-Escape-/XXE-Schutz, `RepositoryClient` mit getrennten Lade-/Indexfehlern, digest-verifizierter `ContentStore`, unveränderlicher `RepositoryCatalog` mit stabiler Revision/Refresh und parallelem Refresh-Test; Nachweis in `docs/evidence/p2/repository-summary.json`.
@@ -245,9 +246,9 @@ referenzierten JSON-Dateien.
 ## 9. Nächster Arbeitsschritt (P3)
 
 P2 ist für den Compiler-Scope WP-20..27 abgeschlossen. **P3-1 (Formatierung und
-ili2c-CLI-Profil) ist VERIFIED.** Die weiteren P3-Goals sind noch offen:
-vollständige LSP-Fähigkeiten, TypeScript-Diagrammadapter, Performance auf dem
-gepinnten Geo-Korpus `https://geo.so.ch/models` und SDK-/CLI-Releases. Ein
+ili2c-CLI-Profil) ist VERIFIED. P3-2 (LSP-Vertiefung) ist PARTIAL.** Die weiteren
+P3-Goals sind offen: TypeScript-Diagrammadapter, Performance auf dem gepinnten
+Geo-Korpus `https://geo.so.ch/models` und SDK-/CLI-Releases. Ein
 Legacy-Java-API-Adapter ist derzeit nicht Bestandteil von P3.
 Vor jedem neuen Feature: positiven, negativen, Metamodell-/Query- und
 Portabilitätsfall gemeinsam ergänzen; `AnalysisCoverage`-Feature erst entfernen,

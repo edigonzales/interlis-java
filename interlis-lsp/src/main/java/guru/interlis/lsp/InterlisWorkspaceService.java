@@ -2,6 +2,7 @@ package guru.interlis.lsp;
 
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
+import org.eclipse.lsp4j.FileChangeType;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
@@ -26,10 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * P1 workspace service. File watching remains a no-op adapter hook; the
- * read-only diagram command uses the same analysis snapshot as navigation.
- */
+/** Workspace adapter: commands, configuration refresh and watched-file reload. */
 final class InterlisWorkspaceService implements WorkspaceService {
     static final String DIAGRAM_COMMAND = "interlis.diagram";
     static final String COMPILE_COMMAND = "interlis.compile";
@@ -52,12 +50,18 @@ final class InterlisWorkspaceService implements WorkspaceService {
 
     @Override
     public void didChangeConfiguration(DidChangeConfigurationParams params) {
-        // Configuration changes are host policy; the P1 server uses defaults.
+        documents.configurationChanged();
     }
 
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
-        // Repository-driven refresh is P2.
+        for (var event : params.getChanges()) {
+            if (event.getType() == FileChangeType.Deleted) {
+                continue;
+            }
+            documents.reloadExternal(event.getUri());
+        }
+        documents.reanalyzeOpen();
     }
 
     @Override

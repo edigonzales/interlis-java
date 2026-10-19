@@ -5,6 +5,9 @@ import org.eclipse.lsp4j.CompletionOptions;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
 import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.RenameOptions;
+import org.eclipse.lsp4j.SemanticTokensLegend;
+import org.eclipse.lsp4j.SemanticTokensWithRegistrationOptions;
 import org.eclipse.lsp4j.TextDocumentSyncKind;
 import org.eclipse.lsp4j.TextDocumentSyncOptions;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -57,6 +60,14 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
         capabilities.setDefinitionProvider(true);
         capabilities.setDocumentSymbolProvider(true);
         capabilities.setCompletionProvider(completion);
+        capabilities.setReferencesProvider(true);
+        capabilities.setRenameProvider(new RenameOptions(true));
+        capabilities.setCodeActionProvider(true);
+        capabilities.setDocumentFormattingProvider(true);
+        capabilities.setSemanticTokensProvider(new SemanticTokensWithRegistrationOptions(
+                new SemanticTokensLegend(List.of("keyword", "number", "string", "enumMember",
+                        "function", "variable", "property"), List.of()), true, false));
+        capabilities.setFoldingRangeProvider(true);
         return CompletableFuture.completedFuture(new InitializeResult(capabilities));
     }
 
@@ -94,5 +105,9 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
 
     InterlisTextDocumentService textDocumentsForTest() {
         return textDocuments;
+    }
+
+    Workspace workspaceForTest() {
+        return workspace;
     }
 }

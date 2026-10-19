@@ -8,6 +8,7 @@ import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.query.QueryResult;
+import guru.interlis.syntax.SyntaxToken;
 import guru.interlis.model.UnresolvedReason;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
@@ -21,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Default read-only language query implementation. */
 final class LanguageQueryService implements LanguageQueries {
@@ -32,7 +35,8 @@ final class LanguageQueryService implements LanguageQueries {
         token.throwIfCancellationRequested();
         Symbol match = null;
         for (Symbol symbol : snapshot.semanticGraph().symbols()) {
-            if (symbol.nameRange().filter(r -> contains(r, cursor.startOffset())).isPresent()) {
+            if (symbol.nameRange().filter(r -> contains(r, cursor.startOffset()))
+                    .filter(r -> r.length() == symbol.name().value().length()).isPresent()) {
                 if (match == null || width(symbol) < width(match)) {
                     match = symbol;
                 }
@@ -141,7 +145,8 @@ final class LanguageQueryService implements LanguageQueries {
                     .ifPresent(range -> occurrences.add(new ReferenceOccurrence(range,
                             new ReferenceId("declaration-" + symbol.symbol().value()))));
         }
-        return new ReferenceResult(occurrences, true, snapshot.snapshotId());
+        return new ReferenceResult(occurrences,
+                snapshot.coverage().incompleteEntries().isEmpty(), snapshot.snapshotId());
     }
 
     @Override
@@ -150,6 +155,9 @@ final class LanguageQueryService implements LanguageQueries {
         QueryResult<SymbolRef> symbol = symbolAt(snapshot, cursor, token);
         if (!(symbol instanceof QueryResult.Known<SymbolRef> known)) {
             return RenamePreparation.reject("no editable symbol at cursor");
+        }
+        if (!snapshot.coverage().incompleteEntries().isEmpty()) {
+            return RenamePreparation.reject("analysis is incomplete");
         }
         Symbol resolved = snapshot.semanticGraph().symbol(known.value().symbol()).orElse(null);
         if (resolved == null || resolved.name().synthetic() || resolved.nameRange().isEmpty()) {
@@ -162,23 +170,46 @@ final class LanguageQueryService implements LanguageQueries {
     public RenamePlan planRename(AnalysisSnapshot snapshot, RenameRequest request,
                                  CancellationToken token) {
         Objects.requireNonNull(snapshot, "snapshot");
+        if (!snapshot.coverage().incompleteEntries().isEmpty()) {
+            return new RenamePlan(List.of(), List.of(request.symbol()), false,
+                    Optional.of("analysis is incomplete"));
+        }
         Symbol resolved = snapshot.semanticGraph().symbol(request.symbol().symbol()).orElse(null);
         if (resolved == null || resolved.name().synthetic() || resolved.nameRange().isEmpty()) {
             return new RenamePlan(List.of(), List.of(request.symbol()), false,
                     Optional.of("symbol is not editable"));
         }
+        boolean collision = snapshot.semanticGraph().symbols().stream()
+                .filter(symbol -> !symbol.id().equals(resolved.id()))
+                .filter(symbol -> symbol.kind() == resolved.kind())
+                .filter(symbol -> symbol.owner().equals(resolved.owner()))
+                .anyMatch(symbol -> symbol.name().value().equals(request.newName()));
+        if (collision) {
+            return new RenamePlan(List.of(), List.of(request.symbol()), false,
+                    Optional.of("name collision"));
+        }
         Map<SourceId, List<TextEdit>> edits = new LinkedHashMap<>();
+        Map<SourceId, Set<SourceRange>> seen = new LinkedHashMap<>();
         SourceRange declaration = resolved.nameRange().get();
-        edits.computeIfAbsent(declaration.source(), ignored -> new ArrayList<>())
-                .add(new TextEdit(declaration, request.newName()));
+        addEdit(edits, seen, declaration, request.newName());
         for (var reference : snapshot.queries().referencesTo(request.symbol())) {
             for (var segment : reference.segments()) {
-                if (segment.target().filter(request.symbol().symbol()::equals).isPresent()) {
-                    edits.computeIfAbsent(segment.range().source(), ignored -> new ArrayList<>())
-                            .add(new TextEdit(segment.range(), request.newName()));
+                if (segment.target().filter(request.symbol().symbol()::equals).isPresent()
+                        && segment.range().length() == resolved.name().value().length()) {
+                    addEdit(edits, seen, segment.range(), request.newName());
                 }
             }
         }
+        // END names are part of the declaration surface but are not semantic references.
+        snapshot.syntaxSnapshot(declaration.source()).ifPresent(syntax -> {
+            List<SyntaxToken> tokens = syntax.tokens();
+            for (int i = 0; i + 1 < tokens.size(); i++) {
+                if ("END".equalsIgnoreCase(tokens.get(i).text())
+                        && resolved.name().value().equals(tokens.get(i + 1).text())) {
+                    addEdit(edits, seen, tokens.get(i + 1).range(), request.newName());
+                }
+            }
+        });
         List<DocumentEdit> documents = new ArrayList<>();
         for (Map.Entry<SourceId, List<TextEdit>> entry : edits.entrySet()) {
             SourceRevision expected = snapshot.sourceRevisions().get(entry.getKey());
@@ -206,6 +237,18 @@ final class LanguageQueryService implements LanguageQueries {
             documents.add(new DocumentEdit(entry.getKey(), expected, sorted));
         }
         return new RenamePlan(documents, List.of(request.symbol()), true, Optional.empty());
+    }
+
+    private static void addEdit(Map<SourceId, List<TextEdit>> edits,
+                                Map<SourceId, Set<SourceRange>> seen,
+                                SourceRange range, String replacement) {
+        Set<SourceRange> ranges = seen.computeIfAbsent(range.source(), ignored -> new HashSet<>());
+        boolean sameStart = ranges.stream()
+                .anyMatch(existing -> existing.startOffset() == range.startOffset());
+        if (!sameStart && ranges.add(range)) {
+            edits.computeIfAbsent(range.source(), ignored -> new ArrayList<>())
+                    .add(new TextEdit(range, replacement));
+        }
     }
 
     private static void validateCursor(AnalysisSnapshot snapshot, SourceRange cursor) {

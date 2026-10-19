@@ -77,11 +77,12 @@ Command: `./gradlew check`
 | `guru.interlis.projection.CrossSnapshotReferenceTest` | 1 | 0 |
 | `guru.interlis.wasm.bridge.BridgeDispatcherTest` | 3 | 0 |
 | `guru.interlis.lsp.LspServerTest` | 4 | 0 |
+| `guru.interlis.lsp.LspFeatureTest` | 5 | 0 |
 | `guru.interlis.lsp.LspProcessTest` | 1 | 0 |
 | `guru.interlis.lsp.LspProtocolCancellationTest` | 1 | 0 |
 | `guru.interlis.lsp.LspErrorContractTest` | 1 | 0 |
 | `guru.interlis.cli.CliApplicationTest` | 8 | 0 |
-| **Total** | **159** | **0** |
+| **Total** | **164** | **0** |
 
 The Gradle test reports are generated under `<module>/build/test-results/test/`.
 

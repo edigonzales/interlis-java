@@ -6,6 +6,14 @@ import guru.interlis.compiler.query.CompletionQuery;
 import guru.interlis.compiler.query.CompletionResult;
 import guru.interlis.compiler.query.DefinitionTarget;
 import guru.interlis.compiler.query.HoverInfo;
+import guru.interlis.compiler.query.ReferenceOptions;
+import guru.interlis.compiler.query.ReferenceResult;
+import guru.interlis.compiler.query.RenamePlan;
+import guru.interlis.compiler.query.RenamePreparation;
+import guru.interlis.compiler.query.RenameRequest;
+import guru.interlis.format.FormatOptions;
+import guru.interlis.format.FormatOutcome;
+import guru.interlis.format.ModelFormatters;
 import guru.interlis.compiler.query.LanguageQueries;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticArgument;
@@ -25,11 +33,15 @@ import guru.interlis.projection.DiagramSelection;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
 import guru.interlis.source.SourceText;
+import guru.interlis.syntax.SyntaxToken;
 import guru.interlis.workspace.AnalysisRequest;
 import guru.interlis.workspace.SourceChange;
 import guru.interlis.workspace.SourceExpectation;
 import guru.interlis.workspace.SourceUpdate;
 import guru.interlis.workspace.Workspace;
+import org.eclipse.lsp4j.CodeAction;
+import org.eclipse.lsp4j.CodeActionParams;
+import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
@@ -41,8 +53,21 @@ import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.DocumentFormattingParams;
+import org.eclipse.lsp4j.FoldingRange;
+import org.eclipse.lsp4j.FoldingRangeRequestParams;
+import org.eclipse.lsp4j.SemanticTokens;
+import org.eclipse.lsp4j.SemanticTokensParams;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.Hover;
+import org.eclipse.lsp4j.PrepareRenameDefaultBehavior;
+import org.eclipse.lsp4j.PrepareRenameParams;
+import org.eclipse.lsp4j.Range;
+import org.eclipse.lsp4j.ReferenceParams;
+import org.eclipse.lsp4j.RenameParams;
+import org.eclipse.lsp4j.RenameOptions;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.MarkupContent;
@@ -54,6 +79,10 @@ import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.jsonrpc.messages.Either3;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseError;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import java.util.ArrayList;
@@ -205,6 +234,232 @@ final class InterlisTextDocumentService implements TextDocumentService {
             }
         }
         return CompletableFuture.completedFuture(result);
+    }
+
+    @Override
+    public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
+        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+        SourceRange cursor = cursor(state, params.getPosition());
+        QueryResult<SymbolRef> selected = queries.symbolAt(state.analysis, cursor,
+                CancellationToken.none());
+        if (!(selected instanceof QueryResult.Known<SymbolRef> known)) {
+            return CompletableFuture.completedFuture(List.of());
+        }
+        boolean includeDeclaration = params.getContext() == null
+                || params.getContext().isIncludeDeclaration();
+        ReferenceResult result = queries.references(state.analysis, known.value(),
+                new ReferenceOptions(includeDeclaration), CancellationToken.none());
+        List<Location> locations = new ArrayList<>();
+        for (var occurrence : result.references()) {
+            SourceText source = workspace.source(occurrence.range().source()).orElse(null);
+            if (source != null && source.revision().equals(occurrence.range().revision())) {
+                locations.add(new Location(occurrence.range().source().value(),
+                        toLspRange(source, occurrence.range())));
+            }
+        }
+        return CompletableFuture.completedFuture(locations);
+    }
+
+    @Override
+    public CompletableFuture<Either3<Range, org.eclipse.lsp4j.PrepareRenameResult,
+            PrepareRenameDefaultBehavior>> prepareRename(PrepareRenameParams params) {
+        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+        RenamePreparation preparation = queries.prepareRename(state.analysis,
+                cursor(state, params.getPosition()), CancellationToken.none());
+        if (!preparation.allowed()) {
+            return failed(ResponseErrorCode.RequestFailed,
+                    preparation.reason().orElse("rename is not allowed"));
+        }
+        SourceRange range = preparation.range().orElseThrow();
+        if (!documents.containsKey(range.source().value())) {
+            return failed(ResponseErrorCode.RequestFailed,
+                    "rename target is not an editable open source");
+        }
+        return CompletableFuture.completedFuture(Either3.forFirst(
+                toLspRange(state.source, range)));
+    }
+
+    @Override
+    public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
+        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+        QueryResult<SymbolRef> selected = queries.symbolAt(state.analysis,
+                cursor(state, params.getPosition()), CancellationToken.none());
+        if (!(selected instanceof QueryResult.Known<SymbolRef> known)) {
+            return failed(ResponseErrorCode.RequestFailed, "no editable symbol at cursor");
+        }
+        RenamePlan plan;
+        try {
+            plan = queries.planRename(state.analysis, new RenameRequest(known.value(),
+                    params.getNewName(), state.analysis.sourceRevisions()),
+                    CancellationToken.none());
+        } catch (IllegalArgumentException invalidName) {
+            return failed(ResponseErrorCode.InvalidParams, invalidName.getMessage());
+        }
+        if (!plan.complete()) {
+            ResponseErrorCode code = plan.reason().orElse("").equals("CONTENT_MODIFIED")
+                    ? ResponseErrorCode.ContentModified : ResponseErrorCode.RequestFailed;
+            return failed(code, plan.reason().orElse("rename could not be planned"));
+        }
+        Map<String, List<TextEdit>> changes = new LinkedHashMap<>();
+        for (var document : plan.edits()) {
+            if (!documents.containsKey(document.source().value())) {
+                return failed(ResponseErrorCode.RequestFailed,
+                        "rename would modify a non-open/read-only source: "
+                                + document.source().value());
+            }
+            SourceText source = workspace.source(document.source()).orElse(null);
+            if (source == null || !source.revision().equals(document.expected())) {
+                return failed(ResponseErrorCode.ContentModified, "CONTENT_MODIFIED");
+            }
+            List<TextEdit> edits = document.edits().stream()
+                    .map(edit -> new TextEdit(toLspRange(source, edit.range()),
+                            edit.replacement()))
+                    .toList();
+            changes.put(document.source().value(), edits);
+        }
+        WorkspaceEdit edit = new WorkspaceEdit();
+        edit.setChanges(changes);
+        return CompletableFuture.completedFuture(edit);
+    }
+
+    @Override
+    public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
+        DocumentState state = requireState(new Position(0, 0), params.getTextDocument());
+        FormatOutcome outcome = ModelFormatters.create().format(state.source,
+                FormatOptions.defaults(), CancellationToken.none());
+        if (!(outcome instanceof FormatOutcome.Formatted formatted)
+                || formatted.text().equals(state.source.text())) {
+            return CompletableFuture.completedFuture(List.of());
+        }
+        return CompletableFuture.completedFuture(List.of(new TextEdit(
+                toLspRange(state.source, state.source.range(0, state.source.length())),
+                formatted.text())));
+    }
+
+    @Override
+    public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
+        DocumentState state = requireState(params.getRange().getStart(), params.getTextDocument());
+        FormatOutcome outcome = ModelFormatters.create().format(state.source,
+                FormatOptions.defaults(), CancellationToken.none());
+        if (!(outcome instanceof FormatOutcome.Formatted formatted)
+                || formatted.text().equals(state.source.text())) {
+            return CompletableFuture.completedFuture(List.of());
+        }
+        CodeAction action = new CodeAction("Format INTERLIS source");
+        action.setKind("source.format");
+        WorkspaceEdit edit = new WorkspaceEdit();
+        edit.setChanges(Map.of(state.sourceId.value(), List.of(new TextEdit(
+                toLspRange(state.source, state.source.range(0, state.source.length())),
+                formatted.text()))));
+        action.setEdit(edit);
+        return CompletableFuture.completedFuture(List.of(Either.forRight(action)));
+    }
+
+    synchronized void configurationChanged() {
+        reanalyzeOpen();
+    }
+
+    synchronized void reloadExternal(String uri) {
+        if (documents.containsKey(uri) || !uri.startsWith("file:")) {
+            return;
+        }
+        try {
+            java.net.URI fileUri = java.net.URI.create(uri);
+            guru.interlis.repository.FileSourceLoader loader =
+                    new guru.interlis.repository.FileSourceLoader(java.nio.file.Path.of("."));
+            var loaded = loader.load(new guru.interlis.repository.SourceLocator(
+                            java.nio.file.Path.of(fileUri).toString()),
+                    guru.interlis.repository.FetchPolicy.defaults(), CancellationToken.none());
+            SourceId sourceId = new SourceId(uri);
+            var existing = workspace.source(sourceId);
+            if (existing.isPresent() && existing.get().text().equals(loaded.text())) {
+                return;
+            }
+            SourceExpectation expectation = existing
+                    .<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
+                    .orElseGet(SourceExpectation.Absent::new);
+            workspace.update(new SourceUpdate(sourceId, expectation,
+                    new SourceChange.Replace(loaded.text())));
+        } catch (RuntimeException ignored) {
+            // A watched file may disappear between notification and read.
+        }
+    }
+
+    synchronized void reanalyzeOpen() {
+        for (String uri : List.copyOf(documents.keySet())) {
+            DocumentState state = documents.get(uri);
+            if (state != null) {
+                analyze(uri, state.lspVersion);
+            }
+        }
+    }
+
+    private static <T> CompletableFuture<T> failed(ResponseErrorCode code, String message) {
+        return CompletableFuture.failedFuture(new ResponseErrorException(
+                new ResponseError(code, message, null)));
+    }
+
+    @Override
+    public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
+        DocumentState state = requireState(new Position(0, 0), params.getTextDocument());
+        List<Integer> data = semanticTokens(state);
+        return CompletableFuture.completedFuture(new SemanticTokens(data));
+    }
+
+    @Override
+    public CompletableFuture<List<FoldingRange>> foldingRange(FoldingRangeRequestParams params) {
+        DocumentState state = requireState(new Position(0, 0), params.getTextDocument());
+        List<FoldingRange> ranges = new ArrayList<>();
+        for (Symbol symbol : state.analysis.semanticGraph().declarationsInOrder()) {
+            if (symbol.origin() instanceof guru.interlis.model.Origin.DeclaredOrigin declared
+                    && declared.range().source().equals(state.sourceId)) {
+                var range = toLspRange(state.source, declared.range());
+                if (range.getEnd().getLine() > range.getStart().getLine()) {
+                    ranges.add(new FoldingRange(range.getStart().getLine(),
+                            range.getEnd().getLine()));
+                }
+            }
+        }
+        ranges.sort(Comparator.comparingInt(FoldingRange::getStartLine)
+                .thenComparingInt(FoldingRange::getEndLine));
+        return CompletableFuture.completedFuture(ranges);
+    }
+
+    private static List<Integer> semanticTokens(DocumentState state) {
+        List<SyntaxToken> tokens = new ArrayList<>();
+        for (SyntaxToken token : state.analysis.syntaxSnapshot(state.sourceId)
+                .map(snapshot -> snapshot.tokens()).orElse(List.of())) {
+            if (token.kind() != guru.interlis.syntax.TokenKind.EOF
+                    && token.kind() != guru.interlis.syntax.TokenKind.PUNCTUATION) {
+                tokens.add(token);
+            }
+        }
+        tokens.sort(Comparator.comparingInt(token -> token.range().startOffset()));
+        List<Integer> data = new ArrayList<>();
+        int lastLine = 0;
+        int lastCharacter = 0;
+        for (SyntaxToken token : tokens) {
+            var start = state.source.lineMap().positionAt(token.range().startOffset());
+            int type = switch (token.kind()) {
+                case KEYWORD -> 0;
+                case NUMBER -> 1;
+                case STRING -> 2;
+                case IDENTIFIER -> 5;
+                default -> 6;
+            };
+            int deltaLine = start.line() - lastLine;
+            int deltaCharacter = deltaLine == 0 ? start.character() - lastCharacter
+                    : start.character();
+            int length = Math.max(1, token.range().length());
+            data.add(deltaLine);
+            data.add(deltaCharacter);
+            data.add(length);
+            data.add(type);
+            data.add(0);
+            lastLine = start.line();
+            lastCharacter = start.character();
+        }
+        return data;
     }
 
     CompletableFuture<String> diagram(DiagramParams params) {
