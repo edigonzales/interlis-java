@@ -15,6 +15,7 @@ Command: `./gradlew check`
 | `guru.interlis.model.DecimalLiteralTest` | 3 | 0 |
 | `guru.interlis.compiler.SyntaxContractTest` | 4 | 0 |
 | `guru.interlis.compiler.FragmentParserTest` | 4 | 0 |
+| `guru.interlis.compiler.LanguageProfileContractTest` | 3 | 0 |
 | `guru.interlis.compiler.CompilerEngineTest` | 5 | 0 |
 | `guru.interlis.compiler.ArchitectureBoundaryTest` | 1 | 0 |
 | `guru.interlis.compiler.SnapshotOwnershipTest` | 1 | 0 |
@@ -74,7 +75,7 @@ Command: `./gradlew check`
 | `guru.interlis.lsp.LspProtocolCancellationTest` | 1 | 0 |
 | `guru.interlis.lsp.LspErrorContractTest` | 1 | 0 |
 | `guru.interlis.cli.CliApplicationTest` | 5 | 0 |
-| **Total** | **138** | **0** |
+| **Total** | **141** | **0** |
 
 The Gradle test reports are generated under `<module>/build/test-results/test/`.
 

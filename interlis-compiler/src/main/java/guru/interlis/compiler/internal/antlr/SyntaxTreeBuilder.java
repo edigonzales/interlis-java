@@ -102,6 +102,8 @@ final class SyntaxTreeBuilder {
     private long nodeCounter;
     private final Set<String> unsupportedFeatures = new LinkedHashSet<>();
     private final List<SourceRange> recoveredRanges = new ArrayList<>();
+    private final List<LanguageProfile.Feature> versionViolations = new ArrayList<>();
+    private final List<SourceRange> versionViolationRanges = new ArrayList<>();
 
     SyntaxTreeBuilder(SourceText source, AntlrOffsetMap offsets,
                       CommonTokenStream tokenStream, LanguageVersion language) {
@@ -117,6 +119,14 @@ final class SyntaxTreeBuilder {
 
     List<SourceRange> recoveredRanges() {
         return List.copyOf(recoveredRanges);
+    }
+
+    List<LanguageProfile.Feature> versionViolations() {
+        return List.copyOf(versionViolations);
+    }
+
+    List<SourceRange> versionViolationRanges() {
+        return List.copyOf(versionViolationRanges);
     }
 
     DocumentSyntax build(InterlisParser.Interlis2defContext context) {
@@ -1323,8 +1333,10 @@ final class SyntaxTreeBuilder {
                     nameFromContext(restricted.referenceAttr().restrictedClassOrAssRef()),
                     restricted.referenceAttr().EXTERNAL() != null);
         } else if (restricted.enumeration() != null) {
-            if (language == LanguageVersion.ILI23) {
-                unsupportedFeatures.add("ENUM_COLLECTION_ILI23");
+            if (!LanguageProfile.supports(language,
+                    LanguageProfile.Feature.INLINE_ENUM_COLLECTION)) {
+                versionViolations.add(LanguageProfile.Feature.INLINE_ENUM_COLLECTION);
+                versionViolationRanges.add(range(restricted.enumeration()));
             }
             element = enumerationType(restricted.enumeration());
         } else {

@@ -95,17 +95,20 @@ public final class AntlrSyntaxService implements SyntaxService {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         tokens.fill();
 
-        if (effectiveDetection.version().orElse(null) == LanguageVersion.ILI23) {
-            for (Token token : tokens.getTokens()) {
-                if (token.getType() == InterlisLexer.MULTICOORD) {
+        LanguageVersion profileVersion = effectiveDetection.version().orElse(LanguageVersion.ILI23);
+        for (Token token : tokens.getTokens()) {
+            LanguageProfile.featureForToken(token.getType()).ifPresent(feature -> {
+                if (!LanguageProfile.supports(profileVersion, feature)) {
                     collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0006"),
                                     Severity.ERROR, Phase.PARSING,
                                     "diagnostic.syntax.versionConstruct")
                             .at(offsets.tokenRange(token))
-                            .argument(new DiagnosticArgument.TextArgument("construct", "MULTICOORD"))
-                            .argument(new DiagnosticArgument.TextArgument("language", "2.3")));
+                            .argument(new DiagnosticArgument.TextArgument("construct",
+                                    feature.label()))
+                            .argument(new DiagnosticArgument.TextArgument("language",
+                                    profileVersion.literal())));
                 }
-            }
+            });
         }
 
         InterlisParser parser = new InterlisParser(tokens);
@@ -163,6 +166,16 @@ public final class AntlrSyntaxService implements SyntaxService {
                     source.range(source.length(), source.length()), List.of());
             return snapshotWithBudget(source, options, effectiveDetection, tokens, offsets,
                     collector, document, builder, budgetError);
+        }
+        for (int i = 0; i < builder.versionViolations().size(); i++) {
+            LanguageProfile.Feature feature = builder.versionViolations().get(i);
+            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0006"),
+                            Severity.ERROR, Phase.PARSING,
+                            "diagnostic.syntax.versionConstruct")
+                    .at(builder.versionViolationRanges().get(i))
+                    .argument(new DiagnosticArgument.TextArgument("construct", feature.label()))
+                    .argument(new DiagnosticArgument.TextArgument("language",
+                            language.literal())));
         }
         List<Diagnostic> diagnostics = collector.freeze();
         SyntaxCoverage coverage = new SyntaxCoverage(consumed,

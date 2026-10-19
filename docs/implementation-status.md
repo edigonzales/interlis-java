@@ -22,7 +22,7 @@ vollständiger Closure und vollständiger Coverage ein `CompiledSchema` aus.
 Nicht implementierte Sprachkonstrukte werden als `NOT_IMPLEMENTED` sichtbar und
 blockieren den Compile.
 
-Verifiziert sind: **138 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
+Verifiziert sind: **141 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
 Node, Chromium/Firefox/WebKit über Playwright, ein tatsächlich ausgeführter
 GraalVM-Web-Image-Build samt Node- und Browservertrag (Chromium/Firefox/WebKit),
 CLI-Distribution und LSP-Adaptertest.
@@ -160,7 +160,7 @@ referenzierten JSON-Dateien.
 
 | Kommando | Ergebnis |
 |---|---|
-| `./gradlew check` | **BUILD SUCCESSFUL**, 138 Tests, 0 Fehler |
+| `./gradlew check` | **BUILD SUCCESSFUL**, 141 Tests, 0 Fehler |
 | `./gradlew :interlis-compiler:sdkExampleTest` | **SDK PASS**, Beispiel gegen gebaute JARs kompiliert und ausgeführt |
 | `python3 tools/reference/reference_check.py` | **5/5 PASS** gegen ili2c 5.6.9; kleiner gepinnter P1-Fallkorpus |
 | `./gradlew conformanceCheck` | **PASS**: 593 ausgewählte Fälle, 592 PASS/1 XFAIL/0 FAIL/0 ERROR; der XFAIL ist der out-of-scope INTERLIS1-Transferfall |
@@ -205,9 +205,10 @@ referenzierten JSON-Dateien.
 3. **Web Image und Safari.** Der Web-Image-Pfad wurde unter Node und in
    Chromium, Firefox und Playwright-WebKit ausgeführt. TeaVM wurde zusätzlich in
    echtem Safari geprüft; der Web-Image-Safari-Pfad ist nicht separat gelaufen.
-4. **P2-Semantik.** Der P2-Audit (WP-20..27) läuft; die historische
-   Sammelaussage zu fehlenden Typ-/View-/Metaobject-Familien ist nicht mehr
-   aktuell und wird im P2-Abschluss durch eine belastbare WP-Matrix ersetzt.
+4. **P2-Semantik.** Der P2-Audit (WP-20..27) läuft in
+   `docs/evidence/p2/wp-audit.md`; die historische Sammelaussage zu fehlenden
+   Typ-/View-/Metaobject-Familien ist nicht mehr aktuell und wird im
+   P2-Abschluss durch eine belastbare WP-Matrix ersetzt.
 5. **Fragmentanalyse:** `parseFragment` ist implementiert und mit
    `FragmentParserTest` für Ausdruck, Objektpfad, Attributdeklaration,
    Originalkoordinaten und Trailing-Content abgedeckt.
@@ -225,9 +226,10 @@ referenzierten JSON-Dateien.
 ## 9a. P2-Zwischenstand (WP-23/WP-24 abgeschlossen, 2026-10-18)
 
 - Conformance: **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR** von 593 ausgewählten 2.3/2.4-Fällen.
-- JVM: **138 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
+- JVM: **141 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
 - Umgesetzt: Typfamilien (Temporal, OID/Blackbox/Alignment, FORMAT, CLASS/STRUCTURE-Werte), UNIT/unitRef, Domain-Enumerationen, Domain-Extends, Rollen-/Assoziationsregeln, Attribut-Overrides, Namens-/Endnamen-Regeln, Geometry-Typen und -Regeln, View-Deklarationen mit Alias-/Attributprüfungen, externe Constraint-Blöcke, UNIQUE-/SET-/Plausibility-Constraints, Enum-/Klassenkonstanten.
 - **WP-24 Translation:** Guard entfernt; Quellmodell/Version, Modellkopf, Imports, Token-/Namenskorrespondenz, Constraints, Modellreferenzen, Einheiten und Koordinaten werden validiert. **36/36 Single-Feature-Translation-Accept-Fälle PASS**, **0** Translation-Reject-False-Accepts; Nachweis in `docs/evidence/conformance/translation-summary.json`.
+- **Sprachprofil/Keyword-Matrix:** `MULTICOORD`, `GENERIC`, `DEFERRED GENERICS`, `CONTEXT` und Inline-Enum-Collections werden versionsabhängig geprüft; `LanguageProfileContractTest` deckt 2.3-Ablehnung und 2.4-Akzeptanz ab.
 - **Rollenpfad-Ausdrücke:** `ilimanual_CoordSys` und `ilimanual_CoordSysAppendix` PASS; 0 False Accepts; Nachweis in `docs/evidence/conformance/role-path-summary.json`.
 - **Domain-/Unit-Klassifikation:** `ExtendedAttr` PASS, `ExtendedAttrFail` abgelehnt; Nachweis in `docs/evidence/conformance/domain-unit-summary.json`.
 - **XML/Metaobject/ROLE:** alle XML-Generator-, XSD-, Metaobject- und ROLE-Fälle PASS; 0 False Accepts; Nachweis in `docs/evidence/conformance/xml-meta-role-summary.json`.
