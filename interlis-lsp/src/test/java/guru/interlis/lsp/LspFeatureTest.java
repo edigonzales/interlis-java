@@ -108,6 +108,81 @@ class LspFeatureTest {
     }
 
     @Test
+    void renameAcrossOpenImportedSourceProducesMultiFileEdit() throws Exception {
+        Path testdata = Path.of(System.getProperty("testdata.dir", "../testdata"));
+        Path basePath = testdata.resolve("models/base24.ili");
+        Path surveyPath = testdata.resolve("models/survey24.ili");
+        String base = Files.readString(basePath);
+        String survey = Files.readString(surveyPath);
+        String baseUri = basePath.toAbsolutePath().toUri().toString();
+        String surveyUri = surveyPath.toAbsolutePath().toUri().toString();
+        InterlisLanguageServer server = server();
+        InterlisTextDocumentService documents = server.textDocumentsForTest();
+        documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(baseUri, "interlis",
+                1, base)));
+        documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(surveyUri, "interlis",
+                1, survey)));
+        int line = 12;
+        int character = survey.split("\n")[line].lastIndexOf("Count");
+        WorkspaceEdit edit = documents.rename(new RenameParams(
+                new TextDocumentIdentifier(surveyUri), new Position(line, character),
+                "RenamedCount")).get(2, TimeUnit.SECONDS);
+        assertTrue(edit.getChanges().containsKey(baseUri), edit.getChanges().toString());
+        assertTrue(edit.getChanges().containsKey(surveyUri), edit.getChanges().toString());
+        server.shutdown().get(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void renameOfClosedImportedSourceIsRejectedAsReadOnly() throws Exception {
+        Path testdata = Path.of(System.getProperty("testdata.dir", "../testdata"));
+        Path basePath = testdata.resolve("models/base24.ili");
+        Path surveyPath = testdata.resolve("models/survey24.ili");
+        String base = Files.readString(basePath);
+        String survey = Files.readString(surveyPath);
+        String baseUri = basePath.toAbsolutePath().toUri().toString();
+        String surveyUri = surveyPath.toAbsolutePath().toUri().toString();
+        InterlisLanguageServer server = server();
+        var baseId = new guru.interlis.source.SourceId(baseUri);
+        server.workspaceForTest().update(new guru.interlis.workspace.SourceUpdate(baseId,
+                new guru.interlis.workspace.SourceExpectation.Absent(),
+                new guru.interlis.workspace.SourceChange.Replace(base)));
+        InterlisTextDocumentService documents = server.textDocumentsForTest();
+        documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(surveyUri, "interlis",
+                1, survey)));
+        int line = 12;
+        int character = survey.split("\n")[line].lastIndexOf("Count");
+        ExecutionException failure = org.junit.jupiter.api.Assertions.assertThrows(
+                ExecutionException.class, () -> documents.rename(new RenameParams(
+                        new TextDocumentIdentifier(surveyUri), new Position(line, character),
+                        "RenamedCount")).get(2, TimeUnit.SECONDS));
+        assertTrue(failure.getCause().getMessage().contains("read-only"),
+                failure.getCause().getMessage());
+        server.shutdown().get(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void missingImportedSourceCannotPrepareRename() throws Exception {
+        Path testdata = Path.of(System.getProperty("testdata.dir", "../testdata"));
+        Path surveyPath = testdata.resolve("models/survey24.ili");
+        String survey = Files.readString(surveyPath);
+        String surveyUri = surveyPath.toAbsolutePath().toUri().toString();
+        InterlisLanguageServer server = server();
+        InterlisTextDocumentService documents = server.textDocumentsForTest();
+        documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(surveyUri, "interlis",
+                1, survey)));
+        int line = 12;
+        int character = survey.split("\n")[line].lastIndexOf("Count");
+        ExecutionException failure = org.junit.jupiter.api.Assertions.assertThrows(
+                ExecutionException.class, () -> documents.prepareRename(new PrepareRenameParams(
+                        new TextDocumentIdentifier(surveyUri), new Position(line, character)))
+                        .get(2, TimeUnit.SECONDS));
+        assertTrue(failure.getCause().getMessage().contains("analysis is incomplete")
+                        || failure.getCause().getMessage().contains("no editable symbol"),
+                failure.getCause().getMessage());
+        server.shutdown().get(2, TimeUnit.SECONDS);
+    }
+
+    @Test
     void renameCollisionIsRejected() throws Exception {
         String collisionModel = """
                 INTERLIS 2.3;

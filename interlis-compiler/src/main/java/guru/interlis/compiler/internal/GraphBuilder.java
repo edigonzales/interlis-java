@@ -4365,13 +4365,17 @@ final class GraphBuilder {
     // ---- references and coverage ----------------------------------------------
 
     private void buildReferences() {
-        // References are recorded during resolution only for declarations that
-        // need navigation. The graph is still fully usable without synthetic
-        // references; base/type/role references are added here.
+        // Walk the complete declaration tree: attributes and roles also carry
+        // navigable type/role references, not only model-level declarations.
         for (IndexedDeclarations.ModelEntry entry : index.models()) {
-            for (DeclInfo child : index.children(entry.id())) {
-                referenceFor(child);
-            }
+            referenceTree(entry.id());
+        }
+    }
+
+    private void referenceTree(SymbolId owner) {
+        for (DeclInfo child : index.children(owner)) {
+            referenceFor(child);
+            referenceTree(child.id());
         }
     }
 
@@ -4385,6 +4389,34 @@ final class GraphBuilder {
         } else if (decl.syntax() instanceof TopicSyntax topic && topic.baseTopic().isPresent()) {
             recordReference(decl, topic.baseTopic().get(), baseOf.get(decl.id()),
                     ReferenceUsage.BASE_TYPE);
+        } else if (decl.syntax() instanceof DomainDeclarationSyntax domain
+                && domain.baseDomain().isPresent()) {
+            recordReference(decl, domain.baseDomain().get(), baseOf.get(decl.id()),
+                    ReferenceUsage.BASE_TYPE);
+        } else if (decl.syntax() instanceof RoleDeclarationSyntax role) {
+            SymbolId target = symbols.get(decl.id()) instanceof RoleSymbol symbol
+                    ? symbol.target() : null;
+            recordReference(decl, role.target(), target, ReferenceUsage.ROLE_TARGET);
+        } else if (decl.syntax() instanceof AttributeDeclarationSyntax attribute) {
+            referenceForType(decl, attribute.type());
+        }
+    }
+
+    private void referenceForType(DeclInfo decl, TypeSyntax syntax) {
+        if (syntax instanceof DomainReferenceSyntax reference) {
+            TypeDescriptor descriptor = types.get(declaredTypes.get(decl.id()));
+            if (descriptor instanceof DomainReferenceType domain) {
+                recordReference(decl, reference.name(), domain.targetDomain(),
+                        ReferenceUsage.TYPE_USE);
+            }
+        } else if (syntax instanceof ReferenceTypeSyntax reference) {
+            TypeDescriptor descriptor = types.get(declaredTypes.get(decl.id()));
+            if (descriptor instanceof ReferenceType target) {
+                recordReference(decl, reference.target(), target.target(),
+                        ReferenceUsage.TYPE_USE);
+            }
+        } else if (syntax instanceof CollectionTypeSyntax collection) {
+            referenceForType(decl, collection.elementType());
         }
     }
 

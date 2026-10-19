@@ -1,7 +1,7 @@
 {
   "schemaVersion": "1.0",
   "goal": "P3-2 LSP completion",
-  "status": "PARTIAL",
+  "status": "VERIFIED",
   "requirements": [
     "LSP-010",
     "LSP-012",
@@ -21,7 +21,7 @@
     "capability snapshot"
   ],
   "tests": {
-    "LspFeatureTest": 5,
+    "LspFeatureTest": 8,
     "LspServerTest": 4,
     "LspProcessTest": 1,
     "LspProtocolCancellationTest": 1,
@@ -30,11 +30,8 @@
   "gates": {
     "check": "SUCCESS",
     "checkPortable": "SUCCESS",
-    "checkBrowser": "SUCCESS"
-  },
-  "gaps": [
-    "workspace-wide external-reference fixture for multi-file rename remains to be proven",
-    "read-only imported-source fixture has not been reduced to a stable LSP test",
-    "missing-source rename path needs explicit fixture"
-  ]
+    "checkBrowser": "SUCCESS",
+    "releaseCheck": "SUCCESS",
+    "conformanceCheck": "PASS"
+  }
 }
