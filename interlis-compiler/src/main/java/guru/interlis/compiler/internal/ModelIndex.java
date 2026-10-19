@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -18,6 +19,7 @@ final class ModelIndex {
     private final List<ModelDecl> models;
     private final Map<String, List<ModelDecl>> byName;
     private final Map<SourceId, List<ModelDecl>> bySource;
+    private final Set<SourceId> knownSources;
 
     ModelIndex(List<SyntaxSnapshot> snapshots) {
         List<ModelDecl> all = new ArrayList<>();
@@ -43,6 +45,7 @@ final class ModelIndex {
         Map<SourceId, List<ModelDecl>> frozenSources = new LinkedHashMap<>();
         sources.forEach((id, values) -> frozenSources.put(id, List.copyOf(values)));
         this.bySource = Map.copyOf(frozenSources);
+        this.knownSources = Set.copyOf(sorted.stream().map(snapshot -> snapshot.source().id()).toList());
     }
 
     List<ModelDecl> all() {
@@ -51,6 +54,10 @@ final class ModelIndex {
 
     List<ModelDecl> byName(String name) {
         return byName.getOrDefault(name, List.of());
+    }
+
+    boolean hasSource(SourceId source) {
+        return knownSources.contains(source);
     }
 
     List<ModelDecl> bySource(SourceId source) {

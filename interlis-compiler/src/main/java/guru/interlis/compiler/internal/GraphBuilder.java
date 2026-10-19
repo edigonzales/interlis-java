@@ -269,6 +269,11 @@ final class GraphBuilder {
                     emitRule(decl, "translation syntax does not match source model",
                             "TRANSLATION_STRUCTURE");
                 } else {
+                    if (!coordinateReferences(source).equals(coordinateReferences(model))
+                            || !crsAnnotations(source).equals(crsAnnotations(model))) {
+                        emitRule(decl, "translation coordinate reference systems differ",
+                                "TRANSLATION_COORDINATE");
+                    }
                     if (!metaObjectNames(source).equals(metaObjectNames(model))) {
                         emitRule(decl, "translation REFSYSTEM objects differ",
                                 "TRANSLATION_METAOBJECT");
@@ -367,6 +372,19 @@ final class GraphBuilder {
                 targetNames.add(targetForms.get(i));
             }
         }
+        List<String> sourceFormTypes = lineFormTypes(source);
+        List<String> targetFormTypes = lineFormTypes(target);
+        if (sourceFormTypes.size() == targetFormTypes.size()) {
+            List<String> sourceStructures = structureNames(source);
+            List<String> targetStructures = structureNames(target);
+            for (int i = 0; i < sourceFormTypes.size(); i++) {
+                int sourceIndex = sourceStructures.indexOf(sourceFormTypes.get(i));
+                int targetIndex = targetStructures.indexOf(targetFormTypes.get(i));
+                if (sourceIndex >= 0 && targetIndex >= 0 && sourceIndex != targetIndex) {
+                    return false;
+                }
+            }
+        }
         List<UnitSymbol> sourceUnits = unitsOf(source);
         List<UnitSymbol> targetUnits = unitsOf(target);
         if (sourceUnits.size() == targetUnits.size()) {
@@ -462,6 +480,30 @@ final class GraphBuilder {
         return result;
     }
 
+    private List<String> coordinateReferences(ModelSymbol model) {
+        List<String> refs = new ArrayList<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("\\{([A-Za-z_][A-Za-z0-9_]*)\\[")
+                .matcher(modelText(model));
+        while (matcher.find()) {
+            refs.add(matcher.group(1));
+        }
+        refs.sort(String::compareTo);
+        return refs;
+    }
+
+    private List<String> crsAnnotations(ModelSymbol model) {
+        List<String> refs = new ArrayList<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("@CRS=([^\\s*]+)")
+                .matcher(modelText(model));
+        while (matcher.find()) {
+            refs.add(matcher.group(1));
+        }
+        refs.sort(String::compareTo);
+        return refs;
+    }
+
     private List<String> metaObjectNames(ModelSymbol model) {
         String text = modelText(model);
         List<String> names = new ArrayList<>();
@@ -473,6 +515,29 @@ final class GraphBuilder {
             for (String part : matcher.group(1).split(",")) {
                 names.add(part.trim());
             }
+        }
+        return names;
+    }
+
+    private List<String> lineFormTypes(ModelSymbol model) {
+        List<String> names = new ArrayList<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(?i)LINE\\s+FORM\\s+[A-Za-z_][A-Za-z0-9_]*\\s*:\\s*"
+                        + "([A-Za-z_][A-Za-z0-9_.]*)")
+                .matcher(modelText(model));
+        while (matcher.find()) {
+            names.add(lastSegment(matcher.group(1)));
+        }
+        return names;
+    }
+
+    private List<String> structureNames(ModelSymbol model) {
+        List<String> names = new ArrayList<>();
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("(?i)STRUCTURE\\s+([A-Za-z_][A-Za-z0-9_]*)")
+                .matcher(modelText(model));
+        while (matcher.find()) {
+            names.add(matcher.group(1));
         }
         return names;
     }
@@ -506,18 +571,23 @@ final class GraphBuilder {
         SymbolId current = scopeRoot(context);
         int guard = 0;
         while (current != null && guard++ < 32) {
-            Symbol topicSymbol = symbols.get(current);
-            if (!(topicSymbol instanceof TopicSymbol topic) || topic.baseTopic().isEmpty()) {
+            DeclInfo topicDecl = index.byId(current).orElse(null);
+            if (topicDecl == null || !(topicDecl.syntax() instanceof guru.interlis.syntax.TopicSyntax syntax)
+                    || syntax.baseTopic().isEmpty()) {
                 return Optional.empty();
             }
-            SymbolId base = topic.baseTopic().orElseThrow();
-            for (DeclInfo child : index.children(base)) {
+            Optional<SymbolId> base = tryResolve(topicDecl, syntax.baseTopic().orElseThrow(),
+                    Set.of(SymbolKind.TOPIC));
+            if (base.isEmpty()) {
+                return Optional.empty();
+            }
+            for (DeclInfo child : index.children(base.orElseThrow())) {
                 if ((child.kind() == SymbolKind.STRUCTURE || child.kind() == SymbolKind.DOMAIN)
                         && child.name().equals(name)) {
                     return Optional.of(child.id());
                 }
             }
-            current = base;
+            current = base.orElseThrow();
         }
         return Optional.empty();
     }
@@ -589,7 +659,10 @@ final class GraphBuilder {
         boolean imports = false;
         int previousType = -1;
         int previousPreviousType = -1;
-        for (org.antlr.v4.runtime.Token token : lexer.getAllTokens()) {
+        List<org.antlr.v4.runtime.Token> tokenList =
+                new ArrayList<>(lexer.getAllTokens());
+        for (int tokenIndex = 0; tokenIndex < tokenList.size(); tokenIndex++) {
+            org.antlr.v4.runtime.Token token = tokenList.get(tokenIndex);
             if (token.getChannel() != org.antlr.v4.runtime.Token.DEFAULT_CHANNEL) {
                 continue;
             }
@@ -600,6 +673,16 @@ final class GraphBuilder {
             if (!body) {
                 if (type == guru.interlis.compiler.internal.antlr.InterlisLexer.EQ) {
                     body = true;
+                }
+                continue;
+            }
+            if (type == guru.interlis.compiler.internal.antlr.InterlisLexer.LINE
+                    && tokenIndex + 1 < tokenList.size()
+                    && "FORM".equals(tokenList.get(tokenIndex + 1).getText())) {
+                while (tokenIndex < tokenList.size()
+                        && tokenList.get(tokenIndex).getType()
+                        != guru.interlis.compiler.internal.antlr.InterlisLexer.SEMI) {
+                    tokenIndex++;
                 }
                 continue;
             }
@@ -1450,6 +1533,14 @@ final class GraphBuilder {
             return baseDomain.targetDomain().equals(derivedDomain.targetDomain()) ? null
                     : "extended attribute changes domain";
         }
+        if (base instanceof GenericType baseGeneric
+                && "INHERITED".equals(baseGeneric.name())) {
+            return null;
+        }
+        if (derived instanceof GenericType derivedGeneric
+                && "INHERITED".equals(derivedGeneric.name())) {
+            return null;
+        }
         if (base != null && derived != null && base.kind() == derived.kind()
                 && (base instanceof EnumerationType || base instanceof CoordinateType
                 || base instanceof NumericType || base instanceof FormattedType
@@ -1998,9 +2089,12 @@ final class GraphBuilder {
         }
         Set<String> parameterNames = new LinkedHashSet<>();
         for (guru.interlis.source.SourceText sourceText : sourceSet.sources().values()) {
+            String source = sourceText.text();
+            int firstTopic = source.toUpperCase(java.util.Locale.ROOT).indexOf("TOPIC");
+            String header = firstTopic < 0 ? source : source.substring(0, firstTopic);
             java.util.regex.Matcher parameterMatcher = java.util.regex.Pattern
                     .compile("(?i)PARAMETER\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*:")
-                    .matcher(sourceText.text());
+                    .matcher(header);
             while (parameterMatcher.find()) {
                 if (!parameterNames.add(parameterMatcher.group(1))) {
                     emitRule(decl, "runtime parameter name must be unique",
@@ -2019,6 +2113,53 @@ final class GraphBuilder {
         while (refSystemMatcher.find()) {
             if (!importedModels.contains(refSystemMatcher.group(1))) {
                 emitRule(decl, "REFSYSTEM target model must be imported", "REFSYSTEM_IMPORT");
+            }
+        }
+        for (guru.interlis.source.SourceText sourceText : sourceSet.sources().values()) {
+            String source = sourceText.text();
+            Set<String> imports = new LinkedHashSet<>();
+            java.util.regex.Matcher importMatcher = java.util.regex.Pattern
+                    .compile("(?is)\\bIMPORTS\\s+([^;]+);").matcher(source);
+            while (importMatcher.find()) {
+                for (String part : importMatcher.group(1).split(",")) {
+                    imports.add(part.trim().replaceAll("(?i)^UNQUALIFIED\\s+", ""));
+                }
+            }
+            java.util.regex.Matcher refs = java.util.regex.Pattern
+                    .compile("(?is)\\bREFSYSTEM\\s+BASKET\\s+[A-Za-z_][A-Za-z0-9_]*\\s*~\\s*"
+                            + "([A-Za-z_][A-Za-z0-9_]*)\\.")
+                    .matcher(source);
+            while (refs.find()) {
+                if (!imports.contains(refs.group(1))) {
+                    emitRule(decl, "REFSYSTEM target model must be imported", "REFSYSTEM_IMPORT");
+                }
+            }
+            if (java.util.regex.Pattern.compile("(?is)\\bGRAPHIC\\b[^;]*\\bBASED\\s+ON\\b")
+                    .matcher(source).find()
+                    && !java.util.regex.Pattern.compile("(?is)\\bDEPENDS\\s+ON\\b")
+                    .matcher(source).find()) {
+                emitRule(decl, "GRAPHIC requires a topic dependency",
+                        "TOPIC_DEPENDS_ON_GRAPHIC");
+            }
+            Set<String> graphics = new LinkedHashSet<>();
+            java.util.regex.Matcher graphicMatcher = java.util.regex.Pattern
+                    .compile("(?i)\\bGRAPHIC\\s+([A-Za-z_][A-Za-z0-9_]*)").matcher(source);
+            while (graphicMatcher.find()) {
+                graphics.add(graphicMatcher.group(1));
+            }
+            java.util.regex.Matcher dependsMatcher = java.util.regex.Pattern
+                    .compile("(?is)\\bDEPENDS\\s+ON\\s+([^;]+);").matcher(source);
+            while (dependsMatcher.find()) {
+                for (String dependency : dependsMatcher.group(1).split(",")) {
+                    String dependencyName = dependency.trim();
+                    if (dependencyName.contains(".")) {
+                        dependencyName = dependencyName.substring(dependencyName.lastIndexOf('.') + 1);
+                    }
+                    if (graphics.contains(dependencyName)) {
+                        emitRule(decl, "TOPIC DEPENDS ON must not target a GRAPHIC",
+                                "TOPIC_DEPENDS_ON_GRAPHIC");
+                    }
+                }
             }
         }
         Set<String> modelLevelNames = new LinkedHashSet<>();
@@ -2098,8 +2239,19 @@ final class GraphBuilder {
         if (syntax.endName().isPresent() && !syntax.endName().orElseThrow().equals(syntax.name())) {
             emitRule(decl, "TOPIC end name does not match declaration", "TOPIC_END_NAME");
         }
-        Optional<SymbolId> base = syntax.baseTopic().flatMap(name ->
-                resolve(decl, name, Set.of(SymbolKind.TOPIC)));
+        Optional<SymbolId> base = syntax.baseTopic().flatMap(name -> {
+            Optional<SymbolId> resolved = tryResolve(decl, name, Set.of(SymbolKind.TOPIC));
+            if (resolved.isEmpty()) {
+                List<SymbolId> matches = symbols.values().stream()
+                        .filter(TopicSymbol.class::isInstance).map(TopicSymbol.class::cast)
+                        .filter(topic -> topic.name().value().equals(name.text()))
+                        .map(TopicSymbol::id).toList();
+                if (matches.size() == 1) {
+                    return Optional.of(matches.getFirst());
+                }
+            }
+            return resolved;
+        });
         base.ifPresent(id -> baseOf.put(decl.id(), id));
         if (base.isPresent() && symbols.get(base.orElseThrow()) instanceof TopicSymbol baseTopic) {
             boolean abstractBase = baseTopic.header().modifiers()
@@ -2234,7 +2386,8 @@ final class GraphBuilder {
             DeclInfo memberDecl = index.byId(member).orElse(null);
             if (memberDecl != null && memberDecl.kind() == SymbolKind.ATTRIBUTE) {
                 TypeId typeId = declaredTypes.get(member);
-                if (typeId != null && types.get(typeId) instanceof ReferenceType) {
+                if (decl.language() != guru.interlis.model.LanguageVersion.ILI24
+                        && typeId != null && types.get(typeId) instanceof ReferenceType) {
                     emitRule(memberDecl, "reference attribute is only allowed in a structure",
                             "REFERENCE_ATTRIBUTE_CLASS");
                 }
@@ -2260,11 +2413,18 @@ final class GraphBuilder {
             SymbolId current = topic;
             int guard = 0;
             while (current != null && guard++ < 32) {
-                Symbol topicSymbol = symbols.get(current);
-                if (!(topicSymbol instanceof TopicSymbol t) || t.baseTopic().isEmpty()) {
+                DeclInfo topicDecl = index.byId(current).orElse(null);
+                if (topicDecl == null
+                        || !(topicDecl.syntax() instanceof guru.interlis.syntax.TopicSyntax topicSyntax)
+                        || topicSyntax.baseTopic().isEmpty()) {
                     break;
                 }
-                SymbolId parent = t.baseTopic().orElseThrow();
+                Optional<SymbolId> parentOpt = tryResolve(topicDecl,
+                        topicSyntax.baseTopic().orElseThrow(), Set.of(SymbolKind.TOPIC));
+                if (parentOpt.isEmpty()) {
+                    break;
+                }
+                SymbolId parent = parentOpt.orElseThrow();
                 for (DeclInfo child : index.children(parent)) {
                     if (child.kind() == SymbolKind.STRUCTURE
                             && child.name().equals(name.text())) {
@@ -2444,8 +2604,12 @@ final class GraphBuilder {
                     .orElse(false);
             boolean inherited = isTopicSubtype(roleScope, targetScope)
                     || inheritedClassFromBaseTopic(roleScope, resolvedTarget)
+                    || inheritedFromTopicSyntax(roleScope, resolvedTarget)
                     || syntax.target().text().equals(syntax.name());
-            if (!modelScope && !inherited && roleScope != null && targetScope != null
+            boolean knownRoleTopic = roleScope != null
+                    && index.byId(roleScope).map(owner -> owner.kind() == SymbolKind.TOPIC)
+                    .orElse(false);
+            if (!modelScope && !inherited && knownRoleTopic && targetScope != null
                     && !roleScope.equals(targetScope)) {
                 emitRule(decl, "cross-topic role requires EXTERNAL", "ROLE_EXTERNAL");
             }
@@ -2489,6 +2653,30 @@ final class GraphBuilder {
             }
             current = symbols.get(current) instanceof TopicSymbol topic
                     ? topic.baseTopic().orElse(null) : null;
+        }
+        return false;
+    }
+
+    private boolean inheritedFromTopicSyntax(SymbolId roleTopic, SymbolId targetClass) {
+        if (!(symbols.get(targetClass) instanceof ClassSymbol target)) {
+            return false;
+        }
+        DeclInfo roleTopicDecl = index.byId(roleTopic).orElse(null);
+        if (roleTopicDecl == null
+                || !(roleTopicDecl.syntax() instanceof guru.interlis.syntax.TopicSyntax syntax)
+                || syntax.baseTopic().isEmpty()) {
+            return false;
+        }
+        Optional<SymbolId> base = tryResolve(roleTopicDecl, syntax.baseTopic().orElseThrow(),
+                Set.of(SymbolKind.TOPIC));
+        if (base.isEmpty()) {
+            return false;
+        }
+        for (DeclInfo child : index.children(base.orElseThrow())) {
+            if (child.kind() == SymbolKind.CLASS
+                    && child.name().equals(target.name().value())) {
+                return true;
+            }
         }
         return false;
     }

@@ -1,25 +1,7 @@
 {
   "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
-  "fails": 20,
+  "fails": 8,
   "entries": [
-    {
-      "testId": "ili23.Assoc23Test.assocComplete",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 \u00dcbersetzungspr\u00fcfung",
-      "inputs": [
-        "test/data/ili23/translation/assocComplete.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "ASSOCIATION_CARDINALITY",
-      "features": [
-        "ASSOCIATION_CARDINALITY"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/assocComplete.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=ASSOCIATION_CARDINALITY, construct=ASSOCIATION_CARDINALITY)\n"
-    },
     {
       "testId": "ili23.Attribute10Test.attributeComplete",
       "languageVersion": "2.3",
@@ -35,41 +17,7 @@
       "primaryFeature": "UNCLASSIFIED",
       "features": [],
       "exitCode": 1,
-      "stderr": "ERROR ILI-RES-0001 diagnostic.resolution.missing (model=file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attribute10Complete_de.ili)\nERROR ILI-RES-0001 diagnostic.resolution.missing (model=file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attribute10Complete_fr.ili)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attribute10Complete_de.ili:3:1: ERROR ILI-SYN-0004 diagnostic.syntax.trailing (actual=MODEL)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attribute10Complete_fr.ili:3:1: ERROR ILI-SYN-0004 diagnostic.syntax.trailing (actual=MODEL)\n"
-    },
-    {
-      "testId": "ili23.Attribute23Test.attributeComplete",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 \u00dcbersetzungspr\u00fcfung",
-      "inputs": [
-        "test/data/ili23/translation/attributeComplete.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attributeComplete.ili:24:27: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=ClassA1.ClassA3)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attributeComplete.ili:64:27: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=ClassB1.ClassB3)\n"
-    },
-    {
-      "testId": "ili23.CoordType23Test.coordTypeComplete",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 \u00dcbersetzungspr\u00fcfung",
-      "inputs": [
-        "test/data/ili23/translation/coordTypeComplete.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "METAOBJECT",
-      "features": [
-        "METAOBJECT"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/coordTypeComplete.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=METAOBJECT)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/coordTypeComplete.ili:17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=unsupported@307)\n"
+      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attribute10Complete_de.ili:3:1: ERROR ILI-SYN-0004 diagnostic.syntax.trailing (actual=MODEL)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attribute10Complete_fr.ili:3:1: ERROR ILI-SYN-0004 diagnostic.syntax.trailing (actual=MODEL)\n"
     },
     {
       "testId": "ili23.Enumerations23Test.extendedAttr",
@@ -98,12 +46,10 @@
         "outcome": "accept"
       },
       "actual": "rejected",
-      "primaryFeature": "MISSING_ATTRIBUTE_TYPE",
-      "features": [
-        "MISSING_ATTRIBUTE_TYPE"
-      ],
+      "primaryFeature": "UNCLASSIFIED",
+      "features": [],
       "exitCode": 1,
-      "stderr": "va/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:11:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Enum3, rule=duplicate enumeration value Test3.a2/ENUM_VALUE_UNIQUE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:11:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Enum3, rule=duplicate enumeration value Test3/ENUM_VALUE_UNIQUE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:28:6: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr1, rule=extended attribute changes type/ATTRIBUTE_OVERRIDE_TYPE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:28:24: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=missing attribute type)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:29:6: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr2, rule=extended attribute changes type/ATTRIBUTE_OVERRIDE_TYPE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:29:24: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=missing attribute type)\n"
+      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:11:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Enum3, rule=duplicate enumeration value Test3.a1/ENUM_VALUE_UNIQUE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:11:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Enum3, rule=duplicate enumeration value Test3.a2/ENUM_VALUE_UNIQUE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/enumerations/ExtendedEnum.ili:11:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Enum3, rule=duplicate enumeration value Test3/ENUM_VALUE_UNIQUE)\n"
     },
     {
       "testId": "ili23.IliSymbols23Test.nestedComment",
@@ -134,7 +80,6 @@
       "actual": "rejected",
       "primaryFeature": "PATH",
       "features": [
-        "PARAMETER",
         "STRING_RANGE",
         "EXPRESSION",
         "PATH"
@@ -156,7 +101,6 @@
       "actual": "rejected",
       "primaryFeature": "PATH",
       "features": [
-        "PARAMETER",
         "STRING_RANGE",
         "EXPRESSION",
         "PATH"
@@ -181,138 +125,6 @@
       "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormOrdering.ili:22:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ModelB, rule=translation syntax does not match source model/TRANSLATION_STRUCTURE)\n"
     },
     {
-      "testId": "ili23.MainRule23Test.mainRules_SyntaxIli23",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Modelle und Namensr\u00e4ume",
-      "inputs": [
-        "test/data/ili23/mainRule/mainRules_SyntaxIli23.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "ERROR ILI-RES-0001 diagnostic.resolution.missing (model=file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/mainRule/mainRules_SyntaxIli23.ili)\n"
-    },
-    {
-      "testId": "ili23.NumericType23Test.numericTypeComplete",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 \u00dcbersetzungspr\u00fcfung",
-      "inputs": [
-        "test/data/ili23/translation/numericTypeComplete.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "METAOBJECT",
-      "features": [
-        "METAOBJECT"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/numericTypeComplete.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=METAOBJECT)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/numericTypeComplete.ili:17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=unsupported@308)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/numericTypeComplete.ili:48:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METAOBJECT, construct=unsupported@949)\n"
-    },
-    {
-      "testId": "ili23.XMLGenerator23Test.association_GenerateXMLForAssocToEmbedTopic",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Zus\u00e4tzliche Compile-Fixtures",
-      "inputs": [
-        "test/data/ili23/xml/association/association_GenerateXMLForAssocToEmbedTopic.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/association/association_GenerateXMLForAssocToEmbedTopic.ili:18:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a_embeddedInC, rule=cross-topic role requires EXTERNAL/ROLE_EXTERNAL)\n"
-    },
-    {
-      "testId": "ili23.XMLGenerator23Test.association_GenerateXMLForAssocToNotEmbeddTopic",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Zus\u00e4tzliche Compile-Fixtures",
-      "inputs": [
-        "test/data/ili23/xml/association/association_GenerateXMLForAssocToNotEmbeddTopic.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/association/association_GenerateXMLForAssocToNotEmbeddTopic.ili:26:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a, rule=cross-topic role requires EXTERNAL/ROLE_EXTERNAL)\n"
-    },
-    {
-      "testId": "ili23.XMLGenerator23Test.enumeration_GenerateXMLSchemaWithEnum",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Zus\u00e4tzliche Compile-Fixtures",
-      "inputs": [
-        "test/data/ili23/xml/enumerationtype/enumeration_GenerateXMLSchemaWithEnum.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "MISSING_ATTRIBUTE_TYPE",
-      "features": [
-        "MISSING_ATTRIBUTE_TYPE"
-      ],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/enumerationtype/enumeration_GenerateXMLSchemaWithEnum.ili:1:1: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=MISSING_ATTRIBUTE_TYPE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/enumerationtype/enumeration_GenerateXMLSchemaWithEnum.ili:16:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=farbe, rule=extended attribute changes type/ATTRIBUTE_OVERRIDE_TYPE)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/enumerationtype/enumeration_GenerateXMLSchemaWithEnum.ili:16:25: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=missing attribute type)\n"
-    },
-    {
-      "testId": "ili23.XMLGenerator23Test.structureAttr_GenerateXMLForEntendedStructAttr",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Zus\u00e4tzliche Compile-Fixtures",
-      "inputs": [
-        "test/data/ili23/xml/structureattribute/structureAttr_GenerateXMLForEntendedStructAttr.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/structureattribute/structureAttr_GenerateXMLForEntendedStructAttr.ili:26:32: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=StructA)\n"
-    },
-    {
-      "testId": "ili23.XSDMetaDataGenerator23Test.xsdmeta_null",
-      "languageVersion": "2.3",
-      "group": "ILI 2.3 \u2013 Zus\u00e4tzliche Compile-Fixtures",
-      "inputs": [
-        "test/data/ili23/xml/xsdmeta/null/xsdmeta_null.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "ERROR ILI-RES-0001 diagnostic.resolution.missing (model=file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/xml/xsdmeta/null/xsdmeta_null.ili)\n"
-    },
-    {
-      "testId": "ili24.Attribute24Test.attributeRef_RefAttrInClass",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Attribute und neue Typen",
-      "inputs": [
-        "test/data/ili24/attribute/attributeRef_RefAttrInClass.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "UNCLASSIFIED",
-      "features": [],
-      "exitCode": 1,
-      "stderr": "file://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/attributeRef_RefAttrInClass.ili:8:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr, rule=reference attribute is only allowed in a structure/REFERENCE_ATTRIBUTE_CLASS)\n"
-    },
-    {
       "testId": "ili24.Attribute24Test.enum_List",
       "languageVersion": "2.4",
       "group": "ILI 2.4 \u2013 Attribute und neue Typen",
@@ -329,29 +141,6 @@
       ],
       "exitCode": 1,
       "stderr": "fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:26: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=(, expected=<unknown>)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:27: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=a)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:28: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=,, expected=':=',';')\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:29: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=missing attribute type)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:30: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=,, expected='(',':')\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:31: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=MISSING_ATTRIBUTE_TYPE, construct=missing attribute type)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/enum_List.ili:7:32: ERROR ILI-SYN-0002 diagnostic.syntax.unexpected (actual=), expected='(',':')\n"
-    },
-    {
-      "testId": "ili24.Refhb24Test.roadsExgm2ien",
-      "languageVersion": "2.4",
-      "group": "ILI 2.4 \u2013 Referenz-/Integrationsmodelle",
-      "inputs": [
-        "test/data/ili24/refhb/RoadsExdm2ben.ili",
-        "test/data/ili24/refhb/AbstractSymbology.ili",
-        "test/data/ili24/refhb/RoadsExdm2ien.ili",
-        "test/data/ili24/refhb/StandardSymbology.ili",
-        "test/data/ili24/refhb/RoadsExgm2ien.ili"
-      ],
-      "expected": {
-        "outcome": "accept"
-      },
-      "actual": "rejected",
-      "primaryFeature": "PARAMETER",
-      "features": [
-        "PARAMETER",
-        "GRAPHIC"
-      ],
-      "exitCode": 1,
-      "stderr": "MPL-0001 diagnostic.implementation.unsupported (feature=PARAMETER, construct=unsupported@7611)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/refhb/StandardSymbology.ili:231:7: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=PARAMETER, construct=unsupported@8278)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/refhb/StandardSymbology.ili:256:7: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=PARAMETER, construct=unsupported@9003)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/refhb/StandardSymbology.ili:257:7: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=PARAMETER, construct=unsupported@9046)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/refhb/StandardSymbology.ili:299:7: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=PARAMETER, construct=unsupported@10413)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/refhb/StandardSymbology.ili:300:7: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=PARAMETER, construct=unsupported@10456)\nfile://<cache>/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/refhb/StandardSymbology.ili:301:7: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=PARAMETER, construct=unsupported@10502)\n"
     }
   ]
 }

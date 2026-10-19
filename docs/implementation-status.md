@@ -14,7 +14,7 @@ Die P0-Basis und der vertikale P1-Abschnitt sind als **Gradle-Multiprojekt**
 implementiert. Ein kleiner, gepinnter ili2c-5.6.9-Referenzlauf validiert die
 positiven und negativen P1-Fixtures. Die historische 610-Fall-Suite ist als
 separater `conformanceCheck` für INTERLIS 2.3/2.4 integriert: 593 von 610 Fällen
-(17×1.0 ausgeschlossen), aktuell 573 PASS/20 FAIL/0 ERROR. Der Compiler
+(17×1.0 ausgeschlossen), aktuell 585 PASS/8 FAIL/0 ERROR. Der Compiler
 analysiert mehrere Modelldateien mit Import,
 Domänen, Klassen/Strukturen, Vererbung, Attributen, Assoziationsrollen,
 Kardinalitäten und typisierten Mandatory-Constraints. Das Gate stellt nur bei
@@ -30,7 +30,7 @@ CLI-Distribution und LSP-Adaptertest.
 Die P1-Abnahme ist abgeschlossen. **Akzeptierte Restlücke:** 258
 Javadoc-Warnungen (API-003), vom Nutzer am 2026-10-18 ausdrücklich als
 dokumentierte Restlücke akzeptiert. **Nicht bestanden** ist die 610er-Suite im
-gewählten 2.3/2.4-Umfang (573 PASS/20 FAIL/0 ERROR); das ist der P2-Backlog.
+gewählten 2.3/2.4-Umfang (585 PASS/8 FAIL/0 ERROR); das ist der P2-Backlog.
 Ebenfalls offen: vollständige 2.3/2.4-Semantik (P2) und Performancebudgets. Die
 Plattform-Gates JVM, Node, Chromium, Firefox, Playwright-WebKit und echtes Safari
 sind ausgeführt und bestanden.
@@ -85,7 +85,7 @@ die generierten Quellen liegen ausschliesslich unter `build/generated-src`.
 | WP | Anforderungen | Status | Umfang und Evidenz |
 |---|---|---|---|
 | WP-00 Repository/Gradle | BUILD-001..004, 009; AGENT-001/008/010; ARCH-001/009; NFR-009/010 | VERIFIED | Wrapper, Groovy-DSL, JDK 25, Module, zyklusfreier Graph; `./gradlew check` grün. |
-| WP-01 Referenzen/Fallkorpus | TEST-/COMPAT-Grundlagen; GOAL-012 | **VERIFIED (P1-Profil; 610er-Suite separat)** | Eigene Fixtures unter `testdata/models`; ili2c 5.6.9 mit Quell-URL und SHA-256 gepinnt. Fünf explizite Fälle (2.4-Import/Vererbung, 2.3, defekt, trailing, fehlender Import) laufen gegen das Referenzwerkzeug. Zusätzlich ist die gepinnte 610er-Suite als separater `conformanceCheck` für 2.3/2.4 integriert: 593 von 610 Fällen (17×1.0 ausgeschlossen), aktuell 573 PASS/20 FAIL/0 ERROR. Der FAIL-Stand ist P2-Kompatibilitätsbacklog, kein P1-Releasegate; Clustering in `docs/evidence/conformance/backlog.md`. |
+| WP-01 Referenzen/Fallkorpus | TEST-/COMPAT-Grundlagen; GOAL-012 | **VERIFIED (P1-Profil; 610er-Suite separat)** | Eigene Fixtures unter `testdata/models`; ili2c 5.6.9 mit Quell-URL und SHA-256 gepinnt. Fünf explizite Fälle (2.4-Import/Vererbung, 2.3, defekt, trailing, fehlender Import) laufen gegen das Referenzwerkzeug. Zusätzlich ist die gepinnte 610er-Suite als separater `conformanceCheck` für 2.3/2.4 integriert: 593 von 610 Fällen (17×1.0 ausgeschlossen), aktuell 585 PASS/8 FAIL/0 ERROR. Der FAIL-Stand ist P2-Kompatibilitätsbacklog, kein P1-Releasegate; Clustering in `docs/evidence/conformance/backlog.md`. |
 | WP-02 Syntaxspike nach Gradle | BUILD-005/006/010; SYN-012; WASM-001/002 | VERIFIED | Grammatik unverändert, ANTLR 4.13.2, bekannte Warnung 154 zu `viewDef` reproduziert; JVM, WasmGC-Node und JS-Node laufen. |
 | WP-03 Diagnostik/Laufkontext | DIAG-001..005/007..009; LOG-001..004/007/010 | VERIFIED (P1-Kern) | Strukturierte Diagnosen, Katalog inklusive Doppelcode-/Argument-/Phasenprüfung, Collector, kanonische Ordnung, Cause-Suppression, RunContext/Lifecycle mit genau einem Abschlussversuch, Observer-Isolierung, Abbruch/Budget und LSP-stdout-Reinheit sind getestet. Ein produktiver Telemetrie-/Dateisink bleibt P3. |
 
@@ -158,7 +158,7 @@ referenzierten JSON-Dateien.
 | `./gradlew check` | **BUILD SUCCESSFUL**, 134 Tests, 0 Fehler |
 | `./gradlew :interlis-compiler:sdkExampleTest` | **SDK PASS**, Beispiel gegen gebaute JARs kompiliert und ausgeführt |
 | `python3 tools/reference/reference_check.py` | **5/5 PASS** gegen ili2c 5.6.9; kleiner gepinnter P1-Fallkorpus |
-| `./gradlew conformanceCheck` | **FAIL (erwartet)**: 593 2.3/2.4-Fälle, 573 PASS/20 FAIL/0 ERROR; separater P2-Backlog |
+| `./gradlew conformanceCheck` | **FAIL (erwartet)**: 593 2.3/2.4-Fälle, 585 PASS/8 FAIL/0 ERROR; separater P2-Backlog |
 | `./gradlew javadoc` | **BUILD SUCCESSFUL**; 258 Warnungen, als API-003-Restlücke akzeptiert |
 | `./gradlew checkPortable` | **SUCCESS**, JVM plus WasmGC-/JS-Node-Verträge |
 | `./gradlew :interlis-wasm-teavm:browserContractTest` | **SUCCESS** für Chromium, Firefox, WebKit |
@@ -192,7 +192,7 @@ referenzierten JSON-Dateien.
    Dezimalzahl und Worker-Neustart. `checkBrowser` und `releaseCheck` sind grün.
 2. **Referenz-/Konformitätsumfang.** Das kleine Fünf-Fall-Profil ist P1-grün.
    Die gepinnte 610er-Suite ist für 2.3/2.4 integriert (593 Fälle; 17×1.0
-   ausgeschlossen), aber mit 573 PASS/20 FAIL/0 ERROR noch nicht bestanden.
+   ausgeschlossen), aber mit 585 PASS/8 FAIL/0 ERROR noch nicht bestanden.
    Dieser Stand ist der P2-Kompatibilitätsbacklog; „vollständig konform“ wird
    nicht behauptet.
 3. **Web Image und Safari.** Der Web-Image-Pfad wurde unter Node und in
@@ -221,6 +221,7 @@ referenzierten JSON-Dateien.
 - JVM: **134 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
 - Umgesetzt: Typfamilien (Temporal, OID/Blackbox/Alignment, FORMAT, CLASS/STRUCTURE-Werte), UNIT/unitRef, Domain-Enumerationen, Domain-Extends, Rollen-/Assoziationsregeln, Attribut-Overrides, Namens-/Endnamen-Regeln, Geometry-Typen und -Regeln, View-Deklarationen mit Alias-/Attributprüfungen, externe Constraint-Blöcke, UNIQUE-/SET-/Plausibility-Constraints, Enum-/Klassenkonstanten.
 - **WP-24 Translation:** Guard entfernt; Quellmodell/Version, Modellkopf, Imports, Token-/Namenskorrespondenz, Constraints, Modellreferenzen, Einheiten und Koordinaten werden validiert. **36/36 Single-Feature-Translation-Accept-Fälle PASS**, **0** Translation-Reject-False-Accepts; Nachweis in `docs/evidence/conformance/translation-summary.json`.
+- **XML/Metaobject/ROLE:** alle XML-Generator-, XSD-, Metaobject- und ROLE-Fälle PASS; 0 False Accepts; Nachweis in `docs/evidence/conformance/xml-meta-role-summary.json`.
 - **Generic/Deferred/Context:** **16/16 Fälle PASS**, **0** False Accepts; Nachweis in `docs/evidence/conformance/generic-summary.json`.
 - **WP-23 View-Formation:** **19/19 View-Accept-Fälle PASS**, **0/20 View-Reject-False-Accepts**; ABSTRACT-/BASIS-/Alias-/Topic-View-Regeln und View-Base-Extensions sind validiert. Nachweis in `docs/evidence/conformance/view-summary.json`.
 - **WP-22 Objektpfade/Funktionen/Constraints:** alle 25 Constraint-/Ausdrucksfälle, alle 3 Funktionsfälle und die 2.4-Constraint-/Domain-Fälle PASS; **0** neue False Accepts. Nachweis in `docs/evidence/conformance/wp22-summary.json`.

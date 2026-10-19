@@ -1,4 +1,4 @@
-jectNameFail
+bjectNameFail
 [interlis-java] PASS   ili23.RuntimeParameter23Test.runtimeParameterComplete
 [interlis-java] PASS   ili23.RuntimeParameter23Test.runtimeParameterMandatoryFail
 [interlis-java] PASS   ili23.RuntimeParameter23Test.runtimeParameterTypeFail
@@ -85,7 +85,7 @@ jectNameFail
 [interlis-java] PASS   ili23.XSDMetaDataGenerator23Test.xsdmeta_coord
 [interlis-java] PASS   ili23.XSDMetaDataGenerator23Test.xsdmeta_emptyModel
 [interlis-java] PASS   ili23.XSDMetaDataGenerator23Test.xsdmeta_inctransfer
-[interlis-java] FAIL   ili23.XSDMetaDataGenerator23Test.xsdmeta_null
+[interlis-java] PASS   ili23.XSDMetaDataGenerator23Test.xsdmeta_null
 [interlis-java] PASS   ili23.XSDMetaDataGenerator23Test.xsdmeta_oid
 [interlis-java] PASS   ili23.XMLGenerator23Test.topics_GenerateXMLSchemaForTopicDef
 [interlis-java] PASS   ili23.XMLGenerator23Test.model_GenerateXMLSchemaWithBasicModel
@@ -93,17 +93,17 @@ jectNameFail
 [interlis-java] PASS   ili23.XMLGenerator23Test.surface_GenerateXMLSchemaForSurface
 [interlis-java] PASS   ili23.XMLGenerator23Test.optionalMandatory_GenerateOptionalAndMandatoryAttrs
 [interlis-java] PASS   ili23.XMLGenerator23Test.attribute_GenerateXMLSchemaWithTransientAttribute
-[interlis-java] FAIL   ili23.XMLGenerator23Test.enumeration_GenerateXMLSchemaWithEnum
+[interlis-java] PASS   ili23.XMLGenerator23Test.enumeration_GenerateXMLSchemaWithEnum
 [interlis-java] PASS   ili23.XMLGenerator23Test.enumeration_GenerateXMLForExtEnumAttr
 [interlis-java] PASS   ili23.XMLGenerator23Test.enumeration_GenerateXMLForExtEnumDomain
 [interlis-java] PASS   ili23.XMLGenerator23Test.enumeration_GenerateXMLForEnumType
 [interlis-java] PASS   ili23.XMLGenerator23Test.numeric_GenerateXMLWithNumberAttr
-[interlis-java] FAIL   ili23.XMLGenerator23Test.structureAttr_GenerateXMLForEntendedStructAttr
+[interlis-java] PASS   ili23.XMLGenerator23Test.structureAttr_GenerateXMLForEntendedStructAttr
 [interlis-java] PASS   ili23.XMLGenerator23Test.text_GenerateXMLForTextAttrs
 [interlis-java] PASS   ili23.XMLGenerator23Test.text_GenerateXMLForAbstractTextAttr
 [interlis-java] PASS   ili23.XMLGenerator23Test.class_GenerateXMLForExtendedClassDef
-[interlis-java] FAIL   ili23.XMLGenerator23Test.association_GenerateXMLForAssocToEmbedTopic
-[interlis-java] FAIL   ili23.XMLGenerator23Test.association_GenerateXMLForAssocToNotEmbeddTopic
+[interlis-java] PASS   ili23.XMLGenerator23Test.association_GenerateXMLForAssocToEmbedTopic
+[interlis-java] PASS   ili23.XMLGenerator23Test.association_GenerateXMLForAssocToNotEmbeddTopic
 [interlis-java] PASS   ili23.XMLGenerator23Test.association_GenerateXMLForCompositionRole
 [interlis-java] PASS   ili23.XMLGenerator23Test.association_GenerateXMLForAssocAttrs
 [interlis-java] PASS   ili23.XMLGenerator23Test.association_GenerateXMLForClassWithMultipleEmbedTopic
@@ -120,13 +120,13 @@ jectNameFail
 [interlis-java] PASS   ili23.ExpressionTest.simpleOk
 [interlis-java] PASS   ili23.ScopedNameTest.simpleOk
 [interlis-java] PASS   ili23.ViewableGetAttributesAndRoles2Test.baseClass
-[interlis-java] FAIL   ili24.Refhb24Test.roadsExgm2ien
+[interlis-java] PASS   ili24.Refhb24Test.roadsExgm2ien
 [interlis-java] PASS   ili24.StringEscapeSequenceTest.quotes + backslash + quotesAndBackslash + unicode + unicodeSurrogate
 [interlis-java] PASS   ili24.Domain24Test.compile_Ok + Metamodellprüfungen
 [interlis-java] PASS   ili24.Domain24Test.compile_Fail
 [interlis-java] PASS   ili24.Constraints24Test.constraintsCompile + Constraint-Metamodelltests
 [interlis-java] PASS   ili24.Constraints24Test.compile_fail
-[interlis-java] FAIL   ili24.Attribute24Test.attributeRef_RefAttrInClass
+[interlis-java] PASS   ili24.Attribute24Test.attributeRef_RefAttrInClass
 [interlis-java] PASS   ili24.Attribute24Test.text_List
 [interlis-java] FAIL   ili24.Attribute24Test.enum_List
 [interlis-java] PASS   ili24.Attribute24Test.dateTime
@@ -160,6 +160,6 @@ jectNameFail
 [interlis-java] PASS   ili24.Expressions24Test.div_numeric_fail
 [interlis-java] PASS   ili24.Expressions24Test.implication
 [interlis-java] PASS   ili24.Expressions24Test.implication_fail
-Overall result: FAIL (PASS=573, XFAIL=0, FAIL=20, XPASS=0, ERROR=0)
+Overall result: FAIL (PASS=585, XFAIL=0, FAIL=8, XPASS=0, ERROR=0)
 Reports: <repo>/build/conformance
 

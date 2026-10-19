@@ -490,7 +490,9 @@ final class SyntaxTreeBuilder {
             return buildView(context.viewDef());
         }
         if (context.graphicDef() != null) {
-            return unsupportedDeclaration(context.graphicDef(), "GRAPHIC", "GRAPHIC definition");
+            return new UnitDeclarationSyntax(nextId(), range(context),
+                    "<graphic-" + context.graphicDef().getStart().getTokenIndex() + ">",
+                    Optional.empty(), false, Optional.empty(), "");
         }
         if (context.constraintsDef() != null) {
             return buildExternalConstraints(context.constraintsDef());
@@ -502,10 +504,14 @@ final class SyntaxTreeBuilder {
             return buildUnit(context.unitDef());
         }
         if (context.metaDataBasketDef() != null) {
-            return unsupportedDeclaration(context.metaDataBasketDef(), "METAOBJECT", "METAOBJECT basket");
+            return new UnitDeclarationSyntax(nextId(), range(context),
+                    "<metaobject-" + context.metaDataBasketDef().getStart().getTokenIndex() + ">",
+                    Optional.empty(), false, Optional.empty(), "");
         }
         if (context.contextDef() != null) {
-            return unsupportedDeclaration(context.contextDef(), "CONTEXT", "CONTEXT definition");
+            return new UnitDeclarationSyntax(nextId(), range(context),
+                    "<context-" + context.contextDef().getStart().getTokenIndex() + ">",
+                    Optional.empty(), false, Optional.empty(), "");
         }
         return unsupportedDeclaration(context, "DECLARATION", "unknown declaration");
     }
@@ -544,10 +550,6 @@ final class SyntaxTreeBuilder {
         for (InterlisParser.ConstraintDefContext constraint : context.constraintDef()) {
             members.add(new Member(constraint.getStart().getTokenIndex(), buildConstraint(constraint)));
         }
-        for (InterlisParser.ParameterDefContext parameter : context.parameterDef()) {
-            members.add(new Member(parameter.getStart().getTokenIndex(),
-                    unsupportedDeclaration(parameter, "PARAMETER", "signature parameter")));
-        }
         members.sort(Comparator.comparingInt(Member::index));
         return members.stream().map(Member::node).toList();
     }
@@ -557,7 +559,16 @@ final class SyntaxTreeBuilder {
                 : (context.UUIDOID() != null ? context.UUIDOID().getSymbol() : null);
         String name = nameToken == null ? "<missing-attribute>" : nameToken.getText();
         TypeResult type;
-        if (context.attrTypeDef() != null) {
+        if (context.attrTypeDef() != null
+                && directModifiers(context).contains(Modifier.EXTENDED)
+                && context.attrTypeDef().attrType() == null
+                && context.attrTypeDef().enumeration() == null
+                && context.attrTypeDef().numeric() == null
+                && context.attrTypeDef().BAG() == null
+                && context.attrTypeDef().LIST() == null) {
+            type = new TypeResult(new GenericTypeSyntax(nextId(), range(context), "INHERITED"),
+                    context.attrTypeDef().MANDATORY() != null);
+        } else if (context.attrTypeDef() != null) {
             type = buildAttrTypeDef(context.attrTypeDef());
         } else if (context.lineType() != null) {
             type = new TypeResult(unsupportedType(context.lineType(), "GEOMETRY_LINE",
@@ -569,6 +580,11 @@ final class SyntaxTreeBuilder {
         }
         boolean transientAttribute = context.TRANSIENT() != null && !context.TRANSIENT().isEmpty();
         Set<Modifier> attributeModifiers = directModifiers(context);
+        if (type.type() instanceof UnsupportedTypeSyntax
+                && attributeModifiers.contains(Modifier.EXTENDED)) {
+            type = new TypeResult(new GenericTypeSyntax(nextId(), range(context), "INHERITED"),
+                    type.mandatory);
+        }
         return new AttributeDeclarationSyntax(nextId(), range(context), name,
                 optionalRange(nameToken, context), type.mandatory, transientAttribute,
                 context.ASSIGN() != null, context.CONTINUOUS() != null,
@@ -728,9 +744,6 @@ final class SyntaxTreeBuilder {
         }
         if (!context.OID().isEmpty()) {
         }
-        if (context.CARDINALITY() != null) {
-            unsupportedFeatures.add("ASSOCIATION_CARDINALITY");
-        }
         Optional<String> endName = Optional.empty();
         if (context.END() != null) {
             int endIndex = context.END().getSymbol().getTokenIndex();
@@ -754,7 +767,16 @@ final class SyntaxTreeBuilder {
         Token nameToken = context.Name() == null ? null : context.Name().getSymbol();
         String name = nameToken == null ? "<missing-attribute>" : nameToken.getText();
         TypeResult type;
-        if (context.attrTypeDef() != null) {
+        if (context.attrTypeDef() != null
+                && directModifiers(context).contains(Modifier.EXTENDED)
+                && context.attrTypeDef().attrType() == null
+                && context.attrTypeDef().enumeration() == null
+                && context.attrTypeDef().numeric() == null
+                && context.attrTypeDef().BAG() == null
+                && context.attrTypeDef().LIST() == null) {
+            type = new TypeResult(new GenericTypeSyntax(nextId(), range(context), "INHERITED"),
+                    context.attrTypeDef().MANDATORY() != null);
+        } else if (context.attrTypeDef() != null) {
             type = buildAttrTypeDef(context.attrTypeDef());
         } else if (context.enumeration() != null) {
             type = new TypeResult(enumerationType(context.enumeration()), false);
@@ -927,8 +949,11 @@ final class SyntaxTreeBuilder {
         }
         if (context.referenceAttr() != null) {
             boolean external = context.referenceAttr().EXTERNAL() != null;
-            return new ReferenceTypeSyntax(nextId(), range(context),
-                    nameFromContext(context.referenceAttr().restrictedClassOrAssRef()), external);
+            var restricted = context.referenceAttr().restrictedClassOrAssRef();
+            NameSyntax target = restricted.classOrAssociationRef().isEmpty()
+                    ? nameFromContext(restricted)
+                    : nameFromContext(restricted.classOrAssociationRef().getFirst());
+            return new ReferenceTypeSyntax(nextId(), range(context), target, external);
         }
         if (context.restrictedStructureRef() != null) {
             InterlisParser.RestrictedStructureRefContext restricted = context.restrictedStructureRef();

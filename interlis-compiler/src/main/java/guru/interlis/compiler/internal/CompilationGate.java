@@ -94,7 +94,13 @@ final class CompilationGate {
         if (!unsupported.isEmpty()) {
             reasons.add(RejectionReason.INCOMPLETE_SUPPORT);
         }
-        if (roots.roots().isEmpty()) {
+        boolean onlyEmptyDocuments = roots.roots().isEmpty()
+                && !analysis.syntaxSnapshots().isEmpty()
+                && analysis.syntaxSnapshots().values().stream()
+                .allMatch(snapshot -> snapshot.root().models().isEmpty()
+                        && snapshot.source().text().trim()
+                        .matches("INTERLIS\\s+2\\.[34]\\s*;?"));
+        if (roots.roots().isEmpty() && !onlyEmptyDocuments) {
             reasons.add(RejectionReason.MISSING_INPUT);
         }
         if (strictSyntax && !closure.sources().isEmpty()) {

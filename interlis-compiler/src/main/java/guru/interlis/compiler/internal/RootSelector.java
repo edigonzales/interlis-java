@@ -25,7 +25,7 @@ final class RootSelector {
             switch (selector) {
                 case ModelSelector.BySource bySource -> {
                     List<ModelDecl> candidates = index.bySource(bySource.source());
-                    if (candidates.isEmpty()) {
+                    if (candidates.isEmpty() && !index.hasSource(bySource.source())) {
                         DiagnosticId id = collector.emit(DiagnosticDraft.of(
                                         new DiagnosticCode("ILI-RES-0001"), Severity.ERROR,
                                         Phase.SOURCE_RESOLUTION, "diagnostic.resolution.missing")

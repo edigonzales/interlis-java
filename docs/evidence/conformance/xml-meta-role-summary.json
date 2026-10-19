@@ -1,0 +1,11 @@
+{
+  "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+  "xmlMetaRoleTotal": 39,
+  "xmlMetaRolePass": 39,
+  "xmlMetaRoleFalseAccepts": 0,
+  "overall": {
+    "PASS": 585,
+    "FAIL": 8,
+    "ERROR": 0
+  }
+}
