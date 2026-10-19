@@ -60,3 +60,46 @@ tasks.register('conformanceCheck', Exec) {
     workingDir = rootProject.projectDir
     commandLine 'python3', 'tools/reference/conformance_check.py'
 }
+
+tasks.register('geoCorpus', Exec) {
+    group = 'verification'
+    description = 'Pins the official geo.so.ch corpus used by P3-4 measurements.'
+    workingDir = rootProject.projectDir
+    commandLine 'python3', 'tools/reference/geo_corpus.py'
+}
+
+tasks.register('jvmBenchmark', Exec) {
+    group = 'verification'
+    description = 'Runs the pinned geo corpus through the JVM CLI.'
+    dependsOn ':interlis-cli:installDist'
+    workingDir = rootProject.projectDir
+    commandLine 'python3', 'tools/performance/benchmark_jvm.py'
+}
+
+tasks.register('wasmBenchmark', Exec) {
+    group = 'verification'
+    description = 'Runs the pinned geo corpus through TeaVM WasmGC.'
+    dependsOn ':interlis-wasm-teavm:buildWasmGC'
+    workingDir = rootProject.projectDir
+    commandLine 'node', 'interlis-wasm-teavm/wasm-benchmark.cjs'
+    ignoreExitValue = true
+    doLast {
+        if (!file('docs/evidence/p3/performance-wasm.json').exists()) {
+            throw new GradleException('Wasm benchmark produced no result manifest')
+        }
+    }
+}
+
+tasks.register('browserBenchmark', Exec) {
+    group = 'verification'
+    description = 'Runs the pinned geo corpus through Playwright browsers.'
+    dependsOn ':interlis-wasm-teavm:prepareBrowserHarness'
+    workingDir = rootProject.projectDir
+    commandLine 'node', 'interlis-wasm-teavm/browser-benchmark.cjs'
+}
+
+tasks.register('performanceCheck') {
+    group = 'verification'
+    description = 'Pins the corpus and refreshes JVM, WasmGC and browser measurements.'
+    dependsOn 'geoCorpus', 'jvmBenchmark', 'wasmBenchmark', 'browserBenchmark'
+}

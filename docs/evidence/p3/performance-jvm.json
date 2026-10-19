@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0",
+  "runtime": "jvm",
+  "tool": "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+  "iterationsPerModel": 3,
+  "warmupPerModel": 1,
+  "corpus": "docs/evidence/p3/geo-corpus.json",
+  "corpusIndexSha256": "ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c",
+  "machine": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "processor": "arm",
+    "cpus": 10,
+    "java": [
+      "openjdk version \"25.0.2\" 2026-01-20 LTS"
+    ]
+  },
+  "models": [
+    {
+      "model": "SO_FunctionsExt",
+      "file": "AGI/SO_FunctionsExt.ili",
+      "language": "2.3",
+      "bytes": 3168,
+      "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
+      "checkMs": [
+        149.286583,
+        147.84225,
+        150.07
+      ],
+      "checkMedianMs": 149.286583,
+      "formatMs": [
+        105.871875,
+        106.174042,
+        107.004667
+      ],
+      "formatMedianMs": 106.174042,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 89882624
+    },
+    {
+      "model": "SO_AGI_GWR_20241118",
+      "file": "AGI/SO_AGI_GWR_20241118.ili",
+      "language": "2.3",
+      "bytes": 5419,
+      "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
+      "checkMs": [
+        181.297208,
+        182.111542,
+        179.321917
+      ],
+      "checkMedianMs": 181.297208,
+      "formatMs": [
+        120.318042,
+        119.58925,
+        122.405416
+      ],
+      "formatMedianMs": 120.318042,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112361472
+    },
+    {
+      "model": "SO_AGI_STAC_20230426",
+      "file": "AGI/SO_AGI_STAC_20230426.ili",
+      "language": "2.3",
+      "bytes": 2474,
+      "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
+      "checkMs": [
+        174.739209,
+        187.190542,
+        178.937292
+      ],
+      "checkMedianMs": 178.937292,
+      "formatMs": [
+        125.467042,
+        127.462833,
+        123.433417
+      ],
+      "formatMedianMs": 125.467042,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112361472
+    },
+    {
+      "model": "IliValidGwr_V1_0",
+      "file": "AGI/contrib/IliValidGwr_V1_0.ili",
+      "language": "2.4",
+      "bytes": 4284,
+      "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
+      "checkMs": [
+        189.58625,
+        179.099375,
+        179.912
+      ],
+      "checkMedianMs": 179.912,
+      "formatMs": [
+        132.060041,
+        121.115167,
+        122.081916
+      ],
+      "formatMedianMs": 122.081916,
+      "outputStableAcrossRuns": true,
+      "maxRssKb": 112361472
+    }
+  ],
+  "notes": "Wall-clock subprocess measurements; warmup excluded. No production claim."
+}

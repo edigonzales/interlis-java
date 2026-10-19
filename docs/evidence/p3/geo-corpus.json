@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0",
+  "repository": "https://geo.so.ch/models/",
+  "index": {
+    "url": "https://geo.so.ch/models/ilimodels.xml",
+    "sha256": "ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c"
+  },
+  "models": [
+    {
+      "file": "AGI/SO_FunctionsExt.ili",
+      "model": "SO_FunctionsExt",
+      "version": "2023-10-10",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AGI/SO_FunctionsExt.ili",
+      "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
+      "bytes": 3168
+    },
+    {
+      "file": "AGI/SO_AGI_GWR_20241118.ili",
+      "model": "SO_AGI_GWR_20241118",
+      "version": "2024-11-18",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AGI/SO_AGI_GWR_20241118.ili",
+      "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
+      "bytes": 5419
+    },
+    {
+      "file": "AGI/SO_AGI_STAC_20230426.ili",
+      "model": "SO_AGI_STAC_20230426",
+      "version": "2023-04-26",
+      "language": "2.3",
+      "url": "https://geo.so.ch/models/AGI/SO_AGI_STAC_20230426.ili",
+      "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
+      "bytes": 2474
+    },
+    {
+      "file": "AGI/contrib/IliValidGwr_V1_0.ili",
+      "model": "IliValidGwr_V1_0",
+      "version": "20250811",
+      "language": "2.4",
+      "url": "https://geo.so.ch/models/AGI/contrib/IliValidGwr_V1_0.ili",
+      "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
+      "bytes": 4284
+    }
+  ],
+  "selection": "four standalone, compilable 2.3/2.4 models",
+  "note": "Model bytes are cached outside the repository; the manifest pins them."
+}

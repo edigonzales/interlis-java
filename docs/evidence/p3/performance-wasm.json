@@ -1,0 +1,61 @@
+{
+  "schemaVersion": "1.0",
+  "runtime": "teavm-wasm-gc",
+  "node": "v22.23.1",
+  "iterationsPerModel": 3,
+  "warmupPerModel": 1,
+  "corpus": "docs/evidence/p3/geo-corpus.json",
+  "corpusIndexSha256": "ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c",
+  "wasmBytes": 2801662,
+  "models": [
+    {
+      "model": "SO_FunctionsExt",
+      "language": "2.3",
+      "bytes": 3168,
+      "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
+      "compileMs": [
+        5.054084000000003,
+        8.592542000000009,
+        4.700792000000007
+      ],
+      "compileMedianMs": 5.054084000000003
+    },
+    {
+      "model": "SO_AGI_GWR_20241118",
+      "language": "2.3",
+      "bytes": 5419,
+      "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
+      "compileMs": [
+        14.665875,
+        17.267500000000013,
+        12.046041000000002
+      ],
+      "compileMedianMs": 14.665875
+    },
+    {
+      "model": "SO_AGI_STAC_20230426",
+      "language": "2.3",
+      "bytes": 2474,
+      "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
+      "compileMs": [
+        19.538207999999997,
+        16.174541999999974,
+        17.26045800000003
+      ],
+      "compileMedianMs": 17.26045800000003
+    },
+    {
+      "model": "IliValidGwr_V1_0",
+      "language": "2.4",
+      "bytes": 4284,
+      "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
+      "compileMs": [
+        19.084374999999966,
+        18.288125000000036,
+        19.569833000000017
+      ],
+      "compileMedianMs": 19.084374999999966
+    }
+  ],
+  "notes": "In-process TeaVM WasmGC API measurements; warmup excluded."
+}

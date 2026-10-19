@@ -39,7 +39,7 @@
 
   const output = document.getElementById('output');
   const source = document.getElementById('source');
-  const state = {sessionId: null, revision: '0', snapshotId: null, schemaId: null, hasSource: false, diagramView: null};
+  const state = {sessionId: null, revision: '0', snapshotId: null, schemaId: null, hasSource: false, diagramView: null, benchmarkRevision: null};
 
   function resetState() {
     state.sessionId = null;
@@ -47,6 +47,7 @@
     state.snapshotId = null;
     state.schemaId = null;
     state.hasSource = false;
+    state.benchmarkRevision = null;
   }
 
   async function restartWorker() {
@@ -143,6 +144,35 @@
     return response;
   }
 
+  async function benchmark(text, modelName) {
+    const sessionId = await openSession();
+    const sourceId = 'memory:/benchmark.ili';
+    const updated = await call(envelope('updateSource', sessionId, {
+      sourceId,
+      expectation: state.benchmarkRevision === null ? {kind: 'absent'}
+        : {kind: 'at', revision: state.benchmarkRevision},
+      change: {kind: 'replace', text}
+    }));
+    if (updated.status !== 'ok') throw new Error('benchmark update failed: ' + JSON.stringify(updated));
+    state.benchmarkRevision = updated.result.sourceRevision;
+    state.revision = updated.result.workspaceRevision;
+    const analyzed = await call(envelope('analyze', sessionId, {
+      expectedWorkspaceRevision: state.revision,
+      roots: [{kind: 'byName', modelName}]
+    }));
+    if (analyzed.status !== 'ok') throw new Error('benchmark analyze failed: ' + JSON.stringify(analyzed));
+    const started = performance.now();
+    const compiled = await call(envelope('compile', sessionId, {
+      expectedWorkspaceRevision: state.revision,
+      roots: [{kind: 'byName', modelName}]
+    }));
+    const elapsed = performance.now() - started;
+    if (compiled.status !== 'ok' || compiled.result.outcome !== 'succeeded') {
+      throw new Error('benchmark compile failed: ' + JSON.stringify(compiled));
+    }
+    return elapsed;
+  }
+
   async function runContract() {
     const capabilities = await call(envelope('capabilities'));
     if (capabilities.status !== 'ok') throw new Error('capabilities failed');
@@ -207,5 +237,5 @@
   document.getElementById('compile').onclick = () => compile();
   document.getElementById('diagram').onclick = () => diagram();
 
-  window.interlisBrowserTest = {runContract, analyze, compile, diagram, restartWorker};
+  window.interlisBrowserTest = {runContract, analyze, compile, diagram, benchmark, restartWorker};
 })();

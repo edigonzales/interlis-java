@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "goal": "P3-4 performance and geo corpus",
+  "status": "PARTIAL",
+  "corpus": {
+    "indexSha256": "ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c",
+    "models": 4,
+    "2.3": 3,
+    "2.4": 1
+  },
+  "measurements": [
+    "performance-jvm.json",
+    "performance-wasm.json",
+    "performance-browser.json"
+  ],
+  "gaps": [
+    "large production corpus not yet measured",
+    "queue/backpressure and abort-under-load not measured",
+    "browser 2.4/WebKit subset skipped on WasmGC stack limit"
+  ]
+}

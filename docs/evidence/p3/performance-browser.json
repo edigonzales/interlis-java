@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "1.0",
+  "runtime": "browser",
+  "iterationsPerModel": 3,
+  "warmupPerModel": 1,
+  "corpus": "docs/evidence/p3/geo-corpus.json",
+  "corpusIndexSha256": "ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c",
+  "results": [
+    {
+      "browser": "chromium",
+      "status": "passed",
+      "models": [
+        {
+          "model": "SO_FunctionsExt",
+          "language": "2.3",
+          "bytes": 3168,
+          "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
+          "compileMs": [
+            3.399999976158142,
+            2.699999988079071,
+            3.300000011920929
+          ],
+          "compileMedianMs": 3.300000011920929
+        },
+        {
+          "model": "SO_AGI_GWR_20241118",
+          "language": "2.3",
+          "bytes": 5419,
+          "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
+          "compileMs": [
+            9.400000035762787,
+            8,
+            6.800000011920929
+          ],
+          "compileMedianMs": 8
+        },
+        {
+          "model": "SO_AGI_STAC_20230426",
+          "language": "2.3",
+          "bytes": 2474,
+          "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
+          "compileMs": [
+            13,
+            6.399999976158142,
+            4.800000011920929
+          ],
+          "compileMedianMs": 6.399999976158142
+        },
+        {
+          "model": "IliValidGwr_V1_0",
+          "language": "2.4",
+          "bytes": 4284,
+          "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        }
+      ]
+    },
+    {
+      "browser": "firefox",
+      "status": "passed",
+      "models": [
+        {
+          "model": "SO_FunctionsExt",
+          "language": "2.3",
+          "bytes": 3168,
+          "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
+          "compileMs": [
+            7,
+            6,
+            6
+          ],
+          "compileMedianMs": 6
+        },
+        {
+          "model": "SO_AGI_GWR_20241118",
+          "language": "2.3",
+          "bytes": 5419,
+          "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
+          "compileMs": [
+            18,
+            16,
+            13
+          ],
+          "compileMedianMs": 16
+        },
+        {
+          "model": "SO_AGI_STAC_20230426",
+          "language": "2.3",
+          "bytes": 2474,
+          "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
+          "compileMs": [
+            13,
+            13,
+            12
+          ],
+          "compileMedianMs": 13
+        },
+        {
+          "model": "IliValidGwr_V1_0",
+          "language": "2.4",
+          "bytes": 4284,
+          "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        }
+      ]
+    },
+    {
+      "browser": "webkit",
+      "status": "passed",
+      "models": [
+        {
+          "model": "SO_FunctionsExt",
+          "language": "2.3",
+          "bytes": 3168,
+          "sha256": "0342d1f12958713d902142057e60a7b14ab3860550652d1d8337e9750cb298b9",
+          "compileMs": [
+            7,
+            7,
+            4
+          ],
+          "compileMedianMs": 7
+        },
+        {
+          "model": "SO_AGI_GWR_20241118",
+          "language": "2.3",
+          "bytes": 5419,
+          "sha256": "3401d4ca219d1070f2ca600009ac93786ff16661dedd6b61928b098c2e489ac2",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "SO_AGI_STAC_20230426",
+          "language": "2.3",
+          "bytes": 2474,
+          "sha256": "197b6a7b0e931445da73d675e0f2e5a01609904a4f91a99fba626fcf2d74a3d9",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        },
+        {
+          "model": "IliValidGwr_V1_0",
+          "language": "2.4",
+          "bytes": 4284,
+          "sha256": "6618db45321a72346324df31dc3d582234b0b6f13ca1c48b373525264f61d65c",
+          "status": "skipped",
+          "reason": "browser WasmGC stack limit; measured on JVM/WASM"
+        }
+      ]
+    }
+  ],
+  "notes": "Playwright browser pages; warmup excluded."
+}
