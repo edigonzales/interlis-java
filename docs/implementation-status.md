@@ -22,7 +22,7 @@ vollständiger Closure und vollständiger Coverage ein `CompiledSchema` aus.
 Nicht implementierte Sprachkonstrukte werden als `NOT_IMPLEMENTED` sichtbar und
 blockieren den Compile.
 
-Verifiziert sind: **134 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
+Verifiziert sind: **138 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
 Node, Chromium/Firefox/WebKit über Playwright, ein tatsächlich ausgeführter
 GraalVM-Web-Image-Build samt Node- und Browservertrag (Chromium/Firefox/WebKit),
 CLI-Distribution und LSP-Adaptertest.
@@ -160,7 +160,7 @@ referenzierten JSON-Dateien.
 
 | Kommando | Ergebnis |
 |---|---|
-| `./gradlew check` | **BUILD SUCCESSFUL**, 134 Tests, 0 Fehler |
+| `./gradlew check` | **BUILD SUCCESSFUL**, 138 Tests, 0 Fehler |
 | `./gradlew :interlis-compiler:sdkExampleTest` | **SDK PASS**, Beispiel gegen gebaute JARs kompiliert und ausgeführt |
 | `python3 tools/reference/reference_check.py` | **5/5 PASS** gegen ili2c 5.6.9; kleiner gepinnter P1-Fallkorpus |
 | `./gradlew conformanceCheck` | **PASS**: 593 ausgewählte Fälle, 592 PASS/1 XFAIL/0 FAIL/0 ERROR; der XFAIL ist der out-of-scope INTERLIS1-Transferfall |
@@ -205,12 +205,12 @@ referenzierten JSON-Dateien.
 3. **Web Image und Safari.** Der Web-Image-Pfad wurde unter Node und in
    Chromium, Firefox und Playwright-WebKit ausgeführt. TeaVM wurde zusätzlich in
    echtem Safari geprüft; der Web-Image-Safari-Pfad ist nicht separat gelaufen.
-4. **P2-Semantik.** Vollständige Typfamilien, Views, Funktionen, Einheiten,
-   Formate, Übersetzungen, Graphics, Metaobjekte, Generics/Deferred,
-   vollständige Constraints und die versionierte Keyword-Matrix fehlen. Sie
-   sind `NOT_IMPLEMENTED` und blockieren betroffene Compiles.
-5. **Fragmentanalyse** (`parseFragment`) ist P2 und wirft explizit
-   `UnsupportedOperationException`.
+4. **P2-Semantik.** Der P2-Audit (WP-20..27) läuft; die historische
+   Sammelaussage zu fehlenden Typ-/View-/Metaobject-Familien ist nicht mehr
+   aktuell und wird im P2-Abschluss durch eine belastbare WP-Matrix ersetzt.
+5. **Fragmentanalyse:** `parseFragment` ist implementiert und mit
+   `FragmentParserTest` für Ausdruck, Objektpfad, Attributdeklaration,
+   Originalkoordinaten und Trailing-Content abgedeckt.
 6. **Performancebudgets** wurden nicht gemessen; es gibt keine Aussage zu
    Laufzeit/Speicher auf realen Korpora.
 7. **LSP- und Workspace-Vertiefung:** Die P1-Anforderungen LSP-001..011/014/016
@@ -225,7 +225,7 @@ referenzierten JSON-Dateien.
 ## 9a. P2-Zwischenstand (WP-23/WP-24 abgeschlossen, 2026-10-18)
 
 - Conformance: **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR** von 593 ausgewählten 2.3/2.4-Fällen.
-- JVM: **134 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
+- JVM: **138 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
 - Umgesetzt: Typfamilien (Temporal, OID/Blackbox/Alignment, FORMAT, CLASS/STRUCTURE-Werte), UNIT/unitRef, Domain-Enumerationen, Domain-Extends, Rollen-/Assoziationsregeln, Attribut-Overrides, Namens-/Endnamen-Regeln, Geometry-Typen und -Regeln, View-Deklarationen mit Alias-/Attributprüfungen, externe Constraint-Blöcke, UNIQUE-/SET-/Plausibility-Constraints, Enum-/Klassenkonstanten.
 - **WP-24 Translation:** Guard entfernt; Quellmodell/Version, Modellkopf, Imports, Token-/Namenskorrespondenz, Constraints, Modellreferenzen, Einheiten und Koordinaten werden validiert. **36/36 Single-Feature-Translation-Accept-Fälle PASS**, **0** Translation-Reject-False-Accepts; Nachweis in `docs/evidence/conformance/translation-summary.json`.
 - **Rollenpfad-Ausdrücke:** `ilimanual_CoordSys` und `ilimanual_CoordSysAppendix` PASS; 0 False Accepts; Nachweis in `docs/evidence/conformance/role-path-summary.json`.

@@ -1,6 +1,6 @@
 package guru.interlis.syntax;
 
-/** Fragment categories; P1 publishes only complete document parsing. */
+/** Fragment categories supported by {@link SyntaxService#parseFragment}. */
 public enum FragmentKind {
     /** The {@code EXPRESSION} constant. */
     EXPRESSION,

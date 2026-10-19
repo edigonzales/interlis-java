@@ -11,9 +11,10 @@ public interface SyntaxService {
                          CancellationToken cancellation);
 
     /**
-     * Fragment analysis is a P2 capability. Implementations must throw
-     * {@link UnsupportedOperationException} rather than publish an empty
-     * successful fragment while the feature is not implemented.
+     * Parses a complete expression, object path or attribute declaration inside
+     * an existing source revision. The returned ranges stay in the original
+     * source coordinates; trailing content is reported and cannot be silently
+     * accepted.
      */
     FragmentSnapshot parseFragment(SourceText source, SourceRange fragment,
                                    FragmentKind kind, LanguageVersion languageVersion,

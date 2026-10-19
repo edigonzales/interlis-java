@@ -1363,6 +1363,18 @@ final class SyntaxTreeBuilder {
         return new Cardinality(lower, CardinalityUpper.unbounded());
     }
 
+    ExpressionSyntax buildExpressionFragment(InterlisParser.ExpressionContext context) {
+        return buildExpression(context);
+    }
+
+    ExpressionSyntax buildPathFragment(InterlisParser.ObjectOrAttributePathContext context) {
+        return pathExpression(context);
+    }
+
+    AttributeDeclarationSyntax buildAttributeFragment(InterlisParser.AttributeDefContext context) {
+        return buildAttribute(context);
+    }
+
     private ExpressionSyntax buildExpression(InterlisParser.ExpressionContext context) {
         return buildTerm(context.term());
     }

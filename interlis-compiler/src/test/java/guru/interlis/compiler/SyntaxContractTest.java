@@ -65,11 +65,12 @@ class SyntaxContractTest {
     }
 
     @Test
-    void fragmentAnalysisIsExplicitlyUnsupported() {
+    void fragmentAnalysisRejectsForeignRevision() {
         SourceText source = source("INTERLIS 2.4;");
+        SourceText foreign = new SourceText(source.id(), new SourceRevision(2), source.text());
         var service = SyntaxServices.create();
-        org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,
-                () -> service.parseFragment(source, source.range(0, 0),
+        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> service.parseFragment(source, foreign.range(0, 0),
                         guru.interlis.syntax.FragmentKind.EXPRESSION,
                         guru.interlis.model.LanguageVersion.ILI24, CancellationToken.none()));
     }

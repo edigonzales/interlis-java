@@ -35,6 +35,7 @@ import guru.interlis.syntax.TokenOrigin;
 import guru.interlis.syntax.TriviaKind;
 import guru.interlis.syntax.TriviaSpan;
 import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 
@@ -285,8 +286,92 @@ public final class AntlrSyntaxService implements SyntaxService {
     public FragmentSnapshot parseFragment(SourceText source, SourceRange fragment,
                                           FragmentKind kind, LanguageVersion languageVersion,
                                           CancellationToken cancellation) {
-        throw new UnsupportedOperationException(
-                "Fragment analysis is not implemented in P1; no empty successful fragment is returned");
+        Objects.requireNonNull(source, "source");
+        Objects.requireNonNull(fragment, "fragment");
+        Objects.requireNonNull(kind, "kind");
+        Objects.requireNonNull(languageVersion, "languageVersion");
+        Objects.requireNonNull(cancellation, "cancellation");
+        cancellation.throwIfCancellationRequested();
+        if (!source.id().equals(fragment.source())
+                || !source.revision().equals(fragment.revision())) {
+            throw new IllegalArgumentException("fragment belongs to another source revision");
+        }
+        String fragmentText = source.slice(fragment);
+        DiagnosticCollector collector = new DiagnosticCollector(CATALOG,
+                AnalysisBudget.defaults().maxDiagnostics());
+        AntlrOffsetMap offsets = new AntlrOffsetMap(source);
+        var charStream = CharStreams.fromString(fragmentText);
+        InterlisLexer lexer = new InterlisLexer(charStream);
+        lexer.removeErrorListeners();
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        tokens.fill();
+        List<Token> shifted = new ArrayList<>();
+        for (Token token : tokens.getTokens()) {
+            CommonToken copy = new CommonToken(token);
+            copy.setStartIndex(token.getStartIndex() + fragment.startOffset());
+            int stop = token.getStopIndex() < 0 ? -1 : token.getStopIndex() + fragment.startOffset();
+            copy.setStopIndex(stop);
+            shifted.add(copy);
+        }
+        CommonTokenStream fragmentTokens = new CommonTokenStream(
+                new org.antlr.v4.runtime.ListTokenSource(shifted));
+        fragmentTokens.fill();
+        InterlisParser parser = new InterlisParser(fragmentTokens);
+        parser.removeErrorListeners();
+        parser.addErrorListener(new CollectingParserErrorListener(offsets, collector));
+        org.antlr.v4.runtime.ParserRuleContext context;
+        try {
+            context = switch (kind) {
+                case EXPRESSION -> parser.expression();
+                case OBJECT_PATH -> parser.objectOrAttributePath();
+                case ATTRIBUTE_DECLARATION -> parser.attributeDef();
+            };
+        } catch (RuntimeException error) {
+            context = null;
+        }
+        cancellation.throwIfCancellationRequested();
+        boolean consumed = fragmentTokens.LA(1) == Token.EOF;
+        if (!consumed) {
+            Token next = fragmentTokens.LT(1);
+            if (next != null && next.getType() != Token.EOF) {
+                collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0004"),
+                                Severity.ERROR, Phase.PARSING, "diagnostic.syntax.trailing")
+                        .at(offsets.tokenRange(next))
+                        .argument(new DiagnosticArgument.TokenArgument("actual",
+                                safeTokenText(next))));
+            }
+        }
+        SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, fragmentTokens,
+                languageVersion);
+        guru.interlis.syntax.SyntaxNode root;
+        if (context == null) {
+            SourceRange range = fragment;
+            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0002"),
+                            Severity.ERROR, Phase.PARSING, "diagnostic.syntax.unexpected")
+                    .at(range)
+                    .argument(new DiagnosticArgument.TokenArgument("actual", "<invalid-fragment>"))
+                    .argument(new DiagnosticArgument.IdentifierListArgument("expected",
+                            List.of(kind.name()))));
+            root = switch (kind) {
+                case EXPRESSION, OBJECT_PATH -> new guru.interlis.syntax.UnsupportedExpressionSyntax(
+                        new SyntaxNodeId("fragment-root"), range, "FRAGMENT",
+                        "fragment could not be parsed");
+                case ATTRIBUTE_DECLARATION -> new guru.interlis.syntax.UnsupportedDeclarationSyntax(
+                        new SyntaxNodeId("fragment-root"), range, "FRAGMENT",
+                        "fragment could not be parsed");
+            };
+        } else {
+            root = switch (kind) {
+                case EXPRESSION -> builder.buildExpressionFragment(
+                        (InterlisParser.ExpressionContext) context);
+                case OBJECT_PATH -> builder.buildPathFragment(
+                        (InterlisParser.ObjectOrAttributePathContext) context);
+                case ATTRIBUTE_DECLARATION -> builder.buildAttributeFragment(
+                        (InterlisParser.AttributeDefContext) context);
+            };
+        }
+        return new FragmentSnapshot(source, kind, fragment, root, consumed,
+                collector.freeze(), languageVersion);
     }
 
     private static String safeMessage(Throwable error) {
