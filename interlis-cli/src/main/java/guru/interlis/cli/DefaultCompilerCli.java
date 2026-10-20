@@ -11,6 +11,7 @@ import guru.interlis.format.FormatOutcome;
 import guru.interlis.format.ModelFormatter;
 import guru.interlis.format.ModelFormatters;
 import guru.interlis.model.CompiledSchema;
+import guru.interlis.model.VersionManifest;
 import guru.interlis.projection.DiagramDocument;
 import guru.interlis.projection.DiagramInput;
 import guru.interlis.projection.DiagramJsonCodec;
@@ -62,7 +63,7 @@ public final class DefaultCompilerCli implements CliApplication {
         String command = arguments.getFirst();
         try {
             return switch (command) {
-                case "version" -> version(environment);
+                case "version" -> version(arguments, environment);
                 case "capabilities" -> capabilities(environment);
                 case "check", "compile" -> compile(arguments, environment, token);
                 case "analyze" -> analyze(arguments, environment, token);
@@ -84,9 +85,30 @@ public final class DefaultCompilerCli implements CliApplication {
         }
     }
 
-    private CliExecutionResult version(CliEnvironment environment) {
-        String output = "interlis-java 0.1.0-SNAPSHOT\n"
-                + "language: INTERLIS 2.3, 2.4\n"
+    private CliExecutionResult version(List<String> arguments, CliEnvironment environment) {
+        VersionManifest manifest = VersionManifest.current();
+        if (arguments.size() > 1) {
+            if (arguments.size() == 2 && arguments.get(1).equals("--json")) {
+                String json = "{\"tool\":\"interlis-java\",\"version\":\""
+                        + manifest.toolVersion() + "\",\"apiVersion\":\""
+                        + manifest.apiVersion() + "\",\"diagnosticCatalogVersion\":\""
+                        + manifest.diagnosticCatalogVersion() + "\",\"protocol\":\""
+                        + manifest.protocolIdentifier() + "\",\"languageProfiles\":\""
+                        + manifest.languageProfiles() + "\",\"formatVersion\":\""
+                        + manifest.formatVersion() + "\",\"diagramSchemaVersion\":\""
+                        + manifest.diagramSchemaVersion() + "\"}";
+                environment.out().println(json);
+                return result(CliTermination.SUCCESS, List.of(), json);
+            }
+            return usage(environment, "version accepts only --json");
+        }
+        String output = "interlis-java " + manifest.toolVersion() + "\n"
+                + "api: " + manifest.apiVersion() + "\n"
+                + "diagnostics: " + manifest.diagnosticCatalogVersion() + "\n"
+                + "protocol: " + manifest.protocolIdentifier() + "\n"
+                + "language: INTERLIS " + manifest.languageProfiles() + "\n"
+                + "format: " + manifest.formatVersion() + "\n"
+                + "diagram: " + manifest.diagramSchemaVersion() + "\n"
                 + "java: " + Runtime.version() + "\n"
                 + "grammar: antlr-4.13.2 / geostandards-f8f9723";
         environment.out().println(output);
@@ -94,7 +116,13 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private CliExecutionResult capabilities(CliEnvironment environment) {
-        String output = "{\"tool\":\"interlis-java\",\"version\":\"0.1.0-SNAPSHOT\","
+        VersionManifest manifest = VersionManifest.current();
+        String output = "{\"tool\":\"interlis-java\",\"version\":\"" + manifest.toolVersion() + "\","
+                + "\"apiVersion\":\"" + manifest.apiVersion() + "\","
+                + "\"diagnosticCatalogVersion\":\"" + manifest.diagnosticCatalogVersion() + "\","
+                + "\"formatVersion\":\"" + manifest.formatVersion() + "\","
+                + "\"diagramSchemaVersion\":\"" + manifest.diagramSchemaVersion() + "\","
+                + "\"languageProfiles\":[\"2.3\",\"2.4\"],"
                 + "\"languages\":[\"2.3\",\"2.4\"],"
                 + "\"features\":[\"MODEL\",\"TOPIC\",\"CLASS\",\"STRUCTURE\",\"DOMAIN\",\"FORMAT\","
                 + "\"ATTRIBUTE\",\"INHERITANCE\",\"ASSOCIATION_ROLE\",\"MANDATORY_CONSTRAINT\","
@@ -102,7 +130,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 + "\"notImplemented\":[\"VIEW\",\"GRAPHIC\",\"FUNCTION\",\"UNIT\",\"CONTEXT\","
                 + "\"METAOBJECT\",\"TRANSLATION\",\"DEFERRED_GENERICS\",\"OID\","
                 + "\"BLACKBOX\",\"TEMPORAL\",\"ENUMTREEVAL\",\"EXTERNAL_CONSTRAINTS\"],"
-                + "\"protocol\":\"interlis.compiler/1.0\"}";
+                + "\"protocol\":\"" + manifest.protocolIdentifier() + "\"}";
         environment.out().println(output);
         return result(CliTermination.SUCCESS, List.of(), output);
     }

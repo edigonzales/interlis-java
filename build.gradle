@@ -42,10 +42,12 @@ tasks.register('checkBrowser') {
 
 tasks.register('releaseCheck') {
     group = 'verification'
-    description = 'P1 release profile: check, checkPortable, checkBrowser and the web-image investigation record.'
+    description = 'P1/P3 release profile: checks, portable/browser gates, SDK process check and package.'
     dependsOn tasks.named('check')
     dependsOn tasks.named('checkPortable')
     dependsOn tasks.named('checkBrowser')
+    dependsOn tasks.named('sdkProcessCheck')
+    dependsOn tasks.named('sdkPackage')
     def webimage = subprojects.find { it.name == 'interlis-wasm-webimage' }
     if (webimage != null) {
         dependsOn "${webimage.path}:webImageProbe"
@@ -102,4 +104,31 @@ tasks.register('performanceCheck') {
     group = 'verification'
     description = 'Pins the corpus and refreshes JVM, WasmGC and browser measurements.'
     dependsOn 'geoCorpus', 'jvmBenchmark', 'wasmBenchmark', 'browserBenchmark'
+}
+
+tasks.register('sdkProcessCheck', Exec) {
+    group = 'verification'
+    description = 'Runs the installed CLI as a process and records exit codes/streams.'
+    dependsOn ':interlis-cli:installDist'
+    workingDir = rootProject.projectDir
+    commandLine 'python3', 'tools/sdk/check_distribution.py'
+}
+
+tasks.register('sdkPackage', Zip) {
+    group = 'distribution'
+    description = 'Builds the reproducible SDK/CLI archive (not published).'
+    dependsOn ':interlis-cli:installDist', 'sdkProcessCheck'
+    archiveFileName = "interlis-java-sdk-${project.version}.zip"
+    destinationDirectory = layout.buildDirectory.dir('releases')
+    from(project(':interlis-cli').layout.buildDirectory.dir('install/interlis-cli')) {
+        into 'cli'
+    }
+    from(rootProject.file('examples/sdk')) {
+        into 'examples/sdk'
+    }
+    from(rootProject.file('docs/evidence/p3/version-manifest.json')) {
+        into 'version'
+    }
+    reproducibleFileOrder = true
+    preserveFileTimestamps = false
 }

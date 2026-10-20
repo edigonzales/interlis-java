@@ -19,6 +19,7 @@ Command: `./gradlew check`
 | `guru.interlis.compiler.P2HeaderOptionsTest` | 1 | 0 |
 | `guru.interlis.compiler.CancelledAnalysisTest` | 1 | 0 |
 | `guru.interlis.execution.BoundedObservationQueueTest` | 2 | 0 |
+| `guru.interlis.model.VersionManifestTest` | 2 | 0 |
 | `guru.interlis.compiler.FormatterContractTest` | 3 | 0 |
 | `guru.interlis.compiler.CompilerEngineTest` | 5 | 0 |
 | `guru.interlis.compiler.ArchitectureBoundaryTest` | 1 | 0 |
@@ -84,7 +85,7 @@ Command: `./gradlew check`
 | `guru.interlis.lsp.LspProtocolCancellationTest` | 1 | 0 |
 | `guru.interlis.lsp.LspErrorContractTest` | 1 | 0 |
 | `guru.interlis.cli.CliApplicationTest` | 8 | 0 |
-| **Total** | **170** | **0** |
+| **Total** | **172** | **0** |
 
 The Gradle test reports are generated under `<module>/build/test-results/test/`.
 

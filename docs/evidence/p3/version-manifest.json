@@ -1,0 +1,10 @@
+{
+  "tool": "interlis-java",
+  "version": "0.1.0-SNAPSHOT",
+  "apiVersion": "0.1",
+  "diagnosticCatalogVersion": "interlis-diagnostics/v1",
+  "protocol": "interlis.compiler/1.0",
+  "languageProfiles": "2.3, 2.4",
+  "formatVersion": "1.0",
+  "diagramSchemaVersion": "1.0"
+}

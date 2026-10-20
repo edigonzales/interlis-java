@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "1.0",
+  "status": "passed",
+  "cli": "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+  "commands": [
+    {
+      "arguments": [
+        "version"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "d648a5b004058f123f8784d19115649466c42c73ae1cccef20ff854f9b6a904c",
+      "stdoutLines": 9,
+      "stderrLines": 0
+    },
+    {
+      "arguments": [
+        "version",
+        "--json"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "258c21bbff5d4a2150198fec5a4c0281c05dfa9a6ee4232a1c6ee5d314e17e25",
+      "stdoutLines": 1,
+      "stderrLines": 0
+    },
+    {
+      "arguments": [
+        "capabilities"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "748342f8b2da46e41dd17ef92c3e428da0dd839f973a2fd58f5a0c7ff2277407",
+      "stdoutLines": 1,
+      "stderrLines": 0
+    },
+    {
+      "arguments": [
+        "check",
+        "/Users/stefan/sources/interlis-java/testdata/models/base24.ili",
+        "/Users/stefan/sources/interlis-java/testdata/models/survey24.ili"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutLines": 0,
+      "stderrLines": 0
+    },
+    {
+      "arguments": [
+        "check",
+        "/Users/stefan/sources/interlis-java/testdata/models/broken24.ili"
+      ],
+      "exitCode": 1,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutLines": 0,
+      "stderrLines": 5
+    },
+    {
+      "arguments": [
+        "format",
+        "--check",
+        "/var/folders/0z/1lwhf37x0h9858xcm889mbz80000gn/T/tmptpe_ny41/model.ili"
+      ],
+      "exitCode": 1,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutLines": 0,
+      "stderrLines": 1
+    },
+    {
+      "arguments": [
+        "format",
+        "--indent",
+        "4",
+        "--line-ending",
+        "lf",
+        "/var/folders/0z/1lwhf37x0h9858xcm889mbz80000gn/T/tmptpe_ny41/model.ili"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "b5c0908d18aa51ca5f37cb28f4ec75e09d41bdfbd20d723e95ee40e1c6202fb8",
+      "stdoutLines": 8,
+      "stderrLines": 0
+    },
+    {
+      "arguments": [
+        "format",
+        "--write",
+        "--indent",
+        "4",
+        "--line-ending",
+        "lf",
+        "/var/folders/0z/1lwhf37x0h9858xcm889mbz80000gn/T/tmptpe_ny41/model.ili"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutLines": 0,
+      "stderrLines": 0
+    },
+    {
+      "arguments": [
+        "check",
+        "--no-such-option",
+        "/Users/stefan/sources/interlis-java/testdata/models/base24.ili"
+      ],
+      "exitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdoutLines": 0,
+      "stderrLines": 2
+    }
+  ],
+  "note": "Process-level comparison; stdout/stderr are represented by hashes and line counts."
+}

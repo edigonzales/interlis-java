@@ -22,7 +22,7 @@ vollständiger Closure und vollständiger Coverage ein `CompiledSchema` aus.
 Nicht implementierte Sprachkonstrukte werden als `NOT_IMPLEMENTED` sichtbar und
 blockieren den Compile.
 
-Verifiziert sind: **170 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
+Verifiziert sind: **172 JVM-Tests**, TeaVM-WasmGC und TeaVM-JavaScript unter
 Node, Chromium/Firefox/WebKit über Playwright, ein tatsächlich ausgeführter
 GraalVM-Web-Image-Build samt Node- und Browservertrag (Chromium/Firefox/WebKit),
 CLI-Distribution und LSP-Adaptertest.
@@ -36,8 +36,8 @@ verbleibende **XFAIL** `Attribute10Test.attributeComplete` benötigt
 gewählten 2.3/2.4-Umfang stehen **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR**;
 in-scope sind damit **592 von 592** Fällen PASS, der einzelne XFAIL ist der
 out-of-scope INTERLIS1-Transferfall.
-P2 ist für den Compiler-Scope WP-20..27 abgeschlossen; Performancebudgets und
-P3–P5 bleiben offen. Die
+P2 ist für den Compiler-Scope WP-20..27 abgeschlossen. P3 ist mit P3-1 bis
+P3-5 abgeschlossen; P4/P5 bleiben offen. Die
 Plattform-Gates JVM, Node, Chromium, Firefox, Playwright-WebKit und echtes Safari
 sind ausgeführt und bestanden.
 
@@ -161,7 +161,7 @@ referenzierten JSON-Dateien.
 
 | Kommando | Ergebnis |
 |---|---|
-| `./gradlew check` | **BUILD SUCCESSFUL**, 170 Tests, 0 Fehler |
+| `./gradlew check` | **BUILD SUCCESSFUL**, 172 Tests, 0 Fehler |
 | `./gradlew :interlis-compiler:sdkExampleTest` | **SDK PASS**, Beispiel gegen gebaute JARs kompiliert und ausgeführt |
 | `python3 tools/reference/reference_check.py` | **5/5 PASS** gegen ili2c 5.6.9; kleiner gepinnter P1-Fallkorpus |
 | `./gradlew conformanceCheck` | **PASS**: 593 ausgewählte Fälle, 592 PASS/1 XFAIL/0 FAIL/0 ERROR; der XFAIL ist der out-of-scope INTERLIS1-Transferfall |
@@ -227,9 +227,10 @@ referenzierten JSON-Dateien.
 ## 9a. P2-Abschluss (WP-20..27, 2026-10-19)
 
 - Conformance: **592 PASS / 1 XFAIL / 0 FAIL / 0 ERROR** von 593 ausgewählten 2.3/2.4-Fällen.
-- JVM: **170 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
+- JVM: **172 Tests, 0 Fehler**; `checkPortable`, `checkBrowser` und `releaseCheck` grün.
 - Umgesetzt: Typfamilien (Temporal, OID/Blackbox/Alignment, FORMAT, CLASS/STRUCTURE-Werte), UNIT/unitRef, Domain-Enumerationen, Domain-Extends, Rollen-/Assoziationsregeln, Attribut-Overrides, Namens-/Endnamen-Regeln, Geometry-Typen und -Regeln, View-Deklarationen mit Alias-/Attributprüfungen, externe Constraint-Blöcke, UNIQUE-/SET-/Plausibility-Constraints, Enum-/Klassenkonstanten.
 - **WP-24 Translation:** Guard entfernt; Quellmodell/Version, Modellkopf, Imports, Token-/Namenskorrespondenz, Constraints, Modellreferenzen, Einheiten und Koordinaten werden validiert. **36/36 Single-Feature-Translation-Accept-Fälle PASS**, **0** Translation-Reject-False-Accepts; Nachweis in `docs/evidence/conformance/translation-summary.json`.
+- **P3-5 SDK/Release:** **VERIFIED** – getrenntes Versionsmanifest (Tool/API/Diagnose/Protokoll/Format/Diagramm), SDK-Beispiel gegen Jars, 9-Kommando-Prozessvergleich, reproduzierbares SDK-ZIP (nicht veröffentlicht); Nachweis in `docs/evidence/p3/p3-5-summary.json`.
 - **P3-4 Performance/Geo-Korpus:** **VERIFIED (Seed-Korpus)** – gepinnter Index und 13 reale Modelle; JVM-Compile/Format, TeaVM-WasmGC-Compile und Playwright-Compile gemessen; Evidence `docs/evidence/p3/performance-summary.md`; offen sind größerer Produktionskorpus, Queue-/Abbruchmessung und Browser-2.4/WebKit-Subset.
 - **P3-3 TypeScript-Diagrammadapter:** **VERIFIED** – gepinntes DiagramDocument-1.0-Schema, TypeScript-Deklaration, JS-Adapter mit n-ary-Gruppierung, Source-Anchors und Stale-Prüfung; Browservertrag Chromium/Firefox/WebKit und Adapter-Unit-Test; Nachweis in `docs/evidence/p3/p3-3-summary.json`.
 - **P3-2 LSP:** **VERIFIED** – References, `prepareRename`, Multi-File-Rename mit Kollisions-/Stale-/Read-only-Pfaden, Endnamen, Format-CodeAction, Semantik-Tokens, Folding, Watched Files, Konfigurationsrefresh und Capability-Snapshot; Multi-File-, Read-only-, Missing-Source-, Kollisions- und Stale-Tests; Nachweis in `docs/evidence/p3/p3-2-summary.json`.
@@ -248,9 +249,9 @@ referenzierten JSON-Dateien.
 ## 9. Nächster Arbeitsschritt (P3)
 
 P2 ist für den Compiler-Scope WP-20..27 abgeschlossen. **P3-1 (Formatierung und
-ili2c-CLI-Profil) und P3-2 (LSP-Vertiefung) sind VERIFIED.** Die weiteren
-P3-Goals: **P3-4 Performance auf dem gepinnten Geo-Korpus ist VERIFIED mit
-dokumentierten Skalierungsgrenzen**; P3-5 SDK/CLI-Releases ist noch nicht begonnen. Ein
+ili2c-CLI-Profil) und P3-2 (LSP-Vertiefung) sind VERIFIED.** P3 ist abgeschlossen: **P3-4 Performance** ist mit dokumentierten
+Skalierungsgrenzen verifiziert, **P3-5 SDK/Release** ist verifiziert. P4/P5
+bleiben offen. Ein
 Legacy-Java-API-Adapter ist derzeit nicht Bestandteil von P3.
 Vor jedem neuen Feature: positiven, negativen, Metamodell-/Query- und
 Portabilitätsfall gemeinsam ergänzen; `AnalysisCoverage`-Feature erst entfernen,

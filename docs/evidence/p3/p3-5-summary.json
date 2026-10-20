@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0",
+  "goal": "P3-5 SDK and release",
+  "status": "VERIFIED",
+  "versionManifest": {
+    "path": "docs/evidence/p3/version-manifest.json",
+    "tool": "0.1.0-SNAPSHOT",
+    "api": "0.1",
+    "diagnostics": "interlis-diagnostics/v1",
+    "protocol": "interlis.compiler/1.0",
+    "format": "1.0",
+    "diagram": "1.0",
+    "languages": [
+      "2.3",
+      "2.4"
+    ]
+  },
+  "sdkExample": {
+    "task": "sdkExampleTest",
+    "result": "PASS"
+  },
+  "processComparison": {
+    "path": "docs/evidence/p3/sdk-process-comparison.json",
+    "commands": 9,
+    "result": "PASS"
+  },
+  "package": {
+    "path": "build/releases/interlis-java-sdk-0.1.0-SNAPSHOT.zip",
+    "sha256": "c512eb934c3d2f4cb468cf6ea277b8a2cff1606b46193263ca10939d74c00136",
+    "reproducible": true,
+    "published": false
+  },
+  "gates": {
+    "check": "SUCCESS",
+    "checkPortable": "SUCCESS",
+    "checkBrowser": "SUCCESS",
+    "releaseCheck": "SUCCESS"
+  },
+  "tests": 172
+}

@@ -3,6 +3,7 @@ package guru.interlis.bridge;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticArgument;
 import guru.interlis.execution.CancellationReason;
+import guru.interlis.model.VersionManifest;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,9 +14,9 @@ import java.util.Optional;
 
 /** Explicit protocol 1.0 request/response codec. */
 public final class BridgeCodec {
-    public static final String PROTOCOL = "interlis.compiler";
-    public static final String PROTOCOL_VERSION = "1.0";
-    public static final String TOOL_VERSION = "0.1.0-SNAPSHOT";
+    public static final String PROTOCOL = VersionManifest.PROTOCOL_NAME;
+    public static final String PROTOCOL_VERSION = VersionManifest.PROTOCOL_VERSION;
+    public static final String TOOL_VERSION = VersionManifest.TOOL_VERSION;
 
     BridgeRequest decode(String json) {
         JsonValue value;
