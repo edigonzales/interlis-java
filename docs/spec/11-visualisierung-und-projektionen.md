@@ -255,3 +255,36 @@ Die Tests vergleichen zuerst DiagramDocument-Strukturen. Reine Pixelvergleiche k
 
 **P3:** Rendererparität, Layoutstabilität und Performance mit realen Modellbeständen vervollständigen. Der TypeScript-Diagrammadapter wird an das tatsächlich gepinnte Browser-/Diagrammschema angebunden; Feldnamenähnlichkeit allein begründet keine Kompatibilität. Native C++-/C-ABI-/iox-Adapter sind **nicht Bestandteil von P3**; sie gehören zu P4 oder einem eigenen Adapterauftrag. Ein neues Java-Wasm-Modul ersetzt keine C-ABI und keinen nativen iox-Verbraucher.
 
+
+### Linienformen in der Projektion, Vorab-API 0.2
+
+`DiagramNodeKind.LINE_FORM` stellt eine deklarierte Linienform dar. Die
+Standardauswahl enthält diese Kategorie. Eine REFERENCE-Kante mit Label
+`segment` zeigt auf die gebundene Segmentstruktur; deren Vererbung verwendet
+weiterhin INHERITANCE. Identitäten und Quellanker stammen aus dem gemeinsamen
+Graphen. Das Diagrammformat 1.0 und sein Schema bleiben unverändert: Die dort
+bereits offenen Kind-Strings werden vom TypeScript-Adapter durchgereicht.
+`DiagramProjectionTest.projectsLineFormTargetAndSegmentInheritance` prüft
+Knoten, beide Beziehungen und den Diagrammvalidator.
+
+
+### Metadaten und Parameter, Vorab-API 0.2
+
+METADATA_BASKET und METAOBJECT ergänzen die Standard-Knotenarten. Gebundene
+REFERENCE-Kanten zeigen `topic`, `class` und `basket`; Basketvererbung nutzt
+INHERITANCE. Ein Topic-Ziel wird bei Bedarf als Referenzknoten dargestellt.
+Deklarierte Klassen-/Strukturparameter erscheinen in PARAMETERS als PARAMETER
+mit Typ, Override-Marker und Quellanker. Diagrammformat und Schema bleiben 1.0;
+die vorhandenen offenen Kind-Strings werden vom TypeScript-Adapter transportiert.
+Die Projektionsprüfung validiert die neue Struktur und die Referenzziele.
+
+### K5: Grafikdefinitionen in der Projektion
+
+GRAPHIC und DRAWING_RULE ergänzen `DiagramNodeKind` und die Standardauswahl.
+Die Projektion erhält lokale Zeichenregelknoten und gebundene REFERENCE-Kanten
+`basis`, `signature` und `graphic`; Grafik-/Regelvererbung nutzt INHERITANCE.
+Die Diagramme führen keine Zeichenregeln aus. Identitäten, Reihenfolgen und
+Quellanker stammen aus dem gemeinsamen Graphen. Das Schema 1.0 und der
+TypeScript-Adapter unterstützen die vorhandenen offenen Kind-Strings.
+`DiagramProjectionTest.projectsGraphicBasisRuleSignatureAndInheritance` prüft
+die Knoten, Beziehungen und den Diagrammvalidator.

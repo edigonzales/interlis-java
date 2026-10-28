@@ -1,5 +1,11 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+Der laufende G2-Abschluss folgt dem [Ausführungsvertrag A–I](../evidence/stabilization/g2-completion-plan.md).
+Die versionierte G2-Regelmatrix trennt den vorhandenen Implementierungs-/Teststand
+von der unabhängigen Abnahme. Ein älteres VERIFIED ist ohne neues Review kein
+abgeschlossener Schritt dieses Auftrags. Anforderungen behalten ihre IDs und
+P3-/P4-/P5-Pflichten; A2 erfasst fehlende Regel-/Nachweiszuordnungen ausdrücklich.
+
 ## 1. Zweck und Prüfstatus
 
 Dieses Kapitel verbindet die ursprünglichen Ziele mit den konkreten Fachverträgen, Arbeitspaketen und Abnahmen. Es enthält den vollständigen Index der **289 eindeutig nummerierten Anforderungen** des Pakets. Die erläuternden Klassen-, Methoden-, Fachregel- und Testverträge in den jeweiligen Kapiteln gehören zusätzlich zur Spezifikation; ihre Verbindlichkeit hängt nicht davon ab, ob jeder einzelne Satz eine eigene ID besitzt.
@@ -227,17 +233,17 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [META-003](05-metamodell-und-typensystem.md) | P1 | Doppelte Namen, Rename und Revisionen ergeben keine falsche Vereinigung. |
 | [META-004](05-metamodell-und-typensystem.md) | P1 | Verwendung eines alten `SymbolRef` löst einen definierten API-Fehler aus. |
 | [META-005](05-metamodell-und-typensystem.md) | P1/P2 | Fehlender Domänenname, `ErrorType` und legale Generic-Domäne bleiben unterscheidbar. |
-| [META-006](05-metamodell-und-typensystem.md) | P2 | Katalogzeile besitzt Konstruktor-/Analyse-/Negativ-/Export- oder Querytest. |
+| [META-006](05-metamodell-und-typensystem.md) | P2 | Katalogzeile besitzt Konstruktor-/Analyse-/Negativ-/Export- oder Querytest, auch für Referenzzielmengen, sprachversionsabhängige Identitätsregeln sowie gebundene Einheitenkomponenten und ihre Abstraktions-/Erweiterungsregeln (`ComposedUnitContractTest`). |
 | [META-007](05-metamodell-und-typensystem.md) | P2 | Übersetzungsfixture verändert keine Referenzidentität. |
-| [META-008](05-metamodell-und-typensystem.md) | P1/P2 | Goldenvergleich mit Legacyfällen für Vererbung, Überschreibung und eingebettete Rollen. |
+| [META-008](05-metamodell-und-typensystem.md) | P1/P2 | Goldenvergleich mit Legacyfällen für Vererbung, Überschreibung und eingebettete Rollen; `MandatoryOverrideTypeContractTest` prüft frühe Typbindung, unmittelbare Überschreibungsidentität und Fehlerpfade in 2.3/2.4. |
 | [META-009](05-metamodell-und-typensystem.md) | P1 | Zahlen grösser 2^53, Skalen, Exponenten und Grenzen ohne Doubleverlust. |
 | [META-010](05-metamodell-und-typensystem.md) | P1 | Fehler in unabhängiger Quelle blockiert nicht; Fehler in Importclosure blockiert. |
 | [META-011](05-metamodell-und-typensystem.md) | P1 | Geerbtes Attribut führt auf Originaldeklaration zurück. |
 | [META-012](05-metamodell-und-typensystem.md) | P1/P4 | Zwei unterschiedlich konfigurierte Verbraucher können dasselbe Schema parallel verwenden. |
 | [META-013](05-metamodell-und-typensystem.md) | P1/P2 | Gültiger View wird nicht wegen fehlendem SQL-Exporter abgelehnt oder still verworfen. |
-| [META-014](05-metamodell-und-typensystem.md) | P1/P2 | Exhaustive Variantenprüfung und sichtbare Coverage-Lücke. |
+| [META-014](05-metamodell-und-typensystem.md) | P1/P2 | Exhaustive Variantenprüfung und sichtbare Coverage-Lücke; MANDATORY-Pfade verwenden denselben gebundenen Typ wie das veröffentlichte Attribut; importierte Domains und Ausdruckstypen bleiben unabhängig von der Quelldateisortierung (`ImportedDomainTypeContractTest`). |
 | [META-015](05-metamodell-und-typensystem.md) | P1/P2 | Parallelkompilierung beider Versionen beeinflusst keine andere Sitzung. |
-| [META-016](05-metamodell-und-typensystem.md) | P1/P2 | Unzulässige Zuweisung liefert Grund und betroffene Teiltypen. |
+| [META-016](05-metamodell-und-typensystem.md) | P1/P2 | Unzulässige Zuweisung liefert Grund und betroffene Teiltypen; Referenzrestriktionen werden als ganze Zielmenge geprüft. |
 | [META-017](05-metamodell-und-typensystem.md) | P2 | Fachliche Änderung verändert Fingerprint; Run-ID und Uhrzeit tun dies nicht. |
 
 ### SEM – Compiler und Semantik
@@ -253,7 +259,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [SEM-005](06-kompilierung-und-semantik.md) | P1 | Kein Erfolg durch `null`, Defaulttyp oder ausgelassene Deklaration. |
 | [SEM-006](06-kompilierung-und-semantik.md) | P2 | Gültiger Fall kompiliert ohne Runtimeimplementierung beziehungsweise Datensatzkonkretisierung. |
 | [SEM-007](06-kompilierung-und-semantik.md) | P1 | Wiederholung und Plattformvergleich liefern gleiche fachliche Resultate. |
-| [SEM-008](06-kompilierung-und-semantik.md) | P1/P2 | Ziel vorhanden im globalen Index, aber im fraglichen Scope unzulässig: Diagnose. |
+| [SEM-008](06-kompilierung-und-semantik.md) | P1/P2 | Ziel vorhanden im globalen Index, aber im fraglichen Scope unzulässig: Diagnose, einschliesslich fehlender direkter/geerbter Topic-Abhängigkeit bei Referenzzielmengen. |
 | [SEM-009](06-kompilierung-und-semantik.md) | P1/P2 | Alias-/Vererbungszyklus und erlaubter Referenzzyklus besitzen getrennte Ergebnisse. |
 | [SEM-010](06-kompilierung-und-semantik.md) | P2 | Vollständige Abdeckungsmatrix mit positiven und negativen Fällen. |
 | [SEM-011](06-kompilierung-und-semantik.md) | P1 | Fresh-versus-reuse nach Editfolgen. |
@@ -556,3 +562,250 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [LEGACY-002](18-cli-sdk-und-kompatibilitaetsadapter.md) | zurückgestellt (nicht P3) | Gilt erst bei Wiederaufnahme des Adapterauftrags. |
 
 <!-- REQUIREMENT-INDEX:END -->
+
+### Laufender View-Ausbau A–D
+
+`ViewBindingContractTest` ergänzt die Nachweise für META-006/008/011/014,
+SEM-008/010 und SYN-013/015: tatsächliche View-Mitglieder, Ableitungsausdrücke
+im gewählten Schema, geordnete Basen, Selektionen und gezielte Fehlerpfade.
+Der aktuelle [Lieferstatus](../evidence/stabilization/conformance-deliveries.md)
+trennt Implementierung und ausgeführte Plattformnachweise. Die weiterhin
+unvollständige Inspektions-/Deklarationsabdeckung bleibt offen; die Ergänzung
+ändert keine P2-/P3-Abnahme.
+
+`InspectionFactorContractTest` ergänzt WP-22/23, META-006/008/011/014,
+SEM-008/010/014, SYN-013/015 und TEST-011/012 um gebundene Inspektionsfaktoren,
+OF-Einschränkungen, negative Kontextfälle und identitätsbezogene
+Übersetzungsgegenfälle. Geometrie-/Segmenthierarchie und die vollständige
+B1–B3-Abnahme bleiben ausdrücklich offen.
+
+`ViewInheritanceTranslationContractTest` ergänzt META-006/008/011/014,
+SEM-008/010/014 sowie TEST-011/012: View-Überschreibung mit geerbten
+Ableitungsalternativen, MANDATORY/TRANSIENT/Domainidentität, effektiver
+Vererbungspfad und Übersetzungsziele einschliesslich AGGREGATES. Die
+Originalmodell-Closure wird mitgeprüft. Zwei Workspace-Verträge ergänzen
+RES-003/006 um Vorbereitung der Originalimporte und später hinzugefügte
+Originale. Der Nachweis ist ein Teil von B1–B3;
+P2/P3 bleiben offen. Siehe [Fortsetzung](../evidence/stabilization/view-inheritance-translations.md).
+
+
+Konkretisierung TEST-011/012: Normative Referenzausnahmen besitzen eigene gepinnte
+Erwartungen und positive Gegenproben; der Wrapper prüft JSON-Diagnosen,
+Prozessabschluss und Vollständigkeit. Rohe Referenzresultate und normative
+Bewertung bleiben getrennt (Kapitel 13). Dies ändert keine P2-/P3-Abnahmegrenze.
+
+
+K2 konkretisiert WP-22/24/25; META-003/011/014, SEM-005/009/010/014/017,
+SYN-004/013/015 und TEST-011/012: typisierte Laufzeitparameter, Klassenfunktionen,
+getrennte Namespaces, gebundene Attributpfadtypen und Konstanten. Nachweise:
+`ParameterClassFunctionContractTest` und [K2](../evidence/stabilization/k2-parameters-class-functions.md).
+Offene Signatur-/METAOBJECT-Parameter und vollständige abhängige
+Attributpfadargumente werden damit nicht als erledigt eingestuft.
+
+
+K3 konkretisiert WP-24/25; META-003/011/014, SEM-010/014/017/019,
+SYN-004/013/015 und TEST-011/012 mit strukturierten CONTEXT-Zuordnungen,
+identitätsgebundenem GENERIC/DEFERRED und öffentlichen Topic-Bindungen.
+`GenericContextContractTest` prüft Imports, Alternativen, Vererbung,
+Übersetzungsziele, Quellreihenfolge und Wiederverwendung. P3 bleibt offen.
+
+K4/Linienformen konkretisiert WP-20/24/25; META-003/006/008/011/014/015,
+SEM-010/014/017, SYN-004/013/015, TEST-011/012 und VIZ-001/008:
+strukturierte Deklarationen, gebundene Segmentziele und Geometriekomponenten,
+versionsgerechter Kontrakt, Übersetzungsidentitäten und Quellqueries.
+`LineFormBindingContractTest`, `GeometryTypeContractTest` und
+`DiagramProjectionTest` prüfen den Teilumfang. Metadaten, Achsenreferenzen und
+vollständige Inspektionsstrukturen bleiben innerhalb K4 offen; P3 bleibt offen.
+
+
+K4/Metadaten und Inspektionen konkretisiert WP-20/23/24/25;
+META-003/006/008/010/011/014, SEM-005/010/014/017, SYN-004/013/015,
+TEST-011/012 und VIZ-001/008: gebundene Baskets, Metaobjekte, Achsen,
+Unit-Parameter, Übersetzungen und Standard-Geometrieinspektionen. Die
+Verträge stehen in Kapitel 04/05/11/16, Tests in `MetadataBindingContractTest`,
+`GeometryInspectionContractTest` und `DiagramProjectionTest`. Eigene
+Inspektionssegmente, SIGN/GRAPHIC und übrige P3-Pflichten bleiben offen.
+
+K5 konkretisiert WP-20/23/24/25; META-003/006/008/010/011/014,
+SEM-005/010/014/017, SYN-004/013/015, TEST-011/012 und VIZ-001/008:
+strukturierte Grafiken, gebundene Signaturparameter und Zuweisungen,
+Selektions-/Rollenpfade, Vererbung und Übersetzungen. Der unveränderte
+`roadsExgm2ien`-Fall und seine OID-Kontrollfassung werden getrennt bewertet;
+Nachweise und Grenzen stehen im [K5-Nachweis](../evidence/stabilization/k5-graphics.md).
+Dies ersetzt keine vollständige P3-Abnahme; K6 und unabhängige Sprachfunde
+bleiben offen.
+
+K6 konkretisiert WP-20/22/25; META-003/006/009/011/014/016,
+SEM-005/010/014 und TEST-011/012: exakte geordnete Umrechnungsfaktoren,
+Nullfaktor-/Nullteilerdiagnosen, gebundene skalare Einheitenvererbung und
+öffentliche Erweiterungsqueries. Verträge stehen in Kapitel 04/05/16,
+Nachweise in `NumericUnitConversionContractTest` und der portablen Matrix.
+Der [K6-Nachweis](../evidence/stabilization/k6-units.md) beschreibt den tatsächlich
+geprüften Fallumfang und verbleibende Grenzen. P2/P3 bleiben bis zur gesamten
+Abnahme offen.
+
+### G2 C: Geometrietoleranz und eigene Inspektionssegmente
+
+WP-22/24/25 konkretisiert META-003/006/009/014, SEM-005/008/010/014/017
+und TEST-011/012. Kapitel 05 besitzt den effektiven Geometrievertrag und
+`GeometryType.Tolerance`; Kapitel 06 die gemeinsame Bindung/Prüfung, Kapitel 16
+die API-Zuordnung. `GeometryRulesContractTest`, `GeometryInspectionContractTest`
+und `GeometryOriginalAcceptanceTest` prüfen Präzision, Vollständigkeit,
+Vererbung, öffentliche Typrelationen, Kontextstrukturen und unveränderte
+Katalogquellen. Dies ist keine Vollständigkeitszusage für alle G2-Regeln.
+Aktuelle Ausführung und die separat offene 2.3-Toleranzfrage stehen in
+`docs/evidence/stabilization/g2-rule-matrix.json` und im Implementierungsstatus.
+
+
+### G2 D: Signatur-Verantwortung
+
+WP-24/25, META-003/006/010/014, SEM-005/010/014/017 und TEST-011/012:
+Die Verantwortungsregel und geerbte Parametertypen stehen in Kapitel 05/06,
+die unveränderten API-Namen in Kapitel 16. Original- und Modell-/Querynachweise
+stehen in `GraphicResponsibilityContractTest`; aktuelle Ausführung und
+verbleibende G2-Abnahmen im Implementierungsstatus und in der G2-Regelmatrix.
+
+### G2 E1: Namensbindung und einfache vordefinierte Domänen
+
+WP-21/22/24/27, SYN-013, META-003/005/006/011/014/015 und
+SEM-002/005/010/014: drei typisierte einfache INTERLIS-Domänen, FINAL,
+Quellfehler statt Ersatzdomäne, vollständige qualifizierte Namen und
+öffentliche Query-/Editornachweise. Verträge stehen in Kapitel 05/06/16;
+`PredefinedBindingContractTest` und portable Fälle prüfen diesen Teilumfang.
+Die übrigen E1–E5-Regeln bleiben einzeln in der G2-Regelmatrix offen.
+
+### G2 E1: Funktionsprofil und METAOBJECT_TRANSLATION
+
+WP-21/22/24/27; SYN-004/005/006/010/013/015, META-003/006/008/011/015,
+SEM-005/010/014, TEST-011/012: versionsgerechte leere Deklarations-/Aufruflisten,
+Recovery und Fragmente sowie die vordefinierte Übersetzungsklasse mit zwei
+Pflichtattributen, getrennten UNIQUE-Regeln, gebundenen Pfaden, Herkunft,
+Reihenfolge, Imports/Vererbung/Übersetzungen und öffentlichen Queries.
+Verträge stehen in Kapitel 04/05/06/16; `E1FunctionMetadataContractTest`
+sichert den Teilumfang. Die übrigen E1–E5-Pflichten bleiben offen.
+
+E1-Modellkopfoptionen konkretisieren SYN-004/013/015, META-003/006/011/014/015/017,
+SEM-005/010/014/017 und TEST-011/012: Originalwerte/Herkunft, Defaults,
+Versionsprofile, IANA-Registerbindung, kanonischer Transfernamensraum und
+Übersetzungsvergleich; Verträge 04/05/06/16 und ModelHeaderContractTest.
+
+E1-Profile (SYN-004/013/015, SEM-005/010/014, META-003/014): DATE,
+TIMEOFDAY und DATETIME sind 2.4-Syntax; die XML-Domänen bleiben in beiden
+Versionen verfügbar. TYPE MODEL enthält die vorgesehenen Deklarationsfamilien;
+SYMBOLOGY benötigt nur in 2.3 CONTRACTED. Dokumentarische Familienempfehlungen
+für REFSYSTEM/SYMBOLOGY werden nicht als zusätzliche Quellfehler erzwungen.
+Wiederholte Properties liefern ILI-SYN-0007 am zweiten Token; Warnungsablehnung
+verwendet das gemeinsame Gate. EXTENDED und explizites EXTENDS am selben
+Klassen-/Strukturkopf sind unzulässig. Fehlende Attributtypen nach Parser-Recovery
+behalten die ursprüngliche Syntaxursache als ErrorType; sie erzeugen keine
+Implementierungssperre. E1ProfileSafetyContractTest und ModelKindContractTest
+prüfen diese Regeln; dies ist keine pauschale E1-/G2-Abnahme.
+
+E2 konkretisiert META-003/006/009/014 und SEM-005/010/014 gemäss Kapitel 05/06:
+DomainSymbol.mandatory(), gebundene CLASS-Domänen, unverfälschte fehlerhafte
+NumericTypeSyntax und QueryResult<UnitRelation> mit NOT_A_UNIT. Verbraucher
+verwenden die gemeinsame Typrelation. UnitRelationContractTest und
+DomainRestrictionContractTest prüfen Modell, Queries, Fehlursachen und Edits.
+Die weiterführende Normabnahme bleibt in g2-rule-matrix.json ausdrücklich offen.
+
+E2-Präzision ist versionsabhängig: 2.3 §2.8.5 S.42 erlaubt Verfeinerung,
+sofern gerundete Grenzen im Basisbereich bleiben (7.9949 ja, 7.9999 nein bei
+Basismaximum 7.99). 2.4 §3.8.5 S.53 verlangt unveränderte Präzision.
+`TypeRelations.canExtend(derived, base, context, language)` erhält daher einen
+expliziten nullfreien LanguageVersion-Parameter; weder Quellnamen noch ein
+zufällig gefundenes Modell bestimmen das Profil. Interne Verbraucher und
+Vorab-API-0.2-Tests werden direkt angepasst, ohne alte Überladung.
+Die 2.3-Rundung verwendet exakte Dezimalwerte und HALF_UP; Tie-Details bleiben
+in der Normprüfung separat sichtbar. Allgemeine Zuweisung ist unverändert.
+
+E2-TEXT ergänzt ohne öffentliche Signaturänderung die Literal-Längenregel aus
+Kapitel 05/06 (META-003/006/014, SEM-005/010/014, TEST-011/012). Bindung und
+öffentliche Typabfragen verwenden denselben Literaltyp; Quelltext, Identitäten
+und UTF-16-Bereiche werden nicht normalisiert. Geprüft durch TextLengthsTest
+und TextLiteralContractTest sowie die gepinnten Normalisierungseingaben.
+
+E3 (META-003/006/008/010/014, SEM-005/008/010/014/017, SYN-004/013/015,
+TEST-011/012) ergänzt StructureValueTypeSyntax in guru.interlis.syntax und
+TYPE_STRUCTURE_VALUE. StructureValueType.target() ist optional; restrictions()
+und targetRoots() erhalten gebundene Identitäten. Kapitel 04/05/06 definiert
+Nullfreiheit, Reihenfolge, Quell-/Snapshotbezug, Funktionskontext und Fehler.
+StructureValueContractTest, die bisherigen View-/Inspektionsverträge und
+DomainRestrictionContractTest prüfen Verbraucher und lange Ketten.
+
+E2-Regelverfeinerung (META-003/006/014, SEM-005/010/014, TEST-011/012):
+Gemeinsame Domänen-/Attribut-/Query-Erweiterung; numerische Collectionelemente;
+Koordinatendimensionen und vererbte Richtungs-/Referenzidentitäten. TEXT-NFD-Länge
+gilt in 2.3 und 2.4. Einzelregeln/Nachweise stehen in der G2-Matrix; daraus folgt
+keine vollständige E2- oder G2-Abnahme.
+
+E1/E4-Regelverfeinerung: EOF und vollständige Relationsabbildung (SYN-004/013/015),
+explizite Enumformale/-baumwerte sowie gemeinsame Operatorregeln und vollständige
+Enum-/Geometrie-Standardsignaturen (META-003/006/008/010/014, SEM-005/010/014/017,
+TEST-011/012). Einzelregeln werden in der G2-Matrix belegt; convertUnit und
+areAreas-Kontexte sowie übrige E1–E5-Pflichten bleiben offen.
+
+E4-Vertragspräzisierung zu SYN-004/013/015, SRC-002–005, META-006/011/014 und
+SEM-005/010/014/020: strukturierte Einheiten an Zahlenkonstanten und zusätzliche
+Funktionsargumentpfade gemäss Kapitel 04–06/16. Der tatsächliche Abnahmestand
+bleibt in der G2-Regelmatrix und im Implementierungsstatus; die Präzisierung
+schliesst keine noch ungeprüften Funktionskontexte.
+
+E1/E4 zu META-006/014 und SEM-005/010: Definiertheit der Funktionsparameter und
+Rückgabewerte gemäss Kapitel 04–06/16. Reine Typrelationen und erforderliche
+Deklarationen bleiben unterscheidbar. Abnahme gemäss aktueller G2-Regelmatrix.
+
+E2 zu META-006/014 und SEM-005/010/014: Gemeinsame FORMAT-Relationen und
+ErrorType-Veröffentlichung gemäss Kapitel 05/06/16. Implizite Komponentengrenzen,
+gebundene Layoutpräfixe und Attributüberschreibungen werden gemeinsam geprüft.
+
+E2 zu META-003/006/014 und SEM-005/010/014: Vollständigkeit effektiver numerischer
+und Koordinaten-Deklarationen sowie Fehler expliziter Zielbindungen gemäss
+Kapitel 05/06/16; Funktions- und GENERIC-Ausnahmen bleiben getrennt.
+
+E1 zu SYN-002/004/013 und META-015: Vollständige reservierte Worttabellen,
+kontextabhängige Wörter, Fragment-/Rename-Parität und versionsgebundene Boolean-
+Herkunft gemäss Kapitel 04–06/16. Buildnachweis für Tokenvokabular in Kapitel 03.
+
+E5 zu META-006/010/014/017 und SEM-010/014/017: Strukturierte Quell-Metaattribute,
+Dokumentation, Funktionserläuterungen und deklarationsgebundener CRS-Vergleich
+gemäss Kapitel 04–06/16. Externe Overlays bleiben gesonderte F-Pflicht.
+
+E5-Nachweis zu SEM-010/014/017, META-006/010/014 und TEST-011/012:
+`StructuredTranslationContractTest` und portable Übersetzungsgegenfälle prüfen
+den gebundenen Strukturvergleich statt eines Volltext-/Namensfallbacks. Dies
+belegt die dort einzeln aufgeführten Regeln, keine pauschale G2-Abnahme.
+
+E1-Nachweis zu META-003/006/014/015, SEM-005/008/010/014 und TEST-011/012:
+`PredefinedOidIdentityContractTest` prüft versionsgebundene OID-Identitäten,
+Herkunft/Basen/Modifikatoren, Navigationsziele und Import-/Wiederverwendungsfälle.
+Dies schliesst die vollständige vordefinierte Modellabnahme nicht automatisch ab.
+
+E2 Collection-Elementbindung (META-006/014, SEM-005/010/014, TEST-011/012):
+2.4 verwendet für einfache benannte Elemente die vorhandene Domain-/Struktur-
+bindung. 2.3 bleibt strukturgebunden; ANYSTRUCTURE und RESTRICTION bleiben
+versionsunabhängig strukturspezifisch. Nachweise und offene Ursachen stehen in
+NamedCollectionElementContractTest und der versionierten G2-Regelmatrix.
+
+E5 geometrische Kontextkorrespondenzen (META-007/010/014, SEM-005/008/010/014/017,
+TEST-011/012): Kontextualisierte Segmente und Inspektionsstrukturen werden nur
+nach gebundenem Pfad-/Geometrievergleich zugeordnet und anschliessend regulär
+verglichen. GeometryTranslationContextContractTest prüft öffentliche Links,
+Fehlerziele, exakte Toleranzen, Flächen, eigene Segmente und isolierte Vertexkontexte.
+
+E1 vordefinierte Namensbindung (META-006/014/015, SEM-005/008/010/014,
+TEST-011/012): gemeinsame Binder für vorhandene vordefinierte Inhalte,
+UNQUALIFIED-Importprofile und echte Mehrdeutigkeit. PredefinedNameBindingContractTest
+prüft Zielidentität, Quellbereiche, Revisionen und Wiederverwendung. Vollständige
+vordefinierte Modellinhalte und die allgemeine Namenskategorienprüfung bleiben
+getrennte G2-Regeln.
+
+E2 skalierte Typgrenzen (SYN-004/013/015, META-006/014, SEM-005/010/014,
+TEST-011/012): ScaledBoundaryContractTest prüft Mantissen einschliesslich Null,
+Vorzeichen, Präzision, öffentliche Typwerte, exakte UTF-16-Diagnosebereiche,
+Fragmente, importierte Grenzen und Fresh/Reuse-Editfolgen. Exponentenrelation und
+allgemeines Konstantenprofil bleiben separate offene Normregeln.
+
+E4 direkte Constraintnamen (META-006/011/014, SEM-005/008/010/014, TEST-011/012):
+ConstraintNameContractTest prüft eindeutige Namen über direkte Constraintfamilien
+und same-topic CONSTRAINTS OF, zweite Namensbereiche und öffentliche Queries.
+Vererbte Namensräume bleiben im Fallkatalog ausdrücklich offen.

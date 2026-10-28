@@ -36,7 +36,8 @@ class GeometryTypeContractTest {
                 .filter(GeometryType.class::isInstance).map(GeometryType.class::cast)
                 .findFirst().orElseThrow();
         assertEquals(GeometryKind.MULTIPOLYLINE, geometry.geometryKind());
-        assertEquals(Optional.of("STRAIGHTS,ARCS"), geometry.lineForm());
+        assertEquals(List.of("INTERLIS.STRAIGHTS", "INTERLIS.ARCS"), geometry.lineForms().stream()
+                .map(id -> succeeded.analysis().semanticGraph().symbol(id).orElseThrow().name().value()).toList());
         assertEquals(Optional.of("Coord"), geometry.vertexDomain()
                 .map(id -> succeeded.analysis().semanticGraph().symbol(id).orElseThrow().name().value()));
     }

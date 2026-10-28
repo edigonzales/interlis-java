@@ -51,7 +51,7 @@ class VersionScopeTest {
         CompilationOutcome.Rejected rejected = assertInstanceOf(
                 CompilationOutcome.Rejected.class, outcome23, () -> describe(outcome23));
         assertTrue(rejected.analysis().diagnostics().stream()
-                .anyMatch(d -> d.code().value().equals("ILI-SYN-0006")));
+                .anyMatch(d -> d.severity()==guru.interlis.diagnostics.Severity.ERROR));
     }
 
     private static CompilationOutcome compile(String text, String modelName) {

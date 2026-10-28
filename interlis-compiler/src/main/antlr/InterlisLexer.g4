@@ -1,5 +1,8 @@
 lexer grammar InterlisLexer;
 
+// Legacy reserved words are classified by the selected language profile.
+tokens { RESERVED_WORD }
+
 // Règles lexicales INTERLIS 2.4 définies avec les référénce eCH-0031
 // INTERLIS 2.4 lexikalische Regeln, definiert mit eCH-0031-Referenzen
 

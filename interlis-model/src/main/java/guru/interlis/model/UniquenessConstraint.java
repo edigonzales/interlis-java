@@ -5,17 +5,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Global or local uniqueness condition.
+ * Global or local uniqueness condition. All expression IDs belong to the containing snapshot.
+ * Lists are immutable, null-free and preserve source order; expressions retain types and ranges.
  *
  * @param name declared name
  * @param basket whether the constraint is basket-wide
  * @param where optional filter expression
- * @param keys key fields
- * @param localKeys local key groups
+ * @param keys global key expressions; empty for LOCAL
+ * @param localKeys local prefix and field expressions; empty for global uniqueness
  */
 public record UniquenessConstraint(Optional<String> name, boolean basket,
                                    Optional<ExpressionId> where,
-                                   List<ObjectPath> keys,
+                                   List<ExpressionId> keys,
                                    List<LocalUniqueness> localKeys)
         implements ConstraintDefinition {
     /** Creates a validated instance. */
@@ -26,19 +27,12 @@ public record UniquenessConstraint(Optional<String> name, boolean basket,
         localKeys = List.copyOf(Objects.requireNonNull(localKeys, "localKeys"));
     }
 
-    /**
-     * Immutable value.
-     *
-     * @param name declared name
-     * @param prefix path prefix
-     * @param fields field paths
-     */
-    public record LocalUniqueness(String name, List<String> prefix, List<String> fields) {
-        /** Creates a validated instance. */
+    /** LOCAL prefix and field expressions, all snapshot-local and in source order.
+     * Fields bind in the structure selected by the prefix, independently of its multiplicity. */
+    public record LocalUniqueness(ExpressionId prefix, List<ExpressionId> fields) {
         public LocalUniqueness {
-            Objects.requireNonNull(name, "name");
-            prefix = List.copyOf(Objects.requireNonNull(prefix, "prefix"));
-            fields = List.copyOf(Objects.requireNonNull(fields, "fields"));
+            Objects.requireNonNull(prefix, "prefix");
+            fields = List.copyOf(fields);
         }
     }
 }

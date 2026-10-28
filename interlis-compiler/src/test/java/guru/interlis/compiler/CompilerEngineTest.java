@@ -35,7 +35,7 @@ class CompilerEngineTest {
               DOMAIN
                 Count = 0..999;
                 Label = TEXT*40;
-              TOPIC Common =
+              TOPIC Common = OID AS INTERLIS.UUIDOID;
                 CLASS BaseBuilding =
                   height : Count;
                   label : Label;
@@ -170,7 +170,7 @@ class CompilerEngineTest {
     }
 
     @Test
-    void viewDeclarationIsNoLongerUnsupported() {
+    void projectionSchemaIsComplete() {
         SourceText source = CompilerTestSupport.source("memory:/view.ili", """
                 INTERLIS 2.4;
                 MODEL ViewModel AT "https://example.interlis.ch" VERSION "1.0" =

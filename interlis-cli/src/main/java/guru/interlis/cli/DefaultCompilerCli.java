@@ -54,6 +54,18 @@ public final class DefaultCompilerCli implements CliApplication {
     @Override
     public CliExecutionResult run(List<String> arguments, CliEnvironment environment,
                                   CancellationToken token) {
+        Objects.requireNonNull(environment, "environment");
+        CliExecutionResult outcome = execute(arguments, environment, token);
+        environment.out().flush();
+        environment.err().flush();
+        if (environment.out().checkError() || environment.err().checkError()) {
+            return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "output write failed");
+        }
+        return outcome;
+    }
+
+    private CliExecutionResult execute(List<String> arguments, CliEnvironment environment,
+                                       CancellationToken token) {
         Objects.requireNonNull(arguments, "arguments");
         Objects.requireNonNull(environment, "environment");
         Objects.requireNonNull(token, "token");
@@ -127,9 +139,10 @@ public final class DefaultCompilerCli implements CliApplication {
                 + "\"features\":[\"MODEL\",\"TOPIC\",\"CLASS\",\"STRUCTURE\",\"DOMAIN\",\"FORMAT\","
                 + "\"ATTRIBUTE\",\"INHERITANCE\",\"ASSOCIATION_ROLE\",\"MANDATORY_CONSTRAINT\","
                 + "\"IMPORTS\",\"COORD\",\"MULTICOORD\"],"
-                + "\"notImplemented\":[\"VIEW\",\"GRAPHIC\",\"FUNCTION\",\"UNIT\",\"CONTEXT\","
-                + "\"METAOBJECT\",\"TRANSLATION\",\"DEFERRED_GENERICS\",\"OID\","
-                + "\"BLACKBOX\",\"TEMPORAL\",\"ENUMTREEVAL\",\"EXTERNAL_CONSTRAINTS\"],"
+                + "\"qualification\":\"P3_OPEN\","
+                + "\"partialFeatures\":[\"FUNCTION\",\"TRANSLATION\",\"DEFERRED_GENERICS\"],"
+                + "\"notImplemented\":[\"VIEW_SCHEMA\",\"GRAPHIC\",\"CONTEXT\","
+                + "\"METADATA_BASKET\",\"RUNTIME_PARAMETER\",\"LINE_FORM\",\"FUNCTION_ARGUMENT_TYPE\",\"BUILTIN_SIGNATURE\"],"
                 + "\"protocol\":\"" + manifest.protocolIdentifier() + "\"}";
         environment.out().println(output);
         return result(CliTermination.SUCCESS, List.of(), output);
@@ -287,12 +300,8 @@ public final class DefaultCompilerCli implements CliApplication {
         Path temp = Files.createTempFile(parent, ".interlis-format-", ".ili");
         try {
             Files.writeString(temp, text, StandardCharsets.UTF_8);
-            try {
-                Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING);
-            } catch (java.nio.file.AtomicMoveNotSupportedException unsupported) {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING);
         } finally {
             Files.deleteIfExists(temp);
         }

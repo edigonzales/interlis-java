@@ -45,6 +45,7 @@ final class DefaultWorkspace implements Workspace {
     private WorkspaceConfiguration configuration;
     private WorkspaceRevision revision = WorkspaceRevision.initial();
     private AnalysisSnapshot lastAnalysis;
+    private final Map<SourceId, guru.interlis.syntax.SyntaxSnapshot> syntaxCache = new LinkedHashMap<>();
     private boolean closed;
     private boolean busy;
     private long parses;
@@ -129,6 +130,7 @@ final class DefaultWorkspace implements Workspace {
                 sources.putAll(staged);
                 revisions.clear();
                 revisions.putAll(stagedRevisions);
+                tombstones.keySet().removeAll(staged.keySet());
                 revision = next;
                 invalidateLastAnalysis();
             }
@@ -189,6 +191,7 @@ final class DefaultWorkspace implements Workspace {
             boolean semanticChanged = !oldSemantic.equals(newSemantic);
             boolean anyChanged = !oldFull.equals(newFull);
             configuration = newConfiguration;
+            enforceCacheLimits();
             if (semanticChanged) {
                 revision = nextWorkspaceRevision();
                 invalidateLastAnalysis();
@@ -209,56 +212,80 @@ final class DefaultWorkspace implements Workspace {
     }
 
     @Override
-    public synchronized WorkspaceCapture capture(AnalysisRequest request, CancellationToken token) {
-        requireOpen();
-        enter();
-        try {
-            Objects.requireNonNull(request, "request");
-            Objects.requireNonNull(token, "token");
+    public WorkspaceCapture capture(AnalysisRequest request, CancellationToken token) {
+        return capture(request, token, guru.interlis.syntax.ParseMode.EDITOR);
+    }
+
+    private WorkspaceCapture capture(AnalysisRequest request, CancellationToken token,
+                                     guru.interlis.syntax.ParseMode mode) {
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(token, "token");
+        final WorkspaceRevision capturedRevision;
+        final WorkspaceConfiguration capturedConfiguration;
+        final Map<SourceId, SourceText> capturedSources;
+        final Map<SourceId, guru.interlis.syntax.SyntaxSnapshot> cached;
+        final AnalysisSnapshot previous;
+        synchronized (this) {
+            requireOpen();
             if (!revision.equals(request.expectedWorkspaceRevision())) {
                 throw conflict(UpdateRejectionCode.VERSION_CONFLICT,
                         "workspace revision changed", Optional.empty(), Optional.empty());
             }
-            long totalUtf16 = 0;
-            for (SourceText text : sources.values()) {
-                if (text.length() > configuration.compilerOptions().budget()
-                        .maxSourceUtf16Length()) {
-                    throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
-                }
-                totalUtf16 = Math.addExact(totalUtf16, text.length());
-            }
-            if (totalUtf16 > configuration.compilerOptions().budget()
-                    .maxTotalSourceUtf16Length()) {
+            capturedRevision = revision;
+            capturedConfiguration = configuration;
+            capturedSources = new LinkedHashMap<>(sources);
+            cached = new LinkedHashMap<>(syntaxCache);
+            previous = lastAnalysis;
+        }
+        var budget = capturedConfiguration.compilerOptions().budget();
+        long totalUtf16 = 0;
+        for (SourceText text : capturedSources.values()) {
+            token.throwIfCancellationRequested();
+            if (text.length() > budget.maxSourceUtf16Length()) {
                 throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
             }
-            SourceInventory inventory = new SourceInventory(revision, sources,
-                    configuration.resolverCatalog(), configuration.compilerOptions().budget());
-            ResolutionOutcome outcome = new DefaultModelResolutionService().prepare(
-                    new ResolutionRequest(request.roots(), configuration.resolutionPolicy(),
-                            configuration.compilerOptions().budget(),
-                            inventory.fingerprint().value()), () -> inventory, token);
-            PreparedClosure closure;
-            switch (outcome) {
-                case ResolutionOutcome.Prepared prepared -> closure = prepared.closure();
-                case ResolutionOutcome.ResolutionCancelled cancelled -> {
-                    cancellations++;
-                    throw new OperationCancelledException(cancelled.reason());
-                }
-                case ResolutionOutcome.ResolutionFailed failed ->
-                        throw new IllegalStateException("model resolution failed: "
-                                + failed.failureId());
-            }
-            CompilationRequest compilationRequest = new CompilationRequest(request.roots(),
-                    closure.sourceSet(), configuration.compilerOptions());
-            AnalysisReuse reuse = lastAnalysis == null ? AnalysisReuse.none()
-                    : new AnalysisReuse(Optional.of(lastAnalysis),
-                    lastAnalysis.syntaxSnapshots());
-            String fingerprint = inputFingerprint(inventory, request, compilationRequest);
-            return new WorkspaceCapture(revision, compilationRequest, reuse, closure,
-                    new InputFingerprint("SHA-256/workspace-capture-v1", fingerprint), origin);
-        } finally {
-            exit();
+            totalUtf16 = Math.addExact(totalUtf16, text.length());
         }
+        if (totalUtf16 > budget.maxTotalSourceUtf16Length()) {
+            throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
+        }
+        var options = new guru.interlis.syntax.ParseOptions(mode, Optional.empty(), budget);
+        Map<SourceId, guru.interlis.syntax.SyntaxSnapshot> parsed = new LinkedHashMap<>();
+        for (SourceText text : capturedSources.values()) {
+            token.throwIfCancellationRequested();
+            var syntax = cached.get(text.id());
+            if (syntax != null && syntax.source().revision().equals(text.revision())
+                    && syntax.source().text().equals(text.text()) && syntax.options().equals(options)) {
+                synchronized (this) { syntaxReuses++; }
+            } else {
+                synchronized (this) { parses++; }
+                syntax = guru.interlis.syntax.SyntaxServices.create().parse(text, options, token);
+            }
+            parsed.put(text.id(), syntax);
+        }
+        SourceInventory inventory = new SourceInventory(capturedRevision, capturedSources,
+                capturedConfiguration.resolverCatalog(), parsed);
+        ResolutionOutcome outcome = new DefaultModelResolutionService().prepare(
+                new ResolutionRequest(request.roots(), capturedConfiguration.resolutionPolicy(),
+                        budget, inventory.fingerprint().value()), () -> inventory, token);
+        PreparedClosure closure;
+        switch (outcome) {
+            case ResolutionOutcome.Prepared prepared -> closure = prepared.closure();
+            case ResolutionOutcome.ResolutionCancelled cancelled -> {
+                synchronized (this) { cancellations++; }
+                throw new OperationCancelledException(cancelled.reason());
+            }
+            case ResolutionOutcome.ResolutionFailed failed ->
+                    throw new IllegalStateException("model resolution failed: " + failed.failureId());
+        }
+        CompilationRequest compilationRequest = new CompilationRequest(request.roots(),
+                closure.sourceSet(), capturedConfiguration.compilerOptions());
+        // The resolver and engine consume the exact same parse. Retention is committed
+        // only by acceptAnalysis, so a late capture cannot poison reuse state.
+        AnalysisReuse reuse = new AnalysisReuse(Optional.ofNullable(previous), parsed);
+        String fingerprint = inputFingerprint(inventory, request, compilationRequest);
+        return new WorkspaceCapture(capturedRevision, compilationRequest, reuse, closure,
+                new InputFingerprint("SHA-256/workspace-capture-v1", fingerprint), origin);
     }
 
     @Override
@@ -277,7 +304,10 @@ final class DefaultWorkspace implements Workspace {
                 return AnalysisAcceptance.STALE_NO_COMMIT;
             }
             verifySnapshot(capture, analysis);
+            syntaxCache.clear();
+            syntaxCache.putAll(analysis.syntaxSnapshots());
             lastAnalysis = analysis;
+            enforceCacheLimits();
             accepted++;
             return AnalysisAcceptance.ACCEPTED;
         } finally {
@@ -308,8 +338,8 @@ final class DefaultWorkspace implements Workspace {
     @Override
     public AnalysisSnapshot analyze(AnalysisRequest request, CancellationToken token) {
         WorkspaceCapture capture = capture(request, token);
+        recordSemanticInvocation();
         AnalysisSnapshot analysis = engine.analyze(capture.request(), capture.reuse(), token);
-        semanticAnalyses++;
         acceptAnalysis(capture, analysis);
         return analysis;
     }
@@ -318,9 +348,9 @@ final class DefaultWorkspace implements Workspace {
     public AnalysisSnapshot analyze(AnalysisRequest request, RunContext context,
                                     CancellationToken token) {
         WorkspaceCapture capture = capture(request, token);
+        recordSemanticInvocation();
         AnalysisSnapshot analysis = engine.analyze(capture.request(), capture.reuse(), context,
                 token);
-        semanticAnalyses++;
         acceptAnalysis(capture, analysis);
         return analysis;
     }
@@ -328,7 +358,8 @@ final class DefaultWorkspace implements Workspace {
     @Override
     public CompilationOutcome compile(WorkspaceCompileRequest request, CancellationToken token) {
         WorkspaceCapture capture = capture(new AnalysisRequest(
-                request.expectedWorkspaceRevision(), request.roots()), token);
+                request.expectedWorkspaceRevision(), request.roots()), token, guru.interlis.syntax.ParseMode.STRICT);
+        recordSemanticInvocation();
         CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), token);
         acceptOutcome(capture, outcome);
         return outcome;
@@ -338,7 +369,8 @@ final class DefaultWorkspace implements Workspace {
     public CompilationOutcome compile(WorkspaceCompileRequest request, RunContext context,
                                       CancellationToken token) {
         WorkspaceCapture capture = capture(new AnalysisRequest(
-                request.expectedWorkspaceRevision(), request.roots()), token);
+                request.expectedWorkspaceRevision(), request.roots()), token, guru.interlis.syntax.ParseMode.STRICT);
+        recordSemanticInvocation();
         CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), context,
                 token);
         acceptOutcome(capture, outcome);
@@ -349,22 +381,29 @@ final class DefaultWorkspace implements Workspace {
         switch (outcome) {
             case CompilationOutcome.Succeeded succeeded -> acceptAnalysis(capture, succeeded.analysis());
             case CompilationOutcome.Rejected rejected -> acceptAnalysis(capture, rejected.analysis());
-            case CompilationOutcome.Cancelled cancelled -> cancellations++;
+            case CompilationOutcome.Cancelled cancelled -> {
+                synchronized (this) { cancellations++; }
+            }
             case CompilationOutcome.Failed ignored -> {
             }
         }
     }
 
+    private synchronized void recordSemanticInvocation() {
+        semanticAnalyses++;
+    }
+
     @Override
     public synchronized WorkspaceMetrics metrics() {
         return new WorkspaceMetrics(parses, syntaxReuses, semanticAnalyses, accepted, stale,
-                sources.size(), lastAnalysis == null ? 0 : 1, evictions, cancellations);
+                syntaxCache.size(), lastAnalysis == null ? 0 : 1, evictions, cancellations);
     }
 
     @Override
     public synchronized void close() {
         closed = true;
         lastAnalysis = null;
+        syntaxCache.clear();
     }
 
     private UpdateReceipt applyChecked(SourceUpdate update) {
@@ -378,6 +417,7 @@ final class DefaultWorkspace implements Workspace {
             sources.putAll(staged);
             revisions.clear();
             revisions.putAll(stagedRevisions);
+            tombstones.keySet().removeAll(staged.keySet());
             revision = next;
             invalidateLastAnalysis();
         }
@@ -405,11 +445,10 @@ final class DefaultWorkspace implements Workspace {
                     Optional.of(existing.revision()), previousRevision, previousRevision, false,
                     List.of());
         }
-        SourceRevision next = nextSourceRevision(id, existing, stagedRevisions);
+        SourceRevision next = nextSourceRevision(id, existing);
         SourceText updated = new SourceText(id, next, text);
         staged.put(id, updated);
         stagedRevisions.put(id, next);
-        tombstones.remove(id);
         return new UpdateReceipt(id, Optional.ofNullable(previousSourceRevision), Optional.of(next),
                 previousRevision, newRevision, true,
                 List.of(existing == null ? InvalidationReason.SOURCE_ADDED
@@ -471,8 +510,7 @@ final class DefaultWorkspace implements Workspace {
         return builder.toString();
     }
 
-    private SourceRevision nextSourceRevision(SourceId id, SourceText existing,
-                                              Map<SourceId, SourceRevision> stagedRevisions) {
+    private SourceRevision nextSourceRevision(SourceId id, SourceText existing) {
         SourceRevision previous = existing != null ? existing.revision()
                 : tombstones.getOrDefault(id, SourceRevision.initial());
         long next = previous.value() + 1;
@@ -508,6 +546,23 @@ final class DefaultWorkspace implements Workspace {
      *
      * @return the value
      */
+    private void enforceCacheLimits() {
+        CacheLimits limits = configuration.cacheLimits();
+        long retained = syntaxCache.values().stream().mapToLong(s -> s.source().length()).sum();
+        var iterator = syntaxCache.entrySet().iterator();
+        while (iterator.hasNext() && (syntaxCache.size() > limits.maxSyntaxEntries()
+                || retained > limits.maxRetainedSourceUtf16Units())) {
+            retained -= iterator.next().getValue().source().length();
+            iterator.remove();
+            evictions++;
+        }
+        if (lastAnalysis != null && (limits.maxAnalysisEntries() == 0
+                || lastAnalysis.syntaxSnapshots().size() > syntaxCache.size())) {
+            lastAnalysis = null;
+            evictions++;
+        }
+    }
+
     private void invalidateLastAnalysis() {
         // Keep lastAnalysis for identity reuse; it is never published as current.
     }

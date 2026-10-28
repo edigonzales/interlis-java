@@ -18,8 +18,8 @@ import java.util.Objects;
  * @param referenceSystem optional reference system literal
  */
 public record CoordinateTypeSyntax(SyntaxNodeId id, SourceRange range, int dimensions,
-                                   List<NumericRange> axes, boolean multiCoordinate,
-                                   java.util.Optional<String> referenceSystem)
+                                   List<NumericTypeSyntax> axes, boolean multiCoordinate,
+                                   java.util.Optional<String> referenceSystem, java.util.Optional<guru.interlis.model.CoordinateType.Rotation> rotation)
         implements TypeSyntax {
     /** Creates a validated instance. */
     public CoordinateTypeSyntax {
@@ -30,6 +30,7 @@ public record CoordinateTypeSyntax(SyntaxNodeId id, SourceRange range, int dimen
             throw new IllegalArgumentException("invalid coordinate syntax dimensions");
         }
         referenceSystem = Objects.requireNonNull(referenceSystem, "referenceSystem");
+        rotation = Objects.requireNonNull(rotation);
     }
 
     @Override
@@ -39,6 +40,6 @@ public record CoordinateTypeSyntax(SyntaxNodeId id, SourceRange range, int dimen
 
     @Override
     public List<SyntaxNode> children() {
-        return new ArrayList<>();
+        return List.copyOf(axes);
     }
 }

@@ -4,7 +4,6 @@ import guru.interlis.compiler.internal.DiagnosticCollector;
 import guru.interlis.diagnostics.DiagnosticArgument;
 import guru.interlis.diagnostics.DiagnosticCode;
 import guru.interlis.diagnostics.DiagnosticDraft;
-import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.source.SourceRange;
@@ -32,17 +31,21 @@ public final class CollectingLexerErrorListener extends BaseErrorListener {
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol,
                             int line, int charPositionInLine, String msg,
                             RecognitionException e) {
-        int start = offsets.offsetAtLineColumn(line, charPositionInLine);
-        int end = Math.min(source.length(), start + 1);
-        SourceRange range = source.range(start, end);
+        SourceRange range;
+        if(e instanceof org.antlr.v4.runtime.LexerNoViableAltException lexical
+                && lexical.getStartIndex()>=0 && lexical.getStartIndex()<offsets.codePointCount())
+            range=offsets.range(lexical.getStartIndex(),lexical.getStartIndex());
+        else {
+            int start=offsets.offsetAtLineColumn(line,charPositionInLine);
+            range=source.range(start,Math.min(source.length(),start+1));
+        }
         String tokenText = offendingSymbol instanceof org.antlr.v4.runtime.Token token
                 ? token.getText() : "<lexer>";
-        DiagnosticId id = collector.emit(DiagnosticDraft.of(
+        collector.emit(DiagnosticDraft.of(
                         new DiagnosticCode("ILI-SYN-0001"), Severity.ERROR, Phase.LEXING,
                         "diagnostic.syntax.lexical")
                 .at(range)
                 .argument(new DiagnosticArgument.TokenArgument("token",
                         tokenText == null ? "<eof>" : tokenText)));
-        // The id is intentionally not exposed here; the collector owns the list.
     }
 }

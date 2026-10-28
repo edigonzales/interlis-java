@@ -96,20 +96,7 @@ public final class AntlrSyntaxService implements SyntaxService {
         tokens.fill();
 
         LanguageVersion profileVersion = effectiveDetection.version().orElse(LanguageVersion.ILI23);
-        for (Token token : tokens.getTokens()) {
-            LanguageProfile.featureForToken(token.getType()).ifPresent(feature -> {
-                if (!LanguageProfile.supports(profileVersion, feature)) {
-                    collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0006"),
-                                    Severity.ERROR, Phase.PARSING,
-                                    "diagnostic.syntax.versionConstruct")
-                            .at(offsets.tokenRange(token))
-                            .argument(new DiagnosticArgument.TextArgument("construct",
-                                    feature.label()))
-                            .argument(new DiagnosticArgument.TextArgument("language",
-                                    profileVersion.literal())));
-                }
-            });
-        }
+        checkTokenProfile(tokens,profileVersion,offsets,collector);
 
         InterlisParser parser = new InterlisParser(tokens);
         parser.removeErrorListeners();
@@ -126,17 +113,7 @@ public final class AntlrSyntaxService implements SyntaxService {
         cancellation.throwIfCancellationRequested();
 
         boolean consumed = tokenAt(tokens) == Token.EOF;
-        if (consumed && !collector.budgetExceeded()) {
-            // The grammar's start rule does not require EOF; enforce it here.
-            Token next = tokens.LT(1);
-            if (next != null && next.getType() != Token.EOF) {
-                collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0004"),
-                                Severity.ERROR, Phase.PARSING, "diagnostic.syntax.trailing")
-                        .at(offsets.tokenRange(next))
-                        .argument(new DiagnosticArgument.TokenArgument("actual",
-                                safeTokenText(next))));
-            }
-        }
+        // The start rule is also used without EOF; the syntax service owns trailing-input diagnostics.
         if (!consumed && tree != null) {
             Token next = tokens.LT(1);
             if (next != null && next.getType() != Token.EOF) {
@@ -157,7 +134,7 @@ public final class AntlrSyntaxService implements SyntaxService {
         }
 
         LanguageVersion language = effectiveDetection.version().orElse(LanguageVersion.ILI23);
-        SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, tokens, language);
+        SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, tokens, language, options.budget());
         DocumentSyntax document;
         try {
             document = builder.build(tree);
@@ -167,16 +144,8 @@ public final class AntlrSyntaxService implements SyntaxService {
             return snapshotWithBudget(source, options, effectiveDetection, tokens, offsets,
                     collector, document, builder, budgetError);
         }
-        for (int i = 0; i < builder.versionViolations().size(); i++) {
-            LanguageProfile.Feature feature = builder.versionViolations().get(i);
-            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0006"),
-                            Severity.ERROR, Phase.PARSING,
-                            "diagnostic.syntax.versionConstruct")
-                    .at(builder.versionViolationRanges().get(i))
-                    .argument(new DiagnosticArgument.TextArgument("construct", feature.label()))
-                    .argument(new DiagnosticArgument.TextArgument("language",
-                            language.literal())));
-        }
+        collectVersionViolations(builder, language, collector);
+        var metadata=SourceAnnotations.read(source,tokens,offsets,collector,cancellation);
         List<Diagnostic> diagnostics = collector.freeze();
         SyntaxCoverage coverage = new SyntaxCoverage(consumed,
                 diagnostics.stream().noneMatch(d -> d.code().value().equals("ILI-SYN-0001")),
@@ -184,9 +153,22 @@ public final class AntlrSyntaxService implements SyntaxService {
                         || d.code().value().startsWith("ILI-SYN-0003")
                         || d.code().value().startsWith("ILI-SYN-0004")),
                 builder.recoveredRanges(), builder.unsupportedFeatures(), false, false);
-        return new SyntaxSnapshot(source, options.mode(), effectiveDetection, document,
+        return new SyntaxSnapshot(source, options, effectiveDetection, document,
                 buildTokens(source, offsets, tokens), buildTrivia(source, offsets, tokens),
-                diagnostics, coverage, fingerprint(source, options, effectiveDetection));
+                diagnostics, coverage, fingerprint(source, options, effectiveDetection), metadata);
+    }
+
+    private static void collectVersionViolations(SyntaxTreeBuilder builder, LanguageVersion language,
+                                                 DiagnosticCollector collector) {
+        builder.propertyDiagnostics().forEach(collector::emit);
+        for (int i = 0; i < builder.versionViolations().size(); i++) {
+            LanguageProfile.Feature feature = builder.versionViolations().get(i);
+            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0006"),
+                            Severity.ERROR, Phase.PARSING, "diagnostic.syntax.versionConstruct")
+                    .at(builder.versionViolationRanges().get(i))
+                    .argument(new DiagnosticArgument.TextArgument("construct", feature.label()))
+                    .argument(new DiagnosticArgument.TextArgument("language", language.literal())));
+        }
     }
 
     private static int tokenAt(CommonTokenStream tokens) {
@@ -215,9 +197,9 @@ public final class AntlrSyntaxService implements SyntaxService {
                 java.util.Optional.empty(), java.util.Optional.empty(), List.of());
         SyntaxCoverage coverage = new SyntaxCoverage(false, false, false,
                 builder.recoveredRanges(), builder.unsupportedFeatures(), true, false);
-        return new SyntaxSnapshot(source, options.mode(), detection, document,
+        return new SyntaxSnapshot(source, options, detection, document,
                 buildTokens(source, offsets, tokens), buildTrivia(source, offsets, tokens),
-                List.of(diagnostic), coverage, fingerprint(source, options, detection));
+                List.of(diagnostic), coverage, fingerprint(source, options, detection),java.util.Map.of());
     }
 
     private static List<SyntaxToken> buildTokens(SourceText source, AntlrOffsetMap offsets,
@@ -309,26 +291,30 @@ public final class AntlrSyntaxService implements SyntaxService {
                 || !source.revision().equals(fragment.revision())) {
             throw new IllegalArgumentException("fragment belongs to another source revision");
         }
-        String fragmentText = source.slice(fragment);
+        return parseMappedFragment(source,fragment,kind,languageVersion,cancellation,source.slice(fragment),n->fragment.startOffset()+n);
+    }
+
+    /** Internal typed-path consumer; source IDs/revisions and escape boundaries
+     * refer to the original string token, not to a fabricated source document. */
+    public FragmentSnapshot parsePathLiteral(SourceText source,SourceRange literal,LanguageVersion language,CancellationToken cancellation) {
+        var decoded=guru.interlis.compiler.internal.InterlisStrings.decode(source.slice(literal));
+        SourceRange content=source.range(literal.startOffset()+1,literal.endOffset()-1);
+        return parseMappedFragment(source,content,FragmentKind.OBJECT_PATH,language,cancellation,decoded.text(),n->literal.startOffset()+decoded.rawOffset(n));
+    }
+
+    private FragmentSnapshot parseMappedFragment(SourceText source,SourceRange fragment,FragmentKind kind,
+            LanguageVersion languageVersion,CancellationToken cancellation,String fragmentText,java.util.function.IntUnaryOperator originalOffset) {
+        cancellation.throwIfCancellationRequested();
         DiagnosticCollector collector = new DiagnosticCollector(CATALOG,
                 AnalysisBudget.defaults().maxDiagnostics());
-        AntlrOffsetMap offsets = new AntlrOffsetMap(source);
+        AntlrOffsetMap offsets = new AntlrOffsetMap(source,fragmentText,originalOffset);
         var charStream = CharStreams.fromString(fragmentText);
         InterlisLexer lexer = new InterlisLexer(charStream);
         lexer.removeErrorListeners();
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        tokens.fill();
-        List<Token> shifted = new ArrayList<>();
-        for (Token token : tokens.getTokens()) {
-            CommonToken copy = new CommonToken(token);
-            copy.setStartIndex(token.getStartIndex() + fragment.startOffset());
-            int stop = token.getStopIndex() < 0 ? -1 : token.getStopIndex() + fragment.startOffset();
-            copy.setStopIndex(stop);
-            shifted.add(copy);
-        }
-        CommonTokenStream fragmentTokens = new CommonTokenStream(
-                new org.antlr.v4.runtime.ListTokenSource(shifted));
+        lexer.addErrorListener(new CollectingLexerErrorListener(source,offsets,collector));
+        CommonTokenStream fragmentTokens=new CommonTokenStream(lexer);
         fragmentTokens.fill();
+        checkTokenProfile(fragmentTokens,languageVersion,offsets,collector);
         InterlisParser parser = new InterlisParser(fragmentTokens);
         parser.removeErrorListeners();
         parser.addErrorListener(new CollectingParserErrorListener(offsets, collector));
@@ -355,7 +341,7 @@ public final class AntlrSyntaxService implements SyntaxService {
             }
         }
         SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, fragmentTokens,
-                languageVersion);
+                languageVersion, AnalysisBudget.defaults());
         guru.interlis.syntax.SyntaxNode root;
         if (context == null) {
             SourceRange range = fragment;
@@ -373,7 +359,7 @@ public final class AntlrSyntaxService implements SyntaxService {
                         new SyntaxNodeId("fragment-root"), range, "FRAGMENT",
                         "fragment could not be parsed");
             };
-        } else {
+        } else try {
             root = switch (kind) {
                 case EXPRESSION -> builder.buildExpressionFragment(
                         (InterlisParser.ExpressionContext) context);
@@ -383,8 +369,37 @@ public final class AntlrSyntaxService implements SyntaxService {
                         (InterlisParser.AttributeDefContext) context);
             };
         }
+        catch(AnalysisBudgetExceededException limit) {
+            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-INF-0002"),Severity.ERROR,Phase.INFRASTRUCTURE,"diagnostic.limit")
+                    .argument(new DiagnosticArgument.TextArgument("resource",limit.resource()))
+                    .argument(new DiagnosticArgument.IntegerArgument("limit",java.math.BigInteger.valueOf(limit.limit()))));
+            root=kind==FragmentKind.ATTRIBUTE_DECLARATION
+                    ? new guru.interlis.syntax.UnsupportedDeclarationSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",limit.resource())
+                    : new guru.interlis.syntax.UnsupportedExpressionSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",limit.resource());
+            consumed=false;
+        }
+        collectVersionViolations(builder, languageVersion, collector);
         return new FragmentSnapshot(source, kind, fragment, root, consumed,
                 collector.freeze(), languageVersion);
+    }
+
+    private static void checkTokenProfile(CommonTokenStream tokens,LanguageVersion language,AntlrOffsetMap offsets,DiagnosticCollector collector) {
+        LanguageProfile.classify(tokens,language);
+        for (Token token : tokens.getTokens()) {
+            LanguageProfile.featureForToken(token.getType()).ifPresent(feature -> {
+                if (!LanguageProfile.supports(language, feature)) {
+                    collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0006"),
+                                    Severity.ERROR, Phase.PARSING,
+                                    "diagnostic.syntax.versionConstruct")
+                            .at(offsets.tokenRange(token))
+                            .argument(new DiagnosticArgument.TextArgument("construct",
+                                    feature.label()))
+                            .argument(new DiagnosticArgument.TextArgument("language",
+                                    language.literal())));
+                }
+            });
+        }
+
     }
 
     private static String safeMessage(Throwable error) {

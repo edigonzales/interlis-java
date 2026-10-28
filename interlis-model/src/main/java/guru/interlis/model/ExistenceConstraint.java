@@ -5,13 +5,15 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Existence of a referenced object under an alternative target set.
+ * Existence of an attribute value under an alternative target set. Expression IDs
+ * belong to the containing snapshot and retain types, ranges and error states.
+ * Alternatives are immutable, null-free and preserve source order.
  *
  * @param name declared name
- * @param source source identifier
+ * @param source snapshot-local source path expression, including type and diagnostic state
  * @param targets the {@code targets} component
  */
-public record ExistenceConstraint(Optional<String> name, ObjectPath source,
+public record ExistenceConstraint(Optional<String> name, ExpressionId source,
                                   List<ExistenceTarget> targets)
         implements ConstraintDefinition {
     /** Creates a validated instance. */
@@ -25,9 +27,9 @@ public record ExistenceConstraint(Optional<String> name, ObjectPath source,
      * Immutable value.
      *
      * @param viewable the {@code viewable} component
-     * @param path name path
+     * @param path snapshot-local target path expression
      */
-    public record ExistenceTarget(SymbolId viewable, ObjectPath path) {
+    public record ExistenceTarget(SymbolId viewable, ExpressionId path) {
         /** Creates a validated instance. */
         public ExistenceTarget {
             Objects.requireNonNull(viewable, "viewable");

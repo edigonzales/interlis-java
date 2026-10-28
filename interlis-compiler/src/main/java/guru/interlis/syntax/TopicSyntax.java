@@ -19,13 +19,14 @@ import java.util.Set;
  * @param baseTopic the {@code baseTopic} component
  * @param dependencies the {@code dependencies} component
  * @param members member identifiers
- * @param oidRule optional raw OID rule
+ * @param oidRules declared OID rules in source order
+ * @param deferredGenerics explicitly declared 2.4 domain names, in source order
  */
 public record TopicSyntax(SyntaxNodeId id, SourceRange range, String name,
                           Set<Modifier> modifiers, Optional<String> endName,
                           Optional<NameSyntax> baseTopic,
                           List<NameSyntax> dependencies, List<SyntaxNode> members,
-                          Optional<String> oidRule)
+                          List<OidRuleSyntax> oidRules, List<NameSyntax> deferredGenerics)
         implements SyntaxNode {
     /** Creates a validated instance. */
     public TopicSyntax {
@@ -37,7 +38,8 @@ public record TopicSyntax(SyntaxNodeId id, SourceRange range, String name,
         baseTopic = Objects.requireNonNull(baseTopic, "baseTopic");
         dependencies = List.copyOf(Objects.requireNonNull(dependencies, "dependencies"));
         members = List.copyOf(Objects.requireNonNull(members, "members"));
-        oidRule = Objects.requireNonNull(oidRule, "oidRule");
+        deferredGenerics = List.copyOf(deferredGenerics);
+        oidRules = List.copyOf(Objects.requireNonNull(oidRules, "oidRules"));
     }
 
     @Override
@@ -49,7 +51,9 @@ public record TopicSyntax(SyntaxNodeId id, SourceRange range, String name,
     public List<SyntaxNode> children() {
         List<SyntaxNode> result = new ArrayList<>();
         baseTopic.ifPresent(result::add);
+        oidRules.forEach(rule -> rule.domain().ifPresent(result::add));
         result.addAll(dependencies);
+        result.addAll(deferredGenerics);
         result.addAll(members);
         return result;
     }

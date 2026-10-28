@@ -37,13 +37,18 @@ END JsTarget.
     expectedWorkspaceRevision: updated.result.workspaceRevision,
     roots: [{kind: 'byName', modelName: 'JsTarget'}]
   }));
-  const result = {status: 'passed', tool: capabilities.result.toolVersion,
+  if (compiled.status !== 'ok' || compiled.result.outcome !== 'succeeded') {
+    throw new Error('compile failed: ' + JSON.stringify(compiled));
+  }
+  handle(envelope('closeSession', sessionId));
+  const stabilizationCases = await require('./stabilization-contract.cjs')(api);
+  const result = {stabilizationCases, status: 'passed', tool: capabilities.result.toolVersion,
     outcome: compiled.result ? compiled.result.outcome : compiled.status,
     runtime: 'teavm-js', node: process.version};
   fs.writeFileSync(path.resolve(__dirname, 'build/js-contract-result.json'),
     JSON.stringify(result, null, 2));
   console.log('js-contract PASS ' + JSON.stringify(result));
-  process.exit(0);
+  process.exitCode = 0;
 })().catch(error => {
   console.error('js-contract FAIL', error);
   try {
@@ -51,5 +56,5 @@ END JsTarget.
       JSON.stringify({status: 'failed', error: String(error), runtime: 'teavm-js'}, null, 2));
   } catch (ignored) {
   }
-  process.exit(1);
+  process.exitCode = 1;
 });

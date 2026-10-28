@@ -1,13 +1,8 @@
 package guru.interlis.workspace.resolution;
 
-import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.compiler.ResolutionFingerprint;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceText;
-import guru.interlis.syntax.ParseMode;
-import guru.interlis.syntax.ParseOptions;
-import guru.interlis.syntax.SyntaxService;
-import guru.interlis.syntax.SyntaxServices;
 import guru.interlis.syntax.SyntaxSnapshot;
 import guru.interlis.workspace.WorkspaceRevision;
 
@@ -26,20 +21,32 @@ public final class SourceInventory {
     private final ResolverCatalog catalog;
     private final ResolutionFingerprint fingerprint;
 
+    /**
+     * Copies the supplied sources and matching syntax without parsing or performing IO.
+     * Headers follow source-ID order, then declaration order. Every source requires a
+     * non-null snapshot with exactly the same ID, revision and text.
+     *
+     * @throws IllegalArgumentException if a snapshot belongs to a different source state
+     * @throws NullPointerException if an argument, source or required snapshot is null
+     */
     public SourceInventory(WorkspaceRevision workspaceRevision, Map<SourceId, SourceText> sources,
-                           ResolverCatalog catalog, AnalysisBudget budget) {
+                           ResolverCatalog catalog, Map<SourceId, SyntaxSnapshot> syntax) {
         this.workspaceRevision = Objects.requireNonNull(workspaceRevision, "workspaceRevision");
         this.sources = Map.copyOf(Objects.requireNonNull(sources, "sources"));
         this.catalog = Objects.requireNonNull(catalog, "catalog");
         Map<SourceId, SyntaxSnapshot> parsed = new LinkedHashMap<>();
         List<ModelHeader> headers = new ArrayList<>();
-        SyntaxService service = SyntaxServices.create();
+        Objects.requireNonNull(syntax, "syntax");
         List<SourceId> ids = new ArrayList<>(sources.keySet());
         ids.sort(java.util.Comparator.comparing(SourceId::value));
         for (SourceId id : ids) {
             SourceText text = sources.get(id);
-            SyntaxSnapshot snapshot = service.parse(text, ParseOptions.defaults(ParseMode.EDITOR),
-                    guru.interlis.execution.CancellationToken.none());
+            SyntaxSnapshot snapshot = Objects.requireNonNull(syntax.get(id), "missing syntax");
+            if (!snapshot.source().id().equals(id)
+                    || !snapshot.source().revision().equals(text.revision())
+                    || !snapshot.source().text().equals(text.text())) {
+                throw new IllegalArgumentException("syntax does not match inventory source");
+            }
             parsed.put(id, snapshot);
             for (var model : snapshot.root().models()) {
                 headers.add(ModelHeader.of(id, text.revision(), model));

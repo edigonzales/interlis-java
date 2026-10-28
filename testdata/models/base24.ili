@@ -8,7 +8,7 @@ MODEL Base
     Count = 0..999;
     Label = TEXT*40;
 
-  TOPIC Common =
+  TOPIC Common = OID AS INTERLIS.UUIDOID;
 
     CLASS BaseBuilding =
       height : Count;

@@ -99,18 +99,30 @@ final class SyntaxTreeBuilder {
     private final AntlrOffsetMap offsets;
     private final CommonTokenStream tokenStream;
     private final LanguageVersion language;
+    private final guru.interlis.compiler.AnalysisBudget budget;
     private long nodeCounter;
     private final Set<String> unsupportedFeatures = new LinkedHashSet<>();
     private final List<SourceRange> recoveredRanges = new ArrayList<>();
     private final List<LanguageProfile.Feature> versionViolations = new ArrayList<>();
     private final List<SourceRange> versionViolationRanges = new ArrayList<>();
+    private final List<guru.interlis.diagnostics.DiagnosticDraft> propertyDiagnostics = new ArrayList<>();
+
+    List<guru.interlis.diagnostics.DiagnosticDraft> propertyDiagnostics() { return List.copyOf(propertyDiagnostics); }
+
+    private void addModifier(Set<Modifier> modifiers, Modifier value, Token token) {
+        if (!modifiers.add(value)) propertyDiagnostics.add(guru.interlis.diagnostics.DiagnosticDraft.of(
+                new guru.interlis.diagnostics.DiagnosticCode("ILI-SYN-0007"), guru.interlis.diagnostics.Severity.WARNING,
+                guru.interlis.diagnostics.Phase.PARSING, "diagnostic.syntax.redundantProperty")
+                .at(tokenRange(token)).argument(new guru.interlis.diagnostics.DiagnosticArgument.TokenArgument("property", token.getText())));
+    }
 
     SyntaxTreeBuilder(SourceText source, AntlrOffsetMap offsets,
-                      CommonTokenStream tokenStream, LanguageVersion language) {
+                      CommonTokenStream tokenStream, LanguageVersion language, guru.interlis.compiler.AnalysisBudget budget) {
         this.source = Objects.requireNonNull(source, "source");
         this.offsets = Objects.requireNonNull(offsets, "offsets");
         this.tokenStream = Objects.requireNonNull(tokenStream, "tokenStream");
         this.language = Objects.requireNonNull(language, "language");
+        this.budget=Objects.requireNonNull(budget,"budget");
     }
 
     Set<String> unsupportedFeatures() {
@@ -153,8 +165,22 @@ final class SyntaxTreeBuilder {
                 : guru.interlis.model.ModelKind.NORMAL;
         return new ModelSyntax(nextId(), range(context), name, kind,
                 context.CONTRACTED() != null, version, issuer, language,
-                modelLanguage(context), translationSource(context), translationVersion(context),
-                endName(context.END(), context), imports, members);
+                translationSource(context), translationVersion(context),
+                endName(context.END(), context), imports, members, modelOptions(context));
+    }
+
+    private guru.interlis.model.ModelOptions modelOptions(InterlisParser.ModeldefContext context) {
+        return new guru.interlis.model.ModelOptions(modelLanguage(context).map(value -> new guru.interlis.model.ModelOptions.TextValue(value,
+                new guru.interlis.model.Origin.DeclaredOrigin(tokenRange(context.LPAR().getSymbol(), context.RPAR().getSymbol())))), Optional.ofNullable(context.NOINCREMENTALTRANSFER())
+                .map(token -> new guru.interlis.model.Origin.DeclaredOrigin(tokenRange(token.getSymbol()))),
+                modelTextOption(context, context.CHARSET()), modelTextOption(context, context.XMLNS()));
+    }
+
+    private Optional<guru.interlis.model.ModelOptions.TextValue> modelTextOption(InterlisParser.ModeldefContext context, TerminalNode keyword) {
+        if (keyword == null) return Optional.empty();
+        return context.STRING().stream().filter(value -> value.getSymbol().getTokenIndex() > keyword.getSymbol().getTokenIndex())
+                .findFirst().map(value -> new guru.interlis.model.ModelOptions.TextValue(unquote(value.getText()),
+                        new guru.interlis.model.Origin.DeclaredOrigin(tokenRange(keyword.getSymbol(), value.getSymbol()))));
     }
 
     private Optional<String> modelLanguage(InterlisParser.ModeldefContext context) {
@@ -206,32 +232,18 @@ final class SyntaxTreeBuilder {
         return Optional.of(unquote(tokenStream.get(i).getText()));
     }
 
-    private Optional<String> oidRule(ParserRuleContext context) {
-        int start = -1;
-        int end = -1;
-        for (int i = context.getStart().getTokenIndex(); i <= context.getStop().getTokenIndex(); i++) {
-            Token token = tokenStream.get(i);
-            if (start < 0 && token.getType() == InterlisParser.BASKET
-                    && i + 1 <= context.getStop().getTokenIndex()
-                    && tokenStream.get(i + 1).getType() == InterlisParser.OID) {
-                start = i;
-            }
-            if (start < 0 && token.getType() == InterlisParser.OID) {
-                start = i;
-            }
-            if (start >= 0 && token.getType() == InterlisParser.SEMI) {
-                end = i;
-                break;
+    private List<guru.interlis.syntax.OidRuleSyntax> oidRules(ParserRuleContext context) {
+        List<guru.interlis.syntax.OidRuleSyntax> result = new ArrayList<>();
+        if (context.children != null) for (var child : context.children) {
+            if (child instanceof InterlisParser.BasketOidRuleContext rule) {
+                result.add(new guru.interlis.syntax.OidRuleSyntax(true,
+                        Optional.of(nameFromContext(rule.oidDomainRef())), range(rule)));
+            } else if (child instanceof InterlisParser.ObjectOidRuleContext rule) {
+                result.add(new guru.interlis.syntax.OidRuleSyntax(false,
+                        rule.oidDomainRef() == null ? Optional.empty() : Optional.of(nameFromContext(rule.oidDomainRef())), range(rule)));
             }
         }
-        if (start < 0) {
-            return Optional.empty();
-        }
-        int last = end > start ? end - 1 : start;
-        int from = tokenStream.get(start).getStartIndex();
-        int to = tokenStream.get(last).getStopIndex();
-        return from >= 0 && to >= from
-                ? Optional.of(source.text().substring(from, to + 1).trim()) : Optional.empty();
+        return List.copyOf(result);
     }
 
     private Optional<String> endName(TerminalNode end, ParserRuleContext context) {
@@ -258,19 +270,17 @@ final class SyntaxTreeBuilder {
             if (token.getType() == InterlisParser.IMPORTS) {
                 int index = cursor + 1;
                 boolean unqualified = false;
-                if (index <= stop && tokenStream.get(index).getType() == InterlisParser.UNQUALIFIED) {
-                    unqualified = true;
-                    index++;
-                }
                 while (index <= stop) {
                     Token current = tokenStream.get(index);
                     if (current.getType() == InterlisParser.SEMI) {
                         break;
                     }
+                    if (current.getType() == InterlisParser.UNQUALIFIED) unqualified = true;
                     if (current.getType() == InterlisParser.Name
                             || current.getType() == InterlisParser.INTERLIS) {
                         result.add(new ImportSyntax(nextId(), tokenRange(current),
                                 current.getText(), unqualified, Optional.empty()));
+                        unqualified = false;
                     }
                     index++;
                 }
@@ -299,20 +309,49 @@ final class SyntaxTreeBuilder {
             }
         }
         for (InterlisParser.UnitDefContext unit : context.unitDef()) {
-            members.add(new Member(unit.getStart().getTokenIndex(), buildUnit(unit)));
+            members.add(new Member(unit.getStart().getTokenIndex(),
+                    isDomainEnumeration(unit) ? buildDomainFromUnit(unit) : buildUnit(unit)));
         }
         for (InterlisParser.FunctionDefContext function : context.functionDef()) {
             members.add(new Member(function.getStart().getTokenIndex(), buildFunction(function)));
         }
-        Set<String> declaredParameters = new LinkedHashSet<>();
-        for (InterlisParser.RunTimeParameterDefContext parameter
-                : context.runTimeParameterDef()) {
-            if (!declaredParameters.add(parameter.Name().getText())) {
-                unsupportedFeatures.add("DUPLICATE_PARAMETER");
-            }
+        for (var parameter : context.runTimeParameterDef()) {
+            members.add(new Member(parameter.getStart().getTokenIndex(),
+                    new guru.interlis.syntax.ParameterDeclarationSyntax(nextId(), range(parameter), parameter.Name().getText(),
+                            Optional.of(tokenRange(parameter.Name().getSymbol())), parameter.attrTypeDef().MANDATORY() != null, Set.of(),
+                            buildAttrTypeDef(parameter.attrTypeDef()).type())));
+        }
+        for (var basket : context.metaDataBasketDef()) {
+            members.add(new Member(basket.getStart().getTokenIndex(),
+                    buildMetadataBasket(basket)));
+        }
+        for (var definition : context.contextDef()) {
+            members.add(new Member(definition.getStart().getTokenIndex(),
+                    buildContext(definition)));
+        }
+        for (var lineForm : context.lineFormTypeDef()) {
+            members.add(new Member(lineForm.getStart().getTokenIndex(),
+                    new guru.interlis.syntax.LineFormDeclarationSyntax(nextId(), range(lineForm),
+                            lineForm.Name(0).getText(), Optional.of(tokenRange(lineForm.Name(0).getSymbol())),
+                            nameSyntax(List.of(lineForm.Name(1).getSymbol())))));
         }
         members.sort(Comparator.comparingInt(Member::index));
         return members.stream().map(Member::node).toList();
+    }
+
+    private guru.interlis.syntax.MetadataBasketDeclarationSyntax buildMetadataBasket(InterlisParser.MetaDataBasketDefContext context) {
+        List<guru.interlis.syntax.MetadataBasketDeclarationSyntax.ObjectDeclaration> objects = new ArrayList<>();
+        for (var group : context.metaObjectGroup()) {
+            for (int i = 1; i < group.Name().size(); i++) {
+                var name = group.Name(i).getSymbol();
+                objects.add(new guru.interlis.syntax.MetadataBasketDeclarationSyntax.ObjectDeclaration(nextId(), tokenRange(name),
+                        name.getText(), nameSyntax(List.of(group.Name(0).getSymbol()))));
+            }
+        }
+        return new guru.interlis.syntax.MetadataBasketDeclarationSyntax(nextId(), range(context), context.Name()==null?"<missing-basket>":context.Name().getText(),
+                context.Name()==null?Optional.empty():Optional.of(tokenRange(context.Name().getSymbol())), context.FINAL() == null ? Set.of() : Set.of(Modifier.FINAL),
+                context.REFSYSTEM() != null ? guru.interlis.model.MetadataBasketSymbol.Kind.REFSYSTEM : guru.interlis.model.MetadataBasketSymbol.Kind.SIGN,
+                nameFromContext(context.topicRef()), Optional.ofNullable(context.metaDataBasketRef()).map(this::nameFromContext), objects);
     }
 
     private SyntaxNode buildExternalConstraints(InterlisParser.ConstraintsDefContext context) {
@@ -326,89 +365,135 @@ final class SyntaxTreeBuilder {
                 "external-constraints");
     }
 
-    private ViewDeclarationSyntax buildView(InterlisParser.ViewDefContext context) {
-        Token nameToken = context.Name().isEmpty() ? null : context.Name(0).getSymbol();
-        String name = nameToken == null ? "<missing-view>" : nameToken.getText();
-        Optional<NameSyntax> baseView = context.EXTENDS() != null && context.viewRef() != null
-                ? Optional.of(nameFromContext(context.viewRef())) : Optional.empty();
-        Optional<String> formation = context.formationDef() == null ? Optional.empty()
-                : Optional.of(source.text().substring(
-                        context.formationDef().getStart().getStartIndex(),
-                        context.formationDef().getStop().getStopIndex() + 1).trim());
-        Optional<String> body = Optional.empty();
-        if (context.EQ() != null && context.END() != null) {
-            int from = context.EQ().getSymbol().getStopIndex() + 1;
-            int to = context.END().getSymbol().getStartIndex() - 1;
-            if (from <= to) {
-                body = Optional.of(source.text().substring(from, to + 1).trim());
-            }
-        }
-        Optional<String> endName = Optional.empty();
-        if (context.END() != null && context.Name().size() > 1) {
-            endName = Optional.of(context.Name(context.Name().size() - 1).getText());
-        }
-        List<ViewDeclarationSyntax.BaseExtension> baseExtensions = new ArrayList<>();
-        for (InterlisParser.BaseExtensionDefContext extension : context.baseExtensionDef()) {
-            List<NameSyntax> targets = new ArrayList<>();
-            for (InterlisParser.RenamedViewableRefContext target : extension.renamedViewableRef()) {
-                targets.add(nameFromContext(target));
-            }
-            Token baseToken = extension.Name().getSymbol();
-            NameSyntax baseName = new NameSyntax(nextId(), tokenRange(baseToken), List.of(
-                    new NameSyntax.NameSegmentSyntax(baseToken.getText(),
-                            tokenRange(baseToken))));
-            baseExtensions.add(new ViewDeclarationSyntax.BaseExtension(baseName, targets));
-        }
-        List<NameSyntax> allOf = new ArrayList<>();
-        List<String> attributeNames = new ArrayList<>();
-        if (context.viewAttributes() != null) {
-            int start = context.viewAttributes().getStart().getTokenIndex();
-            int stop = context.viewAttributes().getStop().getTokenIndex();
-            for (int i = start; i <= stop; i++) {
-                if (tokenStream.get(i).getType() == InterlisParser.ALL && i + 2 <= stop
-                        && tokenStream.get(i + 1).getType() == InterlisParser.OF
-                        && tokenStream.get(i + 2).getType() == InterlisParser.Name) {
-                    Token token = tokenStream.get(i + 2);
-                    allOf.add(new NameSyntax(nextId(), tokenRange(token), List.of(
-                            new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token)))));
+    private ViewDeclarationSyntax.Base viewBase(InterlisParser.RenamedViewableRefContext c, boolean orNull) {
+        NameSyntax target = nameFromContext(c.viewableRef());
+        NameSyntax alias = c.Name() == null ? new NameSyntax(nextId(), target.segments().getLast().range(),
+                List.of(target.segments().getLast())) : nameFromToken(c.Name().getSymbol());
+        return new ViewDeclarationSyntax.Base(alias, target, c.Name() != null, orNull);
+    }
+
+    private NameSyntax nameFromToken(Token token) {
+        return new NameSyntax(nextId(), tokenRange(token), List.of(new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token))));
+    }
+
+    private Set<Modifier> finalViewAttributeModifiers(ParserRuleContext context) {
+        var result = new java.util.HashSet<>(directModifiers(context));
+        result.add(Modifier.FINAL); return Set.copyOf(result);
+    }
+
+    private ViewDeclarationSyntax buildView(InterlisParser.ViewDefContext c) {
+        var kind = ViewDeclarationSyntax.FormationKind.PROJECTION;
+        List<ViewDeclarationSyntax.Base> bases = new ArrayList<>();
+        List<PathExpressionSyntax> paths = new ArrayList<>();
+        var f = c.formationDef();
+        if (f != null) {
+            if (f.projection() != null) bases.add(viewBase(f.projection().renamedViewableRef(), false));
+            else if (f.join() != null) {
+                kind = ViewDeclarationSyntax.FormationKind.JOIN;
+                var refs = f.join().renamedViewableRef();
+                for (int i = 0; i < refs.size(); i++) {
+                    int end = i + 1 < refs.size() ? refs.get(i + 1).getStart().getTokenIndex() : f.join().getStop().getTokenIndex() + 1;
+                    boolean nullable = false;
+                    for (int j = refs.get(i).getStop().getTokenIndex() + 1; j < end; j++) nullable |= tokenStream.get(j).getType() == InterlisParser.NULL;
+                    bases.add(viewBase(refs.get(i), nullable));
                 }
-            }
-            for (InterlisParser.AttributeDefContext attribute :
-                    context.viewAttributes().attributeDef()) {
-                if (attribute.Name() != null) {
-                    attributeNames.add(attribute.Name().getText());
+            } else if (f.union() != null) {
+                kind = ViewDeclarationSyntax.FormationKind.UNION;
+                f.union().renamedViewableRef().forEach(x -> bases.add(viewBase(x, false)));
+            } else if (f.aggregation() != null) {
+                kind = ViewDeclarationSyntax.FormationKind.AGGREGATION;
+                bases.add(viewBase(f.aggregation().renamedViewableRef(), false));
+                for (var key : f.aggregation().uniqueEl()) {
+                    var expression = pathExpression(key.objectOrAttributePath());
+                    if (expression instanceof PathExpressionSyntax path) paths.add(path);
                 }
+            } else if (f.inspection() != null) {
+                var inspection = inspectionFormation(f.inspection());
+                kind = inspection.kind(); bases.addAll(inspection.bases()); paths.addAll(inspection.paths());
             }
         }
-        return new ViewDeclarationSyntax(nextId(), range(context), name,
-                optionalRange(nameToken, context), directModifiers(context), baseView, formation, body,
-                baseExtensions, allOf, attributeNames, endName);
+        List<ViewDeclarationSyntax.BaseExtension> extensions = new ArrayList<>();
+        for (var e : c.baseExtensionDef()) extensions.add(new ViewDeclarationSyntax.BaseExtension(nameFromToken(e.Name().getSymbol()),
+                e.renamedViewableRef().stream().map(x -> viewBase(x, false)).toList()));
+        List<ViewDeclarationSyntax.Member> members = new ArrayList<>();
+        if (c.viewAttributes() != null) for (var a : c.viewAttributes().viewAttribute()) {
+            if (a.ALL() != null) members.add(new ViewDeclarationSyntax.AllOf(nameFromToken(a.Name().getSymbol())));
+            else if (a.attributeDef() != null) members.add(new ViewDeclarationSyntax.Attribute(buildAttribute(a.attributeDef())));
+            else members.add(new ViewDeclarationSyntax.Attribute(new AttributeDeclarationSyntax(nextId(), range(a), a.Name().getText(),
+                    Optional.of(tokenRange(a.Name().getSymbol())), false, a.TRANSIENT().size() > 0, true, false, false,
+                    finalViewAttributeModifiers(a), new GenericTypeSyntax(nextId(), range(a), "INFERRED"), List.of(buildExpression(a.expression())))));
+        }
+        return new ViewDeclarationSyntax(nextId(), range(c), c.Name(0)==null?"<missing-view>":c.Name(0).getText(),
+                c.Name(0)==null?Optional.empty():Optional.of(tokenRange(c.Name(0).getSymbol())),
+                directModifiers(c), c.viewRef() == null ? Optional.empty() : Optional.of(nameFromContext(c.viewRef())),
+                f == null ? Optional.empty() : Optional.of(new ViewDeclarationSyntax.Formation(kind, bases, paths)), extensions,
+                c.selection().stream().map(x -> buildExpression(x.expression())).toList(), members,
+                c.constraintDef().stream().map(this::buildConstraint).toList(),
+                c.Name().size() > 1 ? Optional.of(c.Name(c.Name().size() - 1).getText()) : Optional.empty());
     }
 
     private FunctionDeclarationSyntax buildFunction(InterlisParser.FunctionDefContext context) {
+        checkFunctionList(context.argumentDef().size(), context.LPAR(), context.RPAR(), LanguageProfile.Feature.EMPTY_FUNCTION_PARAMETERS);
         Token nameToken = context.Name().isEmpty() ? null : context.Name(0).getSymbol();
         String name = nameToken == null ? "<missing-function>" : nameToken.getText();
         List<FunctionDeclarationSyntax.FunctionParameterSyntax> parameters = new ArrayList<>();
         for (InterlisParser.ArgumentDefContext argument : context.argumentDef()) {
             String parameterName = argument.Name() == null ? "<missing>" : argument.Name().getText();
-            String typeName = argument.argumentType() == null ? ""
-                    : source.text().substring(argument.argumentType().getStart().getStartIndex(),
-                    argument.argumentType().getStop().getStopIndex() + 1).trim();
             parameters.add(new FunctionDeclarationSyntax.FunctionParameterSyntax(parameterName,
-                    typeName));
+                    buildArgumentType(argument.argumentType()), mandatoryArgument(argument.argumentType())));
         }
-        int colon = context.COLON().getSymbol().getTokenIndex();
-        int semicolon = context.getStop().getTokenIndex();
-        String returnType = "";
-        if (colon + 1 < semicolon) {
-            int from = tokenStream.get(colon + 1).getStartIndex();
-            int to = tokenStream.get(semicolon - 1).getStopIndex();
-            if (from >= 0 && to >= from) {
-                returnType = source.text().substring(from, to + 1).trim();
-            }
+        TypeSyntax returnType;
+        if (context.BOOLEAN() != null) {
+            returnType = new BooleanTypeSyntax(nextId(), tokenRange(context.BOOLEAN().getSymbol()));
+        } else if (context.argumentType() != null) {
+            returnType = buildArgumentType(context.argumentType());
+        } else if(context.Name().isEmpty()) {
+            returnType=new UnsupportedTypeSyntax(nextId(),range(context),"MISSING_FUNCTION_RETURN_TYPE","missing function result type");
+        } else {
+            Token returnName = context.Name().getLast().getSymbol();
+            NameSyntax reference = new NameSyntax(nextId(), tokenRange(returnName),
+                    List.of(new NameSyntax.NameSegmentSyntax(returnName.getText(), tokenRange(returnName))));
+            returnType = new DomainReferenceSyntax(nextId(), reference.range(), reference);
         }
         return new FunctionDeclarationSyntax(nextId(), range(context), name,
-                optionalRange(nameToken, context), parameters, returnType);
+                optionalRange(nameToken, context), parameters, returnType, mandatoryArgument(context.argumentType()),
+                Optional.ofNullable(context.Explanation()).map(node->new guru.interlis.syntax.SourceMetadata.Text(node.getText().substring(2,node.getText().length()-2).strip(),tokenRange(node.getSymbol()))));
+    }
+
+    private boolean mandatoryArgument(InterlisParser.ArgumentTypeContext context) {
+        return context!=null && context.attrTypeDef()!=null && context.attrTypeDef().MANDATORY()!=null;
+    }
+
+    /** A missing/recovered delimiter already has a syntax error; only closed source lists have a profile. */
+    private void checkFunctionList(int count, TerminalNode opening, TerminalNode closing, LanguageProfile.Feature feature) {
+        if (count != 0 || LanguageProfile.supports(language, feature) || opening == null || closing == null
+                || opening.getSymbol().getTokenIndex() < 0 || closing.getSymbol().getTokenIndex() < 0) return;
+        versionViolations.add(feature);
+        versionViolationRanges.add(tokenRange(opening.getSymbol(), closing.getSymbol()));
+    }
+
+    private TypeSyntax buildArgumentType(InterlisParser.ArgumentTypeContext context) {
+        if (context.attrTypeDef() != null) {
+            return buildAttrTypeDef(context.attrTypeDef()).type();
+        }
+        if (context.OBJECT() != null || context.OBJECTS() != null) {
+            var restricted = context.restrictedClassOrAssRef();
+            if (restricted == null) {
+                return new guru.interlis.syntax.ObjectArgumentTypeSyntax(nextId(), range(context),
+                        Optional.of(nameFromContext(context.viewRef())), List.of(), context.OBJECTS() != null);
+            }
+            var names = restricted.classOrAssociationRef();
+            boolean anyClass = restricted.ANYCLASS() != null;
+            return new guru.interlis.syntax.ObjectArgumentTypeSyntax(nextId(), range(context),
+                    anyClass ? Optional.empty() : Optional.of(nameFromContext(names.getFirst())),
+                    names.stream().skip(anyClass ? 0 : 1).map(this::nameFromContext).toList(),
+                    context.OBJECTS() != null);
+        }
+        if(context.ENUMVAL()!=null || context.ENUMTREEVAL()!=null)
+            return new guru.interlis.syntax.EnumArgumentTypeSyntax(nextId(),range(context),context.ENUMTREEVAL()!=null);
+        // These argument families need their own bound semantics; do not turn them
+        // into a default BOOLEAN or a class-value type with a different meaning.
+        return unsupportedType(context, "FUNCTION_ARGUMENT_TYPE", "function argument type");
     }
 
     private UnitDeclarationSyntax buildUnit(InterlisParser.UnitDefContext context) {
@@ -424,12 +509,66 @@ final class SyntaxTreeBuilder {
                 int start = tokenStream.get(eq + 1).getStartIndex();
                 int stop = tokenStream.get(semi - 1).getStopIndex();
                 if (start >= 0 && stop >= start) {
-                    definition = source.text().substring(start, stop + 1);
+                    var definitionRange = offsets.range(start, stop);
+                    definition = source.text().substring(definitionRange.startOffset(), definitionRange.endOffset());
                 }
             }
         }
-        return new UnitDeclarationSyntax(nextId(), range(context), name,
-                optionalRange(nameToken, context), context.ABSTRACT() != null, base, definition);
+        Token binding = context.LSBR() == null ? nameToken : context.Name(1).getSymbol();
+        var components = new ArrayList<UnitDeclarationSyntax.Component>();
+        if (context.composedUnit() != null) {
+            var operator = guru.interlis.model.UnitSymbol.Operator.MULTIPLY;
+            for (var child : context.composedUnit().children) {
+                if (child instanceof TerminalNode token && token.getSymbol().getType() == InterlisParser.DIV)
+                    operator = guru.interlis.model.UnitSymbol.Operator.DIVIDE;
+                else if (child instanceof TerminalNode token && token.getSymbol().getType() == InterlisParser.MUL)
+                    operator = guru.interlis.model.UnitSymbol.Operator.MULTIPLY;
+                else if (child instanceof InterlisParser.UnitRefContext ref)
+                    components.add(new UnitDeclarationSyntax.Component(operator, nameFromContext(ref)));
+            }
+        }
+        Optional<NameSyntax> derived = context.derivedUnit() == null ? Optional.empty()
+                : Optional.of(nameFromContext(context.derivedUnit().unitRef()));
+        var factors = new ArrayList<guru.interlis.model.UnitSymbol.ConversionFactor>();
+        Optional<String> function = Optional.empty();
+        if (context.derivedUnit() != null) {
+            var conversion = context.derivedUnit();
+            if (conversion.FUNCTION() != null) {
+                function = Optional.ofNullable(conversion.Explanation()).map(ParseTree::getText);
+            } else {
+                var operator = guru.interlis.model.UnitSymbol.Operator.MULTIPLY;
+                boolean invalidConstant = false;
+                for (var child : conversion.children) {
+                    if (child instanceof TerminalNode token && token.getSymbol().getType() == InterlisParser.DIV)
+                        operator = guru.interlis.model.UnitSymbol.Operator.DIVIDE;
+                    else if (child instanceof TerminalNode token && token.getSymbol().getType() == InterlisParser.MUL)
+                        operator = guru.interlis.model.UnitSymbol.Operator.MULTIPLY;
+                    else if (child instanceof InterlisParser.DecConstContext value) {
+                        var kind = value.PI() != null ? guru.interlis.model.UnitSymbol.ConstantKind.PI
+                                : value.LNBASE() != null ? guru.interlis.model.UnitSymbol.ConstantKind.LNBASE
+                                : guru.interlis.model.UnitSymbol.ConstantKind.DECIMAL;
+                        Optional<DecimalLiteral> decimal = kind == guru.interlis.model.UnitSymbol.ConstantKind.DECIMAL
+                                ? decimal(value.getText(),range(value)) : Optional.empty();
+                        if (kind != guru.interlis.model.UnitSymbol.ConstantKind.DECIMAL || decimal.isPresent())
+                            factors.add(new guru.interlis.model.UnitSymbol.ConversionFactor(operator, kind, decimal, range(value)));
+                        else invalidConstant = true;
+                    }
+                }
+                // The numeric-literal guard emitted by decimal() prevents a schema.
+                // Do not publish a partial formula as though its factors were complete.
+                if (invalidConstant) factors.clear();
+            }
+        }
+        return new UnitDeclarationSyntax(nextId(), range(context), binding == null ? name : binding.getText(),
+                optionalRange(binding, context), name, context.ABSTRACT() != null, base, derived, components, factors, function, definition);
+    }
+
+    private guru.interlis.syntax.ContextDeclarationSyntax buildContext(InterlisParser.ContextDefContext context) {
+        var mappings = context.contextMapping().stream().map(m ->
+                new guru.interlis.syntax.ContextDeclarationSyntax.Mapping(nameFromContext(m.domainRef(0)),
+                        m.domainRef().subList(1, m.domainRef().size()).stream().map(this::nameFromContext).toList())).toList();
+        return new guru.interlis.syntax.ContextDeclarationSyntax(nextId(), range(context), context.Name().getText(),
+                Optional.of(tokenRange(context.Name().getSymbol())), mappings);
     }
 
     private TopicSyntax buildTopic(InterlisParser.TopicDefContext context) {
@@ -438,8 +577,6 @@ final class SyntaxTreeBuilder {
         Set<Modifier> modifiers = directModifiers(context);
         if (context.VIEW() != null) {
             modifiers.add(Modifier.VIEW);
-        }
-        if (!context.OID().isEmpty()) {
         }
         Optional<NameSyntax> base = Optional.empty();
         if (context.EXTENDS() != null && !context.topicRef().isEmpty()) {
@@ -457,7 +594,8 @@ final class SyntaxTreeBuilder {
             members.add(buildDefinition(definition));
         }
         return new TopicSyntax(nextId(), range(context), name, modifiers,
-                endName(context.END(), context), base, dependencies, members, oidRule(context));
+                endName(context.END(), context), base, dependencies, members, oidRules(context),
+                context.genericRef().stream().map(this::nameFromContext).toList());
     }
 
     private SyntaxNode buildDefinition(InterlisParser.DefinitionsContext context) {
@@ -493,9 +631,7 @@ final class SyntaxTreeBuilder {
             return buildView(context.viewDef());
         }
         if (context.graphicDef() != null) {
-            return new UnitDeclarationSyntax(nextId(), range(context),
-                    "<graphic-" + context.graphicDef().getStart().getTokenIndex() + ">",
-                    Optional.empty(), false, Optional.empty(), "");
+            return buildGraphic(context.graphicDef());
         }
         if (context.constraintsDef() != null) {
             return buildExternalConstraints(context.constraintsDef());
@@ -504,58 +640,52 @@ final class SyntaxTreeBuilder {
             return buildFunction(context.functionDef());
         }
         if (context.unitDef() != null) {
-            String unitText = context.unitDef().getText();
-            if (unitText.contains("=(") && !unitText.contains("[")) {
+            if (isDomainEnumeration(context.unitDef())) {
                 return buildDomainFromUnit(context.unitDef());
             }
             return buildUnit(context.unitDef());
         }
         if (context.metaDataBasketDef() != null) {
-            return new UnitDeclarationSyntax(nextId(), range(context),
-                    "<metaobject-" + context.metaDataBasketDef().getStart().getTokenIndex() + ">",
-                    Optional.empty(), false, Optional.empty(), "");
+            return buildMetadataBasket(context.metaDataBasketDef());
         }
         if (context.contextDef() != null) {
-            return new UnitDeclarationSyntax(nextId(), range(context),
-                    "<context-" + context.contextDef().getStart().getTokenIndex() + ">",
-                    Optional.empty(), false, Optional.empty(), "");
+            return buildContext(context.contextDef());
         }
         return unsupportedDeclaration(context, "DECLARATION", "unknown declaration");
     }
 
+    /** A single enum element and a composed unit share a grammar shape; the section decides. */
+    private boolean isDomainEnumeration(InterlisParser.UnitDefContext context) {
+        var value = context.composedUnit();
+        if (value == null || !value.MUL().isEmpty() || !value.DIV().isEmpty()) return false;
+        ParseTree boundary = context;
+        ParserRuleContext scope = context.getParent();
+        if (scope instanceof InterlisParser.DefinitionsContext) {
+            boundary = scope;
+            scope = scope.getParent();
+        }
+        boolean domain = false;
+        for (int i = 0; i < scope.getChildCount(); i++) {
+            ParseTree child = scope.getChild(i);
+            if (child == boundary) break;
+            Token start = child instanceof TerminalNode terminal ? terminal.getSymbol()
+                    : child instanceof ParserRuleContext rule ? rule.getStart() : null;
+            if (start != null && start.getType() == InterlisParser.DOMAIN) domain = true;
+            if (start != null && start.getType() == InterlisParser.UNIT) domain = false;
+        }
+        return context.UNIT() == null && domain;
+    }
+
     private DomainDeclarationSyntax buildDomainFromUnit(InterlisParser.UnitDefContext context) {
-        String text = context.getText();
-        int eq = text.indexOf('=');
-        String header = eq < 0 ? text : text.substring(0, eq);
-        int extendsIndex = header.toUpperCase(java.util.Locale.ROOT).indexOf("EXTENDS");
-        String name = header;
-        Optional<NameSyntax> base = Optional.empty();
-        if (extendsIndex >= 0) {
-            name = header.substring(0, extendsIndex).trim();
-            String baseText = header.substring(extendsIndex + "EXTENDS".length()).trim();
-            List<NameSyntax.NameSegmentSyntax> segments = new ArrayList<>();
-            for (String part : baseText.split("\\.")) {
-                segments.add(new NameSyntax.NameSegmentSyntax(part, range(context)));
-            }
-            base = Optional.of(new NameSyntax(new SyntaxNodeId(
-                    "domain-base-" + context.getStart().getTokenIndex()), range(context), segments));
-        }
-        int open = text.indexOf('(', eq + 1);
-        int close = text.lastIndexOf(')');
-        List<EnumerationTypeSyntax.EnumerationValueSyntax> values = new ArrayList<>();
-        if (open >= 0 && close > open) {
-            for (String value : text.substring(open + 1, close).split(",")) {
-                String trimmed = value.trim();
-                if (!trimmed.isEmpty()) {
-                    values.add(new EnumerationTypeSyntax.EnumerationValueSyntax(
-                            trimmed, range(context), false));
-                }
-            }
-        }
-        EnumerationTypeSyntax type = new EnumerationTypeSyntax(nextId(), range(context),
-                values, false, false);
-        return new DomainDeclarationSyntax(nextId(), range(context), name.strip(),
-                Optional.empty(), Set.of(), base, type, List.of());
+        Token name = context.Name(0).getSymbol();
+        Optional<NameSyntax> base = context.unitRef() == null ? Optional.empty()
+                : Optional.of(nameFromContext(context.unitRef()));
+        NameSyntax value = nameFromContext(context.composedUnit());
+        EnumerationTypeSyntax type = new EnumerationTypeSyntax(nextId(), range(context.composedUnit()),
+                List.of(new EnumerationTypeSyntax.EnumerationValueSyntax(value.text(), value.range(),
+                        false, value.segments().size() > 1)), false, false, Set.of());
+        return new DomainDeclarationSyntax(nextId(), range(context), name.getText(),
+                optionalRange(name, context), directModifiers(context), base, type, List.of());
     }
 
     private ClassDeclarationSyntax buildClass(InterlisParser.ClassDefContext context) {
@@ -563,12 +693,10 @@ final class SyntaxTreeBuilder {
         String name = nameToken == null ? "<missing-class>" : nameToken.getText();
         Optional<NameSyntax> base = context.EXTENDS() == null || context.classOrStructureRef() == null
                 ? Optional.empty() : Optional.of(nameFromContext(context.classOrStructureRef()));
-        if (context.OID() != null) {
-        }
         List<SyntaxNode> members = buildClassMembers(context.classOrStructureDef());
         return new ClassDeclarationSyntax(nextId(), range(context), name,
                 optionalRange(nameToken, context), modifiers(context), base, members,
-                oidRule(context), endName(context.END(), context));
+                oidRules(context), endName(context.END(), context));
     }
 
     private StructureDeclarationSyntax buildStructure(InterlisParser.StructureDefContext context) {
@@ -579,6 +707,36 @@ final class SyntaxTreeBuilder {
         List<SyntaxNode> members = buildClassMembers(context.classOrStructureDef());
         return new StructureDeclarationSyntax(nextId(), range(context), name,
                 optionalRange(nameToken, context), modifiers(context), base, members);
+    }
+
+    private guru.interlis.syntax.GraphicDeclarationSyntax buildGraphic(InterlisParser.GraphicDefContext context) {
+        List<guru.interlis.syntax.GraphicDeclarationSyntax.Rule> rules=new ArrayList<>();
+        for(var rule:context.drawingRule()) {
+            List<guru.interlis.syntax.GraphicDeclarationSyntax.Clause> clauses=new ArrayList<>();
+            for(var clause:rule.condSignParamAssignment()) {
+                List<guru.interlis.syntax.GraphicDeclarationSyntax.Assignment> assignments=new ArrayList<>();
+                for(var assignment:clause.signParamAssignment()) {
+                    guru.interlis.syntax.GraphicDeclarationSyntax.Value value;
+                    if(assignment.metaObjectRef()!=null) value=new guru.interlis.syntax.GraphicDeclarationSyntax.MetaObjectValue(nameFromContext(assignment.metaObjectRef()));
+                    else if(assignment.factor()!=null) value=new guru.interlis.syntax.GraphicDeclarationSyntax.ExpressionValue(buildFactor(assignment.factor()));
+                    else {
+                        List<guru.interlis.syntax.GraphicDeclarationSyntax.EnumAssignment> cases=new ArrayList<>();
+                        for(var entry:assignment.enumAssignment()) {
+                            var range=entry.enumRange();
+                            guru.interlis.syntax.GraphicDeclarationSyntax.Value v=entry.metaObjectRef()!=null
+                                    ? new guru.interlis.syntax.GraphicDeclarationSyntax.MetaObjectValue(nameFromContext(entry.metaObjectRef()))
+                                    : new guru.interlis.syntax.GraphicDeclarationSyntax.ExpressionValue(constantExpression(entry.constant()));
+                            cases.add(new guru.interlis.syntax.GraphicDeclarationSyntax.EnumAssignment(range(entry),range.enumerationConst(0).getText().substring(1),range.enumerationConst().size()>1?Optional.of(range.enumerationConst(1).getText().substring(1)):Optional.empty(),v));
+                        }
+                        value=new guru.interlis.syntax.GraphicDeclarationSyntax.AccordingValue(pathExpression(assignment.attributePath().objectOrAttributePath()),cases);
+                    }
+                    assignments.add(new guru.interlis.syntax.GraphicDeclarationSyntax.Assignment(range(assignment),nameSyntax(List.of(assignment.Name().getSymbol())),value));
+                }
+                clauses.add(new guru.interlis.syntax.GraphicDeclarationSyntax.Clause(range(clause),Optional.ofNullable(clause.expression()).map(this::buildExpression),assignments));
+            }
+            rules.add(new guru.interlis.syntax.GraphicDeclarationSyntax.Rule(nextId(),range(rule),rule.Name().getText(),Optional.of(tokenRange(rule.Name().getSymbol())),modifiers(rule),Optional.ofNullable(rule.classRef()).map(this::nameFromContext),clauses));
+        }
+        return new guru.interlis.syntax.GraphicDeclarationSyntax(nextId(),range(context),context.Name(0)==null?"<missing-graphic>":context.Name(0).getText(),context.Name(0)==null?Optional.empty():Optional.of(tokenRange(context.Name(0).getSymbol())),modifiers(context),Optional.ofNullable(context.graphicRef()).map(this::nameFromContext),Optional.ofNullable(context.viewableRef()).map(this::nameFromContext),context.selection().stream().map(x->buildExpression(x.expression())).toList(),rules,endName(context.END(),context));
     }
 
     private List<SyntaxNode> buildClassMembers(InterlisParser.ClassOrStructureDefContext context) {
@@ -592,6 +750,13 @@ final class SyntaxTreeBuilder {
         for (InterlisParser.ConstraintDefContext constraint : context.constraintDef()) {
             members.add(new Member(constraint.getStart().getTokenIndex(), buildConstraint(constraint)));
         }
+        for (var parameter : context.parameterDef()) {
+            var type = parameter.attrTypeDef() != null ? buildAttrTypeDef(parameter.attrTypeDef()).type()
+                    : new guru.interlis.syntax.MetaObjectTypeSyntax(nextId(), range(parameter), Optional.ofNullable(parameter.classRef()).map(this::nameFromContext));
+            members.add(new Member(parameter.getStart().getTokenIndex(), new guru.interlis.syntax.ParameterDeclarationSyntax(
+                    nextId(), range(parameter), parameter.Name().getText(), Optional.of(tokenRange(parameter.Name().getSymbol())),
+                    parameter.attrTypeDef() != null && parameter.attrTypeDef().MANDATORY() != null, modifiers(parameter), type)));
+        }
         members.sort(Comparator.comparingInt(Member::index));
         return members.stream().map(Member::node).toList();
     }
@@ -601,16 +766,7 @@ final class SyntaxTreeBuilder {
                 : (context.UUIDOID() != null ? context.UUIDOID().getSymbol() : null);
         String name = nameToken == null ? "<missing-attribute>" : nameToken.getText();
         TypeResult type;
-        if (context.attrTypeDef() != null
-                && directModifiers(context).contains(Modifier.EXTENDED)
-                && context.attrTypeDef().attrType() == null
-                && context.attrTypeDef().enumeration() == null
-                && context.attrTypeDef().numeric() == null
-                && context.attrTypeDef().BAG() == null
-                && context.attrTypeDef().LIST() == null) {
-            type = new TypeResult(new GenericTypeSyntax(nextId(), range(context), "INHERITED"),
-                    context.attrTypeDef().MANDATORY() != null);
-        } else if (context.attrTypeDef() != null) {
+        if (context.attrTypeDef() != null) {
             type = buildAttrTypeDef(context.attrTypeDef());
         } else if (context.lineType() != null) {
             type = new TypeResult(unsupportedType(context.lineType(), "GEOMETRY_LINE",
@@ -622,15 +778,10 @@ final class SyntaxTreeBuilder {
         }
         boolean transientAttribute = context.TRANSIENT() != null && !context.TRANSIENT().isEmpty();
         Set<Modifier> attributeModifiers = directModifiers(context);
-        if (type.type() instanceof UnsupportedTypeSyntax
-                && attributeModifiers.contains(Modifier.EXTENDED)) {
-            type = new TypeResult(new GenericTypeSyntax(nextId(), range(context), "INHERITED"),
-                    type.mandatory);
-        }
         return new AttributeDeclarationSyntax(nextId(), range(context), name,
                 optionalRange(nameToken, context), type.mandatory, transientAttribute,
                 context.ASSIGN() != null, context.CONTINUOUS() != null,
-                context.SUBDIVISION() != null, attributeModifiers, type.type);
+                context.SUBDIVISION() != null, attributeModifiers, type.type, context.expression().stream().map(this::buildExpression).toList());
     }
 
     private List<DomainDeclarationSyntax> buildDomains(InterlisParser.DomainDefContext context) {
@@ -670,20 +821,10 @@ final class SyntaxTreeBuilder {
         }
         String name = nameToken.getText();
         Optional<NameSyntax> base = Optional.empty();
-        for (int i = startIndex; i < eqIndex; i++) {
-            Token token = tokenStream.get(i);
-            if (token.getType() == InterlisParser.EXTENDS) {
-                List<Token> names = new ArrayList<>();
-                for (int j = i + 1; j < eqIndex; j++) {
-                    Token candidate = tokenStream.get(j);
-                    if (candidate.getType() == InterlisParser.Name
-                            || candidate.getType() == InterlisParser.INTERLIS) {
-                        names.add(candidate);
-                    }
-                }
-                if (!names.isEmpty()) {
-                    base = Optional.of(nameSyntax(names));
-                }
+        for (InterlisParser.DomainRefContext candidate : context.domainRef()) {
+            int index = candidate.getStart().getTokenIndex();
+            if (index >= startIndex && index < eqIndex) {
+                base = Optional.of(nameFromContext(candidate));
                 break;
             }
         }
@@ -714,10 +855,21 @@ final class SyntaxTreeBuilder {
             }
         }
         if (type == null) {
+            List<Token> bounds = new ArrayList<>();
+            for (int i = eqIndex + 1; i <= endIndex; i++)
+                if (tokenStream.get(i).getType() == InterlisParser.STRING) bounds.add(tokenStream.get(i));
+            if (bounds.size() == 2) type = new FormattedTypeSyntax(nextId(), range(context), Optional.empty(),
+                    false, false, List.of(), Optional.of(unquote(bounds.get(0).getText())), Optional.of(unquote(bounds.get(1).getText())));
+        }
+        if (type == null) {
             for (int i = eqIndex + 1; i <= endIndex; i++) {
                 int tokenType = tokenStream.get(i).getType();
                 if (tokenType == InterlisParser.CLASS) {
-                    type = new GenericTypeSyntax(nextId(), tokenRange(tokenStream.get(i)), "CLASS");
+                    int typeStart = eqIndex;
+                    var restrictions = context.classOrAssociationRef().stream()
+                            .filter(r -> r.getStart().getTokenIndex() > typeStart && r.getStop().getTokenIndex() <= endIndex)
+                            .map(this::nameFromContext).toList();
+                    type = new ClassValueTypeSyntax(nextId(), tokenRange(tokenStream.get(i)), false, restrictions);
                     break;
                 }
                 if (tokenType == InterlisParser.STRUCTURE) {
@@ -734,10 +886,7 @@ final class SyntaxTreeBuilder {
                 }
             }
             if (mandatoryOnly) {
-                type = new UnsupportedTypeSyntax(nextId(),
-                        tokenRange(tokenStream.get(eqIndex + 1)), "DOMAIN_MANDATORY_ONLY",
-                        "domain without explicit value type");
-                unsupportedFeatures.add("DOMAIN_MANDATORY_ONLY");
+                type = new GenericTypeSyntax(nextId(), tokenRange(tokenStream.get(eqIndex + 1)), "INHERITED");
             } else {
                 type = new UnsupportedTypeSyntax(nextId(), range(context),
                         "UNSUPPORTED_DOMAIN_TYPE", "unsupported domain type");
@@ -745,21 +894,42 @@ final class SyntaxTreeBuilder {
             }
         }
         List<ConstraintDeclarationSyntax> constraints = new ArrayList<>();
-        boolean domainConstraints = false;
-        for (int i = startIndex; i <= endIndex; i++) {
-            if (tokenStream.get(i).getType() == InterlisParser.CONSTRAINTS) {
-                domainConstraints = true;
-                break;
+        for (int i = 2; i < context.getChildCount(); i++) {
+            if (context.getChild(i) instanceof InterlisParser.ExpressionContext condition
+                    && condition.getStart().getTokenIndex() > eqIndex
+                    && condition.getStop().getTokenIndex() < endIndex) {
+                Token constraintName = ((TerminalNode) context.getChild(i - 2)).getSymbol();
+                SourceRange constraintRange = tokenRange(constraintName, condition.getStop());
+                constraints.add(new ConstraintDeclarationSyntax(nextId(), constraintRange,
+                        Optional.of(constraintName.getText()), ConstraintKind.DOMAIN,
+                        Optional.of(buildExpression(condition)), List.of(), Optional.empty(), Optional.empty(), false, Optional.empty(), Optional.empty()));
+                if (!LanguageProfile.supports(language, LanguageProfile.Feature.DOMAIN_CONSTRAINT)) {
+                    versionViolations.add(LanguageProfile.Feature.DOMAIN_CONSTRAINT);
+                    versionViolationRanges.add(constraintRange);
+                }
             }
-        }
-        if (domainConstraints && type instanceof GenericTypeSyntax generic
-                && (generic.name().equals("CLASS") || generic.name().equals("STRUCTURE"))) {
-            unsupportedFeatures.add("DOMAIN_CONSTRAINT_CLASS");
         }
         SourceRange declarationRange = tokenRange(tokenStream.get(startIndex),
                 tokenStream.get(endIndex));
         return new DomainDeclarationSyntax(nextId(), declarationRange, name,
-                Optional.of(tokenRange(nameToken)), modifiers(context), base, type, constraints);
+                Optional.of(tokenRange(nameToken)), domainModifiers(startIndex, eqIndex, endIndex), base, type, constraints);
+    }
+
+    private Set<Modifier> domainModifiers(int start, int end, int declarationEnd) {
+        Set<Modifier> result = new LinkedHashSet<>();
+        for (int i = start; i < end; i++) switch (tokenStream.get(i).getType()) {
+            case InterlisParser.ABSTRACT -> addModifier(result, Modifier.ABSTRACT, tokenStream.get(i));
+            case InterlisParser.FINAL -> addModifier(result, Modifier.FINAL, tokenStream.get(i));
+            case InterlisParser.GENERIC -> addModifier(result, Modifier.GENERIC, tokenStream.get(i));
+            default -> { }
+        }
+        for (int i = end + 1; i <= declarationEnd; i++) {
+            Token token = tokenStream.get(i);
+            if (token.getChannel() != Token.DEFAULT_CHANNEL) continue;
+            if (token.getType() == InterlisParser.MANDATORY) result.add(Modifier.MANDATORY);
+            break;
+        }
+        return result;
     }
 
     private AssociationDeclarationSyntax buildAssociation(
@@ -784,8 +954,6 @@ final class SyntaxTreeBuilder {
         for (InterlisParser.ConstraintDefContext constraint : context.constraintDef()) {
             constraints.add(buildConstraint(constraint));
         }
-        if (!context.OID().isEmpty()) {
-        }
         Optional<String> endName = Optional.empty();
         if (context.END() != null) {
             int endIndex = context.END().getSymbol().getTokenIndex();
@@ -799,9 +967,13 @@ final class SyntaxTreeBuilder {
         }
         Optional<NameSyntax> baseAssociation = context.associationRef() == null ? Optional.empty()
                 : Optional.of(nameFromContext(context.associationRef()));
+        Set<Modifier> associationModifiers = modifiers(context);
+        if (context.objectOidRule() != null && context.objectOidRule().NO() != null) associationModifiers.remove(Modifier.OID);
         return new AssociationDeclarationSyntax(nextId(), range(context), name, nameRange,
-                endName, baseAssociation, modifiers(context), roles, attributes, constraints,
-                oidRule(context));
+                endName, baseAssociation, associationModifiers, roles, attributes, constraints,
+                oidRules(context), context.cardinality() == null ? Optional.empty()
+                        : Optional.of(cardinality(context.cardinality())), context.renamedViewableRef() == null
+                        ? Optional.empty() : Optional.of(viewBase(context.renamedViewableRef(), false)));
     }
 
     private AttributeDeclarationSyntax buildAssociationAttribute(
@@ -809,16 +981,7 @@ final class SyntaxTreeBuilder {
         Token nameToken = context.Name() == null ? null : context.Name().getSymbol();
         String name = nameToken == null ? "<missing-attribute>" : nameToken.getText();
         TypeResult type;
-        if (context.attrTypeDef() != null
-                && directModifiers(context).contains(Modifier.EXTENDED)
-                && context.attrTypeDef().attrType() == null
-                && context.attrTypeDef().enumeration() == null
-                && context.attrTypeDef().numeric() == null
-                && context.attrTypeDef().BAG() == null
-                && context.attrTypeDef().LIST() == null) {
-            type = new TypeResult(new GenericTypeSyntax(nextId(), range(context), "INHERITED"),
-                    context.attrTypeDef().MANDATORY() != null);
-        } else if (context.attrTypeDef() != null) {
+        if (context.attrTypeDef() != null) {
             type = buildAttrTypeDef(context.attrTypeDef());
         } else if (context.enumeration() != null) {
             type = new TypeResult(enumerationType(context.enumeration()), false);
@@ -831,7 +994,7 @@ final class SyntaxTreeBuilder {
         }
         return new AttributeDeclarationSyntax(nextId(), range(context), name,
                 optionalRange(nameToken, context), context.MANDATORY() != null || type.mandatory,
-                false, context.ASSIGN() != null, false, false, directModifiers(context), type.type);
+                false, context.ASSIGN() != null, false, false, directModifiers(context), type.type, List.of());
     }
 
     private Token associationNameToken(InterlisParser.AssociationDefContext context) {
@@ -853,8 +1016,8 @@ final class SyntaxTreeBuilder {
             unsupportedFeatures.add("ATTRIBUTE_STYLE_ROLE");
             NameSyntax target = syntheticName("UNSUPPORTED_ROLE", range(context));
             return new RoleDeclarationSyntax(nextId(), range(context), name,
-                    optionalRange(nameToken, context), Cardinality.unboundedFrom(0), target,
-                    modifiers(context), aggregation, false);
+                    optionalRange(nameToken, context), Cardinality.unboundedFrom(0), List.of(new RoleDeclarationSyntax.Target(target, List.of())),
+                    modifiers(context), aggregation, false, Optional.empty());
         }
         boolean explicitCardinality = context.cardinality() != null;
         Cardinality cardinality;
@@ -867,27 +1030,37 @@ final class SyntaxTreeBuilder {
         } else {
             cardinality = Cardinality.unboundedFrom(0);
         }
-        NameSyntax target;
-        if (!context.restrictedClassOrAssRef().isEmpty()) {
-            target = nameFromContext(context.restrictedClassOrAssRef(0));
-        } else {
-            target = syntheticName("UNRESOLVED_ROLE_TARGET", range(context));
+        List<RoleDeclarationSyntax.Target> targets = new ArrayList<>();
+        for (var target : context.restrictedClassOrAssRef()) {
+            var names = target.classOrAssociationRef();
+            boolean any = target.ANYCLASS() != null;
+            NameSyntax base = any
+                    ? syntheticName("ANYCLASS", tokenRange(target.ANYCLASS().getSymbol()))
+                    : nameFromContext(names.getFirst());
+            targets.add(new RoleDeclarationSyntax.Target(base, names.stream().skip(any ? 0 : 1)
+                    .map(this::nameFromContext).toList()));
+        }
+        if (targets.isEmpty()) {
+            targets.add(new RoleDeclarationSyntax.Target(syntheticName("UNRESOLVED_ROLE_TARGET", range(context)), List.of()));
             unsupportedFeatures.add("MISSING_ROLE_TARGET");
         }
         return new RoleDeclarationSyntax(nextId(), range(context), name,
-                optionalRange(nameToken, context), cardinality, target, modifiers(context),
-                aggregation, explicitCardinality);
+                optionalRange(nameToken, context), cardinality, targets, modifiers(context),
+                aggregation, explicitCardinality, context.factor() == null ? Optional.empty() : Optional.of(buildFactor(context.factor())));
     }
 
     private ConstraintDeclarationSyntax buildConstraint(InterlisParser.ConstraintDefContext context) {
         if (context.mandatoryConstraint() != null) {
             InterlisParser.MandatoryConstraintContext mandatory = context.mandatoryConstraint();
+            if(language==LanguageVersion.ILI23 && (mandatory.Name()!=null)) {
+                versionViolations.add(LanguageProfile.Feature.NAMED_OR_BASKET_CONSTRAINT);versionViolationRanges.add(range(mandatory));
+            }
             Optional<String> name = mandatory.Name() == null ? Optional.empty()
                     : Optional.of(mandatory.Name().getText());
             Optional<ExpressionSyntax> expression = mandatory.expression() == null ? Optional.empty()
                     : Optional.of(buildExpression(mandatory.expression()));
             return new ConstraintDeclarationSyntax(nextId(), range(context), name,
-                    ConstraintKind.MANDATORY, expression, List.of(), Optional.empty(), false);
+                    ConstraintKind.MANDATORY, expression, List.of(), Optional.empty(), Optional.empty(), false, Optional.empty(), Optional.empty());
         }
         if (context.uniquenessConstraint() != null) {
             InterlisParser.UniquenessConstraintContext unique = context.uniquenessConstraint();
@@ -895,67 +1068,72 @@ final class SyntaxTreeBuilder {
                     : Optional.of(unique.Name().getText());
             Optional<ExpressionSyntax> where = unique.expression() == null ? Optional.empty()
                     : Optional.of(buildExpression(unique.expression()));
-            List<NameSyntax> uniqueKeys = new ArrayList<>();
-            for (InterlisParser.GlobalUniquenessContext global : unique.globalUniqueness()) {
-                for (InterlisParser.UniqueElContext uniqueEl : global.uniqueEl()) {
-                    Token token = firstMeaningfulToken(uniqueEl.objectOrAttributePath());
-                    if (token != null) {
-                        uniqueKeys.add(new NameSyntax(nextId(), tokenRange(token), List.of(
-                                new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token)))));
-                    }
-                }
+            List<ExpressionSyntax> uniqueKeys = new ArrayList<>();
+            Optional<PathExpressionSyntax> prefix = Optional.empty();
+            if (unique.globalUniqueness() != null) {
+                for (var key : unique.globalUniqueness().uniqueEl()) uniqueKeys.add(pathExpression(key.objectOrAttributePath()));
+            } else if (unique.localUniqueness() != null) {
+                var local = unique.localUniqueness();
+                prefix = Optional.of(tokenPath(local.prefix));
+                for (Token field : local.fields) uniqueKeys.add(tokenPath(List.of(field)));
             }
-            for (InterlisParser.LocalUniquenessContext local : unique.localUniqueness()) {
-                for (TerminalNode nameNode : local.Name()) {
-                    Token token = nameNode.getSymbol();
-                    uniqueKeys.add(new NameSyntax(nextId(), tokenRange(token), List.of(
-                            new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token)))));
-                }
+            if (language == LanguageVersion.ILI23 && (unique.Name() != null || unique.BASKET() != null)) {
+                versionViolations.add(LanguageProfile.Feature.NAMED_OR_BASKET_CONSTRAINT);
+                versionViolationRanges.add(range(unique));
             }
             return new ConstraintDeclarationSyntax(nextId(), range(context), name,
-                    ConstraintKind.UNIQUENESS, where, uniqueKeys, Optional.empty(),
-                    !unique.localUniqueness().isEmpty()
-                            || containsToken(unique, InterlisParser.LOCAL));
+                    ConstraintKind.UNIQUENESS, where, uniqueKeys, Optional.empty(), prefix, unique.BASKET() != null, Optional.empty(), Optional.empty());
         }
+
         if (context.plausibilityConstraint() != null) {
             InterlisParser.PlausibilityConstraintContext plausibility = context.plausibilityConstraint();
+            if(language==LanguageVersion.ILI23 && (plausibility.Name()!=null)) {
+                versionViolations.add(LanguageProfile.Feature.NAMED_OR_BASKET_CONSTRAINT);versionViolationRanges.add(range(plausibility));
+            }
             Optional<String> name = plausibility.Name() == null ? Optional.empty()
                     : Optional.of(plausibility.Name().getText());
             Optional<ExpressionSyntax> expression = plausibility.expression() == null
                     ? Optional.empty() : Optional.of(buildExpression(plausibility.expression()));
             return new ConstraintDeclarationSyntax(nextId(), range(context), name,
-                    ConstraintKind.PLAUSIBILITY, expression, List.of(), Optional.empty(), false);
+                    ConstraintKind.PLAUSIBILITY, expression, List.of(), Optional.empty(), Optional.empty(), false,
+                    plausibility.percentage==null?Optional.empty():decimal(plausibility.percentage.getText(),tokenRange(plausibility.percentage)).map(value->new ConstraintDeclarationSyntax.Plausibility(value,
+                            plausibility.GTEQ()!=null?guru.interlis.model.BinaryOperator.GTE:guru.interlis.model.BinaryOperator.LTE,
+                            tokenRange(plausibility.percentage))), Optional.empty());
         }
         if (context.existenceConstraint() != null) {
             InterlisParser.ExistenceConstraintContext existence = context.existenceConstraint();
-            NameSyntax source = existence.attributePath().isEmpty()
-                    ? syntheticName("<missing-source>", range(existence))
-                    : pathName(existence.attributePath(0).objectOrAttributePath());
+            ExpressionSyntax source = pathExpression(existence.attributePath(0).objectOrAttributePath());
             List<ExistenceConstraintSyntax.ExistenceTargetSyntax> targets = new ArrayList<>();
             for (int i = 0; i < existence.viewableRef().size(); i++) {
                 NameSyntax viewable = nameFromContext(existence.viewableRef(i));
-                NameSyntax path = i + 1 < existence.attributePath().size()
-                        ? pathName(existence.attributePath(i + 1).objectOrAttributePath())
-                        : syntheticName("<missing-path>", range(existence));
+                ExpressionSyntax path = pathExpression(existence.attributePath(i + 1).objectOrAttributePath());
                 targets.add(new ExistenceConstraintSyntax.ExistenceTargetSyntax(viewable, path));
             }
-            return new ConstraintDeclarationSyntax(nextId(), range(context), Optional.empty(),
-                    ConstraintKind.EXISTENCE, Optional.empty(), List.of(),
+            if (language == LanguageVersion.ILI23 && existence.Name() != null) {
+                versionViolations.add(LanguageProfile.Feature.NAMED_OR_BASKET_CONSTRAINT);
+                versionViolationRanges.add(range(existence));
+            }
+            return new ConstraintDeclarationSyntax(nextId(), range(context),
+                    Optional.ofNullable(existence.Name()).map(TerminalNode::getText), ConstraintKind.EXISTENCE, Optional.empty(), List.of(),
                     Optional.of(new ExistenceConstraintSyntax(nextId(), range(context), source, targets)),
-                    false);
+                    Optional.empty(), false, Optional.empty(), Optional.empty());
         }
         if (context.setConstraint() != null) {
             InterlisParser.SetConstraintContext set = context.setConstraint();
+            if(language==LanguageVersion.ILI23 && (set.Name()!=null || set.BASKET()!=null)) {
+                versionViolations.add(LanguageProfile.Feature.NAMED_OR_BASKET_CONSTRAINT);versionViolationRanges.add(range(set));
+            }
             Optional<String> name = set.Name() == null ? Optional.empty()
                     : Optional.of(set.Name().getText());
             Optional<ExpressionSyntax> condition = set.expression().isEmpty() ? Optional.empty()
                     : Optional.of(buildExpression(set.expression(set.expression().size() - 1)));
             return new ConstraintDeclarationSyntax(nextId(), range(context), name,
-                    ConstraintKind.SET, condition, List.of(), Optional.empty(), false);
+                    ConstraintKind.SET, condition, List.of(), Optional.empty(), Optional.empty(), set.BASKET()!=null, Optional.empty(),
+                    set.WHERE()!=null && set.expression().size()>1?Optional.of(buildExpression(set.expression(0))):Optional.empty());
         }
         unsupportedFeatures.add("CONSTRAINT_UNKNOWN");
         return new ConstraintDeclarationSyntax(nextId(), range(context), Optional.empty(),
-                ConstraintKind.MANDATORY, Optional.empty(), List.of(), Optional.empty(), false);
+                ConstraintKind.MANDATORY, Optional.empty(), List.of(), Optional.empty(), Optional.empty(), false, Optional.empty(), Optional.empty());
     }
 
     private TypeResult buildAttrTypeDef(InterlisParser.AttrTypeDefContext context) {
@@ -975,10 +1153,23 @@ final class SyntaxTreeBuilder {
         if (context.BAG() != null || context.LIST() != null) {
             return new TypeResult(collectionType(context), mandatory);
         }
+        if (mandatory) {
+            return new TypeResult(new GenericTypeSyntax(nextId(), range(context), "INHERITED"), true);
+        }
         UnsupportedTypeSyntax unsupported = new UnsupportedTypeSyntax(nextId(), range(context),
                 "MISSING_ATTRIBUTE_TYPE", "missing attribute type");
         unsupportedFeatures.add("MISSING_ATTRIBUTE_TYPE");
         return new TypeResult(unsupported, mandatory);
+    }
+
+    private ReferenceTypeSyntax referenceType(InterlisParser.ReferenceAttrContext context) {
+        var restricted = context.restrictedClassOrAssRef();
+        var names = restricted.classOrAssociationRef();
+        boolean any = restricted.ANYCLASS() != null;
+        NameSyntax target = any ? syntheticName("ANYCLASS", tokenRange(restricted.ANYCLASS().getSymbol()))
+                : nameFromContext(names.getFirst());
+        return new ReferenceTypeSyntax(nextId(), range(context), target,
+                names.stream().skip(any ? 0 : 1).map(this::nameFromContext).toList(), context.EXTERNAL() != null);
     }
 
     private TypeSyntax buildAttrType(InterlisParser.AttrTypeContext context) {
@@ -990,28 +1181,28 @@ final class SyntaxTreeBuilder {
                     nameFromContext(context.domainRef()));
         }
         if (context.referenceAttr() != null) {
-            boolean external = context.referenceAttr().EXTERNAL() != null;
-            var restricted = context.referenceAttr().restrictedClassOrAssRef();
-            NameSyntax target = restricted.classOrAssociationRef().isEmpty()
-                    ? nameFromContext(restricted)
-                    : nameFromContext(restricted.classOrAssociationRef().getFirst());
-            return new ReferenceTypeSyntax(nextId(), range(context), target, external);
+            return referenceType(context.referenceAttr());
         }
         if (context.restrictedStructureRef() != null) {
             InterlisParser.RestrictedStructureRefContext restricted = context.restrictedStructureRef();
-            if (!restricted.structureRef().isEmpty()) {
-                return new DomainReferenceSyntax(nextId(), range(context),
-                        nameFromContext(restricted.structureRef().getFirst()));
-            }
+            // CLASS/STRUCTURE type restrictions also contain structureRef children.
+            // Preserve the enclosing type instead of mistaking its first restriction for the type.
             if (restricted.type() != null) {
-                return buildType(restricted.type());
+                var type = buildType(restricted.type());
+                if (type instanceof ClassValueTypeSyntax value && !restricted.structureRef().isEmpty()) {
+                    var restrictions = new ArrayList<>(value.restrictions());
+                    restricted.structureRef().stream().map(this::nameFromContext).forEach(restrictions::add);
+                    return new ClassValueTypeSyntax(value.id(), range(restricted), value.structureValue(), restrictions);
+                }
+                return type;
             }
+            if (restricted.ANYSTRUCTURE() != null || !restricted.structureRef().isEmpty()) return structureValueType(restricted);
+            if (restricted.numeric() != null) return numericType(restricted.numeric());
+            if (restricted.enumeration() != null) return enumerationType(restricted.enumeration());
             if (restricted.referenceAttr() != null) {
-                return new ReferenceTypeSyntax(nextId(), range(context),
-                        nameFromContext(restricted.referenceAttr().restrictedClassOrAssRef()),
-                        restricted.referenceAttr().EXTERNAL() != null);
+                return referenceType(restricted.referenceAttr());
             }
-            unsupportedFeatures.add("ANYSTRUCTURE");
+
         }
         UnsupportedTypeSyntax unsupported = new UnsupportedTypeSyntax(nextId(), range(context),
                 "UNSUPPORTED_ATTRIBUTE_TYPE", "unsupported attribute type");
@@ -1027,31 +1218,24 @@ final class SyntaxTreeBuilder {
             return lineType(context.lineType());
         }
         if (context.STRING() != null && context.STRING().size() >= 2) {
-            return new TextTypeSyntax(nextId(), range(context),
-                    guru.interlis.model.TextKind.TEXT, java.util.OptionalInt.empty());
+            return new FormattedTypeSyntax(nextId(), range(context), Optional.empty(), false, false, List.of(),
+                    Optional.of(unquote(context.STRING(0).getText())), Optional.of(unquote(context.STRING(1).getText())));
         }
         unsupportedFeatures.add("UNSUPPORTED_TYPE");
         return unsupportedType(context, "UNSUPPORTED_TYPE", "unsupported type");
     }
 
+    private TextTypeSyntax textType(InterlisParser.TextTypeContext text) {
+        TextKind kind = text.MTEXT() != null ? TextKind.MTEXT : text.TEXT() != null ? TextKind.TEXT
+                : text.NAME() != null ? TextKind.NAME : TextKind.URI;
+        OptionalInt length = text.PosNumber() == null ? OptionalInt.empty()
+                : OptionalInt.of(Integer.parseInt(text.PosNumber().getText()));
+        return new TextTypeSyntax(nextId(), range(text), kind, length);
+    }
+
     private TypeSyntax buildBaseType(InterlisParser.BaseTypeContext context) {
         if (context.textType() != null) {
-            InterlisParser.TextTypeContext text = context.textType();
-            TextKind kind;
-            if (text.MTEXT() != null) {
-                kind = TextKind.MTEXT;
-            } else if (text.TEXT() != null) {
-                kind = TextKind.TEXT;
-            } else if (text.NAME() != null) {
-                kind = TextKind.NAME;
-            } else {
-                kind = TextKind.URI;
-            }
-            OptionalInt length = OptionalInt.empty();
-            if (text.PosNumber() != null) {
-                length = OptionalInt.of(Integer.parseInt(text.PosNumber().getText()));
-            }
-            return new TextTypeSyntax(nextId(), range(context), kind, length);
+            return textType(context.textType());
         }
         if (context.booleanType() != null) {
             return new BooleanTypeSyntax(nextId(), range(context));
@@ -1061,20 +1245,26 @@ final class SyntaxTreeBuilder {
             if (numericType.numeric() != null) {
                 return numericType(numericType.numeric());
             }
-            return numericTypeUnbounded(context);
+            return numericTypeUnbounded(context.numericType());
         }
         if (context.coordinateType() != null) {
             return coordinateType(context.coordinateType());
         }
         if (context.oIDType() != null) {
             InterlisParser.OIDTypeContext oid = context.oIDType();
-            guru.interlis.model.OidKind kind = oid.UUIDOID() != null
-                    ? guru.interlis.model.OidKind.UUID
-                    : oid.ANY() != null ? guru.interlis.model.OidKind.ANY
+            if (oid.UUIDOID() != null) {
+                return new DomainReferenceSyntax(nextId(), range(oid), nameFromContext(oid));
+            }
+            guru.interlis.model.OidKind kind = oid.ANY() != null ? guru.interlis.model.OidKind.ANY
                     : oid.NUMERIC() != null || oid.numeric() != null
                     ? guru.interlis.model.OidKind.NUMERIC
                     : guru.interlis.model.OidKind.TEXT;
-            return new OidTypeSyntax(nextId(), range(oid), kind);
+            Optional<TypeSyntax> carrier = oid.numeric() != null ? Optional.of(numericType(oid.numeric()))
+                    : oid.textType() != null ? Optional.of(textType(oid.textType()))
+                    : oid.NUMERIC() != null ? Optional.of(new NumericTypeSyntax(nextId(), range(oid),
+                            Optional.empty(), Optional.empty(), false, guru.interlis.model.NumericDirection.NONE, Optional.empty(), Optional.empty()))
+                    : Optional.empty();
+            return new OidTypeSyntax(nextId(), range(oid), kind, carrier);
         }
         if (context.blackboxType() != null) {
             InterlisParser.BlackboxTypeContext blackbox = context.blackboxType();
@@ -1090,34 +1280,39 @@ final class SyntaxTreeBuilder {
         }
         if (context.classType() != null) {
             InterlisParser.ClassTypeContext classType = context.classType();
-            List<String> restrictions = new ArrayList<>();
+            List<NameSyntax> restrictions = new ArrayList<>();
             for (InterlisParser.ViewableRefContext restriction : classType.viewableRef()) {
-                restrictions.add(nameFromContext(restriction).text());
+                restrictions.add(nameFromContext(restriction));
             }
             for (InterlisParser.ClassOrStructureRefContext restriction :
                     classType.classOrStructureRef()) {
-                restrictions.add(nameFromContext(restriction).text());
+                restrictions.add(nameFromContext(restriction));
             }
             return new ClassValueTypeSyntax(nextId(), range(classType),
                     classType.STRUCTURE() != null, restrictions);
         }
         if (context.formattedType() != null) {
             InterlisParser.FormattedTypeContext formatted = context.formattedType();
-            String formatName;
-            if (formatted.INTERLIS() != null && formatted.Name() != null) {
-                formatName = "INTERLIS." + formatted.Name().getText();
-            } else if (formatted.domainRef() != null) {
-                formatName = nameFromContext(formatted.domainRef()).text();
-            } else {
-                formatName = source.text().substring(formatted.getStart().getStartIndex(),
-                        formatted.getStop().getStopIndex() + 1).trim();
+            NameSyntax base = formatted.structureRef() != null ? nameFromContext(formatted.structureRef())
+                    : formatted.domainRef() != null ? nameFromContext(formatted.domainRef())
+                    : nameSyntax(List.of(formatted.INTERLIS().getSymbol(), formatted.Name().getSymbol()));
+            List<FormattedTypeSyntax.Part> parts = new ArrayList<>();
+            if (formatted.formatDef() != null) for (ParseTree child : formatted.formatDef().children) {
+                if (child instanceof TerminalNode literal && literal.getSymbol().getType() == InterlisParser.STRING)
+                    parts.add(new FormattedTypeSyntax.Part(Optional.empty(), Optional.empty(), Optional.empty(),
+                            unquote(literal.getText()), tokenRange(literal.getSymbol())));
+                else if (child instanceof InterlisParser.BaseAttrRefContext attribute)
+                    parts.add(new FormattedTypeSyntax.Part(Optional.of(nameSyntax(List.of(attribute.Name().getSymbol()))),
+                            attribute.PosNumber() == null ? Optional.empty() : Optional.of(new BigInteger(attribute.PosNumber().getText())),
+                            attribute.domainRef() == null ? Optional.empty() : Optional.of(nameFromContext(attribute.domainRef())),
+                            "", range(attribute)));
             }
-            Optional<String> minimum = formatted.STRING().isEmpty() ? Optional.empty()
-                    : Optional.of(unquote(formatted.STRING(0).getText()));
-            Optional<String> maximum = formatted.STRING().size() < 2 ? Optional.empty()
-                    : Optional.of(unquote(formatted.STRING(1).getText()));
-            return new FormattedTypeSyntax(nextId(), range(formatted), formatName, minimum, maximum);
+            return new FormattedTypeSyntax(nextId(), range(formatted), Optional.of(base), formatted.structureRef() != null,
+                    formatted.formatDef() != null && formatted.formatDef().INHERITANCE() != null, parts,
+                    formatted.STRING().isEmpty() ? Optional.empty() : Optional.of(unquote(formatted.STRING(0).getText())),
+                    formatted.STRING().size() < 2 ? Optional.empty() : Optional.of(unquote(formatted.STRING(1).getText())));
         }
+
         if (context.dateTimeType() != null) {
             InterlisParser.DateTimeTypeContext temporal = context.dateTimeType();
             guru.interlis.model.TemporalKind kind = temporal.DATE() != null
@@ -1127,7 +1322,11 @@ final class SyntaxTreeBuilder {
             return new TemporalTypeSyntax(nextId(), range(temporal), kind);
         }
         if (context.attributeType() != null) {
-            return new GenericTypeSyntax(nextId(), range(context), "ATTRIBUTE");
+            var attribute = context.attributeType();
+            return new guru.interlis.syntax.AttributePathTypeSyntax(nextId(), range(attribute),
+                    attribute.attributePath() == null ? Optional.empty() : Optional.of(pathExpression(attribute.attributePath().objectOrAttributePath())),
+                    attribute.Name() == null ? Optional.empty() : Optional.of(nameFromToken(attribute.Name().getSymbol())),
+                    attribute.attrTypeDef().stream().map(t -> buildAttrTypeDef(t).type()).toList());
         }
         if (context.enumTreeValueType() != null) {
             return new EnumTreeValueSyntax(nextId(), range(context),
@@ -1149,14 +1348,10 @@ final class SyntaxTreeBuilder {
                 : context.MULTIPOLYLINE() != null ? guru.interlis.model.GeometryKind.MULTIPOLYLINE
                 : context.MULTISURFACE() != null ? guru.interlis.model.GeometryKind.MULTISURFACE
                 : guru.interlis.model.GeometryKind.MULTIAREA;
-        Optional<String> lineForm = Optional.empty();
-        if (context.lineForm() != null && !context.lineForm().lineFormType().isEmpty()) {
-            List<String> forms = new ArrayList<>();
-            for (InterlisParser.LineFormTypeContext form : context.lineForm().lineFormType()) {
-                forms.add(source.text().substring(form.getStart().getStartIndex(),
-                        form.getStop().getStopIndex() + 1).trim());
-            }
-            lineForm = Optional.of(String.join(",", forms));
+        List<NameSyntax> lineForms = new ArrayList<>();
+        if (context.lineForm() != null) for (var form : context.lineForm().lineFormType()) {
+            List<Token> names = form.Name().stream().map(TerminalNode::getSymbol).toList();
+            lineForms.add(nameSyntax(names.isEmpty() ? List.of(form.getStart()) : names));
         }
         Optional<NameSyntax> vertexDomain = Optional.empty();
         if (context.controlPoints() != null && !context.controlPoints().Name().isEmpty()) {
@@ -1164,8 +1359,8 @@ final class SyntaxTreeBuilder {
                     .map(TerminalNode::getSymbol).toList();
             vertexDomain = Optional.of(nameSyntax(names));
         }
-        Optional<String> lineAttributes = context.LINE() != null && context.Name() != null
-                ? Optional.of(context.Name().getText()) : Optional.empty();
+        Optional<NameSyntax> lineAttributes = context.LINE() != null && context.Name() != null
+                ? Optional.of(nameSyntax(List.of(context.Name().getSymbol()))) : Optional.empty();
         Optional<String> overlap = Optional.empty();
         if (context.intersectionDef() != null) {
             if (context.intersectionDef().Dec() != null) {
@@ -1176,66 +1371,84 @@ final class SyntaxTreeBuilder {
                 overlap = Optional.of(context.intersectionDef().PosNumber().getText());
             }
         }
-        return new LineTypeSyntax(nextId(), range(context), kind, lineForm, vertexDomain,
-                lineAttributes, overlap);
+        return new LineTypeSyntax(nextId(), range(context), kind, lineForms, vertexDomain,
+                lineAttributes, overlap, context.DIRECTED() != null, context.intersectionDef() != null);
     }
 
     private CoordinateTypeSyntax coordinateType(InterlisParser.CoordinateTypeContext context) {
         boolean multi = context.MULTICOORD() != null;
-        List<NumericRange> axes = new ArrayList<>();
-        for (InterlisParser.NumericContext numeric : context.numeric()) {
-            axes.add(numericRange(numeric));
-        }
-        for (InterlisParser.NumericTypeContext numericType : context.numericType()) {
-            if (numericType.numeric() != null) {
-                axes.add(numericRange(numericType.numeric()));
-            } else {
-                axes.add(NumericRange.unbounded());
-            }
+        List<NumericTypeSyntax> axes = new ArrayList<>();
+        for (ParseTree child : context.children) {
+            if (child instanceof InterlisParser.NumericContext numeric) axes.add(numericType(numeric));
+            else if (child instanceof InterlisParser.NumericTypeContext numeric)
+                axes.add(numeric.numeric() == null ? numericTypeUnbounded(numeric) : numericType(numeric.numeric()));
         }
         if (axes.isEmpty()) {
             unsupportedFeatures.add("COORDINATE_WITHOUT_AXES");
-            axes.add(NumericRange.unbounded());
+            axes.add(numericTypeUnbounded(context));
         }
         if (axes.size() > 3) {
             unsupportedFeatures.add("COORDINATE_TOO_MANY_AXES");
         }
-        List<NumericRange> limited = axes.size() > 3 ? axes.subList(0, 3) : axes;
+        List<NumericTypeSyntax> limited = axes.size() > 3 ? axes.subList(0, 3) : axes;
         Optional<String> referenceSystem = context.REFSYS() != null && context.STRING() != null
                 ? Optional.of(unquote(context.STRING().getText())) : Optional.empty();
         return new CoordinateTypeSyntax(nextId(), range(context), limited.size(), limited, multi,
-                referenceSystem);
+                referenceSystem, Optional.ofNullable(context.rotationDef()).map(rotation -> new guru.interlis.model.CoordinateType.Rotation(
+                        Integer.parseInt(rotation.PosNumber(0).getText()), Integer.parseInt(rotation.PosNumber(1).getText()))));
     }
 
     private NumericTypeSyntax numericType(InterlisParser.NumericContext context) {
-        NumericRange range = numericRange(context);
+        List<Token> numbers = numericTokens(context);
+        Optional<DecimalLiteral> minimum = numbers.isEmpty() ? Optional.empty() : numericBoundary(numbers.getFirst());
+        Optional<DecimalLiteral> maximum = numbers.size() < 2 ? Optional.empty() : numericBoundary(numbers.get(1));
         Optional<NameSyntax> unit = context.unitRef() == null ? Optional.empty()
                 : Optional.of(nameFromContext(context.unitRef()));
-        return new NumericTypeSyntax(nextId(), range(context), range.minimum(), range.maximum(),
-                range.circular(), range.direction(), unit);
+        return new NumericTypeSyntax(nextId(), range(context), minimum, maximum,
+                context.CIRCULAR() != null, context.CLOCKWISE() != null ? NumericDirection.CLOCKWISE
+                        : context.COUNTERCLOCKWISE() != null ? NumericDirection.COUNTERCLOCKWISE : NumericDirection.NONE,
+                unit, referenceSystem(context.refSys()));
+    }
+
+    /** Scaled type boundaries use Float's mantissa production. Ordinary constants
+     * and unit factors use decimal(), whose independent lexical profile is retained. */
+    private Optional<DecimalLiteral> numericBoundary(Token token) {
+        String text=token.getText();
+        var value=decimal(text,tokenRange(token));
+        if(value.isEmpty())return value;
+        int exponent=Math.max(text.indexOf('e'),text.indexOf('E'));
+        if(exponent>=0) {
+            int start=text.startsWith("+") || text.startsWith("-")?1:0;
+            boolean canonical=exponent>start+2 && text.charAt(start)=='0' && text.charAt(start+1)=='.';
+            // Float explicitly permits a zero mantissa of any declared precision.
+            if(canonical && text.charAt(start+2)=='0') {
+                for(int i=start+2;i<exponent;i++)if(text.charAt(i)!='0') {canonical=false;break;}
+            }
+            if(!canonical)propertyDiagnostics.add(guru.interlis.diagnostics.DiagnosticDraft.of(
+                    new guru.interlis.diagnostics.DiagnosticCode("ILI-SYN-0002"),guru.interlis.diagnostics.Severity.ERROR,
+                    guru.interlis.diagnostics.Phase.PARSING,"diagnostic.syntax.unexpected")
+                    .at(tokenRange(token)).argument(new guru.interlis.diagnostics.DiagnosticArgument.TokenArgument("actual",text))
+                    .argument(new guru.interlis.diagnostics.DiagnosticArgument.IdentifierListArgument("expected",
+                            List.of("scaled boundary with 0.nonzero-digits or 0.zeros mantissa"))));
+        }
+        return value;
     }
 
     private NumericTypeSyntax numericTypeUnbounded(ParserRuleContext context) {
+        var numeric = context instanceof InterlisParser.NumericTypeContext n ? n : null;
         return new NumericTypeSyntax(nextId(), range(context), Optional.empty(), Optional.empty(),
-                false, NumericDirection.NONE, Optional.empty());
+                numeric != null && numeric.CIRCULAR() != null,
+                numeric != null && numeric.CLOCKWISE() != null ? NumericDirection.CLOCKWISE
+                        : numeric != null && numeric.COUNTERCLOCKWISE() != null ? NumericDirection.COUNTERCLOCKWISE : NumericDirection.NONE,
+                numeric == null ? Optional.empty() : Optional.ofNullable(numeric.unitRef()).map(this::nameFromContext),
+                numeric == null ? Optional.empty() : referenceSystem(numeric.refSys()));
     }
 
-    private NumericRange numericRange(InterlisParser.NumericContext context) {
-        List<Token> numbers = numericTokens(context);
-        Optional<DecimalLiteral> minimum = Optional.empty();
-        Optional<DecimalLiteral> maximum = Optional.empty();
-        if (!numbers.isEmpty()) {
-            minimum = decimal(numbers.getFirst().getText());
-        }
-        if (numbers.size() > 1) {
-            maximum = decimal(numbers.get(1).getText());
-        }
-        NumericDirection direction = context.CLOCKWISE() != null ? NumericDirection.CLOCKWISE
-                : context.COUNTERCLOCKWISE() != null ? NumericDirection.COUNTERCLOCKWISE
-                : NumericDirection.NONE;
-        boolean circular = context.CIRCULAR() != null;
-        return new NumericRange(minimum, maximum, circular, direction, Optional.empty(),
-                Optional.empty());
+    private Optional<NumericTypeSyntax.ReferenceSystem> referenceSystem(InterlisParser.RefSysContext context) {
+        if (context == null) return Optional.empty();
+        return Optional.of(new NumericTypeSyntax.ReferenceSystem(nameFromContext(
+                context.domainRef() != null ? context.domainRef() : context.metaObjectRef()), context.domainRef() != null,
+                context.PosNumber() == null ? java.util.OptionalInt.empty() : java.util.OptionalInt.of(Integer.parseInt(context.PosNumber().getText()))));
     }
 
     private List<Token> numericTokens(ParserRuleContext context) {
@@ -1258,24 +1471,19 @@ final class SyntaxTreeBuilder {
         for (InterlisParser.EnumElementContext element : context.enumElement()) {
             collectEnumValues(element, "", values);
         }
-        boolean ordered = context.ORDERED() != null;
-        boolean circular = context.CIRCULAR() != null;
-        if (!ordered && context.getStop() != null) {
-            for (int i = context.getStop().getTokenIndex() + 1; i < tokenStream.size(); i++) {
-                Token token = tokenStream.get(i);
-                if (token.getType() == InterlisParser.SEMI) {
-                    break;
-                }
-                if (token.getType() == InterlisParser.ORDERED) {
-                    ordered = true;
-                    break;
-                }
-                if (token.getType() == InterlisParser.CIRCULAR) {
-                    circular = true;
-                }
-            }
+        Set<String> finals = new java.util.LinkedHashSet<>();
+        collectEnumFinals(context, "", finals);
+        return new EnumerationTypeSyntax(nextId(), range(context), values,
+                context.ORDERED() != null, context.CIRCULAR() != null, finals);
+    }
+
+    private void collectEnumFinals(InterlisParser.EnumerationContext context, String parent, Set<String> finals) {
+        if (context.FINAL() != null) finals.add(parent);
+        for (var element : context.enumElement()) {
+            String name = element.Name().stream().map(TerminalNode::getText).collect(java.util.stream.Collectors.joining("."));
+            String path = parent.isEmpty() ? name : parent + "." + name;
+            if (element.enumeration() != null) collectEnumFinals(element.enumeration(), path, finals);
         }
-        return new EnumerationTypeSyntax(nextId(), range(context), values, ordered, circular);
     }
 
     private void collectEnumValues(InterlisParser.EnumElementContext context, String prefix,
@@ -1294,12 +1502,20 @@ final class SyntaxTreeBuilder {
         boolean nested = context.enumeration() != null
                 && (!context.enumeration().enumElement().isEmpty()
                 || context.enumeration().FINAL() != null);
-        values.add(new EnumerationTypeSyntax.EnumerationValueSyntax(path, tokenRange(first), nested));
+        values.add(new EnumerationTypeSyntax.EnumerationValueSyntax(path, tokenRange(first), nested, names.size() > 1));
         if (context.enumeration() != null) {
             for (InterlisParser.EnumElementContext child : context.enumeration().enumElement()) {
                 collectEnumValues(child, path, values);
             }
         }
+    }
+
+    private guru.interlis.syntax.StructureValueTypeSyntax structureValueType(InterlisParser.RestrictedStructureRefContext context) {
+        boolean any=context.ANYSTRUCTURE()!=null;
+        var names=context.structureRef();
+        return new guru.interlis.syntax.StructureValueTypeSyntax(nextId(),range(context),
+                any?Optional.empty():Optional.of(nameFromContext(names.getFirst())),
+                names.stream().skip(any?0:1).map(this::nameFromContext).toList());
     }
 
     private CollectionTypeSyntax collectionType(InterlisParser.AttrTypeDefContext context) {
@@ -1314,15 +1530,21 @@ final class SyntaxTreeBuilder {
             element = new UnsupportedTypeSyntax(nextId(), range(context),
                     "MISSING_COLLECTION_ELEMENT", "missing collection element type");
             unsupportedFeatures.add("MISSING_COLLECTION_ELEMENT");
-        } else if (!restricted.structureRef().isEmpty()) {
-            element = new DomainReferenceSyntax(nextId(), range(restricted),
-                    nameFromContext(restricted.structureRef().getFirst()));
         } else if (restricted.type() != null) {
             element = buildType(restricted.type());
+        } else if (language == LanguageVersion.ILI24 && restricted.ANYSTRUCTURE() == null
+                && restricted.RESTRICTION() == null && restricted.structureRef().size() == 1) {
+            // In 2.4 OF accepts AttrType, so an unqualified/qualified named element
+            // may denote either a domain or a structure. Keep its actual identity;
+            // structure restrictions and ANYSTRUCTURE retain their dedicated binder.
+            element = new DomainReferenceSyntax(nextId(), range(restricted),
+                    nameFromContext(restricted.structureRef(0)));
+        } else if (restricted.ANYSTRUCTURE() != null || !restricted.structureRef().isEmpty()) {
+            element = structureValueType(restricted);
         } else if (restricted.referenceAttr() != null) {
-            element = new ReferenceTypeSyntax(nextId(), range(restricted),
-                    nameFromContext(restricted.referenceAttr().restrictedClassOrAssRef()),
-                    restricted.referenceAttr().EXTERNAL() != null);
+            element = referenceType(restricted.referenceAttr());
+        } else if (restricted.numeric() != null) {
+            element = numericType(restricted.numeric());
         } else if (restricted.enumeration() != null) {
             if (!LanguageProfile.supports(language,
                     LanguageProfile.Feature.INLINE_ENUM_COLLECTION)) {
@@ -1333,7 +1555,7 @@ final class SyntaxTreeBuilder {
         } else {
             element = new UnsupportedTypeSyntax(nextId(), range(restricted),
                     "ANYSTRUCTURE", "ANYSTRUCTURE element");
-            unsupportedFeatures.add("ANYSTRUCTURE");
+
         }
         return new CollectionTypeSyntax(nextId(), range(context), kind, cardinality, element);
     }
@@ -1452,7 +1674,8 @@ final class SyntaxTreeBuilder {
 
     private ExpressionSyntax buildTerm2(InterlisParser.Term2Context context) {
         if (context.relation() != null && context.predicate().size() >= 2) {
-            BinaryOperator operator = relationOperator(context.relation().getStart().getType());
+            BinaryOperator operator = context.relation().LT()!=null && context.relation().GT()!=null
+                    ? BinaryOperator.NEQ : relationOperator(context.relation().getStart().getType());
             return new BinaryExpressionSyntax(nextId(), range(context), operator,
                     buildPredicate(context.predicate(0)), buildPredicate(context.predicate(1)));
         }
@@ -1495,7 +1718,25 @@ final class SyntaxTreeBuilder {
         return unsupportedExpression(context, "UNSUPPORTED_PREDICATE", "unsupported predicate");
     }
 
+    private ViewDeclarationSyntax.Formation inspectionFormation(InterlisParser.InspectionContext context) {
+        var path = new PathExpressionSyntax(nextId(), range(context), context.Name().stream()
+                .map(n -> new PathExpressionSyntax.Segment(nameFromToken(n.getSymbol()), false,
+                    Optional.empty(), Optional.empty(), tokenRange(n.getSymbol()))).toList());
+        return new ViewDeclarationSyntax.Formation(context.AREA() == null
+                ? ViewDeclarationSyntax.FormationKind.INSPECTION : ViewDeclarationSyntax.FormationKind.AREA_INSPECTION,
+                List.of(viewBase(context.renamedViewableRef(), false)), List.of(path));
+    }
+
     private ExpressionSyntax buildFactor(InterlisParser.FactorContext context) {
+        if (context.inspection() != null || context.INSPECTION() != null) {
+            return new guru.interlis.syntax.InspectionExpressionSyntax(nextId(), range(context),
+                    Optional.ofNullable(context.viewableRef()).map(this::nameFromContext),
+                    Optional.ofNullable(context.inspection()).map(this::inspectionFormation),
+                    Optional.ofNullable(context.objectOrAttributePath()).map(this::pathExpression));
+        }
+        if (context.ALL() != null && context.objectOrAttributePath() != null) {
+            return unsupportedExpression(context, "ALL_OF_PATH", "ALL OF path requires view semantics");
+        }
         if (context.objectOrAttributePath() != null) {
             return pathExpression(context.objectOrAttributePath());
         }
@@ -1505,48 +1746,66 @@ final class SyntaxTreeBuilder {
         if (context.Number() != null) {
             Token token = context.Number().getSymbol();
             return new LiteralExpressionSyntax(nextId(), range(context), LiteralKind.NUMBER,
-                    token.getText(), decimal(token.getText()));
+                    token.getText(), decimal(token.getText(),tokenRange(token)), Optional.empty());
         }
         if (context.functionCall() != null) {
             InterlisParser.FunctionCallContext call = context.functionCall();
+            checkFunctionList(call.argument().size(), call.LPAR(), call.RPAR(), LanguageProfile.Feature.EMPTY_FUNCTION_ARGUMENTS);
             List<ExpressionSyntax> arguments = new ArrayList<>();
             for (InterlisParser.ArgumentContext argument : call.argument()) {
-                if (argument.expression() != null) {
-                    arguments.add(buildExpression(argument.expression()));
-                } else {
-                    unsupportedFeatures.add("FUNCTION_CALL_ARGUMENT");
-                }
+                arguments.add(buildArgument(argument));
             }
-            String name = call.Name().isEmpty() ? "<missing>"
-                    : call.Name(call.Name().size() - 1).getText();
+            List<NameSyntax.NameSegmentSyntax> segments = call.Name().stream()
+                    .map(n -> new NameSyntax.NameSegmentSyntax(n.getText(), tokenRange(n.getSymbol())))
+                    .toList();
+            SourceRange nameRange = new SourceRange(source.id(), source.revision(),
+                    segments.getFirst().range().startOffset(), segments.getLast().range().endOffset());
+            NameSyntax name = new NameSyntax(nextId(), nameRange, segments);
             return new FunctionCallExpressionSyntax(nextId(), range(context), name, arguments);
         }
         if (context.ALL() != null) {
-            return new GenericConstantExpressionSyntax(nextId(), range(context), "ALL");
+            if (context.objectOrAttributePath() != null) {
+                return unsupportedExpression(context, "ALL_OF_PATH", "ALL OF path requires view semantics");
+            }
+            return new guru.interlis.syntax.ObjectSetExpressionSyntax(nextId(), range(context), Optional.empty());
         }
         if (context.INTERLIS() != null) {
+            checkFunctionList(context.argument().size(), context.LPAR(), context.RPAR(), LanguageProfile.Feature.EMPTY_FUNCTION_ARGUMENTS);
             List<ExpressionSyntax> arguments = new ArrayList<>();
             for (InterlisParser.ArgumentContext argument : context.argument()) {
-                if (argument.expression() != null) {
-                    arguments.add(buildExpression(argument.expression()));
-                } else {
-                    unsupportedFeatures.add("BUILTIN_ARGUMENT");
-                }
+                arguments.add(buildArgument(argument));
             }
-            String name = context.Name().isEmpty()
-                    ? context.URI() != null ? context.URI().getText() : "builtin"
-                    : context.Name(context.Name().size() - 1).getText();
-            return new BuiltinFunctionExpressionSyntax(nextId(), range(context), name, arguments);
+            Token nameToken=context.Name().isEmpty() ? context.URI()!=null?context.URI().getSymbol():context.INTERLIS().getSymbol()
+                    :context.Name(context.Name().size()-1).getSymbol();
+            var name=nameSyntax(List.of(context.INTERLIS().getSymbol(),nameToken));
+            return new BuiltinFunctionExpressionSyntax(nextId(),range(context),name,arguments);
         }
         if (context.PARAMETER() != null) {
-            return new GenericConstantExpressionSyntax(nextId(), range(context), "PARAMETER");
-        }
-        if (context.inspection() != null) {
-            unsupportedFeatures.add("INSPECTION");
-            return unsupportedExpression(context, "INSPECTION", "inspection expression");
+            var segments = context.Name().stream().map(n -> new NameSyntax.NameSegmentSyntax(n.getText(), tokenRange(n.getSymbol()))).toList();
+            var nameRange = new SourceRange(source.id(), source.revision(), segments.getFirst().range().startOffset(), segments.getLast().range().endOffset());
+            return new guru.interlis.syntax.ParameterExpressionSyntax(nextId(), range(context), new NameSyntax(nextId(), nameRange, segments));
         }
         unsupportedFeatures.add("UNSUPPORTED_EXPRESSION");
         return unsupportedExpression(context, "UNSUPPORTED_EXPRESSION", "unsupported expression");
+    }
+
+    private ExpressionSyntax buildArgument(InterlisParser.ArgumentContext context) {
+        // ALL is also accepted by the factor grammar. Explicit selection belongs here.
+        if (context.ALL() == null) return buildExpression(context.expression());
+        Optional<guru.interlis.syntax.ObjectArgumentTypeSyntax> selection = Optional.empty();
+        if (context.restrictedClassOrAssRef() != null) {
+            var restricted = context.restrictedClassOrAssRef();
+            var names = restricted.classOrAssociationRef();
+            boolean any = restricted.ANYCLASS() != null;
+            selection = Optional.of(new guru.interlis.syntax.ObjectArgumentTypeSyntax(nextId(),
+                    range(restricted), any ? Optional.empty() : Optional.of(nameFromContext(names.getFirst())),
+                    names.stream().skip(any ? 0 : 1).map(this::nameFromContext).toList(), true));
+        } else if (context.viewableRef() != null) {
+            selection = Optional.of(new guru.interlis.syntax.ObjectArgumentTypeSyntax(nextId(),
+                    range(context.viewableRef()), Optional.of(nameFromContext(context.viewableRef())),
+                    List.of(), true));
+        }
+        return new guru.interlis.syntax.ObjectSetExpressionSyntax(nextId(), range(context), selection);
     }
 
     private ExpressionSyntax constantExpression(InterlisParser.ConstantContext context) {
@@ -1556,18 +1815,19 @@ final class SyntaxTreeBuilder {
         if (context.textConst() != null) {
             String lexeme = context.textConst().getText();
             return new LiteralExpressionSyntax(nextId(), range(context), LiteralKind.TEXT,
-                    lexeme, Optional.empty());
+                    lexeme, Optional.empty(), Optional.empty());
         }
         if (context.numericConst() != null) {
             InterlisParser.NumericConstContext numeric = context.numericConst();
-            String text = numeric.getText();
+            String text = numeric.decConst().getText();
+            Optional<NameSyntax> unit = Optional.ofNullable(numeric.unitRef()).map(this::nameFromContext);
             if ("PI".equals(text) || "LNBASE".equals(text)) {
-                return new ConstantExpressionSyntax(nextId(), range(context), text);
+                return new ConstantExpressionSyntax(nextId(), range(context), text, unit);
             }
             if (numeric.decConst() != null && numeric.decConst().getStart() != null) {
                 String lexeme = numeric.decConst().getText();
                 return new LiteralExpressionSyntax(nextId(), range(context), LiteralKind.NUMBER,
-                        lexeme, decimal(lexeme));
+                        lexeme, decimal(lexeme,range(numeric.decConst())), unit);
             }
             unsupportedFeatures.add("NUMERIC_CONSTANT");
             return unsupportedExpression(context, "NUMERIC_CONSTANT", "numeric constant");
@@ -1577,7 +1837,10 @@ final class SyntaxTreeBuilder {
                     nameFromContext(context.classConst().viewableRef()));
         }
         if (context.attributePathConst() != null) {
-            return new GenericConstantExpressionSyntax(nextId(), range(context), "ATTRIBUTE");
+            var constant = context.attributePathConst();
+            return new guru.interlis.syntax.AttributeConstantExpressionSyntax(nextId(), range(context),
+                    constant.viewableRef() == null ? Optional.empty() : Optional.of(nameFromContext(constant.viewableRef())),
+                    nameFromToken(constant.Name().getSymbol()));
         }
         if (context.enumerationConst() != null) {
             return new EnumerationConstantExpressionSyntax(nextId(), range(context),
@@ -1596,31 +1859,43 @@ final class SyntaxTreeBuilder {
         return false;
     }
 
-    private NameSyntax pathName(InterlisParser.ObjectOrAttributePathContext context) {
-        List<NameSyntax.NameSegmentSyntax> segments = new ArrayList<>();
-        for (InterlisParser.PathElContext element : context.pathEl()) {
-            Token token = firstMeaningfulToken(element);
-            if (token != null) {
-                segments.add(new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token)));
-            }
+    private PathExpressionSyntax tokenPath(List<Token> tokens) {
+        List<PathExpressionSyntax.Segment> segments = new ArrayList<>();
+        for (Token token : tokens) {
+            var name = new NameSyntax(nextId(), tokenRange(token), List.of(
+                    new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token))));
+            segments.add(new PathExpressionSyntax.Segment(name, false, Optional.empty(), Optional.empty(), name.range()));
         }
-        return segments.isEmpty() ? syntheticName("<missing-path>", range(context))
-                : new NameSyntax(nextId(), range(context), segments);
+        return new PathExpressionSyntax(nextId(), tokenRange(tokens.getFirst(), tokens.getLast()), segments);
     }
 
     private ExpressionSyntax pathExpression(InterlisParser.ObjectOrAttributePathContext context) {
-        List<NameSyntax> segments = new ArrayList<>();
+        List<PathExpressionSyntax.Segment> segments = new ArrayList<>();
         for (InterlisParser.PathElContext element : context.pathEl()) {
+            if (element.COLON() != null || !element.EQ().isEmpty()) {
+                return unsupportedExpression(context, "INSPECTION_PATH",
+                        "inspection context is not yet represented");
+            }
             Token token = firstMeaningfulToken(element);
             if (token == null) {
                 continue;
             }
-            if (element.LSBR() != null && element.Name() != null) {
-                // Name[index] selection is not in the P1 slice.
-                unsupportedFeatures.add("PATH_INDEX");
+            Optional<guru.interlis.model.PathIndex> selection = Optional.empty();
+            if (element.attributeRef() != null && element.attributeRef().LSBR() != null) {
+                var attribute = element.attributeRef();
+                var kind = attribute.FIRST() != null ? guru.interlis.model.PathIndex.Kind.FIRST
+                        : attribute.LAST() != null ? guru.interlis.model.PathIndex.Kind.LAST
+                        : guru.interlis.model.PathIndex.Kind.POSITION;
+                selection = Optional.of(new guru.interlis.model.PathIndex(kind,
+                        attribute.PosNumber() == null ? Optional.empty()
+                                : Optional.of(new java.math.BigInteger(attribute.PosNumber().getText()))));
             }
-            segments.add(new NameSyntax(nextId(), range(element), List.of(
-                    new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token)))));
+            segments.add(new PathExpressionSyntax.Segment(new NameSyntax(nextId(), tokenRange(token), List.of(
+                    new NameSyntax.NameSegmentSyntax(token.getText(), tokenRange(token)))),
+                    element.associationPath() != null && element.associationPath().BACKSLASH() != null,
+                    element.LSBR() == null ? Optional.empty() : Optional.of(new NameSyntax(nextId(),
+                            tokenRange(element.Name(1).getSymbol()), List.of(new NameSyntax.NameSegmentSyntax(
+                            element.Name(1).getText(), tokenRange(element.Name(1).getSymbol()))))), selection, range(element)));
         }
         if (segments.isEmpty()) {
             unsupportedFeatures.add("EMPTY_PATH");
@@ -1630,6 +1905,7 @@ final class SyntaxTreeBuilder {
     }
 
     private Token firstMeaningfulToken(ParserRuleContext context) {
+        if (context.getStart() == null || context.getStop() == null) return null;
         for (int i = context.getStart().getTokenIndex(); i <= context.getStop().getTokenIndex(); i++) {
             Token token = tokenStream.get(i);
             if (token.getType() == InterlisParser.Name
@@ -1654,13 +1930,16 @@ final class SyntaxTreeBuilder {
     private void collectNameTokens(ParseTree tree, List<Token> target) {
         if (tree instanceof TerminalNode terminal) {
             int type = terminal.getSymbol().getType();
-            if (type == InterlisParser.Name || type == InterlisParser.INTERLIS) {
+            if (type == InterlisParser.Name || type == InterlisParser.INTERLIS
+                    || type == InterlisParser.UUIDOID || type == InterlisParser.ANYOID
+                    || type == InterlisParser.HALIGNMENT || type == InterlisParser.VALIGNMENT
+                    || type == InterlisParser.REFSYSTEM || type == InterlisParser.SIGN || type == InterlisParser.METAOBJECT) {
                 target.add(terminal.getSymbol());
             }
             return;
         }
         if (tree instanceof ParserRuleContext rule) {
-            for (ParseTree child : rule.children) {
+            if(rule.children!=null) for (ParseTree child : rule.children) {
                 collectNameTokens(child, target);
             }
         }
@@ -1682,10 +1961,7 @@ final class SyntaxTreeBuilder {
     }
 
     private Set<Modifier> modifiers(ParserRuleContext context) {
-        Set<Modifier> result = directModifiers(context);
-        if (result.contains(Modifier.OID)) {
-        }
-        return result;
+        return directModifiers(context);
     }
 
     private Set<Modifier> directModifiers(ParserRuleContext context) {
@@ -1695,18 +1971,18 @@ final class SyntaxTreeBuilder {
                 continue;
             }
             switch (terminal.getSymbol().getType()) {
-                case InterlisParser.ABSTRACT -> result.add(Modifier.ABSTRACT);
-                case InterlisParser.EXTENDED -> result.add(Modifier.EXTENDED);
-                case InterlisParser.FINAL -> result.add(Modifier.FINAL);
-                case InterlisParser.TRANSIENT -> result.add(Modifier.TRANSIENT);
-                case InterlisParser.MANDATORY -> result.add(Modifier.MANDATORY);
-                case InterlisParser.ORDERED -> result.add(Modifier.ORDERED);
-                case InterlisParser.EXTERNAL -> result.add(Modifier.EXTERNAL);
-                case InterlisParser.HIDING -> result.add(Modifier.HIDING);
-                case InterlisParser.GENERIC -> result.add(Modifier.GENERIC);
-                case InterlisParser.VIEW -> result.add(Modifier.VIEW);
-                case InterlisParser.OID -> result.add(Modifier.OID);
-                case InterlisParser.DERIVED -> result.add(Modifier.DERIVED);
+                case InterlisParser.ABSTRACT -> addModifier(result, Modifier.ABSTRACT, terminal.getSymbol());
+                case InterlisParser.EXTENDED -> addModifier(result, Modifier.EXTENDED, terminal.getSymbol());
+                case InterlisParser.FINAL -> addModifier(result, Modifier.FINAL, terminal.getSymbol());
+                case InterlisParser.TRANSIENT -> addModifier(result, Modifier.TRANSIENT, terminal.getSymbol());
+                case InterlisParser.MANDATORY -> addModifier(result, Modifier.MANDATORY, terminal.getSymbol());
+                case InterlisParser.ORDERED -> addModifier(result, Modifier.ORDERED, terminal.getSymbol());
+                case InterlisParser.EXTERNAL -> addModifier(result, Modifier.EXTERNAL, terminal.getSymbol());
+                case InterlisParser.HIDING -> addModifier(result, Modifier.HIDING, terminal.getSymbol());
+                case InterlisParser.GENERIC -> addModifier(result, Modifier.GENERIC, terminal.getSymbol());
+                case InterlisParser.VIEW -> addModifier(result, Modifier.VIEW, terminal.getSymbol());
+                case InterlisParser.OID -> addModifier(result, Modifier.OID, terminal.getSymbol());
+                case InterlisParser.DERIVED -> addModifier(result, Modifier.DERIVED, terminal.getSymbol());
                 default -> {
                 }
             }
@@ -1738,41 +2014,33 @@ final class SyntaxTreeBuilder {
         return new UnsupportedExpressionSyntax(nextId(), range(context), feature, construct);
     }
 
-    private Optional<DecimalLiteral> decimal(String lexeme) {
+    private Optional<DecimalLiteral> decimal(String lexeme,SourceRange numericRange) {
+        int digits=0;
+        for(int i=0;i<lexeme.length();i++)if(lexeme.charAt(i)>='0' && lexeme.charAt(i)<='9' && ++digits>budget.maxNumericLiteralDigits())
+            throw new guru.interlis.compiler.internal.AnalysisBudgetExceededException("maxNumericLiteralDigits",budget.maxNumericLiteralDigits());
+        int e=Math.max(lexeme.indexOf('e'),lexeme.indexOf('E'));
+        if(e>=0) {
+            long exponent=0;int start=e+1;
+            if(start<lexeme.length() && (lexeme.charAt(start)=='+' || lexeme.charAt(start)=='-'))start++;
+            for(int i=start;i<lexeme.length();i++) {
+                char c=lexeme.charAt(i);if(c<'0' || c>'9')break;
+                exponent=exponent*10+c-'0';
+                if(exponent>budget.maxAbsoluteDecimalExponent())throw new guru.interlis.compiler.internal.AnalysisBudgetExceededException("maxAbsoluteDecimalExponent",budget.maxAbsoluteDecimalExponent());
+            }
+        }
         try {
             return Optional.of(DecimalLiteral.parse(lexeme));
-        } catch (RuntimeException e) {
-            unsupportedFeatures.add("NUMERIC_LITERAL");
+        } catch (NumberFormatException | ArithmeticException invalid) {
+            propertyDiagnostics.add(guru.interlis.diagnostics.DiagnosticDraft.of(new guru.interlis.diagnostics.DiagnosticCode("ILI-SYN-0002"),
+                    guru.interlis.diagnostics.Severity.ERROR,guru.interlis.diagnostics.Phase.PARSING,"diagnostic.syntax.unexpected")
+                    .at(numericRange).argument(new guru.interlis.diagnostics.DiagnosticArgument.TokenArgument("actual",lexeme))
+                    .argument(new guru.interlis.diagnostics.DiagnosticArgument.IdentifierListArgument("expected",List.of("decimal literal"))));
             return Optional.empty();
         }
     }
 
     private String unquote(String text) {
-        if (text.length() < 2 || text.charAt(0) != '"') {
-            return text;
-        }
-        String body = text.substring(1, text.length() - 1);
-        StringBuilder result = new StringBuilder(body.length());
-        for (int i = 0; i < body.length(); i++) {
-            char c = body.charAt(i);
-            if (c == '\\' && i + 1 < body.length()) {
-                char next = body.charAt(++i);
-                switch (next) {
-                    case '"' -> result.append('"');
-                    case '\\' -> result.append('\\');
-                    case 'u' -> {
-                        if (i + 4 < body.length()) {
-                            result.append((char) Integer.parseInt(body.substring(i + 1, i + 5), 16));
-                            i += 4;
-                        }
-                    }
-                    default -> result.append(next);
-                }
-            } else {
-                result.append(c);
-            }
-        }
-        return result.toString();
+        return guru.interlis.compiler.internal.InterlisStrings.decode(text).text();
     }
 
     private Optional<SourceRange> optionalRange(Token token, ParserRuleContext context) {

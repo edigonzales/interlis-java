@@ -1,0 +1,70 @@
+{
+  "scope": "New independent E1/E5 normative audit, no compiler change or exception. Both compilers reject differing CONTRACTED markers in a 2.4 translation. Reconcile the structural-equivalence requirement with §3.5.1 declaring CONTRACTED without semantic effect; keep 2.3 separate. No definitive norm verdict yet.",
+  "cases": [
+    {
+      "marker": false,
+      "source": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = DOMAIN D=0..10; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = DOMAIN Num=0..10; END F.\n",
+      "sha256": "d70ba3cb775f7290d99e23e4c6426e7f3d7e35f71ebbdc86b68f27cef4e1e5b1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-contracted/marker-false.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-contracted/marker-false.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-contracted/marker-false.ili>\nInfo: ...compiler run done 2026-10-25 04:13:32\n"
+        }
+      }
+    },
+    {
+      "marker": true,
+      "source": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = DOMAIN D=0..10; END Base. CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = DOMAIN Num=0..10; END F.\n",
+      "sha256": "24b8293a2b1a0c00bf99be29303d6b03e404e16d85980b976cf7bea1fec3df21",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-contracted/marker-true.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-91bc174decaa61349e2df0d0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-91bc174decaa61349e2df0d0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-contracted/marker-true.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":198},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-contracted/marker-true.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-contracted/marker-true.ili>\nbuild/reports/stabilization/g2-contracted/marker-true.ili:1:If Base is CONTRACTED, F should be as well, and vice versa.\n...compiler run failed 2026-10-25 04:13:33\n"
+        }
+      }
+    }
+  ],
+  "sourceEvidenceManifest": "verification-2026-10-25-g2-B-final.json"
+}

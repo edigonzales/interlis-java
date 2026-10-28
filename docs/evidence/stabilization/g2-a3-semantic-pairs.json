@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0",
+  "status": "COUNTERCHECK_PAIRS_MATCHED",
+  "purpose": "A3 JVM/portable countercheck pairing; not acceptance",
+  "pairs": [
+    {
+      "id": "lost-member-presence",
+      "jvm": {
+        "suite": "guru.interlis.compiler.LineFormBindingContractTest",
+        "method": "customFormsExposeSegmentInheritanceMembersAndSourceReferences",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LineFormBindingContractTest.java",
+        "sourceSha256": "08128ad07026e5496121c232e5294971f6ae1ad9a456631b3efb25a75e969771",
+        "methodStart": 2323,
+        "methodEnd": 4145,
+        "methodSha256": "978561ed4920347db0fea497f0769d244df0413730885ea937a1c157b3f4d790"
+      },
+      "portable": {
+        "source": "interlis-wasm-teavm/stabilization-contract.cjs",
+        "sourceSha256": "5ed76b76fb36664c4b823eea087bb8fb195c8ad930c1b80603db5166727a1e50",
+        "markers": [
+          "memory:/a3-lost-member.ili",
+          "A3 inherited member missing"
+        ]
+      },
+      "status": "PASS_BOTH",
+      "limit": "presence through completion, not effective-member order"
+    },
+    {
+      "id": "wrong-same-named-target",
+      "jvm": {
+        "suite": "guru.interlis.compiler.E4EnumOperatorContractTest",
+        "method": "sameNamedEnumElementsKeepTheirDomainTarget",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E4EnumOperatorContractTest.java",
+        "sourceSha256": "964cf9a9d1fcbd47af807e2cf2f212e549bc1313d91808c971f07444eb53ccfa",
+        "methodStart": 5384,
+        "methodEnd": 6747,
+        "methodSha256": "fc41b348e3681f1285ec3baec8ca8dbae59c1fd499ca92b80aab77f998e777c3"
+      },
+      "portable": {
+        "source": "interlis-wasm-teavm/stabilization-contract.cjs",
+        "sourceSha256": "5ed76b76fb36664c4b823eea087bb8fb195c8ad930c1b80603db5166727a1e50",
+        "markers": [
+          "memory:/a3-target.ili",
+          "A3 same-named enum elements"
+        ]
+      },
+      "status": "PASS_BOTH",
+      "limit": "portable query checks target identity; JVM checks type identity"
+    },
+    {
+      "id": "swapped-correspondence-order",
+      "jvm": {
+        "suite": "guru.interlis.compiler.StructuredTranslationContractTest",
+        "method": "translationCorrespondencesPreserveStructuralMemberOrder",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructuredTranslationContractTest.java",
+        "sourceSha256": "9da3eb1736dc6254a18382fb3fd1663997d131cc7e302395ecb31af40ecf0a54",
+        "methodStart": 2653,
+        "methodEnd": 3626,
+        "methodSha256": "9dc130f3a269ef17d32694591b278a7e6981362244b9182eff015efd129bff14"
+      },
+      "portable": {
+        "source": "interlis-wasm-teavm/stabilization-contract.cjs",
+        "sourceSha256": "5ed76b76fb36664c4b823eea087bb8fb195c8ad930c1b80603db5166727a1e50",
+        "markers": [
+          "memory:/a3-order.ili",
+          "DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;"
+        ]
+      },
+      "status": "PASS_BOTH",
+      "limit": "portable checks accept/reject; JVM checks correspondence order"
+    }
+  ],
+  "validation": {
+    "pairs": 3,
+    "status": "COUNTERCHECK_PAIRS_MATCHED",
+    "acceptance": "NOT_ACCEPTANCE"
+  }
+}

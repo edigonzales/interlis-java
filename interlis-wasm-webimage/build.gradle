@@ -18,6 +18,7 @@ def graalHome = providers.gradleProperty('graalVmHome')
 def binaryenHome = providers.gradleProperty('binaryenHome')
         .orElse(providers.environmentVariable('BINARYEN_HOME'))
         .orElse('')
+def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 
 tasks.register('compileWebImageProbe', JavaCompile) {
     group = 'verification'
@@ -65,6 +66,9 @@ tasks.register('webImagePrepareBrowser', Copy) {
     description = 'Stages the Web Image browser harness.'
     dependsOn 'webImageBuild'
     from 'src/web'
+    from(project(':interlis-wasm-teavm').file('stabilization-contract.cjs')) {
+        rename { 'stabilization-contract.js' }
+    }
     from(layout.buildDirectory.dir('webimage')) {
         include 'interlis-compiler.js'
         include 'interlis-compiler.js.wasm'
@@ -77,18 +81,19 @@ tasks.register('webImageBrowserTest', Exec) {
     description = 'Runs the Web Image build in Chromium, Firefox and Playwright-WebKit.'
     dependsOn 'webImagePrepareBrowser'
     workingDir = projectDir
-    commandLine 'node', 'browser-contract.cjs'
+    commandLine nodeExecutable.get(), 'browser-contract.cjs'
 }
 
 tasks.register('webImageProbe') {
     group = 'verification'
+    timeout = java.time.Duration.ofSeconds(60)
     description = 'Runs the built Web Image module under Node and records the comparison result.'
     dependsOn 'webImageBuild'
     doLast {
+        delete file('build/webimage/result.json')
         providers.exec {
             workingDir = projectDir
-            commandLine 'node', 'webimage-contract.cjs'
-            ignoreExitValue = true
+            commandLine nodeExecutable.get(), 'webimage-contract.cjs'
         }.result.get()
         def report = file('build/webimage/result.json')
         if (!report.exists()) {
@@ -99,4 +104,8 @@ tasks.register('webImageProbe') {
             throw new GradleException('Web Image probe failed: ' + result)
         }
     }
+}
+
+tasks.named('webImagePrepareBrowser') {
+    from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt'))
 }

@@ -4,6 +4,8 @@ package guru.interlis.model;
 public enum DerivationKind {
     /** The {@code INHERITANCE} constant. */
     INHERITANCE,
+    /** Predefined structure specialized for an inspection coordinate type. */
+    CONTEXTUALIZATION,
     /** The {@code OVERRIDE} constant. */
     OVERRIDE,
     /** The {@code ALIAS} constant. */

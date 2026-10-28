@@ -1,0 +1,1089 @@
+{
+  "schemaVersion": "1.0",
+  "recordedAt": "2026-10-21T13:07:20.151813+00:00",
+  "scope": "K4 partial: three line-form cases verified; remaining K4, K5-K6 and P3 OPEN",
+  "source": {
+    "baseCommit": "3820c6b5dead437cdaeb9569fbfe726abec25d6e",
+    "workingTreeDirty": true,
+    "implementationTreeSha256": "be8d799f612429ab8cc7ae9e85fb7f2be7ad8c22b41585ffbd51278c2f918c79",
+    "treeDigestMethod": "SHA-256 of sorted git tracked/nonignored untracked files excluding docs/: UTF-8 path, NUL, exact file bytes, NUL"
+  },
+  "host": {
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.8.1\nBuildVersion:\t\t24H32",
+    "model": "MacBookAir10,1",
+    "cpu": "Apple M1",
+    "memoryBytes": 17179869184,
+    "architecture": "arm64"
+  },
+  "toolchains": {
+    "java": "openjdk 25.0.3 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)",
+    "gradle": "9.8.1",
+    "node": "v24.22.0",
+    "graalVm": "native-image 25.0.3 2026-04-21\nGraalVM Runtime Environment Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS-jvmci-b01)\nSubstrate VM Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS, serial gc, compressed references)",
+    "binaryen": "wasm-opt version 133 (version_133)",
+    "playwright": "1.64.1",
+    "antlr": "4.13.2",
+    "teaVm": "0.16.0"
+  },
+  "pins": {
+    "baselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+    "suite": {
+      "url": "https://codeberg.org/edigonzales/interlis-compiler-testsuite/archive/88576ffc4cd491dd72d2375eb897ea9f3f55d2c3.tar.gz",
+      "commit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+      "sha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe"
+    },
+    "packageLockSha256": "7c751361732047ba2da9d2deee1fd343df747c6e19ee7e5baf041c5d271c8d70",
+    "geoSeedManifestSha256": "9ae9601c16b1b729e59eb70e93ad6de2469a32bb00310eb4c5d36d71489073a6",
+    "geoScope": "Historical 13-file seed only; full frozen 2.3/2.4 closure not yet acquired",
+    "downloadedNodeArchiveSha256": "6a9724d9b50a5f22b4816cded441b5a8d9ddae546191a5e5b7efa5a5e2ee26d5",
+    "binaryenArchiveSha256": "ad66da82ac13f163e424b1643f16c6dfcccc98b5966296b43e52d3cab04f84a8",
+    "normativeExpectationsSha256": "2cc699eba7b135928ce943a8da2453a656ec8b21d6bb546549a6d94c84684be1"
+  },
+  "commands": [
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew checkPortable checkBrowser :interlis-wasm-webimage:webImageProbe conformanceCheck sdkProcessCheck -PnodeExecutable=/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node -PgraalVmHome=/Users/stefan/.sdkman/candidates/java/25.0.3-graal -PbinaryenHome=/Users/stefan/.cache/interlis-java/runtime/binaryen-version_133 --continue --console=plain",
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew check :interlis-cli:installDist --console=plain"
+  ],
+  "results": {
+    "jvm": {
+      "totals": {
+        "tests": 375,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "modules": {
+        "interlis-cli": {
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-compiler": {
+          "tests": 293,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-lsp": {
+          "tests": 16,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-model": {
+          "tests": 16,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-projection": {
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-repository": {
+          "tests": 19,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-wasm-bridge": {
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-workspace": {
+          "tests": 10,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      }
+    },
+    "wrapperUnitTests": 15,
+    "combinedGradle": {
+      "exitCode": 1,
+      "reason": "Only conformanceCheck failed: 8 open implementation cases; all 16 normative checks passed"
+    },
+    "rawReports": {
+      "teaVmJavaScript": {
+        "path": "interlis-wasm-teavm/build/js-contract-result.json",
+        "sha256": "bada8e243fa340cf7bcffa0401167958955e482561436b039ea9a49324772905",
+        "contents": {
+          "stabilizationCases": 1338,
+          "status": "passed",
+          "tool": "0.2.0-SNAPSHOT",
+          "outcome": "succeeded",
+          "runtime": "teavm-js",
+          "node": "v24.22.0"
+        }
+      },
+      "teaVmWasmGC": {
+        "path": "interlis-wasm-teavm/build/wasm-contract-result.json",
+        "sha256": "c5b6b4dc813cb81612f3e708e3815abc6006b83abb5c301130e2c27abfc82388",
+        "contents": {
+          "stabilizationCases": 1338,
+          "status": "passed",
+          "tool": "0.2.0-SNAPSHOT",
+          "nodes": 2,
+          "outcome": "succeeded",
+          "runtime": "teavm-wasm-gc",
+          "node": "v24.22.0"
+        }
+      },
+      "teaVmBrowsers": {
+        "path": "interlis-wasm-teavm/build/browser-results.json",
+        "sha256": "40fbd54f2968c4fa4a20bbd171aa30a33462d6547f45ea5a79266ee5ec8211ac",
+        "contents": [
+          {
+            "browser": "chromium",
+            "browserVersion": "156.0.8078.4",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 1338,
+              "capabilities": "0.2.0-SNAPSHOT",
+              "analyzeRevision": "1",
+              "rejectedOutcome": "rejected",
+              "compiledOutcome": "succeeded",
+              "diagramNodes": 2,
+              "diagramEdges": 0,
+              "diagramAssociations": 0,
+              "diagnostics": 0,
+              "exactDecimal": true,
+              "workerRestartOutcome": "succeeded"
+            }
+          },
+          {
+            "browser": "firefox",
+            "browserVersion": "157.0",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 1338,
+              "capabilities": "0.2.0-SNAPSHOT",
+              "analyzeRevision": "1",
+              "rejectedOutcome": "rejected",
+              "compiledOutcome": "succeeded",
+              "diagramNodes": 2,
+              "diagramEdges": 0,
+              "diagramAssociations": 0,
+              "diagnostics": 0,
+              "exactDecimal": true,
+              "workerRestartOutcome": "succeeded"
+            }
+          },
+          {
+            "browser": "webkit",
+            "browserVersion": "27.2",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 1338,
+              "capabilities": "0.2.0-SNAPSHOT",
+              "analyzeRevision": "1",
+              "rejectedOutcome": "rejected",
+              "compiledOutcome": "succeeded",
+              "diagramNodes": 2,
+              "diagramEdges": 0,
+              "diagramAssociations": 0,
+              "diagnostics": 0,
+              "exactDecimal": true,
+              "workerRestartOutcome": "succeeded"
+            }
+          }
+        ]
+      },
+      "safari": {
+        "path": "interlis-wasm-teavm/build/safari-result.json",
+        "sha256": "25e4f5a6f52317b22e803b08e8920d2bf5e8b376498dd3ba246e388b96ffd01d",
+        "contents": {
+          "status": "passed",
+          "browser": "Safari",
+          "driverVersion": "Included with Safari 27.0 (20625.1.29.18.28)",
+          "node": "v24.22.0",
+          "result": {
+            "diagramAssociations": 0,
+            "compiledOutcome": "succeeded",
+            "exactDecimal": true,
+            "analyzeRevision": "1",
+            "stabilizationCases": 1338,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "diagnostics": 0,
+            "workerRestartOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "status": "ok",
+            "rejectedOutcome": "rejected"
+          },
+          "driverStderr": ""
+        }
+      },
+      "webImageNode": {
+        "path": "interlis-wasm-webimage/build/webimage/result.json",
+        "sha256": "ec9fa3284823021e3441cba6c3fccff2f515522700821241c92cba7479de453b",
+        "contents": {
+          "stabilizationCases": 1338,
+          "status": "ok",
+          "tool": "0.2.0-SNAPSHOT",
+          "outcome": "succeeded",
+          "runtime": "graalvm-web-image",
+          "node": "v24.22.0"
+        }
+      },
+      "webImageBrowsers": {
+        "path": "interlis-wasm-webimage/build/webimage-browser/browser-results.json",
+        "sha256": "e47eb9103b6cb1456d3eddecb8ae74d05ecd976bcfdad1c00d88caa1e706a6fc",
+        "contents": [
+          {
+            "browser": "chromium",
+            "browserVersion": "156.0.8078.4",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "runtime": "graalvm-web-image",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 1338,
+              "tool": "0.2.0-SNAPSHOT",
+              "outcome": "succeeded"
+            }
+          },
+          {
+            "browser": "firefox",
+            "browserVersion": "157.0",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "runtime": "graalvm-web-image",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 1338,
+              "tool": "0.2.0-SNAPSHOT",
+              "outcome": "succeeded"
+            }
+          },
+          {
+            "browser": "webkit",
+            "browserVersion": "27.2",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "runtime": "graalvm-web-image",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 1338,
+              "tool": "0.2.0-SNAPSHOT",
+              "outcome": "succeeded"
+            }
+          }
+        ]
+      },
+      "conformance": {
+        "path": "build/reports/conformance/conformance-summary.json",
+        "sha256": "970d50c556dc0752cb910e2886071987576fc6020c0a892048f77f62fe9bf943",
+        "contents": {
+          "overallResult": "FAIL",
+          "exitCode": 1,
+          "summary": {
+            "PASS": 568,
+            "XFAIL": 17,
+            "FAIL": 8,
+            "XPASS": 0,
+            "ERROR": 0,
+            "TOTAL": 593
+          },
+          "reportJson": "report.json",
+          "reportJunit": "report.junit.xml",
+          "reportHtml": "report.html",
+          "referenceSummary": {
+            "XPASS": 0,
+            "FAIL": 24,
+            "ERROR": 0,
+            "PASS": 568,
+            "XFAIL": 1,
+            "TOTAL": 593
+          },
+          "referenceResult": "FAIL",
+          "normativeAssessments": [
+            {
+              "testId": "ili23.Assoc23Test.assocComplete",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.7.1",
+                "reason": "Mehrere Links derselben Teilnehmer ben\u00f6tigen neben CARDINALITY eine eigene OID."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/assocComplete.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5b3143113c3786e4746c5b24, diag-fc7cef07d05edbc388dec0d2], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/assocComplete.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5b3143113c3786e4746c5b24\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/assocComplete.ili\",\"revision\":\"1\",\"startOffset\":346,\"endOffset\":450},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"assocA3\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID\"}]},{\"id\":\"diag-fc7cef07d05edbc388dec0d2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/assocComplete.ili\",\"revision\":\"1\",\"startOffset\":1082,\"endOffset\":1186},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"assocB3\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Assoc23Test.assocComplete.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Association23Test.association_AssociationAsTarget",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.7.1",
+                "reason": "Eine Assoziation als Rollenziel ben\u00f6tigt eine eigene OID."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/association/association_AssociationAsTarget.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e75251b91de95df84a1fc8f3], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/association/association_AssociationAsTarget.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e75251b91de95df84a1fc8f3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/association/association_AssociationAsTarget.ili\",\"revision\":\"1\",\"startOffset\":247,\"endOffset\":257},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"a2b\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"association target a2b requires its own OID/REFERENCE_ASSOCIATION_OID\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Association23Test.association_AssociationAsTarget.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Class23Test.classComplete",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.5.1\u20132.5.2",
+                "reason": "OID AS und BASKET OID AS ben\u00f6tigen in 2.3 ein CONTRACTED-Modell; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/classComplete.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-56d57e39059b41c3760f23e6, diag-7409a38e3a4e06368d11b4df, diag-8ba919e51137a01251eca66c, diag-f9683cbfd1f29b3b4569447b], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/classComplete.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7409a38e3a4e06368d11b4df\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/classComplete.ili\",\"revision\":\"1\",\"startOffset\":198,\"endOffset\":245},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ClassA1\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]},{\"id\":\"diag-8ba919e51137a01251eca66c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/classComplete.ili\",\"revision\":\"1\",\"startOffset\":323,\"endOffset\":455},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicA2\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]},{\"id\":\"diag-56d57e39059b41c3760f23e6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/classComplete.ili\",\"revision\":\"1\",\"startOffset\":685,\"endOffset\":732},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ClassB1\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]},{\"id\":\"diag-f9683cbfd1f29b3b4569447b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/classComplete.ili\",\"revision\":\"1\",\"startOffset\":810,\"endOffset\":942},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicB2\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Class23Test.classComplete.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Classes23Test.class_AcceptingOidDefinition",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.5.1\u20132.5.2",
+                "reason": "OID AS und BASKET OID AS ben\u00f6tigen in 2.3 ein CONTRACTED-Modell; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/class/class_AcceptingOidDefinition.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e9287d23740a4fbeae030760], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/class/class_AcceptingOidDefinition.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e9287d23740a4fbeae030760\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/class/class_AcceptingOidDefinition.ili\",\"revision\":\"1\",\"startOffset\":99,\"endOffset\":153},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"class\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Classes23Test.class_AcceptingOidDefinition.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Expressions23Test.expressions_ParentPathElement",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.6; 2.8.1",
+                "reason": "Ein abgeleiteter Wert muss in den Zielbereich passen; TEXT*20 ist nicht TEXT*10 zuweisbar."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/expressions_ParentPathElement.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d174c5e16704977eaf619a90], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/expressions_ParentPathElement.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d174c5e16704977eaf619a90\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/expressions_ParentPathElement.ili\",\"revision\":\"1\",\"startOffset\":297,\"endOffset\":309},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*20\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Expressions23Test.expressions_ParentPathElement.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.FormattedType23Test.simple + baseDomainRestricted",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.8.7; Anhang A XMLDate; 4.3.11.5",
+                "reason": "XMLDate ben\u00f6tigt zweistellige Monate und Tage, auch in Bereichsgrenzen."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/formattedType/FormattedType.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-146648536441144162a48e74, diag-25b89f7954e8a0e4afd46db0], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/formattedType/FormattedType.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-146648536441144162a48e74\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/formattedType/FormattedType.ili\",\"revision\":\"1\",\"startOffset\":165,\"endOffset\":224},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"attr1\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]},{\"id\":\"diag-25b89f7954e8a0e4afd46db0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/formattedType/FormattedType.ili\",\"revision\":\"1\",\"startOffset\":231,\"endOffset\":288},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"attr2\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.FormattedType23Test.simple___baseDomainRestricted.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.6; 2.8.10",
+                "reason": "Ein numerischer Wert ist keinem booleschen Attribut zuweisbar."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/iliconversion/iliconversion_CheckViewDefWithALLOF.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-886e657653cc8b2fc56ce107], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/iliconversion/iliconversion_CheckViewDefWithALLOF.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-886e657653cc8b2fc56ce107\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/iliconversion/iliconversion_CheckViewDefWithALLOF.ili\",\"revision\":\"1\",\"startOffset\":446,\"endOffset\":462},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Models23Test.models_DomainAndRuntimeParam_SameName",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.11; 2.5.1",
+                "reason": "Laufzeitparameter sind in 2.3 nur innerhalb von CONTRACTED-Modellen zul\u00e4ssig; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2d4a3659cc08b3bc71c4afad], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2d4a3659cc08b3bc71c4afad\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":112},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"param\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Models23Test.models_DomainAndRuntimeParam_SameName.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Role23Test.roleComplete",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.7.1",
+                "reason": "HIDING ist bei einer nicht versteckenden Geschwisterrolle f\u00fcr dieselbe Zielklasse unzul\u00e4ssig."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/roleComplete.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-72f71bc712de9d1fe5cb243d, diag-d9277552e648b00a7221eabf], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/roleComplete.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-72f71bc712de9d1fe5cb243d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/roleComplete.ili\",\"revision\":\"1\",\"startOffset\":610,\"endOffset\":703},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"assocA2q\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT\"}]},{\"id\":\"diag-d9277552e648b00a7221eabf\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/roleComplete.ili\",\"revision\":\"1\",\"startOffset\":2140,\"endOffset\":2233},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"assocB2q\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Role23Test.roleComplete.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.RuntimeParameter23Test.runtimeParameterComplete",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.11; 2.5.1",
+                "reason": "Laufzeitparameter sind in 2.3 nur innerhalb von CONTRACTED-Modellen zul\u00e4ssig; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-25be9ebba7ba82576eb53754, diag-59eb005020878c644c7cf2c3, diag-9cbd5ede94d869f3936d49f2, diag-f66e0e0cf8f35277c8e422bb], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-59eb005020878c644c7cf2c3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":103,\"endOffset\":121},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramA1\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]},{\"id\":\"diag-9cbd5ede94d869f3936d49f2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":124,\"endOffset\":152},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramA3\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]},{\"id\":\"diag-25be9ebba7ba82576eb53754\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":285,\"endOffset\":303},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramB1\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]},{\"id\":\"diag-f66e0e0cf8f35277c8e422bb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":306,\"endOffset\":334},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramB3\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.RuntimeParameter23Test.runtimeParameterComplete.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Topic23Test.topicComplete",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.5.1\u20132.5.2",
+                "reason": "OID AS und BASKET OID AS ben\u00f6tigen in 2.3 ein CONTRACTED-Modell; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/topicComplete.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-488e0e2989a3a6352db8a204, diag-890c94d076aa85c163d07a1a], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/topicComplete.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-890c94d076aa85c163d07a1a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/topicComplete.ili\",\"revision\":\"1\",\"startOffset\":202,\"endOffset\":327},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicA2\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]},{\"id\":\"diag-488e0e2989a3a6352db8a204\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/topicComplete.ili\",\"revision\":\"1\",\"startOffset\":599,\"endOffset\":724},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicB2\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Topic23Test.topicComplete.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.5.1\u20132.5.2",
+                "reason": "OID AS und BASKET OID AS ben\u00f6tigen in 2.3 ein CONTRACTED-Modell; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/topics/topics_ExplicitBasketOidDefinition.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-700d95baa288f0f1ec9184ea], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/topics/topics_ExplicitBasketOidDefinition.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-700d95baa288f0f1ec9184ea\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/topics/topics_ExplicitBasketOidDefinition.ili\",\"revision\":\"1\",\"startOffset\":83,\"endOffset\":164},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"topic\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Topics23Test.topics_ExplicitBasketOidDefinition.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.5.1\u20132.5.2",
+                "reason": "OID AS und BASKET OID AS ben\u00f6tigen in 2.3 ein CONTRACTED-Modell; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/topics/topics_ExplicitTopicOidDefinition.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9ef1f2b749e94ce90e03400a], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/topics/topics_ExplicitTopicOidDefinition.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9ef1f2b749e94ce90e03400a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/topics/topics_ExplicitTopicOidDefinition.ili\",\"revision\":\"1\",\"startOffset\":83,\"endOffset\":171},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"topic\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.Topics23Test.topics_ExplicitTopicOidDefinition.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.View23Test.view_AcceptBasicViewProjectionDef",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.6; 2.8.1",
+                "reason": "Ein unbeschr\u00e4nktes TEXT-Funktionsergebnis ist nicht TEXT*80 zuweisbar."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/view/view_AcceptBasicViewProjectionDef.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4edfe9091613747434b80901], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/view/view_AcceptBasicViewProjectionDef.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4edfe9091613747434b80901\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/view/view_AcceptBasicViewProjectionDef.ili\",\"revision\":\"1\",\"startOffset\":471,\"endOffset\":498},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*80\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.View23Test.view_AcceptBasicViewProjectionDef.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+                "sections": "2.5.1\u20132.5.2",
+                "reason": "OID AS und BASKET OID AS ben\u00f6tigen in 2.3 ein CONTRACTED-Modell; in 2.4 entf\u00e4llt diese Pflicht."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/metamodel/ViewableGetAttributesAndRoles2.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5bc4e20a292891a75a045904], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/metamodel/ViewableGetAttributesAndRoles2.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5bc4e20a292891a75a045904\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/metamodel/ViewableGetAttributesAndRoles2.ili\",\"revision\":\"1\",\"startOffset\":357,\"endOffset\":785},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"topicB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili23.ViewableGetAttributesAndRoles2Test.baseClass.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            },
+            {
+              "testId": "ili24.Attribute24Test.attributeRef_RefAttrInClass",
+              "referenceExpectation": {
+                "outcome": "accept"
+              },
+              "referenceClassification": "FAIL",
+              "actualOutcome": "rejected",
+              "ownExpectation": "rejected",
+              "norm": {
+                "url": "https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf",
+                "sections": "3.5.3; 3.6.4",
+                "reason": "Ein Referenzziel mit implizitem NO OID ist in 2.4 unzul\u00e4ssig."
+              },
+              "result": "PASS",
+              "original": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/attributeRef_RefAttrInClass.ili"
+                ],
+                "exitCode": 1,
+                "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7c6b2b0d2ffb69e0be6f150d], requestedRoots=[BySource[source=SourceId[value=file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/attributeRef_RefAttrInClass.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7c6b2b0d2ffb69e0be6f150d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/attribute/attributeRef_RefAttrInClass.ili\",\"revision\":\"1\",\"startOffset\":148,\"endOffset\":175},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"attr\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"reference target ClassA has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID\"}]}]}\n",
+                "stderr": ""
+              },
+              "positiveControl": {
+                "command": [
+                  "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                  "check",
+                  "--json",
+                  "/Users/stefan/sources/interlis-java/testdata/conformance/normative/ili24.Attribute24Test.attributeRef_RefAttrInClass.ili"
+                ],
+                "exitCode": 0,
+                "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+                "stderr": ""
+              }
+            }
+          ],
+          "referenceReport": "build/conformance/report.json",
+          "suite": {
+            "url": "https://codeberg.org/edigonzales/interlis-compiler-testsuite/archive/88576ffc4cd491dd72d2375eb897ea9f3f55d2c3.tar.gz",
+            "commit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+            "sha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe"
+          },
+          "filter": "^(ili23|ili24)\\.",
+          "selection": {
+            "languageVersions": [
+              "2.3",
+              "2.4"
+            ],
+            "suiteCaseCount": 610,
+            "selectedCaseCount": 593,
+            "excludedCaseCount": 17,
+            "excludedVersions": [
+              "1.0"
+            ]
+          },
+          "cli": "interlis-cli/build/install/interlis-cli/bin/interlis-cli"
+        }
+      },
+      "sdkProcesses": {
+        "path": "build/reports/sdk/sdk-process-comparison.json",
+        "sha256": "99463083a2a47b425b5520c87f5957e9f84c3d7cde3eba571239594f8a10da20",
+        "contents": {
+          "schemaVersion": "1.0",
+          "status": "passed",
+          "cli": "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "commands": [
+            {
+              "arguments": [
+                "version"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "8691e5b3eaf3722c7001649021f54a880072e2949cb24f996ba5f81742b179fe",
+              "stdoutLines": 9,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "version",
+                "--json"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "a3c257572aebdb148ad57dd2909f069663446075f408d88e297bbc40598a0c8e",
+              "stdoutLines": 1,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "capabilities"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "2cc1b86cbd92b0961736f141a4262dd0993fa31d2ad27fc4f3ecc2c37feb6920",
+              "stdoutLines": 1,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "check",
+                "/Users/stefan/sources/interlis-java/testdata/models/base24.ili",
+                "/Users/stefan/sources/interlis-java/testdata/models/survey24.ili"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "check",
+                "/Users/stefan/sources/interlis-java/testdata/models/broken24.ili"
+              ],
+              "exitCode": 1,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 5
+            },
+            {
+              "arguments": [
+                "format",
+                "--check",
+                "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/tmp4_tsjrfh/model.ili"
+              ],
+              "exitCode": 1,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 1
+            },
+            {
+              "arguments": [
+                "format",
+                "--indent",
+                "4",
+                "--line-ending",
+                "lf",
+                "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/tmp4_tsjrfh/model.ili"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "b5c0908d18aa51ca5f37cb28f4ec75e09d41bdfbd20d723e95ee40e1c6202fb8",
+              "stdoutLines": 8,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "format",
+                "--write",
+                "--indent",
+                "4",
+                "--line-ending",
+                "lf",
+                "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/tmp4_tsjrfh/model.ili"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "check",
+                "--no-such-option",
+                "/Users/stefan/sources/interlis-java/testdata/models/base24.ili"
+              ],
+              "exitCode": 2,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 2
+            }
+          ],
+          "note": "Process-level comparison; stdout/stderr are represented by hashes and line counts."
+        }
+      }
+    },
+    "referenceSummary": {
+      "XPASS": 0,
+      "FAIL": 24,
+      "ERROR": 0,
+      "PASS": 568,
+      "XFAIL": 1,
+      "TOTAL": 593
+    },
+    "projectSummary": {
+      "PASS": 568,
+      "XFAIL": 17,
+      "FAIL": 8,
+      "XPASS": 0,
+      "ERROR": 0,
+      "TOTAL": 593
+    },
+    "referenceComparison": "k4-lines-reference-comparison-2026-10-21.json"
+  },
+  "artifacts": {
+    "interlis-cli/build/libs/interlis-cli-0.2.0-SNAPSHOT.jar": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+    "interlis-compiler/build/libs/interlis-compiler-0.2.0-SNAPSHOT.jar": "217cc3574f7b8ed9f8567591465db9370af7435879f9b3f8afd7c92279d7379a",
+    "interlis-model/build/libs/interlis-model-0.2.0-SNAPSHOT.jar": "0b0f05703792cc38481946bfa8843511bad5e65c909710d6f5fbdd206fdb8cd4",
+    "interlis-projection/build/libs/interlis-projection-0.2.0-SNAPSHOT.jar": "dcad7182a7f552303b9c86a49cfe20d54c2ae44902592ffcb047263b7f6194f6",
+    "interlis-repository/build/libs/interlis-repository-0.2.0-SNAPSHOT.jar": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+    "interlis-wasm-bridge/build/libs/interlis-wasm-bridge-0.2.0-SNAPSHOT.jar": "108842ecf9c7c881a5be029f586f3c051303fcc73eff0966f3a3bf5ec025caa6",
+    "interlis-workspace/build/libs/interlis-workspace-0.2.0-SNAPSHOT.jar": "732dfe77fddc21270b942033997d59b5b03b09d87af8192a8350c457e6efa581",
+    "interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js": "298ee056896d7eea2c8ae70b172abf55c83bad385d33e547d38c89625267ff65",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm": "0709bd61dbe82f17538c992913df3f185165f5b87f666d0cf8b3d9bb2113bd26",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js": "4fa1e0e0d686cc6e0a0d111e606cb876f7168bd695d9e3d639e7d5684453089b",
+    "interlis-wasm-teavm/build/web/client.js": "9f60c9e691ab5dcb190f8cadcd05868104d780d719518e8a7735b94ae8572f6e",
+    "interlis-wasm-teavm/build/web/stabilization-contract.js": "54efdc1af0d7e9d607f3a9198be7e80f66c00d27f124356b2c02cbfaa2414695",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js": "98d121943d66def8571579c4ee3de30d811af2363c4b91064f351b56fb8bb232",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js.wasm": "6d608eab844fe2e0f8e618488745e7120d9a5721bffd93154f12252b18c3ae67"
+  },
+  "logs": {
+    "build/reports/stabilization/k4-lines-full.log": "b1062c6df9d9ca02dbf8fa17b0974cdbdbe80734aa3489efdd2e13829f282c59",
+    "build/reports/stabilization/k4-lines-targeted.log": "68528123fd870b671c09c3e20bc9be64346fe7a6c37ba0bccc258d9068975c3f"
+  },
+  "limitations": [
+    "Three raw reference FAIL closed; all 16 normative exceptions still verified.",
+    "Seven remaining K4 cases, one K5 case and six K6 numeric-unit regressions remain open.",
+    "A separately reproduced geometric tolerance precision bug is assigned after K6.",
+    "Broader P3 language, workspace, adapter, platform, performance and retention requirements remain open."
+  ]
+}

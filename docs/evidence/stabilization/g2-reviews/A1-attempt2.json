@@ -1,0 +1,152 @@
+{
+  "schemaVersion": "1.0",
+  "step": "A1",
+  "attempt": 2,
+  "reviewedAt": "2026-10-27T08:56:24Z",
+  "verdict": "ABGENOMMEN",
+  "requirements": [
+    "TEST-001",
+    "TEST-004",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "scope": "Technische A1-Abnahme der eingefrorenen Ausgangsquellen, Normdateien, Pins, Evidenzhilfe, Rohberichte und Reproduktion. Keine Abnahme der Sprachsemantik, der bestehenden VERIFIED-Zeilen, der 18 normativen Referenzausnahmen, von P3 oder von G2 insgesamt.",
+  "packet": {
+    "manifest": "build/reports/g2/A1/packet-v2/manifest.json",
+    "sha256": "73c1753bfb1d7d56f4c7a1114009d7254f7db3a801639faf9eff54ebc907486f",
+    "hashVerified": true,
+    "sourceBasis": "build/reports/g2/A1/input-v2/source.tar.gz",
+    "sourceDigest": "49c76c5aabf479d5722601c7d0f4b6bf6d0107cd98702ebac4558f540556c180"
+  },
+  "reviewModelConfiguration": {
+    "requested": "gpt-5.6-sol",
+    "evidence": "Der explizite Modellparameter wurde beim Start dieses unabhängigen Reviewers vom Tool akzeptiert; daraus wird keine Selbstauskunft zur Modellidentität abgeleitet."
+  },
+  "verified": {
+    "packetReferences": true,
+    "sourceArchiveMembers": 1075,
+    "preChangeArchiveMembers": 1069,
+    "changedSources": 14,
+    "patchReproducesFrozenAfterSources": true,
+    "norm23Sha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+    "norm24Sha256": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069",
+    "normativeExpectationsUnchanged": true,
+    "baselineUnchanged": true,
+    "wrapperAndToolPinsUnchanged": true,
+    "artifactHashesMatched": 17,
+    "gradleRun": {
+      "manifestStatus": "PASSED",
+      "exitCode": 0,
+      "logSha256Verified": true,
+      "logEnd": "BUILD SUCCESSFUL in 3m 56s",
+      "actionableTasks": "59 executed"
+    },
+    "jvm": {
+      "sourceTestClasses": 144,
+      "profileSuites": 144,
+      "archivedXmlReports": 144,
+      "testcases": 688,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "allHashesVerified": true,
+      "allOriginalMtimesAfterRunStart": true,
+      "sourceSuiteSetEqualsProfile": true,
+      "taskSet": "Acht Module mit Tests; TeaVM und Web Image als erwartete NO-SOURCE-Testtasks"
+    },
+    "referenceRecount": {
+      "PASS": 574,
+      "XFAIL": 1,
+      "FAIL": 18,
+      "XPASS": 0,
+      "ERROR": 0,
+      "TOTAL": 593
+    },
+    "projectSummary": {
+      "PASS": 574,
+      "XFAIL": 19,
+      "FAIL": 0,
+      "XPASS": 0,
+      "ERROR": 0,
+      "TOTAL": 593
+    },
+    "normativeAssessments": 18,
+    "portableCasesPerRuntimeOrBrowser": 3249,
+    "sdkProcessCommands": 9,
+    "evidenceUnitTests": 9,
+    "existingWrapperTests": 20
+  },
+  "priorFindings": [
+    {
+      "id": "A1-R1",
+      "status": "CLOSED",
+      "evidence": "Das eingefrorene Profil und report_result prüfen Fallauswahl, Summen, Roh-/Wrapperkonsistenz, portable Fallzahl und Vertragswerte, Browser-/Toolversionen sowie die vollständige geordnete SDK-Kommandoliste. Die acht früheren leergrünen Varianten werden durch einen gezielten Test abgelehnt."
+    },
+    {
+      "id": "A1-R2",
+      "status": "CLOSED",
+      "evidence": "Der Lauf löscht alte JVM-XMLs, verlangt die exakte eingefrorene Suite-Menge, prüft Laufzeitbezug und Testcase-Details und archiviert 144 XMLs samt Hash und Original-mtime. Die archivierten XMLs wurden unabhängig als 688 erfolgreiche Testfälle nachgezählt."
+    }
+  ],
+  "findings": [],
+  "nonBlockingObservations": [
+    "Das A1-Diff enthält Evidenzwerkzeug, technisches Profil, Negativtests und Status-/Planverweise; keine Sprachsemantik- oder Produktions-API-Datei wurde geändert.",
+    "Der technische Profilstand bildet exakt alle 144 eingefrorenen Java-*Test.java-Klassen ab; die Testtask-Menge entspricht allen zehn eingebundenen Modulen.",
+    "Die Hilfe bleibt eine direkte, dateibasierte Implementierung ohne zusätzliches Framework oder paralleles Buildsystem.",
+    "Die 18 rohen Referenz-FAILs bleiben sichtbar und werden nur im Projektwrapper durch 18 vorhandene normative Assessments zu XFAIL umklassiert; dieses Review genehmigt diese Assessments nicht."
+  ],
+  "counterprobes": [
+    {
+      "probe": "Vertauschen der ersten beiden SDK-Kommandos im echten archivierten Report bei unveränderter Anzahl",
+      "result": "REJECTED",
+      "message": "Changed SDK command/exit profile"
+    },
+    {
+      "probe": "Duplizieren einer normativen Bewertung bei gleichzeitigem Verlust einer anderen Bewertung",
+      "result": "REJECTED",
+      "message": "Missing or duplicate normative assessments"
+    },
+    {
+      "probe": "Ändern von diagramNodes im echten TeaVM-Browserreport von 2 auf 3",
+      "result": "REJECTED",
+      "message": "Incomplete browser contracts"
+    }
+  ],
+  "commands": [
+    {
+      "command": "python3 tools/reference/g2_evidence.py verify --snapshot ../../input-v2",
+      "cwd": "build/reports/g2/A1/review-v2/frozen",
+      "result": "PASS",
+      "observation": "Source-Digest 49c76c5aabf479d5722601c7d0f4b6bf6d0107cd98702ebac4558f540556c180"
+    },
+    {
+      "command": "python3 -m unittest discover -s tools/reference -p test_g2_evidence.py -v",
+      "cwd": "build/reports/g2/A1/review-v2/frozen",
+      "result": "PASS",
+      "observation": "9 Tests bestanden"
+    },
+    {
+      "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "cwd": "build/reports/g2/A1/review-v2/frozen",
+      "result": "PASS",
+      "observation": "9 Tests; BUILD SUCCESSFUL in 2s; 1 Task ausgeführt"
+    },
+    {
+      "command": "patch -p1 --batch --forward -i ../../packet-v2/changes.patch",
+      "cwd": "build/reports/g2/A1/review-v2/reconstructed",
+      "result": "PASS",
+      "observation": "14 deklarierte Änderungen reproduzieren alle 1075 After-Dateien aus 1069 Pre-Change-Dateien"
+    },
+    {
+      "command": "python3 audit.py",
+      "cwd": "build/reports/g2/A1/review-v2",
+      "result": "PASS",
+      "observation": "Manifest-/Archiv-/Patch-/Report-/XML-/Pin-/Artefakthashes, Suite-/Taskmengen, Recounts und drei eigene Gegenproben bestanden"
+    }
+  ],
+  "normativeDecision": {
+    "made": false,
+    "status": "Keine normative Erwartung oder Ausnahme wurde durch A1 genehmigt. Die 18 bestehenden normativen Bewertungen bleiben der Nutzerentscheidung vorbehalten."
+  },
+  "acceptance": "A1 ist in seinem technischen Baseline-/Evidenzumfang abgenommen. A2/A3 sowie alle fachlichen Sprach-, Norm- und Phasenabnahmen bleiben offen."
+}

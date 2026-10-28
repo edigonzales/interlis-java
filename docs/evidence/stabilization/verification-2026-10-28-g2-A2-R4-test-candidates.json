@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "R4 keyword candidate index from conditions/requirements to JVM tests",
+  "acceptance": "CANDIDATE_ONLY",
+  "testMethods": 615,
+  "conditions": 621,
+  "requirements": 80,
+  "withCandidate": 669,
+  "candidateIndex": "docs/evidence/stabilization/g2-test-candidate-index.json",
+  "candidateIndexSha256": "74308da3dc78a3d55c87846b745456883d6896814c076a33e370f4707fa616ff",
+  "matrix": "g2-rule-matrix.json",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "tools": {
+    "g2_test_candidates.py": "69295b97c5dc6ceb3a6c223788f5ee92880b438b6cb8ae2cf4f7c836ba721d25",
+    "test_g2_test_candidates.py": "ff44b39109bd88e41d60d740d3f2d4889039e6517d3345542c992848bcd781a8"
+  },
+  "commands": [
+    "python3 tools/reference/g2_test_candidates.py --out build/reports/g2/A2/R4/test-candidates.json",
+    "./gradlew g2EvidenceTest --rerun-tasks --console=plain"
+  ],
+  "logs": {
+    "candidates": "build/reports/g2/A2/R4/test-candidates.log",
+    "candidatesSha256": "5e4dfb2615a1ea519a1f1bcb2a636a16f11299f20e272973dc5b06424f5935f4",
+    "evidence": "build/reports/g2/A2/R4/g2-evidence-test-candidates.log",
+    "evidenceSha256": "8f80696227b30762d8c64078ec3e14859224d8c0f9f2c4c41513933105bcd780"
+  },
+  "technicalTests": 56,
+  "compilerTests": 614,
+  "compilerFailures": 0,
+  "compilerErrors": 0,
+  "compilerSkipped": 0,
+  "acceptanceLimits": [
+    "Keyword candidates only; no assertion, execution or acceptance is claimed.",
+    "538 of 701 condition/requirement rows have a candidate; 163 have none.",
+    "Candidate method hashes are verified against the actual test source."
+  ],
+  "remaining": [
+    "Inspect candidate method bodies and bind actual assertions per condition.",
+    "Implement missing cases for the 163 rows without candidates.",
+    "Complete the remaining R4 execution and independent review.",
+    "A2 overall review, A3 and phase A review."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "conditionsWithCandidate": 614,
+  "requirementsWithCandidate": 55
+}

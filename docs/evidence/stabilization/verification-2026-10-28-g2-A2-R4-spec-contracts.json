@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "R4 specification contract worklist",
+  "acceptance": "PLANNED_NOT_ACCEPTED",
+  "numbered": 289,
+  "unnumberedExplicit": 12,
+  "matrixLinked": 45,
+  "ownerMissing": 0,
+  "specContractInventory": "docs/evidence/stabilization/g2-spec-contract-inventory.json",
+  "specContractInventorySha256": "e2bd1dcf3b627987de6c459ff0c5dc99c634215a36e5ea6ad04b7516dd50a968",
+  "matrix": "g2-rule-matrix.json",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "tools": {
+    "g2_spec_contracts.py": "d7ca65a85325dd95ad3ab7482313cc52911e035a2bdaa1b097936af391f10750",
+    "test_g2_spec_contracts.py": "fc2a1408a9a5f86919206014e5b4c54bb823d35e1274a89e87713105bdc72511"
+  },
+  "commands": [
+    "python3 tools/reference/g2_spec_contracts.py --out build/reports/g2/A2/R4/spec-contracts.json",
+    "./gradlew g2EvidenceTest --rerun-tasks --console=plain"
+  ],
+  "logs": {
+    "contracts": "build/reports/g2/A2/R4/spec-contracts.log",
+    "contractsSha256": "a553f12efbbf643115c5bd2b690e0c9a652713b5c390dbdf917e054ff5b0cf24",
+    "evidence": "build/reports/g2/A2/R4/g2-evidence-test-spec-contracts.log",
+    "evidenceSha256": "ca55a4034535682c8def513faef325eb852b08a14aa21a9948c261e8a0451701"
+  },
+  "technicalTests": 54,
+  "compilerTests": 614,
+  "compilerFailures": 0,
+  "compilerErrors": 0,
+  "compilerSkipped": 0,
+  "acceptanceLimits": [
+    "Requirement ownership and gaps only; no implementation/test acceptance.",
+    "45 matrix links are not executed evidence.",
+    "The 12 unnumbered lines are an explicit line-level detection, not a complete prose audit."
+  ],
+  "remaining": [
+    "Map the 80 G2 requirements with a proposed owner step to concrete acceptance.",
+    "Audit all unnumbered prose contracts in 04–10/13/16.",
+    "Complete paragraph/grammar/builtin case execution.",
+    "A2 overall review, A3 and phase A review."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "outsideG2": 164,
+  "g2Planned": 80
+}

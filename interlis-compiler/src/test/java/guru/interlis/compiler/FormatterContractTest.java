@@ -74,4 +74,50 @@ class FormatterContractTest {
                 FormatOptions.defaults(), CancellationToken.none());
         assertInstanceOf(FormatOutcome.Rejected.class, outcome);
     }
+
+    @Test
+    void multilineAndInterleavedCommentsKeepTheirTextAndPosition() {
+        String input = """
+                INTERLIS 2.4;
+                MODEL M AT "x" VERSION "1" =
+                /* first 😀
+                   middle
+                 last */ TOPIC T =
+                CLASS /* between keyword and name */ C =
+                value : TEXT*10; /* after attribute */
+                END C;
+                END T;
+                END M.
+                """;
+        String formatted = format(input, FormatOptions.defaults());
+        assertEquals(formatted, format(formatted, FormatOptions.defaults()));
+        assertEquals(tokenTexts(input), tokenTexts(formatted));
+        assertTrue(formatted.contains("/* first 😀\n   middle\n last */"));
+        assertTrue(formatted.contains("CLASS /* between keyword and name */ C"));
+    }
+
+    @Test
+    void preservesTokensAndIsIdempotentAcrossVersionsAndLineEndings() {
+        for (String version : List.of("2.3", "2.4")) {
+            for (String ending : List.of("\n", "\r\n", "\r")) {
+                String input = String.join(ending, "INTERLIS " + version + ";",
+                        "CONTRACTED MODEL M AT \"x\" VERSION \"1\" =",
+                        "/* first 😀", "  second */",
+                        "TOPIC T =", "CLASS C = END C;", "CLASS D =",
+                        "value : TEXT*80; !! Unicode äöü",
+                        "MANDATORY CONSTRAINT value == \"a /* b */ END C;\";",
+                        "END D;", "END T;", "END M.", "");
+                for (FormatOptions.LineEnding setting : FormatOptions.LineEnding.values()) {
+                    var options = new FormatOptions(2, setting, true);
+                    String formatted = format(input, options);
+                    assertEquals(formatted, format(formatted, options));
+                    assertEquals(tokenTexts(input), tokenTexts(formatted));
+                    assertTrue(formatted.contains("    CLASS D ="));
+                    if (setting == FormatOptions.LineEnding.PRESERVE) {
+                        assertTrue(formatted.endsWith("END M." + ending));
+                    }
+                }
+            }
+        }
+    }
 }

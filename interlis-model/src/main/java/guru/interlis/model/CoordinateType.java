@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public record CoordinateType(TypeId id, Origin origin, int dimensions,
                              List<NumericRange> axes, boolean multiCoordinate,
-                             Optional<String> referenceSystem)
+                             Optional<String> referenceSystem, Optional<Rotation> rotation)
         implements TypeDescriptor {
     /** Creates a validated instance. */
     public CoordinateType {
@@ -30,10 +30,13 @@ public record CoordinateType(TypeId id, Origin origin, int dimensions,
             throw new IllegalArgumentException("axis count must match dimensions");
         }
         referenceSystem = Objects.requireNonNull(referenceSystem, "referenceSystem");
+        rotation = Objects.requireNonNull(rotation);
     }
 
     @Override
     public TypeKind kind() {
         return TypeKind.COORDINATE;
     }
+    /** One-based axis indices defining zero direction and positive quarter turn. */
+    public record Rotation(int zeroAxis, int quarterTurnAxis) { }
 }

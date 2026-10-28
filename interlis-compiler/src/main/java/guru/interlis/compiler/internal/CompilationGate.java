@@ -47,7 +47,8 @@ final class CompilationGate {
         relevantIds.addAll(closure.diagnostics());
         for (Diagnostic diagnostic : analysis.diagnostics()) {
             boolean inClosure = diagnostic.primaryRange()
-                    .map(r -> closure.sources().contains(r.source()))
+                    .map(r -> diagnostic.phase() == Phase.LEXING || diagnostic.phase() == Phase.PARSING
+                            ? closure.sources().contains(r.source()) : closure.contains(r))
                     .orElse(relevantIds.contains(diagnostic.id()));
             if (inClosure) {
                 relevant.add(diagnostic);
@@ -71,11 +72,6 @@ final class CompilationGate {
             }
         }
         Set<String> unsupported = new LinkedHashSet<>();
-        output.graphResult().unsupportedBySource().forEach((source, features) -> {
-            if (closure.sources().contains(source)) {
-                unsupported.addAll(features);
-            }
-        });
         for (AnalysisCoverage.CoverageEntry entry : analysis.coverage().entries()) {
             if (entry.source().filter(closure.sources()::contains).isEmpty()
                     && entry.source().isPresent()) {

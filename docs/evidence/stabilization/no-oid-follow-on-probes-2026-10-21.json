@@ -1,0 +1,66 @@
+{
+  "recordedAt": "2026-10-21T00:59:19.777531+00:00",
+  "scope": "Additional follow-on probes, not acceptance cases",
+  "cases": [
+    {
+      "case": "external-without-depends",
+      "source": "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = TOPIC Base = OID AS INTERLIS.UUIDOID; CLASS A = END A; END Base; TOPIC T = STRUCTURE S = r: REFERENCE TO (EXTERNAL) Base.A; END S; END T; END F.",
+      "sha256": "881d5efd91ae0e9b543be6d310d1cad520f06424a59ef9ad0b354db7f2f2c84a",
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/external-without-depends.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/external-without-depends.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/external-without-depends.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/external-without-depends.ili:1:issuer doesn't match URI syntax <x>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/external-without-depends.ili:1:It seems as if you were trying to refer to TOPIC F.Base. Please specify the model name as well.\n...compiler run failed 2026-10-21 02:56:59\n"
+        }
+      },
+      "assessment": "OPEN: EXTERNAL does not replace required DEPENDS ON (2.6.3/3.6.3). Current false accept; next bound topic-dependency work. Not part of the pinned external suite or passed portable cases."
+    },
+    {
+      "case": "forward-restriction",
+      "source": "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = TOPIC T = OID AS INTERLIS.UUIDOID; CLASS A = END A; STRUCTURE S = r: REFERENCE TO A RESTRICTION (B); END S; CLASS B EXTENDS A = END B; END T; END F.",
+      "sha256": "b5d37c86ed84f0b8d2d6a30e329271e73069a7ed37387631628f26e34dbaad4e",
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/forward-restriction.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/forward-restriction.ili:1:110: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=r, rule=reference restriction must specialize its primary target/REFERENCE_TARGET_RESTRICTION)\n"
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/forward-restriction.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/forward-restriction.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/forward-restriction.ili:1:issuer doesn't match URI syntax <x>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/forward-restriction.ili:1:There is no view or class \"B\" in TOPIC F.T.\n...compiler run failed 2026-10-21 02:57:00\n"
+        }
+      },
+      "assessment": "Both compilers reject the forward restriction; this does not prove general declaration-order conformance."
+    }
+  ]
+}

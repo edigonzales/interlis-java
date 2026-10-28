@@ -30,6 +30,16 @@ record Closure(List<ModelDecl> roots, List<ModelDecl> models, Set<SourceId> sour
         return reasons.isEmpty();
     }
 
+    /** Semantic locations belong to models, not to every model sharing their file. */
+    boolean contains(guru.interlis.source.SourceRange range) {
+        if (!sources.contains(range.source())) return false;
+        if (range.isEmpty() && range.startOffset() == 0) return true;
+        return models.stream().anyMatch(model -> model.sourceId().equals(range.source())
+                && model.syntax().range().revision().equals(range.revision())
+                && model.syntax().range().startOffset() <= range.startOffset()
+                && model.syntax().range().endOffset() >= range.endOffset());
+    }
+
     record ImportEdge(ModelDecl importer, ImportSyntax site, ModelDecl target) {
         ImportEdge {
             Objects.requireNonNull(importer, "importer");

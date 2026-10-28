@@ -1,0 +1,1467 @@
+{
+  "recordedAt": "2026-10-21T08:15:42.046620+00:00",
+  "total": 52,
+  "currentExpected": 52,
+  "referenceAgreement": 42,
+  "baseCommit": "3820c6b5dead437cdaeb9569fbfe726abec25d6e",
+  "ili2cSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "javaVersion": "openjdk version \"25.0.3\" 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)\n",
+  "cases": [
+    {
+      "id": 0,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE DEFINED(a->x); = ALL OF a; END V; END T; END F.",
+      "sourceSha256": "cec1cc008c60bd36e7a60bb9ac1e51ba4a3cc4c6046a2abb01e6f47feb555448",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/000.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/000.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/000.ili>\nInfo: ...compiler run done 2026-10-21 10:14:50\n"
+      }
+    },
+    {
+      "id": 1,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE a->x; = END V; END T; END F.",
+      "sourceSha256": "6e30db822243e24d3dd0b4530625e6b8664289030e4566afb3a64d9a84f3678e",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/001.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/001.ili:1:184: ERROR ILI-SEM-0005 diagnostic.semantics.type (actual=TEXT, expected=BOOLEAN)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/001.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/001.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/001.ili:1:logical expression required.\n...compiler run failed 2026-10-21 10:14:50\n"
+      }
+    },
+    {
+      "id": 2,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = w := a->x; END W; END T; END F.",
+      "sourceSha256": "a14e9c3195bec0d58c2b968de40894f4027abebe259c18f0419a4c56603772a4",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/002.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/002.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/002.ili>\nInfo: ...compiler run done 2026-10-21 10:14:50\n"
+      }
+    },
+    {
+      "id": 3,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->missing; END V; END T; END F.",
+      "sourceSha256": "0e7736a193f611d2a6b0ce7efc09beade7269863aa132059868270bbd771224d",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/003.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/003.ili:1:188: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=missing)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/003.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/003.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/003.ili:1:Name missing is not applicable to CLASS F.T.A.\n...compiler run failed 2026-10-21 10:14:50\n"
+      }
+    },
+    {
+      "id": 4,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = ALL OF a; x := a->x; END V; END T; END F.",
+      "sourceSha256": "cec65254af4ac53cc52231531b88f45d4062189bf7a84dc5dc76be862425b949",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/004.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/004.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=duplicate view attribute or basis name/VIEW_ATTRIBUTE_DUPLICATE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/004.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/004.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/004.ili:1:VIEW F.T.V can not declare several attributes bearing the same name. There is already an attribute \"x\".\n...compiler run failed 2026-10-21 10:14:55\n"
+      }
+    },
+    {
+      "id": 5,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; BASE a EXTENDED BY b~B = END V; END T; END F.",
+      "sourceSha256": "5a3fa149eb85e4664c6ac7e7490f0e51d0b6f4c6c7a01084463487ddf3ac6d16",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/005.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/005.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=view base extension must specialize its base/VIEW_BASE_EXTENSION)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/005.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/005.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/005.ili:1:b must be an extension of a.\n...compiler run failed 2026-10-21 10:14:55\n"
+      }
+    },
+    {
+      "id": 6,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = ALL OF a; ALL OF b; END V; END T; END F.",
+      "sourceSha256": "0956c06ba2e6aecc85de292b3600311c9bf49e6a270905d81afb52a4a76bc9bb",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/006.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/006.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/006.ili>\nInfo: ...compiler run done 2026-10-21 10:14:56\n"
+      }
+    },
+    {
+      "id": 7,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = z : MANDATORY TEXT*20 := b->y; END V; END T; END F.",
+      "sourceSha256": "6c0e68f191d94e207c9b4dfc72110a942f2782693bd6fc22934defc95dbebce3",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/007.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/007.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=mandatory view attribute uses an optional join basis/VIEW_NULLABLE_ATTRIBUTE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/007.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/007.ili>\nInfo: ...compiler run done 2026-10-21 10:14:56\n"
+      }
+    },
+    {
+      "id": 8,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,a~B; = END V; END T; END F.",
+      "sourceSha256": "ccda44c0387f3eebdee5e94d13583d910de127b11820b78a890e314051636f88",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/008.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/008.ili:1:171: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a, rule=duplicate view basis/VIEW_ALIAS_CONFLICT)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/008.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/008.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/008.ili:1:The name \"a\" can not be an alias for CLASS F.T.B and CLASS F.T.A at the same time. Please use a different name.\n  The name \"a\" can not be an alias for CLASS F.T.B and CLASS F.T.A at the same time. Please use a different name.\n...compiler run failed 2026-10-21 10:15:01\n"
+      }
+    },
+    {
+      "id": 9,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x,b->y; END V; END T; END F.",
+      "sourceSha256": "8ad0477928685767f84f62d763dc1d611802a3778e1d2594a9ec75ee46677dce",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/009.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/009.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/009.ili>\nInfo: ...compiler run done 2026-10-21 10:15:01\n"
+      }
+    },
+    {
+      "id": 10,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x; END V; END T; END F.",
+      "sourceSha256": "537f065383e555ca634c0c9cab668e8e18c72d27dfd395767d4f7e2a95bbfb56",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/010.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/010.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=mandatory union attribute needs every basis/VIEW_UNION_ATTRIBUTE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/010.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/010.ili>\nInfo: ...compiler run done 2026-10-21 10:15:01\n"
+      }
+    },
+    {
+      "id": 11,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = ALL OF a; END V; END T; END F.",
+      "sourceSha256": "4060f4dff0adbc4152854c65d60e005e651cca84ff22e988f23b75d32f313e81",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/011.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/011.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=ALL OF is not allowed in UNION or AREA INSPECTION/VIEW_ALL_OF)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/011.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=mandatory union attribute needs every basis/VIEW_UNION_ATTRIBUTE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/011.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/011.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/011.ili:1:A UNION a can not use the construct ALL OF.\n...compiler run failed 2026-10-21 10:15:02\n"
+      }
+    },
+    {
+      "id": 12,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F.",
+      "sourceSha256": "1d066b06dcda298fc31f459343bb062627c5be53d1d3cbf228299773a767e4d4",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/012.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/012.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/012.ili>\nInfo: ...compiler run done 2026-10-21 10:15:04\n"
+      }
+    },
+    {
+      "id": 13,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x,a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F.",
+      "sourceSha256": "7963499d9137377dfd7a52a819877278f4a1287ee943bf77b2eb374970d02760",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/013.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/013.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/013.ili>\nInfo: ...compiler run done 2026-10-21 10:15:04\n"
+      }
+    },
+    {
+      "id": 14,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->missing); = END V; END T; END F.",
+      "sourceSha256": "c7fff85e6c7c61c69f62269015a24f52478ab433ee61da30fc373aa1972fcfc9",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/014.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/014.ili:1:188: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=missing)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/014.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/014.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/014.ili:1:Name missing is not applicable to CLASS F.T.A.\n...compiler run failed 2026-10-21 10:15:04\n"
+      }
+    },
+    {
+      "id": 15,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = z (EXTENDED) : TEXT := a->x; END W; END T; END F.",
+      "sourceSha256": "2c7bc9cc31f0ed02d6ed323b2f026e19fd5edb571f8778dac37dfde228fde5fd",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/015.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/015.ili:1:217: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=z, rule=cannot override FINAL attribute/VIEW_FINAL)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/015.ili:1:217: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=z, rule=view override must specialize the inherited type/VIEW_ATTRIBUTE_TYPE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/015.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/015.ili>\nInfo: ...compiler run done 2026-10-21 10:15:05\n"
+      }
+    },
+    {
+      "id": 16,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = ALL OF child; label := PARENT->label; END V; END T; END F.",
+      "sourceSha256": "fcabee6717662638da314a52f00e702593e89c27568fa542c74df5fae5f199aa",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/016.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/016.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/016.ili>\nInfo: ...compiler run done 2026-10-21 10:15:07\n"
+      }
+    },
+    {
+      "id": 17,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->label; = END V; END T; END F.",
+      "sourceSha256": "193513cfac8b1d1ad1f0952a74ab08dfcd280453b1e4c2135b743db6ea247b06",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/017.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/017.ili:1:159: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=inspection requires a structure or geometry attribute/VIEW_INSPECTION_TYPE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/017.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/017.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/017.ili:1:can not decompose label. Only attributes whose type is a composition, a surface or an area can be decomposed.\n  can not decompose label. Only attributes whose type is a composition, a surface or an area can be decomposed.\n...compiler run failed 2026-10-21 10:15:07\n"
+      }
+    },
+    {
+      "id": 18,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = value := THISAREA->label; END V; END T; END F.",
+      "sourceSha256": "29eddb1cd5f2c69e68417991ae650588511740af5c19e4a3b27244a859ee1dda",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/018.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/018.ili:1:159: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=invalid inspection path context/VIEW_INSPECTION_CONTEXT)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/018.ili:1:210: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=inspection context, construct=inspection context)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/018.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/018.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/018.ili:1:An object path element THISAREA must not be used in VIEW F.T.V.\n...compiler run failed 2026-10-21 10:15:08\n"
+      }
+    },
+    {
+      "id": 19,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V PROJECTION OF A; = value := PARENT->label; END V; END T; END F.",
+      "sourceSha256": "cb7e552dd6ae6b393acd08cae198c5b8188d32e0085b484c8533e8c5fd95320c",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/019.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/019.ili:1:159: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=invalid inspection path context/VIEW_INSPECTION_CONTEXT)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/019.ili:1:194: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=inspection context, construct=inspection context)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/019.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/019.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/019.ili:1:An object path element PARENT must not be used in VIEW F.T.V.\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/019.ili:class ch.interlis.ili2c.metamodel.Projection cannot be cast to class ch.interlis.ili2c.metamodel.DecompositionView (ch.interlis.ili2c.metamodel.Projection and ch.interlis.ili2c.metamodel.DecompositionView are in unnamed module of loader 'app')\n  class ch.interlis.ili2c.metamodel.Projection cannot be cast to class ch.interlis.ili2c.metamodel.DecompositionView (ch.interlis.ili2c.metamodel.Projection and ch.interlis.ili2c.metamodel.DecompositionView are in unnamed module of loader 'app')\n...compiler run failed 2026-10-21 10:15:08\n"
+      }
+    },
+    {
+      "id": 20,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = x := child->missing; END V; END T; END F.",
+      "sourceSha256": "b55e67524eb7e83f181365d9fcddf9b6534436701deabe32442c76aa59123922",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/020.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/020.ili:1:213: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=missing)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/020.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/020.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/020.ili:1:Name missing is not applicable to STRUCTURE F.T.S.\n...compiler run failed 2026-10-21 10:15:12\n"
+      }
+    },
+    {
+      "id": 21,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF AB; = MANDATORY CONSTRAINT a->x == b->y; END V; END T; END F.",
+      "sourceSha256": "e187f8743c9faf2f2adb4332b3e76453ac6e068f6b76f5b27ea7c937df9bb305",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/021.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/021.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/021.ili>\nInfo: ...compiler run done 2026-10-21 10:15:12\n"
+      }
+    },
+    {
+      "id": 22,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF B; = MANDATORY CONSTRAINT a->x == \"x\"; END V; END T; END F.",
+      "sourceSha256": "80ec4c36055922c9419c7fd50dd004b2af86f7a30e2743b58bbf961f533d0343",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/022.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/022.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/022.ili>\nInfo: ...compiler run done 2026-10-21 10:15:13\n"
+      }
+    },
+    {
+      "id": 23,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->A; b -- B := V->B; END AB; END T; END F.",
+      "sourceSha256": "724deee30b2915da5f27b65f39ce46abf5c7bba1b518e3f0391eca671fe19836",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/023.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/023.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/023.ili>\nInfo: ...compiler run done 2026-10-21 10:15:14\n"
+      }
+    },
+    {
+      "id": 24,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->B; b -- B := V->B; END AB; END T; END F.",
+      "sourceSha256": "21da168d6a310e1b70d90a8ca37b017be8f9827db93737bd905b1d8658729f48",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/024.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/024.ili:1:199: ERROR ILI-SEM-0005 diagnostic.semantics.type (actual=REFERENCE, expected=single role target)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/024.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/024.ili>\nInfo: ...compiler run done 2026-10-21 10:15:17\n"
+      }
+    },
+    {
+      "id": 25,
+      "expected": "rejected",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00 .. 100.00, 0.00 .. 100.00; TOPIC T = CLASS A = start : Coord; line : POLYLINE WITH (STRAIGHTS,ARCS) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = MANDATORY CONSTRAINT line->Segments[FIRST]->SegmentEndPoint == PARENT->start; END V; END T; END F.",
+      "sourceSha256": "f6dd6996bd5834fe7a8cffe389f83831303e1ec7af7826b2996e1f60332624a7",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/025.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/025.ili:1:209: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=INSPECTION_GEOMETRY_SCHEMA, construct=predefined segment hierarchy, StartSegment constraint and line metadata are incomplete)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/025.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/025.ili>\nInfo: ...compiler run done 2026-10-21 10:15:19\n"
+      }
+    },
+    {
+      "id": 26,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE DEFINED(a->x); = ALL OF a; END V; END T; END F.",
+      "sourceSha256": "1e3ab8da9c172e61b5bb4a4d0ea91f4adbc1caf8379ea74c515871a50dcc3934",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/026.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/026.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/026.ili>\nInfo: ...compiler run done 2026-10-21 10:15:20\n"
+      }
+    },
+    {
+      "id": 27,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE a->x; = END V; END T; END F.",
+      "sourceSha256": "c3a495b2931b9284d3a026dd4471cb937d7f3f6bb287d57c74aefced7d1d5317",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/027.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/027.ili:1:184: ERROR ILI-SEM-0005 diagnostic.semantics.type (actual=TEXT, expected=BOOLEAN)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/027.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/027.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/027.ili:1:logical expression required.\n...compiler run failed 2026-10-21 10:15:19\n"
+      }
+    },
+    {
+      "id": 28,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = w := a->x; END W; END T; END F.",
+      "sourceSha256": "40905f754eb95808cf63349d4a7d3365618c4671876478818640f74c5c4b9e03",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/028.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/028.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/028.ili>\nInfo: ...compiler run done 2026-10-21 10:15:23\n"
+      }
+    },
+    {
+      "id": 29,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->missing; END V; END T; END F.",
+      "sourceSha256": "a7b34b18b5e34433967ef52407eb97124cc32001e0c924303278d660faa13f1e",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/029.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/029.ili:1:188: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=missing)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/029.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/029.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/029.ili:1:Name missing is not applicable to CLASS F.T.A.\n...compiler run failed 2026-10-21 10:15:24\n"
+      }
+    },
+    {
+      "id": 30,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = ALL OF a; x := a->x; END V; END T; END F.",
+      "sourceSha256": "c77ab9faa67eb16eab049f568b76487b2b86fb15b3c7a8ff8b21ebfc8c452f3f",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/030.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/030.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=duplicate view attribute or basis name/VIEW_ATTRIBUTE_DUPLICATE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/030.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/030.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/030.ili:1:VIEW F.T.V can not declare several attributes bearing the same name. There is already an attribute \"x\".\n...compiler run failed 2026-10-21 10:15:24\n"
+      }
+    },
+    {
+      "id": 31,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; BASE a EXTENDED BY b~B = END V; END T; END F.",
+      "sourceSha256": "f487ed3269b163c812c0282eb21a1710ab3b9a581dbbbe716098dafd4ab9677d",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/031.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/031.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=view base extension must specialize its base/VIEW_BASE_EXTENSION)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/031.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/031.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/031.ili:1:b must be an extension of a.\n...compiler run failed 2026-10-21 10:15:24\n"
+      }
+    },
+    {
+      "id": 32,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = ALL OF a; ALL OF b; END V; END T; END F.",
+      "sourceSha256": "14c36a7fc4f114c2454f15b067b17a9913b383ce97f95ece98eb33e67e61a51d",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/032.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/032.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/032.ili>\nInfo: ...compiler run done 2026-10-21 10:15:27\n"
+      }
+    },
+    {
+      "id": 33,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = z : MANDATORY TEXT*20 := b->y; END V; END T; END F.",
+      "sourceSha256": "ce23b011a492b7b5c104f09928119125d1de936ada2d13213df28cd4560395ca",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/033.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/033.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=mandatory view attribute uses an optional join basis/VIEW_NULLABLE_ATTRIBUTE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/033.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/033.ili>\nInfo: ...compiler run done 2026-10-21 10:15:28\n"
+      }
+    },
+    {
+      "id": 34,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,a~B; = END V; END T; END F.",
+      "sourceSha256": "cda0771aa8688fef454c036463b5220d61e16355a33bff445460f083c7f79b91",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/034.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/034.ili:1:171: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a, rule=duplicate view basis/VIEW_ALIAS_CONFLICT)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/034.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/034.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/034.ili:1:The name \"a\" can not be an alias for CLASS F.T.B and CLASS F.T.A at the same time. Please use a different name.\n  The name \"a\" can not be an alias for CLASS F.T.B and CLASS F.T.A at the same time. Please use a different name.\n...compiler run failed 2026-10-21 10:15:28\n"
+      }
+    },
+    {
+      "id": 35,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x,b->y; END V; END T; END F.",
+      "sourceSha256": "26ff00f56d639123d3a7f9e3f25a9259f26f986dbd903d76451640a305c43ad6",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/035.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/035.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/035.ili>\nInfo: ...compiler run done 2026-10-21 10:15:28\n"
+      }
+    },
+    {
+      "id": 36,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x; END V; END T; END F.",
+      "sourceSha256": "442380cf12a0505a1833e55b0b672a19a298575dcfbc5d16392e2f44455f47c1",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/036.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/036.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=mandatory union attribute needs every basis/VIEW_UNION_ATTRIBUTE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/036.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/036.ili>\nInfo: ...compiler run done 2026-10-21 10:15:31\n"
+      }
+    },
+    {
+      "id": 37,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = ALL OF a; END V; END T; END F.",
+      "sourceSha256": "28546ed26c06ad6ffafa5f42024ea4e1a4d682aff2c8464acc116fd65abd025e",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/037.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/037.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=ALL OF is not allowed in UNION or AREA INSPECTION/VIEW_ALL_OF)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/037.ili:1:152: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=mandatory union attribute needs every basis/VIEW_UNION_ATTRIBUTE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/037.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/037.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/037.ili:1:A UNION a can not use the construct ALL OF.\n...compiler run failed 2026-10-21 10:15:31\n"
+      }
+    },
+    {
+      "id": 38,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F.",
+      "sourceSha256": "b7fe7fe8caf540fd13096a112ba9f7caf626fdb88f44d4f23bad947dc37621b2",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/038.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/038.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/038.ili>\nInfo: ...compiler run done 2026-10-21 10:15:31\n"
+      }
+    },
+    {
+      "id": 39,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x,a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F.",
+      "sourceSha256": "ac7d5431a397a1a8cd50141ce6bb65c05517c90a8b3feee93f56fb06a2d77baa",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/039.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/039.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/039.ili>\nInfo: ...compiler run done 2026-10-21 10:15:32\n"
+      }
+    },
+    {
+      "id": 40,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->missing); = END V; END T; END F.",
+      "sourceSha256": "a3cdc4c853d5e47eb9f443ec7220454ba6b639ca215cb9dadc1d58693f0a875e",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/040.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/040.ili:1:188: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=missing)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/040.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/040.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/040.ili:1:Name missing is not applicable to CLASS F.T.A.\n...compiler run failed 2026-10-21 10:15:34\n"
+      }
+    },
+    {
+      "id": 41,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = z (EXTENDED) : TEXT := a->x; END W; END T; END F.",
+      "sourceSha256": "36638992099a92e2a35b801a981f00f793faa63909d99bc54815034d394275eb",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/041.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/041.ili:1:217: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=z, rule=cannot override FINAL attribute/VIEW_FINAL)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/041.ili:1:217: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=z, rule=view override must specialize the inherited type/VIEW_ATTRIBUTE_TYPE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/041.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/041.ili>\nInfo: ...compiler run done 2026-10-21 10:15:35\n"
+      }
+    },
+    {
+      "id": 42,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = ALL OF child; label := PARENT->label; END V; END T; END F.",
+      "sourceSha256": "57fc76d18fce31c09a9399fac83adc2e75201857770737005ab334df555d52a6",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/042.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/042.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/042.ili>\nInfo: ...compiler run done 2026-10-21 10:15:35\n"
+      }
+    },
+    {
+      "id": 43,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->label; = END V; END T; END F.",
+      "sourceSha256": "2e6a0601ab16670ce8d2f85c713273d2a9ac31f6e2e65299426377f2b6b2f021",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/043.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/043.ili:1:159: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=inspection requires a structure or geometry attribute/VIEW_INSPECTION_TYPE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/043.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/043.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/043.ili:1:can not decompose label. Only attributes whose type is a composition, a surface or an area can be decomposed.\n  can not decompose label. Only attributes whose type is a composition, a surface or an area can be decomposed.\n...compiler run failed 2026-10-21 10:15:35\n"
+      }
+    },
+    {
+      "id": 44,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = value := THISAREA->label; END V; END T; END F.",
+      "sourceSha256": "a66efe9cdae95e1b3d8d36cbb63edbf96a88caef641b17efa837a5df578a8834",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/044.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/044.ili:1:159: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=invalid inspection path context/VIEW_INSPECTION_CONTEXT)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/044.ili:1:210: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=inspection context, construct=inspection context)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/044.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/044.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/044.ili:1:An object path element THISAREA must not be used in VIEW F.T.V.\n...compiler run failed 2026-10-21 10:15:37\n"
+      }
+    },
+    {
+      "id": 45,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V PROJECTION OF A; = value := PARENT->label; END V; END T; END F.",
+      "sourceSha256": "c9df442f8230ce2ea2c862c2feca55b9729a545463d3e40e42155fd013bdd5de",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/045.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/045.ili:1:159: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=V, rule=invalid inspection path context/VIEW_INSPECTION_CONTEXT)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/045.ili:1:194: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=inspection context, construct=inspection context)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/045.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/045.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/045.ili:1:An object path element PARENT must not be used in VIEW F.T.V.\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/045.ili:class ch.interlis.ili2c.metamodel.Projection cannot be cast to class ch.interlis.ili2c.metamodel.DecompositionView (ch.interlis.ili2c.metamodel.Projection and ch.interlis.ili2c.metamodel.DecompositionView are in unnamed module of loader 'app')\n  class ch.interlis.ili2c.metamodel.Projection cannot be cast to class ch.interlis.ili2c.metamodel.DecompositionView (ch.interlis.ili2c.metamodel.Projection and ch.interlis.ili2c.metamodel.DecompositionView are in unnamed module of loader 'app')\n...compiler run failed 2026-10-21 10:15:37\n"
+      }
+    },
+    {
+      "id": 46,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = x := child->missing; END V; END T; END F.",
+      "sourceSha256": "8654b9a05e3057d935104615abcd3c91120c9b4c505ef5575d3b75718bcc1bab",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/046.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/046.ili:1:213: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=missing)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/046.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/046.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/046.ili:1:Name missing is not applicable to STRUCTURE F.T.S.\n...compiler run failed 2026-10-21 10:15:37\n"
+      }
+    },
+    {
+      "id": 47,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF AB; = MANDATORY CONSTRAINT a->x == b->y; END V; END T; END F.",
+      "sourceSha256": "e8b07c45fa2bc9fd5f9534a4007df6bfc6f46bfb69df6aecfc82bd2a0ebfb196",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/047.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/047.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/047.ili>\nInfo: ...compiler run done 2026-10-21 10:15:38\n"
+      }
+    },
+    {
+      "id": 48,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF B; = MANDATORY CONSTRAINT a->x == \"x\"; END V; END T; END F.",
+      "sourceSha256": "25d7bad3c8de98a67ab8ac8458145ce65445e26fa7cf0e903f2bc1a75163ff49",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/048.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/048.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/048.ili>\nInfo: ...compiler run done 2026-10-21 10:15:40\n"
+      }
+    },
+    {
+      "id": 49,
+      "expected": "succeeded",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->A; b -- B := V->B; END AB; END T; END F.",
+      "sourceSha256": "b41fd02c35765f742dfab352612cf6d4c4f770bb9dffdd25d201ce7036fe5c60",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/049.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/049.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/049.ili>\nInfo: ...compiler run done 2026-10-21 10:15:41\n"
+      }
+    },
+    {
+      "id": 50,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->B; b -- B := V->B; END AB; END T; END F.",
+      "sourceSha256": "641fabe8b5cb888a1926e0e37fbaa11237483dc534f9ca189bddb02710fc1a96",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/050.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/050.ili:1:255: ERROR ILI-SEM-0005 diagnostic.semantics.type (actual=REFERENCE, expected=single role target)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/050.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/050.ili>\nInfo: ...compiler run done 2026-10-21 10:15:41\n"
+      }
+    },
+    {
+      "id": 51,
+      "expected": "rejected",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00 .. 100.00, 0.00 .. 100.00; TOPIC T = CLASS A = start : Coord; line : POLYLINE WITH (STRAIGHTS,ARCS) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = MANDATORY CONSTRAINT line->Segments[FIRST]->SegmentEndPoint == PARENT->start; END V; END T; END F.",
+      "sourceSha256": "8175f36a30cca65a9962f001694644fe039a04a55bcd262c1e6efd88101fb8f1",
+      "current": {
+        "command": [
+          "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/051.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/051.ili:1:209: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=INSPECTION_GEOMETRY_SCHEMA, construct=predefined segment hierarchy, StartSegment constraint and line metadata are incomplete)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "/Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/051.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/view-cases/051.ili>\nInfo: ...compiler run done 2026-10-21 10:15:42\n"
+      }
+    }
+  ]
+}

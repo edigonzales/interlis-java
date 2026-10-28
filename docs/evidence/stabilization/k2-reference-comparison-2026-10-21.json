@@ -1,0 +1,389 @@
+{
+  "referenceVersion": "5.6.9",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "cases": [
+    {
+      "testId": "ili23.Expressions23Test.equals_runtimeParam",
+      "sources": [
+        {
+          "path": "test/data/ili23/expressions/equals_runtimeParam.ili",
+          "sha256": "173d43d739c03ec8a922529b6e1a66f714b99ac8405c47abf2db6caee5d892ff"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\n\nCONTRACTED MODEL ModelA AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\n  PARAMETER\n  \tRuntimeParam : TEXT;\n\n  TOPIC TopicA = \n\n    CLASS ClassA =\n      attr : TEXT;\n      MANDATORY CONSTRAINT attr==PARAMETER RuntimeParam;\n    END ClassA;\n\n  END TopicA;\n\nEND ModelA.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/equals_runtimeParam.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/equals_runtimeParam.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/equals_runtimeParam.ili>\nInfo: ...compiler run done 2026-10-21 14:17:07\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.Expressions23Test.logical_function",
+      "sources": [
+        {
+          "path": "test/data/ili23/expressions/logical_function.ili",
+          "sha256": "a5d8b0c805f953e04ef238ba28302799aa707611d195439fd33571a928c4b586"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\n\nMODEL ModelA AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\n\n  TOPIC TopicA = \n\n    CLASS ClassA =\n      attr : TEXT;\n      MANDATORY CONSTRAINT INTERLIS.isOfClass(THIS,>ClassA);\n    END ClassA;\n\n  END TopicA;\n\nEND ModelA.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/logical_function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/logical_function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/logical_function.ili>\nInfo: ...compiler run done 2026-10-21 14:17:08\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.Models23Test.models_DomainAndRuntimeParam_SameName",
+      "sources": [
+        {
+          "path": "test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili",
+          "sha256": "db73f13f4b2ef6d08b365cb8625e663bc70298e8832f47245ee924d89ebb29b2"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\nMODEL model AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\tPARAMETER \n\t\tparam : BOOLEAN;\n\tDOMAIN\n\t\tparam = TEXT*2; !! ok; different namesapce\nEND model.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2d4a3659cc08b3bc71c4afad], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2d4a3659cc08b3bc71c4afad\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":112},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"param\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili>\nInfo: ...compiler run done 2026-10-21 14:17:08\n"
+          }
+        },
+        "positive": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<repo>/testdata/conformance/normative/ili23.Models23Test.models_DomainAndRuntimeParam_SameName.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/testdata/conformance/normative/ili23.Models23Test.models_DomainAndRuntimeParam_SameName.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/testdata/conformance/normative/ili23.Models23Test.models_DomainAndRuntimeParam_SameName.ili>\nInfo: ...compiler run done 2026-10-21 14:17:08\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.RuntimeParameter23Test.runtimeParameterComplete",
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/runtimeParameterComplete.ili",
+          "sha256": "ea8c6d3fcb6282459b718ca8d397785528823d975f2568a08f2ed26a606115c5"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\nMODEL ModelA (de) AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\n\tPARAMETER \n\t\tparamA1 : TEXT*20;\n\t\tparamA3 : MANDATORY TEXT*20;\n\nEND ModelA.\n\n\nMODEL ModelB (fr) AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" \nTRANSLATION OF ModelA [ \"1\"]\n=\n\tPARAMETER \n\t\tparamB1 : TEXT*20;\n\t\tparamB3 : MANDATORY TEXT*20;\n\nEND ModelB.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-25be9ebba7ba82576eb53754, diag-59eb005020878c644c7cf2c3, diag-9cbd5ede94d869f3936d49f2, diag-f66e0e0cf8f35277c8e422bb], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-59eb005020878c644c7cf2c3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":103,\"endOffset\":121},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramA1\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]},{\"id\":\"diag-9cbd5ede94d869f3936d49f2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":124,\"endOffset\":152},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramA3\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]},{\"id\":\"diag-25be9ebba7ba82576eb53754\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":285,\"endOffset\":303},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramB1\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]},{\"id\":\"diag-f66e0e0cf8f35277c8e422bb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili\",\"revision\":\"1\",\"startOffset\":306,\"endOffset\":334},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"paramB3\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/runtimeParameterComplete.ili>\nInfo: ...compiler run done 2026-10-21 14:17:09\n"
+          }
+        },
+        "positive": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<repo>/testdata/conformance/normative/ili23.RuntimeParameter23Test.runtimeParameterComplete.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/testdata/conformance/normative/ili23.RuntimeParameter23Test.runtimeParameterComplete.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/testdata/conformance/normative/ili23.RuntimeParameter23Test.runtimeParameterComplete.ili>\nInfo: ...compiler run done 2026-10-21 14:17:09\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.Attributes23Test.attributePathType_ClassTypeRestriction",
+      "sources": [
+        {
+          "path": "test/data/ili23/attribute/attributePathType_ClassTypeRestriction.ili",
+          "sha256": "0be9382a71f6cf7794efe4c2fb19b4a4f94be8284aec1d78f82a78857b6ac32b"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\nMODEL model AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\n\tTOPIC topic =\n\n\t\tCLASS a =\n\t\tEND a;\n\n\t\tCLASS b =\n\t\tEND b;\n\n\t\tASSOCIATION a2b =\n\t\t\ta -- a;\n\t\t\tb -- b;\n\t\t\tobjClass(TRANSIENT): CLASS := INTERLIS.myClass(a);\n\t\t\tattrPath: ATTRIBUTE OF objClass;\n\t\tEND a2b;\n\n\tEND topic;\n\nEND model.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/attribute/attributePathType_ClassTypeRestriction.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/attribute/attributePathType_ClassTypeRestriction.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/attribute/attributePathType_ClassTypeRestriction.ili>\nInfo: ...compiler run done 2026-10-21 14:17:10\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.AttributePathType23Test.attributePathTypeComplete",
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/attributePathTypeComplete.ili",
+          "sha256": "597700f1c09f09586ceb907aa656bfdf4d577ad0070b7e5b7e1e85354e8d8071"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\nCONTRACTED MODEL ModelA (de) AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\t\n\tTOPIC TopicA =\n\t\t\n\t\tCLASS ClassA =\n\t\t\tattrA1 : ATTRIBUTE;\n\t\t\tattrA2 : ATTRIBUTE RESTRICTION (TEXT*10);\n\t\t\tattrA3 : CLASS;\n\t\t\tattrA4 : ATTRIBUTE OF attrA3;\n\t\tEND ClassA;\n\n\tEND TopicA;\n\n\tFUNCTION funcA (argA1: OBJECTS OF ANYCLASS; argA2: ATTRIBUTE OF @ argA1): BOOLEAN;\n\nEND ModelA.\n\nCONTRACTED MODEL ModelB (fr) AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" \nTRANSLATION OF ModelA [ \"1\"]\n=\n\n\tTOPIC TopicB =\n\n\t\tCLASS ClassB =\n\t\t\tattrB1 : ATTRIBUTE;\n\t\t\tattrB2 : ATTRIBUTE RESTRICTION (TEXT*10);\n\t\t\tattrB3 : CLASS;\n\t\t\tattrB4 : ATTRIBUTE OF attrB3;\n\t\tEND ClassB;\n\n\tEND TopicB;\n\t\n\tFUNCTION funcB (argB1: OBJECTS OF ANYCLASS; argB2: ATTRIBUTE OF @ argB1): BOOLEAN;\n\nEND ModelB.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attributePathTypeComplete.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attributePathTypeComplete.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/attributePathTypeComplete.ili>\nInfo: ...compiler run done 2026-10-21 14:17:10\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.Attributes23Test.attributePathType_ArgumentRestriction",
+      "sources": [
+        {
+          "path": "test/data/ili23/attribute/attributePathType_ArgumentRestriction.ili",
+          "sha256": "60539fac9d9672f29cf07242f92d6bd9aed3b076ca38d94b7bab7e2bb8f0e1da"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\nCONTRACTED MODEL model AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\tFUNCTION func(Objects: OBJECTS OF ANYCLASS;\n\t\tattrPath: ATTRIBUTE OF @ Objects\n\t\t): BOOLEAN;\n\nEND model.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/attribute/attributePathType_ArgumentRestriction.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/attribute/attributePathType_ArgumentRestriction.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/attribute/attributePathType_ArgumentRestriction.ili>\nInfo: ...compiler run done 2026-10-21 14:17:10\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.Expressions23Test.equals_attributePathType",
+      "sources": [
+        {
+          "path": "test/data/ili23/expressions/equals_attributePathType.ili",
+          "sha256": "99982c24f0cceb53786f6cafb841819d972a96e1d33ce3b90aaed5c8ebffd23c"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\n\nMODEL ModelA AT \"http://www.interlis.ch/ili2c/tests/\" VERSION \"1\" =\n\n\n  TOPIC TopicA = \n  \t\n    CLASS ClassA =\n      attr1 : ATTRIBUTE;\n      attr2 : TEXT;\n      MANDATORY CONSTRAINT attr1==>>attr2;\n    END ClassA;\n\n  END TopicA;\n\nEND ModelA.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/equals_attributePathType.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/equals_attributePathType.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/expressions/equals_attributePathType.ili>\nInfo: ...compiler run done 2026-10-21 14:17:11\n"
+          }
+        }
+      }
+    },
+    {
+      "testId": "ili23.InterlisConversion23Test.iliconversion_ili2GenerationOfAttrPathType",
+      "sources": [
+        {
+          "path": "test/data/ili23/iliconversion/iliconversion_ili2GenerationOfAttrPathType.ili",
+          "sha256": "67d26e206b61b49dc7c10c4955fed5fcf704220028fce39704b02e0ba0f5ad75"
+        }
+      ],
+      "sourceText": "INTERLIS 2.3;\n\nCONTRACTED MODEL model \n\tAT \"http://www.interlis.ch/ili2c/tests/\" \n\tVERSION \"1\" =\n\t\n\tFUNCTION func( Objects : OBJECTS OF ANYCLASS; attrPath : ATTRIBUTE OF @ Objects) : BOOLEAN;\n\n\tTOPIC topic =\n\n\t\tCLASS a =\n\t\t\tobjClass : CLASS;\n\t\t\tattrPath : ATTRIBUTE OF objClass;\n\t\t\tattrPath2 : ATTRIBUTE RESTRICTION ( TEXT*10 );\n\t\tEND a;\n\n\tEND topic;\n\nEND model.\n",
+      "results": {
+        "original": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/iliconversion/iliconversion_ili2GenerationOfAttrPathType.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/iliconversion/iliconversion_ili2GenerationOfAttrPathType.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/iliconversion/iliconversion_ili2GenerationOfAttrPathType.ili>\nInfo: ...compiler run done 2026-10-21 14:17:11\n"
+          }
+        }
+      }
+    }
+  ]
+}

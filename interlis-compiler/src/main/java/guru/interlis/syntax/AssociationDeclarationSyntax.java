@@ -1,6 +1,7 @@
 package guru.interlis.syntax;
 
 import guru.interlis.model.Modifier;
+import guru.interlis.model.Cardinality;
 import guru.interlis.source.SourceRange;
 
 import java.util.ArrayList;
@@ -22,7 +23,8 @@ import java.util.Set;
  * @param roles role identifiers
  * @param attributes attribute identifiers
  * @param constraints the {@code constraints} component
- * @param oidRule optional raw OID rule
+ * @param cardinality declared association-instance multiplicity; absent means exactly one
+ * @param oidRules declared OID rules in source order
  */
 public record AssociationDeclarationSyntax(SyntaxNodeId id, SourceRange range, String name,
                                            Optional<SourceRange> nameRange,
@@ -32,11 +34,13 @@ public record AssociationDeclarationSyntax(SyntaxNodeId id, SourceRange range, S
                                            List<RoleDeclarationSyntax> roles,
                                            List<AttributeDeclarationSyntax> attributes,
                                            List<ConstraintDeclarationSyntax> constraints,
-                                           Optional<String> oidRule)
+                                           List<OidRuleSyntax> oidRules, Optional<Cardinality> cardinality, Optional<ViewDeclarationSyntax.Base> derivedFrom)
         implements DeclarationSyntax {
     /** Creates a validated instance. */
     public AssociationDeclarationSyntax {
         Objects.requireNonNull(id, "id");
+        Objects.requireNonNull(derivedFrom);
+        Objects.requireNonNull(cardinality, "cardinality");
         Objects.requireNonNull(range, "range");
         Objects.requireNonNull(name, "name");
         nameRange = Objects.requireNonNull(nameRange, "nameRange");
@@ -46,7 +50,7 @@ public record AssociationDeclarationSyntax(SyntaxNodeId id, SourceRange range, S
         roles = List.copyOf(Objects.requireNonNull(roles, "roles"));
         attributes = List.copyOf(Objects.requireNonNull(attributes, "attributes"));
         constraints = List.copyOf(Objects.requireNonNull(constraints, "constraints"));
-        oidRule = Objects.requireNonNull(oidRule, "oidRule");
+        oidRules = List.copyOf(Objects.requireNonNull(oidRules, "oidRules"));
     }
 
     @Override
@@ -58,6 +62,8 @@ public record AssociationDeclarationSyntax(SyntaxNodeId id, SourceRange range, S
     public List<SyntaxNode> children() {
         List<SyntaxNode> result = new ArrayList<>();
         baseAssociation.ifPresent(result::add);
+        derivedFrom.ifPresent(b -> { result.add(b.alias()); result.add(b.target()); });
+        oidRules.forEach(rule -> rule.domain().ifPresent(result::add));
         result.addAll(roles);
         result.addAll(attributes);
         result.addAll(constraints);

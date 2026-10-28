@@ -39,7 +39,19 @@ tasks.named('check') {
 }
 
 generateGrammarSource {
+    // Lexer and parser share one token vocabulary: a change to either grammar
+    // requires the complete source set, rather than Gradle's changed-file subset.
+    inputs.files(sourceSets.main.antlr).withPropertyName('completeGrammarInputs')
+            .withPathSensitivity(org.gradle.api.tasks.PathSensitivity.RELATIVE)
+    // ANTLR must not read the previous generated vocabulary before rewriting it.
+    doFirst { project.delete(outputDirectory) }
     arguments += ['-package', 'guru.interlis.compiler.internal.antlr', '-visitor', '-no-listener']
 }
 
 sourceSets.main.java.srcDir layout.buildDirectory.dir('generated-src/antlr/main')
+
+tasks.named('processResources') {
+    from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt')) {
+        into 'META-INF/licenses'
+    }
+}

@@ -11,15 +11,17 @@ import java.util.Objects;
  * @param id stable identifier
  * @param range source range
  * @param target target symbol
+ * @param restrictions ordered restriction names, immutable and null-free
  * @param external external-role marker
  */
 public record ReferenceTypeSyntax(SyntaxNodeId id, SourceRange range, NameSyntax target,
-                                  boolean external) implements TypeSyntax {
+                                  List<NameSyntax> restrictions, boolean external) implements TypeSyntax {
     /** Creates a validated instance. */
     public ReferenceTypeSyntax {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(range, "range");
         Objects.requireNonNull(target, "target");
+        restrictions = List.copyOf(restrictions);
     }
 
     @Override
@@ -29,6 +31,8 @@ public record ReferenceTypeSyntax(SyntaxNodeId id, SourceRange range, NameSyntax
 
     @Override
     public List<SyntaxNode> children() {
-        return List.of(target);
+        List<SyntaxNode> children = new java.util.ArrayList<>();
+        children.add(target); children.addAll(restrictions);
+        return List.copyOf(children);
     }
 }

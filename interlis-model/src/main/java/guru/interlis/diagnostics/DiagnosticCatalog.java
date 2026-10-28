@@ -137,6 +137,9 @@ public final class DiagnosticCatalog {
                 Set.of(Phase.PARSING, Phase.SEMANTIC_CHECKING), "diagnostic.syntax.versionConstruct",
                 DiagnosticDefinition.PositionRule.REQUIRED,
                 arg("construct", ArgumentKind.TEXT), arg("language", ArgumentKind.TEXT)));
+        list.add(def("ILI-SYN-0007", "redundant repeated property", Severity.WARNING,
+                Set.of(Phase.PARSING), "diagnostic.syntax.redundantProperty",
+                DiagnosticDefinition.PositionRule.REQUIRED, arg("property", ArgumentKind.TOKEN)));
         list.add(def("ILI-RES-0001", "requested or imported model is missing", Severity.ERROR,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.missing",
                 DiagnosticDefinition.PositionRule.OPTIONAL,

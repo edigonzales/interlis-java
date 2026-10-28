@@ -11,7 +11,7 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 CLI = ROOT / "interlis-cli" / "build" / "install" / "interlis-cli" / "bin" / "interlis-cli"
-EVIDENCE = ROOT / "docs" / "evidence" / "p3"
+EVIDENCE = ROOT / "build" / "reports" / "sdk"
 TESTDATA = ROOT / "testdata" / "models"
 
 
@@ -31,6 +31,7 @@ def run(arguments: list[str]) -> dict:
 def main() -> int:
     if not CLI.exists():
         raise SystemExit(f"installed CLI missing: {CLI}")
+    EVIDENCE.mkdir(parents=True, exist_ok=True)
     results = []
     version = run(["version"])
     assert version["exitCode"] == 0, version
@@ -41,7 +42,7 @@ def main() -> int:
     version_json = run(["version", "--json"])
     assert version_json["exitCode"] == 0, version_json
     parsed_version = json.loads(version_json["stdout"])
-    assert parsed_version["apiVersion"] == "0.1"
+    assert parsed_version["apiVersion"] == "0.2"
     assert parsed_version["protocol"] == "interlis.compiler/1.0"
     results.append(version_json)
     (EVIDENCE / "version-manifest.json").write_text(
@@ -51,7 +52,7 @@ def main() -> int:
     parsed_capabilities = json.loads(capabilities["stdout"])
     assert capabilities["exitCode"] == 0
     assert parsed_capabilities["protocol"] == "interlis.compiler/1.0"
-    assert parsed_capabilities["apiVersion"] == "0.1"
+    assert parsed_capabilities["apiVersion"] == "0.2"
     results.append(capabilities)
 
     positive = run(["check", str(TESTDATA / "base24.ili"), str(TESTDATA / "survey24.ili")])

@@ -33,7 +33,8 @@ final class InterlisWorkspaceService implements WorkspaceService {
     static final String COMPILE_COMMAND = "interlis.compile";
     private final Workspace workspace;
     private final InterlisTextDocumentService documents;
-    private final ExecutorService compileExecutor = Executors.newCachedThreadPool(runnable -> {
+    private final ExecutorService compileExecutor = new java.util.concurrent.ThreadPoolExecutor(1, 1, 0,
+            java.util.concurrent.TimeUnit.MILLISECONDS, new java.util.concurrent.ArrayBlockingQueue<>(16), runnable -> {
         Thread thread = new Thread(runnable, "interlis-lsp-compile");
         thread.setDaemon(true);
         return thread;
@@ -57,6 +58,7 @@ final class InterlisWorkspaceService implements WorkspaceService {
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
         for (var event : params.getChanges()) {
             if (event.getType() == FileChangeType.Deleted) {
+                documents.deleteExternal(event.getUri());
                 continue;
             }
             documents.reloadExternal(event.getUri());
@@ -108,6 +110,7 @@ final class InterlisWorkspaceService implements WorkspaceService {
 
     private CompletableFuture<Object> compileWorkspace() {
         CompletableFuture<Object> result = new CompletableFuture<>();
+        try {
         compileExecutor.execute(() -> {
             WorkspaceState state = workspace.state();
             List<ModelSelector> roots = state.sourceRevisions().keySet().stream()
@@ -147,6 +150,12 @@ final class InterlisWorkspaceService implements WorkspaceService {
                 result.completeExceptionally(failure);
             }
         });
+        } catch (java.util.concurrent.RejectedExecutionException full) {
+            result.completeExceptionally(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
+                    new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
+                            org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.RequestFailed,
+                            "compiler queue is full or closed", null)));
+        }
         return result;
     }
 

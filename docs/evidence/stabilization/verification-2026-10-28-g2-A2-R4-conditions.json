@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "R4 paragraph-cluster condition worklist",
+  "acceptance": "PARTIAL_LINKED_NOT_ACCEPTED",
+  "atomization": "PARAGRAPH_CLUSTER",
+  "conditions": 777,
+  "compilerConditions": 369,
+  "plannedCases": 1476,
+  "counts": {
+    "2.3": {
+      "conditions": 321,
+      "compilerConditions": 259,
+      "plannedCases": 1036
+    },
+    "2.4": {
+      "conditions": 456,
+      "compilerConditions": 362,
+      "plannedCases": 1448
+    }
+  },
+  "conditionsFile": "docs/evidence/stabilization/g2-norm-conditions.json",
+  "conditionsSha256": "c148ddf364826a453d833b4b14bb8bfc0ff74d23e65b6db13d4a4f183adc318a",
+  "inventory": "docs/evidence/stabilization/g2-norm-inventory.json",
+  "inventorySha256": "966e43f65051d4d03c47f7d6e5c77d346978b86c76298701a1fe7cf825972dbb",
+  "crosswalk": "docs/evidence/stabilization/g2-norm-crosswalk.json",
+  "crosswalkSha256": "e8002f834123ae47be83f8a7c52722eea918825c577b2129927f2321e1e7d2bb",
+  "matrix": "g2-rule-matrix.json",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "tools": {
+    "g2_norm_conditions.py": "9a4ed0e4bbd4e2ae03b3703d17d3bea78df051c8e52ee6d97d88ae1b6039d598",
+    "test_g2_norm_conditions.py": "448f460c6773d4cae4cda7a2465e4029b172e7e1d56bf4a77289e9af74020351"
+  },
+  "commands": [
+    "build/g2-venv/bin/python tools/reference/g2_norm_conditions.py --inventory docs/evidence/stabilization/g2-norm-inventory.json --crosswalk docs/evidence/stabilization/g2-norm-crosswalk.json --out build/reports/g2/A2/R4/norm-conditions.json",
+    "./gradlew g2EvidenceTest --rerun-tasks --console=plain"
+  ],
+  "logs": {
+    "conditions": "build/reports/g2/A2/R4/norm-conditions.log",
+    "conditionsSha256": "056ec41ad7ad6cf515d75afbca376ed22983dd180d57b62d64b377c91210ef74",
+    "evidence": "build/reports/g2/A2/R4/g2-evidence-test-conditions.log",
+    "evidenceSha256": "5753ca0deee97b186114c367d343db971a2fb218d48487748f4f36f8fb1b9481"
+  },
+  "technicalTests": 46,
+  "compilerTests": 614,
+  "compilerFailures": 0,
+  "compilerErrors": 0,
+  "compilerSkipped": 0,
+  "acceptanceLimits": [
+    "All case kinds are PLANNED; no condition has executed evidence.",
+    "No implementation/evidence assessment or independent review is claimed.",
+    "No new normative expectation or user decision."
+  ],
+  "remaining": [
+    "Implement and execute the 2484 planned cases, starting with lexical and model-header conditions.",
+    "Assign concrete matrix rules/requirements and implementation locations to each condition.",
+    "Resolve the 18 normative exceptions and open user decisions.",
+    "Complete A2 overall review, A3 and phase A review."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "linkedConditions": 19,
+  "withCandidateConditions": 614,
+  "withoutCandidateConditions": 163,
+  "compilerWithoutCandidates": 0,
+  "explanatoryFragments": 7,
+  "predefinedConditions": 245
+}

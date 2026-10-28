@@ -1,0 +1,205 @@
+{
+  "schemaVersion": "1.0",
+  "step": "A2",
+  "subreview": "A2-R2",
+  "reviewedAt": "2026-10-27T12:38:07Z",
+  "verdict": "NACHARBEIT",
+  "r2Disposition": {
+    "status": "OPEN",
+    "reason": "The appendix/function and lexical inventories are substantially complete, but the 21 special value/type rows are not versioned or linked to a norm/rule, and one planned assertion is false for the actual factory: BuiltinFunctions.Value.OBJECT is unused by every current Signature although the catalogue asks to inspect explicit signatures using OBJECT.",
+    "requiredWork": [
+      "Give every specialValuesAndTypes row an explicit applicable language/version scope and a concrete norm/rule linkage (or an explicit linkage to the already catalogued function declaration that supplies it); validate and pin those fields in g2_predefined.py and its tests.",
+      "Correct BUILTIN_VALUE:OBJECT without choosing a norm outcome: record that the current source has zero signature uses, connect it to BUILTIN_AREAS2_AREAS3_NORM_PROFILE, and make its planned assertions conditional on the eventual user decision.",
+      "For PREDEFINED:INTERLIS.areAreas2, keep both exact 2.4 sources visible at the row/link level: chapter 3.14 uses OBJECTS and the current factory uses OBJECTS, while appendix A uses OBJECT. Do not turn either into an accepted expectation before the user decision."
+    ]
+  },
+  "scope": "Independent read-only review of source/norm/version inventory completeness and planned acceptance specificity. It does not assess language implementation, execute clause assertions, approve norm conflicts, or close A2-R3/A2-R4.",
+  "reviewModelConfiguration": {
+    "requested": "gpt-5.6-sol",
+    "evidence": "The explicit model configuration was supplied and accepted by the parent orchestration. No identity claim is inferred from model self-report."
+  },
+  "packet": {
+    "manifest": "build/reports/g2/A2/r2-packet/manifest.json",
+    "sha256": "ec594de117e26ce037ffa5b726c2ac81545648a594f42ef67d55e11431a3f3a8",
+    "hashVerified": true,
+    "patchSha256": "57d9a80a0540aa3dc0fc701f00f23cf156b441ba91605691b27effd0296824bc",
+    "beforeManifestSha256": "3d94ec415deff39f07dbb77a83dadc47a9a5a2560bf27dcb490045a27ebf0ac1",
+    "beforeSourceDigest": "47e6fff56f19b77fcc30d13b344de5ec6f4d42bf62334b93f8ae27518da609bd",
+    "beforeFiles": 1099,
+    "afterManifestSha256": "f0a7ec5d43c1d9d1c6c16c56f5027be12a0dfdec5c4f88f717f48ed6bf578f96",
+    "afterSourceDigest": "2ec0ae2fc12a40688a2fa6ca4a14eb08028006c84dfedd91900890900989802b",
+    "afterFiles": 1105,
+    "changedSources": 13,
+    "ignoredGeneratedRemovals": [],
+    "archivesAndManifestsMatch": true,
+    "patchReproducesFrozenAfterSources": true,
+    "normHashesMatch": true
+  },
+  "verifiedInventory": {
+    "appendixDeclarationRows": 130,
+    "families": {
+      "MODEL": 1,
+      "LINE_FORM": 2,
+      "UNIT": 26,
+      "DOMAIN": 16,
+      "ENUM_VALUE": 10,
+      "CLASS": 8,
+      "STRUCTURE": 12,
+      "TOPIC": 1,
+      "METADATA_BASKET": 1,
+      "METAOBJECT": 2,
+      "ATTRIBUTE": 21,
+      "PARAMETER": 5,
+      "CONSTRAINT": 4,
+      "FUNCTION": 21
+    },
+    "applicableDeclarationRows": {
+      "2.3": 121,
+      "2.4": 129
+    },
+    "functions": {
+      "2.3ManualUnion": 13,
+      "2.4ManualUnion": 21,
+      "factory": 21,
+      "chapterOnly2.4": [
+        "areAreasWithoutGaps",
+        "areAreasWithoutGaps2"
+      ],
+      "appendixOnly2.4": [
+        "areAreas3"
+      ],
+      "setsMatch": true
+    },
+    "reservedWords": {
+      "2.3": 154,
+      "2.4": 168,
+      "exactTableDifferences": {
+        "2.3": {
+          "missingInSource": [],
+          "additionalInSource": []
+        },
+        "2.4": {
+          "missingInSource": [],
+          "additionalInSource": []
+        }
+      }
+    },
+    "features": 13,
+    "contextualTokens": 11,
+    "classificationRules": 4,
+    "profileCallSites": 19,
+    "predefinedOriginProducers": 13,
+    "catalogueReproducedByteIdentically": true,
+    "sourceInventoryReproducedByteIdentically": true,
+    "canonicalVsContextInspectionDistinctionPreserved": true,
+    "ordinaryBindingGapsRemainAssignedTo": "B1"
+  },
+  "findings": [
+    {
+      "id": "A2-R2-SPECIAL-SCOPE",
+      "severity": "BLOCKING",
+      "status": "OPEN",
+      "title": "The 21 special values/type variants are not versioned norm/rule inventory rows",
+      "evidence": "Every specialValuesAndTypes row has step, sourceAnchors and generic acceptance, but none has languages/version or norm/rule linkage. g2_predefined.inventory validates neither field. This does not meet the previously reviewed R2 closure criterion 'versionsbezogen mit Quelle, Regel, Schritt und konkreter Abnahme'.",
+      "impact": "Wrong-version or missing norm-family mappings for these rows cannot be detected, and internal descriptor variants cannot be traced to the exact standard-function declarations that justify them."
+    },
+    {
+      "id": "A2-R2-OBJECT-ASSERTION",
+      "severity": "BLOCKING",
+      "status": "OPEN",
+      "title": "The OBJECT descriptor's planned acceptance contradicts the actual signature factory",
+      "evidence": "BuiltinFunctions.Value.OBJECT has zero uses in SIGNATURES; all current areAreas2/areAreas3 text variants use OBJECTS. Nevertheless BUILTIN_VALUE:OBJECT says 'Inspect explicit signatures using OBJECT' and asks for a wrong-family OBJECT-formal test. Appendix A 2.4 has OBJECT for areAreas2, chapter 3.14 and the actual factory have OBJECTS; the separate conflict evidence and pendingUserDecision correctly avoid a norm decision, but this special row does not express that conditional state.",
+      "impact": "The planned assertion is currently unexecutable and could silently turn the unresolved norm conflict into an assumed expectation."
+    },
+    {
+      "id": "A2-R3",
+      "severity": "BLOCKING",
+      "status": "OPEN",
+      "title": "Rule-specific contract/case/assertion inventory remains open",
+      "evidence": "Out of scope for R2 and explicitly retained by the packet."
+    },
+    {
+      "id": "A2-R4",
+      "severity": "BLOCKING",
+      "status": "OPEN",
+      "title": "Whole-paragraph, appendix, unnumbered-contract and exception audit remains open",
+      "evidence": "Out of scope for R2 and explicitly retained by the packet."
+    }
+  ],
+  "unchangedControls": {
+    "normativeExpectationsSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+    "conformanceBaselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+    "a1EvidenceProfileSha256": "a284801931c83a1befc2fa858b29a17656a6d842505c0db9cb8e833bd71b3289",
+    "buildGradleSha256": "9c13d2e233405bb679351e09fa83b12463f5f1a0c020a1a52a6b729e54df3ffa",
+    "gradlePropertiesSha256": "49b9e59b3c515a83d6d352a3e44e89f671a2dbe064e1248f4964f93e4e887b3f",
+    "newNormativeDecisions": 0,
+    "newXfailsOrExceptions": 0,
+    "productionOrPublicApiChanges": []
+  },
+  "counterprobe": {
+    "artifact": "build/reports/g2/A2/r2-review/counterprobe.json",
+    "script": "build/reports/g2/A2/r2-review/counterprobe.py",
+    "scriptSha256": "f14ae1625ce6a5fe1b1623362cbee91e265175ae6c98013c2582cfb24b48bb14",
+    "status": "PASS",
+    "mutationsDetected": [
+      "missing chapter-only function",
+      "wrong version mapping",
+      "missing contextual token branch"
+    ],
+    "reviewFindingsDetected": [
+      "all special rows lack version/norm scope",
+      "OBJECT descriptor has no current signature use despite its planned assertion"
+    ]
+  },
+  "commands": [
+    {
+      "command": "g2_evidence.py verify --snapshot .../r2-input-v2 --sources",
+      "cwd": "build/reports/g2/A2/r2-review/after",
+      "result": "PASS after initializing an isolated Git index",
+      "observation": "Source digest 2ec0ae2fc12a40688a2fa6ca4a14eb08028006c84dfedd91900890900989802b. The first attempt inherited the parent repository and therefore could not enumerate the nested extraction; no source mismatch was found."
+    },
+    {
+      "command": "python3 -m unittest discover -s tools/reference -p 'test_g2_*.py' -v",
+      "cwd": "build/reports/g2/A2/r2-review/after",
+      "result": "PASS",
+      "observation": "26 tests passed with Python 3.12.14."
+    },
+    {
+      "command": "JAVA_HOME=...25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "cwd": "build/reports/g2/A2/r2-review/after",
+      "result": "PASS",
+      "observation": "26 tests; BUILD SUCCESSFUL in 2s."
+    },
+    {
+      "command": "author_g2_predefined.py --out build/reports/g2/A2/r2-review/catalogue-reproduced.json",
+      "cwd": "build/reports/g2/A2/r2-review/after",
+      "result": "PASS",
+      "observation": "Python 3.12.14 / pypdf 6.10.0; byte-identical SHA-256 a0781dfa9905ab78fb9f5b7f38a12a65ce62652ce987103f5d02f774b3e9c24c."
+    },
+    {
+      "command": "g2_inventory.py --norm23 build/norms/ili23.pdf --norm24 build/norms/ili24.pdf --out build/reports/g2/A2/r2-review/source-scan.json",
+      "cwd": "build/reports/g2/A2/r2-review/after",
+      "result": "PASS",
+      "observation": "Exact excerpts/source anchors passed; byte-identical SHA-256 d3ab518a5de0e14c8237a1208f26432fe3e53badec0d26383face522278cd1b8."
+    },
+    {
+      "command": "python3 counterprobe.py",
+      "cwd": "build/reports/g2/A2/r2-review",
+      "result": "PASS",
+      "observation": "Manual/function/factory/context comparison and three mutations passed; two blocking inventory findings detected."
+    },
+    {
+      "command": "independent manifest/hash/mode/patch audit",
+      "cwd": "build/reports/g2/A2/r2-review",
+      "result": "PASS",
+      "observation": "1099 before and 1105 after files; exactly 13 changes; patch reconstruction equals the after manifest; ignoredGeneratedRemovals empty."
+    }
+  ],
+  "notExecuted": [
+    "No full compiler/portable/browser/SDK phase run: the packet changes no production semantics or public API and A2 remains open.",
+    "No clause-specific semantic assertions: these belong to A2-R3 and later B1-B3/E2 acceptance.",
+    "No approval of BUILTIN_AREAS2_AREAS3_NORM_PROFILE or any other normative exception."
+  ],
+  "postPacketObservation": "The later build/reports/g2/A2/r2/binding-observations/report.json was read only as corroboration of the already documented B1 boundary. It is outside the frozen packet and is not used to certify R2.",
+  "nextStep": "Repair the two R2 inventory defects and request another focused R2 review. A2 still requires R3 and R4 plus a fresh whole-A2 review before A3."
+}

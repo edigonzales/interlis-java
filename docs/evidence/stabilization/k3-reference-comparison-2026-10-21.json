@@ -1,0 +1,688 @@
+{
+  "referenceVersion": "5.6.9",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "cases": [
+    {
+      "testId": "ili24.GenericValueRanges24Test.contextDomainNotGeneric",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextDomainNotGeneric_fail.ili",
+          "sha256": "d3da4d35f2c9f6c984bb435d3e6026e4c35fd0438f4c2e10259d602e5e7ca5d3"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextDomainNotGeneric_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-92a4b4bb84f4049522e51bab], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextDomainNotGeneric_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-92a4b4bb84f4049522e51bab\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextDomainNotGeneric_fail.ili\",\"revision\":\"1\",\"startOffset\":191,\"endOffset\":229},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"default\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"CONTEXT domain must be GENERIC coordinates/CONTEXT_GENERIC\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextDomainNotGeneric_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextDomainNotGeneric_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextDomainNotGeneric_fail.ili:19:The domain CoordA of context default must be generic.\n  The domain CoordA of context default must be generic.\n...compiler run failed 2026-10-21 14:41:36\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.contextInDifferentModel",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInDifferentModel.ili",
+          "sha256": "b96e0f4f73db3197e19762005b1aa8d09e50458d2357df141f8ad4aa46ba070e"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInDifferentModel.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInDifferentModel.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInDifferentModel.ili>\nInfo: ...compiler run done 2026-10-21 14:41:37\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.contextInSameModel",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInSameModel.ili",
+          "sha256": "a65b39074ff1e8b16333034a1e136c65849743e57d79fab073c32187956a63e3"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInSameModel.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInSameModel.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/contextInSameModel.ili>\nInfo: ...compiler run done 2026-10-21 14:41:39\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.deferredDomainNoContext",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili",
+          "sha256": "19738dadb0d0acb6d8f10ce2022e3991b0f0e575960d6c261ee7cf73797e4c85"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-263a5e198dba27c387602127, diag-5d18e0f398be85407c437d1b], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-263a5e198dba27c387602127\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili\",\"revision\":\"1\",\"startOffset\":143,\"endOffset\":259},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicA\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"DEFERRED GENERICS domain has no CONTEXT/GENERIC_CONTEXT_MISSING\"}]},{\"id\":\"diag-5d18e0f398be85407c437d1b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili\",\"revision\":\"1\",\"startOffset\":143,\"endOffset\":259},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicA\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"generic domain is used without an effective CONTEXT/GENERIC_CONTEXT_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili:8:ModelA.TopicA has no accessible context definition for deferred generic Coord2.\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredDomainNoContext_fail.ili:8:ModelA.TopicA is missing a context definition for generic DOMAIN ModelA.Coord2.\n...compiler run failed 2026-10-21 14:41:40\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.deferredMissing",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredMissing_fail.ili",
+          "sha256": "b14fc246097eb57ced56f13e78fff6706793c686d911ecffa3882559abb62cb5"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredMissing_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-399b5c3e91bf39cfcd0a2f61], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredMissing_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-399b5c3e91bf39cfcd0a2f61\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredMissing_fail.ili\",\"revision\":\"1\",\"startOffset\":514,\"endOffset\":641},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicA\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"multiple CONTEXT alternatives require DEFERRED GENERICS/GENERIC_DEFERRED_REQUIRED\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredMissing_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredMissing_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredMissing_fail.ili:23:ModelA.TopicA is missing a deferred generic definition for Coord2.\n...compiler run failed 2026-10-21 14:41:42\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.deferredUnusedType",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredUnusedType_fail.ili",
+          "sha256": "be278f67f8cd61fc33b22f8b19a713c4cd00c11c9726b4a515a926a8ae9aa42a"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredUnusedType_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f50a429944fb1ae9e03cf097], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredUnusedType_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f50a429944fb1ae9e03cf097\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredUnusedType_fail.ili\",\"revision\":\"1\",\"startOffset\":514,\"endOffset\":689},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicA\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"DEFERRED GENERICS domain is unused/GENERIC_DEFERRED_UNUSED\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredUnusedType_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredUnusedType_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/deferredUnusedType_fail.ili:23:ModelA.TopicA has an unused deferred generic definition for Coord2.\n...compiler run failed 2026-10-21 14:41:43\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.genericInStructAttr",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr.ili",
+          "sha256": "4d65383f62f5fbd793f10365e96a7fad45e952f36cd00eb7f33a35cda5e7fef3"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr.ili>\nInfo: ...compiler run done 2026-10-21 14:41:45\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.genericInStructAttr_MissignDeferred_Fail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr_MissignDeferred_Fail.ili",
+          "sha256": "0ebf9f771348a601253bfa792a9e96daf39df27396ac3acbc2147f545f6bf862"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr_MissignDeferred_Fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ab2a4563695acd8ecd3595fb], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr_MissignDeferred_Fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ab2a4563695acd8ecd3595fb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr_MissignDeferred_Fail.ili\",\"revision\":\"1\",\"startOffset\":977,\"endOffset\":1120},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TopicA\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"multiple CONTEXT alternatives require DEFERRED GENERICS/GENERIC_DEFERRED_REQUIRED\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr_MissignDeferred_Fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr_MissignDeferred_Fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/GenericInStructAttr_MissignDeferred_Fail.ili:45:ModelD.TopicA is missing a deferred generic definition for Coord2.\n...compiler run failed 2026-10-21 14:41:46\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.invalidDeferredDomain",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili",
+          "sha256": "a366c8c17da11a899a632975618a48f41e35cb88a289a3230d90175f35c18ace"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6534317ef08f9eb97ea689fe], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6534317ef08f9eb97ea689fe\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili\",\"revision\":\"1\",\"startOffset\":123,\"endOffset\":139},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"InexistentDomain\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili:6:There is no domain \"InexistentDomain\" in MODEL ModelA.\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili:5:ModelA.TopicA has no accessible context definition for deferred generic InexistentDomain.\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDeferredDomain_fail.ili:5:ModelA.TopicA has an unused deferred generic definition for InexistentDomain.\n...compiler run failed 2026-10-21 14:41:47\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.invalidDimensions",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDimension_fail.ili",
+          "sha256": "cac6a9eba91e27e872418032a35beaaba530533070d9eecc9c8c46d5c99175e7"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDimension_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-18e0a269670e159e220bd964], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDimension_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-18e0a269670e159e220bd964\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDimension_fail.ili\",\"revision\":\"1\",\"startOffset\":208,\"endOffset\":246},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"default\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"CONTEXT target dimensions differ/GENERIC_DIMENSIONS\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDimension_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDimension_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidDimension_fail.ili:Expected coord type to have 3 dimensions but it has 2 dimensions.\n...compiler run failed 2026-10-21 14:41:49\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.invalidRange",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidRange_fail.ili",
+          "sha256": "2c03fba3fcab57697456682b9cf29b3ddc123f2f9dc12feadbc20c10f9a2bacb"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidRange_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-18202c935bf23948159f0d3f], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidRange_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-18202c935bf23948159f0d3f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidRange_fail.ili\",\"revision\":\"1\",\"startOffset\":200,\"endOffset\":238},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"default\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"CONTEXT target must refine the generic coordinates/GENERIC_RANGE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidRange_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidRange_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/invalidRange_fail.ili:When rounded to 0 digits after the dot, the maximum must not exceed the inherited value. However, 200 gets rounded to 200, which is greater than 100.\n...compiler run failed 2026-10-21 14:41:50\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.missingContext",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/MissingContext24.ili",
+          "sha256": "a0e51ab9054888d9dda04b861a84e6b1f6f30157923c00e3db454726b24d0581"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/MissingContext24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-86b7dad68f47b1296607bf2a], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/MissingContext24.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-86b7dad68f47b1296607bf2a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/MissingContext24.ili\",\"revision\":\"1\",\"startOffset\":149,\"endOffset\":247},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"TestA\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"generic domain is used without an effective CONTEXT/GENERIC_CONTEXT_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/MissingContext24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/MissingContext24.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/MissingContext24.ili:7:ModelA.TestA is missing a context definition for generic DOMAIN ModelA.Coord.\n...compiler run failed 2026-10-21 14:41:51\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContexts",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContexts.ili",
+          "sha256": "0cf2b43862dcf04a750eb81be5c869092161333cf6e15dec87ca33582898f977"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContexts.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContexts.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContexts.ili>\nInfo: ...compiler run done 2026-10-21 14:41:53\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContextsB",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsB.ili",
+          "sha256": "918314f80292cf7d68d781fb0b094c3a1cf11817438b152af0db84b4fec047d9"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsB.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsB.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsB.ili>\nInfo: ...compiler run done 2026-10-21 14:41:54\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContextsExtending",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsExtending.ili",
+          "sha256": "3e219d6e82f945c2ba4db1febfc1775d808c4859704cf9f36a6bd898edbf7d00"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsExtending.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsExtending.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsExtending.ili>\nInfo: ...compiler run done 2026-10-21 14:41:55\n"
+        }
+      }
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContextsNotExtending",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsNotExtending_fail.ili",
+          "sha256": "2fd1c6b8d7586ca40e9b2daa1b36394beb982a45a6affe71a01022d367176dee"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsNotExtending_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9c137fecef2c7caaede0e741], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsNotExtending_fail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9c137fecef2c7caaede0e741\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsNotExtending_fail.ili\",\"revision\":\"1\",\"startOffset\":893,\"endOffset\":947},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"default\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"CONTEXT target must extend an existing alternative/GENERIC_CONTEXT_EXTENDS\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsNotExtending_fail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsNotExtending_fail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili24/genericValueRanges/multipleContextsNotExtending_fail.ili:48:The domain Coord2_SmallArea_CHLV95 must match or extend a domain of the existing context for generic type Coord2.\n  The domain Coord2_SmallArea_CHLV95 must match or extend a domain of the existing context for generic type Coord2.\n...compiler run failed 2026-10-21 14:41:56\n"
+        }
+      }
+    },
+    {
+      "testId": "k3.mixed-axis",
+      "sourceText": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN G (GENERIC) = COORD NUMERIC, 0..100; A = COORD 200..300,0..100; CONTEXT c = G = A; TOPIC T = CLASS C = p: G; END C; END T; END M.",
+      "sha256": "f5c381b94536235852030a67a4128d723e45a5900a270a0c5128e2669d8b0115",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "/tmp/mixed-axis.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/tmp/mixed-axis.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </tmp/mixed-axis.ili>\nInfo: ...compiler run done 2026-10-21 14:43:06\n"
+        }
+      }
+    },
+    {
+      "testId": "k3.mixed-axis-widened",
+      "sourceText": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN G (GENERIC) = COORD NUMERIC, 0..100; A = COORD 0..100,200..300; CONTEXT c = G = A; TOPIC T = CLASS C = p: G; END C; END T; END M.",
+      "sha256": "26edaa588d8f25a9d0718b9f9bd3d82a462a332dfcd619209c43a3160f133e9d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "/tmp/mixed-axis-widened.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d79d67c2b1d3a60d8d4ca681], requestedRoots=[BySource[source=SourceId[value=file:///tmp/mixed-axis-widened.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d79d67c2b1d3a60d8d4ca681\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///tmp/mixed-axis-widened.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":150},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"c\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"CONTEXT target must refine the generic coordinates/GENERIC_RANGE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/tmp/mixed-axis-widened.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </tmp/mixed-axis-widened.ili>\n/tmp/mixed-axis-widened.ili:When rounded to 0 digits after the dot, the maximum must not exceed the inherited value. However, 300 gets rounded to 300, which is greater than 100.\n...compiler run failed 2026-10-21 14:43:06\n"
+        }
+      }
+    },
+    {
+      "testId": "k3.mixed-axis-reversed",
+      "sourceText": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN G (GENERIC) = COORD 0..100, NUMERIC; A = COORD 0..100,200..300; CONTEXT c = G = A; TOPIC T = CLASS C = p: G; END C; END T; END M.",
+      "sha256": "5abdf018ff0d0dd3241121e5967622db29d59739b4b67b13de4de5139525d8b3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "/tmp/mixed-axis-reversed.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/tmp/mixed-axis-reversed.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </tmp/mixed-axis-reversed.ili>\nInfo: ...compiler run done 2026-10-21 14:43:06\n"
+        }
+      }
+    }
+  ]
+}

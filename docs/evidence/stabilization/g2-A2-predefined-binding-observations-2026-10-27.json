@@ -1,0 +1,582 @@
+{
+  "scope": "A2 source-binding observations only, no normative acceptance/rejection expectations; B1 owns any implementation follow-up",
+  "sourceSnapshot": "build/reports/g2/A2/r2-input-v2/manifest.json",
+  "sourceDigest": "2ec0ae2fc12a40688a2fa6ca4a14eb08028006c84dfedd91900890900989802b",
+  "artifactHashes": {
+    "interlis-cli/build/install/interlis-cli/lib/ST4-4.3.4.jar": "f927ac384c46d749f8b5ec68972a53aed21e00313509299616edb73bfa15ff33",
+    "interlis-cli/build/install/interlis-cli/lib/antlr-runtime-3.5.3.jar": "68bf9f5a33dfcb34033495c587e6236bef4e37aa6612919f5b1e843b90669fb9",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-4.13.2.jar": "e6f0b10d2ad206f338afe16867fc47148b6729d6e3a260ea28379b91f03a3657",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-cli/build/install/interlis-cli/lib/icu4j-72.1.jar": "3df572b240a68d13b5cd778ad2393e885d26411434cd8f098ac5987ea2e64ce3",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-cli-0.2.0-SNAPSHOT.jar": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "6ea3886f03069a44d67ade2ffa4851cd357821b528ab5115e9f036541dd4065e",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-model-0.2.0-SNAPSHOT.jar": "2cef8908c4ccefd4e7076c314f4b3df034b8c81bb95bc2838f5a777c22d4c46a",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "1aa61e30866e3ecf4bf16569771da154e151436b4a8ae83ae1cdbdf40decc382",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "c952e3ca1e8a4f8f735abb9b5d8ecffcf1e3f867acc5d1053a6a40fc638ec593",
+    "interlis-cli/build/install/interlis-cli/lib/org.abego.treelayout.core-1.0.3.jar": "fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326"
+  },
+  "cases": [
+    {
+      "name": "domain-NAME",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/domain-NAME-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=INTERLIS.NAME;END F.\n",
+      "sha256": "76f8bafce9e8333d0585addab019f829679c8c03c59116184f4b7e7545111d29",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/domain-NAME-2.3.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ada8ea7f282c85315993f2db, diag-d8ce07592e7d826b66eb1247], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d8ce07592e7d826b66eb1247\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-NAME-2.3.ili\",\"revision\":\"1\",\"startOffset\":78,\"endOffset\":86},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]},{\"id\":\"diag-ada8ea7f282c85315993f2db\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-NAME-2.3.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":91},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"NAME\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ANYOID','HALIGNMENT','UUIDOID','VALIGNMENT',Name\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ada8ea7f282c85315993f2db, diag-d8ce07592e7d826b66eb1247], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001",
+        "ILI-SYN-0002"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/domain-NAME-2.3.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/domain-NAME-2.3.ili>\nbuild/reports/g2/A2/r2/binding-observations/domain-NAME-2.3.ili:1:unexpected token: INTERLIS\n...compiler run failed 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "domain-URI",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/domain-URI-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=INTERLIS.URI;END F.\n",
+      "sha256": "7b8e494e8723a1eb12cbda9466b158e9045e138c10041daf9c895cb6b86f7201",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/domain-URI-2.3.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6bed4a25dbf0b34a502fc6a4, diag-cb12c5f3369f1abb58ddf270], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6bed4a25dbf0b34a502fc6a4\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-URI-2.3.ili\",\"revision\":\"1\",\"startOffset\":78,\"endOffset\":86},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]},{\"id\":\"diag-cb12c5f3369f1abb58ddf270\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-URI-2.3.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":90},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"URI\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ANYOID','HALIGNMENT','UUIDOID','VALIGNMENT',Name\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6bed4a25dbf0b34a502fc6a4, diag-cb12c5f3369f1abb58ddf270], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001",
+        "ILI-SYN-0002"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/domain-URI-2.3.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/domain-URI-2.3.ili>\nbuild/reports/g2/A2/r2/binding-observations/domain-URI-2.3.ili:1:unexpected token: INTERLIS\n...compiler run failed 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "domain-BOOLEAN",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=INTERLIS.BOOLEAN;END F.\n",
+      "sha256": "e1953d9f23c7b24f9a5f6ed3ce516101abd00040c17f57c6d55a2253c8ce4f3d",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.3.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-14915c2780c6aad608f5b05b, diag-e0826bc069fc755850c1d1d3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-14915c2780c6aad608f5b05b\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.3.ili\",\"revision\":\"1\",\"startOffset\":78,\"endOffset\":86},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]},{\"id\":\"diag-e0826bc069fc755850c1d1d3\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.3.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":94},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ANYOID','HALIGNMENT','UUIDOID','VALIGNMENT',Name\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-14915c2780c6aad608f5b05b, diag-e0826bc069fc755850c1d1d3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001",
+        "ILI-SYN-0002"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.3.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.3.ili>\nbuild/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.3.ili:1:unexpected token: INTERLIS\n...compiler run failed 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "structure-LineGeometry",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=geometry:INTERLIS.LineGeometry;END S;END F.\n",
+      "sha256": "c0b068c22a8c1c39a207062b0996039bb9793a8bc39152d7801ac4aea11e5eec",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.3.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b224a961fe1fab29260c9458], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b224a961fe1fab29260c9458\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.3.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":111},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.LineGeometry\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b224a961fe1fab29260c9458], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.3.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.3.ili>\nInfo: ...compiler run done 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "structure-SurfaceEdge",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=geometry:INTERLIS.SurfaceEdge;END S;END F.\n",
+      "sha256": "6ac3578926a2aa7754c7093f1b502adb6ccd6486b511cce296bf8dbace1f51f1",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.3.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-20bc43218660437eef59c256], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-20bc43218660437eef59c256\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.3.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":110},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.SurfaceEdge\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-20bc43218660437eef59c256], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.3.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.3.ili>\nInfo: ...compiler run done 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "structure-SurfaceBoundary",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=geometry:INTERLIS.SurfaceBoundary;END S;END F.\n",
+      "sha256": "a086fdf3d746a70c355d4bbdec3a28266ad2f1c1e8baa459a2d76538745cef1c",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.3.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-34d588c0f0c15dbdb8ff357b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-34d588c0f0c15dbdb8ff357b\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.3.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":114},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.SurfaceBoundary\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-34d588c0f0c15dbdb8ff357b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.3.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.3.ili>\nInfo: ...compiler run done 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "unit-operative-control",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0..10[INTERLIS.kg];END F.\n",
+      "sha256": "2aabb7c368a28fff38aa4ca13cf3797df4733a960c6ae6489feec0c99367fc94",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.3.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+      "stderr": "",
+      "status": "ok",
+      "diagnosticCodes": [],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.3.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.3.ili>\nInfo: ...compiler run done 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "segment-control",
+      "language": "2.3",
+      "source": "build/reports/g2/A2/r2/binding-observations/segment-control-2.3.ili",
+      "sourceText": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S(ABSTRACT) EXTENDS INTERLIS.LineSegment=END S;END F.\n",
+      "sha256": "d6158643407922f9855f17972192de713a59328c475c22ccc4ebad6e7a2db762",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/segment-control-2.3.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+      "stderr": "",
+      "status": "ok",
+      "diagnosticCodes": [],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/segment-control-2.3.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/segment-control-2.3.ili>\nInfo: ...compiler run done 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "domain-NAME",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/domain-NAME-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=INTERLIS.NAME;END F.\n",
+      "sha256": "089356688f3ca72bbdd4a211b7397e59d4c9131117c68384ebe87e3dfdc781c6",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/domain-NAME-2.4.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0e33625d95a5cb46a5ca8c1f, diag-2320e25334e0cd830bf43167], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0e33625d95a5cb46a5ca8c1f\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-NAME-2.4.ili\",\"revision\":\"1\",\"startOffset\":78,\"endOffset\":86},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]},{\"id\":\"diag-2320e25334e0cd830bf43167\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-NAME-2.4.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":91},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"NAME\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ANYOID','HALIGNMENT','UUIDOID','VALIGNMENT',Name\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0e33625d95a5cb46a5ca8c1f, diag-2320e25334e0cd830bf43167], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001",
+        "ILI-SYN-0002"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/domain-NAME-2.4.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/domain-NAME-2.4.ili>\nbuild/reports/g2/A2/r2/binding-observations/domain-NAME-2.4.ili:1:unexpected token: INTERLIS\n...compiler run failed 2026-10-27 13:33:41\n"
+      }
+    },
+    {
+      "name": "domain-URI",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/domain-URI-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=INTERLIS.URI;END F.\n",
+      "sha256": "ba2d2f5758f95a282a85771dd1d8ff32d6847c3426b27cad36d62a2221425d45",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/domain-URI-2.4.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7313112335b79beddc0fcf69, diag-f2df4e0794ac66dea7d664f0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f2df4e0794ac66dea7d664f0\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-URI-2.4.ili\",\"revision\":\"1\",\"startOffset\":78,\"endOffset\":86},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]},{\"id\":\"diag-7313112335b79beddc0fcf69\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-URI-2.4.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":90},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"URI\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ANYOID','HALIGNMENT','UUIDOID','VALIGNMENT',Name\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7313112335b79beddc0fcf69, diag-f2df4e0794ac66dea7d664f0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001",
+        "ILI-SYN-0002"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/domain-URI-2.4.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/domain-URI-2.4.ili>\nbuild/reports/g2/A2/r2/binding-observations/domain-URI-2.4.ili:1:unexpected token: INTERLIS\n...compiler run failed 2026-10-27 13:33:42\n"
+      }
+    },
+    {
+      "name": "domain-BOOLEAN",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=INTERLIS.BOOLEAN;END F.\n",
+      "sha256": "f9d6a66c43909e496120553198d48710c7143380d31acf1b03e68c3564697d95",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.4.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6c42de75db071d43bad950a1, diag-b20de2faf94a2d37ed445faa], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b20de2faf94a2d37ed445faa\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.4.ili\",\"revision\":\"1\",\"startOffset\":78,\"endOffset\":86},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]},{\"id\":\"diag-6c42de75db071d43bad950a1\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.4.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":94},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ANYOID','HALIGNMENT','UUIDOID','VALIGNMENT',Name\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6c42de75db071d43bad950a1, diag-b20de2faf94a2d37ed445faa], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001",
+        "ILI-SYN-0002"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.4.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.4.ili>\nbuild/reports/g2/A2/r2/binding-observations/domain-BOOLEAN-2.4.ili:1:unexpected token: INTERLIS\n...compiler run failed 2026-10-27 13:33:42\n"
+      }
+    },
+    {
+      "name": "structure-LineGeometry",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=geometry:INTERLIS.LineGeometry;END S;END F.\n",
+      "sha256": "0fd31339d3d14b405c75a63d2182111cc6856d7f8eeda6bb97f3e9c1def38e3d",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.4.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0c0cb4d7a79cb71b7c8bf52a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0c0cb4d7a79cb71b7c8bf52a\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.4.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":111},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.LineGeometry\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0c0cb4d7a79cb71b7c8bf52a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.4.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/structure-LineGeometry-2.4.ili>\nInfo: ...compiler run done 2026-10-27 13:33:42\n"
+      }
+    },
+    {
+      "name": "structure-SurfaceEdge",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=geometry:INTERLIS.SurfaceEdge;END S;END F.\n",
+      "sha256": "cfbbd8e20dface46ca0f88ed77580107c4d8a6b27a90b86e740a71d4c93a7ae8",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.4.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c3cbd36ad538d5dd416ae091], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c3cbd36ad538d5dd416ae091\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.4.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":110},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.SurfaceEdge\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c3cbd36ad538d5dd416ae091], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.4.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/structure-SurfaceEdge-2.4.ili>\nInfo: ...compiler run done 2026-10-27 13:33:42\n"
+      }
+    },
+    {
+      "name": "structure-SurfaceBoundary",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=geometry:INTERLIS.SurfaceBoundary;END S;END F.\n",
+      "sha256": "88b7ada58cce5c3d12ff7711082741668d319a1567062b21413f358ae9210bb8",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.4.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b42dff8c7ca348de038ec673], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b42dff8c7ca348de038ec673\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.4.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":114},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.SurfaceBoundary\"}]}]}\n",
+      "stderr": "",
+      "status": "rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b42dff8c7ca348de038ec673], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]",
+      "diagnosticCodes": [
+        "ILI-SEM-0001"
+      ],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.4.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/structure-SurfaceBoundary-2.4.ili>\nInfo: ...compiler run done 2026-10-27 13:33:42\n"
+      }
+    },
+    {
+      "name": "unit-operative-control",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0..10[INTERLIS.kg];END F.\n",
+      "sha256": "e6af35003667b7f94b8c486cc25f69b3cd58e34d4cf9e62aae4c3befaeeaac8b",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.4.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+      "stderr": "",
+      "status": "ok",
+      "diagnosticCodes": [],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.4.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/unit-operative-control-2.4.ili>\nInfo: ...compiler run done 2026-10-27 13:33:42\n"
+      }
+    },
+    {
+      "name": "segment-control",
+      "language": "2.4",
+      "source": "build/reports/g2/A2/r2/binding-observations/segment-control-2.4.ili",
+      "sourceText": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S(ABSTRACT) EXTENDS INTERLIS.LineSegment=END S;END F.\n",
+      "sha256": "e89df108f512e3ebef279cc6bd68cb4733931a889b31e135872678c0eeca6e9e",
+      "command": [
+        "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "--root",
+        "F",
+        "build/reports/g2/A2/r2/binding-observations/segment-control-2.4.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+      "stderr": "",
+      "status": "ok",
+      "diagnosticCodes": [],
+      "reference": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/g2/A2/r2/binding-observations/segment-control-2.4.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/g2/A2/r2/binding-observations/segment-control-2.4.ili>\nInfo: ...compiler run done 2026-10-27 13:33:42\n"
+      }
+    }
+  ],
+  "normativeDecisionMade": false,
+  "newSuiteExceptions": 0,
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "productionSourceComparison": {
+    "baseline": "build/reports/g2/A1/input-v2/manifest.json",
+    "current": "build/reports/g2/A2/r2-input-v2/manifest.json",
+    "sameSourcePathsAndHashes": true,
+    "mainSourceFiles": 533,
+    "mappingSha256": "b8cfe8494609e73fe65ac886c939c496a1f6a07706658154db5e3d27aef0f358"
+  },
+  "reproduction": "For each case write the exact sourceText to the recorded source path (create its build directories), then execute command and reference.command. Compare the exit and full diagnostics; this report deliberately has no normative expectedOutcome.",
+  "interpretation": {
+    "structureLookup": "Six own/reference outcome differences for ordinary SurfaceEdge/SurfaceBoundary/LineGeometry use (three structures in both versions); assigned B1 for normative/model review and implementation if confirmed.",
+    "reservedQualifiedNames": "Both compilers reject qualified NAME/URI/BOOLEAN spellings. These observations do not require permitting reserved names or inventing a new qualified syntax.",
+    "controls": "Both compilers accept operative kg and LineSegment controls.",
+    "agreements": 10,
+    "pairs": 16,
+    "independentSemanticAcceptance": false
+  }
+}

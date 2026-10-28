@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public final class SyntaxSnapshot {
     private final SourceText source;
-    private final ParseMode mode;
+    private final ParseOptions options;
     private final LanguageDetection language;
     private final DocumentSyntax root;
     private final List<SyntaxToken> tokens;
@@ -23,13 +23,15 @@ public final class SyntaxSnapshot {
     private final List<Diagnostic> diagnostics;
     private final SyntaxCoverage coverage;
     private final SyntaxFingerprint fingerprint;
+    private final java.util.Map<guru.interlis.source.SourceRange,SourceMetadata> metadata;
 
-    public SyntaxSnapshot(SourceText source, ParseMode mode, LanguageDetection language,
+    public SyntaxSnapshot(SourceText source, ParseOptions options, LanguageDetection language,
                           DocumentSyntax root, List<SyntaxToken> tokens,
                           List<TriviaSpan> trivia, List<Diagnostic> diagnostics,
-                          SyntaxCoverage coverage, SyntaxFingerprint fingerprint) {
+                          SyntaxCoverage coverage, SyntaxFingerprint fingerprint,
+                          java.util.Map<guru.interlis.source.SourceRange,SourceMetadata> metadata) {
         this.source = Objects.requireNonNull(source, "source");
-        this.mode = Objects.requireNonNull(mode, "mode");
+        this.options = Objects.requireNonNull(options, "options");
         this.language = Objects.requireNonNull(language, "language");
         this.root = Objects.requireNonNull(root, "root");
         this.tokens = List.copyOf(Objects.requireNonNull(tokens, "tokens"));
@@ -37,6 +39,20 @@ public final class SyntaxSnapshot {
         this.diagnostics = List.copyOf(Objects.requireNonNull(diagnostics, "diagnostics"));
         this.coverage = Objects.requireNonNull(coverage, "coverage");
         this.fingerprint = Objects.requireNonNull(fingerprint, "fingerprint");
+        this.metadata=java.util.Map.copyOf(metadata);
+        for(var entry:this.metadata.entrySet()) {
+            checkMetadataRange(entry.getKey());
+            entry.getValue().attributes().forEach(value->checkMetadataRange(value.range()));
+            entry.getValue().documentation().forEach(value->checkMetadataRange(value.range()));
+        }
+    }
+
+    /** Annotation groups keyed by the following token's original range. */
+    public java.util.Map<guru.interlis.source.SourceRange,SourceMetadata> metadata() { return metadata; }
+
+    private void checkMetadataRange(guru.interlis.source.SourceRange range) {
+        if(!range.source().equals(source.id()) || !range.revision().equals(source.revision()) || range.endOffset()>source.length())
+            throw new IllegalArgumentException("metadata belongs to another source revision");
     }
 
     /**
@@ -54,7 +70,12 @@ public final class SyntaxSnapshot {
      * @return the result
      */
     public ParseMode mode() {
-        return mode;
+        return options.mode();
+    }
+
+    /** Exact parse profile, including resource limits; part of syntax reuse identity. */
+    public ParseOptions options() {
+        return options;
     }
 
     /**

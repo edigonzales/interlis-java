@@ -43,8 +43,8 @@ topicDef
   : VIEW? TOPIC Name
     (LPAR (ABSTRACT | FINAL) (COMMA (ABSTRACT | FINAL))* RPAR)?
     (EXTENDS topicRef)? EQ
-    (BASKET OID AS ((INTERLIS | Name) DOT)* (Name | UUIDOID | ANYOID) SEMI)?
-    (OID AS ((INTERLIS | Name) DOT)* (Name | UUIDOID | ANYOID) SEMI)?
+    basketOidRule?
+    objectOidRule?
     (DEPENDS ON topicRef (COMMA topicRef)* SEMI)*
     (DEFERRED GENERICS genericRef (COMMA genericRef)* SEMI)?
     definitions*
@@ -68,12 +68,16 @@ topicRef : (Name DOT)? Name;
 
 genericRef : domainRef;
 
+basketOidRule : BASKET OID AS oidDomainRef SEMI;
+objectOidRule : (OID AS oidDomainRef | NO OID) SEMI;
+oidDomainRef : ((INTERLIS | Name) DOT)* (Name | UUIDOID | ANYOID);
+
 // 3.5.3 Classes et structures - Klassen und Strukturen
 
 classDef : CLASS Name
              (LPAR (ABSTRACT | EXTENDED | FINAL) (COMMA (ABSTRACT | EXTENDED | FINAL))* RPAR)?
              (EXTENDS classOrStructureRef)? EQ
-             ((OID AS ((INTERLIS | Name) DOT)* (Name | UUIDOID | ANYOID) | NO OID) SEMI)?
+             objectOidRule?
              classOrStructureDef?
            END Name SEMI;
 
@@ -85,13 +89,13 @@ structureDef : STRUCTURE Name
 
 classRef
           : INTERLIS DOT REFSYSTEM
-          | INTERLIS DOT (Name | SIGN) (DOT (Name | SIGN))*
-          | (Name | SIGN) (DOT (Name | SIGN))*
+          | INTERLIS DOT (Name | SIGN | METAOBJECT) (DOT (Name | SIGN | METAOBJECT))*
+          | (Name | SIGN | METAOBJECT) (DOT (Name | SIGN | METAOBJECT))*
           ;
 
 classOrStructureDef : (ATTRIBUTE? attributeDef+ | ATTRIBUTE | constraintDef+ | PARAMETER parameterDef*)+;
 
-structureRef : (INTERLIS DOT (Name | BOOLEAN | UUIDOID | URI) (DOT Name)*)
+structureRef : (INTERLIS DOT (Name | BOOLEAN | UUIDOID | ANYOID | URI) (DOT Name)*)
              | Name (DOT Name)*;
 
 classOrStructureRef : classRef | structureRef;
@@ -122,7 +126,7 @@ restrictedClassOrAssRef : (classOrAssociationRef | ANYCLASS)
 
 classOrAssociationRef : classRef | associationRef;
 
-restrictedStructureRef : (structureRef | type | referenceAttr | enumeration | ANYSTRUCTURE)
+restrictedStructureRef : (structureRef | type | numeric | referenceAttr | enumeration | ANYSTRUCTURE)
                        (RESTRICTION LPAR structureRef ((COMMA | SEMI) structureRef)* RPAR)?;
 
 restrictedClassOrStructureRef
@@ -136,7 +140,7 @@ associationDef : ASSOCIATION Name?
                      ( LPAR (ABSTRACT | EXTENDED | FINAL | OID) (COMMA (ABSTRACT | EXTENDED | FINAL | OID))* RPAR)?
                      (EXTENDS associationRef)?
                      (DERIVED FROM renamedViewableRef)? EQ
-                     ((OID AS ((INTERLIS | Name) DOT)* (Name | UUIDOID | ANYOID) | NO OID) SEMI)?
+                     objectOidRule?
                      roleDef*
                      ATTRIBUTE? attributeDef*
                      (CARDINALITY EQ cardinality SEMI)?
@@ -175,7 +179,7 @@ type : baseType
      | STRING DOTDOT STRING;
 
 domainRef : (Name DOT (Name DOT)*)? Name
-          | INTERLIS DOT (Name | HALIGNMENT | VALIGNMENT);
+          | INTERLIS DOT (Name | HALIGNMENT | VALIGNMENT | UUIDOID | ANYOID);
 
 baseType : textType
            | enumTreeValueType
@@ -252,7 +256,7 @@ numericType : NUMERIC CIRCULAR? (LSBR unitRef RSBR)? (CLOCKWISE | COUNTERCLOCKWI
 refSys : LCBR metaObjectRef (LSBR PosNumber RSBR)? RCBR
      | LT domainRef (LSBR PosNumber RSBR)? GT;
 
-decConst : Dec | PI | LNBASE | PosNumber;
+decConst : Dec | PI | LNBASE | Number | PosNumber;
 
 numericConst : decConst (LSBR unitRef RSBR)?;
 
@@ -287,8 +291,8 @@ coordinateType : (COORD | MULTICOORD)
 
 rotationDef : ROTATION PosNumber MINUS GT PosNumber;
 
-contextDef : CONTEXT? Name EQ 
-                (domainRef EQ domainRef (OR domainRef)* SEMI)+;
+contextDef : CONTEXT? Name EQ contextMapping+;
+contextMapping : domainRef EQ domainRef (OR domainRef)* SEMI;
 
 // 3.8.9 Domaines de valeurs des identifications d’objet - Wertebereiche von Objektidentifikationen
 
@@ -341,8 +345,7 @@ lineFormTypeDef : Name COLON Name SEMI;
 
 unitDef
   : UNIT? Name
-    (LSBR Name RSBR)?
-    (LPAR ABSTRACT RPAR)?
+    ((LSBR Name RSBR) | (LPAR ABSTRACT RPAR))?
     (EXTENDS unitRef)?
     (EQ (derivedUnit | composedUnit))?
     SEMI
@@ -352,7 +355,7 @@ derivedUnit
     : (decConst ((MUL | DIV) decConst)* | FUNCTION Explanation)? LSBR unitRef RSBR
     ;
 
-composedUnit : LPAR (unitRef | Name | INTERLIS DOT Name) ((MUL | DIV |POW) (unitRef | INTERLIS DOT Name | Name))* RPAR;
+composedUnit : LPAR unitRef ((MUL | DIV) unitRef)* RPAR;
 
 unitRef
   : Name (DOT Name)*
@@ -365,7 +368,9 @@ metaDataBasketDef : (SIGN | REFSYSTEM) BASKET Name
            (LPAR FINAL RPAR)?
            (EXTENDS metaDataBasketRef)?
            TILDE topicRef
-           (SEMI | (OBJECTS OF Name COLON (Name (COMMA Name)*) SEMI?)+);
+           (SEMI | metaObjectGroup+);
+
+metaObjectGroup : OBJECTS OF Name COLON Name (COMMA Name)* SEMI?;
 
 metaDataBasketRef : (Name DOT (Name DOT)?)? Name;
 
@@ -394,7 +399,7 @@ mandatoryConstraint : MANDATORY CONSTRAINT (Name COLON)? expression SEMI;
 
 plausibilityConstraint
     : CONSTRAINT (Name COLON)?
-      (LTEQ | GTEQ) numericConst MOD
+      (LTEQ | GTEQ) percentage=(Dec | Number | PosNumber) MOD
       expression SEMI
     ;
 
@@ -414,7 +419,7 @@ uniquenessConstraint
     : UNIQUE (LPAR BASKET RPAR)?
       (Name COLON)?
       (WHERE expression COLON)?
-      (globalUniqueness | localUniqueness)+
+      (globalUniqueness | localUniqueness)
       SEMI
     ;
 
@@ -424,14 +429,13 @@ uniqueEl : objectOrAttributePath;
 
 localUniqueness
     : LPAR LOCAL RPAR
-      (Name COLON)?
-      Name
-      (MINUS GT Name)* (COLON Name (COMMA Name)*)?
+      prefix+=Name (MINUS GT prefix+=Name)*
+      COLON fields+=Name (COMMA fields+=Name)*
     ;
 
 setConstraint
   : SET CONSTRAINT
-      (LPAR (LOCAL | BASKET) RPAR)?
+      (LPAR BASKET RPAR)?
       (Name COLON WHERE expression COLON expression
         | (WHERE expression COLON)? (Name COLON | INTERLIS COLON)? expression)
       SEMI
@@ -541,7 +545,7 @@ union : UNION OF renamedViewableRef
     (COMMA renamedViewableRef)*;
 
 aggregation : AGGREGATION OF renamedViewableRef
-        (ALL | EQUAL LPAR uniqueEl RPAR);
+        (ALL | EQUAL LPAR uniqueEl (COMMA uniqueEl)* RPAR);
 
 inspection : AREA? INSPECTION OF renamedViewableRef
         MINUS GT Name
@@ -560,14 +564,11 @@ baseExtensionDef : BASE Name EXTENDED BY
 
 selection : WHERE expression SEMI;
 
-viewAttributes
-  : ATTRIBUTE?
-    (
-      ALL OF Name SEMI
+viewAttributes : ATTRIBUTE? viewAttribute*;
+viewAttribute : ALL OF Name SEMI
     | attributeDef
-    | Name (LPAR (ABSTRACT | EXTENDED | FINAL | TRANSIENT) (COMMA (ABSTRACT | EXTENDED | FINAL | TRANSIENT))* RPAR)? ASSIGN expression SEMI
-    )*;
-    
+    | Name (LPAR (ABSTRACT | EXTENDED | FINAL | TRANSIENT) (COMMA (ABSTRACT | EXTENDED | FINAL | TRANSIENT))* RPAR)? ASSIGN expression SEMI;
+
 // 3.16 Représentations graphiques
 
 graphicDef : GRAPHIC Name (LPAR (ABSTRACT | FINAL) (COMMA (ABSTRACT | FINAL))* RPAR)?
@@ -583,7 +584,7 @@ drawingRule : Name (LPAR (ABSTRACT | EXTENDED | FINAL) (COMMA (ABSTRACT | EXTEND
   (OF classRef)?
   COLON condSignParamAssignment (COMMA condSignParamAssignment)* SEMI;
 
-condSignParamAssignment : (WHERE? expression)? 
+condSignParamAssignment : (WHERE expression)?
         LPAR signParamAssignment ( SEMI signParamAssignment )* RPAR;
 
 signParamAssignment : Name

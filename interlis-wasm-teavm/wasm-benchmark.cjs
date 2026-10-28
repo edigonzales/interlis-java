@@ -76,10 +76,13 @@ function wasmPath() {
     corpusIndexSha256: manifest.index.sha256,
     wasmBytes: fs.statSync(wasmPath()).size, models,
     notes: 'In-process TeaVM WasmGC API measurements; warmup excluded.'};
-  fs.writeFileSync(path.join(root, 'docs/evidence/p3/performance-wasm.json'),
+  fs.mkdirSync(path.join(root, 'build/reports/performance'), {recursive: true});
+  fs.writeFileSync(path.join(root, 'build/reports/performance/performance-wasm.json'),
     JSON.stringify(result, null, 2) + '\n');
   console.log('WASM_BENCHMARK_PASS ' + JSON.stringify({models: models.length}));
-  process.kill(process.pid, 'SIGKILL');
+  const closed = handle(envelope('closeSession', sessionId));
+  if (closed.status !== 'ok') throw new Error('closeSession failed');
+  process.exitCode = 0;
 })().catch(error => {
   console.error('WASM_BENCHMARK_FAIL', error);
   process.exit(1);

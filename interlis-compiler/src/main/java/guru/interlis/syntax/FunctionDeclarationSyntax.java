@@ -15,11 +15,13 @@ import java.util.Optional;
  * @param nameRange optional name range
  * @param parameters declared parameters
  * @param returnType declared result type
+ * @param returnMandatory explicit result MANDATORY; domain requirements are bound later
+ * @param explanation optional interpreted explanation and its original range
  */
 public record FunctionDeclarationSyntax(SyntaxNodeId id, SourceRange range, String name,
                                         Optional<SourceRange> nameRange,
                                         List<FunctionParameterSyntax> parameters,
-                                        String returnType) implements DeclarationSyntax {
+                                        TypeSyntax returnType, boolean returnMandatory,Optional<SourceMetadata.Text> explanation) implements DeclarationSyntax {
     /** Creates a validated instance. */
     public FunctionDeclarationSyntax {
         Objects.requireNonNull(id, "id");
@@ -28,6 +30,7 @@ public record FunctionDeclarationSyntax(SyntaxNodeId id, SourceRange range, Stri
         nameRange = Objects.requireNonNull(nameRange, "nameRange");
         parameters = List.copyOf(Objects.requireNonNull(parameters, "parameters"));
         Objects.requireNonNull(returnType, "returnType");
+        Objects.requireNonNull(explanation,"explanation");
     }
 
     @Override
@@ -37,20 +40,24 @@ public record FunctionDeclarationSyntax(SyntaxNodeId id, SourceRange range, Stri
 
     @Override
     public List<SyntaxNode> children() {
-        return List.of();
+        var children = new java.util.ArrayList<SyntaxNode>();
+        parameters.forEach(p -> children.add(p.type()));
+        children.add(returnType);
+        return List.copyOf(children);
     }
 
     /**
      * Declared parameter.
      *
      * @param name parameter name
-     * @param typeName source-level type name
+     * @param type source-level type with exact source range
+     * @param mandatory explicit MANDATORY, before resolving domain requirements
      */
-    public record FunctionParameterSyntax(String name, String typeName) {
+    public record FunctionParameterSyntax(String name, TypeSyntax type, boolean mandatory) {
         /** Creates a validated instance. */
         public FunctionParameterSyntax {
             Objects.requireNonNull(name, "name");
-            Objects.requireNonNull(typeName, "typeName");
+            Objects.requireNonNull(type, "type");
         }
     }
 }

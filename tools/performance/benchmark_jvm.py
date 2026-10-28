@@ -14,7 +14,7 @@ import time
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "docs" / "evidence" / "p3" / "geo-corpus.json"
-OUT = ROOT / "docs" / "evidence" / "p3" / "performance-jvm.json"
+OUT = ROOT / "build" / "reports" / "performance" / "performance-jvm.json"
 CACHE = pathlib.Path(os.environ.get("CONFORMANCE_CACHE", str(pathlib.Path.home() / ".cache" / "interlis-java" / "geo-corpus")))
 CLI = ROOT / "interlis-cli" / "build" / "install" / "interlis-cli" / "bin" / "interlis-cli"
 ITERATIONS = 3
@@ -86,6 +86,7 @@ def main() -> int:
         "models": models,
         "notes": "Wall-clock subprocess measurements; warmup excluded. No production claim.",
     }
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps({"models": len(models), "out": str(OUT.relative_to(ROOT))}, indent=2))
     return 0

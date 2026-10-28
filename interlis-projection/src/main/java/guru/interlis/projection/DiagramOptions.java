@@ -46,7 +46,7 @@ public record DiagramOptions(DiagramSelection selection, DiagramScope scope,
     public static DiagramOptions defaults(DiagramSelection selection) {
         return new DiagramOptions(selection, DiagramScope.SELECTED,
                 Set.of(DiagramNodeKind.CLASS, DiagramNodeKind.STRUCTURE,
-                        DiagramNodeKind.ASSOCIATION, DiagramNodeKind.DOMAIN,
+                        DiagramNodeKind.ASSOCIATION, DiagramNodeKind.DOMAIN, DiagramNodeKind.LINE_FORM, DiagramNodeKind.METADATA_BASKET, DiagramNodeKind.METAOBJECT, DiagramNodeKind.GRAPHIC, DiagramNodeKind.DRAWING_RULE,
                         DiagramNodeKind.VIEW),
                 InheritedMembers.SHOW_WITH_ORIGIN, true, true, true, true,
                 LabelPolicy.CANONICAL, AssociationPresentation.ENTITY,

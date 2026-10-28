@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "1.0",
+  "step": "A2",
+  "attempt": 2,
+  "reviewedAt": "2026-10-27T09:47:03Z",
+  "verdict": "NACHARBEIT",
+  "scope": "Gezielter unabhaengiger Recheck von A2-R1. Keine A2-Gesamtabnahme; A2-R2, A2-R3 und A2-R4 bleiben offen.",
+  "reviewModelConfiguration": {
+    "requested": "gpt-5.6-sol",
+    "evidence": "Der explizite Modellparameter wurde beim Start dieses Reviewers vom Tool akzeptiert; keine Modellidentitaet wurde aus einer Selbstauskunft abgeleitet."
+  },
+  "packet": {
+    "manifest": "build/reports/g2/A2/packet-v2/manifest.json",
+    "sha256": "ddcd565f085a2e117b1cd66baf2e18547868ca47e810faf9be7dbaeba9d993a5",
+    "hashVerified": true,
+    "sourceBasis": "build/reports/g2/A2/input-v2/source.tar.gz",
+    "sourceDigest": "0311fff8c0b676d3df0ebcbca18a6100942bb2de25af15575c89c21b7237a878",
+    "sourceFiles": 1095,
+    "beforeSourceDigest": "1f6f01d45777cd8c13b5390e8619fc1ae705681159c800ef58034e425a4b6b6e",
+    "beforeFiles": 1083,
+    "changedSources": 20,
+    "patchReproducesFrozenAfterSources": true
+  },
+  "r1Disposition": {
+    "id": "A2-R1",
+    "status": "CLOSED",
+    "reason": "Die tatsaechlichen Legacy-Schritte werden gegen die feste Zuordnung geprueft, jede vollstaendige Legacy-Zeile ist durch mappingSha256 gebunden, die vollstaendigen atomicRules stehen im Scan, Atomic-Schema und Requirement-IDs werden geprueft und Kandidaten werden auf eindeutige Testklassen beziehungsweise vorhandene @Test-Methoden samt Quellenhash aufgeloest. Fehlende und klassenweite Links werden ausdruecklich nicht als Assertion gewertet. Der versionierte Inventurtest vergleicht alle betroffenen Mappingausgaben.",
+    "limits": "Die technische Schliessung belegt Nachweisbindung und Fehlgruen-Abwehr, nicht die fachliche Richtigkeit oder Vollstaendigkeit der Zuordnungen; diese bleibt insbesondere Gegenstand von A2-R3 und A2-R4.",
+    "counterprobe": {
+      "artifact": "build/reports/g2/A2/review-v2/counterprobe-r1.json",
+      "sha256": "fe5e5b9b40f1164a689c0b55e9f5aebaaf2240e86259c66d7e2d9a214fb92de7",
+      "status": "PASS",
+      "probes": 12,
+      "observations": [
+        "Eine falsche Legacy-Schrittzuordnung wird abgelehnt.",
+        "Aenderungen an Legacy-Requirements, Negativfall und Public Contract veraendern den gepinnten Output.",
+        "Aenderungen an Atomic-Schritt, Requirements und Acceptance veraendern den gepinnten Output.",
+        "Unbekannte Requirement-IDs, nicht vorhandene Klassen und nicht vorhandene @Test-Methoden werden abgelehnt.",
+        "Fuenf fehlende Links und zwei klassenweite Links bleiben als Nichtnachweis sichtbar.",
+        "Eine Aenderung an einer Kandidatentestquelle veraendert den gepinnten Quellenhash."
+      ]
+    }
+  },
+  "remainingFindings": [
+    {
+      "id": "A2-R2",
+      "severity": "BLOCKING",
+      "status": "OPEN",
+      "title": "Vordefinierte und lexikalisch wirksame Inhalte sind nicht vollstaendig inventarisiert",
+      "evidence": "Die Ausgabe heisst nun praezise standardFunctions und weist otherPredefinedContents ausdruecklich als MISSING_EVIDENCE aus. Versionsabhaengige LanguageProfile-Tabellen sowie vordefinierte Typen, Einheiten, Klassen und Strukturen fehlen weiterhin als Einzelinventar.",
+      "requiredWork": "Alle uebrigen vordefinierten und lexikalisch wirksamen Inhalte versionsbezogen mit Quelle, Regel, Schritt und konkreter Abnahme erfassen."
+    },
+    {
+      "id": "A2-R3",
+      "severity": "BLOCKING",
+      "status": "OPEN",
+      "title": "Regelspezifische Vertrags- und Fallzuordnungen bleiben unvollstaendig",
+      "evidence": "Die sachfremden Links fuer NAME.case und STRING.singleLine wurden korrekt entfernt. Im Scan stehen nun fuenf MISSING_CASE_LINK und zwei CLASS_ONLY_NOT_AN_ASSERTION. Candidate-Links bleiben ausdruecklich Kandidaten und keine Abnahme; die zehn Anfangsregeln sind weiterhin MISSING_EVIDENCE beziehungsweise USER_DECISION_PENDING.",
+      "requiredWork": "Pro Atomregel passende nummerierte und unnummerierte Vertraege sowie konkrete positive, negative und Modell-/Queryassertions mit regelgenauen Faellen liefern; Nutzerentscheidungen getrennt halten."
+    },
+    {
+      "id": "A2-R4",
+      "severity": "BLOCKING",
+      "status": "OPEN",
+      "title": "Der verpflichtende A2-Gesamtumfang fehlt weiterhin",
+      "evidence": "TOC-Locator ersetzen weiterhin nicht den vollstaendigen Sachabsatz-, Anhang-, unnummerierten Vertrags-, Syntax-zu-Modell- und Ausnahmensaudit. Das Inventar bezeichnet diese Punkte selbst als remainingA2 und MISSING_EVIDENCE.",
+      "requiredWork": "A2 ohne pauschale Restpunkte vollstaendig ausarbeiten und danach eine neue unabhaengige A2-Gesamtabnahme durchfuehren."
+    }
+  ],
+  "verified": {
+    "auditArtifact": "build/reports/g2/A2/review-v2/audit.json",
+    "auditSha256": "533a80098b5f7b52ca072ccf8672ba784026cee46152f5903f6b797d2f81d195",
+    "manifestArchiveNormAndEvidenceChain": true,
+    "patchReconstruction": true,
+    "sourceInventoryReproducedByteIdentically": true,
+    "sourceInventorySha256": "8c2f82ebd3ed2405526fa01bf1def7830baf35b5ad114810539026235fc41fc3",
+    "inventoryCounts": {
+      "grammarProductions": 321,
+      "grammarOccurrences": 1218,
+      "specRequirements": 289,
+      "standardFunctionSignatures": 21,
+      "legacyRules": 332,
+      "atomicRules": 10
+    },
+    "normativeExpectationsUnchanged": true,
+    "baselineUnchanged": true,
+    "suiteProfileUnchanged": true,
+    "productionSemanticChanges": [],
+    "observationalAreAreasFixtures": 8,
+    "areasIssueResponsibleStep": "E2",
+    "areasNormativeDecisionMade": false,
+    "newNormativeExpectationsOrXfails": 0
+  },
+  "commands": [
+    {
+      "command": "python3 tools/reference/g2_evidence.py verify --snapshot /Users/stefan/sources/interlis-java/build/reports/g2/A2/input-v2",
+      "cwd": "build/reports/g2/A2/review-v2/frozen",
+      "result": "PASS",
+      "observation": "Source-Digest 0311fff8c0b676d3df0ebcbca18a6100942bb2de25af15575c89c21b7237a878."
+    },
+    {
+      "command": "patch -p1 --batch --forward -i build/reports/g2/A2/packet-v2/changes.patch und audit.py",
+      "cwd": "build/reports/g2/A2/review-v2/patched",
+      "result": "PASS",
+      "observation": "20 deklarierte Aenderungen reproduzieren alle 1095 After-Dateien aus 1083 Before-Dateien; Hashes, Groessen und Ausfuehrbarkeitsbits stimmen."
+    },
+    {
+      "command": "python3 -m unittest discover -s tools/reference -p test_g2_inventory.py -v",
+      "cwd": "build/reports/g2/A2/review-v2/frozen",
+      "result": "PASS",
+      "observation": "11 Tests bestanden."
+    },
+    {
+      "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "cwd": "build/reports/g2/A2/review-v2/frozen",
+      "result": "PASS",
+      "observation": "20 Tests; BUILD SUCCESSFUL in 1s; eine Task ausgefuehrt."
+    },
+    {
+      "command": "python3 tools/reference/g2_inventory.py --norm23 .../input-v2/ili23.pdf --norm24 .../input-v2/ili24.pdf --out build/reports/g2/A2-review-v2/source-scan.json",
+      "cwd": "build/reports/g2/A2/review-v2/frozen",
+      "result": "PASS",
+      "observation": "pypdf 6.10.0; Ausgabe byteidentisch zu g2-source-inventory.json."
+    },
+    {
+      "command": "python3 counterprobe_r1.py",
+      "cwd": "build/reports/g2/A2/review-v2",
+      "result": "PASS",
+      "observation": "12 unabhaengige Mutations- und Sichtbarkeitsproben bestanden."
+    },
+    {
+      "command": "python3 audit.py",
+      "cwd": "build/reports/g2/A2/review-v2",
+      "result": "PASS",
+      "observation": "Hashkette, vollstaendige Patchrekonstruktion, unveraenderte Erwartungen/Pins und fehlende Produktionssemantikaenderungen bestaetigt."
+    }
+  ],
+  "notExecuted": [
+    "Kein vollstaendiger Compiler-/Portable-/Browser-/SDK-Phasenlauf: Der gezielte R1-Recheck aendert keine Produktionssemantik; A2 bleibt wegen R2/R3/R4 nicht phasenabnahmefaehig.",
+    "Keine fachliche Freigabe der areAreas2/areAreas3-Normfrage und keine Revalidierung der 18 bestehenden normativen Referenzausnahmen."
+  ],
+  "technicalBlockers": [],
+  "nextStep": "A2-R2, A2-R3 und A2-R4 vollstaendig schliessen und danach ein neues unabhaengiges A2-Gesamtreview; A3 bleibt bis zur A2-Abnahme nachgeordnet."
+}

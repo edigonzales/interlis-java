@@ -1,0 +1,490 @@
+{
+  "recordedAt": "2026-10-25T10:16:39.406711+00:00",
+  "delivery": "G2 E1 partial: exact binding and simple predefined domains",
+  "gate": {
+    "G2": "OPEN",
+    "P3": "OPEN"
+  },
+  "requirements": [
+    "SYN-013",
+    "META-003",
+    "META-005",
+    "META-006",
+    "META-011",
+    "META-014",
+    "META-015",
+    "SEM-002",
+    "SEM-005",
+    "SEM-010",
+    "SEM-014"
+  ],
+  "source": {
+    "baseCommit": "3820c6b5dead437cdaeb9569fbfe726abec25d6e",
+    "implementationTreeSha256": "9a07df01573578eb3a3de774dc839c18d9bf02fdc6ea38c44f4f95b2f9480bda",
+    "workingTreeDirty": true,
+    "treeDigestMethod": "Sorted git cached/nonignored paths excluding docs; UTF8 path + NUL + exact bytes + NUL."
+  },
+  "host": {
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.8.1\nBuildVersion:\t\t24H32",
+    "model": "MacBookAir10,1",
+    "cpu": "Apple M1",
+    "memoryBytes": 17179869184,
+    "architecture": "arm64"
+  },
+  "toolchains": {
+    "java": "openjdk 25.0.3 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)",
+    "gradle": "9.8.1",
+    "node": "v24.22.0",
+    "graalVm": "native-image 25.0.3 2026-04-21\nGraalVM Runtime Environment Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS-jvmci-b01)\nSubstrate VM Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS, serial gc, compressed references)",
+    "binaryen": "wasm-opt version 133 (version_133)",
+    "playwright": "1.64.1",
+    "antlr": "4.13.2",
+    "teaVm": "0.16.0"
+  },
+  "norms": {
+    "2.3": {
+      "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+      "sha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+      "edition": "2006-04-13"
+    },
+    "2.4": {
+      "url": "https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf",
+      "sha256": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069",
+      "edition": "eCH-0031 2.1.0 / 2024-04-24"
+    }
+  },
+  "pins": {
+    "baselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+    "suite": {
+      "url": "https://codeberg.org/edigonzales/interlis-compiler-testsuite/archive/88576ffc4cd491dd72d2375eb897ea9f3f55d2c3.tar.gz",
+      "commit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+      "sha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe"
+    },
+    "packageLockSha256": "7c751361732047ba2da9d2deee1fd343df747c6e19ee7e5baf041c5d271c8d70",
+    "geoSeedManifestSha256": "9ae9601c16b1b729e59eb70e93ad6de2469a32bb00310eb4c5d36d71489073a6",
+    "geoScope": "Historical 13-file seed only; full frozen 2.3/2.4 closure not yet acquired",
+    "downloadedNodeArchiveSha256": "6a9724d9b50a5f22b4816cded441b5a8d9ddae546191a5e5b7efa5a5e2ee26d5",
+    "binaryenArchiveSha256": "ad66da82ac13f163e424b1643f16c6dfcccc98b5966296b43e52d3cab04f84a8",
+    "normativeExpectationsSha256": "d4a662cd29e6352cc9dda429db00eeb46a5251da1e3aa87c3fba4b086ea908ad",
+    "k6OriginalSources": {
+      "testdata/conformance/k6-units/2.3-numeric-unit-mismatch.ili": "a4f92a1c46f81c59e2cb46cca6d3e083e85e917daa570eab85ba6df52aa9b1b5",
+      "testdata/conformance/k6-units/2.3-zero-divisor.ili": "53390194d5ef450e680752cecbb102db8e563c68f964c0a0a0bb14590a6f5cd8",
+      "testdata/conformance/k6-units/2.3-zero-factor.ili": "f3921b18949463b8f06633afe811b6e68428919e9c4046009a886ab956a1634c",
+      "testdata/conformance/k6-units/2.4-numeric-unit-mismatch.ili": "5aa98b5d6cb5a55afcbf9cf800c25c123ffc9dc7b99e964f1fd941cfa6922812",
+      "testdata/conformance/k6-units/2.4-zero-divisor.ili": "c4f79f93a08265d8aca0b79add78b4e5807b4f6249b19771f8141ab3d5365195",
+      "testdata/conformance/k6-units/2.4-zero-factor.ili": "8d19c92f584c456500b201105f0b63b849af83db94bcb953c5ac2f351d602510"
+    },
+    "originalViewSources": {
+      "ili23.Association23Test.association_DerivedAssociationDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/association_DerivedAssociationDef.ili",
+        "sha256": "77f80127bd7cf55a8575a9488a44e413b19bb9ff04ca1837709c2c9780f5e9ab",
+        "upstreamPath": "test/data/ili23/association/association_DerivedAssociationDef.ili"
+      },
+      "ili23.Expressions23Test.expressions_BasenamePathElement": {
+        "path": "testdata/conformance/b1-b3-acceptance/expressions_BasenamePathElement.ili",
+        "sha256": "f8ab15abf38bcad79e30631460534c3b9bd8d5dce3130084a1ef5621e625d398",
+        "upstreamPath": "test/data/ili23/expressions/expressions_BasenamePathElement.ili"
+      },
+      "ili23.Expressions23Test.expressions_BasenameToUnrenamedViewable": {
+        "path": "testdata/conformance/b1-b3-acceptance/expressions_BasenameToUnrenamedViewable.ili",
+        "sha256": "fbcbd5d981391c9878981f06cbc4899815c01a4cccfa15a543a811796972d978",
+        "upstreamPath": "test/data/ili23/expressions/expressions_BasenameToUnrenamedViewable.ili"
+      },
+      "ili23.View23Test.abstractView_AbstractBaseInConcretViewDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/abstractView_AbstractBaseInConcretViewDef.ili",
+        "sha256": "adbfbc80767809fec043a95fa4650925a45ee57f3750b0902c53385736a175fe",
+        "upstreamPath": "test/data/ili23/view/abstractView_AbstractBaseInConcretViewDef.ili"
+      },
+      "ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/abstractView_AcceptAbstractBaseInAbstractJoinDef.ili",
+        "sha256": "1bb8dc29513d77fe819c9a1cd99267f953494d2f2aeffdaf1162c800a2e39d1f",
+        "upstreamPath": "test/data/ili23/view/abstractView_AcceptAbstractBaseInAbstractJoinDef.ili"
+      },
+      "ili23.View23Test.view_AcceptBasenameOfRenamedInspectionDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasenameOfRenamedInspectionDef.ili",
+        "sha256": "bab88ff1742fd6fa97eac0917bd75ca5e831b8b095fd9acbebb8848cad0d3f01",
+        "upstreamPath": "test/data/ili23/view/view_AcceptBasenameOfRenamedInspectionDef.ili"
+      },
+      "ili23.View23Test.view_AcceptBasenameOfUnrenamedInspectionDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasenameOfUnrenamedInspectionDef.ili",
+        "sha256": "60f8a8b1bdc756152481bdb016416fe6209761900b2fd788811bc97cb9b6588f",
+        "upstreamPath": "test/data/ili23/view/view_AcceptBasenameOfUnrenamedInspectionDef.ili"
+      },
+      "ili23.View23Test.view_AcceptBasicInspectionDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicInspectionDef.ili",
+        "sha256": "252123ee41c78a7871456f8ba92324966028b6c9760fb3a8321a47a4180688f0",
+        "upstreamPath": "test/data/ili23/view/view_AcceptBasicInspectionDef.ili"
+      },
+      "ili23.View23Test.view_AcceptBasicJoinDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicJoinDef.ili",
+        "sha256": "24f17e518ee1f39d96f2097eeeb8fdddd8a315409fd32667ad56e35d986ba246",
+        "upstreamPath": "test/data/ili23/view/view_AcceptBasicJoinDef.ili"
+      },
+      "ili23.View23Test.view_AcceptBasicSelectionViewDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicSelectionViewDef.ili",
+        "sha256": "5ba4881e403663dd364ba9c83e8495ec82f5719e2670f0bcda5e80300036b7b5",
+        "upstreamPath": "test/data/ili23/view/view_AcceptBasicSelectionViewDef.ili"
+      },
+      "ili23.View23Test.view_AcceptBasicUnionDef": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicUnionDef.ili",
+        "sha256": "2cec307e7ba76115b9a88bfa98853c3a932e547ac8e6bc6b9a4fa2638e96f5d6",
+        "upstreamPath": "test/data/ili23/view/view_AcceptBasicUnionDef.ili"
+      },
+      "ili23.View23Test.view_AcceptJoinDefWithoutBasenames": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptJoinDefWithoutBasenames.ili",
+        "sha256": "dcbed390e0426b937e5cf15c2bd7b7917c91e758a98a4dd02d72a815b51f02b1",
+        "upstreamPath": "test/data/ili23/view/view_AcceptJoinDefWithoutBasenames.ili"
+      },
+      "ili23.View23Test.view_AcceptSimpleBaseExtentionInView": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_AcceptSimpleBaseExtentionInView.ili",
+        "sha256": "6e7f77afca6a504a06152f4170332c5053b9bde0323d3123c10db7d7bff2a212",
+        "upstreamPath": "test/data/ili23/view/view_AcceptSimpleBaseExtentionInView.ili"
+      },
+      "ili23.View23Test.view_ObjectPathWithRolename": {
+        "path": "testdata/conformance/b1-b3-acceptance/view_ObjectPathWithRolename.ili",
+        "sha256": "51375519395f29bd2e5273c60a838e44dab58ecf643c17399092b2be805ee143",
+        "upstreamPath": "test/data/ili23/view/view_ObjectPathWithRolename.ili"
+      },
+      "ili23.ViewDef23Test.viewAggregationComplete": {
+        "path": "testdata/conformance/b1-b3-acceptance/viewAggregationComplete.ili",
+        "sha256": "9d3bdf27628da0de60290429f5e294fba2ab96641e0e2817033b3bc43d55c876",
+        "upstreamPath": "test/data/ili23/translation/viewAggregationComplete.ili"
+      },
+      "ili23.ViewDef23Test.viewInspectionComplete": {
+        "path": "testdata/conformance/b1-b3-acceptance/viewInspectionComplete.ili",
+        "sha256": "35c8242e52577fd495907728dda9f32a6ef66f85b88f340489251d123b7de894",
+        "upstreamPath": "test/data/ili23/translation/viewInspectionComplete.ili"
+      },
+      "ili23.ViewDef23Test.viewJoinComplete": {
+        "path": "testdata/conformance/b1-b3-acceptance/viewJoinComplete.ili",
+        "sha256": "073f11cccd19f2e1c8304970beafa273beca0f7f8f4bed1de8b5eb972846330f",
+        "upstreamPath": "test/data/ili23/translation/viewJoinComplete.ili"
+      },
+      "ili23.ViewDef23Test.viewProjectionComplete": {
+        "path": "testdata/conformance/b1-b3-acceptance/viewProjectionComplete.ili",
+        "sha256": "4828dba7018df1f1d9f4ba1485a0252d87bd8998f3973921c762e5a858844ee9",
+        "upstreamPath": "test/data/ili23/translation/viewProjectionComplete.ili"
+      },
+      "ili23.ViewDef23Test.viewUnionComplete": {
+        "path": "testdata/conformance/b1-b3-acceptance/viewUnionComplete.ili",
+        "sha256": "3d94c801cc0ad33c83e83e3ff2747f0db0d256b27b0bdf64bdf98fb45e7adf07",
+        "upstreamPath": "test/data/ili23/translation/viewUnionComplete.ili"
+      }
+    },
+    "originalViewUpstreamCommit": "4ea207f388ef7d91b03d968cc1636f4de84e36ea",
+    "originalTranslationSources": {
+      "testdata/conformance/g2-translations/enums/enumComplete.ili": "6ec704d575fefe5e94b7aec3ececb2fd0326b60704e85b7d5831dbfce7b901db",
+      "testdata/conformance/g2-translations/enums/mandCstrtEnumTreeConstant.ili": "d005ed759227bb3823a7e68ae576846120e17c0ccf90ab53f033c2bb5cc7f924",
+      "testdata/conformance/g2-translations/enums/mandCstrtEnumerationConstant.ili": "bbe28fac1295bb07930e51c9fc991d4477377a25db951832dbd540066ecdebd6",
+      "testdata/conformance/g2-translations/translated-import-2.3.ili": "39a8f3f6bbd5287f0608d3208fc53a799f188d43bac43c5f65ec9ba3e59e0629",
+      "testdata/conformance/g2-translations/translated-import-2.4.ili": "d5705603281688cf11b88f3b18c2dc1b9e0692f436bccc0fe53e443c86556477"
+    },
+    "originalGeometrySources": {
+      "testdata/conformance/g2-geometry/custom-segment-2.3.ili": "5f5c65f5cfdf5f27aed43ccc210b0a0159d53337d1f83910cb1a1f94d871dee3",
+      "testdata/conformance/g2-geometry/custom-segment-2.4.ili": "810623b4d6ea0785963029c76c6ab0593840f4527bad4a3a8137afbec206b755",
+      "testdata/conformance/g2-geometry/fine-tolerance-2.3.ili": "e32e6ab7ea0b1d4a040bf1dee1e8a46f1ea3594c9e2179bd386f5f7662920124",
+      "testdata/conformance/g2-geometry/fine-tolerance-2.4.ili": "ab2d4922191650b6982b2c7a694bb7143748cee00b90a444d9622ae41ff1dc1b",
+      "testdata/conformance/g2-geometry/missing-overlap-19.ili": "7b1ff6ac859cb3482cebf36c1972a1bf5f7779fae4aff0863d9e180a07d3c639",
+      "testdata/conformance/g2-geometry/missing-overlap-21.ili": "b9ccd0b3effdfbe90c2da27427e153bba24978cdbad13f560063f87aa8495291",
+      "testdata/conformance/g2-geometry/missing-overlap-47.ili": "b27c9870817000d9fd33b9e81e738da73f2772b27a14ef3c427b4fc75163f14c",
+      "testdata/conformance/g2-geometry/missing-overlap-49.ili": "6ea78e720c7abce9a4fe2403999277430fad73ad5952868a0c72cd47894589d8"
+    },
+    "originalSignatureSources": {
+      "testdata/conformance/g2-signatures/2.3-Derived.ili": "35a82b534d04edb6f479b38252315b577f70fea583b737ca4c37a6b531312bf1",
+      "testdata/conformance/g2-signatures/2.3-Other.ili": "a961c22e4ed546b088d18417de2fb8b4c1e83b4d5501bb7e64b60fee6c5888a1",
+      "testdata/conformance/g2-signatures/2.3-S.ili": "16d08a96323f91f27b7ed551f578bb3513ae4bfad27b5a4dfafc493ae6b73cbe",
+      "testdata/conformance/g2-signatures/2.4-Derived.ili": "6b258a1474625b82f64b0470331235daeb080d997a6352a80987561d8ace2db9",
+      "testdata/conformance/g2-signatures/2.4-Other.ili": "77a421d920fd6ff7e62efa45755fab69ea18fb5002bb6ac848f9eae4c42de6c4",
+      "testdata/conformance/g2-signatures/2.4-S.ili": "bc5e7e3f1d1f9962a6d3a4b0b78363d3ef31f54ec559441225f073212eacff52"
+    }
+  },
+  "commands": [
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew :interlis-compiler:test --tests *PredefinedBindingContractTest --tests *FunctionContractTest --console=plain",
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew check :interlis-cli:installDist checkPortable checkBrowser :interlis-wasm-webimage:webImageProbe conformanceCheck sdkProcessCheck -PnodeExecutable=/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node -PgraalVmHome=/Users/stefan/.sdkman/candidates/java/25.0.3-graal -PbinaryenHome=/Users/stefan/.cache/interlis-java/runtime/binaryen-version_133 --continue --console=plain",
+    "26 paired compiler processes from exact source text and commands in g2-E1-binding-reference-2026-10-25.json; 4 additional open reproductions."
+  ],
+  "fullCommandExitCode": 0,
+  "jvm": {
+    "tests": 489,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "wrapperTests": 20,
+  "portableCases": 1782,
+  "projectSummary": {
+    "PASS": 574,
+    "XFAIL": 19,
+    "FAIL": 0,
+    "XPASS": 0,
+    "ERROR": 0,
+    "TOTAL": 593
+  },
+  "reports": {
+    "teaVmJavaScript": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/teaVmJavaScript.json",
+      "sha256": "ce782f9fcc9d2e61d5bb73cb61dfbe0b0564501567fd5c6d4367a6be3d9fa6ef",
+      "result": {
+        "stabilizationCases": 1782,
+        "status": "passed",
+        "tool": "0.2.0-SNAPSHOT",
+        "outcome": "succeeded",
+        "runtime": "teavm-js",
+        "node": "v24.22.0"
+      }
+    },
+    "teaVmWasmGC": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/teaVmWasmGC.json",
+      "sha256": "35fcfebe636fcb6a3390d4de1d5400a4ccd59cb7703f56f529c5b3a6ee563ce7",
+      "result": {
+        "stabilizationCases": 1782,
+        "status": "passed",
+        "tool": "0.2.0-SNAPSHOT",
+        "nodes": 2,
+        "outcome": "succeeded",
+        "runtime": "teavm-wasm-gc",
+        "node": "v24.22.0"
+      }
+    },
+    "teaVmBrowsers": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/teaVmBrowsers.json",
+      "sha256": "bd799f850a98812eac0ebc1ce3bd9af1cb97cfb92631824b085dc670643f40c3",
+      "result": [
+        {
+          "browser": "chromium",
+          "browserVersion": "156.0.8078.4",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 1782,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        },
+        {
+          "browser": "firefox",
+          "browserVersion": "157.0",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 1782,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        },
+        {
+          "browser": "webkit",
+          "browserVersion": "27.2",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 1782,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        }
+      ]
+    },
+    "safari": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/safari.json",
+      "sha256": "49cf9c79fdc2325c6f086f222a2fbd825da99af95eb291f04146e319fd2e385a",
+      "result": {
+        "status": "passed",
+        "browser": "Safari",
+        "driverVersion": "Included with Safari 27.0 (20625.1.29.18.28)",
+        "node": "v24.22.0",
+        "result": {
+          "diagramAssociations": 0,
+          "compiledOutcome": "succeeded",
+          "exactDecimal": true,
+          "analyzeRevision": "1",
+          "stabilizationCases": 1782,
+          "capabilities": "0.2.0-SNAPSHOT",
+          "diagnostics": 0,
+          "workerRestartOutcome": "succeeded",
+          "diagramNodes": 2,
+          "diagramEdges": 0,
+          "status": "ok",
+          "rejectedOutcome": "rejected"
+        },
+        "driverStderr": ""
+      }
+    },
+    "webImageNode": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/webImageNode.json",
+      "sha256": "d209290e69b9b5db3862b5cf114f949ca9b0d1581af3b044b0f0b0033806eef3",
+      "result": {
+        "stabilizationCases": 1782,
+        "status": "ok",
+        "tool": "0.2.0-SNAPSHOT",
+        "outcome": "succeeded",
+        "runtime": "graalvm-web-image",
+        "node": "v24.22.0"
+      }
+    },
+    "webImageBrowsers": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/webImageBrowsers.json",
+      "sha256": "854257e0aabff8c27f0cbdaab5aa2b8691ae74146a7b433a66d9d64b297c506b",
+      "result": [
+        {
+          "browser": "chromium",
+          "browserVersion": "156.0.8078.4",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "runtime": "graalvm-web-image",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 1782,
+            "tool": "0.2.0-SNAPSHOT",
+            "outcome": "succeeded"
+          }
+        },
+        {
+          "browser": "firefox",
+          "browserVersion": "157.0",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "runtime": "graalvm-web-image",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 1782,
+            "tool": "0.2.0-SNAPSHOT",
+            "outcome": "succeeded"
+          }
+        },
+        {
+          "browser": "webkit",
+          "browserVersion": "27.2",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "runtime": "graalvm-web-image",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 1782,
+            "tool": "0.2.0-SNAPSHOT",
+            "outcome": "succeeded"
+          }
+        }
+      ]
+    },
+    "sdkProcesses": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/sdkProcesses.json",
+      "sha256": "70cc722230d66b799fddfd27d20f3b5aceb13869b86737f58f281f22ea695285",
+      "status": "passed",
+      "commands": 9
+    },
+    "reference": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/reference.json",
+      "sha256": "825025aa0702898ebe95199bc0842448c79305605da6648b64c52ab1317578f3",
+      "summary": {
+        "TOTAL": 593,
+        "XFAIL": 1,
+        "PASS": 574,
+        "ERROR": 0,
+        "FAIL": 18,
+        "XPASS": 0
+      },
+      "runId": "15f93c16-e59b-4db0-b5e8-c1eb52123298"
+    },
+    "project": {
+      "path": "build/reports/stabilization/g2-e1-binding/final/project.json",
+      "sha256": "b243e40c0e7afb302540253235a1ebac0367f54e7eb257b6058ec019e1ef9d3b",
+      "summary": {
+        "PASS": 574,
+        "XFAIL": 19,
+        "FAIL": 0,
+        "XPASS": 0,
+        "ERROR": 0,
+        "TOTAL": 593
+      },
+      "overallResult": "PASS"
+    }
+  },
+  "artifacts": {
+    "interlis-cli/build/install/interlis-cli/lib/ST4-4.3.4.jar": "f927ac384c46d749f8b5ec68972a53aed21e00313509299616edb73bfa15ff33",
+    "interlis-cli/build/install/interlis-cli/lib/antlr-runtime-3.5.3.jar": "68bf9f5a33dfcb34033495c587e6236bef4e37aa6612919f5b1e843b90669fb9",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-4.13.2.jar": "e6f0b10d2ad206f338afe16867fc47148b6729d6e3a260ea28379b91f03a3657",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-cli/build/install/interlis-cli/lib/icu4j-72.1.jar": "3df572b240a68d13b5cd778ad2393e885d26411434cd8f098ac5987ea2e64ce3",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-cli-0.2.0-SNAPSHOT.jar": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "7f112ffecf99933eedd4dde109629098e2580e80b2e3be3e3353decd4dacf5f3",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-model-0.2.0-SNAPSHOT.jar": "01404ff26ad2c53981e9d23bc6593eb7ac185a28e510cd28c260d120affe80ba",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "a89a620b4465f8fcf9e587243a076d456edda7ca1e2c121da9831c34a54be378",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "c952e3ca1e8a4f8f735abb9b5d8ecffcf1e3f867acc5d1053a6a40fc638ec593",
+    "interlis-cli/build/install/interlis-cli/lib/org.abego.treelayout.core-1.0.3.jar": "fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326",
+    "interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js": "4bb7a2bc00678dd1684829c03cf08ef3a4cfd985cc14c983b4adbcc8e0330c48",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm": "17c2e14f91f5b6a8ad6773856c9c8c303b6dd9c21580ebbe912e6a8d2c5bc6f0",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js": "4fa1e0e0d686cc6e0a0d111e606cb876f7168bd695d9e3d639e7d5684453089b",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js": "98d121943d66def8571579c4ee3de30d811af2363c4b91064f351b56fb8bb232",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js.wasm": "c7ddf8051cb533fa68b0614545edd95d35a42649636dba18192e8c85198e1d99"
+  },
+  "logs": {
+    "build/reports/stabilization/g2-e1-binding/final/gradle.log": "7de58d1ecea105d9752534dc597543c72c825e80e8d24cebe26b0b980ed6ffe3",
+    "build/reports/stabilization/g2-e1-binding/final/targeted.log": "9b73d8743870d946f59acabcb342713408b810b012d0e97743d796bf866e7e0f",
+    "build/reports/stabilization/g2-e1-binding/final/initial-check.log": "dbde9c8ff63ad5703b4bc2105a2f632717c0af6d3582d0d35e7f6b1a858f8c3d"
+  },
+  "referenceComparison": {
+    "path": "g2-E1-binding-reference-2026-10-25.json",
+    "sha256": "39deef4f8a86122ce0605cd76b559ccde3ee46ff1a195b2c83a2ddb29a738397",
+    "pairedCases": 26,
+    "ownExpected": 26,
+    "referenceAgreements": 26,
+    "separateOpenReproductions": 4
+  },
+  "referenceExpectationsChanged": false,
+  "suiteSourcePinsChanged": false,
+  "newSuiteExceptions": 0,
+  "closedPreviouslyFailingSuiteCases": 0,
+  "verifiedRules": [
+    "BINDING.predefinedUnknown",
+    "PREDEFINED.simpleDomains",
+    "DOMAIN.final",
+    "BINDING.qualifiedFunctionEnumTree",
+    "BINDING.importedFunctionEnumTree"
+  ],
+  "necessaryFoundations": [
+    "Keep HALIGNMENT/VALIGNMENT keyword tokens in structured name segments.",
+    "Use existing binder for functions and ALL-OF instead of qualifier/suffix fallback; remove synthetic domain substitute.",
+    "FINAL check uses indexed modifiers even when base construction has not finished."
+  ],
+  "limitations": [
+    "E1 subset only; full E1–E5 rule audit and implementations remain open. Grammar/service reassignment and 21 explicit builtin audit rows are inventory, not verified semantic coverage.",
+    "Detailed public model/query/fresh-reuse assertions run on JVM. Portable acceptance/rejection/edit cases do not replace outstanding detailed JVM/TeaVM semantic graph parity.",
+    "18 reference exceptions await independent norm review; INTERLIS 1 remains separate. No new XFAIL.",
+    "F/G overlays and actual repository/offline/lock host acquisition, frozen real corpus closure and remaining P3 duties are open."
+  ]
+}

@@ -1,0 +1,2053 @@
+{
+  "cases": [
+    {
+      "name": "number-concrete-domain-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=NUMERIC;END F.",
+      "expected": "rejected",
+      "sha256": "2dcc77962dc8b6f7afd410f8cc76b5b8736a73f23e5c952e77d8d5a88a613758",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c50dd4bf5fd9402b3fa295b5], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c50dd4bf5fd9402b3fa295b5\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/0.ili\",\"revision\":\"1\",\"startOffset\":76,\"endOffset\":86},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/0.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/0.ili:1:DOMAIN N has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-25 18:23:49\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-domain-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=NUMERIC;END F.",
+      "expected": "succeeded",
+      "sha256": "ac925ff3088bc3e58dc6a51005c7b7d53b74a696fbe3c0987eede4a6660dfa91",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/1.ili>\nInfo: ...compiler run done 2026-10-25 18:23:50\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-owner-only-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n:NUMERIC;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "1ab6767569369b87c1bd082057d3364be41c14d1ad8d93f4e61d625f20249ec4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c98da752a5357f89d95836a2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c98da752a5357f89d95836a2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/2.ili\",\"revision\":\"1\",\"startOffset\":105,\"endOffset\":115},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/2.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/2.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:23:50\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-attribute-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):NUMERIC;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "56725ffd2cbddb04242e230272de7b804c4a9e51cb73e85ed8066f43b4845aad",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/3.ili>\nInfo: ...compiler run done 2026-10-25 18:23:50\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-domain-used-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=NUMERIC;TOPIC T=CLASS C=n:N;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "2f85dcbfd1724875ccafd4cbf737f77c2264a176e9afc23fd64d0781a0a70a73",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-43d61a9cb022d057b058dd41], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-43d61a9cb022d057b058dd41\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/4.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":116},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/4.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/4.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (DomainDef N is abstract)\n...compiler run failed 2026-10-25 18:23:51\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-domain-used-abstract-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=NUMERIC;TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):N;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "813f0bdb141c76df1d647891d71a97118088fb6f4aa886e7c5c6545a06c91bd3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/5.ili>\nInfo: ...compiler run done 2026-10-25 18:23:51\n"
+        }
+      }
+    },
+    {
+      "name": "coord-concrete-domain-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=COORD NUMERIC,NUMERIC;END F.",
+      "expected": "rejected",
+      "sha256": "a084940debadd828e0801c739c41f9f63d5988101b1f23e6da853681abd3813d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-081d75a08a4f102773c85f13], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-081d75a08a4f102773c85f13\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/6.ili\",\"revision\":\"1\",\"startOffset\":76,\"endOffset\":100},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/6.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/6.ili:1:DOMAIN N has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-25 18:23:51\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-domain-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=COORD NUMERIC,NUMERIC;END F.",
+      "expected": "succeeded",
+      "sha256": "6054767a73a243ebc3cf76ca21633ebe3b90f7d5034dd0705470f0083012b2d3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/7.ili>\nInfo: ...compiler run done 2026-10-25 18:23:52\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-owner-only-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n:COORD NUMERIC,NUMERIC;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "65aa4cf41a3ddbad6a47f13438bbe1e3e3fd22cc60e76f97241970f95ce864c8",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-08a389cc8f8d5dd2af666ebd], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-08a389cc8f8d5dd2af666ebd\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/8.ili\",\"revision\":\"1\",\"startOffset\":105,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/8.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/8.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:23:52\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-attribute-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):COORD NUMERIC,NUMERIC;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "60116fbcfc380e2739a73fbe609337dc8cbf50d53a32c41e98864ee08cbbe6b5",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/9.ili>\nInfo: ...compiler run done 2026-10-25 18:23:52\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-domain-used-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=COORD NUMERIC,NUMERIC;TOPIC T=CLASS C=n:N;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "739b1952cdf04ca17a1115a3b3bf12fa4115253153687d1d3a90a9a8daa4259f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9a3fb3c53f0251a737345116], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9a3fb3c53f0251a737345116\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/10.ili\",\"revision\":\"1\",\"startOffset\":126,\"endOffset\":130},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/10.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/10.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (DomainDef N is abstract)\n...compiler run failed 2026-10-25 18:23:53\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-domain-used-abstract-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=COORD NUMERIC,NUMERIC;TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):N;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "f13da6524899f672442ce245420bdcc7c222e199e9fd4c587977aa61349d3bfd",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/11.ili>\nInfo: ...compiler run done 2026-10-25 18:23:53\n"
+        }
+      }
+    },
+    {
+      "name": "concrete-abstract-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N=0..10[L];END F.",
+      "expected": "rejected",
+      "sha256": "70ea30f9cde979dadb15729835b03c25f8a0a035e4578dc20d3998dae37e4a9c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ac68a4e2aab024ce473379ea], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ac68a4e2aab024ce473379ea\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/12.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":115},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/12.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/12.ili:1:A numeric type that specifies a range of acceptable values can not have an abstract unit. However, UNIT F.L is abstract.\n...compiler run failed 2026-10-25 18:23:53\n"
+        }
+      }
+    },
+    {
+      "name": "abstract-abstract-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC[L];END F.",
+      "expected": "succeeded",
+      "sha256": "793c90509520ed74478edc3db6b6c63ad9c95709ef33d04671bc21170662723f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/13.ili>\nInfo: ...compiler run done 2026-10-25 18:23:54\n"
+        }
+      }
+    },
+    {
+      "name": "abstract-flag-concrete-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=0..10[L];END F.",
+      "expected": "rejected",
+      "sha256": "822a6110ae37b59f53aeeb723a9ff4df951ad9d9cfcf63caa283cfaf906c78f9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3ee7f2778fe8c0e95937e050], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3ee7f2778fe8c0e95937e050\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/14.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":125},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/14.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/14.ili:1:A numeric type that specifies a range of acceptable values can not have an abstract unit. However, UNIT F.L is abstract.\n...compiler run failed 2026-10-25 18:23:54\n"
+        }
+      }
+    },
+    {
+      "name": "inherited-abstract-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC[L];D EXTENDS N=0..10;END F.",
+      "expected": "rejected",
+      "sha256": "79db29ed24daa94878d0f57f1dff2ea0cf5b436d04140898f4b9fa8a8f30216a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/15.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c928624dd26c8106edfa5992], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c928624dd26c8106edfa5992\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/15.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":145},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/15.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/15.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/15.ili:Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n  Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n...compiler run failed 2026-10-25 18:23:54\n"
+        }
+      }
+    },
+    {
+      "name": "specialized-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC[L];D EXTENDS N=0..10[m];END F.",
+      "expected": "succeeded",
+      "sha256": "3be1e77c9769ea10ebfe2679b3bebc6dd028bd76a32f30725312b23ce2684e29",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/16.ili>\nInfo: ...compiler run done 2026-10-25 18:23:55\n"
+        }
+      }
+    },
+    {
+      "name": "coord-inherited-abstract-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=COORD NUMERIC[L],NUMERIC[L];D EXTENDS N=COORD 0..10,0..10;END F.",
+      "expected": "rejected",
+      "sha256": "6604a8d0ba0dd87c65b2f37d3d88bf2339d6b929d211f999f3b8d9a95c755d3e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4b05ce22034a871de1d77cdf, diag-f775370f98e904d02bd6c28d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4b05ce22034a871de1d77cdf\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/17.ili\",\"revision\":\"1\",\"startOffset\":163,\"endOffset\":168},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]},{\"id\":\"diag-f775370f98e904d02bd6c28d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/17.ili\",\"revision\":\"1\",\"startOffset\":169,\"endOffset\":174},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/17.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/17.ili:Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n  Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n...compiler run failed 2026-10-25 18:23:55\n"
+        }
+      }
+    },
+    {
+      "name": "coord-specialized-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=COORD NUMERIC[L],NUMERIC[L];D EXTENDS N=COORD 0..10[m],0..10[m];END F.",
+      "expected": "succeeded",
+      "sha256": "684f5d18fb43cb9a53236120494ef89a0325385268041c95d794242fb48ef84e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/18.ili>\nInfo: ...compiler run done 2026-10-25 18:23:55\n"
+        }
+      }
+    },
+    {
+      "name": "inherited-attribute-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS Parent(ABSTRACT)=n(ABSTRACT):NUMERIC[L];END Parent;CLASS Child EXTENDS Parent=n(EXTENDED):0..10;END Child;END T;END F.",
+      "expected": "rejected",
+      "sha256": "168f4703cf0c99b8a6a4e33b5e5d9367fa9f6eb9cb24174b03b1d989b6045d84",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/19.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-05a7f9c44f26038c675d0af6, diag-9d4244f082cb86c3d0f6a731], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9d4244f082cb86c3d0f6a731\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/19.ili\",\"revision\":\"1\",\"startOffset\":190,\"endOffset\":208},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"unresolved-type/ATTRIBUTE_OVERRIDE_TYPE\"}]},{\"id\":\"diag-05a7f9c44f26038c675d0af6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/19.ili\",\"revision\":\"1\",\"startOffset\":202,\"endOffset\":207},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/19.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/19.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/19.ili:Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n  Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n...compiler run failed 2026-10-25 18:23:56\n"
+        }
+      }
+    },
+    {
+      "name": "specialized-attribute-unit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS Parent(ABSTRACT)=n(ABSTRACT):NUMERIC[L];END Parent;CLASS Child EXTENDS Parent=n(EXTENDED):0..10[m];END Child;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "b5985aa9a836365277bb786cd90dd7efc022580d7bb09d3235c0e020629dc292",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/20.ili>\nInfo: ...compiler run done 2026-10-25 18:23:56\n"
+        }
+      }
+    },
+    {
+      "name": "formal-numeric-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;FUNCTION f(n:NUMERIC[L]):NUMERIC;END F.",
+      "expected": "succeeded",
+      "sha256": "0fb7b03ba2957b6d7eb5f53382548aed602319e645083212b6e67ef50570d2fc",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/21.ili>\nInfo: ...compiler run done 2026-10-25 18:23:57\n"
+        }
+      }
+    },
+    {
+      "name": "transient-explicit-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS C=n(TRANSIENT):NUMERIC:=INTERLIS.len(\"x\");END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "73ee8debd2ea5a2c2c8b19867b0153cc5c829907325a7c2b666c6e65dc8352ee",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/22.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f2af5cf5b2ad2763e33d543d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f2af5cf5b2ad2763e33d543d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/22.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":154},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/22.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/22.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/22.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:23:57\n"
+        }
+      }
+    },
+    {
+      "name": "inferred-view-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS C=n:0..10;END C;VIEW V AGGREGATION OF C ALL;=count:=INTERLIS.elementCount(AGGREGATES);END V;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "71ca7d8a37704c923d46239af1b7cfd8ddec8105fb3b79fe443092e902dc5d1f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/23.ili>\nInfo: ...compiler run done 2026-10-25 18:23:57\n"
+        }
+      }
+    },
+    {
+      "name": "concrete-alias-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC;Small EXTENDS N=0..10;TOPIC T=CLASS C=n:Small;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "d4bf7d86605f863c6d3e22d07a6293b643238dcdece27fee54efad53fa697f06",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/24.ili>\nInfo: ...compiler run done 2026-10-25 18:23:58\n"
+        }
+      }
+    },
+    {
+      "name": "mandatory-omitted-type-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS Parent(ABSTRACT)=n(ABSTRACT):NUMERIC;END Parent;CLASS Child EXTENDS Parent=n(EXTENDED):MANDATORY;END Child;END T;END F.",
+      "expected": "rejected",
+      "sha256": "52b04593bc4abb4971da21ad4acd525f8ccb9a88a749c24ac9b1cd0492996e06",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a44e36fa38f2acff55779e8c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a44e36fa38f2acff55779e8c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/25.ili\",\"revision\":\"1\",\"startOffset\":187,\"endOffset\":209},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/25.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/25.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:23:58\n"
+        }
+      }
+    },
+    {
+      "name": "missing-0..10[Missing]-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=0..10[Missing];END F.",
+      "expected": "rejected",
+      "sha256": "d8ff825d236b693252e85b14c29d65b14a167b8521a56d317b1a5e9f58a48083",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8b27ed4ac7977765cbe2a3b7], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8b27ed4ac7977765cbe2a3b7\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/26.ili\",\"revision\":\"1\",\"startOffset\":84,\"endOffset\":91},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/26.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/26.ili:1:There is no UNIT \"Missing\" in MODEL F.\n...compiler run failed 2026-10-25 18:23:58\n"
+        }
+      }
+    },
+    {
+      "name": "missing-0..10<Missing>-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=0..10<Missing>;END F.",
+      "expected": "rejected",
+      "sha256": "51ac0ff3b2d07fc5a2e7128af83ac7188a742c0a716a447af854708b85ab783a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/27.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4785f28b9506a6d217aa59b9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4785f28b9506a6d217aa59b9\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/27.ili\",\"revision\":\"1\",\"startOffset\":84,\"endOffset\":91},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/27.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/27.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/27.ili:1:There is no domain \"Missing\" in MODEL F.\n...compiler run failed 2026-10-25 18:23:59\n"
+        }
+      }
+    },
+    {
+      "name": "missing-0..10{Missing}-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=0..10{Missing};END F.",
+      "expected": "rejected",
+      "sha256": "99e23aaeed0c58398564bec9d93c8039608f386bf241033aa7a41d5d31d2701a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-639a72e98a7ce217b3a66a13], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-639a72e98a7ce217b3a66a13\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/28.ili\",\"revision\":\"1\",\"startOffset\":76,\"endOffset\":93},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object reference is missing or ambiguous: Missing/METAOBJECT_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/28.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/28.ili:1:There is no MetaDataUseDef.\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/28.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.MetaDataUseDef.findMatchingMetaObjects(ch.interlis.ili2c.metamodel.Table, String)\" because \"basket\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.MetaDataUseDef.findMatchingMetaObjects(ch.interlis.ili2c.metamodel.Table, String)\" because \"basket\" is null\n...compiler run failed 2026-10-25 18:23:59\n"
+        }
+      }
+    },
+    {
+      "name": "missing-COORD 0..10[Missing],0..10-2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=COORD 0..10[Missing],0..10;END F.",
+      "expected": "rejected",
+      "sha256": "0fcadeae2176271b2990fc7e70e02c7258cde3b80e7bc7c2451c89d4685ba891",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2647e75d625866629f06626e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2647e75d625866629f06626e\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/29.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":97},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/29.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/29.ili:1:There is no UNIT \"Missing\" in MODEL F.\n...compiler run failed 2026-10-25 18:24:00\n"
+        }
+      }
+    },
+    {
+      "name": "number-concrete-domain-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=NUMERIC;END F.",
+      "expected": "rejected",
+      "sha256": "32d90b304cc01a8c46bd1b10b21c077eaa6eb3af6758092d542559547b88b160",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d3e5ab3ca2799e27e41cdee0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d3e5ab3ca2799e27e41cdee0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/30.ili\",\"revision\":\"1\",\"startOffset\":76,\"endOffset\":86},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/30.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/30.ili:1:DOMAIN N has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-25 18:24:00\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-domain-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=NUMERIC;END F.",
+      "expected": "succeeded",
+      "sha256": "944fa1a1c90a237d903c1cf3dfd3c53268f2c9418411aea650e878ba163c789c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/31.ili>\nInfo: ...compiler run done 2026-10-25 18:24:00\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-owner-only-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n:NUMERIC;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "3961c7aed48bc018fd08cffa72717cb8eeb9e683fb9e1f4a39085d99580c851a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a161f10a6818f058fe7141f6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a161f10a6818f058fe7141f6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/32.ili\",\"revision\":\"1\",\"startOffset\":105,\"endOffset\":115},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/32.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/32.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:24:01\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-attribute-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):NUMERIC;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "bc2cb9c85256dcad3ea425b8dffbf4ed5acf5ffb85329988a5148c8de1970378",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/33.ili>\nInfo: ...compiler run done 2026-10-25 18:24:01\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-domain-used-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=NUMERIC;TOPIC T=CLASS C=n:N;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "3666284d5e0b2678f8decaf3e6a936d343dcf92dd1ffeae828a469a376545dc4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6e99b7f6d8b24f007caf25cb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6e99b7f6d8b24f007caf25cb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/34.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":116},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/34.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/34.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (DomainDef N is abstract)\n...compiler run failed 2026-10-25 18:24:01\n"
+        }
+      }
+    },
+    {
+      "name": "number-abstract-domain-used-abstract-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=NUMERIC;TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):N;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "95dfe69a7eaed9d9ac06300afe8d36910b93e9adb6c1a45806da3f0f6e35e835",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/35.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/35.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/35.ili>\nInfo: ...compiler run done 2026-10-25 18:24:02\n"
+        }
+      }
+    },
+    {
+      "name": "coord-concrete-domain-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=COORD NUMERIC,NUMERIC;END F.",
+      "expected": "rejected",
+      "sha256": "8872e45e4dc7577f792c658137684082e9b1dacfa5b0524a361b9c84d2b48f93",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e703af54dae11939afdd7969], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e703af54dae11939afdd7969\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/36.ili\",\"revision\":\"1\",\"startOffset\":76,\"endOffset\":100},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/36.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/36.ili:1:DOMAIN N has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-25 18:24:02\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-domain-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=COORD NUMERIC,NUMERIC;END F.",
+      "expected": "succeeded",
+      "sha256": "eaf75d77347446437829a38eec11519a1eb8ed0ba7229d20e3d7068488d937ab",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/37.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/37.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/37.ili>\nInfo: ...compiler run done 2026-10-25 18:24:02\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-owner-only-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n:COORD NUMERIC,NUMERIC;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "407cef8fa2ff55260a3e06f3f6388e30a95e60def0ecd7316e5e8039d98cd5d8",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/38.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-fa74bc13b8e981b14f5adda9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-fa74bc13b8e981b14f5adda9\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/38.ili\",\"revision\":\"1\",\"startOffset\":105,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/38.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/38.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/38.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:24:03\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-attribute-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):COORD NUMERIC,NUMERIC;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "c3c1bbb66ffb4317654b6b1c5666e5386c2db88346cd2b518e45e0017b3eeeed",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/39.ili>\nInfo: ...compiler run done 2026-10-25 18:24:03\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-domain-used-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=COORD NUMERIC,NUMERIC;TOPIC T=CLASS C=n:N;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "00f278f3cf0bbab7efb8fd489686a8fcfe6f5f4c4289fa992c8ad7c7c87197d6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/40.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f20bfaf2a98a4dc27cfa3e63], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f20bfaf2a98a4dc27cfa3e63\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/40.ili\",\"revision\":\"1\",\"startOffset\":126,\"endOffset\":130},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/40.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/40.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/40.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (DomainDef N is abstract)\n...compiler run failed 2026-10-25 18:24:04\n"
+        }
+      }
+    },
+    {
+      "name": "coord-abstract-domain-used-abstract-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N(ABSTRACT)=COORD NUMERIC,NUMERIC;TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=n(ABSTRACT):N;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "65eafd7f943908b8f3265efe0bdb005dba2030b18886dc67c5e7a57e4428ff12",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/41.ili>\nInfo: ...compiler run done 2026-10-25 18:24:04\n"
+        }
+      }
+    },
+    {
+      "name": "concrete-abstract-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N=0..10[L];END F.",
+      "expected": "rejected",
+      "sha256": "47e24676957f4ac9c2cf5e037e75fba1b442976c7b272d2da4ac1f1d5bb95063",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/42.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-41ae3dc977ae9e6db1261ecc], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-41ae3dc977ae9e6db1261ecc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/42.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":115},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/42.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/42.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/42.ili:1:A numeric type that specifies a range of acceptable values can not have an abstract unit. However, UNIT F.L is abstract.\n...compiler run failed 2026-10-25 18:24:04\n"
+        }
+      }
+    },
+    {
+      "name": "abstract-abstract-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC[L];END F.",
+      "expected": "succeeded",
+      "sha256": "7f5b79b3be4d1aea61e7c6e9895fc35a06aae4ee356dcd12dbd7b65139fd801c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/43.ili>\nInfo: ...compiler run done 2026-10-25 18:24:05\n"
+        }
+      }
+    },
+    {
+      "name": "abstract-flag-concrete-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=0..10[L];END F.",
+      "expected": "rejected",
+      "sha256": "0590f87f254c886fa15793f6bbe332d9efe396e9683ea0b1212736b216d626e3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/44.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c6adce2808a2afe691ba75fc], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c6adce2808a2afe691ba75fc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/44.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":125},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/44.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/44.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/44.ili:1:A numeric type that specifies a range of acceptable values can not have an abstract unit. However, UNIT F.L is abstract.\n...compiler run failed 2026-10-25 18:24:05\n"
+        }
+      }
+    },
+    {
+      "name": "inherited-abstract-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC[L];D EXTENDS N=0..10;END F.",
+      "expected": "rejected",
+      "sha256": "5a2a303bb5cf734466649c601ce7dd3a863d95b67dbad9178280ad28a27d7ed7",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/45.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-47950cfb25ecad77d06ea69b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-47950cfb25ecad77d06ea69b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/45.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":145},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/45.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/45.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/45.ili:Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n  Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n...compiler run failed 2026-10-25 18:24:06\n"
+        }
+      }
+    },
+    {
+      "name": "specialized-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC[L];D EXTENDS N=0..10[m];END F.",
+      "expected": "succeeded",
+      "sha256": "f2d4f836c710e37cebe2268d2fe641cb8576dfa4eb419ae4825a656fcecb9a21",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/46.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/46.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/46.ili>\nInfo: ...compiler run done 2026-10-25 18:24:06\n"
+        }
+      }
+    },
+    {
+      "name": "coord-inherited-abstract-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=COORD NUMERIC[L],NUMERIC[L];D EXTENDS N=COORD 0..10,0..10;END F.",
+      "expected": "rejected",
+      "sha256": "7e30aff128b39ec9f39a2ae4f554bc8c417771e25dec2d5743690120232c59f5",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/47.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-28267b6152d4edde3a0121ec, diag-84efff13064ab38f687fd150], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-84efff13064ab38f687fd150\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/47.ili\",\"revision\":\"1\",\"startOffset\":163,\"endOffset\":168},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]},{\"id\":\"diag-28267b6152d4edde3a0121ec\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/47.ili\",\"revision\":\"1\",\"startOffset\":169,\"endOffset\":174},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/47.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/47.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/47.ili:Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n  Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n...compiler run failed 2026-10-25 18:24:06\n"
+        }
+      }
+    },
+    {
+      "name": "coord-specialized-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=COORD NUMERIC[L],NUMERIC[L];D EXTENDS N=COORD 0..10[m],0..10[m];END F.",
+      "expected": "succeeded",
+      "sha256": "09d7310ae136fb557b4fc097ee1707169a8b6590537d96fe52efaf44fb9b7926",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/48.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/48.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/48.ili>\nInfo: ...compiler run done 2026-10-25 18:24:07\n"
+        }
+      }
+    },
+    {
+      "name": "inherited-attribute-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS Parent(ABSTRACT)=n(ABSTRACT):NUMERIC[L];END Parent;CLASS Child EXTENDS Parent=n(EXTENDED):0..10;END Child;END T;END F.",
+      "expected": "rejected",
+      "sha256": "4975ce787c675a4a5bd4c8517f2b74a1684101147514803e756a369438e4314b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/49.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0e9c6b335e0a40724bf7d3cc, diag-4bf8e82bbe0e8e7cc47bf6be], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4bf8e82bbe0e8e7cc47bf6be\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/49.ili\",\"revision\":\"1\",\"startOffset\":190,\"endOffset\":208},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"unresolved-type/ATTRIBUTE_OVERRIDE_TYPE\"}]},{\"id\":\"diag-0e9c6b335e0a40724bf7d3cc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/49.ili\",\"revision\":\"1\",\"startOffset\":202,\"endOffset\":207},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete numeric range requires a concrete unit/NUMERIC_ABSTRACT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/49.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/49.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/49.ili:Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n  Cannot invoke \"antlr.Token.getLine()\" because \"lbrac\" is null\n...compiler run failed 2026-10-25 18:24:07\n"
+        }
+      }
+    },
+    {
+      "name": "specialized-attribute-unit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS Parent(ABSTRACT)=n(ABSTRACT):NUMERIC[L];END Parent;CLASS Child EXTENDS Parent=n(EXTENDED):0..10[m];END Child;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "dc77b93ae6a0cc1bc99ad0ffd92117abce541f6f9351a258b8e64125f3177716",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/50.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/50.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/50.ili>\nInfo: ...compiler run done 2026-10-25 18:24:07\n"
+        }
+      }
+    },
+    {
+      "name": "formal-numeric-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;FUNCTION f(n:NUMERIC[L]):NUMERIC;END F.",
+      "expected": "succeeded",
+      "sha256": "4eb5bf2a3826bd2081317b99aa93861a7bbff0f270612b85742a43ede31c272d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/51.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/51.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/51.ili>\nInfo: ...compiler run done 2026-10-25 18:24:08\n"
+        }
+      }
+    },
+    {
+      "name": "transient-explicit-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS C=n(TRANSIENT):NUMERIC:=INTERLIS.len(\"x\");END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "b2423a0c7603920dcaea5c2878a04c7370ffcd675e71009ee188d04c761bd559",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/52.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f91a7688c907a1b608600cdc], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f91a7688c907a1b608600cdc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/52.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":154},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/52.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/52.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/52.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:24:09\n"
+        }
+      }
+    },
+    {
+      "name": "inferred-view-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS C=n:0..10;END C;VIEW V AGGREGATION OF C ALL;=count:=INTERLIS.elementCount(AGGREGATES);END V;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "7d2e4ed60277ae639ed9c464b5c0ef2516736bfa30bb91289dfd9e04278b59f7",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/53.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/53.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/53.ili>\nInfo: ...compiler run done 2026-10-25 18:24:10\n"
+        }
+      }
+    },
+    {
+      "name": "concrete-alias-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;DOMAIN N(ABSTRACT)=NUMERIC;Small EXTENDS N=0..10;TOPIC T=CLASS C=n:Small;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "06aa41ae1ade468ae1569f0f00c66a59cd56e1620b103ba4b7f4ae461e9db4ff",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/54.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/54.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/54.ili>\nInfo: ...compiler run done 2026-10-25 18:24:13\n"
+        }
+      }
+    },
+    {
+      "name": "mandatory-omitted-type-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT L(ABSTRACT);m EXTENDS L;TOPIC T=CLASS Parent(ABSTRACT)=n(ABSTRACT):NUMERIC;END Parent;CLASS Child EXTENDS Parent=n(EXTENDED):MANDATORY;END Child;END T;END F.",
+      "expected": "rejected",
+      "sha256": "1e28268f497d0d7a3867c7d2f9a79225003e11971d9672c3e4310a9b00b555da",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/55.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c37f542645e10c2c726b1ca9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c37f542645e10c2c726b1ca9\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/55.ili\",\"revision\":\"1\",\"startOffset\":187,\"endOffset\":209},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"n\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incomplete numeric or coordinate declaration requires ABSTRACT/NUMERIC_ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/55.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/55.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/55.ili:1:The attribute n has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-25 18:24:15\n"
+        }
+      }
+    },
+    {
+      "name": "missing-0..10[Missing]-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=0..10[Missing];END F.",
+      "expected": "rejected",
+      "sha256": "4f39c3aa3442e67753da64bd0ce98ddf517d0e289974f2e5ebc033de546cbf19",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/56.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-029bd7f9f7926abe6aa2584f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-029bd7f9f7926abe6aa2584f\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/56.ili\",\"revision\":\"1\",\"startOffset\":84,\"endOffset\":91},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/56.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/56.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/56.ili:1:There is no UNIT \"Missing\" in MODEL F.\n...compiler run failed 2026-10-25 18:24:16\n"
+        }
+      }
+    },
+    {
+      "name": "missing-0..10<Missing>-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=0..10<Missing>;END F.",
+      "expected": "rejected",
+      "sha256": "5af3faa9ac15af18bb5244761e457849c1377f201aeea1f2731e5c575fcece7d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/57.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2b3270942a250b2b5ed13291], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2b3270942a250b2b5ed13291\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/57.ili\",\"revision\":\"1\",\"startOffset\":84,\"endOffset\":91},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/57.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/57.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/57.ili:1:There is no domain \"Missing\" in MODEL F.\n...compiler run failed 2026-10-25 18:24:18\n"
+        }
+      }
+    },
+    {
+      "name": "missing-0..10{Missing}-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=0..10{Missing};END F.",
+      "expected": "rejected",
+      "sha256": "9d965c1e7b51c98c96880fb191114e09707429e1c28e1896d1c021d12a870965",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/58.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-09cc33087953978a86e7e030], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-09cc33087953978a86e7e030\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/58.ili\",\"revision\":\"1\",\"startOffset\":76,\"endOffset\":93},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"N\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object reference is missing or ambiguous: Missing/METAOBJECT_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/58.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/58.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/58.ili:1:There is no MetaDataUseDef.\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/58.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.MetaDataUseDef.findMatchingMetaObjects(ch.interlis.ili2c.metamodel.Table, String)\" because \"basket\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.MetaDataUseDef.findMatchingMetaObjects(ch.interlis.ili2c.metamodel.Table, String)\" because \"basket\" is null\n...compiler run failed 2026-10-25 18:24:20\n"
+        }
+      }
+    },
+    {
+      "name": "missing-COORD 0..10[Missing],0..10-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN N=COORD 0..10[Missing],0..10;END F.",
+      "expected": "rejected",
+      "sha256": "6d363d5016fc6fbba91c441d709dbf7611648c6891c875afb55a22445f6ed291",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/59.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7a484cebed15badb24c3e90d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7a484cebed15badb24c3e90d\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-numeric-abstraction/processes/59.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":97},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/59.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/59.ili>\nbuild/reports/stabilization/g2-e2-numeric-abstraction/processes/59.ili:1:There is no UNIT \"Missing\" in MODEL F.\n...compiler run failed 2026-10-25 18:24:21\n"
+        }
+      }
+    },
+    {
+      "name": "generic-context-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN G(GENERIC)=COORD NUMERIC,NUMERIC;P=COORD 0..10,0..10;CONTEXT default=G=P;TOPIC T=CLASS C=p:G;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "9cd099c67524aa49c84cdcd1220a4ac93ccec52d5cdb395a25de8685d2ef6955",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/60.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/60.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/60.ili>\nInfo: ...compiler run done 2026-10-25 18:24:23\n"
+        }
+      }
+    },
+    {
+      "name": "generic-abstract-topic-2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN G(GENERIC)=COORD NUMERIC,NUMERIC;TOPIC T(ABSTRACT)=CLASS C=p:G;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "be44edd25d2ecf33cad5762cb3ab74ebe3cda8917633de248a79202bf0e70c5d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/61.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-numeric-abstraction/processes/61.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-numeric-abstraction/processes/61.ili>\nInfo: ...compiler run done 2026-10-25 18:24:26\n"
+        }
+      }
+    }
+  ],
+  "ownExpected": 62,
+  "total": 62,
+  "referenceAgreements": 62
+}

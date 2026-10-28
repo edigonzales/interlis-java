@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "R4 normative reference exception packet",
+  "acceptance": "PENDING_USER_REVALIDATION",
+  "expectationsChanged": false,
+  "cases": 18,
+  "packet": "docs/evidence/stabilization/g2-normative-decision-packet-2026-10-28.json",
+  "packetSha256": "77df55f7e72ba5827ec136cf9a1ef77f364c361f35398d901fa0df25a7929915",
+  "markdown": "docs/evidence/stabilization/g2-normative-decision-packet-2026-10-28.md",
+  "markdownSha256": "dd231b726e809f936b523f8ac4a75b2ea573245061fda55b970275ab12cfa39e",
+  "source": "docs/evidence/conformance/normative-expectations.json",
+  "sourceSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+  "matrix": "g2-rule-matrix.json",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "tools": {
+    "g2_normative_decisions.py": "0f37c2cb6cc788b0ab2af13de06a1bb108e64d019fda3caac03bfff05c518389",
+    "test_g2_normative_decisions.py": "d0232b5b4f94b8802db0560d705cde548bace262284062078a910b522acf1841"
+  },
+  "commands": [
+    "build/g2-venv/bin/python tools/reference/g2_normative_decisions.py --out build/reports/g2/A2/R4/normative-decisions.json --markdown build/reports/g2/A2/R4/normative-decisions.md",
+    "./gradlew g2EvidenceTest --rerun-tasks --console=plain"
+  ],
+  "logs": {
+    "packet": "build/reports/g2/A2/R4/normative-decisions.log",
+    "packetSha256": "321af0ac1b364c47a9313eecf72535cc375dcf80b8623ad29e5985ea1dd4f071",
+    "evidence": "build/reports/g2/A2/R4/g2-evidence-test-decisions.log",
+    "evidenceSha256": "d8657407395a7557ed6ec685466781c7fc407b11cdab35db67288f6931fc531a"
+  },
+  "technicalTests": 48,
+  "compilerTests": 614,
+  "compilerFailures": 0,
+  "compilerErrors": 0,
+  "compilerSkipped": 0,
+  "acceptanceLimits": [
+    "No user decision is claimed; all 18 cases remain PENDING_USER_REVALIDATION.",
+    "No own/reference expectation or XFAIL was changed.",
+    "The packet is a preparation, not an independent norm review."
+  ],
+  "remaining": [
+    "User revalidation of the 18 exceptions in both versions.",
+    "Implement/execute the 2484 planned R4 conditions starting with lexical and model-header clauses.",
+    "Resolve TYPE_MODEL_STRUCTURE_BOUNDARY and NUMERIC_SCALING_PAIR_AND_CONSTANT_PROFILE.",
+    "A2 overall review, A3 and phase A review."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN"
+}

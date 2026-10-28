@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Exact numeric interval with optional unit and reference-system hint.
+ * Exact numeric interval with optional bound unit and reference-system/axis identity.
  *
  * @param minimum the {@code minimum} component
  * @param maximum the {@code maximum} component
@@ -15,7 +15,7 @@ import java.util.Optional;
  */
 public record NumericRange(Optional<DecimalLiteral> minimum, Optional<DecimalLiteral> maximum,
                            boolean circular, NumericDirection direction,
-                           Optional<SymbolId> unit, Optional<String> referenceSystem) {
+                           Optional<SymbolId> unit, Optional<ReferenceSystem> referenceSystem) {
     /** Creates a validated instance. */
     public NumericRange {
         minimum = Objects.requireNonNull(minimum, "minimum");
@@ -50,5 +50,12 @@ public record NumericRange(Optional<DecimalLiteral> minimum, Optional<DecimalLit
     public static NumericRange unbounded() {
         return new NumericRange(Optional.empty(), Optional.empty(), false,
                 NumericDirection.NONE, Optional.empty(), Optional.empty());
+    }
+    /** Reference to a declared metadata object or numeric/coordinate domain; axis numbers are one-based. */
+    public record ReferenceSystem(SymbolId target, boolean domain, java.util.OptionalInt axis) {
+        public ReferenceSystem {
+            Objects.requireNonNull(target); Objects.requireNonNull(axis);
+            if (axis.isPresent() && axis.getAsInt() < 1) throw new IllegalArgumentException("axis must be positive");
+        }
     }
 }

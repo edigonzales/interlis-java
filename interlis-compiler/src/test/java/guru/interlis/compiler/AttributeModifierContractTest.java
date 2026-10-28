@@ -23,8 +23,8 @@ class AttributeModifierContractTest {
                 new SourceRevision(1), """
                 INTERLIS 2.3;
                 MODEL A AT "https://example.interlis.ch" VERSION "1.0" =
-                  TOPIC T =
-                    CLASS C =
+                  TOPIC T (ABSTRACT) =
+                    CLASS C (ABSTRACT) =
                       value (ABSTRACT) : TEXT*10;
                     END C;
                   END T;

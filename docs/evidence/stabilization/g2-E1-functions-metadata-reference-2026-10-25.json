@@ -1,0 +1,2590 @@
+{
+  "cases": [
+    {
+      "name": "empty-function",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "b07822adfb24cd65f8108d01e7575f15fb18a1937a083d946d6159802fe0c1ce"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ce679f73905674b7f8922d72], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ce679f73905674b7f8922d72\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":82,\"endOffset\":84},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"empty function parameter list\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili:1:expecting NAME, found ')'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili:1:expecting NAME, found 'END'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili:2:expecting ')', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili:2:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/0/0-functions-metadata.ili:2:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:43:51\n"
+        }
+      }
+    },
+    {
+      "name": "function-parameter",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:BOOLEAN):BOOLEAN; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "951a58c68ab0be68641ffecc76620ffd0d32a1a84a2ebe0bce09b74e3e46df3e"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/1/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/1/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/1/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:43:53\n"
+        }
+      }
+    },
+    {
+      "name": "empty-call",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(); END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "232171a513841eaf1b9d78d19cb0e75d75fa602d587be97a16764b51930fc328"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a1d7c187db22918dc27ee875, diag-bd75fe4149848f87096694a0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a1d7c187db22918dc27ee875\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":82,\"endOffset\":84},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"empty function parameter list\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]},{\"id\":\"diag-bd75fe4149848f87096694a0\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":134,\"endOffset\":136},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"empty function argument list\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili:1:expecting NAME, found ')'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili:1:expecting NAME, found 'TOPIC'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili:1:expecting ':', found ';'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili:1:MODEL F should end with \"END F\", but \"END C\" was found.\nbuild/reports/stabilization/g2-e1-function-metadata/processes/2/0-functions-metadata.ili:1:expecting '.', found ';'\n...compiler run failed 2026-10-25 11:43:55\n"
+        }
+      }
+    },
+    {
+      "name": "extra-argument",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(#true); END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "3be7e9069f4d64a43fc2c39ca9bdcd31dea5c7c125d860c062e45e861ff6f5b2"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c2436df0144311a5f6404400, diag-cfca3d6598fdb2bc57276762], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cfca3d6598fdb2bc57276762\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":82,\"endOffset\":84},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"empty function parameter list\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]},{\"id\":\"diag-c2436df0144311a5f6404400\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":131,\"endOffset\":141},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili:1:expecting NAME, found ')'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili:1:expecting NAME, found 'TOPIC'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili:1:expecting ':', found ';'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili:1:MODEL F should end with \"END F\", but \"END C\" was found.\nbuild/reports/stabilization/g2-e1-function-metadata/processes/3/0-functions-metadata.ili:1:expecting '.', found ';'\n...compiler run failed 2026-10-25 11:43:57\n"
+        }
+      }
+    },
+    {
+      "name": "missing-argument",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:BOOLEAN):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(); END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "801f840558bbdc1e9755102b4664f737346dd6bd579189b4f1f5cc2bccc87d57"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-12e4f96ce8b85e7a2b82efd8, diag-4331f3e788f3eb49f98c13b8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4331f3e788f3eb49f98c13b8\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":145},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"}]},{\"id\":\"diag-12e4f96ce8b85e7a2b82efd8\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":143,\"endOffset\":145},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"empty function argument list\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:1:unexpected token: )\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:2:expecting ')', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:2:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:2:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:2:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:2:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:2:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/4/0-functions-metadata.ili:2:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:43:59\n"
+        }
+      }
+    },
+    {
+      "name": "empty-builtin",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=MANDATORY CONSTRAINT INTERLIS.len()>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "af65f4ef4bf4d83fb52d1570771094a06de96a4d3b44d480debfa7445c672339"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-435fe1b6edb0826955dadbe7, diag-d5d5462afbe9b3c7b3a31cb2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d5d5462afbe9b3c7b3a31cb2\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":109,\"endOffset\":123},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"}]},{\"id\":\"diag-435fe1b6edb0826955dadbe7\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":121,\"endOffset\":123},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"empty function argument list\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:1:unexpected token: )\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:2:expecting ')', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:2:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:2:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:2:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:2:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:2:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/5/0-functions-metadata.ili:2:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:44:00\n"
+        }
+      }
+    },
+    {
+      "name": "metaobject-translation",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "5cbff7ba805fd8ad2e3120bb1cf473bbbed0b85f6b47b369e095ea46aeea8009"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/6/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/6/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/6/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:02\n"
+        }
+      }
+    },
+    {
+      "name": "inherited-path",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "5088ae77bad4cf27b0be593e460e2448c3a4f7aa9e02793f4f86ab0b4f6c8577"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/7/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/7/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/7/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:03\n"
+        }
+      }
+    },
+    {
+      "name": "override",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; CLASS D EXTENDS C=NameInBaseLanguage(EXTENDED):MANDATORY NAME; END D; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "ee33d4acb30995e0261e393f87c4e56e0d797164b0f3456e67ff5a323599fe33"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/8/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/8/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/8/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:05\n"
+        }
+      }
+    },
+    {
+      "name": "mandatory-removed",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; CLASS D EXTENDS C=NameInBaseLanguage(EXTENDED):NAME; END D; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "66e6a442faf8c2a42055824ec251f3c073b678d27d04cd5967d11b81072616ce"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/9/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-dd70daf56fa31c46193eff4a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-dd70daf56fa31c46193eff4a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/9/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":210,\"endOffset\":244},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"NameInBaseLanguage\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"extended attribute may not remove MANDATORY/ATTRIBUTE_OVERRIDE_MANDATORY\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/9/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/9/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/9/0-functions-metadata.ili:1:An attribute with cardinality {0..1} can not extend one whose cardinality is {1}. The cardinality must be more restrictive.\n...compiler run failed 2026-10-25 11:44:06\n"
+        }
+      }
+    },
+    {
+      "name": "wrong-type",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; CLASS D EXTENDS C=NameInBaseLanguage(EXTENDED):MANDATORY 0..10; END D; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "a9a3ce7d756cafc711a61ba99fc45a30c55542be892a5aa00425b811aeca1442"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/10/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7b1dd2f02b1d520315bda466], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7b1dd2f02b1d520315bda466\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/10/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":210,\"endOffset\":255},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"NameInBaseLanguage\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"extended attribute changes type/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/10/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/10/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/10/0-functions-metadata.ili:1:Numeric types can only extend other numeric types.\n...compiler run failed 2026-10-25 11:44:07\n"
+        }
+      }
+    },
+    {
+      "name": "wrong-kind",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END S; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "c353cd2c9a299210ea1e7b72eb59742b2cb90cdbca14ae5e342be63ab5945cd5"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/11/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9614506f720269d2fc2d3f8b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9614506f720269d2fc2d3f8b\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/11/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":92,\"endOffset\":123},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.METAOBJECT_TRANSLATION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/11/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/11/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/11/0-functions-metadata.ili:1:A structure can not extend a class. Therefore, STRUCTURE S can not extend CLASS INTERLIS.METAOBJECT_TRANSLATION.\n  A structure can not extend a class. Therefore, STRUCTURE S can not extend CLASS INTERLIS.METAOBJECT_TRANSLATION.\n...compiler run failed 2026-10-25 11:44:08\n"
+        }
+      }
+    },
+    {
+      "name": "missing-member",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(UnknownName)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "3a4126d855bc9a5cbe820706eb279a112889e15a59e9087d9b188d903a1aa5f4"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/12/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-cf4e5d395d23cff81cf5f037], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cf4e5d395d23cff81cf5f037\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/12/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":162,\"endOffset\":173},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"UnknownName\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/12/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/12/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/12/0-functions-metadata.ili:1:Name UnknownName is not applicable to CLASS F.T.C.\n...compiler run failed 2026-10-25 11:44:09\n"
+        }
+      }
+    },
+    {
+      "name": "axis-restriction",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):LIST {2} OF INTERLIS.AXIS; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "3e8731cac1c46be083fbec2b1a30f12f33058e7639f588151ef12095ba62b1b9"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/13/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/13/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/13/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:10\n"
+        }
+      }
+    },
+    {
+      "name": "axis-widens",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):LIST {4} OF INTERLIS.AXIS; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "530603fb307650b25c9da2e0ed9fa7e3f701ead8a83b5ab7c8e8dba511668b31"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/14/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b049afe39670e47021a4c019], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b049afe39670e47021a4c019\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/14/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":158},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Axis\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"collection-cardinality-widens/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/14/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/14/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/14/0-functions-metadata.ili:1:An attribute with cardinality {4} can not extend one whose cardinality is {1..3}. The cardinality must be more restrictive.\n...compiler run failed 2026-10-25 11:44:11\n"
+        }
+      }
+    },
+    {
+      "name": "axis-kind",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):BAG {2} OF INTERLIS.AXIS; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "26e7877b30066245605a44a15b0eaac70b70ff090081332f076dc650c3b48d64"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/15/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6cc5dfb0f274c6829ef98331], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6cc5dfb0f274c6829ef98331\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/15/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":157},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Axis\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"collection-kind-differs/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/15/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/15/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/15/0-functions-metadata.ili:1:A BAG (unordered) can not extend a LIST (ordered).\n...compiler run failed 2026-10-25 11:44:13\n"
+        }
+      }
+    },
+    {
+      "name": "axis-target",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):LIST {2} OF INTERLIS.GregorianDate; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "92074b4d5bcb5fb2e62e3582f1b603f1cd0ddf6610cc9a753f154df2f519fb49"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/16/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-374503e8e1fa920d2d963f53], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-374503e8e1fa920d2d963f53\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/16/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":167},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Axis\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"collection-element-structure-target-differs/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/16/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/16/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/16/0-functions-metadata.ili:1:For extending the composition, STRUCTURE INTERLIS.GregorianDate would have to extend STRUCTURE INTERLIS.AXIS.\n  For extending the composition, STRUCTURE INTERLIS.GregorianDate would have to extend STRUCTURE INTERLIS.AXIS.\n...compiler run failed 2026-10-25 11:44:14\n"
+        }
+      }
+    },
+    {
+      "name": "translation-valid",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/translation.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END Original.\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/translation.ili": "a2fea33c1ad03b6329be44b8b15d7d1e91baf197ae2c4d41dbaf95e9bc6bc433"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/17/0-translation.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/17/0-translation.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/17/0-translation.ili>\nInfo: ...compiler run done 2026-10-25 11:44:17\n"
+        }
+      }
+    },
+    {
+      "name": "translation-wrong-target",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/translation.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END Original.\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(Name)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/translation.ili": "a649b7e23ca784522389bb8de6c9399bd986aacc6bb084ed3ffc70218896ce9b"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/18/0-translation.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a577e1a79389e10d48962051, diag-aaa8fdd4b5d4a1b267de8375], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-aaa8fdd4b5d4a1b267de8375\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/18/0-translation.ili\",\"revision\":\"1\",\"startOffset\":220,\"endOffset\":427},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation constraint references differ/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-a577e1a79389e10d48962051\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/18/0-translation.ili\",\"revision\":\"1\",\"startOffset\":220,\"endOffset\":427},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/18/0-translation.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/18/0-translation.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/18/0-translation.ili:2:The referenced attributes do not match (Name/NameInBaseLanguage).\n...compiler run failed 2026-10-25 11:44:20\n"
+        }
+      }
+    },
+    {
+      "name": "imports-False",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/a-base.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T;FUNCTION f(v:BOOLEAN):BOOLEAN; END Base.\n"
+        },
+        {
+          "sourceId": "memory:/z-use.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC U=DEPENDS ON Base.T; CLASS D EXTENDS Base.T.C=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0 AND Base.f(#true); END D; END U; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/a-base.ili": "0a9ae23f49ee2ff2a945d5a40cb1eb84317da66c02a50db7d894dda8fb783362",
+        "memory:/z-use.ili": "44125bad568df7c80f0fd933d6fc7aec2283d874ef236ae053e4bd2c1766ee6b"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/19/0-a-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/19/1-z-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/19/0-a-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/19/1-z-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/19/0-a-base.ili>\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/19/1-z-use.ili>\nInfo: ...compiler run done 2026-10-25 11:44:23\n"
+        }
+      }
+    },
+    {
+      "name": "imports-True",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/z-base.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T;FUNCTION f(v:BOOLEAN):BOOLEAN; END Base.\n"
+        },
+        {
+          "sourceId": "memory:/a-use.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC U=DEPENDS ON Base.T; CLASS D EXTENDS Base.T.C=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0 AND Base.f(#true); END D; END U; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/z-base.ili": "0a9ae23f49ee2ff2a945d5a40cb1eb84317da66c02a50db7d894dda8fb783362",
+        "memory:/a-use.ili": "44125bad568df7c80f0fd933d6fc7aec2283d874ef236ae053e4bd2c1766ee6b"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/20/0-z-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/20/1-a-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/20/0-z-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/20/1-a-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/20/0-z-base.ili>\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/20/1-a-use.ili>\nInfo: ...compiler run done 2026-10-25 11:44:25\n"
+        }
+      }
+    },
+    {
+      "name": "empty-function",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "c596cc74cea5509ce04b25defb308a2315cc1bcb9d4e66edf822d893be705eb7"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/21/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/21/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/21/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:27\n"
+        }
+      }
+    },
+    {
+      "name": "function-parameter",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:BOOLEAN):BOOLEAN; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "fbef0f1914890cd3949bcbab7d8b05c2bd16092a0ef0bfda4b21b3b28796dfdb"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/22/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/22/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/22/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:28\n"
+        }
+      }
+    },
+    {
+      "name": "empty-call",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(); END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "c818e6398cc6690d39a6b2d38995638f1e8401e663c197ea4bbb28902daaf4e1"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/23/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/23/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/23/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:29\n"
+        }
+      }
+    },
+    {
+      "name": "extra-argument",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(#true); END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "c15d4149faa9bbea88bd5eade4e8802c57072921d1560c4e6bf81ed1810076fa"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/24/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-270a167db48a4ce322b26b48], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-270a167db48a4ce322b26b48\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/24/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":131,\"endOffset\":141},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/24/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/24/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/24/0-functions-metadata.ili:1:The invocation of FUNCTION F.f is not correct. There should be 0 arguments.\n  The invocation of FUNCTION F.f is not correct. There should be 0 arguments.\nbuild/reports/stabilization/g2-e1-function-metadata/processes/24/0-functions-metadata.ili:1:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 11:44:30\n"
+        }
+      }
+    },
+    {
+      "name": "missing-argument",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:BOOLEAN):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(); END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "16c008f56f15f90c246dd12b7bfe01e26a232c5458ec73fb31cc840ab693aa14"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/25/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-111a793c277006942b41f58b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-111a793c277006942b41f58b\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/25/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":145},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/25/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/25/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/25/0-functions-metadata.ili:1:The invocation of FUNCTION F.f is not correct. There should be 1 arguments.\n  The invocation of FUNCTION F.f is not correct. There should be 1 arguments.\nbuild/reports/stabilization/g2-e1-function-metadata/processes/25/0-functions-metadata.ili:1:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 11:44:32\n"
+        }
+      }
+    },
+    {
+      "name": "empty-builtin",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=MANDATORY CONSTRAINT INTERLIS.len()>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "93968e72bd421a1c62051a84824e9b1b9e10ce714a8570d3671c3b512616305b"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/26/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0bc8ed110c476f0afe594c13], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0bc8ed110c476f0afe594c13\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/26/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":109,\"endOffset\":123},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/26/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/26/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/26/0-functions-metadata.ili:1:The invocation of FUNCTION INTERLIS.len is not correct. There should be 1 arguments.\n  The invocation of FUNCTION INTERLIS.len is not correct. There should be 1 arguments.\nbuild/reports/stabilization/g2-e1-function-metadata/processes/26/0-functions-metadata.ili:1:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"expr\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"expr\" is null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/26/0-functions-metadata.ili:1:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 11:44:34\n"
+        }
+      }
+    },
+    {
+      "name": "metaobject-translation",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "7b8366b7511186d199a240dbb8d807400a1bd328a6f2e6875519a0002c69f3bc"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/27/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/27/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/27/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:36\n"
+        }
+      }
+    },
+    {
+      "name": "inherited-path",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "80b1f00cdccfa7b9097e95cadfccd0f6fe52a2141487ffc0b2da011a1d506ad3"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/28/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/28/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/28/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:37\n"
+        }
+      }
+    },
+    {
+      "name": "override",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; CLASS D EXTENDS C=NameInBaseLanguage(EXTENDED):MANDATORY NAME; END D; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "15a01e315c906d6b92dff682fecb79a47ee9fe23e7dc589198315de795aeb4e1"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/29/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/29/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/29/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:40\n"
+        }
+      }
+    },
+    {
+      "name": "mandatory-removed",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; CLASS D EXTENDS C=NameInBaseLanguage(EXTENDED):NAME; END D; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "d33e5b109fb17376df3b22b9d5d10da2a0f99d0ff1c992abce463cfae03d2e4c"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/30/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-34e7e6de7d3209cec7f3186b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-34e7e6de7d3209cec7f3186b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/30/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":210,\"endOffset\":244},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"NameInBaseLanguage\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"extended attribute may not remove MANDATORY/ATTRIBUTE_OVERRIDE_MANDATORY\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/30/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/30/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/30/0-functions-metadata.ili:1:An attribute with cardinality {0..1} can not extend one whose cardinality is {1}. The cardinality must be more restrictive.\n...compiler run failed 2026-10-25 11:44:42\n"
+        }
+      }
+    },
+    {
+      "name": "wrong-type",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; CLASS D EXTENDS C=NameInBaseLanguage(EXTENDED):MANDATORY 0..10; END D; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "bd97a84d435bf25adb2206226ca4141e9f71bd4851ef9b32b35b5066bc475dc2"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/31/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b12bd3894e586af0dd6bcb5c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b12bd3894e586af0dd6bcb5c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/31/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":210,\"endOffset\":255},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"NameInBaseLanguage\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"extended attribute changes type/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/31/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/31/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/31/0-functions-metadata.ili:1:Numeric types can only extend other numeric types.\n...compiler run failed 2026-10-25 11:44:45\n"
+        }
+      }
+    },
+    {
+      "name": "wrong-kind",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END S; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "e67e77f807266d07410a69488dedc87b61ceab9b447bdda9f04546df1d047426"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/32/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a57ff514c89afcdabe5c7758], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a57ff514c89afcdabe5c7758\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/32/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":92,\"endOffset\":123},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.METAOBJECT_TRANSLATION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/32/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/32/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/32/0-functions-metadata.ili:1:A structure can not extend a class. Therefore, STRUCTURE S can not extend CLASS INTERLIS.METAOBJECT_TRANSLATION.\n  A structure can not extend a class. Therefore, STRUCTURE S can not extend CLASS INTERLIS.METAOBJECT_TRANSLATION.\n...compiler run failed 2026-10-25 11:44:47\n"
+        }
+      }
+    },
+    {
+      "name": "missing-member",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(UnknownName)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "2fe1d16d8ab935f9ac192e938f3cdd10a4a69e332742da8003c26be8171e75a5"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/33/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3ba51c32a21cb23eb70111e2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3ba51c32a21cb23eb70111e2\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/33/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":162,\"endOffset\":173},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"UnknownName\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/33/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/33/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/33/0-functions-metadata.ili:1:Name UnknownName is not applicable to CLASS F.T.C.\n...compiler run failed 2026-10-25 11:44:51\n"
+        }
+      }
+    },
+    {
+      "name": "axis-restriction",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):LIST {2} OF INTERLIS.AXIS; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "395d1071d862698811bf923e48fb8cdd5b5cd690b3719babd091a04156b598dd"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/34/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/34/0-functions-metadata.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/34/0-functions-metadata.ili>\nInfo: ...compiler run done 2026-10-25 11:44:53\n"
+        }
+      }
+    },
+    {
+      "name": "axis-widens",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):LIST {4} OF INTERLIS.AXIS; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "cf00393f8a5b1af30a56293fcafd0cd79e8719887238577cfa4a1820bb091227"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/35/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-10fd69059f55e3c97ffc41c6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-10fd69059f55e3c97ffc41c6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/35/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":158},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Axis\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"collection-cardinality-widens/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/35/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/35/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/35/0-functions-metadata.ili:1:An attribute with cardinality {4} can not extend one whose cardinality is {1..3}. The cardinality must be more restrictive.\n...compiler run failed 2026-10-25 11:44:55\n"
+        }
+      }
+    },
+    {
+      "name": "axis-kind",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):BAG {2} OF INTERLIS.AXIS; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "ae2be23f1455661cc70cca22b06392dd53ae728143a67c03e7d7fa55aae31b77"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/36/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-48f6e402468acb6f80ab4f11], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-48f6e402468acb6f80ab4f11\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/36/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":157},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Axis\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"collection-kind-differs/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/36/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/36/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/36/0-functions-metadata.ili:1:A BAG (unordered) can not extend a LIST (ordered).\n...compiler run failed 2026-10-25 11:44:56\n"
+        }
+      }
+    },
+    {
+      "name": "axis-target",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/functions-metadata.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.COORDSYSTEM=Axis(EXTENDED):LIST {2} OF INTERLIS.GregorianDate; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/functions-metadata.ili": "f5f846d1cdab7f3743f7c99a20cb4b80b001e0560ef5f1e6d19ce1cbe9310feb"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/37/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7f5fcc50201ee697ca4df394], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7f5fcc50201ee697ca4df394\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/37/0-functions-metadata.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":167},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Axis\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"collection-element-structure-target-differs/ATTRIBUTE_OVERRIDE_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/37/0-functions-metadata.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/37/0-functions-metadata.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/37/0-functions-metadata.ili:1:For extending the composition, STRUCTURE INTERLIS.GregorianDate would have to extend STRUCTURE INTERLIS.AXIS.\n  For extending the composition, STRUCTURE INTERLIS.GregorianDate would have to extend STRUCTURE INTERLIS.AXIS.\n...compiler run failed 2026-10-25 11:44:57\n"
+        }
+      }
+    },
+    {
+      "name": "translation-valid",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/translation.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END Original.\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/translation.ili": "258d938d8dc93e0b813b138712cfe8604d6d6529368e5eb75fd4e0c890094d77"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/38/0-translation.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/38/0-translation.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/38/0-translation.ili>\nInfo: ...compiler run done 2026-10-25 11:44:58\n"
+        }
+      }
+    },
+    {
+      "name": "translation-wrong-target",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/translation.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0; END C; END T; END Original.\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT INTERLIS.len(Name)>0; END C; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/translation.ili": "5e4e8e9552a4122fbdc8f314ac353bea263ab9f2515ce8712a3396675473e114"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/39/0-translation.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3843516f6109f394a798b1b5, diag-6e59f01337d79b9d42ae2b64], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3843516f6109f394a798b1b5\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/39/0-translation.ili\",\"revision\":\"1\",\"startOffset\":220,\"endOffset\":427},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation constraint references differ/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-6e59f01337d79b9d42ae2b64\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/39/0-translation.ili\",\"revision\":\"1\",\"startOffset\":220,\"endOffset\":427},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/39/0-translation.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/39/0-translation.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/39/0-translation.ili:2:The referenced attributes do not match (Name/NameInBaseLanguage).\n...compiler run failed 2026-10-25 11:44:59\n"
+        }
+      }
+    },
+    {
+      "name": "imports-False",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/a-base.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T;FUNCTION f():BOOLEAN; END Base.\n"
+        },
+        {
+          "sourceId": "memory:/z-use.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC U=DEPENDS ON Base.T; CLASS D EXTENDS Base.T.C=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0 AND Base.f(); END D; END U; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/a-base.ili": "8e745e9ac13aabdd9c7906ee06b1ac2456e0e973ebac6765ace375a78e60865a",
+        "memory:/z-use.ili": "90c55d015ab22cb297de1a65850fcd9dedb2ee5bdebbc6569b9a0af57180e3ad"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/40/0-a-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/40/1-z-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/40/0-a-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/40/1-z-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/40/0-a-base.ili>\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/40/1-z-use.ili>\nInfo: ...compiler run done 2026-10-25 11:45:00\n"
+        }
+      }
+    },
+    {
+      "name": "imports-True",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/z-base.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T;FUNCTION f():BOOLEAN; END Base.\n"
+        },
+        {
+          "sourceId": "memory:/a-use.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC U=DEPENDS ON Base.T; CLASS D EXTENDS Base.T.C=MANDATORY CONSTRAINT INTERLIS.len(NameInBaseLanguage)>0 AND Base.f(); END D; END U; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/z-base.ili": "8e745e9ac13aabdd9c7906ee06b1ac2456e0e973ebac6765ace375a78e60865a",
+        "memory:/a-use.ili": "90c55d015ab22cb297de1a65850fcd9dedb2ee5bdebbc6569b9a0af57180e3ad"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/41/0-z-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/41/1-a-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/41/0-z-base.ili",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/41/1-a-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/41/0-z-base.ili>\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/41/1-a-use.ili>\nInfo: ...compiler run done 2026-10-25 11:45:01\n"
+        }
+      }
+    },
+    {
+      "name": "incomplete-declaration",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/incomplete.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f("
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/incomplete.ili": "b7713913765d3813414a00e3fd6b656237d9df78ff91302764de60c80f8ceb2d"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-17607c066cd42699b3b2091e, diag-61a562492281a8fb080a9636], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-17607c066cd42699b3b2091e\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":81,\"endOffset\":82},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"f\"}]},{\"id\":\"diag-61a562492281a8fb080a9636\",\"code\":\"ILI-SYN-0003\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.missing\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":83,\"endOffset\":83},\"arguments\":[{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"')',Name\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili:1:expecting NAME, found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili:1:expecting ')', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/42/0-incomplete.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:45:02\n"
+        }
+      }
+    },
+    {
+      "name": "incomplete-call",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/incomplete.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:BOOLEAN):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT f("
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/incomplete.ili": "e5858f66a99a502b924f37036943055845af799ac32f19b3c29964b3b9af8cbd"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS, INCOMPLETE_SUPPORT], diagnosticIds=[diag-0b516fd51b357dd9548559f6, diag-5e8ab874ab0a62776760ef40, diag-b6aebf34c9cd880f60f50f73, diag-cf227714c664031b5152a262], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[MISSING_ATTRIBUTE_TYPE]]\",\"diagnostics\":[{\"id\":\"diag-b6aebf34c9cd880f60f50f73\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":139},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"}]},{\"id\":\"diag-cf227714c664031b5152a262\",\"code\":\"ILI-IMPL-0001\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.implementation.unsupported\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":142},\"arguments\":[{\"name\":\"feature\",\"kind\":\"TEXT\",\"value\":\"MISSING_ATTRIBUTE_TYPE\"},{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"missing attribute type\"}]},{\"id\":\"diag-5e8ab874ab0a62776760ef40\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":141,\"endOffset\":142},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"(\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'AGGREGATES','PARENT','THATAREA','THIS','THISAREA','\\\\',Name\"}]},{\"id\":\"diag-0b516fd51b357dd9548559f6\",\"code\":\"ILI-SYN-0003\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.missing\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":142,\"endOffset\":142},\"arguments\":[{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ABSTRACT','EXTENDED','FINAL','TRANSIENT'\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:expecting ')', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/43/0-incomplete.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:45:03\n"
+        }
+      }
+    },
+    {
+      "name": "incomplete-builtin",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/incomplete.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=MANDATORY CONSTRAINT INTERLIS.len("
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/incomplete.ili": "55741a6e737e427fcf8ab9019899682ca8de5b9723bf1c7e2287cafb425cfb8e"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7759aa61cd49a085c8aac52e, diag-906be074f73135e92bfee1d0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-906be074f73135e92bfee1d0\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":109,\"endOffset\":121},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"}]},{\"id\":\"diag-7759aa61cd49a085c8aac52e\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":121,\"endOffset\":122},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"(\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'!=','*','**','+','-','/',';','<','<=','=','>','>=','AND','OR'\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:expecting ')', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/44/0-incomplete.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:45:04\n"
+        }
+      }
+    },
+    {
+      "name": "incomplete-declaration",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/incomplete.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f("
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/incomplete.ili": "adf3411844b85d44e9698a368655879425ef8e4d7cb12d4f284ca6e3bebb742c"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-642e79e7e3373be1778befbc, diag-906c5ac51abe62727a065e1f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-906c5ac51abe62727a065e1f\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":81,\"endOffset\":82},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"f\"}]},{\"id\":\"diag-642e79e7e3373be1778befbc\",\"code\":\"ILI-SYN-0003\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.missing\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":83,\"endOffset\":83},\"arguments\":[{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"')',Name\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/45/0-incomplete.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:45:05\n"
+        }
+      }
+    },
+    {
+      "name": "incomplete-call",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/incomplete.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:BOOLEAN):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT f("
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/incomplete.ili": "e6f86d2ebf8e6a00c1c05ecda73428dbfa6a66e41e5284fa049087ed4b8375fe"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS, INCOMPLETE_SUPPORT], diagnosticIds=[diag-224e158b7b472b683b7180a4, diag-31fd6853f9fe1bcb0f2963ff, diag-5dbd89a43778da4e11480d1a, diag-c11afd8436f494c00629b718], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[MISSING_ATTRIBUTE_TYPE]]\",\"diagnostics\":[{\"id\":\"diag-224e158b7b472b683b7180a4\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":139},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"}]},{\"id\":\"diag-c11afd8436f494c00629b718\",\"code\":\"ILI-IMPL-0001\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.implementation.unsupported\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":142},\"arguments\":[{\"name\":\"feature\",\"kind\":\"TEXT\",\"value\":\"MISSING_ATTRIBUTE_TYPE\"},{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"missing attribute type\"}]},{\"id\":\"diag-31fd6853f9fe1bcb0f2963ff\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":141,\"endOffset\":142},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"(\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'AGGREGATES','PARENT','THATAREA','THIS','THISAREA','\\\\',Name\"}]},{\"id\":\"diag-5dbd89a43778da4e11480d1a\",\"code\":\"ILI-SYN-0003\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.missing\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":142,\"endOffset\":142},\"arguments\":[{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'ABSTRACT','EXTENDED','FINAL','TRANSIENT'\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/46/0-incomplete.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:45:06\n"
+        }
+      }
+    },
+    {
+      "name": "incomplete-builtin",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/incomplete.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=MANDATORY CONSTRAINT INTERLIS.len("
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/incomplete.ili": "326ccd84cab970b5252a3a01f7ff75f5ad137cc7d4c39e2ef3b835f6f5856369"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3b7af19d232321ffc9894321, diag-4ae03eea193903598d5d7351], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4ae03eea193903598d5d7351\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":109,\"endOffset\":121},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"0 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"1 arguments\"}]},{\"id\":\"diag-3b7af19d232321ffc9894321\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili\",\"revision\":\"1\",\"startOffset\":121,\"endOffset\":122},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"(\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'!=','*','**','+','-','/',';','<','<=','=','>','>=','AND','OR'\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili:1:unexpected token: null\nbuild/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili:1:expecting ';', found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-function-metadata/processes/47/0-incomplete.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:45:07\n"
+        }
+      }
+    },
+    {
+      "name": "function-predefined-target",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/function-target.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:OBJECT OF INTERLIS.METAOBJECT_TRANSLATION):BOOLEAN; FUNCTION g(v:CLASS RESTRICTION(INTERLIS.METAOBJECT_TRANSLATION)):BOOLEAN; TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT f(THIS) AND g(>F.T.C); END C; CLASS Other=END Other; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/function-target.ili": "11bf7bc84c25ce4e27981e8f7f8e96955cd3c87d7a860726352d1b0b47f45bab"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/48/0-function-target.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/48/0-function-target.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/48/0-function-target.ili>\nInfo: ...compiler run done 2026-10-25 11:45:08\n"
+        }
+      }
+    },
+    {
+      "name": "function-wrong-class",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/function-target.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:OBJECT OF INTERLIS.METAOBJECT_TRANSLATION):BOOLEAN; FUNCTION g(v:CLASS RESTRICTION(INTERLIS.METAOBJECT_TRANSLATION)):BOOLEAN; TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT f(THIS) AND g(>F.T.Other); END C; CLASS Other=END Other; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/function-target.ili": "dfacd1727d98b3a5dfc5bbba826b9b17347c505fbd106beeef3eca93da11ce57"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/49/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-49ac0b185065e11689cbf2ce], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-49ac0b185065e11689cbf2ce\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/49/0-function-target.ili\",\"revision\":\"1\",\"startOffset\":302,\"endOffset\":312},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"CLASS_VALUE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"CLASS_VALUE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/49/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/49/0-function-target.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/49/0-function-target.ili:1:There is no view or class \"Other\" in TOPIC F.T.\n...compiler run failed 2026-10-25 11:45:09\n"
+        }
+      }
+    },
+    {
+      "name": "function-missing-target",
+      "version": "2.3",
+      "sources": [
+        {
+          "sourceId": "memory:/function-target.ili",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:OBJECT OF INTERLIS.UnknownTranslation):BOOLEAN; FUNCTION g(v:CLASS RESTRICTION(INTERLIS.METAOBJECT_TRANSLATION)):BOOLEAN; TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT f(THIS) AND g(>F.T.C); END C; CLASS Other=END Other; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/function-target.ili": "23b49393bd9f5caa91c7be5955415136bd501f93f5c59e6bab258d5b506d6e64"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/50/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ad2c096e034b17288c554062, diag-ff37c94fd6e1d6cb16bed00f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ff37c94fd6e1d6cb16bed00f\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/50/0-function-target.ili\",\"revision\":\"1\",\"startOffset\":95,\"endOffset\":122},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.UnknownTranslation\"}]},{\"id\":\"diag-ad2c096e034b17288c554062\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/50/0-function-target.ili\",\"revision\":\"1\",\"startOffset\":286,\"endOffset\":290},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"REFERENCE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/50/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/50/0-function-target.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/50/0-function-target.ili:1:There is no view or class \"UnknownTranslation\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:45:10\n"
+        }
+      }
+    },
+    {
+      "name": "function-predefined-target",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/function-target.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:OBJECT OF INTERLIS.METAOBJECT_TRANSLATION):BOOLEAN; FUNCTION g(v:CLASS RESTRICTION(INTERLIS.METAOBJECT_TRANSLATION)):BOOLEAN; TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT f(THIS) AND g(>F.T.C); END C; CLASS Other=END Other; END T; END F.\n"
+        }
+      ],
+      "expected": "succeeded",
+      "sourceHashes": {
+        "memory:/function-target.ili": "e560b83c9f072cedb14b0a7b799450c7e15d88234abbad974f8719ed841adfb4"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/51/0-function-target.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/51/0-function-target.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/51/0-function-target.ili>\nInfo: ...compiler run done 2026-10-25 11:45:11\n"
+        }
+      }
+    },
+    {
+      "name": "function-wrong-class",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/function-target.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:OBJECT OF INTERLIS.METAOBJECT_TRANSLATION):BOOLEAN; FUNCTION g(v:CLASS RESTRICTION(INTERLIS.METAOBJECT_TRANSLATION)):BOOLEAN; TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT f(THIS) AND g(>F.T.Other); END C; CLASS Other=END Other; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/function-target.ili": "278f21a39d78930a4d83947484dfff1033515b9bb554911dd99a8793abee35f6"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/52/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3a069e65af33d8f5c47bc603], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3a069e65af33d8f5c47bc603\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/52/0-function-target.ili\",\"revision\":\"1\",\"startOffset\":302,\"endOffset\":312},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"CLASS_VALUE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"CLASS_VALUE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/52/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/52/0-function-target.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/52/0-function-target.ili:1:There is no view or class \"Other\" in TOPIC F.T.\n...compiler run failed 2026-10-25 11:45:13\n"
+        }
+      }
+    },
+    {
+      "name": "function-missing-target",
+      "version": "2.4",
+      "sources": [
+        {
+          "sourceId": "memory:/function-target.ili",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:OBJECT OF INTERLIS.UnknownTranslation):BOOLEAN; FUNCTION g(v:CLASS RESTRICTION(INTERLIS.METAOBJECT_TRANSLATION)):BOOLEAN; TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=MANDATORY CONSTRAINT f(THIS) AND g(>F.T.C); END C; CLASS Other=END Other; END T; END F.\n"
+        }
+      ],
+      "expected": "rejected",
+      "sourceHashes": {
+        "memory:/function-target.ili": "464cb91cff9355fd5e2fbf5fecf0a0755dd046fa19de228d11d1e1653bbed7e9"
+      },
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/53/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-403741ea813da7792d7377a5, diag-d077b242c1b8bc756970efaa], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-403741ea813da7792d7377a5\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/53/0-function-target.ili\",\"revision\":\"1\",\"startOffset\":95,\"endOffset\":122},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.UnknownTranslation\"}]},{\"id\":\"diag-d077b242c1b8bc756970efaa\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-function-metadata/processes/53/0-function-target.ili\",\"revision\":\"1\",\"startOffset\":286,\"endOffset\":290},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"REFERENCE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-function-metadata/processes/53/0-function-target.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/processes/53/0-function-target.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/processes/53/0-function-target.ili:1:There is no view or class \"UnknownTranslation\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:45:14\n"
+        }
+      }
+    }
+  ],
+  "total": 54,
+  "ownExpected": 54,
+  "referenceAgreements": 54,
+  "baselineOriginals": {
+    "scope": "Open E1 follow-up reproductions; no baseline/source/exception changes",
+    "cases": [
+      {
+        "case": "metaobject-translation",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T; END F.\n",
+        "sha256": "5cbff7ba805fd8ad2e3120bb1cf473bbbed0b85f6b47b369e095ea46aeea8009",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-451ade0c8b66e70c83c2f9f2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-451ade0c8b66e70c83c2f9f2\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":127},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.METAOBJECT_TRANSLATION\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili>\nInfo: ...compiler run done 2026-10-25 11:14:37\n"
+          }
+        }
+      },
+      {
+        "case": "empty-function",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; END F.\n",
+        "sha256": "b07822adfb24cd65f8108d01e7575f15fb18a1937a083d946d6159802fe0c1ce",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili>\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:1:expecting NAME, found ')'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:1:expecting NAME, found 'END'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:2:expecting ')', found 'null'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:2:expecting \"END\", found 'null'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:2:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:14:38\n"
+          }
+        }
+      },
+      {
+        "case": "metaobject-translation",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T; END F.\n",
+        "sha256": "7b8366b7511186d199a240dbb8d807400a1bd328a6f2e6875519a0002c69f3bc",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9e0fe765942e0715c690e078], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9e0fe765942e0715c690e078\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":127},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.METAOBJECT_TRANSLATION\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili>\nInfo: ...compiler run done 2026-10-25 11:14:39\n"
+          }
+        }
+      },
+      {
+        "case": "empty-function",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; END F.\n",
+        "sha256": "c596cc74cea5509ce04b25defb308a2315cc1bcb9d4e66edf822d893be705eb7",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-empty-function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-empty-function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.4-empty-function.ili>\nInfo: ...compiler run done 2026-10-25 11:14:39\n"
+          }
+        }
+      }
+    ]
+  },
+  "headerFollowUp": {
+    "scope": "Separate OPEN E1 follow-up, no source or expectation changes. Public ModelSyntax/ModelSymbol do not yet expose these header properties. Own parser currently accepts them in both versions.",
+    "cases": [
+      {
+        "version": "2.3",
+        "option": "NOINCREMENTALTRANSFER",
+        "source": "INTERLIS 2.3; MODEL F NOINCREMENTALTRANSFER AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:TEXT; END C; END T; END F.\n",
+        "sha256": "4f78f2619e9226cc54ba2bde177a8208d89f6c7b3df974815c0be20487454e97",
+        "results": {
+          "own": {
+            "command": [
+              "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-NOINCREMENTALTRANSFER.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-NOINCREMENTALTRANSFER.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-NOINCREMENTALTRANSFER.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-NOINCREMENTALTRANSFER.ili:1:unexpected token: NOINCREMENTALTRANSFER\n...compiler run failed 2026-10-25 12:11:28\n"
+          }
+        }
+      },
+      {
+        "version": "2.3",
+        "option": "CHARSET",
+        "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = CHARSET \"UTF-8\"; TOPIC T=CLASS C=value:TEXT; END C; END T; END F.\n",
+        "sha256": "354a5a8ebf5bdf931702e524f28fe26f69b1a7bed11f360cd4dc55b42d4fae67",
+        "results": {
+          "own": {
+            "command": [
+              "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-CHARSET.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-CHARSET.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-CHARSET.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-CHARSET.ili:1:expecting \"END\", found 'CHARSET'\nbuild/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-CHARSET.ili:1:expecting '.', found ';'\n...compiler run failed 2026-10-25 12:11:30\n"
+          }
+        }
+      },
+      {
+        "version": "2.3",
+        "option": "XMLNS",
+        "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = XMLNS \"https://example.org/namespace\"; TOPIC T=CLASS C=value:TEXT; END C; END T; END F.\n",
+        "sha256": "b72f39adcbff37eef027fbe4520064ccc75b94bf34e6d4c08bb22dc4e05eb91b",
+        "results": {
+          "own": {
+            "command": [
+              "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-XMLNS.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-XMLNS.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-XMLNS.ili>\nbuild/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-XMLNS.ili:1:expecting \"END\", found 'XMLNS'\nbuild/reports/stabilization/g2-e1-function-metadata/header-followup/2.3-XMLNS.ili:1:expecting '.', found ';'\n...compiler run failed 2026-10-25 12:11:31\n"
+          }
+        }
+      },
+      {
+        "version": "2.4",
+        "option": "NOINCREMENTALTRANSFER",
+        "source": "INTERLIS 2.4; MODEL F NOINCREMENTALTRANSFER AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:TEXT; END C; END T; END F.\n",
+        "sha256": "3ede2b93ad822a490cfd0acaed01a9bac075fd6ced8abebb2623f95ab1e1f325",
+        "results": {
+          "own": {
+            "command": [
+              "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-NOINCREMENTALTRANSFER.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-NOINCREMENTALTRANSFER.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-NOINCREMENTALTRANSFER.ili>\nInfo: ...compiler run done 2026-10-25 12:11:33\n"
+          }
+        }
+      },
+      {
+        "version": "2.4",
+        "option": "CHARSET",
+        "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = CHARSET \"UTF-8\"; TOPIC T=CLASS C=value:TEXT; END C; END T; END F.\n",
+        "sha256": "28e38a9e438fa027fd3dbf6d4c47557e57743a96baeb19100d06b8e09c3165b8",
+        "results": {
+          "own": {
+            "command": [
+              "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-CHARSET.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-CHARSET.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-CHARSET.ili>\nInfo: ...compiler run done 2026-10-25 12:11:34\n"
+          }
+        }
+      },
+      {
+        "version": "2.4",
+        "option": "XMLNS",
+        "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = XMLNS \"https://example.org/namespace\"; TOPIC T=CLASS C=value:TEXT; END C; END T; END F.\n",
+        "sha256": "9d433f1eddcd06c5144b8507d4528026eb9dc5664d3082bed5ae413e9e264351",
+        "results": {
+          "own": {
+            "command": [
+              "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-XMLNS.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-XMLNS.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-function-metadata/header-followup/2.4-XMLNS.ili>\nInfo: ...compiler run done 2026-10-25 12:11:37\n"
+          }
+        }
+      }
+    ]
+  },
+  "scope": "54 paired own/ili2c processes from exact portable sources; all expected outcomes and exit statuses agree. The two malformed ordinary calls across both versions retain the separately OPEN MISSING_ATTRIBUTE_TYPE recovery classification. The four original byte-pinned reproductions and six new independent header probes stay distinct from the frozen 593 suite cases. No exceptions/baseline/source pins changed."
+}

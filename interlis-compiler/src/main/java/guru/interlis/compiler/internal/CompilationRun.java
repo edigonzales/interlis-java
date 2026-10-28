@@ -75,13 +75,27 @@ final class CompilationRun {
         IndexedDeclarations declarations = indexer.index(
                 syntax.values().stream().toList(), reuse);
         token.throwIfCancellationRequested();
-        chargeSemanticWork(declarations);
 
         Map<SourceId, java.util.Set<String>> syntaxUnsupported = new LinkedHashMap<>();
-        syntax.forEach((id, snapshot) -> syntaxUnsupported.put(id,
-                snapshot.coverage().unsupportedFeatures()));
+        syntax.forEach((id, snapshot) -> {
+            var unmatched = new java.util.LinkedHashSet<>(snapshot.coverage().unsupportedFeatures());
+            var nodes = new java.util.ArrayDeque<guru.interlis.syntax.SyntaxNode>();
+            nodes.add(snapshot.root());
+            while (!nodes.isEmpty()) {
+                token.throwIfCancellationRequested();
+                var node = nodes.removeFirst();
+                switch (node) {
+                    case guru.interlis.syntax.UnsupportedDeclarationSyntax unsupported -> unmatched.remove(unsupported.featureId());
+                    case guru.interlis.syntax.UnsupportedTypeSyntax unsupported -> unmatched.remove(unsupported.featureId());
+                    case guru.interlis.syntax.UnsupportedExpressionSyntax unsupported -> unmatched.remove(unsupported.featureId());
+                    default -> { }
+                }
+                nodes.addAll(node.children());
+            }
+            syntaxUnsupported.put(id, unmatched);
+        });
         GraphBuilder builder = new GraphBuilder(declarations, sourceSet, closure, collector,
-                snapshotId, syntaxUnsupported);
+                snapshotId, syntaxUnsupported, token, request.options().budget());
         var bindingPhase = lifecycle.beginPhase(Phase.BINDING,
                 new guru.interlis.execution.RunEvent.PhaseMetadata(declarations.all().size()));
         GraphBuilder.GraphResult graphResult;
@@ -135,13 +149,16 @@ final class CompilationRun {
                 if (reused != null
                         && reused.source().revision().equals(source.revision())
                         && reused.source().contentFingerprint().equals(source.contentFingerprint())
-                        && reused.mode() == mode) {
+                        && reused.options().equals(new ParseOptions(mode, java.util.Optional.empty(),
+                                request.options().budget()))) {
                     snapshot = reused;
                 } else {
                     snapshot = SyntaxServices.create().parse(source,
                             new ParseOptions(mode, java.util.Optional.empty(),
                                     request.options().budget()), token);
                 }
+                if(snapshot.coverage().budgetExceeded())throw new guru.interlis.execution.OperationCancelledException(
+                        guru.interlis.execution.CancellationReason.RESOURCE_LIMIT);
                 syntax.put(id, snapshot);
                 collector.importAll(snapshot.diagnostics());
             }
@@ -152,14 +169,6 @@ final class CompilationRun {
             }
         } finally {
             phase.finish(guru.interlis.execution.PhaseStatus.SUCCEEDED);
-        }
-    }
-
-    private void chargeSemanticWork(IndexedDeclarations declarations) {
-        long work = declarations.all().size() * 4L;
-        if (work > request.options().budget().maxSemanticWorkUnits()) {
-            throw new AnalysisBudgetExceededException("maxSemanticWorkUnits",
-                    request.options().budget().maxSemanticWorkUnits());
         }
     }
 

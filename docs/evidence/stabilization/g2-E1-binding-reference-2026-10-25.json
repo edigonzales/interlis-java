@@ -1,0 +1,1918 @@
+{
+  "cases": [
+    {
+      "case": "unknown-domain",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.TypoDomain; END C; END T; END F.\n",
+      "sha256": "bf8f30dfb0aa43fb5ee23d97e8105f64b5f40445bdca2d1f0d4020864985cdba",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f4721aeb89915e42aff6e09b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f4721aeb89915e42aff6e09b\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":113},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.TypoDomain\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili:1:There is no domain \"TypoDomain\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:13:38\n"
+        }
+      }
+    },
+    {
+      "case": "date",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.INTERLIS_1_DATE; END C; END T; END F.\n",
+      "sha256": "670a106da8db789d06b1612fecd7023fd63216307718f16e25e04bd3e17c78e2",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-date.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-date.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-date.ili>\nInfo: ...compiler run done 2026-10-25 11:13:39\n"
+        }
+      }
+    },
+    {
+      "case": "horizontal",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.HALIGNMENT; END C; END T; END F.\n",
+      "sha256": "a6c89bc50c546241665c12108e6d26bebb00a4a029c22844fa87ddce33826588",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-horizontal.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-horizontal.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-horizontal.ili>\nInfo: ...compiler run done 2026-10-25 11:13:40\n"
+        }
+      }
+    },
+    {
+      "case": "vertical",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.VALIGNMENT; END C; END T; END F.\n",
+      "sha256": "8a25fcc7718c514e3241dcdd610d16a1fb8790d1381e39d553226bee974ebe2f",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-vertical.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-vertical.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-vertical.ili>\nInfo: ...compiler run done 2026-10-25 11:13:41\n"
+        }
+      }
+    },
+    {
+      "case": "predefined-final",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D EXTENDS INTERLIS.INTERLIS_1_DATE=TEXT*8; END F.\n",
+      "sha256": "6e8c24045eaf33b87e4acdf0e7e168d03c36f9b3fa7afb802c67a78f04947852",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-805b5aaa2b329b327bcbfedb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-805b5aaa2b329b327bcbfedb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili\",\"revision\":\"1\",\"startOffset\":79,\"endOffset\":121},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"cannot extend FINAL domain/DOMAIN_FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili:1:DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n  DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:13:42\n"
+        }
+      }
+    },
+    {
+      "case": "source-final",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; E EXTENDS D=TEXT*8; END F.\n",
+      "sha256": "03c005fa0528cc8ce4107078be36db0da28189de9fcb0f34ad0f051e7ccc2fae",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5575e6cd5c4c9281574c1255], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5575e6cd5c4c9281574c1255\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":115},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"E\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"cannot extend FINAL domain/DOMAIN_FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili:1:DOMAIN F.D can not be extended because it has been declared as FINAL.\n  DOMAIN F.D can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:13:44\n"
+        }
+      }
+    },
+    {
+      "case": "source-final-use",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; TOPIC T=CLASS C=value:D; END C; END T; END F.\n",
+      "sha256": "ba3d0445cc3469599e0e0ee95d630e8dca2e905b6fab4ad8c99f95b9869d81bb",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final-use.ili>\nInfo: ...compiler run done 2026-10-25 11:13:45\n"
+        }
+      }
+    },
+    {
+      "case": "function-unqualified",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT f(1); END C; END T; END F.\n",
+      "sha256": "dbd586a2bb8bbd97a2e230ec44e793dd50d6b3ee6af67a16f0bf3c697b95c28d",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-unqualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-unqualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-unqualified.ili>\nInfo: ...compiler run done 2026-10-25 11:13:46\n"
+        }
+      }
+    },
+    {
+      "case": "function-qualified",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(1); END C; END T; END F.\n",
+      "sha256": "dd89c1a9fe9256557266bc4edb6d7146a20edb1d50a8e43c3a489cd5047c39c3",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:13:47\n"
+        }
+      }
+    },
+    {
+      "case": "function-false-prefix",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT Missing.f(1); END C; END T; END F.\n",
+      "sha256": "e74278ed4d42519f00c56dbba50f10fd231f5f18a441395b343ba8c353ea4847",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5f1fe0e16e1cbe775e96a462], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5f1fe0e16e1cbe775e96a462\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":149},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing.f\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili:1:There is no FUNCTION \"f\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:13:48\n"
+        }
+      }
+    },
+    {
+      "case": "enum-qualified",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF F.D; END C; END T; END F.\n",
+      "sha256": "71e8d0d83767c349f05790a16ec80878fc8684dcdd2464e6b3b4267c88d28d18",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:13:49\n"
+        }
+      }
+    },
+    {
+      "case": "enum-false-prefix",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF Missing.D; END C; END T; END F.\n",
+      "sha256": "cc90a1102d11f3810eec50395d4925c7fd32cdd8e76d808fff749a834707d487",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4822443be9f3fd1685e1e210], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4822443be9f3fd1685e1e210\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":126},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing.D\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili:1:There is no domain \"D\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:13:50\n"
+        }
+      }
+    },
+    {
+      "case": "enum-missing",
+      "version": "2.3",
+      "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:ALL OF INTERLIS.NoSuchEnum; END C; END T; END F.\n",
+      "sha256": "2319e036c069143570f628a44e29608be4466b400f3e3bdcb0d76b4ac34b0c20",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-90e56bced22919e741c6051a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-90e56bced22919e741c6051a\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":120},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.NoSuchEnum\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili:1:There is no domain \"NoSuchEnum\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:13:51\n"
+        }
+      }
+    },
+    {
+      "case": "unknown-domain",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.TypoDomain; END C; END T; END F.\n",
+      "sha256": "a45a6df3ed2dac803f64f4ba6335257cd14b5ae13903fecbe353304c084ba323",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-dda586f52b103d5d6b28cb2d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-dda586f52b103d5d6b28cb2d\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":113},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.TypoDomain\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili:1:There is no domain \"TypoDomain\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:13:52\n"
+        }
+      }
+    },
+    {
+      "case": "date",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.INTERLIS_1_DATE; END C; END T; END F.\n",
+      "sha256": "8c1707431a0c7993b616445361af0f5657ff3e887ae6b0d05d4289e27906e06a",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-date.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-date.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-date.ili>\nInfo: ...compiler run done 2026-10-25 11:13:53\n"
+        }
+      }
+    },
+    {
+      "case": "horizontal",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.HALIGNMENT; END C; END T; END F.\n",
+      "sha256": "0c3b3e5d9c11e919f1047282061c447da5ead47b5b8c3b17d29db91e66ea342a",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-horizontal.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-horizontal.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-horizontal.ili>\nInfo: ...compiler run done 2026-10-25 11:13:54\n"
+        }
+      }
+    },
+    {
+      "case": "vertical",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.VALIGNMENT; END C; END T; END F.\n",
+      "sha256": "574961023e92a801539333950ed06a2b68b41591f78de6457e234644d84e7e1c",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-vertical.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-vertical.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-vertical.ili>\nInfo: ...compiler run done 2026-10-25 11:13:56\n"
+        }
+      }
+    },
+    {
+      "case": "predefined-final",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D EXTENDS INTERLIS.INTERLIS_1_DATE=TEXT*8; END F.\n",
+      "sha256": "9933c0b13cf26ec1fa83d7589fcaa726e7aeb42cdf6d5b78aa1877857c85064b",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-453531bb3f45f0595e3d305d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-453531bb3f45f0595e3d305d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili\",\"revision\":\"1\",\"startOffset\":79,\"endOffset\":121},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"cannot extend FINAL domain/DOMAIN_FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili:1:DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n  DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:13:56\n"
+        }
+      }
+    },
+    {
+      "case": "source-final",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; E EXTENDS D=TEXT*8; END F.\n",
+      "sha256": "5902e3e5e4bb32083699e95ef515a9e9d9f3bb32188b0187b6b160d71620cdc9",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b6cb3c2ef0f1ac18c1d5a1d3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b6cb3c2ef0f1ac18c1d5a1d3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":115},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"E\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"cannot extend FINAL domain/DOMAIN_FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili:1:DOMAIN F.D can not be extended because it has been declared as FINAL.\n  DOMAIN F.D can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:13:58\n"
+        }
+      }
+    },
+    {
+      "case": "source-final-use",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; TOPIC T=CLASS C=value:D; END C; END T; END F.\n",
+      "sha256": "38b4d45bfad6895e59ae6d9b54aee054f779718004c560ee7e5ecb58d0ae21b7",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final-use.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final-use.ili>\nInfo: ...compiler run done 2026-10-25 11:13:58\n"
+        }
+      }
+    },
+    {
+      "case": "function-unqualified",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT f(1); END C; END T; END F.\n",
+      "sha256": "7902519a199d984b8b2068259b874943ccf6058b532c0cd9f160304cb782f869",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-unqualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-unqualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-unqualified.ili>\nInfo: ...compiler run done 2026-10-25 11:14:00\n"
+        }
+      }
+    },
+    {
+      "case": "function-qualified",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(1); END C; END T; END F.\n",
+      "sha256": "c58fc05dc1bb1cef00cddc091edf7505e6fa00ee26cc4775b32e7ffd928509bf",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:14:01\n"
+        }
+      }
+    },
+    {
+      "case": "function-false-prefix",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT Missing.f(1); END C; END T; END F.\n",
+      "sha256": "81f36d4d233003a97b2f4d4f2016a1775345c6b1403e3e08c6765ab318a89868",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8162f889c54986abf7395b72], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8162f889c54986abf7395b72\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":149},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing.f\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili:1:There is no FUNCTION \"f\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:14:03\n"
+        }
+      }
+    },
+    {
+      "case": "enum-qualified",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF F.D; END C; END T; END F.\n",
+      "sha256": "50137e8673514f655e955442a8fca6649fc090ce22baaa300d7a3f9e84e05e76",
+      "expectedExitCode": 0,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-qualified.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:14:05\n"
+        }
+      }
+    },
+    {
+      "case": "enum-false-prefix",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF Missing.D; END C; END T; END F.\n",
+      "sha256": "304d87a24d547859b9ba24b6ce678370f7de6ee45dde1fe50380bb41f3b358fd",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0cdda5dec8766d05183491e9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0cdda5dec8766d05183491e9\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili\",\"revision\":\"1\",\"startOffset\":117,\"endOffset\":126},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing.D\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili:1:There is no domain \"D\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:14:06\n"
+        }
+      }
+    },
+    {
+      "case": "enum-missing",
+      "version": "2.4",
+      "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:ALL OF INTERLIS.NoSuchEnum; END C; END T; END F.\n",
+      "sha256": "41396ba86988879c7303d597c9766d44103ab603bf6292f521d27e0bccdd5739",
+      "expectedExitCode": 1,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a134f032e3cc7afa11ee951a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a134f032e3cc7afa11ee951a\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":120},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.NoSuchEnum\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili:1:There is no domain \"NoSuchEnum\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:14:08\n"
+        }
+      }
+    }
+  ],
+  "ownExpected": 26,
+  "referenceAgreements": 26,
+  "baseline": {
+    "cases": [
+      {
+        "case": "unknown-domain",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.TypoDomain; END C; END T; END F.\n",
+        "sha256": "bf8f30dfb0aa43fb5ee23d97e8105f64b5f40445bdca2d1f0d4020864985cdba",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili"
+            ],
+            "exitCode": 3,
+            "stdout": "{\"status\":\"failed: failure-1\",\"diagnostics\":[{\"id\":\"diag-b20e319a7ed2018bfd456ab1\",\"code\":\"ILI-INF-0001\",\"severity\":\"ERROR\",\"phase\":\"INFRASTRUCTURE\",\"messageKey\":\"diagnostic.internal\",\"arguments\":[{\"name\":\"failureId\",\"kind\":\"TEXT\",\"value\":\"failure-1\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-unknown-domain.ili:1:There is no domain \"TypoDomain\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:05:33\n"
+          }
+        }
+      },
+      {
+        "case": "date",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.INTERLIS_1_DATE; END C; END T; END F.\n",
+        "sha256": "670a106da8db789d06b1612fecd7023fd63216307718f16e25e04bd3e17c78e2",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-date.ili"
+            ],
+            "exitCode": 3,
+            "stdout": "{\"status\":\"failed: failure-1\",\"diagnostics\":[{\"id\":\"diag-b20e319a7ed2018bfd456ab1\",\"code\":\"ILI-INF-0001\",\"severity\":\"ERROR\",\"phase\":\"INFRASTRUCTURE\",\"messageKey\":\"diagnostic.internal\",\"arguments\":[{\"name\":\"failureId\",\"kind\":\"TEXT\",\"value\":\"failure-1\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-date.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-date.ili>\nInfo: ...compiler run done 2026-10-25 11:05:34\n"
+          }
+        }
+      },
+      {
+        "case": "horizontal",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.HALIGNMENT; END C; END T; END F.\n",
+        "sha256": "a6c89bc50c546241665c12108e6d26bebb00a4a029c22844fa87ddce33826588",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-horizontal.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7ecd2dbb3bbeed974545ba92], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7ecd2dbb3bbeed974545ba92\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-horizontal.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":102},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-horizontal.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-horizontal.ili>\nInfo: ...compiler run done 2026-10-25 11:05:34\n"
+          }
+        }
+      },
+      {
+        "case": "vertical",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.VALIGNMENT; END C; END T; END F.\n",
+        "sha256": "8a25fcc7718c514e3241dcdd610d16a1fb8790d1381e39d553226bee974ebe2f",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-vertical.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-bf4477c8bc1c8b0bbdb233ea], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-bf4477c8bc1c8b0bbdb233ea\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-vertical.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":102},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-vertical.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-vertical.ili>\nInfo: ...compiler run done 2026-10-25 11:05:35\n"
+          }
+        }
+      },
+      {
+        "case": "predefined-final",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D EXTENDS INTERLIS.INTERLIS_1_DATE=TEXT*8; END F.\n",
+        "sha256": "6e8c24045eaf33b87e4acdf0e7e168d03c36f9b3fa7afb802c67a78f04947852",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-696d778f6d3627ae2e986558], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-696d778f6d3627ae2e986558\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili\",\"revision\":\"1\",\"startOffset\":89,\"endOffset\":113},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.INTERLIS_1_DATE\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-predefined-final.ili:1:DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n  DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:05:35\n"
+          }
+        }
+      },
+      {
+        "case": "source-final",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; E EXTENDS D=TEXT*8; END F.\n",
+        "sha256": "03c005fa0528cc8ce4107078be36db0da28189de9fcb0f34ad0f051e7ccc2fae",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final.ili:1:DOMAIN F.D can not be extended because it has been declared as FINAL.\n  DOMAIN F.D can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:05:35\n"
+          }
+        }
+      },
+      {
+        "case": "source-final-use",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; TOPIC T=CLASS C=value:D; END C; END T; END F.\n",
+        "sha256": "ba3d0445cc3469599e0e0ee95d630e8dca2e905b6fab4ad8c99f95b9869d81bb",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final-use.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final-use.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-source-final-use.ili>\nInfo: ...compiler run done 2026-10-25 11:05:36\n"
+          }
+        }
+      },
+      {
+        "case": "function-unqualified",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT f(1); END C; END T; END F.\n",
+        "sha256": "dbd586a2bb8bbd97a2e230ec44e793dd50d6b3ee6af67a16f0bf3c697b95c28d",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-unqualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-unqualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-unqualified.ili>\nInfo: ...compiler run done 2026-10-25 11:05:36\n"
+          }
+        }
+      },
+      {
+        "case": "function-qualified",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(1); END C; END T; END F.\n",
+        "sha256": "dd89c1a9fe9256557266bc4edb6d7146a20edb1d50a8e43c3a489cd5047c39c3",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:05:36\n"
+          }
+        }
+      },
+      {
+        "case": "function-false-prefix",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT Missing.f(1); END C; END T; END F.\n",
+        "sha256": "e74278ed4d42519f00c56dbba50f10fd231f5f18a441395b343ba8c353ea4847",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-function-false-prefix.ili:1:There is no FUNCTION \"f\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:05:37\n"
+          }
+        }
+      },
+      {
+        "case": "enum-qualified",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF F.D; END C; END T; END F.\n",
+        "sha256": "71e8d0d83767c349f05790a16ec80878fc8684dcdd2464e6b3b4267c88d28d18",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:05:37\n"
+          }
+        }
+      },
+      {
+        "case": "enum-false-prefix",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF Missing.D; END C; END T; END F.\n",
+        "sha256": "cc90a1102d11f3810eec50395d4925c7fd32cdd8e76d808fff749a834707d487",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-false-prefix.ili:1:There is no domain \"D\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:05:37\n"
+          }
+        }
+      },
+      {
+        "case": "enum-missing",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:ALL OF INTERLIS.NoSuchEnum; END C; END T; END F.\n",
+        "sha256": "2319e036c069143570f628a44e29608be4466b400f3e3bdcb0d76b4ac34b0c20",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-90e56bced22919e741c6051a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-90e56bced22919e741c6051a\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":120},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.NoSuchEnum\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.3-enum-missing.ili:1:There is no domain \"NoSuchEnum\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:05:38\n"
+          }
+        }
+      },
+      {
+        "case": "unknown-domain",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.TypoDomain; END C; END T; END F.\n",
+        "sha256": "a45a6df3ed2dac803f64f4ba6335257cd14b5ae13903fecbe353304c084ba323",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili"
+            ],
+            "exitCode": 3,
+            "stdout": "{\"status\":\"failed: failure-1\",\"diagnostics\":[{\"id\":\"diag-b20e319a7ed2018bfd456ab1\",\"code\":\"ILI-INF-0001\",\"severity\":\"ERROR\",\"phase\":\"INFRASTRUCTURE\",\"messageKey\":\"diagnostic.internal\",\"arguments\":[{\"name\":\"failureId\",\"kind\":\"TEXT\",\"value\":\"failure-1\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-unknown-domain.ili:1:There is no domain \"TypoDomain\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:05:38\n"
+          }
+        }
+      },
+      {
+        "case": "date",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.INTERLIS_1_DATE; END C; END T; END F.\n",
+        "sha256": "8c1707431a0c7993b616445361af0f5657ff3e887ae6b0d05d4289e27906e06a",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-date.ili"
+            ],
+            "exitCode": 3,
+            "stdout": "{\"status\":\"failed: failure-1\",\"diagnostics\":[{\"id\":\"diag-b20e319a7ed2018bfd456ab1\",\"code\":\"ILI-INF-0001\",\"severity\":\"ERROR\",\"phase\":\"INFRASTRUCTURE\",\"messageKey\":\"diagnostic.internal\",\"arguments\":[{\"name\":\"failureId\",\"kind\":\"TEXT\",\"value\":\"failure-1\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-date.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-date.ili>\nInfo: ...compiler run done 2026-10-25 11:05:38\n"
+          }
+        }
+      },
+      {
+        "case": "horizontal",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.HALIGNMENT; END C; END T; END F.\n",
+        "sha256": "0c3b3e5d9c11e919f1047282061c447da5ead47b5b8c3b17d29db91e66ea342a",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-horizontal.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7888ad323c41fd310a63c39e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7888ad323c41fd310a63c39e\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-horizontal.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":102},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-horizontal.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-horizontal.ili>\nInfo: ...compiler run done 2026-10-25 11:05:39\n"
+          }
+        }
+      },
+      {
+        "case": "vertical",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:INTERLIS.VALIGNMENT; END C; END T; END F.\n",
+        "sha256": "574961023e92a801539333950ed06a2b68b41591f78de6457e234644d84e7e1c",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-vertical.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-32b8e51d7cc88bf646ff96a0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-32b8e51d7cc88bf646ff96a0\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-vertical.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":102},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-vertical.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-vertical.ili>\nInfo: ...compiler run done 2026-10-25 11:05:39\n"
+          }
+        }
+      },
+      {
+        "case": "predefined-final",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D EXTENDS INTERLIS.INTERLIS_1_DATE=TEXT*8; END F.\n",
+        "sha256": "9933c0b13cf26ec1fa83d7589fcaa726e7aeb42cdf6d5b78aa1877857c85064b",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0b3a00309bd487ab0e92be0b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0b3a00309bd487ab0e92be0b\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili\",\"revision\":\"1\",\"startOffset\":89,\"endOffset\":113},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.INTERLIS_1_DATE\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-predefined-final.ili:1:DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n  DOMAIN INTERLIS.INTERLIS_1_DATE can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:05:39\n"
+          }
+        }
+      },
+      {
+        "case": "source-final",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; E EXTENDS D=TEXT*8; END F.\n",
+        "sha256": "5902e3e5e4bb32083699e95ef515a9e9d9f3bb32188b0187b6b160d71620cdc9",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final.ili:1:DOMAIN F.D can not be extended because it has been declared as FINAL.\n  DOMAIN F.D can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-25 11:05:40\n"
+          }
+        }
+      },
+      {
+        "case": "source-final-use",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL)=TEXT*8; TOPIC T=CLASS C=value:D; END C; END T; END F.\n",
+        "sha256": "38b4d45bfad6895e59ae6d9b54aee054f779718004c560ee7e5ecb58d0ae21b7",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final-use.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final-use.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-source-final-use.ili>\nInfo: ...compiler run done 2026-10-25 11:05:40\n"
+          }
+        }
+      },
+      {
+        "case": "function-unqualified",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT f(1); END C; END T; END F.\n",
+        "sha256": "7902519a199d984b8b2068259b874943ccf6058b532c0cd9f160304cb782f869",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-unqualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-unqualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-unqualified.ili>\nInfo: ...compiler run done 2026-10-25 11:05:40\n"
+          }
+        }
+      },
+      {
+        "case": "function-qualified",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT F.f(1); END C; END T; END F.\n",
+        "sha256": "c58fc05dc1bb1cef00cddc091edf7505e6fa00ee26cc4775b32e7ffd928509bf",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:05:41\n"
+          }
+        }
+      },
+      {
+        "case": "function-false-prefix",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f(v:NUMERIC):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT Missing.f(1); END C; END T; END F.\n",
+        "sha256": "81f36d4d233003a97b2f4d4f2016a1775345c6b1403e3e08c6765ab318a89868",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-function-false-prefix.ili:1:There is no FUNCTION \"f\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:05:41\n"
+          }
+        }
+      },
+      {
+        "case": "enum-qualified",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF F.D; END C; END T; END F.\n",
+        "sha256": "50137e8673514f655e955442a8fca6649fc090ce22baaa300d7a3f9e84e05e76",
+        "expectedExitCode": 0,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-qualified.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-qualified.ili>\nInfo: ...compiler run done 2026-10-25 11:05:41\n"
+          }
+        }
+      },
+      {
+        "case": "enum-false-prefix",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=(a,b); TOPIC T=CLASS C=value:ALL OF Missing.D; END C; END T; END F.\n",
+        "sha256": "304d87a24d547859b9ba24b6ce678370f7de6ee45dde1fe50380bb41f3b358fd",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili:1:There is no model \"Missing\".\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-false-prefix.ili:1:There is no domain \"D\" in MODEL Missing.\n...compiler run failed 2026-10-25 11:05:42\n"
+          }
+        }
+      },
+      {
+        "case": "enum-missing",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:ALL OF INTERLIS.NoSuchEnum; END C; END T; END F.\n",
+        "sha256": "41396ba86988879c7303d597c9766d44103ab603bf6292f521d27e0bccdd5739",
+        "expectedExitCode": 1,
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a134f032e3cc7afa11ee951a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a134f032e3cc7afa11ee951a\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":120},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.NoSuchEnum\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili>\n<repo>/build/reports/stabilization/g2-e1-binding/2.4-enum-missing.ili:1:There is no domain \"NoSuchEnum\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 11:05:42\n"
+          }
+        }
+      }
+    ],
+    "ownExpected": 12,
+    "referenceAgreements": 12
+  },
+  "openFollowUp": {
+    "scope": "Open E1 follow-up reproductions; no baseline/source/exception changes",
+    "cases": [
+      {
+        "case": "metaobject-translation",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T; END F.\n",
+        "sha256": "5cbff7ba805fd8ad2e3120bb1cf473bbbed0b85f6b47b369e095ea46aeea8009",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-451ade0c8b66e70c83c2f9f2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-451ade0c8b66e70c83c2f9f2\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":127},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.METAOBJECT_TRANSLATION\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.3-metaobject-translation.ili>\nInfo: ...compiler run done 2026-10-25 11:14:37\n"
+          }
+        }
+      },
+      {
+        "case": "empty-function",
+        "version": "2.3",
+        "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; END F.\n",
+        "sha256": "b07822adfb24cd65f8108d01e7575f15fb18a1937a083d946d6159802fe0c1ce",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili>\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:1:expecting NAME, found ')'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:1:expecting NAME, found 'END'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:2:expecting ')', found 'null'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:2:expecting \"END\", found 'null'\n<repo>/build/reports/stabilization/g2-e1-followup/2.3-empty-function.ili:2:expecting '.', found 'null'\n...compiler run failed 2026-10-25 11:14:38\n"
+          }
+        }
+      },
+      {
+        "case": "metaobject-translation",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C EXTENDS INTERLIS.METAOBJECT_TRANSLATION=END C; END T; END F.\n",
+        "sha256": "7b8366b7511186d199a240dbb8d807400a1bd328a6f2e6875519a0002c69f3bc",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili"
+            ],
+            "exitCode": 1,
+            "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9e0fe765942e0715c690e078], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9e0fe765942e0715c690e078\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili\",\"revision\":\"1\",\"startOffset\":96,\"endOffset\":127},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"INTERLIS.METAOBJECT_TRANSLATION\"}]}]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.4-metaobject-translation.ili>\nInfo: ...compiler run done 2026-10-25 11:14:39\n"
+          }
+        }
+      },
+      {
+        "case": "empty-function",
+        "version": "2.4",
+        "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = FUNCTION f():BOOLEAN; END F.\n",
+        "sha256": "c596cc74cea5509ce04b25defb308a2315cc1bcb9d4e66edf822d893be705eb7",
+        "results": {
+          "own": {
+            "command": [
+              "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+              "check",
+              "--json",
+              "--root",
+              "F",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-empty-function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+            "stderr": ""
+          },
+          "ili2c": {
+            "command": [
+              "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+              "-jar",
+              "<home>/.cache/interlis-java/ili2c.jar",
+              "-o0",
+              "<repo>/build/reports/stabilization/g2-e1-followup/2.4-empty-function.ili"
+            ],
+            "exitCode": 0,
+            "stdout": "",
+            "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-e1-followup/2.4-empty-function.ili>\nInfo: ...compiler run done 2026-10-25 11:14:39\n"
+          }
+        }
+      }
+    ]
+  },
+  "scope": "26 paired compiler processes for E1 binding, plus 4 separate open E1 reproductions. Original frozen suite, pins and expectations unchanged. Baseline differences are observed causes; final source failures are checked through structured JSON. These additional cases are outside the frozen 593-case suite."
+}

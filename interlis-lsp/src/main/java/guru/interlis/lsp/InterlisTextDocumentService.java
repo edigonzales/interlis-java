@@ -130,6 +130,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     @Override
     public synchronized void didChange(DidChangeTextDocumentParams params) {
         String uri = params.getTextDocument().getUri();
+        DocumentState previous = documents.get(uri);
+        if (previous == null || params.getTextDocument().getVersion() <= previous.lspVersion) {
+            return;
+        }
         SourceId sourceId = new SourceId(uri);
         SourceText current = workspace.source(sourceId).orElseThrow(
                 () -> new IllegalStateException("document is not open: " + uri));
@@ -141,7 +145,15 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     @Override
     public synchronized void didClose(DidCloseTextDocumentParams params) {
-        documents.remove(params.getTextDocument().getUri());
+        String uri = params.getTextDocument().getUri();
+        documents.remove(uri);
+        SourceId id = new SourceId(uri);
+        if (uri.startsWith("file:")) {
+            reloadExternal(uri);
+        } else {
+            workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
+        }
+        reanalyzeOpen();
         DiagnosticSink current = sink.get();
         if (current != null) {
             current.publish(new PublishDiagnosticsParams(params.getTextDocument().getUri(),
@@ -365,6 +377,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
         }
         try {
             java.net.URI fileUri = java.net.URI.create(uri);
+            if (!java.nio.file.Files.exists(java.nio.file.Path.of(fileUri))) {
+                deleteExternal(uri);
+                return;
+            }
             guru.interlis.repository.FileSourceLoader loader =
                     new guru.interlis.repository.FileSourceLoader(java.nio.file.Path.of("."));
             var loaded = loader.load(new guru.interlis.repository.SourceLocator(
@@ -383,6 +399,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
         } catch (RuntimeException ignored) {
             // A watched file may disappear between notification and read.
         }
+    }
+
+    synchronized void deleteExternal(String uri) {
+        if (documents.containsKey(uri)) return;
+        SourceId id = new SourceId(uri);
+        workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
     }
 
     synchronized void reanalyzeOpen() {
@@ -630,8 +652,11 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private static CompletionItemKind completionKind(CompletionCandidate candidate) {
         return switch (candidate.kind()) {
             case CLASS, STRUCTURE, ASSOCIATION -> CompletionItemKind.Class;
-            case DOMAIN -> CompletionItemKind.TypeParameter;
+            case DOMAIN, LINE_FORM -> CompletionItemKind.TypeParameter;
             case ATTRIBUTE, ROLE -> CompletionItemKind.Field;
+            case PARAMETER, METAOBJECT -> CompletionItemKind.Variable;
+            case METADATA_BASKET, GRAPHIC -> CompletionItemKind.Module;
+            case DRAWING_RULE -> CompletionItemKind.Method;
             case TOPIC, MODEL -> CompletionItemKind.Module;
             case CONSTRAINT -> CompletionItemKind.Keyword;
             case KEYWORD -> CompletionItemKind.Keyword;
@@ -647,6 +672,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             case ASSOCIATION -> SymbolKind.Interface;
             case DOMAIN -> SymbolKind.TypeParameter;
             case ATTRIBUTE -> SymbolKind.Field;
+            case PARAMETER -> SymbolKind.Variable;
             case ROLE -> SymbolKind.Field;
             case CONSTRAINT -> SymbolKind.Key;
             default -> SymbolKind.Object;

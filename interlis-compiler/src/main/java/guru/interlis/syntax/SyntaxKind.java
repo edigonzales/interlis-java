@@ -2,6 +2,10 @@ package guru.interlis.syntax;
 
 /** Closed syntax-node classification. */
 public enum SyntaxKind {
+    GRAPHIC, DRAWING_RULE,
+    METAOBJECT_TYPE,
+    /** Structured OBJECT OF function type. */
+    TYPE_OBJECT_ARGUMENT,
     /** The {@code DOCUMENT} constant. */
     DOCUMENT,
     /** The {@code MODEL} constant. */
@@ -20,6 +24,12 @@ public enum SyntaxKind {
     UNIT,
     /** The {@code FUNCTION} constant. */
     FUNCTION,
+    CONTEXT,
+    METADATA_BASKET, METAOBJECT,
+    LINE_FORM,
+    PARAMETER,
+    EXPRESSION_PARAMETER,
+    EXPRESSION_ATTRIBUTE_CONSTANT,
     /** The {@code EXTERNAL_CONSTRAINT} constant. */
     EXTERNAL_CONSTRAINT,
     /** The {@code VIEW} constant. */
@@ -46,6 +56,7 @@ public enum SyntaxKind {
     TYPE_DOMAIN_REFERENCE,
     /** The {@code TYPE_REFERENCE} constant. */
     TYPE_REFERENCE,
+    TYPE_STRUCTURE_VALUE,
     /** The {@code TYPE_OID} constant. */
     TYPE_OID,
 
@@ -60,6 +71,7 @@ public enum SyntaxKind {
 
     /** The {@code TYPE_CLASS_VALUE} constant. */
     TYPE_CLASS_VALUE,
+    TYPE_ATTRIBUTE_PATH,
 
     /** The {@code TYPE_LINE} constant. */
     TYPE_LINE,
@@ -73,6 +85,7 @@ public enum SyntaxKind {
     TYPE_COORDINATE,
     /** The {@code TYPE_ENUM_TREE} constant. */
     TYPE_ENUM_TREE,
+    TYPE_ENUM_ARGUMENT,
     /** The {@code TYPE_GENERIC} constant. */
     TYPE_GENERIC,
     /** The {@code TYPE_UNSUPPORTED} constant. */
@@ -81,6 +94,8 @@ public enum SyntaxKind {
     EXPRESSION_LITERAL,
     /** The {@code EXPRESSION_PATH} constant. */
     EXPRESSION_PATH,
+    EXPRESSION_OBJECT_SET,
+    EXPRESSION_INSPECTION,
     /** The {@code EXPRESSION_BINARY} constant. */
     EXPRESSION_BINARY,
     /** The {@code EXPRESSION_GENERIC_CONSTANT} constant. */

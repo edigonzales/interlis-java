@@ -2,7 +2,7 @@ package guru.interlis.compiler;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.TemporalKind;
-import guru.interlis.model.TemporalType;
+import guru.interlis.model.FormattedType;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class TemporalTypeContractTest {
     @Test
-    void dateTimeKindsBecomeTemporalTypes() {
+    void dateTimeKeywordsUseTheBoundPredefinedFormats() {
         SourceText source = new SourceText(new SourceId("memory:/temporal.ili"),
                 new SourceRevision(1), """
                 INTERLIS 2.4;
@@ -38,9 +38,9 @@ class TemporalTypeContractTest {
                 CompilationOutcome.Succeeded.class,
                 CompilerEngines.create().compile(request, CancellationToken.none()));
         var kinds = succeeded.analysis().semanticGraph().types().stream()
-                .filter(TemporalType.class::isInstance).map(TemporalType.class::cast)
-                .map(TemporalType::temporalKind).toList();
-        assertEquals(List.of(TemporalKind.DATE, TemporalKind.TIMEOFDAY, TemporalKind.DATETIME),
-                kinds);
+                .filter(FormattedType.class::isInstance).map(FormattedType.class::cast)
+                .map(t -> t.predefined().orElseThrow()).toList();
+        assertEquals(java.util.Set.of(TemporalKind.DATE, TemporalKind.TIMEOFDAY, TemporalKind.DATETIME),
+                java.util.Set.copyOf(kinds));
     }
 }

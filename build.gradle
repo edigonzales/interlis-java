@@ -2,12 +2,45 @@ plugins {
     id 'base'
 }
 
+def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+tasks.register('checkNodeRuntime') {
+    group = 'verification'
+    description = 'Checks the pinned Node runtime before portable tests and benchmarks.'
+    doLast {
+        def actual = providers.exec {
+            commandLine nodeExecutable.get(), '--version'
+        }.standardOutput.asText.get().trim()
+        def expected = "v${providers.gradleProperty('nodeVersion').get()}"
+        if (actual != expected) {
+            throw new GradleException("Node ${expected} required, found ${actual}. "
+                    + "Set -PnodeExecutable=/path/to/node. Node 22 can hang in V8 WasmGC compilation.")
+        }
+    }
+}
+
 allprojects {
     group = 'guru.interlis'
     version = providers.gradleProperty('projectVersion').get()
 }
 
 subprojects { sub ->
+    sub.tasks.matching { it.name in ['wasmContractTest', 'jsContractTest',
+            'browserContractTest', 'safariContractTest', 'diagramAdapterTest',
+            'webImageProbe', 'webImageBrowserTest'] }.configureEach {
+        dependsOn rootProject.tasks.named('checkNodeRuntime')
+        // Keep functional deadlines independent of competing compiler/native-image
+        // builds and reference JVMs. Ordering does not select additional tasks.
+        mustRunAfter ':conformanceCheck', ':interlis-wasm-webimage:webImageBuild',
+                ':interlis-wasm-teavm:generateJavaScript', ':interlis-wasm-teavm:generateWasmGC'
+        def previousProbe = [
+                wasmContractTest: ':interlis-wasm-teavm:jsContractTest',
+                webImageProbe: ':interlis-wasm-teavm:wasmContractTest',
+                webImageBrowserTest: ':interlis-wasm-webimage:webImageProbe',
+                browserContractTest: ':interlis-wasm-webimage:webImageBrowserTest',
+                safariContractTest: ':interlis-wasm-teavm:browserContractTest'
+        ][name]
+        if (previousProbe) mustRunAfter previousProbe
+    }
     sub.plugins.withId('java') {
         rootProject.tasks.named('check').configure {
             dependsOn "${sub.path}:check"
@@ -42,7 +75,8 @@ tasks.register('checkBrowser') {
 
 tasks.register('releaseCheck') {
     group = 'verification'
-    description = 'P1/P3 release profile: checks, portable/browser gates, SDK process check and package.'
+    description = 'P3 release profile including conformance, performance and platform evidence.'
+    dependsOn 'conformanceCheck', 'performanceCheck'
     dependsOn tasks.named('check')
     dependsOn tasks.named('checkPortable')
     dependsOn tasks.named('checkBrowser')
@@ -55,10 +89,26 @@ tasks.register('releaseCheck') {
 }
 
 
+tasks.register('conformanceWrapperTest', Exec) {
+    group = 'verification'
+    description = 'Checks failure paths of reviewed normative expectations.'
+    workingDir = rootProject.projectDir
+    commandLine 'python3', '-m', 'unittest', 'discover', '-s', 'tools/reference', '-p', 'test_conformance_check.py'
+}
+tasks.named('check') { dependsOn 'conformanceWrapperTest' }
+
+tasks.register('g2EvidenceTest', Exec) {
+    group = 'verification'
+    description = 'Checks G2 source inventory, frozen review inputs and evidence failure paths.'
+    workingDir = rootProject.projectDir
+    commandLine 'python3', '-m', 'unittest', 'discover', '-s', 'tools/reference', '-p', 'test_g2_*.py'
+}
+tasks.named('check') { dependsOn 'g2EvidenceTest' }
+
 tasks.register('conformanceCheck', Exec) {
     group = 'verification'
     description = 'Runs the pinned external INTERLIS 2.3/2.4 conformance suite.'
-    dependsOn ':interlis-cli:installDist'
+    dependsOn ':interlis-cli:installDist', 'conformanceWrapperTest'
     workingDir = rootProject.projectDir
     commandLine 'python3', 'tools/reference/conformance_check.py'
 }
@@ -71,6 +121,7 @@ tasks.register('geoCorpus', Exec) {
 }
 
 tasks.register('jvmBenchmark', Exec) {
+    dependsOn 'geoCorpus'
     group = 'verification'
     description = 'Runs the pinned geo corpus through the JVM CLI.'
     dependsOn ':interlis-cli:installDist'
@@ -79,25 +130,22 @@ tasks.register('jvmBenchmark', Exec) {
 }
 
 tasks.register('wasmBenchmark', Exec) {
+    dependsOn 'geoCorpus', 'checkNodeRuntime'
     group = 'verification'
     description = 'Runs the pinned geo corpus through TeaVM WasmGC.'
     dependsOn ':interlis-wasm-teavm:buildWasmGC'
     workingDir = rootProject.projectDir
-    commandLine 'node', 'interlis-wasm-teavm/wasm-benchmark.cjs'
-    ignoreExitValue = true
-    doLast {
-        if (!file('docs/evidence/p3/performance-wasm.json').exists()) {
-            throw new GradleException('Wasm benchmark produced no result manifest')
-        }
-    }
+    commandLine nodeExecutable.get(), 'interlis-wasm-teavm/wasm-benchmark.cjs'
+
 }
 
 tasks.register('browserBenchmark', Exec) {
+    dependsOn 'geoCorpus', 'checkNodeRuntime'
     group = 'verification'
     description = 'Runs the pinned geo corpus through Playwright browsers.'
     dependsOn ':interlis-wasm-teavm:prepareBrowserHarness'
     workingDir = rootProject.projectDir
-    commandLine 'node', 'interlis-wasm-teavm/browser-benchmark.cjs'
+    commandLine nodeExecutable.get(), 'interlis-wasm-teavm/browser-benchmark.cjs'
 }
 
 tasks.register('performanceCheck') {
@@ -126,7 +174,7 @@ tasks.register('sdkPackage', Zip) {
     from(rootProject.file('examples/sdk')) {
         into 'examples/sdk'
     }
-    from(rootProject.file('docs/evidence/p3/version-manifest.json')) {
+    from(rootProject.file('build/reports/sdk/version-manifest.json')) {
         into 'version'
     }
     reproducibleFileOrder = true

@@ -1,0 +1,414 @@
+{
+  "recordedAt": "2026-10-20T17:37:46.995818+00:00",
+  "scope": "WasmGC shutdown isolation; no performance acceptance; P2/P3 OPEN",
+  "source": {
+    "baseCommit": "3820c6b5dead437cdaeb9569fbfe726abec25d6e",
+    "workingTreeDirty": true,
+    "implementationTreeSha256": "fcb16a4dc8a1d4a785d8ae818e2814fb2e26290a6ef05a15f513a85e00f2ece1",
+    "treeDigestMethod": "SHA-256 of sorted git tracked/nonignored untracked files excluding docs/: UTF-8 path, NUL, exact file bytes, NUL",
+    "note": "This is an uncommitted working-tree verification, not a release or clean-commit certificate."
+  },
+  "host": {
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.8.1\nBuildVersion:\t\t24H32",
+    "model": "MacBookAir10,1",
+    "cpu": "Apple M1",
+    "memoryBytes": 17179869184,
+    "architecture": "arm64"
+  },
+  "reports": [
+    {
+      "recordedAt": "2026-10-20T17:37:15.513009+00:00",
+      "scope": "Diagnostic only; liftoff-only is not a production or performance acceptance",
+      "node": "v22.23.1",
+      "host": "macOS-15.8.1-arm64-arm-64bit",
+      "wasmSha256": "9f8b2968fdb215d2a302bc3fd985647b02faf6c0db53f57c4c55c36994f44b49",
+      "results": [
+        {
+          "profile": "standard",
+          "mode": "compile",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "compile"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.35473049999999995,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node22-accepted/standard-compile.log",
+          "logSha256": "9028c92a34477cc2a7e73d1a636e750fa1ba97eb89ce79851c9d180bdafaf50e",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"compile\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n{\"event\":\"beforeExit\",\"mode\":\"compile\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"compile\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "standard",
+          "mode": "load",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "load"
+          ],
+          "status": "TIMEOUT",
+          "exitCode": -15,
+          "elapsedSeconds": 15.130221875,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": false,
+          "exitObserved": false,
+          "log": "build/reports/stabilization/exit-node22-accepted/standard-load.log",
+          "logSha256": "356ac01400c4eb3fb46f361982266d1775a7b0fd1458b5f22936655f758c8750",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"load\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n"
+        },
+        {
+          "profile": "standard",
+          "mode": "capabilities",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "capabilities"
+          ],
+          "status": "TIMEOUT",
+          "exitCode": -15,
+          "elapsedSeconds": 15.141991166,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": false,
+          "exitObserved": false,
+          "log": "build/reports/stabilization/exit-node22-accepted/standard-capabilities.log",
+          "logSha256": "fdb35ecd5798bb03e8998df5b212ebf79985f7443e65f8131b82874fdde6b051",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"capabilities\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n"
+        },
+        {
+          "profile": "standard",
+          "mode": "semantics",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "semantics"
+          ],
+          "status": "TIMEOUT",
+          "exitCode": -15,
+          "elapsedSeconds": 17.775295500000002,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": false,
+          "exitObserved": false,
+          "log": "build/reports/stabilization/exit-node22-accepted/standard-semantics.log",
+          "logSha256": "920955bda8c3f5b740019d680d40b3a2907d756f7a13169d534be9a9c389edfa",
+          "output": "{\"semanticCases\":71}\n{\"event\":\"operation-complete\",\"mode\":\"semantics\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\nSampling process 89833 for 2 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 89833 written to file build/reports/stabilization/exit-node22-accepted/standard-semantics.sample.txt\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "compile",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "compile"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.07681225000000325,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node22-accepted/liftoff-only-diagnostic-compile.log",
+          "logSha256": "9028c92a34477cc2a7e73d1a636e750fa1ba97eb89ce79851c9d180bdafaf50e",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"compile\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n{\"event\":\"beforeExit\",\"mode\":\"compile\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"compile\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "load",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "load"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.1252664580000058,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node22-accepted/liftoff-only-diagnostic-load.log",
+          "logSha256": "41a10b196fa808c12f08395708704ffcd909f6fa4b1f00a883b560104853b8ea",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"load\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"load\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"load\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "capabilities",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "capabilities"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.127968666000001,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node22-accepted/liftoff-only-diagnostic-capabilities.log",
+          "logSha256": "03f6507f92399a696601d126e574abe88fefae9dd18413b0500566ad42a8f286",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"capabilities\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"capabilities\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"capabilities\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "semantics",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "semantics"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.45856725000000154,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node22-accepted/liftoff-only-diagnostic-semantics.log",
+          "logSha256": "7b1238e14079c9e3cdb4054eacf70396fddb4eeb300e68005326b57a5b8d7410",
+          "output": "{\"semanticCases\":71}\n{\"event\":\"operation-complete\",\"mode\":\"semantics\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"semantics\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"semantics\",\"node\":\"v22.23.1\",\"v8\":\"12.4.254.21-node.56\",\"resources\":[]}\n"
+        }
+      ]
+    },
+    {
+      "recordedAt": "2026-10-20T17:36:30.590878+00:00",
+      "scope": "Diagnostic only; liftoff-only is not a production or performance acceptance",
+      "node": "v24.22.0",
+      "host": "macOS-15.8.1-arm64-arm-64bit",
+      "wasmSha256": "9f8b2968fdb215d2a302bc3fd985647b02faf6c0db53f57c4c55c36994f44b49",
+      "results": [
+        {
+          "profile": "standard",
+          "mode": "compile",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "compile"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.34709816699999996,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/standard-compile.log",
+          "logSha256": "9a85ccae65800780682953b81683420715304c4ac85323877e4647fc312e3af8",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"compile\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"beforeExit\",\"mode\":\"compile\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"compile\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "standard",
+          "mode": "load",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "load"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.397052583,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/standard-load.log",
+          "logSha256": "1bd0f00a1444ec86fb041a1c86f96f07d7aba373b5b131e1327f43284fd56bb3",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"load\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"load\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"load\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "standard",
+          "mode": "capabilities",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "capabilities"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.2335646669999999,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/standard-capabilities.log",
+          "logSha256": "ba14c75779ca8a27bb0838d5b9d9358d7709904d543a900fab61cd9dbf7bee82",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"capabilities\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"capabilities\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"capabilities\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "standard",
+          "mode": "semantics",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "semantics"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 1.579357083,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/standard-semantics.log",
+          "logSha256": "4a997f8178ab76c587bdcbaddc32c1a50f9800adc7e3f4f4c258a1ca6bc0e8a8",
+          "output": "{\"semanticCases\":71}\n{\"event\":\"operation-complete\",\"mode\":\"semantics\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"semantics\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"semantics\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "compile",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "compile"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.0815238749999998,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/liftoff-only-diagnostic-compile.log",
+          "logSha256": "9a85ccae65800780682953b81683420715304c4ac85323877e4647fc312e3af8",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"compile\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"beforeExit\",\"mode\":\"compile\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"compile\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "load",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "load"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.2937830419999998,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/liftoff-only-diagnostic-load.log",
+          "logSha256": "1bd0f00a1444ec86fb041a1c86f96f07d7aba373b5b131e1327f43284fd56bb3",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"load\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"load\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"load\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "capabilities",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "capabilities"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 0.2354777079999999,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/liftoff-only-diagnostic-capabilities.log",
+          "logSha256": "ba14c75779ca8a27bb0838d5b9d9358d7709904d543a900fab61cd9dbf7bee82",
+          "output": "{\"event\":\"operation-complete\",\"mode\":\"capabilities\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"capabilities\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"capabilities\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        },
+        {
+          "profile": "liftoff-only-diagnostic",
+          "mode": "semantics",
+          "command": [
+            "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+            "--experimental-wasm-exnref",
+            "--liftoff-only",
+            "/Users/stefan/sources/interlis-java/interlis-wasm-teavm/wasm-exit-probe.cjs",
+            "semantics"
+          ],
+          "status": "PASS",
+          "exitCode": 0,
+          "elapsedSeconds": 1.101720958,
+          "deadlineSeconds": 15,
+          "operationCompleted": true,
+          "beforeExitObserved": true,
+          "exitObserved": true,
+          "log": "build/reports/stabilization/exit-node24-accepted/liftoff-only-diagnostic-semantics.log",
+          "logSha256": "4a997f8178ab76c587bdcbaddc32c1a50f9800adc7e3f4f4c258a1ca6bc0e8a8",
+          "output": "{\"semanticCases\":71}\n{\"event\":\"operation-complete\",\"mode\":\"semantics\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[\"FSReqPromise\",\"CloseReq\"]}\n{\"event\":\"beforeExit\",\"mode\":\"semantics\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n{\"event\":\"exit\",\"mode\":\"semantics\",\"node\":\"v24.22.0\",\"v8\":\"13.6.233.17-node.57\",\"resources\":[]}\n"
+        }
+      ]
+    }
+  ],
+  "node24Download": {
+    "release": {
+      "version": "v24.22.0",
+      "date": "2026-10-14",
+      "files": [
+        "aix-ppc64",
+        "headers",
+        "linux-arm64",
+        "linux-ppc64le",
+        "linux-s390x",
+        "linux-x64",
+        "linux-x64-musl",
+        "osx-arm64-tar",
+        "osx-x64-pkg",
+        "osx-x64-tar",
+        "src",
+        "win-arm64-7z",
+        "win-arm64-zip",
+        "win-x64-7z",
+        "win-x64-exe",
+        "win-x64-msi",
+        "win-x64-zip"
+      ],
+      "npm": "11.19.1",
+      "v8": "13.6.233.17",
+      "uv": "1.52.1",
+      "zlib": "1.3.2.1-motley",
+      "openssl": "3.5.8",
+      "modules": "137",
+      "lts": "Krypton",
+      "security": false
+    },
+    "url": "https://nodejs.org/dist/v24.22.0/node-v24.22.0-darwin-arm64.tar.gz",
+    "sha256": "6a9724d9b50a5f22b4816cded441b5a8d9ddae546191a5e5b7efa5a5e2ee26d5",
+    "checksumSource": "https://nodejs.org/dist/v24.22.0/SHASUMS256.txt",
+    "executable": "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node"
+  },
+  "nativeSample": {
+    "path": "docs/evidence/stabilization/wasmgc-node22-native-stack-2026-10-20.txt",
+    "sha256": "c92d2e1001c6a8d37779eae6bef5e5717e18a1bdfcc69709379ca1bf9146a466"
+  },
+  "negativePinCheck": {
+    "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew checkNodeRuntime -PnodeExecutable=/Users/stefan/.cache/interlis-java/runtime/node-v22.23.1-darwin-arm64/bin/node --console=plain",
+    "expectedExitCode": 1,
+    "actualExitCode": 1,
+    "output": "> Task :checkNodeRuntime FAILED\n\nFAILURE: Build failed with an exception.\n\n* Where:\nBuild file '/Users/stefan/sources/interlis-java/build.gradle' line: 15\n\n* What went wrong:\nExecution failed for task ':checkNodeRuntime' (registered in build file 'build.gradle').\n> Node v24.22.0 required, found v22.23.1. Set -PnodeExecutable=/path/to/node. Node 22 can hang in V8 WasmGC compilation.\n\n* Try:\n> Run with --stacktrace option to get the stack trace.\n> Run with --info or --debug option to get more log output.\n> Run with --scan to get full insights from a Build Scan (powered by Develocity).\n> Get more help at https://help.gradle.org.\n\nBUILD FAILED in 690ms\n1 actionable task: 1 executed\n"
+  },
+  "decision": "Pin Node 24.22.0 for portable host tests; keep TeaVM WasmGC and normal optimization. Node 22 is a reproduced unsupported host profile; liftoff-only is diagnostic only."
+}

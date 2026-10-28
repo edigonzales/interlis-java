@@ -1,0 +1,246 @@
+{
+  "date": "2026-10-28",
+  "step": "A3",
+  "subscope": "Portable/TeaVM/browser export of wrong-target and swapped-order counterchecks; JVM lost-member countercheck",
+  "acceptance": "COUNTERCHECKS_PORTABLE_PASSED_NOT_FULL_A3",
+  "stabilizationContract": "interlis-wasm-teavm/stabilization-contract.cjs",
+  "stabilizationContractSha256": "5ed76b76fb36664c4b823eea087bb8fb195c8ad930c1b80603db5166727a1e50",
+  "newCases": 8,
+  "portableCases": 3257,
+  "runtimes": [
+    "teavm-js",
+    "teavm-wasm-gc",
+    "chromium",
+    "firefox",
+    "webkit",
+    "safari",
+    "webimage-chromium",
+    "webimage-firefox",
+    "webimage-webkit"
+  ],
+  "jvmCounterchecks": [
+    {
+      "testId": "LineFormBindingContractTest.customFormsExposeSegmentInheritanceMembersAndSourceReferences",
+      "purpose": "lost/effective member and source identity"
+    },
+    {
+      "testId": "ImportedTranslationContractTest.equalTypedWrongImportedTargetsRemainErrors",
+      "purpose": "wrong target"
+    },
+    {
+      "testId": "StructuredTranslationContractTest.translationCorrespondencesPreserveStructuralMemberOrder",
+      "purpose": "swapped order"
+    },
+    {
+      "testId": "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+      "purpose": "same-named enum elements keep distinct JVM targets (portable counterpart)"
+    }
+  ],
+  "portableCounterchecks": [
+    {
+      "id": "same-named enum elements keep distinct domain targets",
+      "versions": [
+        "2.3",
+        "2.4"
+      ],
+      "status": "PASS"
+    },
+    {
+      "id": "swapped translation domain order is rejected",
+      "versions": [
+        "2.3",
+        "2.4"
+      ],
+      "status": "PASS"
+    },
+    {
+      "id": "matching translation domain order is accepted",
+      "versions": [
+        "2.3",
+        "2.4"
+      ],
+      "status": "PASS"
+    },
+    {
+      "id": "inherited member remains visible in public completion",
+      "versions": [
+        "2.3",
+        "2.4"
+      ],
+      "status": "PASS"
+    }
+  ],
+  "lostMembersPortable": true,
+  "results": {
+    "interlis-wasm-teavm/build/js-contract-result.json": {
+      "sha256": "7413d335db67c62d9c555fe6257cd81aa5d8a261b922e5cf37a822ad85d5933d",
+      "content": {
+        "stabilizationCases": 3255,
+        "status": "passed",
+        "tool": "0.2.0-SNAPSHOT",
+        "outcome": "succeeded",
+        "runtime": "teavm-js",
+        "node": "v24.22.0"
+      }
+    },
+    "interlis-wasm-teavm/build/wasm-contract-result.json": {
+      "sha256": "f7596ba59436a1ae4318febb046ecd9ad6b3bc98267a884f8f2d654e1a3d0081",
+      "content": {
+        "stabilizationCases": 3255,
+        "status": "passed",
+        "tool": "0.2.0-SNAPSHOT",
+        "nodes": 2,
+        "outcome": "succeeded",
+        "runtime": "teavm-wasm-gc",
+        "node": "v24.22.0"
+      }
+    },
+    "interlis-wasm-teavm/build/browser-results.json": {
+      "sha256": "ca312724e1d320f3d50ee512e76a89c63088862b4ba174a90aee88711ef46d38",
+      "content": [
+        {
+          "browser": "chromium",
+          "browserVersion": "156.0.8078.4",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 3255,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        },
+        {
+          "browser": "firefox",
+          "browserVersion": "157.0",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 3255,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        },
+        {
+          "browser": "webkit",
+          "browserVersion": "27.2",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 3255,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        }
+      ]
+    },
+    "interlis-wasm-teavm/build/safari-result.json": {
+      "sha256": "0233faec4fef0c61e18b0c01861683dc650405af47e7b0eecf5ba76d8902ef17",
+      "content": {
+        "status": "passed",
+        "browser": "Safari",
+        "driverVersion": "Included with Safari 27.0 (20625.1.29.18.28)",
+        "node": "v24.22.0",
+        "result": {
+          "diagramAssociations": 0,
+          "compiledOutcome": "succeeded",
+          "exactDecimal": true,
+          "analyzeRevision": "1",
+          "stabilizationCases": 3255,
+          "capabilities": "0.2.0-SNAPSHOT",
+          "diagnostics": 0,
+          "workerRestartOutcome": "succeeded",
+          "diagramNodes": 2,
+          "diagramEdges": 0,
+          "status": "ok",
+          "rejectedOutcome": "rejected"
+        },
+        "driverStderr": ""
+      }
+    }
+  },
+  "logs": {
+    "portable": "build/reports/g2/A2/R4/check-portable-a3b.log",
+    "portableSha256": "89198ae7e75b3a4e550ec687213e6f1b3c99b964857e037be031c0699f06e7a2",
+    "browser": "build/reports/g2/A2/R4/check-browser-a3b.log",
+    "browserSha256": "c66ec416d8a6fea521137b1d4cea1fd7be386bddc7b7e6561b87240481b81380",
+    "jvm": "build/reports/g2/A2/R4/a3-counterchecks.log",
+    "jvmSha256": "4c94fc13adc637cf5ca56ff7caf6d06354fff315a5508c2ec630d1623308c68b",
+    "enum": "build/reports/g2/A2/R4/a3-enum-target.log",
+    "enumSha256": "d4bb012c07bb0972fc1e1f9b0aaac4cbc6ab76585cbb623bbda29470cc9a996a"
+  },
+  "commands": [
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew checkPortable -PnodeExecutable=build/tools/node-v24.22.0-darwin-arm64/bin/node --console=plain",
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew checkBrowser -PnodeExecutable=build/tools/node-v24.22.0-darwin-arm64/bin/node -PgraalVmHome=/Users/stefan/.sdkman/candidates/java/25.0.3-graal -PbinaryenHome=build/tools/binaryen-version_133 --console=plain",
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew :interlis-compiler:test --tests ... --rerun-tasks --console=plain"
+  ],
+  "limits": [
+    "Counterchecks are portable, but full A3 test export and independent review remain open.",
+    "No new public bridge API and no normative change.",
+    "Diagram/member ordering is not asserted beyond completion presence; lost/effective member order remains a JVM countercheck.",
+    "The JVM enum-target test pairs with the portable case; it does not replace the full A3 export/review."
+  ],
+  "remaining": [
+    "Complete the full A3 test export/semantic comparison and independent review.",
+    "Decide whether effective-member order needs a portable assertion beyond presence.",
+    "A2-R4 execution/reviews and user decisions remain open."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "jvmTests": 4,
+  "compilerTests": 615,
+  "jvmCheckLog": "build/reports/g2/A2/R4/a3-enum-target.log",
+  "jvmCheckLogSha256": "d4bb012c07bb0972fc1e1f9b0aaac4cbc6ab76585cbb623bbda29470cc9a996a",
+  "comparisonStatus": "COUNTERCHECK_PAIRS_MATCHED",
+  "comparisonPairs": [
+    {
+      "case": "lost member presence",
+      "jvm": "LineFormBindingContractTest.customFormsExposeSegmentInheritanceMembersAndSourceReferences",
+      "portable": "completion: inherited member visible (2.3/2.4)",
+      "status": "PASS_BOTH",
+      "limit": "order not asserted portably"
+    },
+    {
+      "case": "wrong same-named target",
+      "jvm": "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+      "portable": "same-named enum elements keep distinct domain targets (2.3/2.4)",
+      "status": "PASS_BOTH"
+    },
+    {
+      "case": "swapped correspondence order",
+      "jvm": "StructuredTranslationContractTest.translationCorrespondencesPreserveStructuralMemberOrder",
+      "portable": "swapped translation order rejected / matching accepted (2.3/2.4)",
+      "status": "PASS_BOTH"
+    }
+  ]
+}

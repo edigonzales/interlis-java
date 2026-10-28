@@ -12,15 +12,19 @@ import java.util.Optional;
  * @param transientAttribute transient marker
  * @param continuous CONTINUOUS marker
  * @param subdivision SUBDIVISION marker
- * @param overrides the {@code overrides} component
+ * @param overrides immediate inherited attribute, including an ALL OF member
+ * @param derivations immutable local alternatives in source order; follow {@code overrides}
+ *                    from base to derived attribute before these alternatives. The last
+ *                    defined alternative wins. IDs belong to the same semantic graph.
  */
 public record AttributeSymbol(SymbolHeader header, TypeId declaredType,
                               boolean mandatory, boolean transientAttribute,
                               boolean continuous, boolean subdivision,
-                              Optional<SymbolId> overrides) implements Symbol {
+                              Optional<SymbolId> overrides, java.util.List<ExpressionId> derivations) implements Symbol {
     /** Creates a validated instance. */
     public AttributeSymbol {
         Objects.requireNonNull(header, "header");
+        derivations = java.util.List.copyOf(derivations);
         Objects.requireNonNull(declaredType, "declaredType");
         overrides = Objects.requireNonNull(overrides, "overrides");
         if (header.kind() != SymbolKind.ATTRIBUTE) {

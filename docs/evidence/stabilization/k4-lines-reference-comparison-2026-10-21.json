@@ -1,0 +1,1132 @@
+{
+  "referenceVersion": "5.6.9",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "cases": [
+    {
+      "testId": "ili23.LineFormType23Test.lineFormTypeComplete",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeComplete.ili",
+          "sha256": "9fc521fbb4d489bea2f08438d2ef358c3f7e3332044590295d449e6a3b7ef360"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeComplete.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeComplete.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeComplete.ili>\nInfo: ...compiler run done 2026-10-21 15:02:53\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineFormType23Test.lineFormTypeStructRefFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeStructRefFail.ili",
+          "sha256": "e53912a6b24e40f81cfd1257ffa6ae55c95c1b889c18585e48b5d73e202f1b9c"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeStructRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a1f58317034a8212b9607966], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeStructRefFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a1f58317034a8212b9607966\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeStructRefFail.ili\",\"revision\":\"1\",\"startOffset\":395,\"endOffset\":801},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translated line form targets a different segment structure/TRANSLATION_LINE_FORM\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeStructRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeStructRefFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineFormTypeStructRefFail.ili:28:The referenced structures do not match.\n...compiler run failed 2026-10-21 15:02:56\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeComplete",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeComplete.ili",
+          "sha256": "d5760acdc41190658ed1eaded70b646b5131c5d1c1463a4acc544d719fc71d84"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeComplete.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeComplete.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeComplete.ili>\nInfo: ...compiler run done 2026-10-21 15:03:01\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeDirectedPolylineFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili",
+          "sha256": "635b8b37035ec0a92a3874183756bde1b1cf0eecabe4edd57051b35edd54cf17"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-99bde84cf0909d5570077d87, diag-a3a46c753ecd974972d6372e, diag-eda07596bf61e03ee3b3b9c2], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a3a46c753ecd974972d6372e\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili\",\"revision\":\"1\",\"startOffset\":295,\"endOffset\":594},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-eda07596bf61e03ee3b3b9c2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili\",\"revision\":\"1\",\"startOffset\":295,\"endOffset\":594},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-99bde84cf0909d5570077d87\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili\",\"revision\":\"1\",\"startOffset\":295,\"endOffset\":594},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeDirectedPolylineFail.ili:26:The domains of the attributes ModelB.TopicB.ClassB.attrB2 and ModelA.TopicA.ClassA.attrA2 do not match.\n...compiler run failed 2026-10-21 15:03:05\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeKindFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeKindFail.ili",
+          "sha256": "e055efc83c810896d1cabc39f46389a0bd56ea79b421df2d974b1aabd3074390"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeKindFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9cfdfb528ff26ac40d9eaf82], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeKindFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9cfdfb528ff26ac40d9eaf82\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeKindFail.ili\",\"revision\":\"1\",\"startOffset\":315,\"endOffset\":640},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeKindFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeKindFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeKindFail.ili:26:The domains of the attributes ModelB.TopicB.ClassB.attrB3 and ModelA.TopicA.ClassA.attrA3 do not match.\n...compiler run failed 2026-10-21 15:03:07\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeLineAttrFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili",
+          "sha256": "b8479c5a2a4834666be75e34987c26e2e9fad347ee1746d0b317771150d91630"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-15d92ec059de9c0b5dcd7044, diag-3f66d52dbcaac503826838af, diag-a66798dbc7fcf3e985e29e3b], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3f66d52dbcaac503826838af\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili\",\"revision\":\"1\",\"startOffset\":422,\"endOffset\":857},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-a66798dbc7fcf3e985e29e3b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili\",\"revision\":\"1\",\"startOffset\":422,\"endOffset\":857},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-15d92ec059de9c0b5dcd7044\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili\",\"revision\":\"1\",\"startOffset\":422,\"endOffset\":857},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineAttrFail.ili:38:The domains of the attributes ModelB.TopicB.ClassB.attrB5 and ModelA.TopicA.ClassA.attrA5 do not match.\n...compiler run failed 2026-10-21 15:03:09\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeLineFormFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili",
+          "sha256": "958367ac9bcf5a328f01c66623bfeac7e4b785a16580ad330f5905499f381640"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a280156c60f952d8ae299aeb, diag-eddc10c09f7b39ac9095968f], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-eddc10c09f7b39ac9095968f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili\",\"revision\":\"1\",\"startOffset\":286,\"endOffset\":580},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-a280156c60f952d8ae299aeb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili\",\"revision\":\"1\",\"startOffset\":286,\"endOffset\":580},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormFail.ili:26:The domains of the attributes ModelB.TopicB.ClassB.attrB1 and ModelA.TopicA.ClassA.attrA1 do not match.\n...compiler run failed 2026-10-21 15:03:12\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeLineFormOrdering",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormOrdering.ili",
+          "sha256": "50ef38d5d8c444f49dccc36ee7916a501530c0ecadf789b3c99965310e4aef30"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormOrdering.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormOrdering.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormOrdering.ili>\nInfo: ...compiler run done 2026-10-21 15:03:16\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeLineFormRefFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili",
+          "sha256": "e5295b5764455d670780a471ab188e3d3b23520e7ab206e9354df13c87c0eb34"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b1b1fd487b3ddda75efdba77, diag-d7fc6fc68ddf644ac002397f], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b1b1fd487b3ddda75efdba77\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili\",\"revision\":\"1\",\"startOffset\":487,\"endOffset\":987},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-d7fc6fc68ddf644ac002397f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili\",\"revision\":\"1\",\"startOffset\":487,\"endOffset\":987},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormRefFail.ili:38:The domains of the attributes ModelB.TopicB.ClassB.attrB4 and ModelA.TopicA.ClassA.attrA4 do not match.\n...compiler run failed 2026-10-21 15:03:20\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeLineFormStructRefFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili",
+          "sha256": "4d431fa2d2897e223e08ee6508cc0c2a012802915f21b7fa129aaea0588c39b6"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f6a77c496a52457f34d842f3], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f6a77c496a52457f34d842f3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili\",\"revision\":\"1\",\"startOffset\":529,\"endOffset\":1071},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translated line form targets a different segment structure/TRANSLATION_LINE_FORM\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili:35:The referenced structures do not match.\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeLineFormStructRefFail.ili:40:The domains of the attributes ModelB.TopicB.ClassB.attrB4 and ModelA.TopicA.ClassA.attrA4 do not match.\n...compiler run failed 2026-10-21 15:03:25\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeOverlapsFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili",
+          "sha256": "ed7efe0f3018cabc5db8ceea40a1f9521b86a77547b3be0116ad3ff0e117e2be"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-55276cd7dcb1e40246f10e19, diag-769442744bf809826f8538bc, diag-c223202907d7548fdfcacb29], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c223202907d7548fdfcacb29\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili\",\"revision\":\"1\",\"startOffset\":315,\"endOffset\":643},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-769442744bf809826f8538bc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili\",\"revision\":\"1\",\"startOffset\":315,\"endOffset\":643},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-55276cd7dcb1e40246f10e19\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili\",\"revision\":\"1\",\"startOffset\":315,\"endOffset\":643},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeOverlapsFail.ili:26:The domains of the attributes ModelB.TopicB.ClassB.attrB3 and ModelA.TopicA.ClassA.attrA3 do not match.\n...compiler run failed 2026-10-21 15:03:29\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeVertexRefFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili",
+          "sha256": "ddc09bb0d228ce34b955fcf308de01989700706ec2383553dd658449c53f528a"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1cd47b5a04e4e01fb7513850, diag-95f0d0e62fd305a511d85bf2, diag-97fa76aeeb6436595aa886d6], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-95f0d0e62fd305a511d85bf2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili\",\"revision\":\"1\",\"startOffset\":331,\"endOffset\":675},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-1cd47b5a04e4e01fb7513850\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili\",\"revision\":\"1\",\"startOffset\":331,\"endOffset\":675},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-97fa76aeeb6436595aa886d6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili\",\"revision\":\"1\",\"startOffset\":331,\"endOffset\":675},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"ModelB\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/translation/lineTypeVertexRefFail.ili:28:The domains of the attributes ModelB.TopicB.ClassB.attrB1 and ModelA.TopicA.ClassA.attrA1 do not match.\n...compiler run failed 2026-10-21 15:03:33\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.overlapTooSmallFail",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili",
+          "sha256": "bea6bc62dbf8c58fbf801ceadfb15e320a7fc92c410f5c5562329f26f75241e0"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-755f1a09ad5f417d7b0809e4], requestedRoots=[BySource[source=SourceId[value=file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-755f1a09ad5f417d7b0809e4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili\",\"revision\":\"1\",\"startOffset\":248,\"endOffset\":339},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Geometry\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"WITHOUT OVERLAPS value is too small/OVERLAP_TOO_SMALL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili>\n<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili:17:The maximal overlap must not undercut the accuracy of the coord domain.\n...compiler run failed 2026-10-21 15:03:35\n"
+        }
+      }
+    },
+    {
+      "testId": "ili23.LineType23Test.simple",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/LineType.ili",
+          "sha256": "2e806eb1ccd4f4db4e12fd676f7ced70d0ea72593f72067bcb1d51c9e3b21b61"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/LineType.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/LineType.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/LineType.ili>\nInfo: ...compiler run done 2026-10-21 15:03:39\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.bound",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-bound.ili",
+          "sha256": "2af96d72559a3910f8b90cc23bd5c7a6690ff063843e6be79c5a13ecbc8e03c5",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S; DOMAIN Coord = COORD 0.000..100.000,0.000..100.000; DOMAIN L = POLYLINE WITH (Curve,STRAIGHTS,ARCS) VERTEX Coord; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-bound.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-bound.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-bound.ili>\nInfo: ...compiler run done 2026-10-21 15:03:43\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.wrongStructure",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-wrongStructure.ili",
+          "sha256": "1d85fd56ed16aa4acfcfba403ad7a5b4c8bf1b040659ca7e99c9b885558cd484",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S = END S; LINE FORM Curve: S; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-wrongStructure.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8c762020dd4c5435685cd979], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-wrongStructure.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8c762020dd4c5435685cd979\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-wrongStructure.ili\",\"revision\":\"1\",\"startOffset\":103,\"endOffset\":112},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Curve\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"line form structure must extend INTERLIS.LineSegment/LINE_FORM_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-wrongStructure.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-wrongStructure.ili>\nInfo: ...compiler run done 2026-10-21 15:03:45\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.wrongClass",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-wrongClass.ili",
+          "sha256": "c1e1c7698a35865c1411c51021c50153244df23d2c59c8c88241e8d302e24b92",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = CLASS S = END S; LINE FORM Curve: S; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-wrongClass.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d8c533b6e80fd612946c779c], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-wrongClass.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d8c533b6e80fd612946c779c\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-wrongClass.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":107},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"S\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-wrongClass.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-wrongClass.ili>\nbuild/reports/stabilization/k4-lines-probes/2.3-wrongClass.ili:1:CLASS S must be declared as abstract. It is not part of a topic.\n...compiler run failed 2026-10-21 15:03:47\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.unknownQualifier",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili",
+          "sha256": "1ee93620c7bbce0747bd6668ea0917eb7d96a195c93004f5b4e2d4aee61ce0ca",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S; DOMAIN Coord = COORD 0.000..100.000,0.000..100.000; DOMAIN L = POLYLINE WITH (Wrong.Curve) VERTEX Coord; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0556b4911857c871a647f458], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0556b4911857c871a647f458\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili\",\"revision\":\"1\",\"startOffset\":232,\"endOffset\":243},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Wrong.Curve\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili>\nbuild/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili:1:There is no LINE FORM \"Wrong\" in MODEL M.\nbuild/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili:1:expecting ')', found '.'\nbuild/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili:1:expecting ';', found ')'\nbuild/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili:1:unexpected token: ;\nbuild/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili:1:unexpected token: M\nbuild/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili:2:expecting \"END\", found 'null'\nbuild/reports/stabilization/k4-lines-probes/2.3-unknownQualifier.ili:2:expecting '.', found 'null'\n...compiler run failed 2026-10-21 15:03:51\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.duplicateForm",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-duplicateForm.ili",
+          "sha256": "90e352fa15dbeaa2e65a54d0f9d1517e6fa56f57dfdaece266daec79d9f6f254",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S; DOMAIN Coord = COORD 0.000..100.000,0.000..100.000; DOMAIN L = POLYLINE WITH (Curve,Curve) VERTEX Coord; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-duplicateForm.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-duplicateForm.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-duplicateForm.ili>\nInfo: ...compiler run done 2026-10-21 15:03:53\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.finalSegment",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-finalSegment.ili",
+          "sha256": "7d4a42e6c2ac67c4c9bd2fde952eb3f7229095fb8783266d6edb3c25c0f7d8fb",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.StraightSegment = END S; LINE FORM Curve: S; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-finalSegment.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5f6e3ceb2856d5e6b1e5b419], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-finalSegment.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5f6e3ceb2856d5e6b1e5b419\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-finalSegment.ili\",\"revision\":\"1\",\"startOffset\":72,\"endOffset\":125},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"S\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"cannot extend FINAL object type/OBJECT_FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-finalSegment.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-finalSegment.ili>\nbuild/reports/stabilization/k4-lines-probes/2.3-finalSegment.ili:1:STRUCTURE INTERLIS.StraightSegment can not be extended because it has been declared as FINAL.\n  STRUCTURE INTERLIS.StraightSegment can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-21 15:03:56\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.contract",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-contract.ili",
+          "sha256": "a6d8db3e3dc7a49c2eeb64ed366719711da9fbdd2549655e89f7bd7f89e16102",
+          "text": "INTERLIS 2.3; MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S;  END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-contract.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ffb7d85e8db77b06e1ea6b38], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-contract.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ffb7d85e8db77b06e1ea6b38\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-contract.ili\",\"revision\":\"1\",\"startOffset\":133,\"endOffset\":142},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Curve\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"custom line forms require CONTRACTED in INTERLIS 2.3/LINE_FORM_CONTRACTED\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-contract.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-contract.ili>\nbuild/reports/stabilization/k4-lines-probes/2.3-contract.ili:1:To contain line form definitions, MODEL M must be contracted.\n...compiler run failed 2026-10-21 15:04:00\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.3.fineTolerance",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.3-fineTolerance.ili",
+          "sha256": "e32e6ab7ea0b1d4a040bf1dee1e8a46f1ea3594c9e2179bd386f5f7662920124",
+          "text": "INTERLIS 2.3; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.000000..100.000000,0.000000..100.000000; L = SURFACE WITH (STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS > 0.00001; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.3-fineTolerance.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6bd563995d534db2ba0d3b91], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-fineTolerance.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6bd563995d534db2ba0d3b91\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.3-fineTolerance.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":194},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"WITHOUT OVERLAPS value is too small/OVERLAP_TOO_SMALL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.3-fineTolerance.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.3-fineTolerance.ili>\nInfo: ...compiler run done 2026-10-21 15:04:03\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.bound",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-bound.ili",
+          "sha256": "a7c504a558d9678e0390689ef16e98c25476eff832e0463b96a658e40f30dd38",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S; DOMAIN Coord = COORD 0.000..100.000,0.000..100.000; DOMAIN L = POLYLINE WITH (Curve,STRAIGHTS,ARCS) VERTEX Coord; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-bound.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-bound.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-bound.ili>\nInfo: ...compiler run done 2026-10-21 15:04:06\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.wrongStructure",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-wrongStructure.ili",
+          "sha256": "746b20f7925667daf1781cfc7fb59a2569c118f89cebd7e0ec3e0ffa9d65e14d",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S = END S; LINE FORM Curve: S; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-wrongStructure.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0eefb8fa0e2d4bcf79c979af], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-wrongStructure.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0eefb8fa0e2d4bcf79c979af\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-wrongStructure.ili\",\"revision\":\"1\",\"startOffset\":103,\"endOffset\":112},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Curve\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"line form structure must extend INTERLIS.LineSegment/LINE_FORM_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-wrongStructure.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-wrongStructure.ili>\nInfo: ...compiler run done 2026-10-21 15:04:08\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.wrongClass",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-wrongClass.ili",
+          "sha256": "f203fe9be803b6813827c201493bb8da9b9e53c3a54496fb76c4da427351f873",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = CLASS S = END S; LINE FORM Curve: S; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-wrongClass.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-aeacf08ceb1042d9b38ff0e7], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-wrongClass.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-aeacf08ceb1042d9b38ff0e7\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-wrongClass.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":107},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"S\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-wrongClass.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-wrongClass.ili>\nbuild/reports/stabilization/k4-lines-probes/2.4-wrongClass.ili:1:CLASS S must be declared as abstract. It is not part of a topic.\n...compiler run failed 2026-10-21 15:04:10\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.unknownQualifier",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili",
+          "sha256": "5ce5effd6f2b2fec6518868b0ed0e8c1a3a4c1804834744df8f7bd078945dc5a",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S; DOMAIN Coord = COORD 0.000..100.000,0.000..100.000; DOMAIN L = POLYLINE WITH (Wrong.Curve) VERTEX Coord; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-904a2e6ee0bb53fd589a477b], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-904a2e6ee0bb53fd589a477b\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili\",\"revision\":\"1\",\"startOffset\":232,\"endOffset\":243},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Wrong.Curve\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili>\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:1:There is no LINE FORM \"Wrong\" in MODEL M.\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:1:expecting ')', found '.'\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:1:DOMAIN L has an unexpected abstract/incomplete definition (missing line form)\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:1:unexpected token: )\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:1:unexpected token: ;\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:1:unexpected token: M\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:2:expecting \"END\", found 'null'\nbuild/reports/stabilization/k4-lines-probes/2.4-unknownQualifier.ili:2:expecting '.', found 'null'\n...compiler run failed 2026-10-21 15:04:11\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.duplicateForm",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-duplicateForm.ili",
+          "sha256": "f262a95a672cfca6e7678a1fc232100abc60b0e1079cc2cb2681e5fe077b1fb4",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S; DOMAIN Coord = COORD 0.000..100.000,0.000..100.000; DOMAIN L = POLYLINE WITH (Curve,Curve) VERTEX Coord; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-duplicateForm.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-duplicateForm.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-duplicateForm.ili>\nInfo: ...compiler run done 2026-10-21 15:04:14\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.finalSegment",
+      "expectation": {
+        "outcome": "reject"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-finalSegment.ili",
+          "sha256": "f1d9a3a00e2a917216d5f2777fd0b20bc8f2513dbdd23dd47ec9c104fd2bb7ee",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.StraightSegment = END S; LINE FORM Curve: S; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-finalSegment.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-77165fa5ac57bca32b0c97ff], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-finalSegment.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-77165fa5ac57bca32b0c97ff\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-finalSegment.ili\",\"revision\":\"1\",\"startOffset\":72,\"endOffset\":125},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"S\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"cannot extend FINAL object type/OBJECT_FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-finalSegment.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-finalSegment.ili>\nbuild/reports/stabilization/k4-lines-probes/2.4-finalSegment.ili:1:STRUCTURE INTERLIS.StraightSegment can not be extended because it has been declared as FINAL.\n  STRUCTURE INTERLIS.StraightSegment can not be extended because it has been declared as FINAL.\n...compiler run failed 2026-10-21 15:04:15\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.contract",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-contract.ili",
+          "sha256": "0d932d7dfd7c9b4c2cf724141cece34935d38cd80329612105e500180133c9ec",
+          "text": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = STRUCTURE S EXTENDS INTERLIS.LineSegment = a: TEXT*10; END S; LINE FORM Curve: S;  END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-contract.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-contract.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-contract.ili>\nbuild/reports/stabilization/k4-lines-probes/2.4-contract.ili:1:To contain line form definitions, MODEL M must be contracted.\n...compiler run failed 2026-10-21 15:04:17\n"
+        }
+      }
+    },
+    {
+      "testId": "k4-lines.2.4.fineTolerance",
+      "expectation": {
+        "outcome": "accept"
+      },
+      "sources": [
+        {
+          "path": "build/reports/stabilization/k4-lines-probes/2.4-fineTolerance.ili",
+          "sha256": "ab2d4922191650b6982b2c7a694bb7143748cee00b90a444d9622ae41ff1dc1b",
+          "text": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.000000..100.000000,0.000000..100.000000; L = SURFACE WITH (STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS > 0.00001; END M.\n"
+        }
+      ],
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "build/reports/stabilization/k4-lines-probes/2.4-fineTolerance.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-536738fb60368a4ebf3cbf8d], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-fineTolerance.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-536738fb60368a4ebf3cbf8d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/k4-lines-probes/2.4-fineTolerance.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":194},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"WITHOUT OVERLAPS value is too small/OVERLAP_TOO_SMALL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/k4-lines-probes/2.4-fineTolerance.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/k4-lines-probes/2.4-fineTolerance.ili>\nInfo: ...compiler run done 2026-10-21 15:04:18\n"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "Phase A platform regression gates",
+  "acceptance": "PASSED_REGRESSION_GATES_NOT_LANGUAGE_ACCEPTANCE",
+  "jvm": {
+    "tests": 699,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "modules": {
+      "interlis-compiler": 614,
+      "interlis-repository": 19,
+      "interlis-model": 16,
+      "interlis-lsp": 16,
+      "interlis-projection": 12,
+      "interlis-workspace": 10,
+      "interlis-cli": 9,
+      "interlis-wasm-bridge": 3
+    }
+  },
+  "portable": {
+    "node": "24.22.0",
+    "casesPerRuntime": 3249,
+    "js": "PASS",
+    "wasmGc": "PASS"
+  },
+  "browser": {
+    "chromium": "PASS",
+    "firefox": "PASS",
+    "webkit": "PASS",
+    "safari": "PASS",
+    "casesPerBrowser": 3249,
+    "webImage": {
+      "chromium": "PASS",
+      "firefox": "PASS",
+      "webkit": "PASS"
+    }
+  },
+  "tools": {
+    "java": "25.0.3-tem",
+    "gradle": "9.8.1",
+    "node": "24.22.0",
+    "graalVm": "25.0.3-graal",
+    "binaryen": "133"
+  },
+  "commands": [
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew check --console=plain",
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew checkPortable -PnodeExecutable=build/tools/node-v24.22.0-darwin-arm64/bin/node --console=plain",
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew checkBrowser -PnodeExecutable=build/tools/node-v24.22.0-darwin-arm64/bin/node -PgraalVmHome=/Users/stefan/.sdkman/candidates/java/25.0.3-graal -PbinaryenHome=build/tools/binaryen-version_133 --console=plain"
+  ],
+  "logs": {
+    "check": "build/reports/g2/A2/R4/full-check.log",
+    "checkSha256": "c8ae2efdea692e150ac6338b4278b4fa0e41dd5c5561807a5d8bc52df3191f0d",
+    "portable": "build/reports/g2/A2/R4/check-portable-node24.log",
+    "portableSha256": "785f21c254420a9e1e5d956ef26041004775c4f693758b0b57bfa31c808fedf1",
+    "browser": "build/reports/g2/A2/R4/check-browser.log",
+    "browserSha256": "16503d4fad2407690549459de4306cb76e54076e0fbbf838b9ec7e2cfbd6230a"
+  },
+  "artifacts": {
+    "interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js": "adedf8f7498330de3fc7452dfaaa481c21ccf6c8472b79f60047e2b50aa910d0",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm": "9950da28515bde9ceaf0411058365d193666bf7106a33036f48714b7e62c52f9",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js": "4fa1e0e0d686cc6e0a0d111e606cb876f7168bd695d9e3d639e7d5684453089b",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js": "98d121943d66def8571579c4ee3de30d811af2363c4b91064f351b56fb8bb232",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js.wasm": "eca093eaf436c9d581e26ea9f65865d55e954d3b7ac2f1660a3bd0d69a60d021"
+  },
+  "results": {
+    "interlis-wasm-teavm/build/js-contract-result.json": {
+      "sha256": "0ff8d936763e9764bd875cf2a89bdc1663ec6ab643eebf02867101dfedf599a8",
+      "content": {
+        "stabilizationCases": 3249,
+        "status": "passed",
+        "tool": "0.2.0-SNAPSHOT",
+        "outcome": "succeeded",
+        "runtime": "teavm-js",
+        "node": "v24.22.0"
+      }
+    },
+    "interlis-wasm-teavm/build/wasm-contract-result.json": {
+      "sha256": "34b442c36c0ba1822c4bca74ba632cca864a70eecb4524b88525ea40bace6239",
+      "content": {
+        "stabilizationCases": 3249,
+        "status": "passed",
+        "tool": "0.2.0-SNAPSHOT",
+        "nodes": 2,
+        "outcome": "succeeded",
+        "runtime": "teavm-wasm-gc",
+        "node": "v24.22.0"
+      }
+    },
+    "interlis-wasm-teavm/build/browser-results.json": {
+      "sha256": "23aa2ec5e76a73796ef46a8973cb6c28245a22820bcebe9c1e066f483eb447ec",
+      "content": [
+        {
+          "browser": "chromium",
+          "browserVersion": "156.0.8078.4",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 3249,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        },
+        {
+          "browser": "firefox",
+          "browserVersion": "157.0",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 3249,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        },
+        {
+          "browser": "webkit",
+          "browserVersion": "27.2",
+          "node": "v24.22.0",
+          "playwright": "1.64.1",
+          "status": "passed",
+          "result": {
+            "status": "ok",
+            "stabilizationCases": 3249,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "analyzeRevision": "1",
+            "rejectedOutcome": "rejected",
+            "compiledOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "diagramAssociations": 0,
+            "diagnostics": 0,
+            "exactDecimal": true,
+            "workerRestartOutcome": "succeeded"
+          }
+        }
+      ]
+    },
+    "interlis-wasm-teavm/build/safari-result.json": {
+      "sha256": "475255f12115684193430ba40983dbaf0a2469b3d4f20c2c0da684647103e1ef",
+      "content": {
+        "status": "passed",
+        "browser": "Safari",
+        "driverVersion": "Included with Safari 27.0 (20625.1.29.18.28)",
+        "node": "v24.22.0",
+        "result": {
+          "diagramAssociations": 0,
+          "compiledOutcome": "succeeded",
+          "exactDecimal": true,
+          "analyzeRevision": "1",
+          "stabilizationCases": 3249,
+          "capabilities": "0.2.0-SNAPSHOT",
+          "diagnostics": 0,
+          "workerRestartOutcome": "succeeded",
+          "diagramNodes": 2,
+          "diagramEdges": 0,
+          "status": "ok",
+          "rejectedOutcome": "rejected"
+        },
+        "driverStderr": ""
+      }
+    }
+  },
+  "limits": [
+    "Platform regression evidence only; no new language rule or independent acceptance.",
+    "A2-R4 execution, A3 and independent reviews remain open.",
+    "P3 releaseCheck was not run."
+  ],
+  "remaining": [
+    "Execute/map the R4 planned cases and complete A2-R4 review.",
+    "A3 test export/semantic comparison.",
+    "Independent R3/R4/A2 reviews and user normative decisions.",
+    "P3 remains separate."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e"
+}

@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0",
+  "step": "A1",
+  "reviewedAt": "2026-10-27T08:30:49Z",
+  "verdict": "NACHARBEIT",
+  "requirements": [
+    "TEST-001",
+    "TEST-004",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "scope": "Belegter A1-Ausgangslauf, eingefrorene Quellen/Normen/Pins, Paketprovenienz und Evidenzhilfe; keine vollstaendige Sprachsemantik-, P3- oder Normfreigabe.",
+  "packet": {
+    "manifest": "build/reports/g2/A1/packet/manifest.json",
+    "sha256": "7903f43d2116e814e8eb18c1ae7d0aaa0d68bb6011e76802b7f41c91f8e62987",
+    "hashVerified": true,
+    "sourceBasis": "build/reports/g2/A1/input/source.tar.gz",
+    "sourceDigest": "d851fd7f6212579490945ee311fdb0d9f1cce260b1151386db056a65555976d3"
+  },
+  "reviewModelConfiguration": {
+    "requested": "gpt-5.6-sol",
+    "evidence": "Der explizite Modellparameter wurde beim Start dieses Reviewers vom Tool akzeptiert; keine Modellidentitaet wurde aus einer Selbstauskunft abgeleitet."
+  },
+  "verified": {
+    "packetReferences": true,
+    "sourceArchiveMembers": 1072,
+    "preChangeArchiveMembers": 1069,
+    "changedSources": 11,
+    "patchReproducesFrozenAfterSources": true,
+    "norm23Sha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+    "norm24Sha256": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069",
+    "normativeExpectationsUnchanged": true,
+    "baselineUnchanged": true,
+    "gradleRun": {
+      "manifestStatus": "PASSED",
+      "exitCode": 0,
+      "logSha256Verified": true,
+      "logEnd": "BUILD SUCCESSFUL in 3m 52s",
+      "actionableTasks": "59 executed"
+    },
+    "referenceRecount": {
+      "PASS": 574,
+      "XFAIL": 1,
+      "FAIL": 18,
+      "XPASS": 0,
+      "ERROR": 0,
+      "TOTAL": 593
+    },
+    "projectSummary": {
+      "PASS": 574,
+      "XFAIL": 19,
+      "FAIL": 0,
+      "XPASS": 0,
+      "ERROR": 0,
+      "TOTAL": 593
+    },
+    "portableCasesPerReportedRuntime": 3249,
+    "sdkProcessCommands": 9,
+    "jvmManifestClaim": {
+      "tests": 688,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "jvmRawReportsArchived": false
+  },
+  "findings": [
+    {
+      "id": "A1-R1",
+      "severity": "blocking",
+      "title": "Unvollstaendige Erfolgsreports koennen den Evidenzlauf grün machen",
+      "evidence": [
+        "tools/reference/g2_evidence.py:136-150 prueft bei Projekt-, Portable-, Safari- und SDK-Reports fast nur Statusfelder.",
+        "Eigene Gegenprobe: Ein Projektbericht mit TOTAL=0, Portable-/Safari-Reports ohne stabilizationCases und ein SDK-Bericht mit leerer commands-Liste wurden alle von report_result akzeptiert.",
+        "Der rohe Referenzreport wird in report_result ohne Inhaltspruefung akzeptiert; eine Konsistenzpruefung zwischen Rohbericht und Projektwrapper fehlt."
+      ],
+      "impact": "Die Hilfe kann trotz fehlender Faelle, fehlender Vertragswerte oder widerspruechlicher Roh-/Wrapperdaten status PASSED ausgeben. Damit sind die explizit geforderte Abwehr falscher gruener Evidenz und die behauptete reproduzierbare Vollstaendigkeit nicht erfuellt.",
+      "requiredAction": "Exakte Schemas und Profilinvarianten validieren: ausgewaehlte Versionen/Fallzahlen und Summen, Detailfall-Recount und Roh-/Wrapperkonsistenz, 3249 Portable-Faelle samt benoetigten Vertragsfeldern je Runtime/Browser, Browser-/Toolversionen sowie die vollstaendige erwartete SDK-Kommandoliste und Exitprofile. Gegenpruefungen fuer Nullfaelle, fehlende Felder und widerspruechliche Reports hinzufuegen."
+    },
+    {
+      "id": "A1-R2",
+      "severity": "blocking",
+      "title": "Alte JVM-Resultate werden akzeptiert und die 688 Rohresultate sind nicht im Paket",
+      "evidence": [
+        "tools/reference/g2_evidence.py:122-133 aggregiert jedes vorhandene interlis-*/build/test-results/test/TEST-*.xml ohne Laufbezug oder erwartete Task-/Suite-Menge.",
+        "tools/reference/g2_evidence.py:162-164 loescht nur die neun JSON-Reports, nicht JVM-XML oder Artefakte.",
+        "Eigene Gegenprobe: Ein auf 2000-01-01 datiertes einzelnes TEST-stale.xml mit tests=688 wurde als vollstaendig bestandene JVM-Abnahme akzeptiert.",
+        "Das Reviewpaket speichert nur die aggregierte JVM-Zahl im Run-Manifest, aber keine JVM-XMLs oder deren Hashes. Der Gradle-Log belegt die ausgefuehrten Testtasks, jedoch nicht die Zahl 688."
+      ],
+      "impact": "Die behaupteten 688 JVM-Tests sind aus dem eingefrorenen Paket nicht unabhaengig nachzaehlbar; alte XMLs oder Reste entfernter Module koennen die Summe beeinflussen. Dass der konkrete Log einen echten erfolgreichen Lauf nahelegt, schliesst diesen Fehlgruen-Pfad nicht aus.",
+      "requiredAction": "Vor dem Lauf alle akzeptierten JVM-Reportpfade und zu hashenden Laufartefakte entfernen oder in einer sauberen isolierten Quelle bauen; danach die erwartete Testtask-/Suite-Menge pruefen und die frischen XML-Rohreports mit Hashes ins Runpaket kopieren. Alte Zusatzmodule/-XMLs muessen zur Ablehnung fuehren. Anschliessend den vollstaendigen A1-Lauf mit der korrigierten Hilfe neu erzeugen."
+    }
+  ],
+  "nonBlockingObservations": [
+    "Der Paket-Hash, alle transitiven Manifest-/Report-/Log-Hashes sowie beide Norm-PDF-Hashes stimmen.",
+    "Der Patch bildet die 1069 Pre-Change-Dateien plus genau 11 deklarierte Aenderungen auf alle 1072 eingefrorenen After-Dateien ab.",
+    "Normative Erwartungen, Konformitaetsbaseline, Wrapperpin, Versionskatalog und gradle.properties sind zwischen Pre-Change und After unveraendert.",
+    "Die vorhandenen konkreten JSON-Reports sind intern konsistent und enthalten die behaupteten 593 beziehungsweise 3249 Faelle; dies heilt die generischen Fehlgruen-Pfade der Hilfe nicht.",
+    "Umfang und Implementierung sind fuer A1 klein gehalten; es wurden keine Sprachsemantik- oder Produktions-API-Aenderungen in den 11 A1-Dateien festgestellt."
+  ],
+  "commands": [
+    {
+      "command": "sha256sum packet/input/pre-change/run manifests, reports, gradle.log and norm PDFs",
+      "result": "PASS",
+      "observation": "Alle erwarteten Hashketten stimmen."
+    },
+    {
+      "command": "python3 .../g2_evidence.py verify --snapshot build/reports/g2/A1/input",
+      "result": "PASS",
+      "observation": "sourceDigest d851fd7f6212579490945ee311fdb0d9f1cce260b1151386db056a65555976d3"
+    },
+    {
+      "command": "./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "cwd": "build/reports/g2/A1/review/frozen",
+      "result": "PASS",
+      "observation": "5 Tests, BUILD SUCCESSFUL; ausschliesslich isolierte Ausgaben unter review/frozen/build."
+    },
+    {
+      "command": "python3 -m unittest discover -s . -p test_g2_evidence.py -v",
+      "cwd": "build/reports/g2/A1/review/frozen/tools/reference",
+      "result": "PASS",
+      "observation": "5 Tests bestanden."
+    },
+    {
+      "command": "Eigene report_result-Gegenprobe mit acht minimalen/leergrünen Reportvarianten",
+      "result": "FAILURE_PATH_NOT_DETECTED",
+      "observation": "Alle acht unvollstaendigen Varianten wurden akzeptiert."
+    },
+    {
+      "command": "Eigene jvm_summary-Gegenprobe mit altem TEST-stale.xml",
+      "result": "FAILURE_PATH_NOT_DETECTED",
+      "observation": "mtime 2000-01-01 und tests=688 wurden als Erfolg aggregiert."
+    },
+    {
+      "command": "Unabhaengiger Python-Recount der eingefrorenen Reports",
+      "result": "PASS_WITH_LIMITATION",
+      "observation": "Referenz- und Projektsummen, 18 Assessments, alle archivierten 3249-Angaben und neun SDK-Kommandos stimmen; JVM-Rohberichte fehlen."
+    },
+    {
+      "command": "patch -p1 auf extrahiertem pre-change/source.tar.gz und Hashvergleich gegen input/manifest.json",
+      "result": "PASS",
+      "observation": "Genau 11 deklarierte Aenderungen reproduzieren alle After-Dateihashes."
+    }
+  ],
+  "normativeDecision": {
+    "made": false,
+    "status": "Keine Normfreigabe erforderlich oder erteilt; A1 aendert normative-expectations.json nicht."
+  },
+  "acceptanceCondition": "A1 erneut vorlegen, nachdem A1-R1 und A1-R2 behoben, durch neue Negativtests belegt und der komplette Ausgangslauf aus demselben eingefrorenen Quellenstand mit frischen, archivierten Rohreports wiederholt wurde."
+}

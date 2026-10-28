@@ -38,7 +38,16 @@ END WebImage.
     expectedWorkspaceRevision: updated.result.workspaceRevision,
     roots: [{kind: 'byName', modelName: 'WebImage'}]
   }));
+  if (compiled.status !== 'ok' || compiled.result.outcome !== 'succeeded') {
+    throw new Error('compile failed: ' + JSON.stringify(compiled));
+  }
+  const closed = handle(envelope('closeSession', sessionId));
+  if (closed.status !== 'ok') throw new Error('closeSession failed');
+  const stabilizationCases = await require('../interlis-wasm-teavm/stabilization-contract.cjs')({
+    handle: globalThis.interlisCompilerHandle
+  });
   const result = {
+    stabilizationCases,
     status: capabilities.status,
     tool: capabilities.result.toolVersion,
     outcome: compiled.result ? compiled.result.outcome : compiled.status,
@@ -48,7 +57,7 @@ END WebImage.
   fs.mkdirSync('build/webimage', {recursive: true});
   fs.writeFileSync('build/webimage/result.json', JSON.stringify(result, null, 2));
   console.log('webimage-contract PASS ' + JSON.stringify(result));
-  process.exit(0);
+  process.exitCode = 0;
 })().catch(error => {
   console.error('webimage-contract FAIL', error);
   try {
@@ -58,5 +67,5 @@ END WebImage.
     }, null, 2));
   } catch (ignored) {
   }
-  process.exit(0);
+  process.exitCode = 1;
 });

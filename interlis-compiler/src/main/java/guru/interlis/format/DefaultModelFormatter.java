@@ -22,9 +22,6 @@ import java.util.Set;
 
 /** Line-preserving token formatter. */
 final class DefaultModelFormatter implements ModelFormatter {
-    private static final Set<String> OPENING_DECLARATIONS = Set.of(
-            "MODEL", "TOPIC", "CLASS", "STRUCTURE", "ASSOCIATION", "VIEW", "FUNCTION",
-            "GRAPHIC", "SIGN");
 
     @Override
     public FormatOutcome format(guru.interlis.source.SourceText source, FormatOptions options,
@@ -61,6 +58,21 @@ final class DefaultModelFormatter implements ModelFormatter {
                 int line = lineOf(lines, token.range().startOffset());
                 tokensByLine.computeIfAbsent(line, ignored -> new ArrayList<>()).add(token);
             }
+            // A multiline token/comment owns its entire source span. Preserve intersecting
+            // lines verbatim rather than emitting the span and its continuation lines twice.
+            Set<Integer> protectedLines = new java.util.HashSet<>();
+            for (var token : snapshot.tokens()) {
+                protectLines(lines, token.range(), protectedLines);
+            }
+            for (var trivia : snapshot.trivia()) {
+                if (trivia.kind() == TriviaKind.COMMENT
+                        || trivia.kind() == TriviaKind.DOCUMENTATION_COMMENT) {
+                    protectLines(lines, trivia.range(), protectedLines);
+                }
+            }
+            var indentation = indentationEvents(snapshot, cancellation);
+            var events = indentation.entrySet().iterator();
+            Map.Entry<Integer, Integer> next = events.hasNext() ? events.next() : null;
             int indent = 0;
             List<String> formattedLines = new ArrayList<>();
             for (int i = 0; i < lines.size(); i++) {
@@ -70,27 +82,39 @@ final class DefaultModelFormatter implements ModelFormatter {
                 List<TriviaSpan> comments = new ArrayList<>(
                         commentsByLine.getOrDefault(i, List.of()));
                 comments.sort(Comparator.comparingInt(t -> t.range().startOffset()));
-                if (tokens.isEmpty() && comments.isEmpty()) {
+                if (tokens.isEmpty() && comments.isEmpty() && !protectedLines.contains(i)) {
                     formattedLines.add("");
                     continue;
                 }
-                if (!tokens.isEmpty()
-                        && "END".equalsIgnoreCase(tokens.getFirst().text())) {
-                    indent = Math.max(0, indent - 1);
+                int contentOffset = tokens.isEmpty() ? line.start() : tokens.getFirst().range().startOffset();
+                if (!comments.isEmpty()) contentOffset = Math.min(contentOffset, comments.getFirst().range().startOffset());
+                while (next != null && next.getKey() <= contentOffset) {
+                    indent += next.getValue();
+                    next = events.hasNext() ? events.next() : null;
                 }
-                StringBuilder builder = new StringBuilder(" ".repeat(indent * options.indentWidth()));
-                if (!tokens.isEmpty()) {
-                    builder.append(renderTokens(tokens));
-                }
-                if (!comments.isEmpty()) {
-                    if (!tokens.isEmpty()) {
-                        builder.append(' ');
+                cancellation.throwIfCancellationRequested();
+                if (protectedLines.contains(i)) {
+                    formattedLines.add(source.text().substring(line.start(), line.end()));
+                } else {
+                    List<Part> parts = new ArrayList<>();
+                    for (SyntaxToken token : tokens) {
+                        parts.add(new Part(token.range().startOffset(), token.text(), false));
                     }
-                    builder.append(renderComments(comments));
-                }
-                formattedLines.add(builder.toString());
-                if (!tokens.isEmpty() && isOpeningLine(tokens)) {
-                    indent++;
+                    for (TriviaSpan comment : comments) {
+                        parts.add(new Part(comment.range().startOffset(), comment.text(), true));
+                    }
+                    parts.sort(Comparator.comparingInt(Part::offset));
+                    StringBuilder builder = new StringBuilder(" ".repeat(indent * options.indentWidth()));
+                    Part previous = null;
+                    for (Part part : parts) {
+                        if (previous != null && (previous.comment() || part.comment()
+                                || needsSpace(previous.text(), part.text()))) {
+                            builder.append(' ');
+                        }
+                        builder.append(part.text());
+                        previous = part;
+                    }
+                    formattedLines.add(builder.toString());
                 }
             }
             String lineEnding = switch (options.lineEnding()) {
@@ -102,40 +126,24 @@ final class DefaultModelFormatter implements ModelFormatter {
             for (int i = 0; i < formattedLines.size(); i++) {
                 result.append(formattedLines.get(i));
                 boolean last = i == formattedLines.size() - 1;
-                String ending = lineEnding != null ? lineEnding
+                String ending = protectedLines.contains(i) ? lines.get(i).ending()
+                        : lineEnding != null ? lineEnding
                         : last ? "" : (lines.get(i).ending().isEmpty() ? "\n" : lines.get(i).ending());
                 result.append(ending);
             }
             String text = result.toString();
+            String finalEnding = lineEnding != null ? lineEnding : lines.stream()
+                    .map(Line::ending).filter(ending -> !ending.isEmpty()).findFirst().orElse("\n");
+            while (text.endsWith("\n") || text.endsWith("\r")) {
+                text = text.substring(0, text.length() - 1);
+            }
             if (options.finalNewline()) {
-                String eol = lineEnding != null ? lineEnding : "\n";
-                while (text.endsWith(eol)) {
-                    text = text.substring(0, text.length() - eol.length());
-                }
-                text = text + eol;
-            } else {
-                while (text.endsWith("\n") || text.endsWith("\r")) {
-                    text = text.substring(0, text.length() - 1);
-                }
+                text += finalEnding;
             }
             return new FormatOutcome.Formatted(text, List.of());
         } catch (OperationCancelledException cancelled) {
             return new FormatOutcome.Cancelled(cancelled.reason());
         }
-    }
-
-    private static String renderTokens(List<SyntaxToken> tokens) {
-        StringBuilder builder = new StringBuilder();
-        String previous = null;
-        for (SyntaxToken token : tokens) {
-            String text = token.text();
-            if (previous != null && needsSpace(previous, text)) {
-                builder.append(' ');
-            }
-            builder.append(text);
-            previous = text;
-        }
-        return builder.toString();
     }
 
     private static boolean needsSpace(String previous, String current) {
@@ -153,23 +161,56 @@ final class DefaultModelFormatter implements ModelFormatter {
         return true;
     }
 
-    private static String renderComments(List<TriviaSpan> comments) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < comments.size(); i++) {
-            if (i > 0) {
-                builder.append(' ');
+    private record Part(int offset, String text, boolean comment) { }
+
+    private static void protectLines(List<Line> lines, guru.interlis.source.SourceRange range,
+                                     Set<Integer> protectedLines) {
+        int first = lineOf(lines, range.startOffset());
+        int last = lineOf(lines, Math.max(range.startOffset(), range.endOffset() - 1));
+        if (last > first) {
+            for (int line = first; line <= last; line++) {
+                protectedLines.add(line);
             }
-            builder.append(comments.get(i).text().strip());
         }
-        return builder.toString();
     }
 
-    private static boolean isOpeningLine(List<SyntaxToken> tokens) {
-        String first = tokens.getFirst().text();
-        if (!OPENING_DECLARATIONS.contains(first.toUpperCase(java.util.Locale.ROOT))) {
-            return false;
+    private static java.util.SortedMap<Integer, Integer> indentationEvents(
+            SyntaxSnapshot syntax, CancellationToken cancellation) {
+        var events = new java.util.TreeMap<Integer, Integer>();
+        var pending = new java.util.ArrayDeque<guru.interlis.syntax.SyntaxNode>();
+        pending.add(syntax.root());
+        List<SyntaxToken> tokens = syntax.tokens();
+        while (!pending.isEmpty()) {
+            cancellation.throwIfCancellationRequested();
+            var node = pending.removeFirst();
+            pending.addAll(node.children());
+            boolean block = switch (node.kind()) {
+                case MODEL, TOPIC, CLASS, STRUCTURE, ASSOCIATION, VIEW -> true;
+                default -> false;
+            };
+            if (!block) continue;
+            int body = -1;
+            int end = -1;
+            int low = 0;
+            int high = tokens.size();
+            while (low < high) {
+                int middle = (low + high) >>> 1;
+                if (tokens.get(middle).range().startOffset() < node.range().startOffset()) low = middle + 1;
+                else high = middle;
+            }
+            for (int i = low; i < tokens.size(); i++) {
+                cancellation.throwIfCancellationRequested();
+                SyntaxToken token = tokens.get(i);
+                if (token.range().endOffset() > node.range().endOffset()) break;
+                if (body < 0 && "=".equals(token.text())) body = token.range().endOffset();
+                if ("END".equals(token.text())) end = token.range().startOffset();
+            }
+            if (body >= 0 && end >= body) {
+                events.merge(body, 1, Integer::sum);
+                events.merge(end, -1, Integer::sum);
+            }
         }
-        return tokens.stream().anyMatch(token -> token.text().equals("="));
+        return events;
     }
 
     private static int lineOf(List<Line> lines, int offset) {

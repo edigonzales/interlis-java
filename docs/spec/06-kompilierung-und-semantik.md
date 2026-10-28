@@ -95,6 +95,30 @@ Die vorhandenen `resolutionDiagnostics` werden über `DiagnosticCollector.import
 
 Das vordefinierte Modell `INTERLIS` wird versionsbezogen vom Compiler bereitgestellt. Eine normale Importquelle namens `INTERLIS` darf dieses nicht still ersetzen. Auflösung von Modellmetadaten und Download von Quelltexten ist Aufgabe08; Typauflösung innerhalb dieser Texte ist Aufgabe dieses Dokuments.
 
+Qualifizierte Funktions- und ALL-OF-Domänenreferenzen behalten sämtliche
+Namenssegmente und den gewählten Namensraum. Ein falscher Präfix darf nicht
+schrittweise entfernt werden, bis ein lokaler Suffix zufällig passt. Unbekannte
+`INTERLIS.*`-Domänen erhalten reguläre Bindungsdiagnosen am Originalbereich;
+sie sind weder Implementierungssperren noch interne Fehler. Die drei einfachen
+Domänen aus Kapitel 05 verwenden die vorhandenen Modell-/Queryverträge.
+Erweiterungen von FINAL-Domänen liefern `DOMAIN_FINAL` über die strukturierte
+Regeldiagnostik. Die Abnahme prüft positive Bindungen, falsche Präfixe,
+Originalbereiche, Imports und frische/wiederverwendende Analyse.
+
+Klassenwert-Einschränkungen der Syntax (CLASS/STRUCTURE RESTRICTION) bleiben
+am Klassenwerttyp gebunden, auch wenn die gemeinsame Grammatik sie über eine
+äussere Strukturreferenz-Produktion erfasst. Sie dürfen weder als blosse
+Domänenreferenz erscheinen noch zu einem unbeschränkten Klassenwert werden.
+Vordefinierte Klassenziele verwenden denselben Binder wie übrige Signaturziele.
+
+Die leere Funktionsliste unterliegt dem gemeinsamen Syntaxprofil aus Kapitel
+04. Ein in 2.4 gültiger parameterloser Aufruf behält Funktionsziel und deklarierten
+Ergebnistyp; zusätzliche oder fehlende tatsächliche Argumente bleiben Quellfehler.
+Vordefinierte Attribute dürfen bei der Überschreibungsprüfung nicht wegen eines
+fehlenden Quelldeklarationsindex übergangen werden. Für gebundene Struktur- und
+Collectiontypen verwendet die Prüfung dieselbe Ziel-/Kardinalitätsbeziehung wie
+die öffentlichen Typabfragen; Pflichtangaben dürfen nicht entfernt werden.
+
 ### 3.3 `CompilerOptions`
 
 ```java
@@ -496,3 +520,313 @@ Die Injektion interner Fehler wird ausschliesslich an einem ausdrücklich testba
 P2 erweitert diese Pipeline nach dem vollständigen Featurekatalog05 und der Sprach-/Konformitätsmatrix13. Jedes neue Fachfeature wird bis zur Query-/Metamodelloberfläche umgesetzt. Erst danach ist „Syntax akzeptiert“ eine vollständige Fähigkeit. Der spätere Transfer-, Validator- und Datenbankaufbau erhält eigene Pläne; er fordert fehlende fachliche Informationen als neue Modell-/Queryverträge an, statt private Compilerfelder auszulesen.
 
 Feingranulare semantische Wiederverwendung wird nach der ersten korrekten Pipeline und den Editvergleichstests aus07 verfeinert. Ein Cache ist eine Optimierung dieser Verträge. Er darf keine alternative Bedeutung des Programms und keine zweite Fehlerpolitik einführen.
+
+### G2 C: Gemeinsame Geometriebindung
+
+Für WP-22/24/25 (META-003/006/009/014, SEM-005/008/010/014/017) wird der
+effektive Geometrietyp vor Ausdrucksbindung hergestellt. Compilerprüfung und
+öffentliche Erweiterungsabfragen verwenden dieselbe Regel; Zuweisungen behalten
+ihre eigene Verträglichkeit. Die versionierte Toleranzdarstellung und die
+Kontextualisierung eigener Segmente stehen in Kapitel 05. Ein Sprachfehler bei
+Präzision, Vollständigkeit oder Erweiterung ergibt eine strukturierte
+Quelldiagnose; eine alte Implementierungssperre darf keine tatsächlich
+implementierten eigenen Segmente mehr sperren. Offene Referenz-/Normentscheidungen
+bleiben im G2-Fallkatalog sichtbar und dürfen nicht automatisch durch
+Erwartungsänderungen erledigt werden.
+
+
+### G2 D: Signatur-Verantwortung und geerbte Parameterwerte
+
+WP-24/25 (META-003/006/010/014, SEM-005/010/014/017, TEST-011/012)
+verwendet die gemeinsame Bindung von Metaobjekten, Parametern und Typen für
+Zeichenregeln. Der vorhandene GraphicBuilder prüft nach der vollständigen
+Parameter-/Override-Bindung die Verantwortungsregeln aus Kapitel 05.
+Quellfehler nennen fehlende Parameter, unpassende Metaobjektklassen oder
+unverträgliche Werte. Geerbte Werte und ihre Quellen werden nicht mutiert.
+Die Prüfung ist statisch; sie führt weder Zeichenregeln noch Bedingungen aus.
+
+E1-Modellkopfbindung verwendet ModelOptions aus Kapitel 05. Der gepinnte
+IANA-Registerstand prüft CHARSET ohne Abhängigkeit von JVM-Hostcodecs oder Netz.
+Ungültige Namen/Namensräume liefern MODEL_CHARSET/MODEL_XMLNS. Übersetzungen
+prüfen gleichen Inkrementaltransferumfang und semantisch gleiche Zeichenvorräte;
+CHARSET-Aliasse werden über das Register verglichen. TRANSLATION_XMLNS markiert
+widersprechende explizite Transfernamensräume. Die effektive Namespace-Bindung
+folgt den tatsächlich gebundenen Originalzielen, auch transitiv und unabhängig
+von Quellenreihenfolge. Der gebundene Strukturvergleich interpretiert diese
+Optionen nicht nochmals aus Text. Der 2.4-CONTRACTED-Marker wird nicht als semantischer
+Übersetzungsunterschied gewertet.
+
+E1-Profile (SYN-004/013/015, SEM-005/010/014, META-003/014): DATE,
+TIMEOFDAY und DATETIME sind 2.4-Syntax; die XML-Domänen bleiben in beiden
+Versionen verfügbar. TYPE MODEL enthält die vorgesehenen Deklarationsfamilien;
+SYMBOLOGY benötigt nur in 2.3 CONTRACTED. Dokumentarische Familienempfehlungen
+für REFSYSTEM/SYMBOLOGY werden nicht als zusätzliche Quellfehler erzwungen.
+Wiederholte Properties liefern ILI-SYN-0007 am zweiten Token; Warnungsablehnung
+verwendet das gemeinsame Gate. EXTENDED und explizites EXTENDS am selben
+Klassen-/Strukturkopf sind unzulässig. Fehlende Attributtypen nach Parser-Recovery
+behalten die ursprüngliche Syntaxursache als ErrorType; sie erzeugen keine
+Implementierungssperre. E1ProfileSafetyContractTest und ModelKindContractTest
+prüfen diese Regeln; dies ist keine pauschale E1-/G2-Abnahme.
+
+### E2: Einheitenrelationen und Domäneneinschränkungen
+
+META-003/006/009/011/014/016, SEM-005/010/014, TEST-011/012.
+`TypeRelations.compareUnits` liefert den vorgesehenen `QueryResult<UnitRelation>`:
+beide Snapshotreferenzen werden geprüft, unbekannte IDs und fremde Symbolarten
+bleiben Unresolved (`NOT_A_UNIT` bei falscher Art). Gebundene Ableitungen und
+zusammengesetzte Produkte/Quotienten werden auf gemeinsame konkrete Ziele
+bezogen. Eine abstrakte gemeinsame EXTENDS-Basis bedeutet keine numerische
+Umrechnung. Zyklen, fehlende Komponenten und ungültige Faktoren liefern keine
+scheinbar bekannte Verträglichkeit. Externe Umrechnungsfunktionen werden nur
+strukturell berücksichtigt, weder ausgeführt noch numerisch approximiert.
+Compiler und Query verwenden dieselbe reine Relation, auch für numerische
+Referenzsysteme. Umrechenbarkeit erlaubt keinen Einheitenwechsel bei Erweiterung.
+
+Numerische Erweiterungen von Domänen und Attributen schränken Grenzen ein und
+bewahren in 2.4 die Nachkommastellen. Öffentliche canExtend-Queries verwenden diese
+Regel ebenfalls. Zuweisung bleibt davon getrennt. Syntax erhält auch verkehrte
+Grenzen unverändert; NUMERIC_BOUNDS/NUMERIC_PRECISION erzeugen reguläre Quellfehler
+mit ErrorType statt Exceptions oder Ersatzbereichen. Die strengere Modell-
+NumericRange-Invariante bleibt erhalten. Weitere Skalierungs-/Abstraktions- und
+Referenzsystemregeln bleiben in der G2-Matrix gesondert abzuprüfen.
+
+MANDATORY wird im Domain-Syntaxmodifier und im effektiven DomainSymbol erhalten;
+`DomainSymbol.mandatory()` liest den effektiven Flag. MANDATORY allein übernimmt
+bei einer Erweiterung den gebundenen Basistyp; ohne Basis ist es ein Quellfehler.
+Attribute und Parameter übernehmen den Pflichtflag verwendeter Domänen.
+Aliastypen werden nicht mutiert. CLASS-Domänen behalten ihre gebundenen
+Restriktionen und ihre typisierten CONSTRAINTS. resolveAliases/canAssign/
+canExtend/areComparable bewahren Invalid und Pending-Ursachen; Aliaszyklen
+werden über besuchte IDs begrenzt, nicht über eine willkürliche Länge von 64.
+
+E2-Präzision ist versionsabhängig: 2.3 §2.8.5 S.42 erlaubt Verfeinerung,
+sofern gerundete Grenzen im Basisbereich bleiben (7.9949 ja, 7.9999 nein bei
+Basismaximum 7.99). 2.4 §3.8.5 S.53 verlangt unveränderte Präzision.
+`TypeRelations.canExtend(derived, base, context, language)` erhält daher einen
+expliziten nullfreien LanguageVersion-Parameter; weder Quellnamen noch ein
+zufällig gefundenes Modell bestimmen das Profil. Interne Verbraucher und
+Vorab-API-0.2-Tests werden direkt angepasst, ohne alte Überladung.
+Die 2.3-Rundung verwendet exakte Dezimalwerte und HALF_UP; Tie-Details bleiben
+in der Normprüfung separat sichtbar. Allgemeine Zuweisung ist unverändert.
+
+### E2: Normative TEXT-Länge
+
+Textliteraltypen in 2.4 verwenden §3.8.1: Anzahl Zeichen mit kanonischer
+Kombinationsklasse 0 nach kanonischer Zerlegung (NFD). Dies ist weder UTF-16-
+Länge noch die Anzahl Unicode-Codepoints im ursprünglichen Text. Es wird nur
+die Länge bestimmt; LiteralExpression.textValue(), Lexem und SourceRange bleiben
+unverändert. Deklarierte maximale Länge muss positiv sein; Länge null eines
+Literals bleibt möglich. CR/LF/TAB erfordern MTEXT, auch bei Unicode-Escapes.
+
+Der portable Compiler verwendet gepinnte Unicode-17.0.0-Gewichtungsintervalle
+und Hanguls kanonische Zerlegung, ohne Laufzeit-Normalizer und ohne neue
+Abhängigkeit. Generierung und Normalisierungskontrolle liegen unter
+`tools/reference/generate_text_weights.py` und
+`tools/reference/TextLengthNormalizationProbe.java`; die Eingaben und Pins
+stehen im Nachweis. Klassen von kombinierenden Zeichen werden nicht aus der
+allgemeinen Zeichenkategorie Mn/Mc abgeleitet. NFKD-Kompatibilitätszerlegungen
+werden nicht angewendet. Bisheriges Codepoint-Längenverhalten in 2.3 bleibt
+unverändert; dies erklärt keine vollständige 2.3-Unicode-Abnahme.
+
+### E3: Gebundene Strukturwerte und Restriktionen
+
+`StructureValueType(id, origin, Optional<SymbolId> target, List<SymbolId> restrictions)`
+ersetzt den einzelnen obligatorischen Zielwert in API 0.2. Leeres target bedeutet
+ANYSTRUCTURE; ungelöste Namen erzeugen ErrorType. Restriktionen sind unveränderlich,
+nullfrei und in Quellreihenfolge gebunden. targetRoots() liefert die eingeschränkten
+Ziele beziehungsweise das Primärziel. StructureValueTypeSyntax erhält die Original-
+Namen und UTF-16-Bereiche; es gibt keine künstliche universelle Strukturdeklaration.
+
+Ein konkreter lauflokaler StructureBindings-Helfer verwendet den Aufbauzustand des
+GraphBuilder. Compiler und TypeRelations.canAssign verwenden dieselbe Relation:
+Strukturelemente passen zu ihren erlaubten Wurzeln; im FUNCTION_ARGUMENT-Kontext
+passen auch Objekte, deren Klasse die geforderte Struktur erweitert. ANYSTRUCTURE
+akzeptiert dort Strukturelemente und Einzelobjekte, keine Objektmengen oder Zahlen.
+Normale eingebettete Wertzuweisung behält ihre eigene Objekt-/Strukturgrenze.
+BAG kann bei Einschränkung zu LIST werden; die umgekehrte Richtung ist unzulässig.
+Kardinalität und Elementrestriktionen werden gemeinsam geprüft.
+
+Pflichtige beliebige Strukturen beziehungsweise Typen ohne verfügbare konkrete
+Struktur verlangen ein abstraktes Attribut. Konkrete Unterstrukturen anderer Themen
+werden nur über explizite passende Wurzeln berücksichtigt. Konkrete Klassen und
+Strukturen dürfen keine effektiven abstrakten Attribute behalten. Normbezug:
+2.3 §2.5.3/2.6.4/2.14; 2.4 §3.5.3/3.6.4/3.14. Nicht gemeinsame Mitglieder von
+Alternativen sind über einen gemeinsamen Pfad nicht statisch ansprechbar.
+
+Inspektionen, Kontextualisierung, Übersetzungen, generische Verwendungen, Diagramm-
+labels und öffentliche Queries erhalten Grundziel und Restriktionen. Vorhandene
+Konstruktorverbraucher und Tests werden direkt angepasst. Relevante Vererbungs-
+und Aliasketten verwenden besuchte IDs statt stiller Abschneidung bei 16/32/64;
+Abbruch und Arbeitsbudget bleiben aktiv. Keine neue Pass-/Plugin-Infrastruktur.
+
+E2: Die Erweiterungsprüfung für Domänen, Attributüberschreibungen und öffentliche
+Queries verwendet denselben Typvergleich. Collections prüfen Elemente rekursiv
+als Erweiterung, nicht als Wertzuweisung. Eigene numerische und Koordinaten-
+Inline-Typen erhalten vererbte Einheiten/Referenzen/Richtungen/Rotation vor
+der Ausdrucksbindung. Aliasziele bleiben unverändert. TEXT-Längen verwenden
+dieselbe NFD-Regel in 2.3 und 2.4 (Kapitel 05). SEM-005/010/014, TEST-011/012.
+
+E4 (SEM-005/010/014/017, TEST-011/012): Vergleichsoperatoren werden nach
+Operandfamilie gemeinsam mit den öffentlichen Queries geprüft. Enum-/FORMAT-
+Konstanten werden bei konkretem Typkontext gebunden; Enumreferenzen erhalten
+die tatsächlichen Ziele und Originalbereiche. Auch Inline-Enums veröffentlichen
+ihre Elementidentitäten. Geerbte Grafikwerte werden geprüft, ohne gemeinsam
+verwendete Ursprungsausdrücke umzuschreiben. Enumfunktionen prüfen gleiche
+Enumidentitäten und zulässige Knoten. Geometriefunktionen prüfen das Profil und
+die tatsächliche Familie. Offene kontextabhängige Builtins behalten ihr Gate.
+
+### E4: Funktionskontext und Konstanteneinheiten
+
+SEM-005/010/014/020: Numerische Konstanteneinheiten werden im Aufrufkontext
+gebunden; unbekannte oder abstrakte Einheiten sind Quellfehler. Parsebare
+Stringpfade verwenden den gemeinsamen Pfadbinder. Ein statisch bekannter
+Wurzeltyp erfordert eine vollständige Bindung; wertabhängige Wurzeln behalten
+strukturierte Pfade mit erforderlichem Ergebnistyp. Übersetzungsvergleiche von
+Aufrufen prüfen gebundene Funktionsziele und Pfadreferenzen. Funktionsausführung
+ist davon nicht umfasst.
+
+Die abhängigen ATTRIBUTE-Parameter werden mit den tatsächlichen Argumenten
+geprüft (einschliesslich benutzerdefinierter Funktionen). Ohne konkreten
+Aufrufkontext liefert die öffentliche Zuweisungsabfrage für passende Werttypen
+mit noch abhängiger Eigentümeridentität NotAnalyzed(PENDING); unpassende
+Werttypen bleiben DISALLOWED. areAreas und die 2.4-WithoutGaps-Variante prüfen
+SurfaceBag/SurfaceAttr gemeinsam; UNDEFINED bei SurfaceBag bindet SurfaceAttr
+an die Objektklasse. Stringvarianten verlangen konstante, vollständig geparste
+Pfade und behalten zusätzliche ArgumentPath-Bindungen im veröffentlichten Schema.
+Strukturmengen dürfen in diesem Pfadkontext durchlaufen werden.
+
+convertUnit verwendet die gebundenen Umrechnungsbeziehungen (Kapitel 05);
+Zielattribute, deklarierte Funktionsparameter und Vergleichsoperanden liefern
+die Zieleinheit. Einheitenlose Zahlenkonstanten übernehmen den numerischen
+Verwendungskontext. Ein unbeschränkter NUMERIC-Parameter legt keine neue
+einheitenlose Zieleinheit fest. Werte und Umrechnungsfaktoren werden nicht
+ausgeführt. Fremde konkrete Einheiten ohne gemeinsame Umrechnungswurzel
+sind unzulässig, auch wenn beide dieselbe abstrakte Dimension erweitern.
+
+Normentscheidung zum 2.4-Standardmodell: §3.14 deklariert areAreas2 mit
+OBJECTS und zeigt ausdrücklich ALL; Anhang A enthält OBJECT bei areAreas2
+und zusätzlich areAreas3 mit OBJECTS. Das Projekt folgt für areAreas2 dem
+Funktionskapitel und erhält areAreas3 als dortigen Mengenalias.
+areAreasWithoutGaps/areAreasWithoutGaps2 sind erst in 2.4 verfügbar.
+Diese Entscheidung ändert keine eingefrorene Referenzerwartung.
+
+E4-Definiertheit: Allgemeine UNDEFINED-Zuweisung und Funktionsargumente verwenden
+dieselbe Typregel. Eine Textkonstante kanonischer Länge null gilt gemäss
+2.3 §2.8.1 / 2.4 §3.8.1 ebenfalls als undefiniert. Ungelöste oder fehlerhafte
+Zieltypen werden dadurch nicht passend. MANDATORY-Signaturparameter lehnen
+explizit undefinierte Werte ab; die Signaturpflicht bleibt öffentlich erhalten.
+Compilezeit-Pfadparameter von areAreas2/3/WithoutGaps2 verlangen weiterhin
+gültige konstante Pfade, abgesehen vom ausdrücklich erlaubten SurfaceBag-
+UNDEFINED. Es entsteht kein Auswerter für Laufzeitargumente.
+
+E2 FORMAT: Compiler und öffentliche canAssign/canExtend-Abfragen verwenden
+gemeinsame Layout-/Komponenten-/Bereichsregeln. Präfixerweiterungen berücksichtigen
+die gebundenen überschriebenen Attribute; ein gleicher einfacher Attributname
+allein genügt nicht. Fehlende explizite Grenzen werden aus den Komponenten und
+verschachtelten/inherited FORMAT-Grenzen ermittelt. Ungültige FORMAT-Bindungen
+veröffentlichen ErrorType mit tatsächlichen Diagnose-IDs, keine scheinbar gültige
+Relation. Der Compiler besitzt keine pauschale FORMAT-Ausnahme für Overrides.
+
+E2 numerische Vollständigkeit (2.3 §2.8/2.8.5/2.8.8; 2.4 §3.8/3.8.5/3.8.8):
+Prüfungen unterscheiden formale Funktionssignaturen von Domänen und Attributen.
+Die Prüfung erfolgt nach früher Typauflösung und Übernahme geerbter Eigenschaften.
+Die Erlaubnis generischer Koordinaten in 2.4 ersetzt weder deren Dimensionen-
+noch CONTEXT-/DEFERRED-Prüfung. Fehlerhafte Zielbindungen bleiben von legalen
+abstrakten Typen unterscheidbar; kein gültiges Schema entsteht aus Quellfehlern.
+
+E1 zu SYN-002/004/013 und META-015: Lexikalische Klassifikation und Prüfung
+kontextabhängiger Wörter gelten auch bei Fragmenten und Rename. Ein in 2.3
+nicht reserviertes neues Wort kann eine benannte Deklaration bezeichnen;
+fehlende Bindungen bleiben gewöhnliche Quellfehler. Das Ausdrücken einer
+2.4-Konstruktion in 2.3 wird dadurch nicht erlaubt. Boolean-Herkünfte bleiben
+in gemischten Closures nach Besitzer/Sprachversion getrennt.
+
+E5 zu META-006/010/014/017 und SEM-010/014/017: Quell-Metaattribute werden aus der
+strukturierten Syntax an die deklarierte Identität gebunden. Eine erneute globale
+Textsuche bildet keine Metadaten- oder Übersetzungssemantik. CRS-Metaangaben
+werden beim Übersetzungsvergleich an den korrespondierenden Koordinaten-
+Deklarationen verglichen. Eine Zeichenfolge in gewöhnlichen Kommentaren,
+Strings oder Funktionserläuterungen ist keine CRS-Angabe. Beliebige lokalisierte
+Beschriftungs-Metaattribute müssen in Übersetzungen nicht textgleich sein.
+Hover übernimmt gebundene Dokumentation und Funktionserläuterungen.
+Externe Overlayeingaben und deren Auflösung bleiben Lieferung F.
+
+E5-Übersetzungsvergleich verwendet die zugeordneten Deklarationen der gebundenen
+Closure. Er prüft Eigenschaften aller repräsentierten Typvarianten, die Struktur
+der Enumeltern und geschlossenen Teilbäume, FORMAT-Komponentenidentitäten,
+Collectionart/-kardinalität, Modifikatoren und vollständige Constraintdefinitionen.
+Pfade und Funktionsaufrufe vergleichen tatsächliche Zielidentitäten. Ein globaler
+Namensersatz, erneutes Lexen des Modelltexts oder tiefenbegrenzte Typformstrings
+sind keine fachliche Vergleichsgrundlage. Domain-Constraints erhalten eigene
+Korrespondenzen und benannte Constraints behalten ihren tatsächlichen Namensbereich.
+Konstanten vergleichen interpretierte Werte; bei numerischen Typgrenzen bleibt
+die deklarierte Genauigkeit zusätzlich relevant. Eine Funktionserläuterung darf
+anders lauten, ihre strukturelle Präsenz bleibt erhalten (2.3 §2.5.1/2.14;
+2.4 §3.5.1/3.14). Fehlende Implementierung oder ein fehlender Zieltyp ist keine
+positive Übersetzungsgleichheit.
+
+E1 OID-Bindung verwendet dieselbe vordefinierte Identität in importierten
+Funktionssignaturen und lokalen Attributen, getrennt nach 2.3/2.4. Jeder
+Namensgebrauch wird unmittelbar aufgezeichnet, auch Funktionsparameter/-ergebnis
+und verschachtelte Typverweise. Ein nachträglicher Attributscan ersetzt dies
+nicht. Allgemeine OID-Zuweisungs-/Erweiterungsregeln und benannte primitive
+Collectiontypen sind davon getrennt nachzuweisen.
+
+### E2: Bindung benannter BAG-/LIST-Elemente
+
+SEM-005/010/014: 2.4 löst einen einfachen benannten Collection-Elementtyp über
+die gemeinsame Domain-/Strukturbindung auf. Imports, Navigation und Diagnose
+verwenden dieselbe Quellreferenz wie ein skalares benanntes Attribut. 2.3 darf
+dadurch keine Collection über einer skalaren Domäne akzeptieren. Explizite
+Strukturrestriktionen dürfen keine Domänenziele erhalten. Abnahme: BAG und LIST
+mit OID-/TEXT-/Numeric-Domänen, Domain-Vererbung, Strukturen, falschen Zielarten,
+Imports in beiden Dateireihenfolgen und gültig–ungültig–gültig mit Fresh/Reuse.
+
+### E5: Geprüfte Kontextkorrespondenzen
+
+SEM-005/008/010/014/017: Vor einer zusätzlichen Inspektionskorrespondenz werden
+Quellpfad, OF-Restriktion, Besitzer und gebundener Geometrietyp verglichen. Nur
+passende Kontexte ergänzen die bestehende Map; Konflikte oder zusammenfallende
+Kopien sind unzulässig. Neu zugeordnete Deklarationen durchlaufen dieselben
+Typ-/Referenz-/Ausdrucksprüfungen. Die Veröffentlichung erfolgt nach diesen
+Prüfungen. Constraints vergleichen ihre Ausdrücke vor den daraus abgeleiteten
+Referenzlisten, damit gültige Kontextziele bereits zugeordnet sind.
+Abnahme: positive/negative Toleranzen, Inline-/Named-/Constraint-Inspektionen,
+Flächen, eigene Segmente, zwei Vertextypen, öffentliche Links, Quellenreihenfolge
+und Fresh/Reuse. Keine Geometrieberechnung oder zusätzliche öffentliche API.
+
+### E1: Gemeinsame Auswahl von Quell- und vordefinierten Namen
+
+SEM-005/008/010/014: Domänen, Strukturen, Objektbasen, Einheiten, FORMAT, OID AS
+und Funktionen verwenden für vorhandene vordefinierte Ziele dieselbe Auswahl.
+Lokale passende Deklarationen behalten ihre Identität. Eine mehrdeutige
+Quellauflösung ist ein Bindungsfehler und darf nicht durch einen Builtin-Aufruf
+ersetzt werden. Der indexbasierte Resolver erhält keine künstlichen Quell-
+deklarationen; die vordefinierten Fabriken bleiben beim Compilerlauf.
+Abnahme: beide Versionen, explizite und unqualifizierte Namen, fehlender Import,
+primitive Schlüsselwörter, lokale Ziele, konkurrierende Userimports, öffentliche
+Quellqueries, umgekehrte Dateireihenfolge und Importpolicy-Edits frisch/wiederverwendet.
+Die Priorität eines einzelnen Userimports gegenüber einem gleichnamigen
+INTERLIS-Import wird in dieser Teillieferung erhalten und separat normativ
+geprüft; sie ist kein abgeschlossener Nachweis allgemeiner Namenskategorien.
+
+### E2: Mantissenprüfung gemeinsamer Typgrenzen
+
+SEM-005/010/014 und SYN-004: Die Syntaxgrenzen von numerischen Domänen, Attributen,
+Koordinatenachsen, numerischen OIDs und numerischen FORMAT-Komponenten werden
+gemeinsam geprüft. Eine unzulässige Mantisse ist ein regulärer Quellsyntaxfehler,
+kein Error durch fehlende Implementierung. Exakter Wert, Präzision und Lexem
+gültiger Grenzen bleiben im veröffentlichten NumericRange erhalten. Konstanten
+und Einheitenfaktoren werden nicht erneut als Typgrenze interpretiert.
+
+### E4: Direkte Constraintnamensräume
+
+SEM-005/008/010/014: Direkte 2.4-Constraints und CONSTRAINTS OF im selben Thema
+werden nach ihrem gebundenen Ziel gemeinsam auf doppelte Namen geprüft.
+Duplikate erhalten die Regel CONSTRAINT_NAME am tatsächlichen zweiten
+Namensbereich. Unterschiedliche Ziele und Themenkontexte bleiben getrennt;
+die Domainregel DOMAIN_CONSTRAINT_NAME bleibt erhalten. 2.3 erhält dadurch
+keine zusätzliche Namenspflicht. Vererbte Constraintnamensräume und externe
+Bedingungen in abgeleiteten Themen sind eine gesonderte offene Abnahme.
+ConstraintNameContractTest prüft direkte Körper, unterschiedliche Familien,
+externe Blöcke, öffentliche Quellqueries, Imports und Fresh/Reuse-Edits.

@@ -7,7 +7,7 @@ import java.util.Objects;
 
 /** EXISTENCE CONSTRAINT source REQUIRED IN target:path [OR ...]. */
 public record ExistenceConstraintSyntax(SyntaxNodeId id, SourceRange range,
-                                        NameSyntax source,
+                                        ExpressionSyntax source,
                                         List<ExistenceTargetSyntax> targets)
         implements SyntaxNode {
     /** Creates a validated instance. */
@@ -19,7 +19,7 @@ public record ExistenceConstraintSyntax(SyntaxNodeId id, SourceRange range,
     }
 
     /** One alternative target. */
-    public record ExistenceTargetSyntax(NameSyntax viewable, NameSyntax path) {
+    public record ExistenceTargetSyntax(NameSyntax viewable, ExpressionSyntax path) {
         /** Creates a validated instance. */
         public ExistenceTargetSyntax {
             Objects.requireNonNull(viewable, "viewable");
@@ -34,6 +34,9 @@ public record ExistenceConstraintSyntax(SyntaxNodeId id, SourceRange range,
 
     @Override
     public List<SyntaxNode> children() {
-        return List.of(source);
+        var children = new java.util.ArrayList<SyntaxNode>();
+        children.add(source);
+        for (var target : targets) { children.add(target.viewable()); children.add(target.path()); }
+        return List.copyOf(children);
     }
 }

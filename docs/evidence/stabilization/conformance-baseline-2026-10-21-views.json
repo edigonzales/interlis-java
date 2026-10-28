@@ -1,0 +1,19 @@
+{
+  "scope": "A: unveränderter Ausgangslauf, keine fachlichen Änderungen",
+  "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew conformanceCheck --console=plain",
+  "exitCode": 1,
+  "summary": {
+    "XFAIL": 1,
+    "PASS": 538,
+    "ERROR": 0,
+    "FAIL": 54,
+    "XPASS": 0,
+    "TOTAL": 593
+  },
+  "recordedAt": "2026-10-21T07:38:58.650834+00:00",
+  "baseCommit": "3820c6b5dead437cdaeb9569fbfe726abec25d6e",
+  "suitePin": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+  "baselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+  "rawReportSha256": "5b5d8cf0d569c31061efebb56442e6cbaedb35734cf3c44b79c8f0baf8c8e9fd",
+  "rawReport": "build/conformance/report.json (Ausgangslauf; Hash vor weiteren Läufen festgehalten)"
+}

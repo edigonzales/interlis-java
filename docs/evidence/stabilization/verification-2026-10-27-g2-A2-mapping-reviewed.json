@@ -1,0 +1,45 @@
+{
+  "step": "A2",
+  "acceptance": "REWORK",
+  "scope": "A2-R1 mapping integrity correction only. R2/R3/R4 not closed.",
+  "sourceInventorySha256": "8c2f82ebd3ed2405526fa01bf1def7830baf35b5ad114810539026235fc41fc3",
+  "implementation": [
+    "Actual legacy steps checked against fixed assignment; complete legacy rows hashed",
+    "Complete atomic mappings including assertions, requirements and candidate links included",
+    "Candidate class/@Test method references resolved; missing/class-only cases explicit",
+    "Standard functions distinguished from missing other predefined/lexical inventories"
+  ],
+  "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+  "exitCode": 0,
+  "tests": 20,
+  "log": "build/reports/g2/A2/rework-v2/gradle-evidence-tests.log",
+  "logSha256": "18dd38a773995c3d87b6d2847dd80eb58d8be17ea50e1a56e8c7ccd81dcd526e",
+  "independentReview": "g2-reviews/A2-attempt2.json",
+  "previousReview": "g2-reviews/A2-attempt1.json",
+  "openFindings": [
+    "A2-R2 full predefined/lexical inventory",
+    "A2-R3 rule-specific contract/case/assertion mapping",
+    "A2-R4 complete body/appendix/unnumbered-contract audit"
+  ],
+  "normativeExpectationsChanged": false,
+  "normativeExpectationsSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "previousEvidence": "verification-2026-10-27-g2-A2-mapping-rework.json",
+  "reviewSha256": "233ee6926dfba747865c75d6ad64cecf4052eb7f27faa9251ef5fed6309d7e42",
+  "reviewedSourceDigest": "0311fff8c0b676d3df0ebcbca18a6100942bb2de25af15575c89c21b7237a878",
+  "packet": {
+    "manifest": "build/reports/g2/A2/packet-v2/manifest.json",
+    "sha256": "ddcd565f085a2e117b1cd66baf2e18547868ca47e810faf9be7dbaeba9d993a5",
+    "hashVerified": true,
+    "sourceBasis": "build/reports/g2/A2/input-v2/source.tar.gz",
+    "sourceDigest": "0311fff8c0b676d3df0ebcbca18a6100942bb2de25af15575c89c21b7237a878",
+    "sourceFiles": 1095,
+    "beforeSourceDigest": "1f6f01d45777cd8c13b5390e8619fc1ae705681159c800ef58034e425a4b6b6e",
+    "beforeFiles": 1083,
+    "changedSources": 20,
+    "patchReproducesFrozenAfterSources": true
+  },
+  "r1Disposition": "CLOSED",
+  "independentCounterprobes": 12
+}

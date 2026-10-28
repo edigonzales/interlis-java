@@ -62,6 +62,34 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
             while (!queue.isEmpty()) {
                 cancellation.throwIfCancellationRequested();
                 ModelHeader header = queue.removeFirst();
+                // Reuse the captured syntax. Original models contribute dependencies,
+                // but TRANSLATION OF does not make their namespaces visible as imports.
+                var model = inventory.syntax().get(header.source()).root().models().stream()
+                        .filter(m -> m.range().startOffset() == header.declarationOffset()).findFirst().orElseThrow();
+                if (model.translationSource().isPresent()) {
+                    String original = model.translationSource().orElseThrow().text();
+                    List<ModelHeader> candidates = inventory.headers().stream()
+                            .filter(h -> h.modelName().equals(original))
+                            .filter(h -> model.translationVersion().isEmpty()
+                                    || model.translationVersion().orElseThrow().equals(h.modelVersion())).toList();
+                    var dependency = new ResolutionDependency(
+                            new ModelSelector.ByName(original, model.translationVersion(), Optional.empty()), List.of(),
+                            candidates.stream().map(DefaultModelResolutionService::location).toList(),
+                            candidates.size() == 1 ? ResolutionDependency.Kind.POSITIVE
+                                    : candidates.isEmpty() ? ResolutionDependency.Kind.NEGATIVE : ResolutionDependency.Kind.AMBIGUOUS,
+                            inventory.fingerprint());
+                    if (candidates.size() == 1) {
+                        dependencies.add(dependency);
+                        ModelHeader target = candidates.getFirst();
+                        trace.add(header.modelName() + " translates " + original + " from " + target.source().value());
+                        if (selected.add(target)) queue.addLast(target);
+                    } else {
+                        negative.add(dependency);
+                        pending.add(new PendingSourceRequest(original, model.translationVersion(), List.of(),
+                                candidates.isEmpty() ? "translation original not found" : "translation original is ambiguous", List.of()));
+                        trace.add(header.modelName() + " has unresolved translation original " + original);
+                    }
+                }
                 for (var importSyntax : header.imports()) {
                     if ("INTERLIS".equals(importSyntax.modelName())) {
                         trace.add("builtin INTERLIS for " + header.modelName());

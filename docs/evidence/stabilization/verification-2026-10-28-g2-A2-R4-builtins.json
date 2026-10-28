@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "R4 builtin-function worklist",
+  "acceptance": "PLANNED_NOT_ACCEPTED",
+  "functions": 21,
+  "plannedCases": 84,
+  "userDecisions": 2,
+  "builtinInventory": "docs/evidence/stabilization/g2-builtin-inventory.json",
+  "builtinInventorySha256": "e1c8f2489a31712e807a47ea5a0dbd53d3e43c9218c8167ca66539cb5b1f9a50",
+  "matrix": "g2-rule-matrix.json",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "tools": {
+    "g2_builtin_inventory.py": "ef8139cdb747a15f52fd78881970c91c1a05959c8ca70c6511f365823bebd1e9",
+    "test_g2_builtin_inventory.py": "0e78b044d2739da7266c46062ef1f24571fa363e113197a9eb9b5a1f4cc57446"
+  },
+  "commands": [
+    "python3 tools/reference/g2_builtin_inventory.py --out build/reports/g2/A2/R4/builtin-inventory.json",
+    "./gradlew g2EvidenceTest --rerun-tasks --console=plain"
+  ],
+  "logs": {
+    "builtins": "build/reports/g2/A2/R4/builtin-inventory.log",
+    "builtinsSha256": "78feb1e74a8103a7024cfa7d8b45cab8f6ff73d6e8248aff035abd3651559957",
+    "evidence": "build/reports/g2/A2/R4/g2-evidence-test-builtins.log",
+    "evidenceSha256": "40683815dcdea48ce30f7b0db9070af1f1dcab811ebf436531a5d5879d9cbf1d"
+  },
+  "technicalTests": 52,
+  "compilerTests": 614,
+  "compilerFailures": 0,
+  "compilerErrors": 0,
+  "compilerSkipped": 0,
+  "acceptanceLimits": [
+    "Signatures are implementation facts; all case kinds are PLANNED.",
+    "areAreas2/areAreas3 remain a user decision.",
+    "No independent acceptance."
+  ],
+  "remaining": [
+    "Execute the 84 planned builtin cases.",
+    "Resolve the areAreas2/areAreas3 normative profile with the user.",
+    "Complete the remaining R4 contract work and all paragraph/grammar cases.",
+    "A2 overall review, A3 and phase A review."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN"
+}

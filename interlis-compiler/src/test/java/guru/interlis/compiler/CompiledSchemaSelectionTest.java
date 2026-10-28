@@ -88,4 +88,28 @@ class CompiledSchemaSelectionTest {
     private static SourceText source(String name, String text) {
         return new SourceText(new SourceId("memory:/" + name), new SourceRevision(1), text);
     }
+
+    @Test
+    void unrelatedSemanticErrorInSameFileDoesNotBlockSelectedModel() {
+        SourceText source = source("shared.ili", """
+                INTERLIS 2.4;
+                MODEL Good AT "x" VERSION "1" =
+                  TOPIC T = CLASS C = value: TEXT; END C; END T;
+                END Good.
+                MODEL Bad AT "x" VERSION "1" =
+                  TOPIC T = CLASS C = value: Missing; END C; END T;
+                END Bad.
+                """);
+        var request = CompilerTestSupport.request(List.of("Good"),
+                Map.of(source.id(), source), List.of(), CompilerOptions.defaults());
+        var succeeded = assertInstanceOf(CompilationOutcome.Succeeded.class,
+                CompilerEngines.create().compile(request, CancellationToken.none()));
+        assertEquals(1, succeeded.schema().models().size());
+        assertTrue(succeeded.analysis().diagnostics().stream()
+                .anyMatch(d -> d.severity() == guru.interlis.diagnostics.Severity.ERROR));
+        var invalid = CompilerTestSupport.request(List.of("Bad"),
+                Map.of(source.id(), source), List.of(), CompilerOptions.defaults());
+        assertInstanceOf(CompilationOutcome.Rejected.class,
+                CompilerEngines.create().compile(invalid, CancellationToken.none()));
+    }
 }

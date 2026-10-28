@@ -5,8 +5,9 @@ package guru.interlis.workspace;
  *
  * @param parses the {@code parses} component
  * @param syntaxReuses the {@code syntaxReuses} component
- * @param semanticAnalyses the {@code semanticAnalyses} component
- * @param acceptedAnalyses the {@code acceptedAnalyses} component
+ * @param semanticAnalyses engine calls initiated by this workspace, including failed/cancelled calls;
+ *                         detached host calls are outside this counter
+ * @param acceptedAnalyses successful acceptance operations, including detached host results
  * @param staleAnalyses the {@code staleAnalyses} component
  * @param cachedSyntaxEntries the {@code cachedSyntaxEntries} component
  * @param cachedAnalysisEntries the {@code cachedAnalysisEntries} component

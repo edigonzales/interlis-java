@@ -1,0 +1,1507 @@
+{
+  "scope": "INTERLIS 2.3/2.4; unchanged pinned suite and baseline",
+  "runId": "5c1497f8-0f70-4f71-887d-25e176695e2d",
+  "finishedAt": "2026-10-21T00:57:15.696875Z",
+  "summary": {
+    "PASS": 538,
+    "XFAIL": 1,
+    "TOTAL": 593,
+    "XPASS": 0,
+    "FAIL": 54,
+    "ERROR": 0
+  },
+  "falseAccepts": 0,
+  "featureOccurrences": {
+    "BUILTIN_SIGNATURE": 1,
+    "CONTEXT": 6,
+    "GRAPHIC": 1,
+    "LINE_FORM": 3,
+    "METADATA_BASKET": 6,
+    "NO_IMPLEMENTATION_GUARD": 9,
+    "RUNTIME_PARAMETER": 3,
+    "VIEW_SCHEMA": 27
+  },
+  "cases": [
+    {
+      "testId": "ili23.Assoc23Test.assocComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/assocComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001",
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 23:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocA3, rule=multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID)",
+        "line 29:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 67:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocB3, rule=multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID)",
+        "line 73:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Association23Test.association_AssociationAsTarget",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/association/association_AssociationAsTarget.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 23:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a2b, rule=association target a2b requires its own OID/REFERENCE_ASSOCIATION_OID)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: an association target requires its own OID (2.7.1/3.7.1); retain pinned reference expectation"
+    },
+    {
+      "testId": "ili23.Association23Test.association_DerivedAssociationDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/association/association_DerivedAssociationDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 23:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Class23Test.classComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/classComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 12:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClassA1, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 21:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicA2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 44:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClassB1, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 53:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicB2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation"
+    },
+    {
+      "testId": "ili23.Classes23Test.class_AcceptingOidDefinition",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/class/class_AcceptingOidDefinition.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 5:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=class, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation"
+    },
+    {
+      "testId": "ili23.CoordType23Test.coordTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/coordTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@307)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Expressions23Test.equals_runtimeParam",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/equals_runtimeParam.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "RUNTIME_PARAMETER"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 7:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@111)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_BasenamePathElement",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_BasenamePathElement.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_BasenameToUnrenamedViewable",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_BasenameToUnrenamedViewable.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ParentPathElement",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_ParentPathElement.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ThisAreaThatArea",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_ThisAreaThatArea.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 20:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Expressions23Test.logical_function",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/logical_function.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "BUILTIN_SIGNATURE"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 11:28: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=BUILTIN_SIGNATURE, construct=BUILTIN_SIGNATURE)"
+      ],
+      "sections": [
+        "S2a"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.FormattedType23Test.simple + baseDomainRestricted",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/formattedType/FormattedType.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 11:6: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr1, rule=FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS)",
+        "line 12:6: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr2, rule=FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: XMLDate FORMAT requires two-digit month/day; retain pinned reference expectation"
+    },
+    {
+      "testId": "ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/iliconversion/iliconversion_CheckViewDefWithALLOF.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 17:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.InterlisManual23Test.ilimanual_CoordSysAppendix",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/interlismanual/coordsys/ilimanual_CoordSysAppendix.ili",
+        "test/data/ili23/interlismanual/coordsys/ilimanual_CoordSysAppendixEx.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 9:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@185)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.LineFormType23Test.lineFormTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/lineFormTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "LINE_FORM"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 9:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@229)",
+        "line 21:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@519)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/lineTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "LINE_FORM"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 13:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@287)",
+        "line 42:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@1177)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeLineFormOrdering",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/lineTypeLineFormOrdering.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "LINE_FORM"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 10:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@248)",
+        "line 31:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@707)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.MetaDataBasket23Test.metaDataBasketComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/metaDataBasketComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 11:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@197)",
+        "line 13:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@236)",
+        "line 33:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@734)",
+        "line 35:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@773)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Models23Test.models_DomainAndRuntimeParam_SameName",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "RUNTIME_PARAMETER"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 5:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@96)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Models23Test.models_ImportedModelReferenceElements",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/models/models_ImportedModelReferenceElements.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 9:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@216)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.NumericType23Test.numericTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/numericTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@308)",
+        "line 48:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@949)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Role23Test.roleComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/roleComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001",
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 36:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocA2q, rule=HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT)",
+        "line 68:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 119:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocB2q, rule=HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT)",
+        "line 151:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.RuntimeParameter23Test.runtimeParameterComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/runtimeParameterComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "RUNTIME_PARAMETER"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 6:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@103)",
+        "line 7:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@124)",
+        "line 16:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@285)",
+        "line 17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@306)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.Topic23Test.topicComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/topicComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 15:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicA2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 43:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicB2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation"
+    },
+    {
+      "testId": "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/topics/topics_ExplicitBasketOidDefinition.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 4:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=topic, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation"
+    },
+    {
+      "testId": "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/topics/topics_ExplicitTopicOidDefinition.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 4:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=topic, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation"
+    },
+    {
+      "testId": "ili23.View23Test.abstractView_AbstractBaseInConcretViewDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/abstractView_AbstractBaseInConcretViewDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/abstractView_AcceptAbstractBaseInAbstractJoinDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasenameOfRenamedInspectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasenameOfRenamedInspectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasenameOfUnrenamedInspectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasenameOfUnrenamedInspectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicInspectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicInspectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 24:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicJoinDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicJoinDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicSelectionViewDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicSelectionViewDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 18:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicUnionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicUnionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 21:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicViewProjectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicViewProjectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptJoinDefWithoutBasenames",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptJoinDefWithoutBasenames.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptPARENTPathElement",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptPARENTPathElement.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 23:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptSimpleBaseExtentionInView",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptSimpleBaseExtentionInView.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 21:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.View23Test.view_ObjectPathWithRolename",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_ObjectPathWithRolename.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 24:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 31:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 38:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewAggregationComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewAggregationComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 13:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 34:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewInspectionComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewInspectionComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 16:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 40:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewJoinComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewJoinComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 18:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 44:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewProjectionComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewProjectionComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 13:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 21:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 27:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 32:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 42:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 63:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 71:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 77:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 82:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 92:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewUnionComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewUnionComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 18:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 46:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/metamodel/ViewableGetAttributesAndRoles2.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 22:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=topicB, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation"
+    },
+    {
+      "testId": "ili24.Attribute24Test.attributeRef_RefAttrInClass",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/attribute/attributeRef_RefAttrInClass.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 8:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr, rule=reference target ClassA has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.4 forbids references to NO OID classes (3.5.3); retain pinned reference expectation"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.contextInDifferentModel",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/contextInDifferentModel.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 32:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@648)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.contextInSameModel",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/contextInSameModel.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 20:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@456)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.genericInStructAttr",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/GenericInStructAttr.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@548)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContexts",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/multipleContexts.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@478)",
+        "line 23:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@517)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContextsB",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/multipleContextsB.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 21:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@473)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContextsExtending",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/multipleContextsExtending.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 20:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@426)",
+        "line 43:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@900)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    },
+    {
+      "testId": "ili24.Refhb24Test.roadsExgm2ien",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/refhb/RoadsExdm2ben.ili",
+        "test/data/ili24/refhb/AbstractSymbology.ili",
+        "test/data/ili24/refhb/RoadsExdm2ien.ili",
+        "test/data/ili24/refhb/StandardSymbology.ili",
+        "test/data/ili24/refhb/RoadsExgm2ien.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "GRAPHIC",
+        "METADATA_BASKET",
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001",
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 41:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Street, rule=reference target Street has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 42:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=StreetAxis, rule=reference target StreetAxis has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 51:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Street, rule=reference target Street has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 52:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=StreetNamePosition, rule=reference target StreetNamePosition has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 12:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@255)",
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@596)",
+        "line 51:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 58:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 65:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@1773)",
+        "line 75:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@2034)",
+        "line 92:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@2551)",
+        "line 104:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@2885)",
+        "line 83:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 84:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineAttrs, rule=reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 89:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=FillColor, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 121:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Font, rule=reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 122:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Symbol, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 144:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 145:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle, rule=reference target LineStyle_Solid has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 149:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineAttrs, rule=reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 150:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle, rule=reference target LineStyle_Solid has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 165:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 166:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle_Dashed, rule=reference target LineStyle_Dashed has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 170:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineAttrs, rule=reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 171:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle_Dashed, rule=reference target LineStyle_Dashed has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 175:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=FontSymbRef, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 176:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ColorRef, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 208:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Font, rule=reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 209:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TextSign, rule=reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 215:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 216:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TextSign, rule=reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 220:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClipFont, rule=reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 221:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TextSign2, rule=reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 235:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Symbol, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 236:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=SymbolSign, rule=reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 240:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClipSymbol, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 241:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=SymbolSign2, rule=reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 245:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 246:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=SymbolSign, rule=reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 261:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Style, rule=reference target LineStyle has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 262:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=PolylineSign, rule=reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 268:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 269:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=PolylineSign, rule=reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 273:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClipStyle, rule=reference target LineStyle has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 274:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=PolylineSign2, rule=reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 278:7: ERROR ILI-SEM-0010 diagnostic.semantics.inh",
+        "... output truncated (19829 bytes total) ..."
+      ],
+      "sections": [
+        "S2b",
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature"
+    }
+  ]
+}

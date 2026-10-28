@@ -168,6 +168,60 @@ class WorkspaceTest {
         };
     }
 
+    @Test
+    void failedBatchPreservesDeletedSourceRevision() {
+        Workspace workspace = WorkspaceTestSupport.workspace();
+        SourceId id = new SourceId("memory:/deleted.ili");
+        WorkspaceTestSupport.add(workspace, id.value(), BASE);
+        WorkspaceTestSupport.replace(workspace, id, BASE + "\n");
+        var deletedRevision = workspace.source(id).orElseThrow().revision();
+        workspace.remove(id, deletedRevision);
+        WorkspaceRevision before = workspace.currentRevision();
+        org.junit.jupiter.api.Assertions.assertThrows(UpdateRejectedException.class,
+                () -> workspace.applyBatch(List.of(
+                        new SourceUpdate(id, new SourceExpectation.Absent(),
+                                new SourceChange.Replace(BASE)),
+                        new SourceUpdate(new SourceId("memory:/missing.ili"),
+                                new SourceExpectation.At(deletedRevision),
+                                new SourceChange.Replace(BASE))), before));
+        assertEquals(before, workspace.currentRevision());
+        assertTrue(workspace.source(id).isEmpty());
+        WorkspaceTestSupport.add(workspace, id.value(), BASE);
+        assertEquals(deletedRevision.value() + 1,
+                workspace.source(id).orElseThrow().revision().value());
+    }
+
+    @Test
+    void syntaxIsSharedWithResolverAndBoundedAfterAcceptance() {
+        Workspace workspace = WorkspaceTestSupport.workspace();
+        SourceId id = new SourceId("memory:/base.ili");
+        WorkspaceTestSupport.add(workspace, id.value(), BASE);
+        var roots = List.<ModelSelector>of(new ModelSelector.ByName("Base", Optional.empty(), Optional.empty()));
+        var request = new AnalysisRequest(workspace.currentRevision(), roots);
+        var capture = workspace.capture(request);
+        var analysis = guru.interlis.compiler.CompilerEngines.create().analyze(capture.request(), capture.reuse(), CancellationToken.none());
+        org.junit.jupiter.api.Assertions.assertSame(capture.reuse().previousSyntax().get(id),
+                analysis.syntaxSnapshot(id).orElseThrow());
+        workspace.acceptAnalysis(capture, analysis);
+        assertEquals(1, workspace.metrics().parses());
+        assertEquals(0, workspace.metrics().semanticAnalyses()); // The host ran this capture.
+        workspace.analyze(request, CancellationToken.none());
+        assertEquals(1, workspace.metrics().semanticAnalyses());
+        assertEquals(1, workspace.metrics().parses());
+        assertEquals(1, workspace.metrics().syntaxReuses());
+
+        var defaults = WorkspaceConfiguration.defaults();
+        workspace.configure(new WorkspaceConfiguration(defaults.compilerOptions(),
+                defaults.resolutionPolicy(), defaults.resolverCatalog(), new CacheLimits(0, 0, 0, 0)),
+                workspace.currentRevision());
+        assertEquals(0, workspace.metrics().cachedSyntaxEntries());
+        assertEquals(0, workspace.metrics().cachedAnalysisEntries());
+        workspace.analyze(request, CancellationToken.none());
+        assertEquals(2, workspace.metrics().parses());
+        assertEquals(0, workspace.metrics().cachedSyntaxEntries());
+        assertTrue(workspace.metrics().evictions() > 0);
+    }
+
     private static List<String> memberNames(CompiledSchema schema) {
         SymbolRef ref = schema.queries().findQualifiedName(
                 QualifiedName.of("Survey", "Data", "Building")).getFirst();
@@ -179,4 +233,35 @@ class WorkspaceTest {
                 .map(symbol -> schema.queries().symbol(symbol).known().orElseThrow().name().value())
                 .toList();
     }
+    @Test void translatedViewIncludesOriginalImportsAndSurvivesEdits() {
+        for (String version : List.of("2.3", "2.4")) {
+            Workspace workspace = WorkspaceTestSupport.workspace();
+            String body = "IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW V EXTENDS Shared.T.V = END V; END T;";
+            String shared = "INTERLIS " + version + "; MODEL Shared AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; VIEW V PROJECTION OF A; = ALL OF A; END V; END T; END Shared.";
+            WorkspaceTestSupport.add(workspace, "memory:/a-translation.ili", "INTERLIS " + version + "; MODEL M AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = " + body + " END M.");
+            WorkspaceTestSupport.add(workspace, "memory:/z-base.ili", "INTERLIS " + version + "; MODEL Base AT \"https://example.org\" VERSION \"1\" = " + body + " END Base.");
+            var id = WorkspaceTestSupport.add(workspace, "memory:/shared.ili", shared).id();
+            var roots = List.<ModelSelector>of(new ModelSelector.ByName("M", Optional.empty(), Optional.empty()));
+            for (String edit : List.of(shared, shared.replace("ALL OF A", "ALL OF Missing"), shared)) {
+                WorkspaceTestSupport.replace(workspace, id, edit);
+                var result = workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots), CancellationToken.none());
+                if (edit.equals(shared)) assertInstanceOf(CompilationOutcome.Succeeded.class, result, () -> describe(result));
+                else assertInstanceOf(CompilationOutcome.Rejected.class, result);
+            }
+        }
+    }
+
+    @Test void missingTranslationOriginalCanBeAddedWithoutEditingTheTranslation() {
+        for (String version : List.of("2.3", "2.4")) {
+            Workspace workspace = WorkspaceTestSupport.workspace();
+            WorkspaceTestSupport.add(workspace, "memory:/translation.ili", "INTERLIS " + version + "; MODEL M AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = END M.");
+            var roots = List.<ModelSelector>of(new ModelSelector.ByName("M", Optional.empty(), Optional.empty()));
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots), CancellationToken.none()));
+            assertTrue(rejected.rejection().reasons().contains(RejectionReason.MISSING_INPUT));
+            WorkspaceTestSupport.add(workspace, "memory:/base.ili", "INTERLIS " + version + "; MODEL Base AT \"https://example.org\" VERSION \"1\" = END Base.");
+            var result = workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots), CancellationToken.none());
+            assertInstanceOf(CompilationOutcome.Succeeded.class, result, () -> describe(result));
+        }
+    }
+
 }

@@ -37,6 +37,7 @@ public record DiagramMember(String id, MemberKind kind, String label,
     }
 
     public enum MemberKind {
+        PARAMETER,
         /** The {@code ATTRIBUTE} constant. */
         ATTRIBUTE,
         /** The {@code ROLE} constant. */

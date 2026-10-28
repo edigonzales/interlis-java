@@ -1,25 +1,21 @@
 package guru.interlis.model;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
-/**
- * Embedded structure value.
- *
- * @param id stable identifier
- * @param origin origin information
- * @param target target symbol
+/** Embedded structure value. Empty target denotes ANYSTRUCTURE; restrictions
+ * retain explicit bound targets in declaration order. IDs belong to the owning
+ * snapshot. Unresolved source targets are represented by ErrorType, never by an
+ * empty wildcard. All components and returned collections are immutable/null-free.
  */
-public record StructureValueType(TypeId id, Origin origin, SymbolId target)
-        implements TypeDescriptor {
-    /** Creates a validated instance. */
+public record StructureValueType(TypeId id, Origin origin, Optional<SymbolId> target,
+                                 List<SymbolId> restrictions) implements TypeDescriptor {
     public StructureValueType {
-        Objects.requireNonNull(id, "id");
-        Objects.requireNonNull(origin, "origin");
-        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(id, "id"); Objects.requireNonNull(origin, "origin");
+        target=Objects.requireNonNull(target, "target");restrictions=List.copyOf(restrictions);
     }
-
-    @Override
-    public TypeKind kind() {
-        return TypeKind.STRUCTURE_VALUE;
-    }
+    /** Effective allowed roots: explicit restrictions, otherwise the primary target. */
+    public List<SymbolId> targetRoots() { return restrictions.isEmpty()?target.stream().toList():restrictions; }
+    @Override public TypeKind kind() { return TypeKind.STRUCTURE_VALUE; }
 }

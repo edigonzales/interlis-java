@@ -1,5 +1,12 @@
 # 13 – Tests, Kompatibilitätsnachweise und Qualitätsgates
 
+Für den Nutzerauftrag zum vollständigen G2-Abschluss vom 27.10.2026 gilt der
+[Ausführungs- und Reviewvertrag](../evidence/stabilization/g2-completion-plan.md).
+Jeder Schritt und jede Phase benötigen ein unabhängiges Review eines explizit
+konfigurierten anderen Modells am eingefrorenen Stand. Ausgeführte Prüfungen
+und Reviewabnahme sind getrennte Zustände. Normative Erwartungen und neue
+Referenzausnahmen benötigen weiterhin die ausdrückliche Nutzerfreigabe.
+
 ## 1. Ziel und verbindliche Aussagegrenzen
 
 Dieses Dokument legt fest, wie ein Coding-Agent Fortschritt und Korrektheit nachweist. Ein erfolgreicher Build, eine grüne kleine Testsuite oder ein lesbares Diagramm genügt nicht als Beleg für einen vollständigen INTERLIS-Compiler. Jede Aussage zur Sprach-, CLI-, Laufzeit- oder Datenbankkompatibilität braucht einen benannten Umfang, gepinnte Referenzen und tatsächlich ausgeführte Tests.
@@ -106,6 +113,21 @@ Der Harness erhält intern `ConformanceRunner.run(ConformanceRunRequest request,
 `ConformanceReport` enthält ausgewählte, ausgeschlossene und ausgeführte Fälle sowie `PASS`, `XFAIL`, `FAIL`, `XPASS` und `ERROR`. Wenn der externe Runner andere Details verwendet, wird die Abbildung dokumentiert. `XPASS` ist kein still zu ignorierendes Glück: Die alte erwartete Abweichung muss geprüft und gegebenenfalls bewusst aus der Baseline entfernt werden. Der Gesamtlauf ist erst nach dieser Bewertung grün.
 
 Eine Menge von XFAILs darf den Zwischenstand beschreiben. Sie ersetzt nicht das P2-Ziel vollständiger Unterstützung des vereinbarten Sprachumfangs. Bei einem normkonformen absichtlichen Unterschied gegenüber ili2c ist eine eigene Erwartung und keine unbegründete Dauer-XFAIL-Markierung nötig.
+
+Der Projektwrapper darf einen Referenz-FAIL nur nach einer bewusst versionierten
+Normerwartung als überprüfte Referenzausnahme ausweisen. Jeder Eintrag enthält
+Suite-ID, Sprachversion, Original-/Gegenprobenhashes, Normstelle, eigene Erwartung
+und die zulässigen strukturierten Diagnosen. Die aktuelle CLI prüft Original
+und positive Gegenprobe zusätzlich mit JSON-Diagnostik. Erwartet das Projekt
+die Annahme des Originals entgegen einer negativen Referenzerwartung, muss
+zusätzlich eine gepinnte negative Gegenprobe mit exakt den zulässigen
+strukturierten Diagnosen bestehen. Unerwartete Diagnosen,
+Implementierungssperren, geänderte Quellen, fehlende Resultate, Prozessfehler und
+unerwartete Annahmen verhindern Erfolg. Der rohe Referenzbericht bleibt erhalten;
+Referenzerwartung, tatsächliches Ergebnis und eigene Bewertung sind im
+Projektbericht getrennt sichtbar. Eine solche Ausnahme ersetzt keine fehlende
+Implementierung. Die bestehende INTERLIS-1-Ausnahme bleibt separat.
+
 
 ## 5. Semantischer Differentialvergleich
 

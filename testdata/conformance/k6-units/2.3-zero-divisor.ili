@@ -1,0 +1,1 @@
+INTERLIS 2.3; MODEL F AT "https://example.org" VERSION "1" = UNIT M [m]; Z = 1 / 0 [m]; END F.

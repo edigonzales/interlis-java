@@ -1,0 +1,1578 @@
+{
+  "recordedAt": "2026-10-25T03:07:15.467456+00:00",
+  "reference": "ili2c 5.6.9",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "total": 27,
+  "ownExpected": 27,
+  "referenceAgreements": 23,
+  "cases": [
+    {
+      "id": 0,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/0/0.ili",
+          "sha256": "6ce9980774390f84c84ccbd1fcfac61859f46d1848af5067c507218755bd5a0d"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/0/1.ili",
+          "sha256": "0177e8ac1df3fab01f08190ec4038499ea6f55b200543d3149af00861767b39b"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/0/2.ili",
+          "sha256": "f1474c965d64543861e2a0c8e63662cca9d88cdeec12580c970cc87f44974178"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/0/3.ili",
+          "sha256": "650cc9ad6d4feab0037a4f56c974c7e1f276967b0e9bc23ee23dbc7d246b3fbf"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/0/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/0/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/0/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/0/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/0/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/0/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/0/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/0/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/0/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/0/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/0/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/0/3.ili>\nInfo: ...compiler run done 2026-10-25 04:07:09\n"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/1/0.ili",
+          "sha256": "650cc9ad6d4feab0037a4f56c974c7e1f276967b0e9bc23ee23dbc7d246b3fbf"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/1/1.ili",
+          "sha256": "f1474c965d64543861e2a0c8e63662cca9d88cdeec12580c970cc87f44974178"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/1/2.ili",
+          "sha256": "0177e8ac1df3fab01f08190ec4038499ea6f55b200543d3149af00861767b39b"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/1/3.ili",
+          "sha256": "6ce9980774390f84c84ccbd1fcfac61859f46d1848af5067c507218755bd5a0d"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/1/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/1/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/1/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/1/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/1/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/1/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/1/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/1/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/1/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/1/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/1/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/1/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:09\n"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/2/0.ili",
+          "sha256": "6ce9980774390f84c84ccbd1fcfac61859f46d1848af5067c507218755bd5a0d"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/2/1.ili",
+          "sha256": "0177e8ac1df3fab01f08190ec4038499ea6f55b200543d3149af00861767b39b"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/2/2.ili",
+          "sha256": "f1474c965d64543861e2a0c8e63662cca9d88cdeec12580c970cc87f44974178"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/2/3.ili",
+          "sha256": "15f37a594e9d4723a88decaa9a7cd3b6dd1e92b5b07016e548a42c9e0f93f5fb"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/2/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/2/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/2/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/2/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3a14fe3ae5c6d592d36295a6, diag-44b60dffb4c4b3c34326b0f0, diag-63f3faaa22d4f80f42906cf1], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-44b60dffb4c4b3c34326b0f0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/2/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-3a14fe3ae5c6d592d36295a6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/2/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-63f3faaa22d4f80f42906cf1\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/2/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/2/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/2/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/2/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/2/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/2/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/2/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/2/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/2/3.ili>\n<repo>/build/reports/stabilization/g2-translations/2/3.ili:1:The domains of the attributes F.U.C.value and Base.U.C.value do not match.\n...compiler run failed 2026-10-25 04:07:10\n"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/3/0.ili",
+          "sha256": "6ce9980774390f84c84ccbd1fcfac61859f46d1848af5067c507218755bd5a0d"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/3/1.ili",
+          "sha256": "0177e8ac1df3fab01f08190ec4038499ea6f55b200543d3149af00861767b39b"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/3/2.ili",
+          "sha256": "f1474c965d64543861e2a0c8e63662cca9d88cdeec12580c970cc87f44974178"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/3/3.ili",
+          "sha256": "77b5a6bab6c56343731d31926205bb8a81b1ffbb68b7081062a0e09da863186c"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/3/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/3/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/3/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/3/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2205f9b99897c95c95fff39a, diag-8d55191ed293bc7ed81b68fa, diag-9ff5951cfe4a81e437858fda, diag-c19387b50a7b30c614de0e85], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9ff5951cfe4a81e437858fda\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/3/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-8d55191ed293bc7ed81b68fa\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/3/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]},{\"id\":\"diag-2205f9b99897c95c95fff39a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/3/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view basis differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-c19387b50a7b30c614de0e85\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/3/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view formation or selection differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/3/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/3/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/3/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/3/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/3/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/3/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/3/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/3/3.ili>\n<repo>/build/reports/stabilization/g2-translations/3/3.ili:The domains of the attributes F.U.V.a and Base.U.V.a do not match.\n<repo>/build/reports/stabilization/g2-translations/3/3.ili:The object paths do not match.\n<repo>/build/reports/stabilization/g2-translations/3/3.ili:1:The referenced attributes do not match (xx/x).\n<repo>/build/reports/stabilization/g2-translations/3/3.ili:1:The base VIEWs do not match.\n...compiler run failed 2026-10-25 04:07:10\n"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/4/0.ili",
+          "sha256": "35045cc56b73358e58d007ba47bb9a8fa7ed7c231ececaa13a586443a1d96451"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/4/1.ili",
+          "sha256": "ec137d3933538ff88b3ab1da944e724f59f35f7ff1bbc95f281aa75ebd6f1411"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/4/2.ili",
+          "sha256": "f1474c965d64543861e2a0c8e63662cca9d88cdeec12580c970cc87f44974178"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/4/3.ili",
+          "sha256": "0177e8ac1df3fab01f08190ec4038499ea6f55b200543d3149af00861767b39b"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/4/4.ili",
+          "sha256": "6ce9980774390f84c84ccbd1fcfac61859f46d1848af5067c507218755bd5a0d"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/4/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/4/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/4/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/4/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/4/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/4/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/4/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/4/1.ili>\n<repo>/build/reports/stabilization/g2-translations/4/1.ili:1:base element must be different from translated element null\n  base element must be different from translated element null\n...compiler run failed 2026-10-25 04:07:10\n"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/5/0.ili",
+          "sha256": "5b09a22bfd1589e4253bbc989b883bb721dfd249e5c899e4532091082a0d85fd"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/5/1.ili",
+          "sha256": "00d139582d274204a2ea6e450267cbe612d452cf3eb279e08b2908590d2a52d7"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/5/2.ili",
+          "sha256": "650cc9ad6d4feab0037a4f56c974c7e1f276967b0e9bc23ee23dbc7d246b3fbf"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/5/3.ili",
+          "sha256": "f1474c965d64543861e2a0c8e63662cca9d88cdeec12580c970cc87f44974178"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/5/4.ili",
+          "sha256": "5abc12d7989a52c8d3995d0f2fbf3f414ced2119235791355b798ab1028fb5b7"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/5/5.ili",
+          "sha256": "6c0340cf31beb05d18d797448767259b5304d3b3c99fd946f01d16802b2e652d"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/5/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/5/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/5/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/5/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/5/5.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/5/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/5/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/5/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/5/2.ili>\nInfo: ...compiler run done 2026-10-25 04:07:10\n"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/6/0.ili",
+          "sha256": "c0691338f5aca23f9b558e645138a70418a45dc7615f2becb379c9f4cfbf2fe8"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/6/1.ili",
+          "sha256": "e917b4c03867bbec3ed88c1c551fa7e26a0ff89c851237fdd5dc791c4b3a52a2"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/6/2.ili",
+          "sha256": "14addebfab194afaf08fef13d5cb420c75deb4c3458d75ec10ad060b5193eb12"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/6/3.ili",
+          "sha256": "237750dc4d2a4e8bd1fbc9cfbfe4702a4aa82a899ffccd591f7c7db04c7836d2"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/6/4.ili",
+          "sha256": "609da75cd332a3579909e57f8268308d6a076c69f450160169ab2f29c09181f4"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/6/5.ili",
+          "sha256": "608a6e7e91d87195fb57c54c83ce0d85b04a308d3fe1df43532d34b2a64cf175"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/6/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/6/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/6/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/6/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/6/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/6/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/6/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/6/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/6/5.ili>\nInfo: ...compiler run done 2026-10-25 04:07:11\n"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/7/0.ili",
+          "sha256": "f15af4e1d3fba6137eb6b137501fcd480202a5bc95740a1debd224b749a41146"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/1.ili",
+          "sha256": "87d49e3687b288e527dcdee18bc653e1dea61c840cff1ff6f8f856d7f5c21821"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/2.ili",
+          "sha256": "6fc5ead1ac941e5ad5a03f0c964b94eecc96bacc8d0387a7daad903d4ff6f25a"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/3.ili",
+          "sha256": "3b9d92f23bc9e6399178917ff1eeccd8c800a1cbe0e57ec1a1c0afaabe04127a"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/4.ili",
+          "sha256": "d0057ac008bd15154c827b020d6db30cb16c76bfad026332ebebf426e8cacaa0"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/5.ili",
+          "sha256": "df3e78e278335828cacf530e13ff08cbd06fd987f2ee56f1a077dc678d92601f"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/6.ili",
+          "sha256": "159cfdd10f806241a857d9918e9482248ad3200b839bfa58278ee10407bfcbe5"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/7.ili",
+          "sha256": "170406b0d66ef2f04632b929687b901547c97eef38ff6bff827cd8ae911a43f6"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/7/8.ili",
+          "sha256": "2af8710a1e6ca47ef76fd384a0b59ef743ebad2b75971dd48e13c0fada5e2f73"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/7/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/5.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/6.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/7.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c9218d561a7eacc4e43ab0cc], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c9218d561a7eacc4e43ab0cc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/7/8.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":118},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/7/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/5.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/6.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/7.ili",
+            "<repo>/build/reports/stabilization/g2-translations/7/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/7.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/5.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/6.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/7/8.ili>\nInfo: ...compiler run done 2026-10-25 04:07:11\n"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/8/0.ili",
+          "sha256": "abddf5952759ddb4c1c96ae2ccfe20d3560ad2f56f67f5d337454b05f3f9a55e"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/8/1.ili",
+          "sha256": "81a8761c2e08c626076dd025746418c21097cd046102d5cbf70bfaf3f7fb90f6"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/8/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/8/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-04303d99281751bf7c729721, diag-1083baabe9ff858629a71f3d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-04303d99281751bf7c729721\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/8/0.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":97},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Base\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation dependency has no original model/TRANSLATION_CYCLE\"}]},{\"id\":\"diag-1083baabe9ff858629a71f3d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/8/1.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":94},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation dependency has no original model/TRANSLATION_CYCLE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/8/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/8/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nloop in ili-files: 0.ili->1.ili->0.ili\n...compiler run failed 2026-10-25 04:07:11\n"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/9/0.ili",
+          "sha256": "d7925b2f7ab04b21155c2c215f19e9e27f62ae4ffc196131661d5791598849ed"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/9/1.ili",
+          "sha256": "e32f84845c6f2d0213049f500c9e4993bab46429304748bb8b72ee59ea381fad"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/9/2.ili",
+          "sha256": "1bb17b28b60fe25eb3d3c3369b964a29afa5e2c49afb5fd7282d0beef9e5945c"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/9/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/9/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/9/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/9/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/9/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/9/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: duplicate model; file ignored <repo>/build/reports/stabilization/g2-translations/9/2.ili\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/9/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/9/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:11\n"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/10/0.ili",
+          "sha256": "1bb17b28b60fe25eb3d3c3369b964a29afa5e2c49afb5fd7282d0beef9e5945c"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/10/1.ili",
+          "sha256": "e32f84845c6f2d0213049f500c9e4993bab46429304748bb8b72ee59ea381fad"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/10/2.ili",
+          "sha256": "8f1d3ba4578ec10e10b3d6a324dc51fbe702f74bd84b697c2e78103ac3d3be2a"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/10/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/10/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/10/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS, MISSING_INPUT], diagnosticIds=[diag-4c1e25ee8e1fc49f5b606382, diag-f48132d9d4dbe573e5e913d8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4c1e25ee8e1fc49f5b606382\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/10/2.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":121},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation source model not found/TRANSLATION_SOURCE\"}]},{\"id\":\"diag-f48132d9d4dbe573e5e913d8\",\"code\":\"ILI-RES-0001\",\"severity\":\"ERROR\",\"phase\":\"SOURCE_RESOLUTION\",\"messageKey\":\"diagnostic.resolution.missing\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/10/2.ili\",\"revision\":\"1\",\"startOffset\":74,\"endOffset\":82},\"arguments\":[{\"name\":\"model\",\"kind\":\"IDENTIFIER\",\"value\":\"Original\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/10/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/10/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/10/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: duplicate model; file ignored <repo>/build/reports/stabilization/g2-translations/10/1.ili\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/10/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/10/2.ili>\n<repo>/build/reports/stabilization/g2-translations/10/2.ili:1:The types of the domains F.Num and Original.N do not match.\n...compiler run failed 2026-10-25 04:07:11\n"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/11/0.ili",
+          "sha256": "836db02dacee6c9149d8777e4b57141ef4be1ef2f34d569ce087da032a1b9cd6"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/11/1.ili",
+          "sha256": "e848f67031858d9587f981c7e4ffa333020a5d6a779a083367a4c5275cd74627"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/11/2.ili",
+          "sha256": "dbf7d7112f36ca1f7d8f87c1aed58f38bc09cef30e09ce9de7a456dc2d2caafe"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/11/3.ili",
+          "sha256": "0b912f8536ffe03aee041b155f72ff8aa6fa6318cdc6aae29b155517993478b2"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/11/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/11/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/11/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/11/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/11/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/11/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/11/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/11/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/11/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/11/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/11/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/11/3.ili>\nInfo: ...compiler run done 2026-10-25 04:07:11\n"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/12/0.ili",
+          "sha256": "0b912f8536ffe03aee041b155f72ff8aa6fa6318cdc6aae29b155517993478b2"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/12/1.ili",
+          "sha256": "dbf7d7112f36ca1f7d8f87c1aed58f38bc09cef30e09ce9de7a456dc2d2caafe"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/12/2.ili",
+          "sha256": "e848f67031858d9587f981c7e4ffa333020a5d6a779a083367a4c5275cd74627"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/12/3.ili",
+          "sha256": "836db02dacee6c9149d8777e4b57141ef4be1ef2f34d569ce087da032a1b9cd6"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/12/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/12/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/12/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/12/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/12/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/12/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/12/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/12/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/12/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/12/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/12/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/12/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:12\n"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/13/0.ili",
+          "sha256": "836db02dacee6c9149d8777e4b57141ef4be1ef2f34d569ce087da032a1b9cd6"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/13/1.ili",
+          "sha256": "e848f67031858d9587f981c7e4ffa333020a5d6a779a083367a4c5275cd74627"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/13/2.ili",
+          "sha256": "dbf7d7112f36ca1f7d8f87c1aed58f38bc09cef30e09ce9de7a456dc2d2caafe"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/13/3.ili",
+          "sha256": "a4c57b1f728bca362747ba68b29dddb09061bfb0dc7bc6e2c938c3bd574591e8"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/13/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/13/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/13/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/13/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1d30e04524547aa2bfd724a4, diag-1d5f67587620310fdc333cfc, diag-877b9b5372bb827e5f74474b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1d5f67587620310fdc333cfc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/13/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type target differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-877b9b5372bb827e5f74474b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/13/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-1d30e04524547aa2bfd724a4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/13/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/13/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/13/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/13/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/13/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/13/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/13/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/13/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/13/3.ili>\n<repo>/build/reports/stabilization/g2-translations/13/3.ili:1:The domains of the attributes F.U.C.value and Base.U.C.value do not match.\n...compiler run failed 2026-10-25 04:07:12\n"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/14/0.ili",
+          "sha256": "836db02dacee6c9149d8777e4b57141ef4be1ef2f34d569ce087da032a1b9cd6"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/14/1.ili",
+          "sha256": "e848f67031858d9587f981c7e4ffa333020a5d6a779a083367a4c5275cd74627"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/14/2.ili",
+          "sha256": "dbf7d7112f36ca1f7d8f87c1aed58f38bc09cef30e09ce9de7a456dc2d2caafe"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/14/3.ili",
+          "sha256": "227ace6fcf93c7b2b7082752b8a3a841ab181339c6ba9559d79ed0048cdc3cbf"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/14/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/14/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/14/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/14/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1f09b032c1da916a41d5fa9f, diag-24695521f0009e4ff6605161, diag-90083d84876fd919c433847c, diag-dde0e4f03760c89900dc6fb6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-90083d84876fd919c433847c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/14/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-dde0e4f03760c89900dc6fb6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/14/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]},{\"id\":\"diag-1f09b032c1da916a41d5fa9f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/14/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view basis differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-24695521f0009e4ff6605161\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/14/3.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view formation or selection differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/14/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/14/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/14/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/14/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/14/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/14/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/14/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/14/3.ili>\n<repo>/build/reports/stabilization/g2-translations/14/3.ili:The domains of the attributes F.U.V.a and Base.U.V.a do not match.\n<repo>/build/reports/stabilization/g2-translations/14/3.ili:The object paths do not match.\n<repo>/build/reports/stabilization/g2-translations/14/3.ili:1:The referenced attributes do not match (xx/x).\n<repo>/build/reports/stabilization/g2-translations/14/3.ili:1:The base VIEWs do not match.\n...compiler run failed 2026-10-25 04:07:12\n"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/15/0.ili",
+          "sha256": "c8fe51e61a5493f692b3faaa1a5eb703e405ca6233ce4acd335f6d8d8a39b41d"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/15/1.ili",
+          "sha256": "08342d8a93772696784b0b7d5b97d88ae972460e81044202f01c15b3094dd333"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/15/2.ili",
+          "sha256": "dbf7d7112f36ca1f7d8f87c1aed58f38bc09cef30e09ce9de7a456dc2d2caafe"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/15/3.ili",
+          "sha256": "e848f67031858d9587f981c7e4ffa333020a5d6a779a083367a4c5275cd74627"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/15/4.ili",
+          "sha256": "836db02dacee6c9149d8777e4b57141ef4be1ef2f34d569ce087da032a1b9cd6"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/15/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/15/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/15/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/15/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/15/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/15/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/15/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/15/1.ili>\n<repo>/build/reports/stabilization/g2-translations/15/1.ili:1:base element must be different from translated element null\n  base element must be different from translated element null\n...compiler run failed 2026-10-25 04:07:13\n"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/16/0.ili",
+          "sha256": "486785fef4c9b543939a59ecd552c78cefccd8fb7913b123b1bd6d2493358990"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/16/1.ili",
+          "sha256": "91b3a03c7d13bfdba8bde14eae1aad0a3463b787c63e08133673dd4a09cfc2a9"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/16/2.ili",
+          "sha256": "0b912f8536ffe03aee041b155f72ff8aa6fa6318cdc6aae29b155517993478b2"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/16/3.ili",
+          "sha256": "dbf7d7112f36ca1f7d8f87c1aed58f38bc09cef30e09ce9de7a456dc2d2caafe"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/16/4.ili",
+          "sha256": "38031e8e39a54741609ab51b67f75a4207ef4b25239da18401c4772a9eea4100"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/16/5.ili",
+          "sha256": "2eea454d335f2a5e6cc0f7e0c0cac4a32a5ebea34efcd83dbd007c5ded215b99"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/16/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/16/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/16/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/16/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/16/5.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/16/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/16/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/16/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/16/2.ili>\nInfo: ...compiler run done 2026-10-25 04:07:13\n"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/17/0.ili",
+          "sha256": "e141565344cafa94532e91cb8f2a77b50a43dfaaac52eee9ffabb3f3dd781966"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/17/1.ili",
+          "sha256": "63124cc6ed7f58553779c7b0d17feb5c37632478f82cfca00ffec9b588426b7e"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/17/2.ili",
+          "sha256": "cb00df5bd58505bd242b49535adb45fe0c634fe83f7c4f9490993ddf8431593e"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/17/3.ili",
+          "sha256": "6bd77cdbf500217d7abfa23a2f39f826447b5e08386cdfc9ca6537cd0d1e432b"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/17/4.ili",
+          "sha256": "b0db59a9c743953bd733bc1bdf802a6a63c4340f5903ec621252225d3bc9e24e"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/17/5.ili",
+          "sha256": "e4ed56436a34ba1982e224a017d7cd477f8a29d1b2786a418ff086c0ec764a7b"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/17/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/17/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/17/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/17/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/17/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/17/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/17/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/17/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/17/5.ili>\nInfo: ...compiler run done 2026-10-25 04:07:13\n"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/18/0.ili",
+          "sha256": "b1d28dbd1f50ce6046b82f145a50ace4f679adcfe27491326b3c8279693336c0"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/1.ili",
+          "sha256": "c13e3501c4b232a9c61f12c884291e6f9aca0a6192410e39a588a797fcc45c68"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/2.ili",
+          "sha256": "6c300a44e884b29b4edd04c1fa84550f1bb41f42b79fae8cc8b8659f74fd5b21"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/3.ili",
+          "sha256": "5e2ae985bb2195729e42c550f6687c02122fee1b2f181318daa32fb74bb80e8e"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/4.ili",
+          "sha256": "534e6a1f3b323293b02b4c81ee44a91d107561e750281982f8a34745e91623e5"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/5.ili",
+          "sha256": "e9f6bc441d8694e7df8a13c9ab0c205e4359f5a627e391b558064bb67995e41f"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/6.ili",
+          "sha256": "5c3e1fbabd5659a3467513215e669ce0e458c6597024349f350a716a74b7a345"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/7.ili",
+          "sha256": "aadbcc7caaeedf4a6eccf5f14f8d9a804441540ecb00a240574267a31edc86c2"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/18/8.ili",
+          "sha256": "4ace8d5b7e6fdd652629e7b1d9071ee1788f301ec1113fab752a6b003d8b760a"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/18/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/5.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/6.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/7.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-dca918e98a1163828706a42a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-dca918e98a1163828706a42a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/18/8.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":118},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/18/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/2.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/3.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/4.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/5.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/6.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/7.ili",
+            "<repo>/build/reports/stabilization/g2-translations/18/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/4.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/3.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/2.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/7.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/5.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/6.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/18/8.ili>\nInfo: ...compiler run done 2026-10-25 04:07:13\n"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/19/0.ili",
+          "sha256": "60ef1d192d607f5bf7175e37fe715a83028606662a91a873103652c0835efdf6"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/19/1.ili",
+          "sha256": "3df7a93042bf8c7f5688ea67e22a59f8d1e6fb7c27f04c3fb12d1b30a8737014"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/19/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/19/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8d35d35c25e3f895f0b9a933, diag-bd69ae66a45373691d40dc8a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8d35d35c25e3f895f0b9a933\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/19/0.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":97},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Base\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation dependency has no original model/TRANSLATION_CYCLE\"}]},{\"id\":\"diag-bd69ae66a45373691d40dc8a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/19/1.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":94},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation dependency has no original model/TRANSLATION_CYCLE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/19/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/19/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nloop in ili-files: 0.ili->1.ili->0.ili\n...compiler run failed 2026-10-25 04:07:13\n"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "expected": "succeeded",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/20/0.ili",
+          "sha256": "c5f833237b2c1b8e7ffc89feb6f57644f699de534b924a06972caac81543b1f8"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/20/1.ili",
+          "sha256": "5f05b703a17f3b3e8513389b0c307c4fe413e99489485c49ced40b6cdd4a453c"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/20/2.ili",
+          "sha256": "d011161f8272f06db695150299e91a6c0e3250c9303aa206ed81185a643be724"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/20/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/20/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/20/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/20/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/20/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/20/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: duplicate model; file ignored <repo>/build/reports/stabilization/g2-translations/20/2.ili\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/20/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/20/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:14\n"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "expected": "rejected",
+      "original": false,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/21/0.ili",
+          "sha256": "d011161f8272f06db695150299e91a6c0e3250c9303aa206ed81185a643be724"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/21/1.ili",
+          "sha256": "5f05b703a17f3b3e8513389b0c307c4fe413e99489485c49ced40b6cdd4a453c"
+        },
+        {
+          "path": "build/reports/stabilization/g2-translations/21/2.ili",
+          "sha256": "6e813eb4f84c6f95d43599e9acdaa83976e43f3d533dae99820d226f8c8ad822"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/21/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/21/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/21/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS, MISSING_INPUT], diagnosticIds=[diag-3a59d79fa3938ccb26dd6121, diag-f37790748897a3b40ba4f1ac], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3a59d79fa3938ccb26dd6121\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/21/2.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":121},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation source model not found/TRANSLATION_SOURCE\"}]},{\"id\":\"diag-f37790748897a3b40ba4f1ac\",\"code\":\"ILI-RES-0001\",\"severity\":\"ERROR\",\"phase\":\"SOURCE_RESOLUTION\",\"messageKey\":\"diagnostic.resolution.missing\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-translations/21/2.ili\",\"revision\":\"1\",\"startOffset\":74,\"endOffset\":82},\"arguments\":[{\"name\":\"model\",\"kind\":\"IDENTIFIER\",\"value\":\"Original\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/21/0.ili",
+            "<repo>/build/reports/stabilization/g2-translations/21/1.ili",
+            "<repo>/build/reports/stabilization/g2-translations/21/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: duplicate model; file ignored <repo>/build/reports/stabilization/g2-translations/21/1.ili\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/21/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/21/2.ili>\n<repo>/build/reports/stabilization/g2-translations/21/2.ili:1:The types of the domains F.Num and Original.N do not match.\n...compiler run failed 2026-10-25 04:07:14\n"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "expected": "succeeded",
+      "original": true,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/22/0.ili",
+          "sha256": "39a8f3f6bbd5287f0608d3208fc53a799f188d43bac43c5f65ec9ba3e59e0629"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/22/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/22/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/22/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:14\n"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "expected": "succeeded",
+      "original": true,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/23/0.ili",
+          "sha256": "d5705603281688cf11b88f3b18c2dc1b9e0692f436bccc0fe53e443c86556477"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-translations/23/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/23/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/23/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:14\n"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "expected": "succeeded",
+      "original": true,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/24/0.ili",
+          "sha256": "6ec704d575fefe5e94b7aec3ececb2fd0326b60704e85b7d5831dbfce7b901db"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "ModelB",
+            "<repo>/build/reports/stabilization/g2-translations/24/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/24/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/24/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:15\n"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "expected": "succeeded",
+      "original": true,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/25/0.ili",
+          "sha256": "d005ed759227bb3823a7e68ae576846120e17c0ccf90ab53f033c2bb5cc7f924"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "ModelB",
+            "<repo>/build/reports/stabilization/g2-translations/25/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/25/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/25/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:15\n"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "expected": "succeeded",
+      "original": true,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-translations/26/0.ili",
+          "sha256": "bbe28fac1295bb07930e51c9fc991d4477377a25db951832dbd540066ecdebd6"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "ModelB",
+            "<repo>/build/reports/stabilization/g2-translations/26/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-translations/26/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-translations/26/0.ili>\nInfo: ...compiler run done 2026-10-25 04:07:15\n"
+        }
+      }
+    }
+  ],
+  "artifacts": {
+    "interlis-cli/build/install/interlis-cli/lib/ST4-4.3.4.jar": "f927ac384c46d749f8b5ec68972a53aed21e00313509299616edb73bfa15ff33",
+    "interlis-cli/build/install/interlis-cli/lib/antlr-runtime-3.5.3.jar": "68bf9f5a33dfcb34033495c587e6236bef4e37aa6612919f5b1e843b90669fb9",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-4.13.2.jar": "e6f0b10d2ad206f338afe16867fc47148b6729d6e3a260ea28379b91f03a3657",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-cli/build/install/interlis-cli/lib/icu4j-72.1.jar": "3df572b240a68d13b5cd778ad2393e885d26411434cd8f098ac5987ea2e64ce3",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-cli-0.2.0-SNAPSHOT.jar": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "621472af52245a8227aba47a9fbc0182d42f8c46956a054de6d38e6aa87e442f",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-model-0.2.0-SNAPSHOT.jar": "455ac4c3f478285ce6ad8cfd7aaa729c1d9b634c6166a0277ba10d0708507e77",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "a89a620b4465f8fcf9e587243a076d456edda7ca1e2c121da9831c34a54be378",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "c952e3ca1e8a4f8f735abb9b5d8ecffcf1e3f867acc5d1053a6a40fc638ec593",
+    "interlis-cli/build/install/interlis-cli/lib/org.abego.treelayout.core-1.0.3.jar": "fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326"
+  },
+  "processErrors": {
+    "own": 0,
+    "ili2c": 0
+  },
+  "interpretation": "27 own typed expected outcomes; 23 reference agreements. The four reference differences concern unused language variants (reference rejects) and conflicting transitive mappings (reference accepts). These are observations with separate scope/causes, not new suite exceptions. Original two follow-on probes and all three unchanged enum originals agree. Own CLI uses explicit --root F / ModelB; reference receives all named files.",
+  "reproduce": "Generate cases from translatedImportCases through the final return in interlis-wasm-teavm/stabilization-contract.cjs, preserving verifySources roots. Run built CLI check --json --root <root> <files> and ili2c 5.6.9 -o0 <files> separately. Missing-version probes require MISSING_INPUT plus SOURCE_ERRORS, all other negative probes require SOURCE_ERRORS; never accept infrastructure/implementation errors."
+}

@@ -64,6 +64,8 @@ def main() -> int:
                 data[name] = child.text
         if data.get("File"):
             entries[data["File"]] = data
+    pinned = json.loads(OUT.read_text())
+    expected = {entry["file"]: entry for entry in pinned["models"]}
     models = []
     for file, version, runtimes in SELECTED:
         metadata = entries.get(file)
@@ -71,6 +73,8 @@ def main() -> int:
             raise SystemExit(f"model not present in pinned index: {file}")
         target = CACHE / file.replace("/", "__")
         fetch(BASE + file, target)
+        if file not in expected or sha256(target) != expected[file]["sha256"]:
+            raise SystemExit(f"corpus content mismatch: {file}; explicit repinning required")
         models.append({
             "file": file,
             "model": metadata["Name"],
@@ -89,7 +93,10 @@ def main() -> int:
         "selection": "thirteen standalone, compilable 2.3/2.4 models; WASM/browser subset flagged per model",
         "note": "Model bytes are cached outside the repository; the manifest pins them.",
     }
-    OUT.write_text(json.dumps(manifest, indent=2) + "\n")
+    report = ROOT / "build" / "reports" / "performance" / "corpus-verification.json"
+    report.parent.mkdir(parents=True, exist_ok=True)
+    report.write_text(json.dumps({"status": "passed", "models": models,
+                                  "scope": "historical seed corpus, not full P3"}, indent=2) + "\n")
     print(json.dumps({"models": len(models), "indexSha256": actual}, indent=2))
     return 0
 

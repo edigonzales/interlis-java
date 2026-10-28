@@ -2,6 +2,7 @@ package guru.interlis.compiler.query;
 
 /** Completion provenance category. */
 public enum CompletionKind {
+    GRAPHIC, DRAWING_RULE,
     /** The {@code MODEL} constant. */
     MODEL,
     /** The {@code TOPIC} constant. */
@@ -18,6 +19,10 @@ public enum CompletionKind {
     ATTRIBUTE,
     /** The {@code ROLE} constant. */
     ROLE,
+    /** Runtime parameter, separate from ordinary member names. */
+    PARAMETER,
+    LINE_FORM,
+    METADATA_BASKET, METAOBJECT,
     /** The {@code CONSTRAINT} constant. */
     CONSTRAINT,
     /** The {@code KEYWORD} constant. */

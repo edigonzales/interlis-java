@@ -25,16 +25,11 @@ function serve(root) {
 }
 
 (async () => {
+  fs.rmSync('build/browser-results.json', {force: true});
   const {chromium, firefox, webkit} = require('playwright');
   const root = path.resolve('build/web');
   const server = await serve(root);
   const url = `http://127.0.0.1:${server.address().port}/`;
-  const home = process.env.HOME;
-  const cached = {
-    chromium: path.join(home, 'Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'),
-    firefox: path.join(home, 'Library/Caches/ms-playwright/firefox-1543/firefox/Nightly.app/Contents/MacOS/firefox'),
-    webkit: path.join(home, 'Library/Caches/ms-playwright/webkit-2359/pw_run.sh')
-  };
   const matrix = [
     ['chromium', chromium],
     ['firefox', firefox],
@@ -44,14 +39,20 @@ function serve(root) {
   for (const [name, type] of matrix) {
     let browser;
     try {
-      const options = {headless: true};
-      if (cached[name] && fs.existsSync(cached[name])) options.executablePath = cached[name];
-      browser = await type.launch(options);
+      browser = await type.launch({headless: true});
       const page = await browser.newPage();
       await page.goto(url, {waitUntil: 'load'});
       await page.waitForFunction(() => Boolean(window.interlisBrowserTest), {timeout: 30000});
-      const result = await page.evaluate(() => window.interlisBrowserTest.runContract());
-      results.push({browser: name, status: 'passed', result});
+      let timeout;
+      const result = await Promise.race([
+        page.evaluate(() => window.interlisBrowserTest.runContract()),
+        new Promise((_, reject) => {
+          timeout = setTimeout(() => reject(new Error('browser contract exceeded 60 seconds')), 60000);
+        })
+      ]).finally(() => clearTimeout(timeout));
+      results.push({browser: name, browserVersion: browser.version(), node: process.version,
+        playwright: require('playwright/package.json').version,
+        status: 'passed', result});
       console.log(`${name.toUpperCase()} PASS ${JSON.stringify(result)}`);
     } catch (error) {
       results.push({browser: name, status: 'failed', error: String(error)});

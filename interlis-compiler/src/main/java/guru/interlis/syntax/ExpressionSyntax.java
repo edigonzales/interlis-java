@@ -2,9 +2,9 @@ package guru.interlis.syntax;
 
 /** Closed expression-syntax hierarchy. */
 public sealed interface ExpressionSyntax extends SyntaxNode permits LiteralExpressionSyntax,
-        PathExpressionSyntax, BinaryExpressionSyntax, UnaryExpressionSyntax,
+        AttributeConstantExpressionSyntax, ParameterExpressionSyntax, PathExpressionSyntax, BinaryExpressionSyntax, UnaryExpressionSyntax,
         DefinedExpressionSyntax, ConstantExpressionSyntax, UndefinedExpressionSyntax,
         ParenthesizedExpressionSyntax, FunctionCallExpressionSyntax, BuiltinFunctionExpressionSyntax,
         EnumerationConstantExpressionSyntax, ClassConstantExpressionSyntax, GenericConstantExpressionSyntax,
-        UnsupportedExpressionSyntax {
+        ObjectSetExpressionSyntax, InspectionExpressionSyntax, UnsupportedExpressionSyntax {
 }

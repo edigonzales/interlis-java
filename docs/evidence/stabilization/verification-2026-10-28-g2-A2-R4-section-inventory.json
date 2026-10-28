@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "R4 section-level norm crosswalk and paragraph worklist",
+  "acceptance": "SECTION_LEVEL_WORKLIST_NOT_ACCEPTED",
+  "atomization": "PENDING",
+  "sections": 311,
+  "entries": 2721,
+  "compilerRuleParagraphs": 1651,
+  "counts": {
+    "COMPILER_RULE": 1651,
+    "EXPLANATORY": 681,
+    "LATER_EXECUTION": 385,
+    "OUTSIDE_COMPILER": 4
+  },
+  "inventory": "docs/evidence/stabilization/g2-norm-inventory.json",
+  "inventorySha256": "966e43f65051d4d03c47f7d6e5c77d346978b86c76298701a1fe7cf825972dbb",
+  "crosswalk": "docs/evidence/stabilization/g2-norm-crosswalk.json",
+  "crosswalkSha256": "e8002f834123ae47be83f8a7c52722eea918825c577b2129927f2321e1e7d2bb",
+  "matrix": "g2-rule-matrix.json",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "sourceInventory": "g2-source-inventory.json",
+  "sourceInventorySha256": "722761ffbf4b55faee4b2e2d0fef9e3b7ae32648cb70390badbe5c21e0da000f",
+  "tools": {
+    "g2_norm_inventory.py": "5c6c1818c4a93684de4d97bbc2e5810aaad51be78883cbbe4a6256819f73c963",
+    "g2_norm_crosswalk.py": "e2e79d3e7141694e227f5f0b509a470ace691c2cced292edfaafc3488d2f123f",
+    "test_g2_norm_inventory.py": "431923a5fa56cc68921d15d10abb9f8a910c96073c9871c03e04cd9fc6f304f5",
+    "test_g2_norm_crosswalk.py": "cef5179c75101d4d431d840bb3fe1891911509f5e469546e0ce2a068b7b4bd5b"
+  },
+  "commands": [
+    "build/g2-venv/bin/python tools/reference/g2_norm_inventory.py --out build/reports/g2/A2/R4/norm-paragraphs.json --norm23 build/norms/ili23.pdf --norm24 build/norms/ili24.pdf",
+    "build/g2-venv/bin/python tools/reference/g2_norm_crosswalk.py --out-crosswalk build/reports/g2/A2/R4/norm-crosswalk.json --inventory build/reports/g2/A2/R4/norm-paragraphs.json --out-inventory build/reports/g2/A2/R4/norm-inventory-classified.json",
+    "./gradlew g2EvidenceTest --rerun-tasks --console=plain"
+  ],
+  "logs": {
+    "inventory": "build/reports/g2/A2/R4/norm-inventory.log",
+    "inventorySha256": "1253651e32da7c10cc8ad0eded18ce3a83c3b2b6a17a07289e002bb5957e1574",
+    "crosswalk": "build/reports/g2/A2/R4/norm-crosswalk.log",
+    "crosswalkSha256": "43f991918505d928b29e2eea30e681fb22d82308bb7520e454bf338411cb1cbe",
+    "evidence": "build/reports/g2/A2/R4/g2-evidence-test.log",
+    "evidenceSha256": "102b75cf962511cea2c2aec99370051b84c4f076820bf65f3e8fd503dbe1f6ea"
+  },
+  "pypdf": "6.10.0",
+  "normPins": {
+    "2.3": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+    "2.4": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069"
+  },
+  "technicalTests": 42,
+  "compilerTests": 614,
+  "compilerFailures": 0,
+  "compilerErrors": 0,
+  "compilerSkipped": 0,
+  "acceptanceLimits": [
+    "Section-level owner assignment only; no paragraph is atomized into a concrete condition.",
+    "No new normative expectation, XFAIL or user decision.",
+    "Independent A2 review has not accepted R4."
+  ],
+  "remaining": [
+    "Atomize the 1651 compiler-rule paragraphs into concrete conditions with positive/negative/model/query acceptance.",
+    "Resolve the 18 normative reference exceptions with the user.",
+    "Resolve TYPE_MODEL_STRUCTURE_BOUNDARY and NUMERIC_SCALING_PAIR_AND_CONSTANT_PROFILE with the user.",
+    "Complete A2 overall review, A3 and phase A review."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN"
+}

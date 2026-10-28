@@ -9,9 +9,15 @@ import java.util.Optional;
  * @param sourceModel canonical source model name
  * @param sourceVersion optional canonical source version
  * @param language optional translation language tag
+ * @param sourceTarget bound original model; empty only in an erroneous analysis
+ * @param correspondences immutable structural correspondences in declaration order,
+ *        followed by actually used import correspondences; all IDs belong to the
+ *        owning graph. Empty if structural binding failed. A checked schema also
+ *        requires semantic comparison of these structures to have succeeded.
  */
 public record ModelTranslation(String sourceModel, Optional<String> sourceVersion,
-                               Optional<String> language) {
+                               Optional<String> language, Optional<SymbolId> sourceTarget,
+                               java.util.List<TranslationLink> correspondences) {
     /** Creates a validated instance. */
     public ModelTranslation {
         Objects.requireNonNull(sourceModel, "sourceModel");
@@ -20,5 +26,7 @@ public record ModelTranslation(String sourceModel, Optional<String> sourceVersio
         }
         sourceVersion = Objects.requireNonNull(sourceVersion, "sourceVersion");
         language = Objects.requireNonNull(language, "language");
+        sourceTarget = Objects.requireNonNull(sourceTarget, "sourceTarget");
+        correspondences = java.util.List.copyOf(correspondences);
     }
 }

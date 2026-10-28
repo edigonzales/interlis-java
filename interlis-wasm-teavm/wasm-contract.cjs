@@ -87,7 +87,14 @@ END Wasm.
   if (!JSON.stringify(diagram).includes('9007199254740993.0010')) {
     throw new Error('exact decimal literal missing from diagram');
   }
+  const closed = JSON.parse(api.handle(JSON.stringify({
+    protocol: 'interlis.compiler', protocolVersion: '1.0', requestId: 'close',
+    sessionId, operation: 'closeSession', params: {}
+  })));
+  if (closed.status !== 'ok') throw new Error('closeSession failed');
+  const stabilizationCases = await require('./stabilization-contract.cjs')(api);
   const summary = {
+    stabilizationCases,
     status: 'passed',
     tool: capabilities.result.toolVersion,
     nodes: diagram.result.nodes.length,
@@ -98,7 +105,7 @@ END Wasm.
   fs.mkdirSync('build', {recursive: true});
   fs.writeFileSync('build/wasm-contract-result.json', JSON.stringify(summary, null, 2));
   console.log('wasm-contract PASS ' + JSON.stringify(summary));
-  process.kill(process.pid, 'SIGKILL');
+  process.exitCode = 0;
 })().catch(error => {
   console.error('wasm-contract FAIL', error);
   try {
@@ -108,5 +115,5 @@ END Wasm.
     }, null, 2));
   } catch (ignored) {
   }
-  process.kill(process.pid, 'SIGKILL');
+  process.exitCode = 1;
 });

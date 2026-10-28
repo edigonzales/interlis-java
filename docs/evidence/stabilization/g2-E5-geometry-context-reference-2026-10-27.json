@@ -1,0 +1,1268 @@
+{
+  "cases": [
+    {
+      "name": "tolerance-leading-zero-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.1;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >00.1;END F.",
+      "expected": "succeeded",
+      "sha256": "263a15120c785703250147d155375e1c91315d09cb68cbb02e7cf84db84a700c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/0.ili>\nInfo: ...compiler run done 2026-10-27 07:29:08\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "tolerance-different-value-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.1;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.2;END F.",
+      "expected": "rejected",
+      "sha256": "d757b29f2b952bc2566dbaf2be02c13d125f1006215bf5fe2d7cb60ab91ea360",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c1ba19ef0d2ce3f93adca294], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c1ba19ef0d2ce3f93adca294\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/1.ili\",\"revision\":\"1\",\"startOffset\":193,\"endOffset\":388},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation domain type differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/1.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/1.ili:1:The types of the domains F.Line and Original.Line do not match.\n...compiler run failed 2026-10-27 07:29:08\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "inline-context-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "dc6f76a42dc74efb27c0c8326a8c6614e57f111fb80f1bca12952f5031909cb6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/2.ili>\nInfo: ...compiler run done 2026-10-27 07:29:09\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "inline-other-line-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->second OF a);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "d4bc238153f1f4b891eac67735d5c3966519352f4f8902de7ecd46597b393f1c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7b97f99098944b703a73f356], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7b97f99098944b703a73f356\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/3.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":923},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/3.ili>\nInfo: ...compiler run done 2026-10-27 07:29:09\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "inline-other-vertex-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX OtherCoord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX OtherCoord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "5471b48d10bb25ce31c723ad848c1047e887c021f957836b2592ee2ead58d911",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-eb3b8b6b8e3d12f26e8aa3ab], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-eb3b8b6b8e3d12f26e8aa3ab\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/4.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":932},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/4.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/4.ili:1:The domains of the attributes F.T.A.first and Original.T.A.first do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/4.ili:1:The domains of the attributes F.T.B.first and Original.T.B.first do not match.\n...compiler run failed 2026-10-27 07:29:09\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "inline-other-source-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~B;=n:=INTERLIS.elementCount(INSPECTION OF B->first OF a);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "c9ff1c08b1da4596e4c313484f93414cf13c1b11c92773f21aff7cb64ed28796",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/5.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a49774da36cbcf8ff71bdef6, diag-b0ee547df045c7a3c7945fbf], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a49774da36cbcf8ff71bdef6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/5.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":922},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-b0ee547df045c7a3c7945fbf\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/5.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":922},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view basis differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/5.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/5.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/5.ili:The domains of the attributes F.T.V.a and Original.T.V.a do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/5.ili:1:The base VIEWs do not match.\n...compiler run failed 2026-10-27 07:29:10\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "inline-invalid-restriction-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a->label);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "a01e9732fce8b09c0f8a1336b25b35732e896bed4f3a02f95ec1d522b7f63db3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7739976c53667724b3fa02eb, diag-a2e398c033db0c8d64979f80], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7739976c53667724b3fa02eb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/6.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":929},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-a2e398c033db0c8d64979f80\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/6.ili\",\"revision\":\"1\",\"startOffset\":824,\"endOffset\":917},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"V\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"inspection restriction requires one object specializing its source/INSPECTION_FACTOR_RESTRICTION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/6.ili>\nInfo: ...compiler run done 2026-10-27 07:29:10\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "named-context-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "f73acf329810ffa6b82b1e00a8cf1f4752bb7e1d5cff0e314a64732e52d28099",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/7.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/7.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/7.ili:The domains of the attributes F.T.I.l and Original.T.I.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/7.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\n...compiler run failed 2026-10-27 07:29:11\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "named-other-line-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->second;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "37ac2c1060b9e3cad0593584cc546d54eac1c4de0d6c7aa629c9eb3ef31b2d27",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2f5306d94a686abf1bcd5f98, diag-edd38c19674572942e99b6ea], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2f5306d94a686abf1bcd5f98\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/8.ili\",\"revision\":\"1\",\"startOffset\":452,\"endOffset\":907},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation inspection context differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-edd38c19674572942e99b6ea\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/8.ili\",\"revision\":\"1\",\"startOffset\":452,\"endOffset\":907},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view formation or selection differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/8.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/8.ili:The domains of the attributes F.T.I.l and Original.T.I.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/8.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\nbuild/reports/stabilization/g2-e5-geometry-context/processes/8.ili:1:The referenced attributes do not match (second/first).\n...compiler run failed 2026-10-27 07:29:11\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "constraint-context-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->first OF THIS)>0;END A;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->first OF THIS)>0;END A;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "28c5377758986afd367aa8e2461a571e74ca25ff50779ba875154e8e859a4e7b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/9.ili>\nInfo: ...compiler run done 2026-10-27 07:29:12\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "constraint-other-line-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->first OF THIS)>0;END A;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->second OF THIS)>0;END A;END T;END F.",
+      "expected": "rejected",
+      "sha256": "09c39823e90026d7cb959bfa1897b7807748b43a97ce9db54b3e65e33a647b3e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c86e6b8545c12e498041b382], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c86e6b8545c12e498041b382\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/10.ili\",\"revision\":\"1\",\"startOffset\":371,\"endOffset\":745},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation constraint targets differ/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/10.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/10.ili>\nInfo: ...compiler run done 2026-10-27 07:29:12\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "custom-segment-context-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Teil EXTENDS INTERLIS.LineSegment=zusatz:TEXT*20;MANDATORY CONSTRAINT DEFINED(zusatz);END Teil;LINE FORM Kurve:Teil;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Kurve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "e2bed548d9298d0c8059d67eeab4e97f952939bf7a791fe61302179371fb14ef",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/11.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/11.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/11.ili:The domains of the attributes F.T.I.l and Original.T.I.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/11.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\n...compiler run failed 2026-10-27 07:29:12\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "custom-segment-other-constraint-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Teil EXTENDS INTERLIS.LineSegment=zusatz:TEXT*20;MANDATORY CONSTRAINT NOT DEFINED(zusatz);END Teil;LINE FORM Kurve:Teil;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Kurve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "b442c3d69470b7dd7a91fcef309e0243a7fb402a0d5ea394b0e290fab960ce1d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8520072ea4b807517c9cf11b, diag-ac6f0b03887d1e227318d3f3, diag-e0a1b606422cb81f1530ba3a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ac6f0b03887d1e227318d3f3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/12.ili\",\"revision\":\"1\",\"startOffset\":456,\"endOffset\":911},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation constraint structure differs/TRANSLATION_CONSTRAINT\"}]},{\"id\":\"diag-8520072ea4b807517c9cf11b\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/12.ili\",\"revision\":\"1\",\"startOffset\":621,\"endOffset\":640},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*20\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"}]},{\"id\":\"diag-e0a1b606422cb81f1530ba3a\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/12.ili\",\"revision\":\"1\",\"startOffset\":625,\"endOffset\":632},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"DEFINED\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"<unknown>\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/12.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/12.ili:1:expecting '(', found 'DEFINED'\nbuild/reports/stabilization/g2-e5-geometry-context/processes/12.ili:1:expecting ';', found '('\nbuild/reports/stabilization/g2-e5-geometry-context/processes/12.ili:1:The number of elements in F.Teil and Original.Segment do not match.\n...compiler run failed 2026-10-27 07:29:13\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "surface-context-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Attrs=label:TEXT;END Attrs;STRUCTURE OtherAttrs=label:TEXT;END OtherAttrs;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01 LINE ATTRIBUTES Attrs;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Attrs=label:TEXT;END Attrs;STRUCTURE OtherAttrs=label:TEXT;END OtherAttrs;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01 LINE ATTRIBUTES Attrs;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "098e06cf0ec39dbbd22ef28841623ae6ad2c5e616249ead0b07c012fdd9a5952",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/13.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/13.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/13.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/13.ili:The referenced classes do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/13.ili:The object paths do not match.\n...compiler run failed 2026-10-27 07:29:13\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "surface-other-target-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Attrs=label:TEXT;END Attrs;STRUCTURE OtherAttrs=label:TEXT;END OtherAttrs;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01 LINE ATTRIBUTES Attrs;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Attrs=label:TEXT;END Attrs;STRUCTURE OtherAttrs=label:TEXT;END OtherAttrs;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01 LINE ATTRIBUTES OtherAttrs;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "343ee97ddbe9821e8f7ede0f3f1cac00613a98380512554871a234ef63b152ba",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-609d0198ee5cb2bec7645f37, diag-ffbd0c09bd59edb51d007c9c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ffbd0c09bd59edb51d007c9c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/14.ili\",\"revision\":\"1\",\"startOffset\":433,\"endOffset\":873},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-609d0198ee5cb2bec7645f37\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/14.ili\",\"revision\":\"1\",\"startOffset\":433,\"endOffset\":873},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation inspection context differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/14.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/14.ili:1:The domains of the attributes F.T.A.region and Original.T.A.region do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/14.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/14.ili:The referenced classes do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/14.ili:The object paths do not match.\n...compiler run failed 2026-10-27 07:29:14\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "area-context-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->region;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->region;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "0add8dc9274877f3be025054d9e87e0ca5a4e8620ece69a20cb88b4fa7763749",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/15.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/15.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/15.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\n...compiler run failed 2026-10-27 07:29:14\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "area-other-target-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->region;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->other;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "ab6205757c1af0c24cd28c45fac0f83861362354de3b688e67986c707d90c21a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-28bc75a9a3aa78c0930599c4, diag-b88d1446a5a0590f7c8a9689], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-28bc75a9a3aa78c0930599c4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/16.ili\",\"revision\":\"1\",\"startOffset\":436,\"endOffset\":873},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation inspection context differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-b88d1446a5a0590f7c8a9689\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/16.ili\",\"revision\":\"1\",\"startOffset\":436,\"endOffset\":873},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view formation or selection differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/16.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/16.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/16.ili:1:The referenced attributes do not match (other/region).\n...compiler run failed 2026-10-27 07:29:15\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "two-custom-vertex-contexts-2.3",
+      "languageVersion": "2.3",
+      "text": "INTERLIS 2.3;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN P2=COORD 0.00..100.00,0.00..100.00;P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX P2;second:POLYLINE WITH(Curve) VERTEX P3;END A;VIEW I2 INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I2;VIEW I3 INSPECTION OF l~A->second;=p:=l->Segments[FIRST]->SegmentEndPoint;END I3;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN P2=COORD 0.00..100.00,0.00..100.00;P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX P2;second:POLYLINE WITH(Curve) VERTEX P3;END A;VIEW I2 INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I2;VIEW I3 INSPECTION OF l~A->second;=p:=l->Segments[FIRST]->SegmentEndPoint;END I3;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "ee4d03004cf68cf03c9c9d3656261d9743edaa79195d00596ec0cd79fb083908",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/17.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/17.ili:The domains of the attributes F.T.I2.l and Original.T.I2.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/17.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\nbuild/reports/stabilization/g2-e5-geometry-context/processes/17.ili:The domains of the attributes F.T.I3.l and Original.T.I3.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/17.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\n...compiler run failed 2026-10-27 07:29:15\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "tolerance-leading-zero-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.1;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >00.1;END F.",
+      "expected": "succeeded",
+      "sha256": "bf45c816c8edfab2e851c2ccd01d3f87f9c737f8ca8314bf3d968d99ccc90248",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/18.ili>\nInfo: ...compiler run done 2026-10-27 07:29:15\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "tolerance-different-value-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.1;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.0..10.0,0.0..10.0;Line=POLYLINE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.2;END F.",
+      "expected": "rejected",
+      "sha256": "274df9e0cc7507f7ed429d250a1106c8e324741c460cf6b7570fc0a22d5a053e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/19.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-aef4b9d381d8710f5e7d8b06], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-aef4b9d381d8710f5e7d8b06\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/19.ili\",\"revision\":\"1\",\"startOffset\":193,\"endOffset\":388},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation domain type differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/19.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/19.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/19.ili:1:The types of the domains F.Line and Original.Line do not match.\n...compiler run failed 2026-10-27 07:29:16\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "inline-context-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "cb0888404735e3dd8692037e952000de119064a806f29e6b154d5a352d9e700f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/20.ili>\nInfo: ...compiler run done 2026-10-27 07:29:16\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "inline-other-line-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->second OF a);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "e7632c946fc4684218620c1bade2e4ec829430463ef19e2aef4f6736200d7a3f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/21.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-470bf54d7d468a2d996f84d3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-470bf54d7d468a2d996f84d3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/21.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":923},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/21.ili>\nInfo: ...compiler run done 2026-10-27 07:29:17\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "inline-other-vertex-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX OtherCoord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX OtherCoord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "92c5c2ee4d580620cb3b761b68aa2ac931e1f3fccb5d6465a2822e4e03d467c8",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/22.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c548c71ab4c49f431fd5712d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c548c71ab4c49f431fd5712d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/22.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":932},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/22.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/22.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/22.ili:1:The domains of the attributes F.T.A.first and Original.T.A.first do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/22.ili:1:The domains of the attributes F.T.B.first and Original.T.B.first do not match.\n...compiler run failed 2026-10-27 07:29:17\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "inline-other-source-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~B;=n:=INTERLIS.elementCount(INSPECTION OF B->first OF a);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "06e21b84a272148831aab06619b5aadafb05be8f085ee5d4c9ff411a9ba9108b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/23.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7bbcca00ae495520ba7a9fcf, diag-85231cc9db48f7feb03cf119], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-85231cc9db48f7feb03cf119\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/23.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":922},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-7bbcca00ae495520ba7a9fcf\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/23.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":922},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view basis differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/23.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/23.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/23.ili:The domains of the attributes F.T.V.a and Original.T.V.a do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/23.ili:1:The base VIEWs do not match.\n...compiler run failed 2026-10-27 07:29:18\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "inline-invalid-restriction-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a);END V;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW V PROJECTION OF a~A;=n:=INTERLIS.elementCount(INSPECTION OF A->first OF a->label);END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "213e0b4040bd623d4a5b38014b987eb5e5b4e27f1a4babcef27acbc950bb8bc0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c47ae71bd92cce169b57f1bb, diag-fe1f18e54d3aff2db80fb053], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c47ae71bd92cce169b57f1bb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/24.ili\",\"revision\":\"1\",\"startOffset\":460,\"endOffset\":929},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-fe1f18e54d3aff2db80fb053\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/24.ili\",\"revision\":\"1\",\"startOffset\":824,\"endOffset\":917},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"V\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"inspection restriction requires one object specializing its source/INSPECTION_FACTOR_RESTRICTION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/24.ili>\nInfo: ...compiler run done 2026-10-27 07:29:19\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "named-context-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "d6f25e7814437c9eff7a0f9ffbabac918f36046a2c50f35aad96374c29041659",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/25.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/25.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/25.ili:The domains of the attributes F.T.I.l and Original.T.I.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/25.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\n...compiler run failed 2026-10-27 07:29:21\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "named-other-line-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END A;CLASS B=label:TEXT;first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;END B;VIEW I INSPECTION OF l~A->second;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "305d636138aba1a978b8d451d29b1d6a6efc9456673dfab3022db704d113b60a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ab5f0d15343e877613051ae3, diag-dfaea05d5920da7d3d487f76], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ab5f0d15343e877613051ae3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/26.ili\",\"revision\":\"1\",\"startOffset\":452,\"endOffset\":907},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation inspection context differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-dfaea05d5920da7d3d487f76\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/26.ili\",\"revision\":\"1\",\"startOffset\":452,\"endOffset\":907},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view formation or selection differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/26.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/26.ili:The domains of the attributes F.T.I.l and Original.T.I.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/26.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\nbuild/reports/stabilization/g2-e5-geometry-context/processes/26.ili:1:The referenced attributes do not match (second/first).\n...compiler run failed 2026-10-27 07:29:25\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "constraint-context-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->first OF THIS)>0;END A;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->first OF THIS)>0;END A;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "c216ac42264e84af5f0122a4daa06679cbd89189054bbf4c9a33ff4177aa989c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/27.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/27.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/27.ili>\nInfo: ...compiler run done 2026-10-27 07:29:27\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "constraint-other-line-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->first OF THIS)>0;END A;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(STRAIGHTS) VERTEX Coord;second:POLYLINE WITH(STRAIGHTS) VERTEX Coord;MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->second OF THIS)>0;END A;END T;END F.",
+      "expected": "rejected",
+      "sha256": "7ab97d4e54f7cf77716f84f2d41ac79be7e18b367d4c5f01c62e4cb10365d600",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6662206e1ce02be0498a580f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6662206e1ce02be0498a580f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/28.ili\",\"revision\":\"1\",\"startOffset\":371,\"endOffset\":745},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation constraint targets differ/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/28.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/28.ili>\nInfo: ...compiler run done 2026-10-27 07:29:29\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "custom-segment-context-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Teil EXTENDS INTERLIS.LineSegment=zusatz:TEXT*20;MANDATORY CONSTRAINT DEFINED(zusatz);END Teil;LINE FORM Kurve:Teil;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Kurve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "abf016cc57c1d82f41e67f96ce2abe57055257a2dcd69ba5e6f9d8f426431163",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/29.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/29.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/29.ili:The domains of the attributes F.T.I.l and Original.T.I.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/29.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\n...compiler run failed 2026-10-27 07:29:31\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "custom-segment-other-constraint-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Teil EXTENDS INTERLIS.LineSegment=zusatz:TEXT*20;MANDATORY CONSTRAINT NOT DEFINED(zusatz);END Teil;LINE FORM Kurve:Teil;DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=first:POLYLINE WITH(Kurve) VERTEX Coord;END A;VIEW I INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "84efa1aba0ddb68f36eb6aeb591ef9e31ab75fc5a2c1ecb50cb73853665a3763",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1ff66de880a8f7f0159f627f, diag-48245ed4e2c1262330f64b4f, diag-b726e7229e943afacbcd584c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1ff66de880a8f7f0159f627f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/30.ili\",\"revision\":\"1\",\"startOffset\":456,\"endOffset\":911},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation constraint structure differs/TRANSLATION_CONSTRAINT\"}]},{\"id\":\"diag-b726e7229e943afacbcd584c\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/30.ili\",\"revision\":\"1\",\"startOffset\":621,\"endOffset\":640},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*20\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"}]},{\"id\":\"diag-48245ed4e2c1262330f64b4f\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/30.ili\",\"revision\":\"1\",\"startOffset\":625,\"endOffset\":632},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"DEFINED\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"<unknown>\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/30.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/30.ili:1:expecting '(', found 'DEFINED'\nbuild/reports/stabilization/g2-e5-geometry-context/processes/30.ili:1:expecting ';', found '('\nbuild/reports/stabilization/g2-e5-geometry-context/processes/30.ili:1:The number of elements in F.Teil and Original.Segment do not match.\n...compiler run failed 2026-10-27 07:29:35\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "surface-context-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "684bb0505cc601aa8c8853ac20d3fe5ad812c3f2a24a0cc8311cdf73a64ef49f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/31.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/31.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/31.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/31.ili:The referenced classes do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/31.ili:The object paths do not match.\n...compiler run failed 2026-10-27 07:29:38\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "surface-other-target-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=region:SURFACE WITH(STRAIGHTS) VERTEX OtherCoord WITHOUT OVERLAPS >0.01;END A;VIEW I INSPECTION OF edge~A->region;=ALL OF edge;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "3099f66482442384d4c228ade4737a0f878fab3e1e00ce9c31b1e948efc6004a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-19118532a0be428fcf979c49, diag-55b0aa9e43d6ff4d4ec4105c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-55b0aa9e43d6ff4d4ec4105c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/32.ili\",\"revision\":\"1\",\"startOffset\":327,\"endOffset\":661},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation attribute type, override or derivation differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-19118532a0be428fcf979c49\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/32.ili\",\"revision\":\"1\",\"startOffset\":327,\"endOffset\":661},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation inspection context differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/32.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/32.ili:1:The domains of the attributes F.T.A.region and Original.T.A.region do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/32.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/32.ili:The referenced classes do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/32.ili:The object paths do not match.\n...compiler run failed 2026-10-27 07:29:42\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "area-context-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->region;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->region;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "889b8882acdf1d91d2d5fc5b788a5a5b4c3d780a45c315dbae86937b19a12a2d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/33.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/33.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/33.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\n...compiler run failed 2026-10-27 07:29:45\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "area-other-target-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->region;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=DOMAIN Coord=COORD 0.00..100.00,0.00..100.00;OtherCoord=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=label:TEXT;region:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;other:AREA WITH(STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS >0.01;END A;VIEW I AREA INSPECTION OF edge~A->other;=left:=THISAREA->label;right:=THATAREA->label;END I;END T;END F.",
+      "expected": "rejected",
+      "sha256": "b95394b2f2633758fd2ef91e5541376be63773d5a6f41af2b2420a453c58f897",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-28a102e864d41080907e8f7a, diag-e77cf3af0b19064bebaca5e2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e77cf3af0b19064bebaca5e2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/34.ili\",\"revision\":\"1\",\"startOffset\":436,\"endOffset\":873},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation inspection context differs/TRANSLATION_REFERENCE\"}]},{\"id\":\"diag-28a102e864d41080907e8f7a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e5-geometry-context/processes/34.ili\",\"revision\":\"1\",\"startOffset\":436,\"endOffset\":873},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation view formation or selection differs/TRANSLATION_REFERENCE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/34.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/34.ili:The domains of the attributes F.T.I.edge and Original.T.I.edge do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/34.ili:1:The referenced attributes do not match (other/region).\n...compiler run failed 2026-10-27 07:29:48\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "two-custom-vertex-contexts-2.4",
+      "languageVersion": "2.4",
+      "text": "INTERLIS 2.4;CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\"=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN P2=COORD 0.00..100.00,0.00..100.00;P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX P2;second:POLYLINE WITH(Curve) VERTEX P3;END A;VIEW I2 INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I2;VIEW I3 INSPECTION OF l~A->second;=p:=l->Segments[FIRST]->SegmentEndPoint;END I3;END T;END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original[\"1\"]=STRUCTURE Segment EXTENDS INTERLIS.LineSegment=extra:TEXT*20;MANDATORY CONSTRAINT DEFINED(extra);END Segment;LINE FORM Curve:Segment;DOMAIN P2=COORD 0.00..100.00,0.00..100.00;P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000;TOPIC T=CLASS A=first:POLYLINE WITH(Curve) VERTEX P2;second:POLYLINE WITH(Curve) VERTEX P3;END A;VIEW I2 INSPECTION OF l~A->first;=p:=l->Segments[FIRST]->SegmentEndPoint;END I2;VIEW I3 INSPECTION OF l~A->second;=p:=l->Segments[FIRST]->SegmentEndPoint;END I3;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "1f5102683a0ced2ad02825bb5a84da1515f97a7def8f93ace9dd2169b2eeeaf0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/35.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e5-geometry-context/processes/35.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e5-geometry-context/processes/35.ili>\nbuild/reports/stabilization/g2-e5-geometry-context/processes/35.ili:The domains of the attributes F.T.I2.l and Original.T.I2.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/35.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\nbuild/reports/stabilization/g2-e5-geometry-context/processes/35.ili:The domains of the attributes F.T.I3.l and Original.T.I3.l do not match.\nbuild/reports/stabilization/g2-e5-geometry-context/processes/35.ili:The referenced attributes do not match (Segments[-1]/Segments[-1]).\n...compiler run failed 2026-10-27 07:29:51\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    }
+  ],
+  "ownExpected": 36,
+  "total": 36,
+  "referenceProcessErrors": 0,
+  "referenceAgreements": 20
+}

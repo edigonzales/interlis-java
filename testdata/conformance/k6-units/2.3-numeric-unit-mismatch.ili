@@ -1,0 +1,1 @@
+INTERLIS 2.3; MODEL F AT "https://example.org" VERSION "1" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [s]; END F.

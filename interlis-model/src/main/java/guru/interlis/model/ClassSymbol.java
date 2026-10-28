@@ -8,7 +8,7 @@ import java.util.Optional;
  * Class declaration.
  *
  * @param header symbol header
- * @param baseType optional base type
+ * @param baseType optional base class or structure identifier
  * @param members member identifiers
  * @param constraints the {@code constraints} component
  */

@@ -19,7 +19,7 @@ class CoordinateReferenceSystemContractTest {
     void referenceSystemIsPreserved() {
         SourceText source = new SourceText(new SourceId("memory:/coord.ili"),
                 new SourceRevision(1), """
-                INTERLIS 2.3;
+                INTERLIS 2.4;
                 MODEL C AT "https://example.interlis.ch" VERSION "1.0" =
                   TOPIC T =
                     CLASS P =

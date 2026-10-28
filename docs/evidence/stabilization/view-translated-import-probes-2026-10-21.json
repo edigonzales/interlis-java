@@ -1,0 +1,72 @@
+{
+  "recordedAt": "2026-10-21T08:56:32.453448+00:00",
+  "cases": [
+    {
+      "version": "2.3",
+      "source": "INTERLIS 2.3;\nMODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; END T; END Original.\nMODEL Translated AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC T = CLASS A = x : TEXT; END A; END T; END Translated.\nMODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Original; TOPIC U = DEPENDS ON Original.T; VIEW V PROJECTION OF a~Original.T.A; = ALL OF a; END V; END U; END Base.\nMODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Translated; TOPIC U = DEPENDS ON Translated.T; VIEW V PROJECTION OF a~Translated.T.A; = ALL OF a; END V; END U; END F.\n",
+      "sourceSha256": "39a8f3f6bbd5287f0608d3208fc53a799f188d43bac43c5f65ec9ba3e59e0629",
+      "expected": "succeeded",
+      "section": "B1-B3 translation dependencies",
+      "current": {
+        "command": [
+          "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "build/reports/stabilization/translated-import-probe.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/translated-import-probe.ili:5:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=F, rule=translation attribute type, override or derivation differs/TRANSLATION_REFERENCE)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/translated-import-probe.ili:5:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=F, rule=translation view basis differs/TRANSLATION_REFERENCE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/stabilization/translated-import-probe.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/translated-import-probe.ili>\nInfo: ...compiler run done 2026-10-21 10:56:28\n"
+      }
+    },
+    {
+      "version": "2.4",
+      "source": "INTERLIS 2.4;\nMODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; END T; END Original.\nMODEL Translated AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC T = CLASS A = x : TEXT; END A; END T; END Translated.\nMODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Original; TOPIC U = DEPENDS ON Original.T; VIEW V PROJECTION OF a~Original.T.A; = ALL OF a; END V; END U; END Base.\nMODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Translated; TOPIC U = DEPENDS ON Translated.T; VIEW V PROJECTION OF a~Translated.T.A; = ALL OF a; END V; END U; END F.\n",
+      "sourceSha256": "d5705603281688cf11b88f3b18c2dc1b9e0692f436bccc0fe53e443c86556477",
+      "expected": "succeeded",
+      "section": "B1-B3 translation dependencies",
+      "current": {
+        "command": [
+          "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "check",
+          "build/reports/stabilization/translated-import-probe.ili"
+        ],
+        "exitCode": 1,
+        "stdout": "",
+        "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/translated-import-probe.ili:5:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=F, rule=translation attribute type, override or derivation differs/TRANSLATION_REFERENCE)\nfile:///Users/stefan/sources/interlis-java/build/reports/stabilization/translated-import-probe.ili:5:1: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=F, rule=translation view basis differs/TRANSLATION_REFERENCE)\n"
+      },
+      "ili2c": {
+        "command": [
+          "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+          "-jar",
+          "/Users/stefan/.cache/interlis-java/ili2c.jar",
+          "-o0",
+          "build/reports/stabilization/translated-import-probe.ili"
+        ],
+        "exitCode": 0,
+        "stdout": "",
+        "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/translated-import-probe.ili>\nInfo: ...compiler run done 2026-10-21 10:56:32\n"
+      }
+    }
+  ],
+  "scope": "Additional open regressions, not part of the frozen suite",
+  "requirementIds": [
+    "META-006",
+    "SEM-010",
+    "SEM-014",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "nextAction": "Build a scope-correct correspondence of the actually selected translated import closures; retain imported target identities in view bases and derivations."
+}

@@ -80,7 +80,8 @@ function serve(root) {
     warmupPerModel: 1, corpus: 'docs/evidence/p3/geo-corpus.json',
     corpusIndexSha256: manifest.index.sha256, results,
     notes: 'Playwright browser pages; warmup excluded.'};
-  fs.writeFileSync(path.join(repoRoot, 'docs/evidence/p3/performance-browser.json'),
+  fs.mkdirSync(path.join(repoRoot, 'build/reports/performance'), {recursive: true});
+  fs.writeFileSync(path.join(repoRoot, 'build/reports/performance/performance-browser.json'),
     JSON.stringify(result, null, 2) + '\n');
   if (results.some(r => r.status !== 'passed')) process.exitCode = 1;
 })().catch(error => {

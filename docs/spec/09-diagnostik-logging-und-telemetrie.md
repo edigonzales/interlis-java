@@ -201,6 +201,7 @@ Diese Codes sind **neue normative Codes des geplanten Projekts**. Sie sind keine
 | `ILI-SYN-0004` | Unerwarteter Inhalt nach vollständiger Starteingabe / ERROR | PARSING | `actual: TOKEN`; erster nicht akzeptierter Restbereich |
 | `ILI-SYN-0005` | Nicht unterstützte Sprachversion / ERROR | PARSING | `actual: TEXT`, `supported: IDENTIFIER_LIST`; Versionsliteral |
 | `ILI-SYN-0006` | Syntaxkonstrukt in gewählter Sprachversion unzulässig / ERROR | PARSING | `construct: TEXT`, `language: TEXT`; konkretes Konstrukt |
+| `ILI-SYN-0007` | Wiederholte Eigenschaft / WARNING | PARSING | `property: TOKEN`; Bereich der wiederholten Eigenschaft |
 | `ILI-RES-0001` | Angefordertes oder importiertes Modell fehlt / ERROR | SOURCE_RESOLUTION | `model: IDENTIFIER`; Importposition, falls vorhanden |
 | `ILI-RES-0002` | Mehrdeutige Modellauflösung / ERROR | SOURCE_RESOLUTION | `model: IDENTIFIER`, `candidates: IDENTIFIER_LIST`; Importposition oder global |
 | `ILI-RES-0003` | Quelle konnte nicht bereitgestellt werden / ERROR | SOURCE_RESOLUTION | `source: TEXT`, `reason: TEXT`; URI ohne Credentials, optional global |

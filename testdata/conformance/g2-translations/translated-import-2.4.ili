@@ -1,0 +1,5 @@
+INTERLIS 2.4;
+MODEL Original AT "https://example.org" VERSION "1" = TOPIC T = CLASS A = x : TEXT; END A; END T; END Original.
+MODEL Translated AT "https://example.org" VERSION "1" TRANSLATION OF Original ["1"] = TOPIC T = CLASS A = x : TEXT; END A; END T; END Translated.
+MODEL Base AT "https://example.org" VERSION "1" = IMPORTS Original; TOPIC U = DEPENDS ON Original.T; VIEW V PROJECTION OF a~Original.T.A; = ALL OF a; END V; END U; END Base.
+MODEL F AT "https://example.org" VERSION "1" TRANSLATION OF Base ["1"] = IMPORTS Translated; TOPIC U = DEPENDS ON Translated.T; VIEW V PROJECTION OF a~Translated.T.A; = ALL OF a; END V; END U; END F.

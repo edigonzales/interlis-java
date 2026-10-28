@@ -41,6 +41,27 @@ final class ImportBinder {
                 continue;
             }
             sources.add(model.sourceId());
+            // A translation depends on the original model and its imports, but does not
+            // import its namespace. Keep this dependency separate from import edges.
+            model.syntax().translationSource().ifPresent(name -> {
+                List<ModelDecl> candidates = index.byName(name.text()).stream()
+                        .filter(candidate -> model.syntax().translationVersion().isEmpty()
+                                || model.syntax().translationVersion().orElseThrow().equals(candidate.version()))
+                        .toList();
+                if (candidates.size() == 1) {
+                    queue.addLast(candidates.getFirst());
+                } else {
+                    boolean ambiguous = candidates.size() > 1;
+                    DiagnosticDraft draft = DiagnosticDraft.of(new DiagnosticCode(ambiguous ? "ILI-RES-0002" : "ILI-RES-0001"),
+                                    Severity.ERROR, Phase.SOURCE_RESOLUTION,
+                                    ambiguous ? "diagnostic.resolution.ambiguous" : "diagnostic.resolution.missing")
+                            .at(name.range()).argument(new DiagnosticArgument.IdentifierArgument("model", name.text()));
+                    if (ambiguous) draft = draft.argument(new DiagnosticArgument.IdentifierListArgument("candidates",
+                            candidates.stream().map(c -> c.sourceId().value() + ":" + c.name()).toList()));
+                    diagnostics.add(collector.emit(draft));
+                    reasons.add(ambiguous ? RejectionReason.AMBIGUOUS_INPUT : RejectionReason.MISSING_INPUT);
+                }
+            });
             for (ImportSyntax site : model.syntax().imports()) {
                 if ("INTERLIS".equals(site.modelName())) {
                     continue;

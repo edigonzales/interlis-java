@@ -1,0 +1,2977 @@
+{
+  "cases": [
+    {
+      "name": "constant-0.00001[m]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>0.00001[m];END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "0c6e5f9aed8fbcf4f9ad0a45972960327e789d84bc1808b8aa8a72d30e2d9266",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/0.ili>\nInfo: ...compiler run done 2026-10-25 17:31:57\n"
+        }
+      }
+    },
+    {
+      "name": "constant-PI[m]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>PI[m];END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "a48b17b8d498eb7996fb0f17a8bc41ff61d0c3bdd7b1ca01bab0aefba651ba8a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/1.ili>\nInfo: ...compiler run done 2026-10-25 17:31:59\n"
+        }
+      }
+    },
+    {
+      "name": "constant-LNBASE[m]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>LNBASE[m];END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "1923370b5c09743f0ea0aca9794650757f64822278894505bd845b692544e2e2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/2.ili>\nInfo: ...compiler run done 2026-10-25 17:32:02\n"
+        }
+      }
+    },
+    {
+      "name": "constant-1[Missing]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>1[Missing];END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "afbafda4df5654db42f0abe6386e73be055ffa32cfc3f13e65e05404b28fea1b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-027a5c20942fd2ed4b16abee, diag-108690d9ff78d22db01ee4dd, diag-566734d436dfb2d397ae8446], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-108690d9ff78d22db01ee4dd\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/3.ili\",\"revision\":\"1\",\"startOffset\":259,\"endOffset\":275},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC,ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]},{\"id\":\"diag-566734d436dfb2d397ae8446\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/3.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":274},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]},{\"id\":\"diag-027a5c20942fd2ed4b16abee\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/3.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":274},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@238\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Numeric constant requires a known unit/CONSTANT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/3.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/3.ili:1:There is neither a UNIT \"Missing\" in TOPIC F.T nor in MODEL F.\n...compiler run failed 2026-10-25 17:32:06\n"
+        }
+      }
+    },
+    {
+      "name": "constant-1[L]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>1[L];END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "c80ad7ea3ebe8b1397c92c0c0357164fed6b2403f500d9b3cd44e0355bfd04f5",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-510468598f461cf1cd82f480, diag-d3c031ed3fb198a46bb9dcb9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-510468598f461cf1cd82f480\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/4.ili\",\"revision\":\"1\",\"startOffset\":259,\"endOffset\":269},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC,ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]},{\"id\":\"diag-d3c031ed3fb198a46bb9dcb9\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/4.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":268},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@238\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Numeric constant requires a concrete unit/CONSTANT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/4.ili>\nInfo: ...compiler run done 2026-10-25 17:32:08\n"
+        }
+      }
+    },
+    {
+      "name": "constant-1[Point]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>1[Point];END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "61b64aee8950c2fcbd40a302268f99231061a06311c6558e7233eb08845930fb",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/5.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0c06a4af581e84e5274df1f5, diag-c0eddeaa1cfadbab92c0aefb, diag-ee0916255927036dd78f4c7f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ee0916255927036dd78f4c7f\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/5.ili\",\"revision\":\"1\",\"startOffset\":259,\"endOffset\":273},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC,ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]},{\"id\":\"diag-0c06a4af581e84e5274df1f5\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/5.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":272},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Point\"}]},{\"id\":\"diag-c0eddeaa1cfadbab92c0aefb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/5.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":272},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@238\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Numeric constant requires a known unit/CONSTANT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/5.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/5.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/5.ili:1:There is neither a UNIT \"Point\" in TOPIC F.T nor in MODEL F.\n...compiler run failed 2026-10-25 17:32:12\n"
+        }
+      }
+    },
+    {
+      "name": "convert-value-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10[km]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "f3beeb6fb80d66aa5e691b15bd27823a5000b70b91bfaae946dc761d05519ce9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/6.ili>\nInfo: ...compiler run done 2026-10-25 17:32:15\n"
+        }
+      }
+    },
+    {
+      "name": "convert-1[m]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10[km]:=INTERLIS.convertUnit(1[m]);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "0c3d9a667d377c98f71fe6ce200d0bdce235add4d35a60e4edd9acb4159d430c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/7.ili>\nInfo: ...compiler run done 2026-10-25 17:32:17\n"
+        }
+      }
+    },
+    {
+      "name": "convert-PI[m]-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10[km]:=INTERLIS.convertUnit(PI[m]);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "b717db8cdab6b8b7e6c41fa9a567d83854b81c166b0552cc592100b5c4dba63f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/8.ili>\nInfo: ...compiler run done 2026-10-25 17:32:20\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-m-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[m]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "bcee8f783ce867b0884b38e5eacd46a0f5c153b33ca29049f44646ed84c13731",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/9.ili>\nInfo: ...compiler run done 2026-10-25 17:32:23\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-km-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[km]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "4bf5c8ed103704a081da1941bcea68de443019749407e576cda1af0003d279e0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/10.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/10.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/10.ili>\nInfo: ...compiler run done 2026-10-25 17:32:26\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-Other-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[Other]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "1f6af30eb06c224d20ecf8d8ed36770431202cc72882f2f4fad14d0ce85c0ed3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/11.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8558f2adb68da0e584aa0a50], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8558f2adb68da0e584aa0a50\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/11.ili\",\"revision\":\"1\",\"startOffset\":204,\"endOffset\":231},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/11.ili>\nInfo: ...compiler run done 2026-10-25 17:32:28\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-s-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[s]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "23fcd52a3ad6d0e13ffb3afdeadb6d489032028e526ebc89e24064eb1613c69a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-af5130bc0d5202d051089a8b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-af5130bc0d5202d051089a8b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/12.ili\",\"revision\":\"1\",\"startOffset\":200,\"endOffset\":227},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/12.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/12.ili>\nInfo: ...compiler run done 2026-10-25 17:32:30\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-unitless-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "dc8ef12688de2aee4e486fda3adab77b8c083e1f4572bbf208e47c7c2c06d0f2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/13.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-43fbeaa72f83ebaa25e1863f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-43fbeaa72f83ebaa25e1863f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/13.ili\",\"revision\":\"1\",\"startOffset\":197,\"endOffset\":224},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/13.ili>\nInfo: ...compiler run done 2026-10-25 17:32:32\n"
+        }
+      }
+    },
+    {
+      "name": "convert-missing-source-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=result(TRANSIENT):0..100[m]:=INTERLIS.convertUnit(1);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "c626252a0cd4e8b512a9fef9655cfaf31ec3e657b758590321286813abc28ae2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b72ad452b760596307aec259], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b72ad452b760596307aec259\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/14.ili\",\"revision\":\"1\",\"startOffset\":180,\"endOffset\":203},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/14.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/14.ili>\nInfo: ...compiler run done 2026-10-25 17:32:34\n"
+        }
+      }
+    },
+    {
+      "name": "convert-unitless-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10;result(TRANSIENT):0..100:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "cb2290fe937bb383b60eedee44ae93e5968295e9328ca68fef72d918a26ebc79",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/15.ili>\nInfo: ...compiler run done 2026-10-25 17:32:37\n"
+        }
+      }
+    },
+    {
+      "name": "convert-comparison-zero-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10[m];MANDATORY CONSTRAINT INTERLIS.convertUnit(value)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "33b331d6d44ba3fd9c2d0dc63918332f3ec8f186a8859191f373170af48e2f94",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/16.ili>\nInfo: ...compiler run done 2026-10-25 17:32:40\n"
+        }
+      }
+    },
+    {
+      "name": "convert-comparison-km-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];other:0..10[km];MANDATORY CONSTRAINT INTERLIS.convertUnit(value)>other;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "d2fca2bff041ea6cf0970e8e43a09c94f11cd7a76660212df39af776dda22e54",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/17.ili>\nInfo: ...compiler run done 2026-10-25 17:32:43\n"
+        }
+      }
+    },
+    {
+      "name": "convert-comparison-s-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];other:0..10[s];MANDATORY CONSTRAINT INTERLIS.convertUnit(value)>other;END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "9c29f671c8a203ee93e7e180cef3ce0f4cae70a2bb62c8b8aad552cf34d43145",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/18.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-166ee843dcf17961fa5e74ff, diag-6679b4e77dafd10502321326], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-166ee843dcf17961fa5e74ff\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/18.ili\",\"revision\":\"1\",\"startOffset\":205,\"endOffset\":232},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@184\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]},{\"id\":\"diag-6679b4e77dafd10502321326\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/18.ili\",\"revision\":\"1\",\"startOffset\":205,\"endOffset\":238},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR,NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/18.ili>\nInfo: ...compiler run done 2026-10-25 17:32:46\n"
+        }
+      }
+    },
+    {
+      "name": "convert-formal-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; FUNCTION check(value:0..10[km]):BOOLEAN;TOPIC T=CLASS C=value:0..10000[m];MANDATORY CONSTRAINT F.check(INTERLIS.convertUnit(value));END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "8848d730a23cc0c95f5dbcdd9cc72119f093ce0f76119d33e58658976a308f80",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/19.ili>\nInfo: ...compiler run done 2026-10-25 17:32:48\n"
+        }
+      }
+    },
+    {
+      "name": "convert-wrong-argument-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=MANDATORY CONSTRAINT INTERLIS.convertUnit(#true)>0;END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "aa876dc22213722f296bfcc8ce5d75ea5e6c352c18287d4562f9aaa927d98c81",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/20.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f22bf2680c9d325ec3a641d8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f22bf2680c9d325ec3a641d8\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/20.ili\",\"revision\":\"1\",\"startOffset\":193,\"endOffset\":198},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/20.ili>\nInfo: ...compiler run done 2026-10-25 17:32:50\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-direct-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreas(ALL,UNDEFINED,>>surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "4e01cad2b4ce358a6fb79732e400cc80b6065b5b240e33b8e5567a4978d38e36",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/21.ili>\nInfo: ...compiler run done 2026-10-25 17:32:52\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-nested-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>S->surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "69dd5ba7df47cb2ded09fa1ec1f80aadd88e4f17f46fc0d16a7abf5c4ac1bfff",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/22.ili>\nInfo: ...compiler run done 2026-10-25 17:32:54\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-wrong-owner-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "884f66879d935b3118006f18187ac557254d0e696accf269f38a1f7357d9e4fb",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/23.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-fae98cde4935d5252d1044a8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-fae98cde4935d5252d1044a8\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/23.ili\",\"revision\":\"1\",\"startOffset\":406,\"endOffset\":415},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@363\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/23.ili>\nInfo: ...compiler run done 2026-10-25 17:32:57\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-wrong-value-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>S->text);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "4e5c4d4c27514a23b9354592cbef0c40433c7b0da0edcb8726518a75c1e31283",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a1e8faca773f389343d6aaca], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a1e8faca773f389343d6aaca\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/24.ili\",\"revision\":\"1\",\"startOffset\":338,\"endOffset\":347},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@295\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/24.ili>\nInfo: ...compiler run done 2026-10-25 17:32:58\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-arity-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreas(ALL,UNDEFINED);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "80ef7f89285e3cc2963fcc4f43f1825327e18a3e67e7254c6b7c9b476704b266",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f8cde75817e542d545b02571], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f8cde75817e542d545b02571\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/25.ili\",\"revision\":\"1\",\"startOffset\":153,\"endOffset\":185},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"2 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"3 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/25.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/25.ili:1:The invocation of FUNCTION INTERLIS.areAreas is not correct. There should be 3 arguments.\n  The invocation of FUNCTION INTERLIS.areAreas is not correct. There should be 3 arguments.\nbuild/reports/stabilization/g2-e4-function-contexts/processes/25.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 17:33:00\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-direct-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,UNDEFINED,>>surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "099d6e2356c1a2f84aaa78c12be6d519447ec27d612646ea6588c1546020593e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-eb055b6a87783832f5348d31], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-eb055b6a87783832f5348d31\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/26.ili\",\"revision\":\"1\",\"startOffset\":206,\"endOffset\":275},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@206\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreasWithoutGaps/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/26.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/26.ili>\nInfo: ...compiler run done 2026-10-25 17:33:02\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-nested-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,>>bag,>>S->surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "77df698c610f91eab65573d95d1990dea2a2664fec90278631a5e11d7396e4c1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/27.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-12ab6aecb22bf388097d9477], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-12ab6aecb22bf388097d9477\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/27.ili\",\"revision\":\"1\",\"startOffset\":295,\"endOffset\":363},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@295\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreasWithoutGaps/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/27.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/27.ili>\nInfo: ...compiler run done 2026-10-25 17:33:03\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-wrong-owner-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,>>bag,>>surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "6db922ca668b6b3b2fc6e62a60faba463b5901f3803e51b008af96b44ae6f2d9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-cc9796f1a29e0159b24e91aa], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cc9796f1a29e0159b24e91aa\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/28.ili\",\"revision\":\"1\",\"startOffset\":363,\"endOffset\":428},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@363\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreasWithoutGaps/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/28.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/28.ili>\nInfo: ...compiler run done 2026-10-25 17:33:05\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-wrong-value-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,>>bag,>>S->text);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "a7648ba34595f286850af516c281563e68f07de5ab611edc3a99c9f026c3353d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4708617e63a03d0f0ca9f70b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4708617e63a03d0f0ca9f70b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/29.ili\",\"revision\":\"1\",\"startOffset\":295,\"endOffset\":360},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@295\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreasWithoutGaps/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/29.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/29.ili>\nInfo: ...compiler run done 2026-10-25 17:33:06\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-arity-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,UNDEFINED);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "5dac870b70cacba9941dde5579b6410f12d9c13ce661ab1aaf524ba80a165ece",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-923b27cbc52ebb0233098b31], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-923b27cbc52ebb0233098b31\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/30.ili\",\"revision\":\"1\",\"startOffset\":138,\"endOffset\":197},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@138\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreasWithoutGaps/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/30.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/30.ili:1:The invocation of FUNCTION INTERLIS.areAreasWithoutGaps is not correct. There should be 3 arguments.\n  The invocation of FUNCTION INTERLIS.areAreasWithoutGaps is not correct. There should be 3 arguments.\nbuild/reports/stabilization/g2-e4-function-contexts/processes/30.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 17:33:08\n"
+        }
+      }
+    },
+    {
+      "name": "dependent-formal-False-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; FUNCTION check(objects:OBJECTS OF ANYCLASS;attr:ATTRIBUTE OF @objects RESTRICTION(SURFACE)):BOOLEAN; TOPIC T=CLASS Other=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;END Other;CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT F.check(ALL,>>surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "c794bf15ae9894bacaa13f61d7dcbc8a8b0d94c799f48889ba85bc72fe923df8",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/31.ili>\nInfo: ...compiler run done 2026-10-25 17:33:09\n"
+        }
+      }
+    },
+    {
+      "name": "dependent-formal-True-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; FUNCTION check(objects:OBJECTS OF ANYCLASS;attr:ATTRIBUTE OF @objects RESTRICTION(SURFACE)):BOOLEAN; TOPIC T=CLASS Other=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;END Other;CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT F.check(ALL,>>Other->surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "dce71954d0f3f9d22338fe4b4f8782c9dcdc5ec63969053498eff6321a0060e5",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-eefe378a35d185ddeba3b089], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-eefe378a35d185ddeba3b089\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/32.ili\",\"revision\":\"1\",\"startOffset\":424,\"endOffset\":440},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@397\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/32.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/32.ili>\nInfo: ...compiler run done 2026-10-25 17:33:11\n"
+        }
+      }
+    },
+    {
+      "name": "constant-0.00001[m]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>0.00001[m];END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "2757830b0c04c8da6c9c5245f303bc0207669ee4832bb04434eb9e338a931d44",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/33.ili>\nInfo: ...compiler run done 2026-10-25 17:33:12\n"
+        }
+      }
+    },
+    {
+      "name": "constant-PI[m]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>PI[m];END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "fde004798bee34f982e3c17fd2294152d0dfe83254104d46c8c9890fc4012b82",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/34.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/34.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/34.ili>\nInfo: ...compiler run done 2026-10-25 17:33:13\n"
+        }
+      }
+    },
+    {
+      "name": "constant-LNBASE[m]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>LNBASE[m];END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "b37398fab0c8ddc51e7f20e05a7619b7fef0c894208f7428eaf8ab9ccdd05913",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/35.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/35.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/35.ili>\nInfo: ...compiler run done 2026-10-25 17:33:15\n"
+        }
+      }
+    },
+    {
+      "name": "constant-1[Missing]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>1[Missing];END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "51c455714e5e065de14d48071ffc9145df5ecb4b280435a626d254c32e3b5fd8",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-45e9fb5e6d57613870ab610b, diag-7235e7043136275591a39605, diag-9b89b734ce91fa77f271bbb3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7235e7043136275591a39605\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/36.ili\",\"revision\":\"1\",\"startOffset\":259,\"endOffset\":275},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC,ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]},{\"id\":\"diag-9b89b734ce91fa77f271bbb3\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/36.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":274},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]},{\"id\":\"diag-45e9fb5e6d57613870ab610b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/36.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":274},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@238\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Numeric constant requires a known unit/CONSTANT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/36.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/36.ili:1:There is neither a UNIT \"Missing\" in TOPIC F.T nor in MODEL F.\n...compiler run failed 2026-10-25 17:33:16\n"
+        }
+      }
+    },
+    {
+      "name": "constant-1[L]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>1[L];END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "87995de8ad3004de17d5662c0efa21969ac5c999b74be59451e8c295c2d74a7e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/37.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-73f04292ff6b48eb2745bd89, diag-e0cb0f1271f163ddefabd7aa], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e0cb0f1271f163ddefabd7aa\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/37.ili\",\"revision\":\"1\",\"startOffset\":259,\"endOffset\":269},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC,ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]},{\"id\":\"diag-73f04292ff6b48eb2745bd89\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/37.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":268},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@238\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Numeric constant requires a concrete unit/CONSTANT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/37.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/37.ili>\nInfo: ...compiler run done 2026-10-25 17:33:17\n"
+        }
+      }
+    },
+    {
+      "name": "constant-1[Point]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=value:-100000.00000..100000.00000[m];MANDATORY CONSTRAINT value>1[Point];END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "06fbde555c6fedbde760d1f97f4b7de1534ab0a2b3dfbb083c3994c111f112e2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/38.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3068b5478a9409a8f23bdce0, diag-975b284623aea436b938ef16, diag-b2832bd36f366bd862eae85b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b2832bd36f366bd862eae85b\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/38.ili\",\"revision\":\"1\",\"startOffset\":259,\"endOffset\":273},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC,ERROR\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]},{\"id\":\"diag-975b284623aea436b938ef16\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/38.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":272},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Point\"}]},{\"id\":\"diag-3068b5478a9409a8f23bdce0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/38.ili\",\"revision\":\"1\",\"startOffset\":267,\"endOffset\":272},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@238\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Numeric constant requires a known unit/CONSTANT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/38.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/38.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/38.ili:1:There is neither a UNIT \"Point\" in TOPIC F.T nor in MODEL F.\n...compiler run failed 2026-10-25 17:33:18\n"
+        }
+      }
+    },
+    {
+      "name": "convert-value-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10[km]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "2475a54ce9dcccedc78c2d41354e64eedf3922b4e81efaebf00644870a4bdd33",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/39.ili>\nInfo: ...compiler run done 2026-10-25 17:33:20\n"
+        }
+      }
+    },
+    {
+      "name": "convert-1[m]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10[km]:=INTERLIS.convertUnit(1[m]);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "8900a211c8e2b22adede33557e026046e2d4bf1338a62d25a513fafd68ecb106",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/40.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/40.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/40.ili>\nInfo: ...compiler run done 2026-10-25 17:33:21\n"
+        }
+      }
+    },
+    {
+      "name": "convert-PI[m]-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10[km]:=INTERLIS.convertUnit(PI[m]);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "befa99931f4d41e16374a67158d913840a9cfb65a0d0e6a2103caedf6c9256e4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/41.ili>\nInfo: ...compiler run done 2026-10-25 17:33:22\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-m-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[m]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "eaaea729848c496b44feec93580bfb591fb4f2e421fd216d88f3b618715f5fb9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/42.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/42.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/42.ili>\nInfo: ...compiler run done 2026-10-25 17:33:23\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-km-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[km]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "6bab6a2ee2c04163d53e7641055ad92e03cedcb8fab917759945234d2f9438ce",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/43.ili>\nInfo: ...compiler run done 2026-10-25 17:33:24\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-Other-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[Other]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "5e2642e8b0ca9c29b8a56af3171c10f46e6e21f032445bd20986729e329ddca6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/44.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d0255f43aa94814ef031eddb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d0255f43aa94814ef031eddb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/44.ili\",\"revision\":\"1\",\"startOffset\":204,\"endOffset\":231},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/44.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/44.ili>\nInfo: ...compiler run done 2026-10-25 17:33:25\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-s-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000[s]:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "e05ea1c79dff6d234b7895aa73464d03a2aa8dbd49e47f09aa66723ac85d9d3f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/45.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-bc88912ae75439cb3462c415], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-bc88912ae75439cb3462c415\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/45.ili\",\"revision\":\"1\",\"startOffset\":200,\"endOffset\":227},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/45.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/45.ili>\nInfo: ...compiler run done 2026-10-25 17:33:26\n"
+        }
+      }
+    },
+    {
+      "name": "convert-target-unitless-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];result(TRANSIENT):0..10000:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "cdc4237b51259e02e529e52d846c3879e1eb483ba946acf3eef06b05b3a5424f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/46.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-61658f7bb8b4418001ad0162], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-61658f7bb8b4418001ad0162\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/46.ili\",\"revision\":\"1\",\"startOffset\":197,\"endOffset\":224},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/46.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/46.ili>\nInfo: ...compiler run done 2026-10-25 17:33:27\n"
+        }
+      }
+    },
+    {
+      "name": "convert-missing-source-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=result(TRANSIENT):0..100[m]:=INTERLIS.convertUnit(1);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "66675ab9197e862e811ea9941ba91f766c39188446dfc2d2124432c371d75e5c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/47.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-213b125d9e6ea88b4ce2042f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-213b125d9e6ea88b4ce2042f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/47.ili\",\"revision\":\"1\",\"startOffset\":180,\"endOffset\":203},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"result\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/47.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/47.ili>\nInfo: ...compiler run done 2026-10-25 17:33:28\n"
+        }
+      }
+    },
+    {
+      "name": "convert-unitless-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10;result(TRANSIENT):0..100:=INTERLIS.convertUnit(value);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "d98ac4ee1efa7e2636989b75d0e101abcff6ce5493a1fdf6a9d2cfa529e24f83",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/48.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/48.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/48.ili>\nInfo: ...compiler run done 2026-10-25 17:33:29\n"
+        }
+      }
+    },
+    {
+      "name": "convert-comparison-zero-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10[m];MANDATORY CONSTRAINT INTERLIS.convertUnit(value)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "93137a790eb239fe426630a0fb3f2aad70a14a44a9256b8cee08cda3f2ccb705",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/49.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/49.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/49.ili>\nInfo: ...compiler run done 2026-10-25 17:33:30\n"
+        }
+      }
+    },
+    {
+      "name": "convert-comparison-km-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];other:0..10[km];MANDATORY CONSTRAINT INTERLIS.convertUnit(value)>other;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "91a1998abf65e44478258e3a1b348a15b209956c9d03ace733a5db6fd27de30e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/50.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/50.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/50.ili>\nInfo: ...compiler run done 2026-10-25 17:33:31\n"
+        }
+      }
+    },
+    {
+      "name": "convert-comparison-s-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=value:0..10000[m];other:0..10[s];MANDATORY CONSTRAINT INTERLIS.convertUnit(value)>other;END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "32a90ea3a2b9d96bf9078b595affdd8166ed9079c5f3524adfcf6fb962e485cc",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/51.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-38fc3790ee1dba6b7a21e031, diag-c477a506ec2b6c6854cfc095], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c477a506ec2b6c6854cfc095\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/51.ili\",\"revision\":\"1\",\"startOffset\":205,\"endOffset\":232},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@184\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"convertUnit source and destination need a common conversion unit/CONVERT_UNIT\"}]},{\"id\":\"diag-38fc3790ee1dba6b7a21e031\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/51.ili\",\"revision\":\"1\",\"startOffset\":205,\"endOffset\":238},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR,NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/51.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/51.ili>\nInfo: ...compiler run done 2026-10-25 17:33:32\n"
+        }
+      }
+    },
+    {
+      "name": "convert-formal-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; FUNCTION check(value:0..10[km]):BOOLEAN;TOPIC T=CLASS C=value:0..10000[m];MANDATORY CONSTRAINT F.check(INTERLIS.convertUnit(value));END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "47dc635543a8c02dfbd9fd40fe10a8c7dc25e2efb29bff408518574ecc5f1985",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/52.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/52.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/52.ili>\nInfo: ...compiler run done 2026-10-25 17:33:33\n"
+        }
+      }
+    },
+    {
+      "name": "convert-wrong-argument-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT L(ABSTRACT); m EXTENDS L; km=1000[m]; Other EXTENDS L; s; TOPIC T=CLASS C=MANDATORY CONSTRAINT INTERLIS.convertUnit(#true)>0;END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "c79b1d92cf4c5818de053cdcdc50643a7c11afd4897f216a4dc4963886e8e74d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/53.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c2b8eeb6e6a61fa3931d69a4], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c2b8eeb6e6a61fa3931d69a4\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/53.ili\",\"revision\":\"1\",\"startOffset\":193,\"endOffset\":198},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/53.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/53.ili>\nInfo: ...compiler run done 2026-10-25 17:33:34\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-direct-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreas(ALL,UNDEFINED,>>surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "47fff29f1cc6892dfbc66151937cdf770ff0d2d65f58753b1ea9ad71c52675bd",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/54.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/54.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/54.ili>\nInfo: ...compiler run done 2026-10-25 17:33:35\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-nested-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>S->surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "54e906000271b4993514c5615b17483de933826270bcb91ccc968178df0be41d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/55.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/55.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/55.ili>\nInfo: ...compiler run done 2026-10-25 17:33:36\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-wrong-owner-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "96e87cd6c6377fb2cafa0efb8b046e50fa1a750e8a4def7bf4f80fcd52701a40",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/56.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4ca49b6c2930a9cf129ab769], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4ca49b6c2930a9cf129ab769\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/56.ili\",\"revision\":\"1\",\"startOffset\":406,\"endOffset\":415},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@363\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/56.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/56.ili>\nInfo: ...compiler run done 2026-10-25 17:33:37\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-wrong-value-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>S->text);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "571c6744c954bc53174e2b030d8976d4077028a1a3030d4ecd5038f3d1ebe781",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/57.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-aa015bebd9acd5c0a2514786], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-aa015bebd9acd5c0a2514786\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/57.ili\",\"revision\":\"1\",\"startOffset\":338,\"endOffset\":347},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@295\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/57.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/57.ili>\nInfo: ...compiler run done 2026-10-25 17:33:38\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas-arity-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreas(ALL,UNDEFINED);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "a123c4a6a7c39a486e557e740c4ccac32f08ebf77a56e18bb49574cbca7827e3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/58.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-558965a9df4196d3f959e55e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-558965a9df4196d3f959e55e\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/58.ili\",\"revision\":\"1\",\"startOffset\":153,\"endOffset\":185},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"2 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"3 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/58.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/58.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/58.ili:1:The invocation of FUNCTION INTERLIS.areAreas is not correct. There should be 3 arguments.\n  The invocation of FUNCTION INTERLIS.areAreas is not correct. There should be 3 arguments.\nbuild/reports/stabilization/g2-e4-function-contexts/processes/58.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 17:33:39\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-direct-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,UNDEFINED,>>surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "0ae3340a3b42e9490d6ddb66d1611aec0c50bab7ee409f3300e06e07b8d3bdf0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/59.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/59.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/59.ili>\nInfo: ...compiler run done 2026-10-25 17:33:40\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-nested-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,>>bag,>>S->surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "a89c69b175b161563691f49e482bb900e214dc40d13b8f1118a6b1b64225aea0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/60.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/60.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/60.ili>\nInfo: ...compiler run done 2026-10-25 17:33:42\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-wrong-owner-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,>>bag,>>surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "9246b69edd0c92513dca2086edf15d9406ef23a9df232130f64b955a686acd11",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/61.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-cc52925685fb20c8e5644730], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cc52925685fb20c8e5644730\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/61.ili\",\"revision\":\"1\",\"startOffset\":417,\"endOffset\":426},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@363\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/61.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/61.ili>\nInfo: ...compiler run done 2026-10-25 17:33:43\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-wrong-value-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=bag:BAG OF S;SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,>>bag,>>S->text);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "5076eb760e6124d06426f0cbf7d2136e5d92987743d168d009ebc0d77e6a6202",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/62.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-317e58a422e1f56979c7ce68], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-317e58a422e1f56979c7ce68\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/62.ili\",\"revision\":\"1\",\"startOffset\":349,\"endOffset\":358},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@295\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/62.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/62.ili>\nInfo: ...compiler run done 2026-10-25 17:33:44\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps-arity-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreasWithoutGaps(ALL,UNDEFINED);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "8f509d022261c518f45178c6b979a071db2b7c58f6dbe2a983d633d7be35d8de",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/63.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-68f8ad4edf3f539f8c50342b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-68f8ad4edf3f539f8c50342b\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/63.ili\",\"revision\":\"1\",\"startOffset\":153,\"endOffset\":196},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"2 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"3 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/63.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/63.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/63.ili:1:The invocation of FUNCTION INTERLIS.areAreasWithoutGaps is not correct. There should be 3 arguments.\n  The invocation of FUNCTION INTERLIS.areAreasWithoutGaps is not correct. There should be 3 arguments.\nbuild/reports/stabilization/g2-e4-function-contexts/processes/63.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 17:33:45\n"
+        }
+      }
+    },
+    {
+      "name": "dependent-formal-False-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; FUNCTION check(objects:OBJECTS OF ANYCLASS;attr:ATTRIBUTE OF @objects RESTRICTION(SURFACE)):BOOLEAN; TOPIC T=CLASS Other=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;END Other;CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT F.check(ALL,>>surface);END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "ebd524344877aff6ec1606e01e484e1967fb9cf19706a792a8438f712646c772",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/64.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/64.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/64.ili>\nInfo: ...compiler run done 2026-10-25 17:33:46\n"
+        }
+      }
+    },
+    {
+      "name": "dependent-formal-True-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; FUNCTION check(objects:OBJECTS OF ANYCLASS;attr:ATTRIBUTE OF @objects RESTRICTION(SURFACE)):BOOLEAN; TOPIC T=CLASS Other=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;END Other;CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT F.check(ALL,>>Other->surface);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "e59e265568cbebb932350833356a0c09ac785060c675590f3844b48276744455",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/65.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-eb47244434efd4a0ed6d59a2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-eb47244434efd4a0ed6d59a2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/65.ili\",\"revision\":\"1\",\"startOffset\":424,\"endOffset\":440},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@397\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"attribute argument has an incompatible owner or value type/FUNCTION_ATTRIBUTE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/65.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/65.ili>\nInfo: ...compiler run done 2026-10-25 17:33:47\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-escaped-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=geometry:BAG OF Holder;SET CONSTRAINT INTERLIS.areAreas2(ALL,\"geom\\u0065try->surfaces\",\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "43f988cf022ace64237ddaadcc0d89f68a7320f4eb87694a9cbc831f5efc6fdb",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/66.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/66.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/66.ili>\nInfo: ...compiler run done 2026-10-25 17:33:48\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-direct-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreas2(ALL,UNDEFINED,\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "2077f0d8aa6017659096e52304ec7dceb33998397497a584957d8a632e5012bb",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/67.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/67.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/67.ili>\nInfo: ...compiler run done 2026-10-25 17:33:49\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-bad-\"missing\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas2(ALL,UNDEFINED,\"missing\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "35dd12b6741b09f60d552ea3507201c4d2d545a71f5b7f6d82d14af34562705d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/68.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e2b52eab0785b446eb416ae5], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e2b52eab0785b446eb416ae5\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/68.ili\",\"revision\":\"1\",\"startOffset\":265,\"endOffset\":272},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/68.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/68.ili>\nInfo: ...compiler run done 2026-10-25 17:33:50\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-bad-\"surface->\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas2(ALL,UNDEFINED,\"surface->\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "0a74854aa1bdec6dc9e3da323db60503c14ac7ac59ab9bdab7a0fdaa895c9281",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/69.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-eedb29db8b5758f6d66a879d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-eedb29db8b5758f6d66a879d\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/69.ili\",\"revision\":\"1\",\"startOffset\":272,\"endOffset\":273},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/69.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/69.ili>\nInfo: ...compiler run done 2026-10-25 17:33:51\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-bad-\"sur\\u0024face\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas2(ALL,UNDEFINED,\"sur\\u0024face\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "911679331ceafc9fe202adebae55c35b2563c9e8b8097612251a148fbb0a1ba6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/70.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-81a5e986020f253de829f886, diag-a01707b4eea6e82724062a8d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-81a5e986020f253de829f886\",\"code\":\"ILI-SYN-0001\",\"severity\":\"ERROR\",\"phase\":\"LEXING\",\"messageKey\":\"diagnostic.syntax.lexical\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/70.ili\",\"revision\":\"1\",\"startOffset\":268,\"endOffset\":274},\"arguments\":[{\"name\":\"token\",\"kind\":\"TOKEN\",\"value\":\"<lexer>\"}]},{\"id\":\"diag-a01707b4eea6e82724062a8d\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/70.ili\",\"revision\":\"1\",\"startOffset\":274,\"endOffset\":278},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"face\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/70.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/70.ili>\nInfo: ...compiler run done 2026-10-25 17:33:52\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-bad-\"\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas2(ALL,UNDEFINED,\"\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "6ab1906731b07219891d53d91f1bf5ad6001bacab6815c97551006612785e69f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/71.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a16797044b2df26df5b82373], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a16797044b2df26df5b82373\",\"code\":\"ILI-SYN-0003\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.missing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/71.ili\",\"revision\":\"1\",\"startOffset\":265,\"endOffset\":265},\"arguments\":[{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'AGGREGATES','PARENT','THATAREA','THIS','THISAREA','\\\\',Name\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/71.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/71.ili>\nInfo: ...compiler run done 2026-10-25 17:33:53\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-bad-name-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas2(ALL,UNDEFINED,name);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "c86b44ddb3e71f4ad09cff93261f9b94f97b3ba4ddb468a108ea5ec110740b68",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/72.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d4d9d925a6a4697aa70c1437], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d4d9d925a6a4697aa70c1437\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/72.ili\",\"revision\":\"1\",\"startOffset\":264,\"endOffset\":268},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@216\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"area path argument requires a constant TEXT path/FUNCTION_PATH_CONSTANT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/72.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/72.ili>\nInfo: ...compiler run done 2026-10-25 17:33:54\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas2-dynamic-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; FUNCTION objects(flag:BOOLEAN):OBJECTS OF ANYCLASS;TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreas2(F.objects(#true),UNDEFINED,\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "dd5c3b6fe7bb465a99b8d697c565101709c1da4f68330732d2c508dd88fea10d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/73.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/73.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/73.ili>\nInfo: ...compiler run done 2026-10-25 17:33:55\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-escaped-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=geometry:BAG OF Holder;SET CONSTRAINT INTERLIS.areAreas3(ALL,\"geom\\u0065try->surfaces\",\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "48cbc861a9652f964bc8f672ab372a135c6f5399d338f656cc02e5dd0ae78e79",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/74.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/74.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/74.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/74.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:33:56\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-direct-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreas3(ALL,UNDEFINED,\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "862618067554912a8172a00bd1be708b28034bc96c2036c161b0c1ecaa0fd281",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/75.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/75.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/75.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/75.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:33:57\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-bad-\"missing\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas3(ALL,UNDEFINED,\"missing\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "4aef6c2215af36a1a924483907cd0528279de13d8e8d23e136661504cd69b881",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/76.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1909dd9d1b8c17fb1a28e1ae], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1909dd9d1b8c17fb1a28e1ae\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/76.ili\",\"revision\":\"1\",\"startOffset\":265,\"endOffset\":272},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/76.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/76.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/76.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:33:58\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-bad-\"surface->\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas3(ALL,UNDEFINED,\"surface->\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "fd86e044832da1dc394ac903d8f1340f3f69325152653ad5cc24be530ea8d06c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/77.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3ec194c12ff5137425fd57ff], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3ec194c12ff5137425fd57ff\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/77.ili\",\"revision\":\"1\",\"startOffset\":272,\"endOffset\":273},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/77.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/77.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/77.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:33:59\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-bad-\"sur\\u0024face\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas3(ALL,UNDEFINED,\"sur\\u0024face\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "ca31f575bf97270d003dbaa4514daf429583ad642f1f8fddc0235dd7e9a96b75",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/78.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-891cd4e328ad0a19a53a6245, diag-d9429ed70cb87b08c6861598], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d9429ed70cb87b08c6861598\",\"code\":\"ILI-SYN-0001\",\"severity\":\"ERROR\",\"phase\":\"LEXING\",\"messageKey\":\"diagnostic.syntax.lexical\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/78.ili\",\"revision\":\"1\",\"startOffset\":268,\"endOffset\":274},\"arguments\":[{\"name\":\"token\",\"kind\":\"TOKEN\",\"value\":\"<lexer>\"}]},{\"id\":\"diag-891cd4e328ad0a19a53a6245\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/78.ili\",\"revision\":\"1\",\"startOffset\":274,\"endOffset\":278},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"face\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/78.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/78.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/78.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:34:00\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-bad-\"\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas3(ALL,UNDEFINED,\"\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "5edac9473f7c1e3fad0a86fee1168c6fbad359fdb140147a50242a1e8e03a31c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/79.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-113a21c3926df027422b9341], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-113a21c3926df027422b9341\",\"code\":\"ILI-SYN-0003\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.missing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/79.ili\",\"revision\":\"1\",\"startOffset\":265,\"endOffset\":265},\"arguments\":[{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'AGGREGATES','PARENT','THATAREA','THIS','THISAREA','\\\\',Name\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/79.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/79.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/79.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:34:01\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-bad-name-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreas3(ALL,UNDEFINED,name);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "59d24514ab5daab7fc31823c9d1a297f06737d6bf4df33d988e0af71f8c876aa",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/80.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2805dc515d4df603834ce5e8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2805dc515d4df603834ce5e8\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/80.ili\",\"revision\":\"1\",\"startOffset\":264,\"endOffset\":268},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@216\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"area path argument requires a constant TEXT path/FUNCTION_PATH_CONSTANT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/80.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/80.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/80.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:34:02\n"
+        }
+      }
+    },
+    {
+      "name": "areAreas3-dynamic-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; FUNCTION objects(flag:BOOLEAN):OBJECTS OF ANYCLASS;TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreas3(F.objects(#true),UNDEFINED,\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "0650ee11eace5f5f02bde6d8e5cb429acb58a00c2229d78656aee08fc157b381",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/81.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/81.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/81.ili>\nbuild/reports/stabilization/g2-e4-function-contexts/processes/81.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 17:34:03\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-escaped-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;text:TEXT;END S; STRUCTURE Holder=surfaces:BAG OF S;END Holder; CLASS C=geometry:BAG OF Holder;SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(ALL,\"geom\\u0065try->surfaces\",\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "ee4b625e9a898cb19fea61ae7aac7840e0a533e9db4d8222f48b2459713309ae",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/82.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/82.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/82.ili>\nInfo: ...compiler run done 2026-10-25 17:34:04\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-direct-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(ALL,UNDEFINED,\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "38b4377a40965dfa0739f7b3600c879693f1e47b9298290cef4d6aa3c806fd55",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/83.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/83.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/83.ili>\nInfo: ...compiler run done 2026-10-25 17:34:05\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-bad-\"missing\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(ALL,UNDEFINED,\"missing\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "aca29f5440039edfede38f490de92757cf7ed81e10426ee465dd87a2e6904598",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/84.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4849765b724218ac2195a78b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4849765b724218ac2195a78b\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/84.ili\",\"revision\":\"1\",\"startOffset\":276,\"endOffset\":283},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"missing\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/84.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/84.ili>\nInfo: ...compiler run done 2026-10-25 17:34:06\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-bad-\"surface->\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(ALL,UNDEFINED,\"surface->\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "6173f4173d17134de6fb882b965d390e41cd8c3fb0fef666ea9cb5fba48bf175",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/85.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a6a835d1d6002209c910f723], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a6a835d1d6002209c910f723\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/85.ili\",\"revision\":\"1\",\"startOffset\":283,\"endOffset\":284},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/85.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/85.ili>\nInfo: ...compiler run done 2026-10-25 17:34:07\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-bad-\"sur\\u0024face\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(ALL,UNDEFINED,\"sur\\u0024face\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "3f3005a276f51a0a4d49a381c8bc03dafbe8b65d6a9b21448b5fcd460e216491",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/86.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-97a48ccc55bb561f60f7b631, diag-ab68e1840f115d637cfc083a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-97a48ccc55bb561f60f7b631\",\"code\":\"ILI-SYN-0001\",\"severity\":\"ERROR\",\"phase\":\"LEXING\",\"messageKey\":\"diagnostic.syntax.lexical\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/86.ili\",\"revision\":\"1\",\"startOffset\":279,\"endOffset\":285},\"arguments\":[{\"name\":\"token\",\"kind\":\"TOKEN\",\"value\":\"<lexer>\"}]},{\"id\":\"diag-ab68e1840f115d637cfc083a\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/86.ili\",\"revision\":\"1\",\"startOffset\":285,\"endOffset\":289},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"face\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/86.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/86.ili>\nInfo: ...compiler run done 2026-10-25 17:34:08\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-bad-\"\"-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(ALL,UNDEFINED,\"\");END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "d9a22d7e17037c8deb8fb06ad670dc7a624a7c010e014dc05911879210f655d6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/87.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ffb8c0aa5446351b8c65ed1c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ffb8c0aa5446351b8c65ed1c\",\"code\":\"ILI-SYN-0003\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.missing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/87.ili\",\"revision\":\"1\",\"startOffset\":276,\"endOffset\":276},\"arguments\":[{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'AGGREGATES','PARENT','THATAREA','THIS','THISAREA','\\\\',Name\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/87.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/87.ili>\nInfo: ...compiler run done 2026-10-25 17:34:09\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-bad-name-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX Point WITHOUT OVERLAPS>0.010;name:TEXT;SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(ALL,UNDEFINED,name);END C;END T; END F.",
+      "expected": "rejected",
+      "sha256": "5411c441e86ae6d001397e758acc1f739978ef89b4241e9bfacd49d54818f85a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/88.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-684a3df0c758673336a4e0b6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-684a3df0c758673336a4e0b6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-function-contexts/processes/88.ili\",\"revision\":\"1\",\"startOffset\":275,\"endOffset\":279},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@216\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"area path argument requires a constant TEXT path/FUNCTION_PATH_CONSTANT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/88.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/88.ili>\nInfo: ...compiler run done 2026-10-25 17:34:10\n"
+        }
+      }
+    },
+    {
+      "name": "areAreasWithoutGaps2-dynamic-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..100.000,0.000..100.000; FUNCTION objects(flag:BOOLEAN):OBJECTS OF ANYCLASS;TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.areAreasWithoutGaps2(F.objects(#true),UNDEFINED,\"surface\");END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "e831d9eca047bc293d284aaa0264d11f290d86dd10e4c141b1f6abd596fd9254",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/89.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-function-contexts/processes/89.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-function-contexts/processes/89.ili>\nInfo: ...compiler run done 2026-10-25 17:34:11\n"
+        }
+      }
+    }
+  ],
+  "ownExpected": 90,
+  "total": 90,
+  "referenceAgreements": 51
+}

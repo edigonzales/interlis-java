@@ -2,8 +2,15 @@ package guru.interlis.model;
 
 /** Closed type-family classification. */
 public enum TypeKind {
+    ENUM_ARGUMENT,
+    METAOBJECT,
+    /** A single object in a function signature or expression. */
+    OBJECT_ARGUMENT,
+    /** A set of objects with a statically bound element constraint. */
+    OBJECT_SET,
     /** The {@code CLASS_VALUE} constant. */
     CLASS_VALUE,
+    ATTRIBUTE_PATH,
     /** The {@code GEOMETRY} constant. */
     GEOMETRY,
     /** The {@code FORMATTED} constant. */
@@ -20,8 +27,6 @@ public enum TypeKind {
     ENUMERATION,
     /** The {@code COORDINATE} constant. */
     COORDINATE,
-    /** The {@code TEMPORAL} constant. */
-    TEMPORAL,
     /** The {@code BLACKBOX} constant. */
     BLACKBOX,
     /** The {@code OID} constant. */

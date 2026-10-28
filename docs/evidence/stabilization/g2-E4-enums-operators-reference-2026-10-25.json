@@ -1,0 +1,3505 @@
+{
+  "cases": [
+    {
+      "name": "text-==-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a==b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "5f351465639812414594669585002de38e05a48d0c98efbae1fec6935b29cb1c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/0.ili>\nInfo: ...compiler run done 2026-10-25 16:22:06\n"
+        }
+      }
+    },
+    {
+      "name": "text-<>-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a<>b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "3e58430bdf2c4e81405ce13ff3bb5c982120f6e1f774a9126452c7f34b348829",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/1.ili>\nInfo: ...compiler run done 2026-10-25 16:22:07\n"
+        }
+      }
+    },
+    {
+      "name": "text-!=-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a!=b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "ab00e2e15806c26a4554b05d7168ddcac28a56f44a05c559a0bd690b8bfb15ac",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/2.ili>\nInfo: ...compiler run done 2026-10-25 16:22:08\n"
+        }
+      }
+    },
+    {
+      "name": "text-<-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a<b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "52aafc2323d875acf558961142c65dde23b2c4ea320e53b740d71be6337634d7",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e8c1d36f7978526a60348d5b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e8c1d36f7978526a60348d5b\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/3.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":133},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/3.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/3.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:22:09\n"
+        }
+      }
+    },
+    {
+      "name": "text->-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a>b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "ac23fc1ef2af8fbf37e314e5f97f5ea791d1faec6caa17130164548b2c63cef3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1490a5a8a326df59451f335b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1490a5a8a326df59451f335b\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/4.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":133},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/4.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/4.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:22:11\n"
+        }
+      }
+    },
+    {
+      "name": "text-<=-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a<=b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "dcc4c5def29584bbe107e898b614fcecf3c49a6425c81ad450dd5aac3608e396",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/5.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c897546138f3470e8b2b5dde], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c897546138f3470e8b2b5dde\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/5.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":134},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/5.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/5.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/5.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:22:13\n"
+        }
+      }
+    },
+    {
+      "name": "text->=-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a>=b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "13f1a6c1d23b4e0a3535d75ca2b38c5787af88ad91e8122314c3e497d593eff9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9325685cbc1cd930537e379e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9325685cbc1cd930537e379e\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/6.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":134},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/6.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/6.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:22:15\n"
+        }
+      }
+    },
+    {
+      "name": "boolean-==-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:BOOLEAN;b:BOOLEAN; MANDATORY CONSTRAINT a==b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "9e7deaa7ea2b438afe58bbce9534b827d563b7e0b3ba296004730b66e4478e4f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/7.ili>\nInfo: ...compiler run done 2026-10-25 16:22:17\n"
+        }
+      }
+    },
+    {
+      "name": "coordinate-==-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:COORD 0..10,0..10;q:COORD 0..10,0..10; MANDATORY CONSTRAINT p==q; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "21d6a7494f55eff2b4fa7023c19171d960992cc047918778b52f8d3c973aa673",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/8.ili>\nInfo: ...compiler run done 2026-10-25 16:22:18\n"
+        }
+      }
+    },
+    {
+      "name": "boolean-<-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:BOOLEAN;b:BOOLEAN; MANDATORY CONSTRAINT a<b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "8bca2e9c26e8c10a622294bb41f67059e401d5e4563534977577a360e2be043d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/9.ili>\nInfo: ...compiler run done 2026-10-25 16:22:20\n"
+        }
+      }
+    },
+    {
+      "name": "coordinate-<-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:COORD 0..10,0..10;q:COORD 0..10,0..10; MANDATORY CONSTRAINT p<q; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "c2c32d81ba650c1707833a1959d2217413bfe42e23f8109255b92e780af061ad",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ac13ef8a93963d372c144b12], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ac13ef8a93963d372c144b12\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/10.ili\",\"revision\":\"1\",\"startOffset\":150,\"endOffset\":153},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"COORDINATE,COORDINATE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/10.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/10.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:22:22\n"
+        }
+      }
+    },
+    {
+      "name": "boolean->=-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:BOOLEAN;b:BOOLEAN; MANDATORY CONSTRAINT a>=b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "5f171a24b9f0bb6a4b5f020b68febb5685b567ef7f05d9fca845b89acb7472dc",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/11.ili>\nInfo: ...compiler run done 2026-10-25 16:22:24\n"
+        }
+      }
+    },
+    {
+      "name": "coordinate->=-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:COORD 0..10,0..10;q:COORD 0..10,0..10; MANDATORY CONSTRAINT p>=q; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "f150c2a5c6788240854ba99ba0ebf15d1f72132c575f0c7b93753cd4142b3b91",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8d7fb9f7f611146f9de12eb6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8d7fb9f7f611146f9de12eb6\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/12.ili\",\"revision\":\"1\",\"startOffset\":150,\"endOffset\":154},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"COORDINATE,COORDINATE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/12.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/12.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:22:27\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(e,#root)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(e,#root); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "9aad43024170431c2b6eacd1e47070e319fd65ab3d8a8104bbd818a1af6c921b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/13.ili>\nInfo: ...compiler run done 2026-10-25 16:22:30\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(t,#root)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(t,#root); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "1069c4dcdf5ce132226bc35816438b913317b590acc3a3041c5884172484b51e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/14.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/14.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/14.ili>\nInfo: ...compiler run done 2026-10-25 16:22:33\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(e,#root,#other)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(e,#root,#other); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "1d395e60ac61d5dd8b29b3342a7a84cc8c5597a7a5239223b0f5ba83f71429ed",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/15.ili>\nInfo: ...compiler run done 2026-10-25 16:22:35\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(e,w)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(e,w); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "08cbd0653e938d206856852b3499954187a3e55e26b1ce00921e3fc7bce9608f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-363d0f7ccc9d54864ba8e723], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-363d0f7ccc9d54864ba8e723\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/16.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":239},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@192\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"enumeration function arguments must refer to compatible values of the same enumeration/ENUM_ARGUMENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/16.ili>\nInfo: ...compiler run done 2026-10-25 16:22:38\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(e,#missing)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(e,#missing); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "ee3d083420ada7ef42a5c68469e04240f7abe71c771d7cf518d512c99bed9e43",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c4220b8796ab031112c4ee44], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c4220b8796ab031112c4ee44\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/17.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":246},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@192\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"enumeration function arguments must refer to compatible values of the same enumeration/ENUM_ARGUMENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/17.ili>\nInfo: ...compiler run done 2026-10-25 16:22:40\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(123,#root)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(123,#root); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "fa0fb31e0f1486c5ca6bd7f1015baf5fc9c24fc4f67ab76ee0f49acbad37bb9d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/18.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-daf59c788b2784f7ed5b105e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-daf59c788b2784f7ed5b105e\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/18.ili\",\"revision\":\"1\",\"startOffset\":235,\"endOffset\":238},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUM_TREE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/18.ili>\nInfo: ...compiler run done 2026-10-25 16:22:42\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(t,#root,#other)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(t,#root,#other); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "826a3d002fad8f04e097f2d75ad94ff621026bb55eb1f1da591dda71f287aa5f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/19.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c0aa4acfae412ae611e57797], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c0aa4acfae412ae611e57797\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/19.ili\",\"revision\":\"1\",\"startOffset\":234,\"endOffset\":235},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUM\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/19.ili>\nInfo: ...compiler run done 2026-10-25 16:22:43\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(e,#root)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(e,#root); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "f72c238963f34dbf57eb08842dfab8b6bfdb6c4d9e90eabf8d0a89306d638451",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/20.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-edb52e87a836488563972152], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-edb52e87a836488563972152\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/20.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":242},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"2 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"3 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/20.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/20.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/20.ili:1:The invocation of FUNCTION INTERLIS.inEnumRange is not correct. There should be 3 arguments.\n  The invocation of FUNCTION INTERLIS.inEnumRange is not correct. There should be 3 arguments.\nbuild/reports/stabilization/g2-e4-enums-operators/processes/20.ili:1:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 16:22:45\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(e,#root,#missing)-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(e,#root,#missing); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "0301083cd8eb0fda1222cacc49ef8e6ac0277a2b5f4d90940062f85c4957de45",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/21.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-535ac5661cb4b3a00f5b21a6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-535ac5661cb4b3a00f5b21a6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/21.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":251},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@192\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"enumeration function arguments must refer to compatible values of the same enumeration/ENUM_ARGUMENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/21.ili>\nInfo: ...compiler run done 2026-10-25 16:22:48\n"
+        }
+      }
+    },
+    {
+      "name": "enum-formals-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Tree=ALL OF E; FUNCTION f(a:ENUMVAL;b:ENUMTREEVAL):BOOLEAN; TOPIC T=CLASS C=e:E;t:Tree; MANDATORY CONSTRAINT f(e,t); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "2b0d28fde555434d0704a39135e5bd76aaaf6ded1ccfdc3f7fbd917f3b109632",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/22.ili>\nInfo: ...compiler run done 2026-10-25 16:22:50\n"
+        }
+      }
+    },
+    {
+      "name": "enum-concrete-assignment-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; FUNCTION f(v:E):BOOLEAN; TOPIC T=CLASS C=e:E:=#root.a; MANDATORY CONSTRAINT f(#other); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "29ed3d379dd14d269d9bc14de678436331a4b1f3f0c927acfa8b9e4eb2bd2fa0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/23.ili>\nInfo: ...compiler run done 2026-10-25 16:22:52\n"
+        }
+      }
+    },
+    {
+      "name": "enum-node-assignment-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; TOPIC T=CLASS C=e:E:=#root; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "74911b58e75ffdef430eb0efd9e9a6f9e5dc6d950fb08d500e6c6c05d060d3bd",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-978a01b0bbc4154c1457bfe7], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-978a01b0bbc4154c1457bfe7\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/24.ili\",\"revision\":\"1\",\"startOffset\":129,\"endOffset\":134},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMVAL\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/24.ili>\nInfo: ...compiler run done 2026-10-25 16:22:55\n"
+        }
+      }
+    },
+    {
+      "name": "bad-tree-base-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN N=0..10; Tree=ALL OF N; END F.",
+      "expected": "rejected",
+      "sha256": "8a319737900f215f8fce724b9329a5db8a1164109ae759156acdd6d6592b6d08",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6d9946977cf87b5e69d1ea48], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6d9946977cf87b5e69d1ea48\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/25.ili\",\"revision\":\"1\",\"startOffset\":93,\"endOffset\":101},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Tree\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"ALL OF requires an enumeration domain/ENUM_TREE_TARGET\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/25.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/25.ili>\nInfo: ...compiler run done 2026-10-25 16:22:57\n"
+        }
+      }
+    },
+    {
+      "name": "unqualified-predefined-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS UNQUALIFIED INTERLIS; TOPIC T=CLASS C=MANDATORY CONSTRAINT len(\"abc\")>0; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "f48030ced8cef61ed4d9b0a5419dc6c59ee711917848ca777ae33b75a96d3a80",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/26.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/26.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/26.ili>\nInfo: ...compiler run done 2026-10-25 16:23:00\n"
+        }
+      }
+    },
+    {
+      "name": "local-function-shadow-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS UNQUALIFIED INTERLIS; FUNCTION len(v:BOOLEAN):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT len(#true); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "b51ae4d195c087b52bca934ba265474f1f09f634976d66b57038c6aa2412c750",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/27.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/27.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/27.ili>\nInfo: ...compiler run done 2026-10-25 16:23:02\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-length-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.length(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "7b67b48ea2d05fa3aa7abc6fc432d10ad801ff36505ce027cfb1a2adad216ee3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-50d816238e23580c991d6fad, diag-f3de450b7e533a211de21dc0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-50d816238e23580c991d6fad\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/28.ili\",\"revision\":\"1\",\"startOffset\":98,\"endOffset\":140},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@98\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.length/BUILTIN_NAME\"}]},{\"id\":\"diag-f3de450b7e533a211de21dc0\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/28.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":139},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR,NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/28.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/28.ili:1:There is no FUNCTION \"length\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:04\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-multilength-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.multilength(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "5218cb9046d2600d5a3cc4e1918c170b1973e88b3623fe725c7d825d5c98092f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5485fec57fffc9338081e477, diag-d1804be799feedb056e16df0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d1804be799feedb056e16df0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/29.ili\",\"revision\":\"1\",\"startOffset\":98,\"endOffset\":145},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@98\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.multilength/BUILTIN_NAME\"}]},{\"id\":\"diag-5485fec57fffc9338081e477\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/29.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":144},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR,NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/29.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/29.ili:1:There is no FUNCTION \"multilength\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:06\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-surface-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.surface(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "b7f6be187719ac6eb08b327c775f8accf4a2b93291f4ebb3507352a4e0b7f100",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5433cc6a4e481cd2b204d24e, diag-ff3f159caf214f54c4875dca], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ff3f159caf214f54c4875dca\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/30.ili\",\"revision\":\"1\",\"startOffset\":98,\"endOffset\":141},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@98\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.surface/BUILTIN_NAME\"}]},{\"id\":\"diag-5433cc6a4e481cd2b204d24e\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/30.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":140},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR,NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/30.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/30.ili:1:There is no FUNCTION \"surface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:07\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-multisurface-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.multisurface(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "66fdde91e0b57051f267f7f78ca79c6c2e5b5d84b51bc8b3a3547c0a175a3d6d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/31.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ae9646cda6202bfc81ba5a38, diag-e3c6f181b3df2bc714c1bd4e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e3c6f181b3df2bc714c1bd4e\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/31.ili\",\"revision\":\"1\",\"startOffset\":98,\"endOffset\":146},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@98\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.multisurface/BUILTIN_NAME\"}]},{\"id\":\"diag-ae9646cda6202bfc81ba5a38\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/31.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":145},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ERROR,NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/31.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/31.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/31.ili:1:There is no FUNCTION \"multisurface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:09\n"
+        }
+      }
+    },
+    {
+      "name": "text-==-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a==b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "f6d4fc0c5163998ab511dee6c39400b276700203072954cc460dfe0c9d157cf0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/32.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/32.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/32.ili>\nInfo: ...compiler run done 2026-10-25 16:23:11\n"
+        }
+      }
+    },
+    {
+      "name": "text-<>-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a<>b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "b154e763c440a17effef589b17bad2db5358f623f05f3f2574f2945fe2ccc7ae",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/33.ili>\nInfo: ...compiler run done 2026-10-25 16:23:13\n"
+        }
+      }
+    },
+    {
+      "name": "text-!=-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a!=b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "e4c28bc2e16604b3aee2301807a8ff2a2f1a21a20e55f7c1f29e3893e7474a77",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/34.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/34.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/34.ili>\nInfo: ...compiler run done 2026-10-25 16:23:14\n"
+        }
+      }
+    },
+    {
+      "name": "text-<-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a<b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "8394000d8a22deb4db0f3e5e2d20f26d889660ebe1f44a4bca1eea4f99c16939",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/35.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6baf728fbc3d78c804d91783], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6baf728fbc3d78c804d91783\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/35.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":133},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/35.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/35.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/35.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:15\n"
+        }
+      }
+    },
+    {
+      "name": "text->-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a>b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "7fafe13518742a2259174d82c70e563814e1594ceecfee0fc57d074adc9b0c63",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f613b12e08cc1f05f6c38ad2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f613b12e08cc1f05f6c38ad2\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/36.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":133},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/36.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/36.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:16\n"
+        }
+      }
+    },
+    {
+      "name": "text-<=-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a<=b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "4f92b645999b06c7eb3f97ea0552bd36753dabf3632bc0be418e16cbc3b13dfd",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/37.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3c563d0c40704c17f87fa795], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3c563d0c40704c17f87fa795\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/37.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":134},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/37.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/37.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/37.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:18\n"
+        }
+      }
+    },
+    {
+      "name": "text->=-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:TEXT*10;b:TEXT*10; MANDATORY CONSTRAINT a>=b; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "9534c24c31ba2d4b4474b98d4a2955ad8ff582e85d5b34142f9547004b7a56aa",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/38.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8c8205ca86849b35a55fa1ec], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8c8205ca86849b35a55fa1ec\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/38.ili\",\"revision\":\"1\",\"startOffset\":130,\"endOffset\":134},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"TEXT*10,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/38.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/38.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/38.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:19\n"
+        }
+      }
+    },
+    {
+      "name": "boolean-==-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:BOOLEAN;b:BOOLEAN; MANDATORY CONSTRAINT a==b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "6901609795d2a4251c634006686a9c75c281b5171b24bb82c88021a0353afb76",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/39.ili>\nInfo: ...compiler run done 2026-10-25 16:23:21\n"
+        }
+      }
+    },
+    {
+      "name": "coordinate-==-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:COORD 0..10,0..10;q:COORD 0..10,0..10; MANDATORY CONSTRAINT p==q; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "a65bb26321e7cbdb13c18a84b5b564e5138c2b483bb8843d0a8fb2ccffa0118c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/40.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/40.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/40.ili>\nInfo: ...compiler run done 2026-10-25 16:23:22\n"
+        }
+      }
+    },
+    {
+      "name": "boolean-<-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:BOOLEAN;b:BOOLEAN; MANDATORY CONSTRAINT a<b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "6dd7ba5a1f14c2eaa581b5583ae9a5df95fdf27b39a9c7ee3f8b199bf6ccd3b7",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/41.ili>\nInfo: ...compiler run done 2026-10-25 16:23:24\n"
+        }
+      }
+    },
+    {
+      "name": "coordinate-<-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:COORD 0..10,0..10;q:COORD 0..10,0..10; MANDATORY CONSTRAINT p<q; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "e4d559a772cc2c984e1de8f1e7fe2e27f8ab779eeaf86a7b125980204d6bb8d9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/42.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0f889b7e8f6a973cd9cfd12f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0f889b7e8f6a973cd9cfd12f\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/42.ili\",\"revision\":\"1\",\"startOffset\":150,\"endOffset\":153},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"COORDINATE,COORDINATE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/42.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/42.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/42.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:25\n"
+        }
+      }
+    },
+    {
+      "name": "boolean->=-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=a:BOOLEAN;b:BOOLEAN; MANDATORY CONSTRAINT a>=b; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "6396fba7f78d6d8d3df83c57de16b70794710a71d4966da837801ebccfc68d8f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/43.ili>\nInfo: ...compiler run done 2026-10-25 16:23:26\n"
+        }
+      }
+    },
+    {
+      "name": "coordinate->=-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:COORD 0..10,0..10;q:COORD 0..10,0..10; MANDATORY CONSTRAINT p>=q; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "3489b6943869145d3a0c883e4d8d87fcaf57195cdccc55584a56a72084a64540",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/44.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8e2f14764af417b99a5f9fda], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8e2f14764af417b99a5f9fda\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/44.ili\",\"revision\":\"1\",\"startOffset\":150,\"endOffset\":154},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"COORDINATE,COORDINATE\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/44.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/44.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/44.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:27\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(e,#root)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(e,#root); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "ffb00ea6bacbaa702060546a95c4d94c2d45b41feb832ff508f9cbbf55bd0295",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/45.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/45.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/45.ili>\nInfo: ...compiler run done 2026-10-25 16:23:28\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(t,#root)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(t,#root); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "6273049836e92e4e3ea9e03f6f5ac3a123bce907e69dbbeb59a30ff7fb480a91",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/46.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/46.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/46.ili>\nInfo: ...compiler run done 2026-10-25 16:23:29\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(e,#root,#other)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(e,#root,#other); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "6842fa328530806542ebb1c8241cfd8a06938bc8bfe89704609336b111bb4894",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/47.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/47.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/47.ili>\nInfo: ...compiler run done 2026-10-25 16:23:30\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(e,w)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(e,w); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "3d29ab57667b56a93c31e036fea53a4bf6643ec50b5d96cbe92c753e7d789610",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/48.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1e968993cdda751e3ed76cc6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1e968993cdda751e3ed76cc6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/48.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":239},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@192\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"enumeration function arguments must refer to compatible values of the same enumeration/ENUM_ARGUMENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/48.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/48.ili>\nInfo: ...compiler run done 2026-10-25 16:23:31\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(e,#missing)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(e,#missing); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "161f04bd846120f740c40b3a8d9313a35626ad063bf9ddb1930dc9764118672c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/49.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5c76ced6828688a16a8e1f98], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5c76ced6828688a16a8e1f98\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/49.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":246},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@192\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"enumeration function arguments must refer to compatible values of the same enumeration/ENUM_ARGUMENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/49.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/49.ili>\nInfo: ...compiler run done 2026-10-25 16:23:32\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.isEnumSubVal(123,#root)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.isEnumSubVal(123,#root); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "bbc257ef196f726ff65dc76872a1c8fb1e6d00148c2455b67b024b3142e46c59",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/50.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9a99c36af8aa864ec99ac5ab], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9a99c36af8aa864ec99ac5ab\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/50.ili\",\"revision\":\"1\",\"startOffset\":235,\"endOffset\":238},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"NUMERIC\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUM_TREE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/50.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/50.ili>\nInfo: ...compiler run done 2026-10-25 16:23:33\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(t,#root,#other)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(t,#root,#other); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "5cd90d3783f19a0eb1fd80c1b03e0fc21276338be056340754eaba2cd4673f55",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/51.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ac2cb1c44642dce2fff91675], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ac2cb1c44642dce2fff91675\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/51.ili\",\"revision\":\"1\",\"startOffset\":234,\"endOffset\":235},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUM\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/51.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/51.ili>\nInfo: ...compiler run done 2026-10-25 16:23:34\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(e,#root)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(e,#root); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "81de20944336891f98761272a5a725caeb715b3fe5df0c4e015034ddd26b1531",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/52.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4d9081b5a6fa09344e6b86f6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4d9081b5a6fa09344e6b86f6\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/52.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":242},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"2 arguments\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"3 arguments\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/52.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/52.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/52.ili:1:The invocation of FUNCTION INTERLIS.inEnumRange is not correct. There should be 3 arguments.\n  The invocation of FUNCTION INTERLIS.inEnumRange is not correct. There should be 3 arguments.\nbuild/reports/stabilization/g2-e4-enums-operators/processes/52.ili:1:Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Evaluable.isDirty()\" because \"condition\" is null\n...compiler run failed 2026-10-25 16:23:35\n"
+        }
+      }
+    },
+    {
+      "name": "INTERLIS.inEnumRange(e,#root,#missing)-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Wrong=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=e:E;w:Wrong;t:Tree; MANDATORY CONSTRAINT INTERLIS.inEnumRange(e,#root,#missing); END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "3964f57a8f1b4ea6cdb6209639d7722a71c8c9113024a71a1d99db1952977b3e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/53.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a2125e5004fc5d73232f8750], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a2125e5004fc5d73232f8750\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/53.ili\",\"revision\":\"1\",\"startOffset\":213,\"endOffset\":251},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@192\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"enumeration function arguments must refer to compatible values of the same enumeration/ENUM_ARGUMENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/53.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/53.ili>\nInfo: ...compiler run done 2026-10-25 16:23:37\n"
+        }
+      }
+    },
+    {
+      "name": "enum-formals-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Tree=ALL OF E; FUNCTION f(a:ENUMVAL;b:ENUMTREEVAL):BOOLEAN; TOPIC T=CLASS C=e:E;t:Tree; MANDATORY CONSTRAINT f(e,t); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "ecc54aac5a5a617d1fe379089e5c41344444ce5431c68daacb6a8e2c0d17879b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/54.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/54.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/54.ili>\nInfo: ...compiler run done 2026-10-25 16:23:38\n"
+        }
+      }
+    },
+    {
+      "name": "enum-concrete-assignment-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; FUNCTION f(v:E):BOOLEAN; TOPIC T=CLASS C=e:E:=#root.a; MANDATORY CONSTRAINT f(#other); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "c76bc731eafe96a1546582f169c9d3dc707ede44b5e1a9e8101d48e5755f8ac5",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/55.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/55.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/55.ili>\nInfo: ...compiler run done 2026-10-25 16:23:39\n"
+        }
+      }
+    },
+    {
+      "name": "enum-node-assignment-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; TOPIC T=CLASS C=e:E:=#root; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "da34f597a4fb49cfa5ca248954cdfe82a04a86533f2b8fe56e1146feea9b6a45",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/56.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-42a215487b7ab6f8300563eb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-42a215487b7ab6f8300563eb\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/56.ili\",\"revision\":\"1\",\"startOffset\":129,\"endOffset\":134},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMVAL\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/56.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/56.ili>\nInfo: ...compiler run done 2026-10-25 16:23:40\n"
+        }
+      }
+    },
+    {
+      "name": "bad-tree-base-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN N=0..10; Tree=ALL OF N; END F.",
+      "expected": "rejected",
+      "sha256": "4602c1c2911f2ca5ccfba3c30911b32b5c935f8088282a269b8a2c909bae1467",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/57.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f5ab8027660ad2fd5f882985], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f5ab8027660ad2fd5f882985\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/57.ili\",\"revision\":\"1\",\"startOffset\":93,\"endOffset\":101},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Tree\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"ALL OF requires an enumeration domain/ENUM_TREE_TARGET\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/57.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/57.ili>\nInfo: ...compiler run done 2026-10-25 16:23:41\n"
+        }
+      }
+    },
+    {
+      "name": "unqualified-predefined-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS UNQUALIFIED INTERLIS; TOPIC T=CLASS C=MANDATORY CONSTRAINT len(\"abc\")>0; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "1a6865054b189dde0e0a64d1eeae8d1b618787b98346aef6d75e7c0a972b3b6f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/58.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/58.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/58.ili>\nInfo: ...compiler run done 2026-10-25 16:23:42\n"
+        }
+      }
+    },
+    {
+      "name": "local-function-shadow-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS UNQUALIFIED INTERLIS; FUNCTION len(v:BOOLEAN):BOOLEAN; TOPIC T=CLASS C=MANDATORY CONSTRAINT len(#true); END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "e2241f6e0a57f700dbc82a7b0cbf063c069854bf80a9b6067c7a7767cd16cfa1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/59.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/59.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/59.ili>\nInfo: ...compiler run done 2026-10-25 16:23:43\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-length-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.length(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "bce6a9715ae9face01a14e9d6f11463fa94e063ca6fe4491d8b4ae96327b31cd",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/60.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4c8d3e99dd99ec0d51312a19], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4c8d3e99dd99ec0d51312a19\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/60.ili\",\"revision\":\"1\",\"startOffset\":135,\"endOffset\":136},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"POLYLINE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/60.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/60.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/60.ili:1:There is no FUNCTION \"length\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:44\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-multilength-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.multilength(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "59991b78891a1c05780aa717baada8350d8b27de4e8c757a25354331f8836615",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/61.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-28cc6f4ec1f016e78f5e45cc], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-28cc6f4ec1f016e78f5e45cc\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/61.ili\",\"revision\":\"1\",\"startOffset\":140,\"endOffset\":141},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"MULTIPOLYLINE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/61.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/61.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/61.ili:1:There is no FUNCTION \"multilength\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:45\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-surface-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.surface(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "59fa95ffcd987d9321434c0416fb0d2064a1cb9821b3f3ad5fd4cf23f570588f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/62.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-264d57d5cb9f9b8f7b6675c0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-264d57d5cb9f9b8f7b6675c0\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/62.ili\",\"revision\":\"1\",\"startOffset\":136,\"endOffset\":137},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"SURFACE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/62.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/62.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/62.ili:1:There is no FUNCTION \"surface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:46\n"
+        }
+      }
+    },
+    {
+      "name": "bad-geometry-multisurface-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=p:BOOLEAN;MANDATORY CONSTRAINT INTERLIS.multisurface(p)>0; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "49ffdeb1973367497525bc609bced7d8b9f38d66db80bf8aab9f9c1242bfab93",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/63.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c238e911e74845751c39a3e8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c238e911e74845751c39a3e8\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/63.ili\",\"revision\":\"1\",\"startOffset\":141,\"endOffset\":142},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"BOOLEAN\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"MULTISURFACE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/63.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/63.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/63.ili:1:There is no FUNCTION \"multisurface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:47\n"
+        }
+      }
+    },
+    {
+      "name": "geometry-length-POLYLINE-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..10.000,0.000..10.000;TOPIC T=CLASS C=p:POLYLINE WITH(STRAIGHTS) VERTEX Point;MANDATORY CONSTRAINT INTERLIS.length(p)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "f54a0c0addb5fc2e6526176f5ef52981f5d33da82ad0e2ecbf5f815b0275e96a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/64.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/64.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/64.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/64.ili:1:There is no FUNCTION \"length\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:48\n"
+        }
+      }
+    },
+    {
+      "name": "geometry-multilength-MULTIPOLYLINE-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..10.000,0.000..10.000;TOPIC T=CLASS C=p:MULTIPOLYLINE WITH(STRAIGHTS) VERTEX Point;MANDATORY CONSTRAINT INTERLIS.multilength(p)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "42ca333161145fae8a648864bbc927f53c5623a47f659e9f2e10c9720227f072",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/65.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/65.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/65.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/65.ili:1:There is no FUNCTION \"multilength\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:49\n"
+        }
+      }
+    },
+    {
+      "name": "geometry-surface-SURFACE-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..10.000,0.000..10.000;TOPIC T=CLASS C=p:SURFACE WITH(STRAIGHTS) VERTEX Point;MANDATORY CONSTRAINT INTERLIS.surface(p)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "f61988546b837f8eb8256095b68f87bd99512bcc9d6964098ff0b954267f30d6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/66.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/66.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/66.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/66.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\nbuild/reports/stabilization/g2-e4-enums-operators/processes/66.ili:1:There is no FUNCTION \"surface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:50\n"
+        }
+      }
+    },
+    {
+      "name": "geometry-surface-AREA-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..10.000,0.000..10.000;TOPIC T=CLASS C=p:AREA WITH(STRAIGHTS) VERTEX Point;MANDATORY CONSTRAINT INTERLIS.surface(p)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "c0fcd496ba3a53534a357bca493ba52f38ac0380d247a335b84b741b2204efb4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/67.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/67.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/67.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/67.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\nbuild/reports/stabilization/g2-e4-enums-operators/processes/67.ili:1:There is no FUNCTION \"surface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:51\n"
+        }
+      }
+    },
+    {
+      "name": "geometry-multisurface-MULTISURFACE-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..10.000,0.000..10.000;TOPIC T=CLASS C=p:MULTISURFACE WITH(STRAIGHTS) VERTEX Point;MANDATORY CONSTRAINT INTERLIS.multisurface(p)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "cd33d96c07318e643856fb98fb8f338d38b8e573d69da18f85428365f1b99a9b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/68.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/68.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/68.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/68.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\nbuild/reports/stabilization/g2-e4-enums-operators/processes/68.ili:1:There is no FUNCTION \"multisurface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:53\n"
+        }
+      }
+    },
+    {
+      "name": "geometry-multisurface-MULTIAREA-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Point=COORD 0.000..10.000,0.000..10.000;TOPIC T=CLASS C=p:MULTIAREA WITH(STRAIGHTS) VERTEX Point;MANDATORY CONSTRAINT INTERLIS.multisurface(p)>0;END C;END T; END F.",
+      "expected": "succeeded",
+      "sha256": "61d15cec42ac4d53d61ec301f5689c07ce8e8193acfeb71a102c721783139c7f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/69.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/69.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/69.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/69.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\nbuild/reports/stabilization/g2-e4-enums-operators/processes/69.ili:1:There is no FUNCTION \"multisurface\" in MODEL INTERLIS.\n...compiler run failed 2026-10-25 16:23:54\n"
+        }
+      }
+    },
+    {
+      "name": "enum-order-ORDERED-2.3",
+      "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=a:Tree;b:Tree;MANDATORY CONSTRAINT a<b; END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "ddc7399ecc92a78bca87dc7f8edb04eb7ab9f94eb787c1552f02e5a98cf841c9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/70.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/70.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/70.ili>\nInfo: ...compiler run done 2026-10-25 16:23:55\n"
+        }
+      }
+    },
+    {
+      "name": "enum-order-CIRCULAR-2.3",
+      "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) CIRCULAR; Tree=ALL OF E; TOPIC T=CLASS C=a:Tree;b:Tree;MANDATORY CONSTRAINT a<b; END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "edf45d6ef4b3bbfdc9ba4b2308a68a69de1eb1c72affc63210dfedbcf72a9d8e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/71.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a12ad48b3bcbacefad2cbd7d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a12ad48b3bcbacefad2cbd7d\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/71.ili\",\"revision\":\"1\",\"startOffset\":164,\"endOffset\":167},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION,ENUMERATION\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/71.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/71.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/71.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:56\n"
+        }
+      }
+    },
+    {
+      "name": "enum-order--2.3",
+      "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ; Tree=ALL OF E; TOPIC T=CLASS C=a:Tree;b:Tree;MANDATORY CONSTRAINT a<b; END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "5de1f81d47471c10beb389d1802e64417ff27b4db31daae9042c7ccbd510e7c1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/72.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-dcfd47fbe4ca35be2ddb9162], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-dcfd47fbe4ca35be2ddb9162\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/72.ili\",\"revision\":\"1\",\"startOffset\":156,\"endOffset\":159},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION,ENUMERATION\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/72.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/72.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/72.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:57\n"
+        }
+      }
+    },
+    {
+      "name": "enum-order-ORDERED-2.4",
+      "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ORDERED; Tree=ALL OF E; TOPIC T=CLASS C=a:Tree;b:Tree;MANDATORY CONSTRAINT a<b; END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "79ae64206b60b6f0e8acdca2bd7ca70e942b36f30774958e4145a064841580a4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/73.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/73.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/73.ili>\nInfo: ...compiler run done 2026-10-25 16:23:58\n"
+        }
+      }
+    },
+    {
+      "name": "enum-order-CIRCULAR-2.4",
+      "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) CIRCULAR; Tree=ALL OF E; TOPIC T=CLASS C=a:Tree;b:Tree;MANDATORY CONSTRAINT a<b; END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "b9c2977c5f887e7d828d45b28588fff8dcf08d1f186a0bb9101f540805ffd505",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/74.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-14697cbe604880976ebf9b93], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-14697cbe604880976ebf9b93\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/74.ili\",\"revision\":\"1\",\"startOffset\":164,\"endOffset\":167},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION,ENUMERATION\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/74.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/74.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/74.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:23:59\n"
+        }
+      }
+    },
+    {
+      "name": "enum-order--2.4",
+      "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN E=(root(a,b),other) ; Tree=ALL OF E; TOPIC T=CLASS C=a:Tree;b:Tree;MANDATORY CONSTRAINT a<b; END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "6e4c151dd3975b31acb2b117af69d706ca1c0e07323ed9b34c8038e1a6a55bab",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/75.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6e1c0bba561b5c3f44b009b4], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6e1c0bba561b5c3f44b009b4\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/75.ili\",\"revision\":\"1\",\"startOffset\":156,\"endOffset\":159},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"ENUMERATION,ENUMERATION\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/75.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/75.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/75.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:24:01\n"
+        }
+      }
+    },
+    {
+      "name": "operator-==-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a==b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "3269c899b4289bbde982c9311addc1614377892781de02200d77338e8a89976e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/76.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/76.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/76.ili>\nInfo: ...compiler run done 2026-10-25 16:24:01\n"
+        }
+      }
+    },
+    {
+      "name": "operator-!=-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a!=b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "7118c4408ae03076a8fb1c5ddd63cd86f8b7d8807429fd0943eb36172680c06d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/77.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/77.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/77.ili>\nInfo: ...compiler run done 2026-10-25 16:24:02\n"
+        }
+      }
+    },
+    {
+      "name": "operator-<>-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a<>b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "7fbdbba77d6f36ffebccb958e464cd7d77c2134a3b47cea2f05112d1761c0b7c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/78.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/78.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/78.ili>\nInfo: ...compiler run done 2026-10-25 16:24:03\n"
+        }
+      }
+    },
+    {
+      "name": "operator-<-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a<b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "b423d08c691253df8a3a8e7ab7e4c57467c6b0298000ab9aa34ed14ee901cf14",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/79.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/79.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/79.ili>\nInfo: ...compiler run done 2026-10-25 16:24:04\n"
+        }
+      }
+    },
+    {
+      "name": "operator-<=-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a<=b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "d67b6e4d642e5dfc2514f16db38c066ed2b39128c3f8006374f6c19d04c8bed6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/80.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/80.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/80.ili>\nInfo: ...compiler run done 2026-10-25 16:24:05\n"
+        }
+      }
+    },
+    {
+      "name": "operator->-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a>b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "b5d8f53865e82bc40ee32dcbc7e7b44ef81b089edd0a39f84765059be11fd6bc",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/81.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/81.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/81.ili>\nInfo: ...compiler run done 2026-10-25 16:24:06\n"
+        }
+      }
+    },
+    {
+      "name": "operator->=-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a>=b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "1847c55f57d796ee94b2eb3e4d8b930dc52e8168b43c1c708de2d14908d60466",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/82.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/82.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/82.ili>\nInfo: ...compiler run done 2026-10-25 16:24:07\n"
+        }
+      }
+    },
+    {
+      "name": "eof-TRAILING-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.TRAILING",
+      "expected": "rejected",
+      "sha256": "9299a1418aec321f4ede94e0836b91850e881245a6d771600da63a0a9a7230b0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/83.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-aa5984bf46cb96c1697d63ba], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-aa5984bf46cb96c1697d63ba\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/83.ili\",\"revision\":\"1\",\"startOffset\":64,\"endOffset\":72},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"TRAILING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/83.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/83.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/83.ili:1:expecting EOF, found 'TRAILING'\n...compiler run failed 2026-10-25 16:24:07\n"
+        }
+      }
+    },
+    {
+      "name": "eof-INTERLIS 2.3-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.INTERLIS 2.3;MODEL Ignored AT \"https://example.org\" VERSION \"1\"=END Ignored.",
+      "expected": "rejected",
+      "sha256": "9199b48610964fa1af5d68e328da1411c68089d7b1d13dd77cb600382b3c564c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/84.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e0aca85692e7d4e28323bcf1], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e0aca85692e7d4e28323bcf1\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/84.ili\",\"revision\":\"1\",\"startOffset\":64,\"endOffset\":72},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"INTERLIS\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/84.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/84.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/84.ili:1:expecting EOF, found 'INTERLIS'\n...compiler run failed 2026-10-25 16:24:08\n"
+        }
+      }
+    },
+    {
+      "name": "eof-;-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.;",
+      "expected": "rejected",
+      "sha256": "c9a16946199b0032e0c9e373350e596558d767b2946fa4e64285933c7efd935a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/85.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3229d7e9b24cfce4ea81f3bf], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3229d7e9b24cfce4ea81f3bf\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/85.ili\",\"revision\":\"1\",\"startOffset\":64,\"endOffset\":65},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\";\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/85.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/85.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/85.ili:1:expecting EOF, found ';'\n...compiler run failed 2026-10-25 16:24:09\n"
+        }
+      }
+    },
+    {
+      "name": "eof-\n!! trailing-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.\n!! trailing comment\n/* block */",
+      "expected": "succeeded",
+      "sha256": "9e41fcc26bf4d287dd63932c920e117fc2ce35a775f8bda0f621160951750a85",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/86.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/86.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/86.ili>\nInfo: ...compiler run done 2026-10-25 16:24:10\n"
+        }
+      }
+    },
+    {
+      "name": "operator-==-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a==b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "19b6d66ff72bf52d9abaf930a6af530b0937e1531b8d95e43eadab63d91cfd7b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/87.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/87.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/87.ili>\nInfo: ...compiler run done 2026-10-25 16:24:11\n"
+        }
+      }
+    },
+    {
+      "name": "operator-!=-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a!=b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "9461f52fc06ba6bc7fc40b871bfb666fbb703fc0571caee2177758e3689c960f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/88.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/88.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/88.ili>\nInfo: ...compiler run done 2026-10-25 16:24:12\n"
+        }
+      }
+    },
+    {
+      "name": "operator-<>-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a<>b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "4a7800939c6cf10dd5e39656717c7274b3fafb5f44771c88bab3320d0155c795",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/89.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/89.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/89.ili>\nInfo: ...compiler run done 2026-10-25 16:24:13\n"
+        }
+      }
+    },
+    {
+      "name": "operator-<-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a<b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "0c2409574d5af7f479307e9a577fffba72623ae6057c1a92fb44df9d8365a2ed",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/90.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/90.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/90.ili>\nInfo: ...compiler run done 2026-10-25 16:24:13\n"
+        }
+      }
+    },
+    {
+      "name": "operator-<=-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a<=b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "a6ac4b91e4aa6540fd1c4198571ae01ce34fe3f2242ef74ab8d4e7067602ddb1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/91.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/91.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/91.ili>\nInfo: ...compiler run done 2026-10-25 16:24:14\n"
+        }
+      }
+    },
+    {
+      "name": "operator->-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a>b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "a740ce977e94e737c25d01e232402f818073e9c912813144908df98169ab8001",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/92.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/92.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/92.ili>\nInfo: ...compiler run done 2026-10-25 16:24:15\n"
+        }
+      }
+    },
+    {
+      "name": "operator->=-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=!! 🥳\r\n TOPIC T=CLASS C=a:0..10;b:0..10;MANDATORY CONSTRAINT a>=b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "e512252ae13dadfd41231086bf74a78b34f6c123cb5f4edb1337d00ed4bb49db",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/93.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/93.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/93.ili>\nInfo: ...compiler run done 2026-10-25 16:24:16\n"
+        }
+      }
+    },
+    {
+      "name": "eof-TRAILING-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.TRAILING",
+      "expected": "rejected",
+      "sha256": "6e558c9c318a937fe2f54ac0c858cb1c0a987043991b59bb717323b9b8b0507f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/94.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0629cdf2a6d3cb36cb6bbd0e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0629cdf2a6d3cb36cb6bbd0e\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/94.ili\",\"revision\":\"1\",\"startOffset\":64,\"endOffset\":72},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"TRAILING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/94.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/94.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/94.ili:1:expecting EOF, found 'TRAILING'\n...compiler run failed 2026-10-25 16:24:17\n"
+        }
+      }
+    },
+    {
+      "name": "eof-INTERLIS 2.4-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.INTERLIS 2.4;MODEL Ignored AT \"https://example.org\" VERSION \"1\"=END Ignored.",
+      "expected": "rejected",
+      "sha256": "89bfd69355aa3d01c7faa9792681de772ab4cf93a9cf8a747c6c0dd03d9a1076",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/95.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b9f70a410e641fb88ceae4bc], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b9f70a410e641fb88ceae4bc\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/95.ili\",\"revision\":\"1\",\"startOffset\":64,\"endOffset\":72},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"INTERLIS\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/95.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/95.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/95.ili:1:expecting EOF, found 'INTERLIS'\n...compiler run failed 2026-10-25 16:24:18\n"
+        }
+      }
+    },
+    {
+      "name": "eof-;-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.;",
+      "expected": "rejected",
+      "sha256": "a9608cfb8575c5a268550cb0452781f3e30f0379e84277775f651faf437e85d9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/96.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-de7b0c470dbf733494a9a675], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-de7b0c470dbf733494a9a675\",\"code\":\"ILI-SYN-0004\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.trailing\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/96.ili\",\"revision\":\"1\",\"startOffset\":64,\"endOffset\":65},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\";\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/96.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/96.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/96.ili:1:expecting EOF, found ';'\n...compiler run failed 2026-10-25 16:24:19\n"
+        }
+      }
+    },
+    {
+      "name": "eof-\n!! trailing-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=END F.\n!! trailing comment\n/* block */",
+      "expected": "succeeded",
+      "sha256": "b33128255c167c97512ea54148de8cbe293d8d274d78dcdbbb6ace71a2b0130c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/97.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/97.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/97.ili>\nInfo: ...compiler run done 2026-10-25 16:24:19\n"
+        }
+      }
+    },
+    {
+      "name": "formatted-compare-b-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=a:INTERLIS.XMLDate;b:INTERLIS.XMLDate;t:INTERLIS.XMLTime;MANDATORY CONSTRAINT a==b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "ddcfd1d7b13c738bfcae54080b2f903ec4f8ba20498289e71bc9c4b580777b5e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/98.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/98.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/98.ili>\nInfo: ...compiler run done 2026-10-25 16:24:20\n"
+        }
+      }
+    },
+    {
+      "name": "formatted-compare-t-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=a:INTERLIS.XMLDate;b:INTERLIS.XMLDate;t:INTERLIS.XMLTime;MANDATORY CONSTRAINT a==t;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "7cd55666cc43755a1ee9ac88915c1a768df1132771fdc1a819ff1d004e5d73e3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/99.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2ed8de52ff41296ee8249983], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2ed8de52ff41296ee8249983\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/99.ili\",\"revision\":\"1\",\"startOffset\":152,\"endOffset\":156},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"FORMATTED,FORMATTED\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE EQUALITY\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/99.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/99.ili>\nInfo: ...compiler run done 2026-10-25 16:24:21\n"
+        }
+      }
+    },
+    {
+      "name": "formatted-compare-b-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=a:INTERLIS.XMLDate;b:INTERLIS.XMLDate;t:INTERLIS.XMLTime;MANDATORY CONSTRAINT a==b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "ac3ebb1b394ac9501d22d6729c8d59faa39d697840ee184c5dbcd0183785d547",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/100.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/100.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/100.ili>\nInfo: ...compiler run done 2026-10-25 16:24:22\n"
+        }
+      }
+    },
+    {
+      "name": "formatted-compare-t-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=a:INTERLIS.XMLDate;b:INTERLIS.XMLDate;t:INTERLIS.XMLTime;MANDATORY CONSTRAINT a==t;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "6e244ad458ef8d401856fdc87e7fca3b24971836e897d1b77cc96365c1064e79",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/101.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5d3abb77162a030e7bd8df02], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5d3abb77162a030e7bd8df02\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/101.ili\",\"revision\":\"1\",\"startOffset\":152,\"endOffset\":156},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"FORMATTED,FORMATTED\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE EQUALITY\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/101.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/101.ili>\nInfo: ...compiler run done 2026-10-25 16:24:23\n"
+        }
+      }
+    },
+    {
+      "name": "oid-compare-==-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN O=OID TEXT*20;TOPIC T=CLASS C=a:O;b:O;MANDATORY CONSTRAINT a==b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "0a8dfbd94c9c760d327b4bb804be2c3a55348e76bde67af6def8db74962d6ff6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/102.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/102.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/102.ili>\nInfo: ...compiler run done 2026-10-25 16:24:24\n"
+        }
+      }
+    },
+    {
+      "name": "oid-compare-<-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN O=OID TEXT*20;TOPIC T=CLASS C=a:O;b:O;MANDATORY CONSTRAINT a<b;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "1a444a79ad6296565ea95d5b0609cc8f8c3fe194545e15cdea7dc8d7464f4b3e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/103.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-79623f4dd84b7ae32118b291], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-79623f4dd84b7ae32118b291\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/103.ili\",\"revision\":\"1\",\"startOffset\":124,\"endOffset\":127},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"OID,OID\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/103.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/103.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/103.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:24:25\n"
+        }
+      }
+    },
+    {
+      "name": "oid-compare-==-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN O=OID TEXT*20;TOPIC T=CLASS C=a:O;b:O;MANDATORY CONSTRAINT a==b;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "fbc52a3504296dc3890f92c1321855d00fa25db230d339388c9f486bcbd4b0a4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/104.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/104.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/104.ili>\nInfo: ...compiler run done 2026-10-25 16:24:26\n"
+        }
+      }
+    },
+    {
+      "name": "oid-compare-<-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN O=OID TEXT*20;TOPIC T=CLASS C=a:O;b:O;MANDATORY CONSTRAINT a<b;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "bf268bf678310777a61acda6b1ed2c5d9313a5b255df551f7a9a295e37e161a5",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/105.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-cac29903c19e81738770efae], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cac29903c19e81738770efae\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-enums-operators/processes/105.ili\",\"revision\":\"1\",\"startOffset\":124,\"endOffset\":127},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"OID,OID\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE ORDERING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-enums-operators/processes/105.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-enums-operators/processes/105.ili>\nbuild/reports/stabilization/g2-e4-enums-operators/processes/105.ili:1:incompatible datatypes\n...compiler run failed 2026-10-25 16:24:27\n"
+        }
+      }
+    }
+  ],
+  "ownExpected": 106,
+  "total": 106,
+  "referenceAgreements": 84
+}

@@ -1,0 +1,532 @@
+{
+  "schemaVersion": "1.0",
+  "recordedAt": "2026-10-21T00:58:17.513802+00:00",
+  "scope": "Partial stabilization S0-S6; P2/P3 remain OPEN",
+  "source": {
+    "baseCommit": "3820c6b5dead437cdaeb9569fbfe726abec25d6e",
+    "workingTreeDirty": true,
+    "implementationTreeSha256": "9bf3c3a7073f549de84be35f16dc6e9265506083bcff5d789c3ea72276a82247",
+    "treeDigestMethod": "SHA-256 of sorted git tracked/nonignored untracked files excluding docs/: UTF-8 path, NUL, exact file bytes, NUL",
+    "note": "This is an uncommitted working-tree verification, not a release or clean-commit certificate."
+  },
+  "host": {
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.8.1\nBuildVersion:\t\t24H32",
+    "model": "MacBookAir10,1",
+    "cpu": "Apple M1",
+    "memoryBytes": 17179869184,
+    "architecture": "arm64"
+  },
+  "toolchains": {
+    "java": "openjdk 25.0.3 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)",
+    "gradle": "9.8.1",
+    "node": "v24.22.0",
+    "graalVm": "native-image 25.0.3 2026-04-21\nGraalVM Runtime Environment Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS-jvmci-b01)\nSubstrate VM Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS, serial gc, compressed references)",
+    "binaryen": "wasm-opt version 133 (version_133)",
+    "playwright": "1.64.1",
+    "antlr": "4.13.2",
+    "teaVm": "0.16.0"
+  },
+  "pins": {
+    "baselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+    "suite": {
+      "url": "https://codeberg.org/edigonzales/interlis-compiler-testsuite/archive/88576ffc4cd491dd72d2375eb897ea9f3f55d2c3.tar.gz",
+      "commit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+      "sha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe"
+    },
+    "packageLockSha256": "7c751361732047ba2da9d2deee1fd343df747c6e19ee7e5baf041c5d271c8d70",
+    "geoSeedManifestSha256": "9ae9601c16b1b729e59eb70e93ad6de2469a32bb00310eb4c5d36d71489073a6",
+    "geoScope": "Historical 13-file seed only; full frozen 2.3/2.4 closure not yet acquired",
+    "downloadedNodeArchiveSha256": "6a9724d9b50a5f22b4816cded441b5a8d9ddae546191a5e5b7efa5a5e2ee26d5",
+    "binaryenArchiveSha256": "ad66da82ac13f163e424b1643f16c6dfcccc98b5966296b43e52d3cab04f84a8"
+  },
+  "commands": [
+    "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew checkPortable checkBrowser :interlis-wasm-webimage:webImageProbe conformanceCheck sdkProcessCheck -PnodeExecutable=/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node -PgraalVmHome=/Users/stefan/.sdkman/candidates/java/25.0.3-graal -PbinaryenHome=/Users/stefan/.cache/interlis-java/runtime/binaryen-version_133 --continue --console=plain"
+  ],
+  "results": {
+    "jvm": {
+      "status": "PASS",
+      "totals": {
+        "tests": 267,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "modules": {
+        "interlis-model": {
+          "tests": 16,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-projection": {
+          "tests": 6,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-workspace": {
+          "tests": 8,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-repository": {
+          "tests": 19,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-wasm-bridge": {
+          "tests": 3,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-cli": {
+          "tests": 9,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-lsp": {
+          "tests": 16,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        },
+        "interlis-compiler": {
+          "tests": 190,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0
+        }
+      }
+    },
+    "sdkExample": {
+      "status": "PASS",
+      "evidence": "SDK PASS in build/reports/stabilization/no-oid-full.log"
+    },
+    "combinedGradle": {
+      "exitCode": 1,
+      "failedTasks": [
+        ":conformanceCheck"
+      ]
+    },
+    "checkPortable": {
+      "status": "PASS",
+      "normalProcessExit": true,
+      "scope": "720 semantic cases and existing bridge assertions on Node 24.22.0; normal optimizing runtime"
+    },
+    "checkBrowser": {
+      "status": "PASS",
+      "scope": "TeaVM Worker contract and 720 semantic cases in Chromium, Firefox, Playwright-WebKit and real Safari; Web Image comparison in Chromium/Firefox/WebKit"
+    },
+    "webImageProbe": {
+      "status": "PASS",
+      "normalProcessExit": true,
+      "scope": "Real GraalVM build and 720 shared cases under Node"
+    },
+    "rawReports": {
+      "teaVmJavaScript": {
+        "path": "interlis-wasm-teavm/build/js-contract-result.json",
+        "sha256": "a8f11a3dbfe5651ec32fa98782335889bb8e37126ad6a454a154b8fa0b7c464c",
+        "contents": {
+          "stabilizationCases": 720,
+          "status": "passed",
+          "tool": "0.2.0-SNAPSHOT",
+          "outcome": "succeeded",
+          "runtime": "teavm-js",
+          "node": "v24.22.0"
+        }
+      },
+      "teaVmWasmGC": {
+        "path": "interlis-wasm-teavm/build/wasm-contract-result.json",
+        "sha256": "e4f664b340a44286795c52965158ce8c051de6101204c5c225e5cd1b12982eb3",
+        "contents": {
+          "stabilizationCases": 720,
+          "status": "passed",
+          "tool": "0.2.0-SNAPSHOT",
+          "nodes": 2,
+          "outcome": "succeeded",
+          "runtime": "teavm-wasm-gc",
+          "node": "v24.22.0"
+        }
+      },
+      "teaVmBrowsers": {
+        "path": "interlis-wasm-teavm/build/browser-results.json",
+        "sha256": "2ab721f47d0e68ea077dc1118293423b1e0d994ec1e502f164692ee980a0117a",
+        "contents": [
+          {
+            "browser": "chromium",
+            "browserVersion": "156.0.8078.4",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 720,
+              "capabilities": "0.2.0-SNAPSHOT",
+              "analyzeRevision": "1",
+              "rejectedOutcome": "rejected",
+              "compiledOutcome": "succeeded",
+              "diagramNodes": 2,
+              "diagramEdges": 0,
+              "diagramAssociations": 0,
+              "diagnostics": 0,
+              "exactDecimal": true,
+              "workerRestartOutcome": "succeeded"
+            }
+          },
+          {
+            "browser": "firefox",
+            "browserVersion": "157.0",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 720,
+              "capabilities": "0.2.0-SNAPSHOT",
+              "analyzeRevision": "1",
+              "rejectedOutcome": "rejected",
+              "compiledOutcome": "succeeded",
+              "diagramNodes": 2,
+              "diagramEdges": 0,
+              "diagramAssociations": 0,
+              "diagnostics": 0,
+              "exactDecimal": true,
+              "workerRestartOutcome": "succeeded"
+            }
+          },
+          {
+            "browser": "webkit",
+            "browserVersion": "27.2",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 720,
+              "capabilities": "0.2.0-SNAPSHOT",
+              "analyzeRevision": "1",
+              "rejectedOutcome": "rejected",
+              "compiledOutcome": "succeeded",
+              "diagramNodes": 2,
+              "diagramEdges": 0,
+              "diagramAssociations": 0,
+              "diagnostics": 0,
+              "exactDecimal": true,
+              "workerRestartOutcome": "succeeded"
+            }
+          }
+        ]
+      },
+      "safari": {
+        "path": "interlis-wasm-teavm/build/safari-result.json",
+        "sha256": "73a50838e00f8537108db856520bef3eab27d8afc623961329d7621ad7735643",
+        "contents": {
+          "status": "passed",
+          "browser": "Safari",
+          "driverVersion": "Included with Safari 27.0 (20625.1.29.18.28)",
+          "node": "v24.22.0",
+          "result": {
+            "diagramAssociations": 0,
+            "compiledOutcome": "succeeded",
+            "exactDecimal": true,
+            "analyzeRevision": "1",
+            "stabilizationCases": 720,
+            "capabilities": "0.2.0-SNAPSHOT",
+            "diagnostics": 0,
+            "workerRestartOutcome": "succeeded",
+            "diagramNodes": 2,
+            "diagramEdges": 0,
+            "status": "ok",
+            "rejectedOutcome": "rejected"
+          },
+          "driverStderr": ""
+        }
+      },
+      "webImageNode": {
+        "path": "interlis-wasm-webimage/build/webimage/result.json",
+        "sha256": "982c2b525c14e8126deeb1fb8ee00b99a9c3b47c6e2838ccde5b87d50184d97d",
+        "contents": {
+          "stabilizationCases": 720,
+          "status": "ok",
+          "tool": "0.2.0-SNAPSHOT",
+          "outcome": "succeeded",
+          "runtime": "graalvm-web-image",
+          "node": "v24.22.0"
+        }
+      },
+      "webImageBrowsers": {
+        "path": "interlis-wasm-webimage/build/webimage-browser/browser-results.json",
+        "sha256": "a588a583c2471c0189e914e017de76d1f1a3c7d0aa3a2689f122369965c9495b",
+        "contents": [
+          {
+            "browser": "chromium",
+            "browserVersion": "156.0.8078.4",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "runtime": "graalvm-web-image",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 720,
+              "tool": "0.2.0-SNAPSHOT",
+              "outcome": "succeeded"
+            }
+          },
+          {
+            "browser": "firefox",
+            "browserVersion": "157.0",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "runtime": "graalvm-web-image",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 720,
+              "tool": "0.2.0-SNAPSHOT",
+              "outcome": "succeeded"
+            }
+          },
+          {
+            "browser": "webkit",
+            "browserVersion": "27.2",
+            "node": "v24.22.0",
+            "playwright": "1.64.1",
+            "runtime": "graalvm-web-image",
+            "status": "passed",
+            "result": {
+              "status": "ok",
+              "stabilizationCases": 720,
+              "tool": "0.2.0-SNAPSHOT",
+              "outcome": "succeeded"
+            }
+          }
+        ]
+      },
+      "conformance": {
+        "path": "build/reports/conformance/conformance-summary.json",
+        "sha256": "1be07aa160f8f4fcb7be335c6dc7d055c9d98faec18533721c0f7b17a2b4ed31",
+        "contents": {
+          "overallResult": "FAIL",
+          "exitCode": 1,
+          "summary": {
+            "PASS": 538,
+            "XFAIL": 1,
+            "TOTAL": 593,
+            "XPASS": 0,
+            "FAIL": 54,
+            "ERROR": 0
+          },
+          "reportJson": "report.json",
+          "reportJunit": "report.junit.xml",
+          "reportHtml": "report.html",
+          "suite": {
+            "url": "https://codeberg.org/edigonzales/interlis-compiler-testsuite/archive/88576ffc4cd491dd72d2375eb897ea9f3f55d2c3.tar.gz",
+            "commit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+            "sha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe"
+          },
+          "filter": "^(ili23|ili24)\\.",
+          "selection": {
+            "languageVersions": [
+              "2.3",
+              "2.4"
+            ],
+            "suiteCaseCount": 610,
+            "selectedCaseCount": 593,
+            "excludedCaseCount": 17,
+            "excludedVersions": [
+              "1.0"
+            ]
+          },
+          "cli": "interlis-cli/build/install/interlis-cli/bin/interlis-cli"
+        }
+      },
+      "sdkProcesses": {
+        "path": "build/reports/sdk/sdk-process-comparison.json",
+        "sha256": "98fb444515634937d7791b30c3be9f897d0b3a21857df6becbf9735fc558833f",
+        "contents": {
+          "schemaVersion": "1.0",
+          "status": "passed",
+          "cli": "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+          "commands": [
+            {
+              "arguments": [
+                "version"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "8691e5b3eaf3722c7001649021f54a880072e2949cb24f996ba5f81742b179fe",
+              "stdoutLines": 9,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "version",
+                "--json"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "a3c257572aebdb148ad57dd2909f069663446075f408d88e297bbc40598a0c8e",
+              "stdoutLines": 1,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "capabilities"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "2cc1b86cbd92b0961736f141a4262dd0993fa31d2ad27fc4f3ecc2c37feb6920",
+              "stdoutLines": 1,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "check",
+                "/Users/stefan/sources/interlis-java/testdata/models/base24.ili",
+                "/Users/stefan/sources/interlis-java/testdata/models/survey24.ili"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "check",
+                "/Users/stefan/sources/interlis-java/testdata/models/broken24.ili"
+              ],
+              "exitCode": 1,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 5
+            },
+            {
+              "arguments": [
+                "format",
+                "--check",
+                "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/tmpdxhnuqho/model.ili"
+              ],
+              "exitCode": 1,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 1
+            },
+            {
+              "arguments": [
+                "format",
+                "--indent",
+                "4",
+                "--line-ending",
+                "lf",
+                "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/tmpdxhnuqho/model.ili"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "b5c0908d18aa51ca5f37cb28f4ec75e09d41bdfbd20d723e95ee40e1c6202fb8",
+              "stdoutLines": 8,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "format",
+                "--write",
+                "--indent",
+                "4",
+                "--line-ending",
+                "lf",
+                "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/tmpdxhnuqho/model.ili"
+              ],
+              "exitCode": 0,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 0
+            },
+            {
+              "arguments": [
+                "check",
+                "--no-such-option",
+                "/Users/stefan/sources/interlis-java/testdata/models/base24.ili"
+              ],
+              "exitCode": 2,
+              "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "stdoutLines": 0,
+              "stderrLines": 2
+            }
+          ],
+          "note": "Process-level comparison; stdout/stderr are represented by hashes and line counts."
+        }
+      }
+    }
+  },
+  "artifacts": {
+    "interlis-cli/build/libs/interlis-cli-0.2.0-SNAPSHOT.jar": {
+      "sha256": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+      "bytes": 33039
+    },
+    "interlis-compiler/build/libs/interlis-compiler-0.2.0-SNAPSHOT.jar": {
+      "sha256": "b9b0a26108583ea8ff12cda9c292ef3a558c7624ec0eeca806f33edd4bf968a8",
+      "bytes": 742228
+    },
+    "interlis-model/build/libs/interlis-model-0.2.0-SNAPSHOT.jar": {
+      "sha256": "394d40cd6817e5d0d6517a52229e0e7874600594bf9dc8ad26eb9762502c2cad",
+      "bytes": 310022
+    },
+    "interlis-projection/build/libs/interlis-projection-0.2.0-SNAPSHOT.jar": {
+      "sha256": "62e3f30fc562b59e8f15e31072bf7dc0c6d3fa18516026016bcb150cecc4f7ec",
+      "bytes": 67411
+    },
+    "interlis-repository/build/libs/interlis-repository-0.2.0-SNAPSHOT.jar": {
+      "sha256": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+      "bytes": 42120
+    },
+    "interlis-wasm-bridge/build/libs/interlis-wasm-bridge-0.2.0-SNAPSHOT.jar": {
+      "sha256": "108842ecf9c7c881a5be029f586f3c051303fcc73eff0966f3a3bf5ec025caa6",
+      "bytes": 44773
+    },
+    "interlis-workspace/build/libs/interlis-workspace-0.2.0-SNAPSHOT.jar": {
+      "sha256": "f4de2293815f21f731330093a42aa64f4d474d5872edb3cafe501d71d316fb14",
+      "bytes": 68341
+    },
+    "interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js": {
+      "sha256": "79264bda1b9fcee8ce3c008cac4f5beccc328d8ea95c4ff6d735ad101655d7bc",
+      "bytes": 1416273
+    },
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm": {
+      "sha256": "babf6153a5857c3fccbb032fbd18fd4a8c8a3f2ed7b128b89396ffbe76f249c9",
+      "bytes": 3195641
+    },
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js": {
+      "sha256": "4fa1e0e0d686cc6e0a0d111e606cb876f7168bd695d9e3d639e7d5684453089b",
+      "bytes": 17268
+    },
+    "interlis-wasm-teavm/build/web/client.js": {
+      "sha256": "9f60c9e691ab5dcb190f8cadcd05868104d780d719518e8a7735b94ae8572f6e",
+      "bytes": 11785
+    },
+    "interlis-wasm-teavm/build/web/stabilization-contract.js": {
+      "sha256": "84b7ff95cfa62f05b708b0c8f9c19c79229b9fc6c12f808b64ca6eabfd002c18",
+      "bytes": 42824
+    },
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js": {
+      "sha256": "98d121943d66def8571579c4ee3de30d811af2363c4b91064f351b56fb8bb232",
+      "bytes": 94959
+    },
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js.wasm": {
+      "sha256": "6ca61adec2211849bfba6ad033a8df94786d5184f854223be7ccb3e484d9b5e2",
+      "bytes": 8510022
+    }
+  },
+  "logs": {
+    "build/reports/stabilization/no-oid-full.log": "26b79c01cd65504e6b8d938d42b910835fa37d1b4ceeeaec5a8a831ce3396846"
+  },
+  "limitations": [
+    "No full P0-P3 normative coverage audit; open required semantic cases are enumerated separately.",
+    "Node 22 remains a reproduced V8 compiler shutdown blocker; Node 24.22.0 is the pinned host profile. No forced exit or liftoff-only workaround is used.",
+    "Earlier --liftoff-only diagnostic exit under Node is not the production profile or a performance acceptance.",
+    "External conformance runner probes -version, which this CLI does not yet implement; raw compilerVersion is usage text. Actual built tool version is captured by the SDK version command and portable capability reports.",
+    "No accepted M1 editor/batch/cancellation/1000-edit retention performance report.",
+    "No Linux x64 or Windows x64 distribution process verification.",
+    "Legacy ili2c check profile, complete resolver/offline integration and full LSP concurrency/closed-file rename remain unimplemented or partial.",
+    "Full releaseCheck was not run and is not accepted; G0-G3 have no complete current release certificate."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "step": "A2",
+  "subscope": "A2-R2 correction of SPECIAL-SCOPE and OBJECT-ASSERTION",
+  "acceptance": "REWORK",
+  "independentRecheck": "PENDING",
+  "previousReview": "g2-reviews/A2-R2-attempt1.json",
+  "sourceInventorySha256": "53add09d890c7ab07d1e236724594f8253a5dd1f476a1c9d5926607b1637e570",
+  "technicalTests": 29,
+  "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+  "exitCode": 0,
+  "log": "build/reports/g2/A2/r2-rework/gradle-evidence-tests.log",
+  "logSha256": "03cc06aa4d5611850694d6dbf0260a64342ad439cc925bac4f8e9e90a552b312",
+  "corrections": [
+    "All21 special rows have explicit both-engine/syntax scope and existing rule references",
+    "Builtin variants record actual typed signature uses, argument/result positions and active language versions",
+    "OBJECT has zero current uses; assertions conditional on explicit user norm decision",
+    "areAreas2 row directly retains chapter OBJECTS and appendix OBJECT with exact PDF excerpts"
+  ],
+  "normExcerptsChecked": {
+    "2.3": 132,
+    "2.4": 143
+  },
+  "normativeExpectationsChanged": false,
+  "newExceptions": 0,
+  "remaining": [
+    "Fresh targeted independent R2 review",
+    "A2-R3 exact contract/case assertions",
+    "A2-R4 full paragraph/contract/exception audit",
+    "Full A2 acceptance before A3"
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN"
+}

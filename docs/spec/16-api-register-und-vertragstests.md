@@ -6,6 +6,119 @@ Dieses Register ordnet die gemeinsamen Typen, Fabriken und Dienste eindeutig ein
 
 Java-Blöcke in der Spezifikation zeigen Signaturen und Varianten; Bodies und Imports sind teilweise absichtlich ausgelassen. Das Repository MUSS zusätzlich tatsächlich kompilierende API-Beispiele enthalten. Die Spezifikation behauptet keine erfolgreiche Kompilierung der nur deklarativ abgebildeten Klassenblöcke.
 
+Vorab-API 0.2 konkretisiert die Funktionssignaturen mit `TypeId` in
+`FunctionParameter`/`FunctionSymbol` (Kapitel 05), Funktionssyntax mit `TypeSyntax`
+und `NameSyntax` sowie `SyntaxSnapshot.options()` (Kapitel 04).
+`ObjectArgumentType` (model, Kapitel 05) und `ObjectArgumentTypeSyntax`
+(compiler/syntax, Kapitel 04) verwenden denselben Basis-/Restriktionsvertrag
+für einzelne Objekte und Mengen. `objects` unterscheidet `OBJECT_ARGUMENT`
+von `OBJECT_SET`; `TYPE_OBJECT_ARGUMENT` bleibt die gemeinsame Syntaxfamilie.
+`ObjectSetExpression` / `ObjectSetExpressionSyntax` erhalten die gebundene
+beziehungsweise syntaktische `ALL`-Auswahl. `PathExpressionSyntax.Segment`
+erhält den Assoziationsoperator, den optionalen `NameSyntax`-Qualifikator und
+`index(): Optional<PathIndex>` getrennt vom Namen. `PathIndex` und
+`PathStep.IndexStep` (model, Kapitel 05) erhalten Auswahl und Zwischentyp;
+exhaustive Verbraucher müssen den zusätzlichen Schritt berücksichtigen;
+`PathStep.AssociationAccessStep` hält Assoziation, beide Rollen, Kardinalität
+und Zwischentyp im selben Snapshot. `PathStep.AssociationSourceStep` (model,
+Kapitel 05) ergänzt den Ausgangsrollenzugang mit Assoziation und Ausgangsrolle,
+Kardinalität je Ausgangsobjekt und Ergebnistyp einschliesslich geerbter
+Mengenwertigkeit. Exhaustive Verbraucher berücksichtigen diese Variante.
+`AssociationDeclarationSyntax.cardinality`
+erhält die Multiplizität der Assoziationsinstanzen. Nullfreiheit, Unveränderlichkeit,
+Reihenfolge, Fehler und positive/negative Abnahmen regeln Kapitel 04/05.
+`RoleDeclarationSyntax.Target` (compiler/syntax) und `RoleTarget` (model)
+erhalten jede Basis mit ihren Restriktionen; `RoleSymbol.targets()` ersetzt den
+Einzelzielvertrag. `AssociationSymbol.baseAssociation()` ergänzt die gebundene
+Vererbung, `cardinality()` die effektive Linkmultiplizität; effektive Rollen verwenden die bestehende `EffectiveMember`-Abfrage.
+Vertragstests prüfen auch Typabfragen und das ausgewählte gültige Schema.
+
+`ConstraintDeclarationSyntax` und `ExistenceConstraintSyntax` (compiler/syntax,
+Kapitel 04) bewahren strukturierte Schlüssel-/Zielpfade sowie LOCAL-Präfix und
+BASKET. `UniquenessConstraint`, seine `LocalUniqueness` und `ExistenceConstraint`
+(model, Kapitel 05) verwenden `ExpressionId` für diese Pfade. Es gibt keine
+parallele String- oder `ObjectPath`-Fassade: Der zugehörige `PathExpression`
+enthält Typ, Schritte und Quellbezug. Graph-/Schema-Closure und Vertragstests
+schliessen diese Ausdrücke ein; Fehler und Lücken erzeugen kein gültiges Schema.
+
+`PathStep.UnresolvedStep` (model, Kapitel 05) ergänzt die geschlossene
+Pfadschrittmenge für fehlerhafte Analysen. Der Schritt bewahrt Name und
+Quellbereich, besitzt kein erfundenes Ziel und verhindert ein gültiges Schema
+für die betroffene Closure. Exhaustive Verbraucher müssen diese Variante
+ausdrücklich behandeln.
+`SourceInventory` erhält bereits vorhandene Syntaxsnapshots statt eines Budgets
+für verstecktes Parsing (Kapitel 08). Es gibt keine parallelen Alt-/Neu-Fassaden.
+Die [Migration](../api-migration-0.2.md) nennt die betroffenen Aufrufer.
+
+Die laufende Vorab-API 0.2 erhält zusätzlich strukturierte
+`EnumerationTypeSyntax`, `FormattedTypeSyntax` und `OidTypeSyntax` im
+Compilerpaket `guru.interlis.syntax` (Kapitel 04). Die Modelltypen
+`EnumerationType`, `FormattedType` und `OidType` gehören weiterhin
+`interlis-model` / `guru.interlis.model` (Kapitel 05): effektive Enum-Basis und
+FINAL-Teilbäume, gebundene Formatbestandteile sowie OID-Trägertypen.
+Syntax verwendet Quellnamen, das Modell snapshotgebundene IDs; alle Werte
+bleiben immutable und nullfrei. `ExistenceValueFamiliesContractTest` prüft
+Inhalte, positive und negative Regeln, öffentliche Queries und Quellbindung.
+Es gibt keine parallelen Alt-/Neu-Konstruktoren. FORMAT-Konkretisierung benötigt
+keinen zusätzlichen öffentlichen Zustand: `Part.attribute()` bezeichnet das
+wirksame Attribut der spezialisierten Struktur; `Part.origin()` behält den
+Deklarationsort. Die noch fehlende numerische Präzision bleibt im referenzierten
+`NumericType` sichtbar. `OidFollowupAbstractFormatContractTest` prüft diese
+Unterscheidung und die sprachversionsabhängigen OID-Folgeregeln.
+
+`OidRuleSyntax` (compiler, `guru.interlis.syntax`, Kapitel 04) und `OidRule`
+(model, `guru.interlis.model`, Kapitel 05) ersetzen rohe OID-Headerstrings.
+Die Syntaxdeklarationen besitzen `oidRules()` in Quellreihenfolge,
+`SymbolHeader.oidRules()` gebundene effektive Regeln mit Herkunft. Optionalität,
+NO OID, Snapshotbezug und Fehlerregeln stehen in den Fachkapiteln. Auch diese
+Änderung gehört zur laufenden, unveröffentlichten Vorab-API 0.2; Aufrufer
+übergeben Listen statt `Optional<String>`.
+
+`ReferenceType` (model, `guru.interlis.model`, Kapitel 05) verwendet ein
+optionales Primärziel und geordnete gebundene Restriktionen; leeres Primärziel
+bedeutet ANYCLASS. `ReferenceTypeSyntax` (compiler, `guru.interlis.syntax`,
+Kapitel 04) erhält dazu die Einschränkungsnamen als Syntaxkinder. Dies ersetzt
+den bisherigen Einzelziel-Konstruktor innerhalb der unveröffentlichten 0.2-API.
+`NoOidReferenceContractTest` prüft Zielmengen, Typabfragen, Quellbindungen und
+versionsabhängige NO-OID-Diagnostik; die gemeinsame portable Suite prüft die
+positiven und negativen Fälle über dieselbe Compilerengine.
+
+`AttributeSymbol.declaredType()` enthält bei einer reinen MANDATORY-
+Überschreibung die gebundene `TypeId` des geerbten Attributes bereits für die
+Ausdrucksprüfung. `overrides()` bleibt die unmittelbare Attributidentität;
+Herkunft und Quellbereiche der neuen Deklaration bleiben erhalten. Fehlende
+Basen/Zyklen erzeugen Diagnosen statt eines gültigen generischen Ersatztyps.
+`ClassSymbol.baseType()` kann gemäss PDF-Referenzprofil eine Klasse oder Struktur
+bezeichnen; die Graphvalidierung erhält und prüft diese Identität.
+`MandatoryOverrideTypeContractTest` prüft beide Sprachversionen, Pfade, Funktionen,
+Constraints, Quellnavigation und die Sortierung importierter Quelldateien.
+Keine Signaturänderung und keine zusätzliche Fassade.
+
+`DomainReferenceType.targetDomain()` und `EffectiveType.aliasPath()` bewahren
+die Domainidentität auch bei früh benötigten importierten Typen. Die
+Ausdrucksprüfung verwendet dieselbe Bindung wie das endgültige Schema;
+Dateisortierung und Wiederverwendung dürfen die fachliche Entscheidung nicht
+ändern. `ImportedDomainTypeContractTest` prüft beide Sprachversionen,
+Skalar-/Funktions-/Struktur-/Indexpfade, Enum-/FORMAT-Basen, Typqueries,
+Navigation und Typzyklen. Der Abschnitt ändert keine öffentliche Signatur.
+
+`TopicSymbol.dependencies()` bleibt eine Liste direkt deklarierter Topic-IDs;
+`baseTopic()` erhält die Vererbung separat (Kapitel 05). Die gebundenen
+DEPENDS-ON-Namensreferenzen verwenden den vorhandenen `TYPE_USE`-Vertrag.
+`TopicDependencyContractTest` prüft Scope, Vererbung, Restriktionen und Zugriff
+auf diese Werte. Dafür entsteht keine neue öffentliche Signatur oder API-Version.
+
+`UnitSymbol` (model, `guru.interlis.model`) und `UnitDeclarationSyntax`
+(compiler, `guru.interlis.syntax`) erhalten `designation`, `derivedFrom` und
+`components` zusätzlich zu den bestehenden Grunddaten. Header-/Syntaxname
+bezeichnen das Kurzzeichen. `UnitSymbol.Component(Operator, SymbolId)` und
+`UnitDeclarationSyntax.Component(Operator, NameSyntax)` sind geordnete,
+nullfreie immutable Werte; `UnitSymbol.Operator` unterscheidet MULTIPLY und
+DIVIDE. Vollständiger Vertrag in Kapitel 04/05. Konstruktoren der laufenden,
+unveröffentlichten Vorab-API 0.2 werden direkt angepasst; keine Parallelfassade.
+`ComposedUnitContractTest` prüft Bindung, Fehler, öffentliche IDs, Numerik und
+Quellnavigation; die portable Suite prüft denselben Compilerkern.
+
 ## 2. Module, Packages und grundlegende Typen
 
 | Modul | Package | Kanonische Typen | Definition |
@@ -149,3 +262,317 @@ Diese Namen bezeichnen zu implementierende Tests. Sie sind keine bereits ausgef�
 ## 10. Vollständigkeit des Methodenentwurfs
 
 Der Entwurf legt alle wesentlichen öffentlichen Einstiege und die fachlich bedeutenden internen Prüfdienste fest. Er erfindet keine tausenden trivialen Getter als Ersatz für fachliche Regeln. Zusätzliche private Datenträger oder Helpermethoden entstehen im Code nach Bedarf. Fehlt beim Implementieren ein fachlicher Vertrag, wird der betreffende Abschnitt mit Regel, Methodenzuständigkeit und Fall ergänzt; die globale Zielmatrix bleibt erhalten.
+
+### View-Vertragserweiterung innerhalb der unveröffentlichten API 0.2
+
+Besitzer ist `interlis-model`, Package `guru.interlis.model`: `ViewSymbol` mit
+seinen geschlossenen Formationsvarianten und `Base`/`BaseExtension`,
+`SymbolKind.VIEW_BASE`, `PathStep.ViewBaseStep` sowie
+`AttributeSymbol.derivations()`. Kapitel 05 beschreibt Ordnung, Herkunft,
+Snapshotbindung und Schema-Abdeckung. `interlis-compiler` besitzt die
+strukturierten Syntaxgegenstücke gemäss Kapitel 04 und den internen
+`ViewBuilder`; dieser teilt ausschliesslich den Zustand seines Compilerlaufs.
+
+`ViewBindingContractTest` prüft geordnete Schema-Inhalte, Ausdruckserreichbarkeit,
+Vererbung, Selektionen, Join-/Unionregeln und Aggregation. Laufzeit- und
+Konformitätsabnahmen werden getrennt im Implementierungsstatus festgehalten.
+Es existiert keine parallele stringbasierte View-Fassade.
+
+Ergänzt werden `PathStep.InspectionStep`/`InspectionKind`,
+`ViewSymbol.Inspection.element`/`parent`, `AssociationSymbol.derivedFrom` und
+`RoleSymbol.derivation`. Die zugehörigen Syntaxwerte liegen in
+`AssociationDeclarationSyntax.derivedFrom` und `RoleDeclarationSyntax.derivation`.
+Die Bindung von Referenzen und die erreichbaren Modellinhalte werden in
+`ViewBindingContractTest`, die Kanten in `DiagramProjectionTest` geprüft.
+
+`interlis-compiler` besitzt `guru.interlis.syntax.InspectionExpressionSyntax`
+und `SyntaxKind.EXPRESSION_INSPECTION`; `interlis-model` besitzt
+`guru.interlis.model.InspectionExpression` als weitere geschlossene Variante
+von `TypedExpression`. Konstruktorinvarianten, Typ, Kinderreihenfolge,
+Snapshotbindung und Fehlerzustände stehen in Kapitel 04/05.
+`InspectionFactorContractTest` und die gemeinsamen portablen Fälle sichern
+den Vertrag. Die Vorab-API bleibt 0.2; es gibt keine zweite Fassade.
+
+View-Vererbungsverträge werden zusätzlich durch
+`ViewInheritanceTranslationContractTest` geprüft: unmittelbare `overrides()`-Kette,
+lokale Ableitungslisten in Basis-vor-Erweiterung-Reihenfolge, vollständiger
+effektiver Vererbungspfad, MANDATORY nach ALL OF, importierte Identitäten und
+AGGREGATES-Korrespondenz in Übersetzungen. Keine neue öffentliche Signatur.
+
+
+### Parameter- und Klassenwerte, Vorab-API 0.2
+
+Kapitel 04 besitzt `ParameterDeclarationSyntax`, `ParameterExpressionSyntax`,
+`AttributePathTypeSyntax`, `AttributeConstantExpressionSyntax` und die gebunden
+vorbereitete `ClassValueTypeSyntax` (compiler/syntax). Kapitel 05 besitzt
+`ParameterSymbol`, `SymbolValueExpression`, `ClassValueType` und
+`AttributePathType` mit seinen geschlossenen `Owner`-Varianten (model).
+`PARAMETER` ergänzt SymbolKind/CompletionKind; der LSP bildet es auf Variable ab.
+Semantik, TypeRelations, Quellqueries und Schemaauswahl verwenden dieselben
+Identitäten. `ParameterClassFunctionContractTest` und portable Verträge prüfen
+den in Kapitel 05 beschriebenen Teilumfang. Keine parallelen Alt-/Neu-Fassaden.
+
+
+### K3: Generische Koordinatenkontexte
+
+`ContextDeclarationSyntax` und `TopicSyntax.deferredGenerics` gehören
+compiler/syntax (Kapitel 04); `ContextSymbol`, `TopicSymbol.GenericBinding` und
+`TopicSymbol.BindingState` gehören model (Kapitel 05). `SymbolKind.CONTEXT`
+ergänzt die geschlossene Symbolmenge. Quellqueries verwenden die gebundenen
+Referenzen; Verbraucher lesen die wirksame Bindung am Topic, ohne Domain-Typen
+kontextabhängig zu überschreiben. Verträge und Grenzen stehen in Kapitel 05;
+`GenericContextContractTest` prüft auch die Inhalte des ausgewählten Schemas.
+
+### K4: Linienformen
+
+Kapitel 04 besitzt `LineFormDeclarationSyntax` und die strukturierten
+Linienform-/Linienattributreferenzen von `LineTypeSyntax` (compiler/syntax).
+Kapitel 05 besitzt `LineFormSymbol` und die erweiterten gebundenen
+`GeometryType`-Komponenten (model). LINE_FORM ergänzt SymbolKind,
+CompletionKind und DiagramNodeKind; Kapitel 11 besitzt den Diagrammvertrag.
+`LineFormBindingContractTest` und `DiagramProjectionTest` prüfen die öffentlichen
+Identitäten, Reihenfolgen, Referenzen und Projektionen. Die Vorab-API bleibt 0.2;
+String- und gebundene Parallelfassaden werden nicht angeboten.
+
+
+### K4: Metadaten, Achsen und Inspektionen
+
+Kapitel 04 besitzt `MetadataBasketDeclarationSyntax` und dessen
+`ObjectDeclaration`, die erweiterten `NumericTypeSyntax`/`CoordinateTypeSyntax`
+sowie Parametermodifikatoren (compiler/syntax). Kapitel 05 besitzt
+`MetadataBasketSymbol`, `MetaObjectSymbol`, `NumericRange.ReferenceSystem`,
+`CoordinateType.Rotation`, `ParameterSymbol.overrides` und
+`DerivationKind.CONTEXTUALIZATION` (model). Herkunft, optionale Fehlerbindungen,
+Reihenfolge und Lebensdauer stehen dort. Kapitel 11 besitzt die zusätzlichen
+Diagrammarten METADATA_BASKET/METAOBJECT und PARAMETERS/PARAMETER.
+`MetadataBindingContractTest` und `GeometryInspectionContractTest` prüfen
+öffentliche Inhalte und Fehlerpfade; Projektion und portable Verträge ergänzen
+die Verbraucherabnahme. API 0.2 erhält keine parallele String-Fassade.
+
+### K5: Grafiken und Signaturparameter
+
+Kapitel 04 besitzt `GraphicDeclarationSyntax` einschliesslich seiner
+Regel-/Zuweisungswerte und `MetaObjectTypeSyntax` (compiler/syntax). Kapitel 05
+besitzt `GraphicSymbol`, `DrawingRuleSymbol` mit geschlossenen Wertvarianten und
+`MetaObjectType` (model). GRAPHIC/DRAWING_RULE ergänzen SymbolKind, SyntaxKind,
+CompletionKind und DiagramNodeKind; METAOBJECT ergänzt TypeKind. Der LSP bildet
+Grafiken auf Module und Zeichenregeln auf Methoden ab. Quellqueries verwenden
+die gebundenen Parameter-/Basis-/Signaturreferenzen. Verträge und Fehlerzustände
+stehen in Kapitel 04/05, Projektion in Kapitel 11. `GraphicBindingContractTest`,
+`DiagramProjectionTest` und portable Verträge prüfen den Umfang. API 0.2 erhält
+keine zusätzliche String- oder Alt-Fassade.
+
+### K6: Exakte Einheitenkonversionen
+
+Kapitel 05 besitzt `UnitSymbol.ConversionFactor` und `UnitSymbol.ConstantKind`
+sowie die neuen `conversionFactors`-/`conversionFunction`-Komponenten (model).
+Kapitel 04 besitzt die ergänzten Komponenten von `UnitDeclarationSyntax`
+(compiler/syntax), verwendet denselben Faktorwert und behält Namensreferenzen
+als `NameSyntax`. Konstruktoren werden innerhalb der unveröffentlichten API
+0.2 direkt angepasst; keine parallele Alt-Fassade. `TypeRelations.canExtend`
+behält seine Signatur und prüft skalare Einheiten nach dem Vertrag aus Kapitel
+05. `NumericUnitConversionContractTest` und portable Fälle sichern Inhalte,
+Nullfreiheit, Unveränderlichkeit, Quellbezug und Fehlerpfade.
+
+### Vordefinierte Datums-/Zeitdomänen (G2 A)
+
+Die vordefinierten Inhalte verwenden `DomainSymbol`, `DomainReferenceType`,
+`FormattedType`, `StructureSymbol` und `AttributeSymbol` aus `interlis-model` /
+`guru.interlis.model`. `TemporalKind` bleibt die Klassifikation; `TemporalType`
+und `TypeKind.TEMPORAL` entfallen innerhalb der unveröffentlichten 0.2.
+Struktur-, Attribut-, Einheiten- und Referenzsystem-IDs gehören zum jeweiligen
+Graph. Vordefinierte Herkunft besitzt keinen Quelldeklarationsbereich.
+`PredefinedTemporalContractTest` prüft Inhalte, Versionsprofile, verschachtelte
+Formate und Fresh-/Reuse-Parität; `TemporalTypeContractTest` prüft die gemeinsame
+Bindung der 2.4-Schlüsselwörter. Grenzen und Fehler verwenden den gemeinsamen
+FORMAT-Prüfer aus Kapitel 05; sämtliche veröffentlichten Werte sind immutable
+und nullfrei.
+
+### Einfache vordefinierte Domänen und Namensbindung (G2 E1)
+
+`DomainSymbol`, `DomainReferenceType`, `TextType`, `AlignmentType` und
+`Origin.PredefinedOrigin` behalten ihre Besitzer und Signaturen.
+`PredefinedBindingContractTest` prüft die drei einfachen Domänen nach Kapitel 05,
+FINAL, snapshotgebundene Typ-/Sprachqueries, Originalbereiche, unbekannte Ziele,
+exakte qualifizierte Namen, Imports und Wiederverwendung. Neue öffentliche
+Fassaden oder Konstruktorvarianten entstehen nicht. Werte bleiben unveränderlich,
+nullfrei und graphgebunden; fehlende Namen ergeben erklärbare Quellfehler.
+
+### E1: Funktionslisten und METAOBJECT_TRANSLATION
+
+Die bestehenden Fabriken, Snapshot-Verträge sowie `FunctionDeclarationSyntax`,
+`FunctionSymbol`, `FunctionCallExpression`, `ClassSymbol`, `AttributeSymbol`,
+`ConstraintSymbol`, `UniquenessConstraint` und `PathExpression` behalten ihre
+Signaturen und Besitzer. `E1FunctionMetadataContractTest` prüft Versionsprofile,
+Originalbereiche, Recovery, Ausdrucksfragmente, typisierte Aufrufe, beide
+Pflichtattribute und unabhängigen UNIQUE-Schlüssel, Reihenfolgen, vordefinierte
+Herkunft, Vererbung, Übersetzungen, Imports, Queries und Wiederverwendung.
+Es gibt keine neue öffentliche Fassade. Werte bleiben nullfrei, unveränderlich
+und an ihren Graph gebunden; Funktions- und Datenbedingungen werden nicht
+ausgeführt. Typqueries sehen die festen NAME-/URI-Grenzen aus Kapitel 05.
+
+### Gebundene Übersetzungen (G2 B)
+
+`TranslationLink` gehört zu `interlis-model` / `guru.interlis.model` und enthält
+die snapshotgebundenen Original-/Übersetzungs-IDs. `ModelTranslation` ergänzt
+`sourceTarget(): Optional<SymbolId>` und `correspondences(): List<TranslationLink>`
+gemäss Kapitel 05. Die unveröffentlichte API 0.2 erhält direkt die fünfteilige
+Konstruktion, keine parallele Fassade. `SemanticQueries.symbol()` macht die
+Beziehungen über das gebundene `ModelSymbol` zugänglich; Namen und kanonische
+Entsprechung bleiben getrennt. `ImportedTranslationContractTest` prüft die
+gepinnten Originalfunde, öffentliche Bindungen, transitive und unveränderte
+Imports, Namenskollisionen, Fehlerursachen und Fresh-/Reuse-Parität.
+
+
+### G2 C: Geometrietoleranz und eigene Inspektionssegmente
+
+Besitzer von `GeometryType.Tolerance`, `GeometryType.Explicit(DecimalLiteral)`
+und `GeometryType.TrackWidth(SymbolId coordinateDomain)` ist **interlis-model /
+guru.interlis.model**. `GeometryType.overlap()` liefert
+`Optional<GeometryType.Tolerance>`. Kapitel 05 beschreibt Nullfreiheit,
+Unveränderlichkeit, Snapshotbindung, genaue explizite Werte, die symbolische
+Spurbreite und das Verhalten bei Vererbung/aufgeschobener Konkretisierung.
+`TypeRelations.canExtend` und der Compiler verwenden dieselbe geometrische
+Erweiterungsregel. Die bestehenden Struktur-, Typ-, Herkunfts- und
+Ausdrucksverträge stellen auch eigene kontextualisierte Segmente dar; es gibt
+keine zusätzliche öffentliche Segmentfassade. Vertragstests:
+`GeometryRulesContractTest`, `GeometryInspectionContractTest`,
+`LineFormBindingContractTest`; gemeinsame portable Fälle in
+`stabilization-contract.cjs`. Eine ausgeführte Annahmeprobe belegt allein noch
+keine vollständige graphische JVM-/TeaVM-Parität.
+
+
+### G2 D: Bestehende Grafikverträge
+
+`DrawingRuleSymbol.signatureClass` (interlis-model / guru.interlis.model) bleibt
+die deklarierte OF-Klasse. MetaObjectValue, ParameterSymbol.owner/overrides,
+Clause und EnumAssignment bewahren die gebundenen Identitäten und Reihenfolgen.
+Die verantwortliche Klasse wird im jeweiligen Zuweisungskontext geprüft; es wird
+kein einzelnes Verantwortlichkeitsfeld für die gesamte Regel eingeführt.
+Kapitel 05 regelt Verantwortung, Pflichtparameter und die statischen Grenzen;
+Kapitel 06 den Prüfzeitpunkt. `GraphicResponsibilityContractTest` und die
+portablen Signaturfälle prüfen diesen Vertrag ohne Änderung der Konstruktoren
+oder Einstiegspunkte.
+
+### E1: ModelOptions
+
+`ModelOptions` und der verschachtelte `TextValue` gehören zu interlis-model /
+guru.interlis.model. ModelSyntax und ModelSymbol ergänzen `options()`;
+ModelSymbol ergänzt `transferNamespace()`. Konstruktorverbraucher werden in der
+unveröffentlichten Vorab-API 0.2 direkt angepasst. Optionals und Werte sind
+nullfrei/immutable; Reihenfolge und Originalrevisionen folgen Kapitel 04/05.
+ModelHeaderContractTest prüft Werte, Herkunft, Defaults, IANA-Aliasse,
+Versionsfehler, gebundene Übersetzungsnamensräume, Konflikte und Wiederverwendung.
+Die bestehenden Fabriken und Snapshot-/Schema-Verträge bleiben unverändert.
+
+E1 ergänzt `ModelOptions.language(): Optional<TextValue>` mit der dokumentarischen
+Modellsprache und Originalherkunft. `ModelSyntax.language()` ist daraus abgeleitet;
+der redundante String-Konstruktorparameter entfällt in API 0.2. Modell- und
+Übersetzungssprache bleiben getrennt. Eigene Sprachbezeichnungen bleiben zulässig.
+
+E2 konkretisiert META-003/006/009/014 und SEM-005/010/014 gemäss Kapitel 05/06:
+DomainSymbol.mandatory(), gebundene CLASS-Domänen, unverfälschte fehlerhafte
+NumericTypeSyntax und QueryResult<UnitRelation> mit NOT_A_UNIT. Verbraucher
+verwenden die gemeinsame Typrelation. UnitRelationContractTest und
+DomainRestrictionContractTest prüfen Modell, Queries, Fehlursachen und Edits.
+Die weiterführende Normabnahme bleibt in g2-rule-matrix.json ausdrücklich offen.
+
+E2-Präzision ist versionsabhängig: 2.3 §2.8.5 S.42 erlaubt Verfeinerung,
+sofern gerundete Grenzen im Basisbereich bleiben (7.9949 ja, 7.9999 nein bei
+Basismaximum 7.99). 2.4 §3.8.5 S.53 verlangt unveränderte Präzision.
+`TypeRelations.canExtend(derived, base, context, language)` erhält daher einen
+expliziten nullfreien LanguageVersion-Parameter; weder Quellnamen noch ein
+zufällig gefundenes Modell bestimmen das Profil. Interne Verbraucher und
+Vorab-API-0.2-Tests werden direkt angepasst, ohne alte Überladung.
+Die 2.3-Rundung verwendet exakte Dezimalwerte und HALF_UP; Tie-Details bleiben
+in der Normprüfung separat sichtbar. Allgemeine Zuweisung ist unverändert.
+
+E2-TEXT ergänzt ohne öffentliche Signaturänderung die Literal-Längenregel aus
+Kapitel 05/06 (META-003/006/014, SEM-005/010/014, TEST-011/012). Bindung und
+öffentliche Typabfragen verwenden denselben Literaltyp; Quelltext, Identitäten
+und UTF-16-Bereiche werden nicht normalisiert. Geprüft durch TextLengthsTest
+und TextLiteralContractTest sowie die gepinnten Normalisierungseingaben.
+
+E3 (META-003/006/008/010/014, SEM-005/008/010/014/017, SYN-004/013/015,
+TEST-011/012) ergänzt StructureValueTypeSyntax in guru.interlis.syntax und
+TYPE_STRUCTURE_VALUE. StructureValueType.target() ist optional; restrictions()
+und targetRoots() erhalten gebundene Identitäten. Kapitel 04/05/06 definiert
+Nullfreiheit, Reihenfolge, Quell-/Snapshotbezug, Funktionskontext und Fehler.
+StructureValueContractTest, die bisherigen View-/Inspektionsverträge und
+DomainRestrictionContractTest prüfen Verbraucher und lange Ketten.
+
+E2-Vertragspräzisierung: `TypeRelations.canExtend` prüft Collections rekursiv
+mit der angegebenen LanguageVersion, Koordinatenerweiterung darf Dimensionen
+ergänzen; `canAssign` bleibt hinsichtlich der Dimensionenzahl unverändert.
+Vererbte Einheiten, Referenzen, Richtung und Rotation sind bereits im effektiven
+öffentlichen Typ erhalten. TEXT-Literaltypen verwenden in beiden Versionen
+die normative NFD-Länge. SharedExtensionContractTest / TextLiteralContractTest
+prüfen Compiler, Queries, Imports und frische/wiederverwendete Analyse.
+
+E4 in API 0.2: EnumArgumentType gehört zu interlis-model/guru.interlis.model,
+EnumArgumentTypeSyntax zu interlis-compiler/guru.interlis.syntax. Beide sind
+nullfrei und unveränderlich und unterscheiden ENUMVAL/ENUMTREEVAL über
+treeValues. EnumerationType erhält treeValues als achten Konstruktorparameter
+(siehe Kapitel 05). BuiltinFunctionExpressionSyntax.functionName() liefert
+NameSyntax statt String; seine Kinder enthalten Name und Argumente in
+Quellreihenfolge. Vollständige Standardsignaturen erscheinen als FunctionSymbol,
+Aufrufe tragen targetFunction und gebundene NameReferences. Die Bindung gehört
+zum Compilerlauf; veröffentlichte Werte bleiben snapshotgebunden.
+E4EnumOperatorContractTest prüft Signaturen, Identitäten, Operatoren, Quellbereiche,
+Imports, Übersetzungsgegenfälle und frische/wiederverwendete Analyse.
+
+E4-Fortsetzung in API 0.2: FunctionCallExpression (interlis-model) erhält
+Map<Integer, ArgumentPath> argumentPaths als achten Konstruktorparameter; normale
+Aufrufe verwenden Map.of(). Seine verschachtelten ArgumentPath/ArgumentPathStep
+Records besitzen die Daten und Bedingungen aus Kapitel 05. Referenzen gehören
+zum gleichen Snapshot; keine zusätzliche Sitzungslebensdauer. LiteralExpressionSyntax
+und ConstantExpressionSyntax (interlis-compiler) erhalten Optional<NameSyntax>
+unit als letzten Parameter; ohne explizite Einheit Optional.empty(). Fehler
+bleiben Compilerdiagnosen. FragmentSyntaxContractTest prüft SourceId, Revision,
+UTF-16, Escape-Grenzen, Lexerfehler und Fragmentende.
+
+E1/E4-Definiertheit in API 0.2: FunctionParameter(name,typeId,mandatory),
+FunctionSymbol(header,parameters,returnType,returnMandatory),
+FunctionDeclarationSyntax(...,returnType,returnMandatory) und
+FunctionParameterSyntax(name,type,mandatory) bewahren die Pflichteigenschaft.
+Werte sind nullfrei, immutable, parametergeordnet und snapshotgebunden wie
+die bisherigen Typreferenzen. Verbraucher übergeben false nur bei tatsächlich
+nicht pflichtigen Signaturen; es bestehen keine parallelen Konstruktoren.
+
+E2 FORMAT ohne weitere öffentliche Signaturänderung: TypeRelations.canAssign und
+canExtend verwenden denselben Prüfer wie Domänen-/Attributerweiterungen.
+FormattedValues gehört nur intern zu interlis-model/guru.interlis.model.internal;
+der bestehende Compilerverbraucher wird verschoben, keine Parallelimplementierung.
+FormattedRelationContractTest prüft gebundene Präfixe/Overrides, verschachtelte
+Grenzen, öffentliche Queries sowie Import-/Edit-/Wiederverwendungsfälle.
+
+E2 numerische Vollständigkeit ergänzt die vorhandenen NumericType-, CoordinateType-,
+DomainSymbol- und AttributeSymbol-Verträge ohne neue öffentliche Signatur. Legale
+abstrakte Werte behalten ihren Typ und die Deklarationsflags; fehlerhafte explizite
+Zielbindungen erhalten ErrorType mit vorhandenen Diagnosen. Aliaswerte bleiben
+unveränderlich. Compiler und Querygegenfälle prüfen die veröffentlichten Werte.
+
+E1 Wort-/Primitivprofile ändern keine öffentliche Signatur. SyntaxToken.kind,
+Sprachabfragen und Rename beachten die gewählte Sprachversion. Standard-
+Boolean-Ergebnisse tragen deren PredefinedOrigin, auch bei gemischten Modellen.
+ANTLR-Klassifikation und Tokenvokabular bleiben intern.
+
+E5 in API 0.2: SourceMetadata gehört zu interlis-compiler/guru.interlis.syntax
+und besitzt verschachtelte Attribute(key,text,range) und Text(text,range).
+SyntaxSnapshot erhält metadata als letzten Konstruktorparameter und eine
+gleichnamige immutable Abfrage. MetaAttributeSet.Value und Documentation
+gehören zu interlis-model/guru.interlis.model; Signaturen und Herkunft gemäss
+Kapitel 05. FunctionDeclarationSyntax(...,explanation) und
+FunctionSymbol(header,parameters,returnType,returnMandatory,explanation) werden
+direkt angepasst. Leere Werte verwenden die vorhandenen empty-Fabriken bzw.
+Optional.empty(); keine parallelen Alt-Fassaden. Quell-Metadaten besitzen die
+Snapshotlebensdauer. Lesen und Binden erhält Abbruch/Diagnostik des Compilerlaufs.
+
+`ConstraintDeclarationSyntax` (compiler/syntax) ergänzt `Optional<Plausibility>`
+mit `DecimalLiteral percentage`, `BinaryOperator comparison` und Zahlenbereich
+sowie `Optional<ExpressionSyntax> where` für SET. Kinder führen den Filter vor
+der Hauptbedingung, unveränderlich und in ursprünglichen UTF-16-Bereichen.
+`SetConstraint.SetConstraintScope` (model) hat GLOBAL/BASKET; GLOBAL ist keine
+Beschränkung auf einen Transfer. `StructuredTranslationContractTest` prüft
+Syntax, Modell, Korrespondenzen und Navigation; NumericLiteralBudgetContractTest
+prüft kontrollierte Compiler-/Fragmentgrenzen.

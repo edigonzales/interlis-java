@@ -1,0 +1,415 @@
+{
+  "recordedAt": "2026-10-21T07:24:20.178092+00:00",
+  "cases": [
+    {
+      "case": "alias-16",
+      "previousProbe": true,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/a-base.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT BaseUnit (ABSTRACT); Wrapped = (BaseUnit); DOMAIN One = (one); END Base.",
+          "sha256": "13f542c89677cd2d3222fec52a6710b02d61c2f29b3c38f1774ea5abc2d115df"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/z-importer.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC T = CLASS C = value: Base.One; MANDATORY CONSTRAINT value == #one; END C; END T; END F.",
+          "sha256": "800d9fddebe41ca442d9356b3dfe8d5de0f608e617ffcf6323d4d5525a1d7e98"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/z-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/a-base.ili:1:102: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Wrapped, rule=composed unit and all components must agree on abstraction/UNIT_COMPONENT_ABSTRACT)\n"
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/z-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/a-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/z-importer.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-0/a-base.ili:1:UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n  UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n...compiler run failed 2026-10-21 09:24:16\n"
+        }
+      },
+      "classification": "CLOSED",
+      "assessment": "The exact previous composed-unit abstraction false accept is now rejected in both source file orders and both language versions."
+    },
+    {
+      "case": "alias-34",
+      "previousProbe": true,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/z-base.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT BaseUnit (ABSTRACT); Wrapped = (BaseUnit); DOMAIN One = (one); END Base.",
+          "sha256": "13f542c89677cd2d3222fec52a6710b02d61c2f29b3c38f1774ea5abc2d115df"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/a-importer.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC T = CLASS C = value: Base.One; MANDATORY CONSTRAINT value == #one; END C; END T; END F.",
+          "sha256": "800d9fddebe41ca442d9356b3dfe8d5de0f608e617ffcf6323d4d5525a1d7e98"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/a-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/z-base.ili:1:102: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Wrapped, rule=composed unit and all components must agree on abstraction/UNIT_COMPONENT_ABSTRACT)\n"
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/a-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/z-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/a-importer.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-1/z-base.ili:1:UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n  UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n...compiler run failed 2026-10-21 09:24:17\n"
+        }
+      },
+      "classification": "CLOSED",
+      "assessment": "The exact previous composed-unit abstraction false accept is now rejected in both source file orders and both language versions."
+    },
+    {
+      "case": "alias-52",
+      "previousProbe": true,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/a-base.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT BaseUnit (ABSTRACT); Wrapped = (BaseUnit); DOMAIN One = (one); END Base.",
+          "sha256": "b5a27c8e4afa5e004e8885c07c94695eb94af9f7491482119581c1becdc6070a"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/z-importer.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC T = CLASS C = value: Base.One; MANDATORY CONSTRAINT value == #one; END C; END T; END F.",
+          "sha256": "f022104d173419c9a0747e8bc522a0378fc200d324770c58172474a1e30787ae"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/z-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/a-base.ili:1:102: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Wrapped, rule=composed unit and all components must agree on abstraction/UNIT_COMPONENT_ABSTRACT)\n"
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/z-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/a-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/z-importer.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-2/a-base.ili:1:UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n  UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n...compiler run failed 2026-10-21 09:24:17\n"
+        }
+      },
+      "classification": "CLOSED",
+      "assessment": "The exact previous composed-unit abstraction false accept is now rejected in both source file orders and both language versions."
+    },
+    {
+      "case": "alias-70",
+      "previousProbe": true,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/z-base.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT BaseUnit (ABSTRACT); Wrapped = (BaseUnit); DOMAIN One = (one); END Base.",
+          "sha256": "b5a27c8e4afa5e004e8885c07c94695eb94af9f7491482119581c1becdc6070a"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/a-importer.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; TOPIC T = CLASS C = value: Base.One; MANDATORY CONSTRAINT value == #one; END C; END T; END F.",
+          "sha256": "f022104d173419c9a0747e8bc522a0378fc200d324770c58172474a1e30787ae"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/a-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "file:///Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/z-base.ili:1:102: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Wrapped, rule=composed unit and all components must agree on abstraction/UNIT_COMPONENT_ABSTRACT)\n"
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/a-importer.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/z-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/a-importer.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/old-3/z-base.ili:1:UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n  UNIT Wrapped must be declared as ABSTRACT. It is composed of UNIT Base.BaseUnit which is abstract.\n...compiler run failed 2026-10-21 09:24:18\n"
+        }
+      },
+      "classification": "CLOSED",
+      "assessment": "The exact previous composed-unit abstraction false accept is now rejected in both source file orders and both language versions."
+    },
+    {
+      "case": "2.3-zero-factor",
+      "previousProbe": false,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-factor.ili",
+          "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0 [m]; END F.",
+          "sha256": "f3921b18949463b8f06633afe811b6e68428919e9c4046009a886ab956a1634c"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-factor.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-factor.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-factor.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-factor.ili:It does not make sense to convert units by multiplication with zero.\n  It does not make sense to convert units by multiplication with zero.\n...compiler run failed 2026-10-21 09:24:18\n"
+        }
+      },
+      "classification": "FALSE_ACCEPT_OPEN",
+      "assessment": "WP-20 follow-on: numerical conversion validation and numeric-domain unit compatibility are not implemented completely. Retain as an open required case, not an accepted norm deviation."
+    },
+    {
+      "case": "2.3-zero-divisor",
+      "previousProbe": false,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-divisor.ili",
+          "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0 [m]; END F.",
+          "sha256": "53390194d5ef450e680752cecbb102db8e563c68f964c0a0a0bb14590a6f5cd8"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-divisor.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-divisor.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-divisor.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-zero-divisor.ili:1:It does not make sense to derive units in a division by zero.\n  It does not make sense to derive units in a division by zero.\n...compiler run failed 2026-10-21 09:24:18\n"
+        }
+      },
+      "classification": "FALSE_ACCEPT_OPEN",
+      "assessment": "WP-20 follow-on: numerical conversion validation and numeric-domain unit compatibility are not implemented completely. Retain as an open required case, not an accepted norm deviation."
+    },
+    {
+      "case": "2.3-numeric-unit-mismatch",
+      "previousProbe": false,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-numeric-unit-mismatch.ili",
+          "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [s]; END F.",
+          "sha256": "a4f92a1c46f81c59e2cb46cca6d3e083e85e917daa570eab85ba6df52aa9b1b5"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-numeric-unit-mismatch.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-numeric-unit-mismatch.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-numeric-unit-mismatch.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.3-numeric-unit-mismatch.ili:1:A numeric type whose base specifies UNIT F.m must either specify the same unit or leave the unit away. Thus, UNIT F.s can not be specified.\n...compiler run failed 2026-10-21 09:24:19\n"
+        }
+      },
+      "classification": "FALSE_ACCEPT_OPEN",
+      "assessment": "WP-20 follow-on: numerical conversion validation and numeric-domain unit compatibility are not implemented completely. Retain as an open required case, not an accepted norm deviation."
+    },
+    {
+      "case": "2.4-zero-factor",
+      "previousProbe": false,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-factor.ili",
+          "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0 [m]; END F.",
+          "sha256": "8d19c92f584c456500b201105f0b63b849af83db94bcb953c5ac2f351d602510"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-factor.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-factor.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-factor.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-factor.ili:It does not make sense to convert units by multiplication with zero.\n  It does not make sense to convert units by multiplication with zero.\n...compiler run failed 2026-10-21 09:24:19\n"
+        }
+      },
+      "classification": "FALSE_ACCEPT_OPEN",
+      "assessment": "WP-20 follow-on: numerical conversion validation and numeric-domain unit compatibility are not implemented completely. Retain as an open required case, not an accepted norm deviation."
+    },
+    {
+      "case": "2.4-zero-divisor",
+      "previousProbe": false,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-divisor.ili",
+          "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0 [m]; END F.",
+          "sha256": "c4f79f93a08265d8aca0b79add78b4e5807b4f6249b19771f8141ab3d5365195"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-divisor.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-divisor.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-divisor.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-zero-divisor.ili:1:It does not make sense to derive units in a division by zero.\n  It does not make sense to derive units in a division by zero.\n...compiler run failed 2026-10-21 09:24:19\n"
+        }
+      },
+      "classification": "FALSE_ACCEPT_OPEN",
+      "assessment": "WP-20 follow-on: numerical conversion validation and numeric-domain unit compatibility are not implemented completely. Retain as an open required case, not an accepted norm deviation."
+    },
+    {
+      "case": "2.4-numeric-unit-mismatch",
+      "previousProbe": false,
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-numeric-unit-mismatch.ili",
+          "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [s]; END F.",
+          "sha256": "5aa98b5d6cb5a55afcbf9cf800c25c123ffc9dc7b99e964f1fd941cfa6922812"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-numeric-unit-mismatch.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-numeric-unit-mismatch.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-numeric-unit-mismatch.ili>\n/Users/stefan/sources/interlis-java/build/reports/stabilization/units-followon-inputs/2.4-numeric-unit-mismatch.ili:1:A numeric type whose base specifies UNIT F.m must either specify the same unit or leave the unit away. Thus, UNIT F.s can not be specified.\n...compiler run failed 2026-10-21 09:24:20\n"
+        }
+      },
+      "classification": "FALSE_ACCEPT_OPEN",
+      "assessment": "WP-20 follow-on: numerical conversion validation and numeric-domain unit compatibility are not implemented completely. Retain as an open required case, not an accepted norm deviation."
+    }
+  ],
+  "summary": {
+    "closedPreviousCases": 4,
+    "openFalseAccepts": 6
+  },
+  "verificationManifest": "verification-2026-10-21-units.json",
+  "currentCompilerJarSha256": "66a8ba6b39449b853eb3f5949574acc2dd9c5268a40a2ba3d280bf8201822cd7",
+  "referenceVersion": "INTERLIS Compiler, Version 5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\n  Distributed by the Coordination of Geographic Information\n  and Geographic Information Systems Group (COSIG), CH-3084 Wabern\n  Developed by Adasys AG, CH-8005 Zurich\n  Maintained by Eisenhut Informatik AG, CH-3400 Burgdorf\n  See http://www.interlis.ch for information about INTERLIS\n  Parts of this program have been generated by ANTLR; see http://www.antlr.org\n  This product includes software developed by the\n  Apache Software Foundation (http://www.apache.org/).\n",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "rawReport": {
+    "path": "build/reports/stabilization/units-follow-on-probes.json",
+    "sha256": "9ebd1c2d9cabd7a89053daf44e04b1f2286a689c12e442fc4e622ae38d4d0a24"
+  }
+}

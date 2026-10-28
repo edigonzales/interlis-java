@@ -38,7 +38,7 @@ class LanguageProfileContractTest {
 
     @Test
     void genericDomainIsRejectedInIli23AndAcceptedInIli24() {
-        assertTrue(versionDiagnostic(parse(GENERIC_MODEL.formatted("2.3"))));
+        assertTrue(parse(GENERIC_MODEL.formatted("2.3")).diagnostics().stream().anyMatch(d->d.severity()==guru.interlis.diagnostics.Severity.ERROR));
         assertFalse(versionDiagnostic(parse(GENERIC_MODEL.formatted("2.4"))));
     }
 
@@ -51,7 +51,7 @@ class LanguageProfileContractTest {
                     Coord = MULTICOORD 1.0 .. 2.0, 1.0 .. 2.0;
                 END M.
                 """;
-        assertTrue(versionDiagnostic(parse(model.formatted("2.3"))));
+        assertTrue(parse(model.formatted("2.3")).diagnostics().stream().anyMatch(d->d.severity()==guru.interlis.diagnostics.Severity.ERROR));
         assertFalse(versionDiagnostic(parse(model.formatted("2.4"))));
     }
 

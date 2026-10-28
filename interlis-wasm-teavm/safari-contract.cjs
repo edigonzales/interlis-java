@@ -25,12 +25,12 @@ function serve(root) {
   });
 }
 
-async function request(base, method, route, body) {
+async function request(base, method, route, body, timeout = 60000) {
   const response = await fetch(base + route, {
     method,
     headers: body === undefined ? {} : {'content-type': 'application/json'},
     body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(60000)
+    signal: AbortSignal.timeout(timeout)
   });
   const text = await response.text();
   let json;
@@ -43,12 +43,11 @@ async function request(base, method, route, body) {
 }
 
 (async () => {
+  fs.rmSync('build/safari-result.json', {force: true});
   const driver = '/System/Cryptexes/App/usr/bin/safaridriver';
   if (!fs.existsSync(driver)) throw new Error('safaridriver is not installed');
 
-  // SafariDriver launches Safari in automation mode. A normal running Safari
-  // can prevent that launch, so the explicit test task closes it first.
-  try { execFileSync('killall', ['Safari'], {stdio: 'ignore'}); } catch { /* not running */ }
+  const driverVersion = execFileSync(driver, ['--version'], {encoding: 'utf8'}).trim();
   const webRoot = path.resolve('build/web');
   const server = await serve(webRoot);
   const url = `http://127.0.0.1:${server.address().port}/`;
@@ -61,14 +60,18 @@ async function request(base, method, route, body) {
   let result;
   try {
     let ready = false;
-    for (let i = 0; i < 40 && !ready; i++) {
+    let lastStatus;
+    const readyDeadline = Date.now() + 30000;
+    while (Date.now() < readyDeadline && !ready) {
+      if (child.exitCode !== null) throw new Error(`safaridriver exited with ${child.exitCode}: ${stderr}`);
       await new Promise(resolve => setTimeout(resolve, 250));
       try {
-        const status = await request(base, 'GET', '/status');
+        const status = await request(base, 'GET', '/status', undefined, 1000);
+        lastStatus = status;
         ready = Boolean(status && status.ready);
-      } catch { /* retry */ }
+      } catch (error) { lastStatus = String(error); }
     }
-    if (!ready) throw new Error('safaridriver did not become ready');
+    if (!ready) throw new Error('safaridriver did not become ready: ' + JSON.stringify(lastStatus));
 
     const created = await request(base, 'POST', '/session', {
       capabilities: {alwaysMatch: {browserName: 'safari'}}
@@ -96,13 +99,15 @@ async function request(base, method, route, body) {
     }
     fs.mkdirSync('build', {recursive: true});
     fs.writeFileSync('build/safari-result.json', JSON.stringify({
-      status: 'passed', browser: 'Safari', result, driverStderr: stderr.trim()
+      status: 'passed', browser: 'Safari', driverVersion, node: process.version,
+      result, driverStderr: stderr.trim()
     }, null, 2));
     console.log('SAFARI PASS ' + JSON.stringify(result));
   } catch (error) {
     fs.mkdirSync('build', {recursive: true});
     fs.writeFileSync('build/safari-result.json', JSON.stringify({
-      status: 'notRun', browser: 'Safari', error: String(error),
+      status: sessionId ? 'failed' : 'notRun', browser: 'Safari', driverVersion,
+      node: process.version, error: String(error),
       partialResult: result, driverStderr: stderr.trim()
     }, null, 2));
     console.error('SAFARI NOT_RUN ' + String(error));

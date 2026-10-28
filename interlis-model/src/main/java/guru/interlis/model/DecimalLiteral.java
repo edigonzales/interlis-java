@@ -27,16 +27,12 @@ public record DecimalLiteral(String lexeme, BigDecimal exactValue, DecimalPrecis
      */
     public static DecimalLiteral parse(String lexeme) {
         Objects.requireNonNull(lexeme, "lexeme");
-        String cleaned = lexeme.replace("+", "");
-        BigDecimal value = new BigDecimal(cleaned);
-        int dot = cleaned.indexOf('.');
-        int fraction = dot < 0 ? 0 : cleaned.length() - dot - 1;
-        int e = Math.max(cleaned.indexOf('e'), cleaned.indexOf('E'));
-        int exponent = 0;
-        if (e >= 0) {
-            exponent = Integer.parseInt(cleaned.substring(e + 1));
-            fraction = 0;
-        }
+        BigDecimal value = new BigDecimal(lexeme);
+        int e = Math.max(lexeme.indexOf('e'), lexeme.indexOf('E'));
+        String mantissa = e < 0 ? lexeme : lexeme.substring(0, e);
+        int dot = mantissa.indexOf('.');
+        int fraction = dot < 0 ? 0 : mantissa.length() - dot - 1;
+        int exponent = e < 0 ? 0 : Integer.parseInt(lexeme.substring(e + 1));
         return new DecimalLiteral(lexeme, value,
                 new DecimalPrecision(fraction, exponent, PrecisionOrigin.LEXICAL));
     }

@@ -47,6 +47,11 @@ final class NameResolver {
     }
 
     Resolution resolve(SymbolId owner, NameSyntax name, Set<SymbolKind> expected) {
+        return resolve(owner, name, expected, true);
+    }
+
+    /** Named references that require a model-qualified spelling disable relative qualifiers. */
+    Resolution resolve(SymbolId owner, NameSyntax name, Set<SymbolKind> expected, boolean relativeQualifiers) {
         Objects.requireNonNull(owner, "owner");
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(expected, "expected");
@@ -57,14 +62,15 @@ final class NameResolver {
         if (segments.size() > 1) {
             candidates.addAll(index.byQualifiedName(joined).stream()
                     .filter(d -> expected.contains(d.kind()))
+                    .filter(d -> visibleModel(owner, d.id()))
                     .map(DeclInfo::id).toList());
             String modelPrefix = modelQualifiedName(owner);
-            if (!modelPrefix.isEmpty()) {
+            if (relativeQualifiers && !modelPrefix.isEmpty()) {
                 candidates.addAll(index.byQualifiedName(modelPrefix + "." + joined).stream()
                         .filter(d -> expected.contains(d.kind()))
                         .map(DeclInfo::id).toList());
             }
-            for (ImportTargets.Target target : importsOf(owner)) {
+            for (ImportTargets.Target target : relativeQualifiers ? importsOf(owner) : List.<ImportTargets.Target>of()) {
                 String targetName = modelQualifiedName(target.target());
                 candidates.addAll(index.byQualifiedName(targetName + "." + joined).stream()
                         .filter(d -> expected.contains(d.kind()))
@@ -78,8 +84,9 @@ final class NameResolver {
                         candidates.add(child.id());
                     }
                 }
+                if (!candidates.isEmpty()) break;
             }
-            for (ImportTargets.Target target : importsOf(owner)) {
+            for (ImportTargets.Target target : candidates.isEmpty() ? importsOf(owner) : List.<ImportTargets.Target>of()) {
                 if (!target.unqualified()) {
                     continue;
                 }
@@ -90,6 +97,11 @@ final class NameResolver {
                 }
             }
         }
+        if (candidates.isEmpty() && segments.size() > 1 && (relativeQualifiers || segments.size() > 2)) {
+            var prefix = new NameSyntax(name.id(), name.range(), name.segments().subList(0, name.segments().size()-1));
+            var topic = resolve(owner, prefix, Set.of(SymbolKind.TOPIC), relativeQualifiers).target();
+            if (topic.isPresent()) candidates.addAll(topicMembers(topic.get(),segments.getLast(),expected,new LinkedHashSet<>()));
+        }
         List<SymbolId> ordered = candidates.stream()
                 .sorted(Comparator.comparing(SymbolId::value)).toList();
         if (ordered.size() == 1) {
@@ -99,6 +111,30 @@ final class NameResolver {
             return new Resolution(Status.UNRESOLVED, Optional.empty(), List.of());
         }
         return new Resolution(Status.AMBIGUOUS, Optional.empty(), ordered);
+    }
+
+    /** Indexed lexical declarations only; predefined values remain owned by GraphBuilder. */
+    Resolution resolveLocal(SymbolId owner, NameSyntax name, Set<SymbolKind> expected) {
+        if(name.segments().size()!=1)return new Resolution(Status.UNRESOLVED,Optional.empty(),List.of());
+        String simple=name.segments().getFirst().text();
+        for(SymbolId scope:scopeChain(owner)) {
+            List<SymbolId> candidates=index.byId(scope).filter(d->d.kind()==SymbolKind.TOPIC).isPresent()
+                    ? topicMembers(scope,simple,expected,new LinkedHashSet<>())
+                    : index.children(scope).stream().filter(d->d.name().equals(simple) && expected.contains(d.kind())).map(DeclInfo::id).toList();
+            if(candidates.size()==1)return new Resolution(Status.BOUND,Optional.of(candidates.getFirst()),List.of());
+            if(candidates.size()>1)return new Resolution(Status.AMBIGUOUS,Optional.empty(),candidates.stream().sorted(Comparator.comparing(SymbolId::value)).toList());
+        }
+        return new Resolution(Status.UNRESOLVED,Optional.empty(),List.of());
+    }
+
+    private List<SymbolId> topicMembers(SymbolId topic,String name,Set<SymbolKind> kinds,Set<SymbolId> seen) {
+        if (!seen.add(topic)) return List.of();
+        var local=index.children(topic).stream().filter(d->d.name().equals(name) && kinds.contains(d.kind())).map(DeclInfo::id).toList();
+        if (!local.isEmpty()) return local;
+        var declaration=index.byId(topic).orElseThrow();
+        var base=((guru.interlis.syntax.TopicSyntax)declaration.syntax()).baseTopic()
+                .flatMap(n->resolve(topic,n,Set.of(SymbolKind.TOPIC)).target());
+        return base.map(id->topicMembers(id,name,kinds,seen)).orElse(List.of());
     }
 
     Resolution resolveModel(String modelName) {
@@ -147,14 +183,14 @@ final class NameResolver {
     }
 
     private List<ImportTargets.Target> importsOf(SymbolId owner) {
-        String model = modelQualifiedName(owner);
-        for (Map.Entry<SymbolId, List<ImportTargets.Target>> entry : importsByModel.entrySet()) {
-            Optional<DeclInfo> info = index.byId(entry.getKey());
-            if (info.isPresent() && info.get().qualifiedName().equals(model)) {
-                return entry.getValue();
-            }
-        }
-        return List.of();
+        return index.modelOfSymbol(owner).map(id -> importsByModel.getOrDefault(id, List.of()))
+                .orElse(List.of());
+    }
+
+    private boolean visibleModel(SymbolId owner, SymbolId target) {
+        var targetModel = index.modelOfSymbol(target);
+        return targetModel.isPresent() && (targetModel.equals(index.modelOfSymbol(owner))
+                || importsOf(owner).stream().anyMatch(i -> i.target().equals(targetModel.get())));
     }
 
     enum Status {

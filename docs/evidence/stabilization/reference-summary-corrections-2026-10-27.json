@@ -1,0 +1,39 @@
+{
+  "scope": "Additive correction of earlier process-summary classification, no source/outcome/expectation change",
+  "source": "docs/evidence/stabilization/g2-E5-bound-translations-reference-2026-10-26.json",
+  "sourceSha256": "37bcbba537a6839032e45a949505e153e412b719ce0ed630de1041d8966f535d",
+  "historicalEqualExitCodes": 77,
+  "semanticReferenceAgreements": 75,
+  "referenceProcessErrors": 4,
+  "cases": [
+    {
+      "name": "illegal-percentage-PI-2.3",
+      "sha256": "bb6f49c9e2134da4d85e4a79e8176a5b11d27250ab216a856a8218f9a6a4bae9",
+      "ownExitCode": 1,
+      "referenceExitCode": 1,
+      "referenceOutcome": "internalError"
+    },
+    {
+      "name": "constraint-profile-MANDATORY CONSTRAINT Named:#true;-2.4",
+      "sha256": "06f80b9b34c860164586bab7f18ff32f0786450227a44df7cf1df80ee403f1b7",
+      "ownExitCode": 0,
+      "referenceExitCode": 1,
+      "referenceOutcome": "internalError"
+    },
+    {
+      "name": "constraint-profile-CONSTRAINT Named:>=90% #true;-2.4",
+      "sha256": "095c3f80c2fd2194b34d65ec16eff4a95e411b1898268242d014daf6469e7ad8",
+      "ownExitCode": 0,
+      "referenceExitCode": 1,
+      "referenceOutcome": "internalError"
+    },
+    {
+      "name": "illegal-percentage-PI-2.4",
+      "sha256": "1ef9097a4094f3c77419e985801f7be0f4b654d627ae8990e7d65fcb9c1e4775",
+      "ownExitCode": 1,
+      "referenceExitCode": 1,
+      "referenceOutcome": "internalError"
+    }
+  ],
+  "explanation": "Two illegal PI percentages cause an ili2c internal error with exit 1. They were included in the 77 equal-exit-code count. Only 75 comparisons are semantic agreements; all four internal errors are separate. Frozen suite and exceptions are unchanged."
+}

@@ -26,7 +26,7 @@ class TypeFamilyContractTest {
                   TOPIC T =
                     CLASS C =
                       oid : OID ANY;
-                      uuid : UUIDOID;
+                      uuid : INTERLIS.UUIDOID;
                       box : BLACKBOX XML;
                       align : HALIGNMENT;
                     END C;
@@ -40,7 +40,9 @@ class TypeFamilyContractTest {
                 CompilationOutcome.Succeeded.class,
                 CompilerEngines.create().compile(request, CancellationToken.none()));
         var types = succeeded.analysis().semanticGraph().types();
-        assertEquals(2, types.stream().filter(OidType.class::isInstance).count());
+        assertEquals(java.util.Set.of(guru.interlis.model.OidKind.ANY, guru.interlis.model.OidKind.UUID),
+                types.stream().filter(OidType.class::isInstance).map(OidType.class::cast)
+                        .map(OidType::oidKind).collect(java.util.stream.Collectors.toSet()));
         assertEquals(1, types.stream().filter(BlackboxType.class::isInstance).count());
         assertEquals(1, types.stream().filter(AlignmentType.class::isInstance).count());
     }

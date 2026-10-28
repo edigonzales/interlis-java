@@ -13,7 +13,7 @@ class ReferenceRuleTest {
             INTERLIS 2.4;
             MODEL Base AT "https://example.interlis.ch" VERSION "1.0" =
               DOMAIN Count = 0..999;
-              TOPIC Common =
+              TOPIC Common = OID AS INTERLIS.UUIDOID;
                 CLASS BaseBuilding =
                   height : Count;
                 END BaseBuilding;
@@ -30,6 +30,7 @@ class ReferenceRuleTest {
                   height (EXTENDED) : Base.Count;
                 END Building;
                 ASSOCIATION Link =
+                  local -- {1} Building;
                   target (EXTERNAL) -- {1} Base.Common.BaseBuilding;
                 END Link;
               END Data;

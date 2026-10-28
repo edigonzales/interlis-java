@@ -1,0 +1,17 @@
+{
+  "source": "Pinned reference manuals, reserved words Table 1; page furniture excluded explicitly.",
+  "files": {
+    "reserved-23.txt": {
+      "count": 154,
+      "sha256": "cddfa17d2232cf109fe0096a99b6e7b814c9fdd5a18467e07ef9f4cc4f55e7d3",
+      "normSha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+      "section": "2.2.7"
+    },
+    "reserved-24.txt": {
+      "count": 168,
+      "sha256": "25c1d536c990f547a3cbad2f314d47ad731b8616843f5de38db9b1a7467b838e",
+      "normSha256": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069",
+      "section": "3.2.7"
+    }
+  }
+}

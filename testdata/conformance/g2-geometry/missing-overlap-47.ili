@@ -1,0 +1,1 @@
+INTERLIS 2.4; CONTRACTED MODEL F AT "https://example.org" VERSION "1" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; TOPIC T = CLASS A = kind: TEXT*10; area: AREA WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V AREA INSPECTION OF edge~A->area; = left := THISAREA->kind; right := THATAREA->kind; END V; END T; END F.

@@ -4,15 +4,15 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * CLASS or STRUCTURE value type with optional restriction names.
+ * CLASS or STRUCTURE value type with optional bound restrictions.
  *
  * @param id stable identifier
  * @param origin origin information
  * @param structureValue whether this is a STRUCTURE value
- * @param restrictions restriction names
+ * @param restrictions immutable ordered roots; each includes its subclasses; empty means unrestricted
  */
 public record ClassValueType(TypeId id, Origin origin, boolean structureValue,
-                             List<String> restrictions) implements TypeDescriptor {
+                             List<SymbolId> restrictions) implements TypeDescriptor {
     /** Creates a validated instance. */
     public ClassValueType {
         Objects.requireNonNull(id, "id");

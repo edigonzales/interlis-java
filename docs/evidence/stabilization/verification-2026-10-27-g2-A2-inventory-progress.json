@@ -1,0 +1,67 @@
+{
+  "step": "A2",
+  "acceptance": "MISSING_EVIDENCE",
+  "execution": "PARTIAL",
+  "requirements": [
+    "SYN-004",
+    "SYN-013",
+    "META-006",
+    "META-014",
+    "SEM-010",
+    "SEM-017",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "sourceInventory": "g2-source-inventory.json",
+  "sourceInventorySha256": "711b4f634c52cdd1bfcc41b179af910b935b69c0864833e953042846aaa3c2e7",
+  "grammarProductions": 321,
+  "parserProductions": 125,
+  "lexerProductions": 196,
+  "syntaxOccurrences": 1218,
+  "numberedSpecificationRequirements": 289,
+  "builtinSignatures": 21,
+  "legacyRowsAssigned": 332,
+  "atomicNormClauses": 10,
+  "normativeExceptionsChanged": 0,
+  "normativeExpectationsChanged": false,
+  "baselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+  "normativeExpectationsSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+  "commands": [
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 tools/reference/g2_inventory.py --norm23 build/norms/ili23.pdf --norm24 build/norms/ili24.pdf --out build/reports/g2/A2/source-scan.json",
+      "result": "DISCOVERY_ONLY",
+      "exitCode": 0,
+      "python": "3.12.14",
+      "pypdf": "6.10.0"
+    },
+    {
+      "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "exitCode": 0,
+      "tests": 19,
+      "log": "build/reports/g2/A2/gradle-evidence-tests.log",
+      "logSha256": "c6d651aefd8c1020cb9df7ae1f060dc074c84650243cc287c7f7bafa9031141a",
+      "python": "3.9.6"
+    }
+  ],
+  "notExecuted": [
+    "No new compiler semantic tests or phase-wide rerun: compiler semantics/API unchanged; A1 full run remains the frozen baseline, not an A2 acceptance.",
+    "Independent full A2 completeness review still missing; individual norm paragraphs/unnumbered contracts/case mapping incomplete."
+  ],
+  "remainingCauses": [
+    "Every normative manual paragraph, including compiler-relevant transfer/model implications and appendices",
+    "Atomize prose and specification contracts beyond numbered requirements",
+    "Concrete model/query assertions and positive/negative/editor case assignment for each individual rule",
+    "Version-specific norm anchors and user decision packets; no inferred approvals",
+    "Independent completeness review"
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "additionalNormativeObservation": {
+    "id": "BUILTIN_AREAS2_AREAS3_NORM_PROFILE",
+    "responsibleStep": "E2",
+    "evidence": "g2-A2-areas-signature-observations-2026-10-27.json",
+    "pairedProcessObservations": 8,
+    "normativeDecisionMade": false,
+    "expectationsChanged": false
+  }
+}

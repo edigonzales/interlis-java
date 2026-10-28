@@ -20,7 +20,7 @@ class OidRuleContractTest {
         SourceText source = new SourceText(new SourceId("memory:/basket-oid.ili"),
                 new SourceRevision(1), """
                 INTERLIS 2.3;
-                MODEL O AT "https://example.interlis.ch" VERSION "1.0" =
+                CONTRACTED MODEL O AT "https://example.interlis.ch" VERSION "1.0" =
                   TOPIC T =
                     BASKET OID AS INTERLIS.UUIDOID;
                     CLASS C = END C;
@@ -36,7 +36,7 @@ class OidRuleContractTest {
         guru.interlis.model.TopicSymbol topic = succeeded.analysis().semanticGraph().symbols().stream()
                 .filter(guru.interlis.model.TopicSymbol.class::isInstance)
                 .map(guru.interlis.model.TopicSymbol.class::cast).findFirst().orElseThrow();
-        assertTrue(topic.header().oidRule().orElseThrow().contains("BASKET"));
+        assertTrue(topic.header().oidRules().getFirst().basket());
     }
 
     @Test
@@ -44,10 +44,10 @@ class OidRuleContractTest {
         SourceText source = new SourceText(new SourceId("memory:/oid.ili"),
                 new SourceRevision(1), """
                 INTERLIS 2.3;
-                MODEL O AT "https://example.interlis.ch" VERSION "1.0" =
+                CONTRACTED MODEL O AT "https://example.interlis.ch" VERSION "1.0" =
                   TOPIC T =
                     CLASS C =
-                      OID AS UUIDOID;
+                      OID AS INTERLIS.UUIDOID;
                     END C;
                   END T;
                 END O.
@@ -61,7 +61,7 @@ class OidRuleContractTest {
         ClassSymbol clazz = succeeded.analysis().semanticGraph().symbols().stream()
                 .filter(ClassSymbol.class::isInstance).map(ClassSymbol.class::cast)
                 .findFirst().orElseThrow();
-        assertTrue(clazz.header().oidRule().isPresent());
-        assertTrue(clazz.header().oidRule().orElseThrow().contains("OID"));
+        assertTrue(!clazz.header().oidRules().isEmpty());
+        assertTrue(clazz.header().oidRules().getFirst().domain().isPresent());
     }
 }

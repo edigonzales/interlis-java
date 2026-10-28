@@ -48,7 +48,7 @@ class ViewFormationSemanticsContractTest {
     }
 
     @Test
-    void simpleViewBaseExtensionCompiles() {
+    void boundViewBaseExtensionProducesSchema() {
         assertInstanceOf(CompilationOutcome.Succeeded.class, compile("""
                 INTERLIS 2.3;
                 MODEL Test AT "https://example.interlis.ch" VERSION "1.0" =

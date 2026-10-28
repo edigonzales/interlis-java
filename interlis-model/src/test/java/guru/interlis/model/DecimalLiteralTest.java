@@ -22,7 +22,7 @@ class DecimalLiteralTest {
     void exponentAndSignArePreservedAsLexicalMetadata() {
         DecimalLiteral literal = DecimalLiteral.parse("1.2e3");
         assertEquals("1.2E+3", literal.exactValue().toString());
-        assertEquals(0, literal.precision().fractionalDigits());
+        assertEquals(1, literal.precision().fractionalDigits());
         assertEquals(3, literal.precision().exponent());
         assertEquals("+1.50", DecimalLiteral.parse("+1.50").lexeme());
         assertEquals(2, DecimalLiteral.parse("+1.50").precision().fractionalDigits());
@@ -31,6 +31,7 @@ class DecimalLiteralTest {
     @Test
     void invalidLiteralIsNotSilentlyAccepted() {
         assertThrows(NumberFormatException.class, () -> DecimalLiteral.parse("1.2.3"));
+        assertThrows(NumberFormatException.class, () -> DecimalLiteral.parse("1+2"));
         assertThrows(NumberFormatException.class, () -> DecimalLiteral.parse(""));
     }
 }

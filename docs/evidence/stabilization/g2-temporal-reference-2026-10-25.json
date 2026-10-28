@@ -1,0 +1,1094 @@
+{
+  "recordedAt": "2026-10-25T02:26:31.851552+00:00",
+  "reference": "ili2c 5.6.9",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "total": 28,
+  "ownExpected": 28,
+  "referenceAgreements": 18,
+  "cases": [
+    {
+      "id": 0,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/0.ili",
+        "sha256": "f9125a2b283a3e67f2d01864dbc97bb88a6fd4ae4a00c8cdc074690c9de1a050"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/0.ili>\nInfo: ...compiler run done 2026-10-25 03:26:26\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 1,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/1.ili",
+        "sha256": "6ff4b69a5a8ea3ce92266503eecb9b51f2f643a8d6a68ba8f672baa67798a818"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/1.ili>\nInfo: ...compiler run done 2026-10-25 03:26:26\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 2,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/2.ili",
+        "sha256": "e94c5889ea1ee30fa71b8cf54019fb268aa81effc029b657caf234d9e956bc37"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/2.ili>\nInfo: ...compiler run done 2026-10-25 03:26:26\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/3.ili",
+        "sha256": "06b152a912fa9560c2ad8e5903e1627b1e77041d4efb6fa2960487b7c16a0ddc"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/3.ili>\nInfo: ...compiler run done 2026-10-25 03:26:26\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/4.ili",
+        "sha256": "2265122373cc41240a5d7506e426f814588bd0c22d49bbc03e75ca91368123fe"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ab0ae8472f86d072f9476220], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/4.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ab0ae8472f86d072f9476220\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/4.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":125},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/4.ili>\n<repo>/build/reports/stabilization/g2-temporal/4.ili:1:Formatted value \"1581-01-01\" out of range.\n...compiler run failed 2026-10-25 03:26:27\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/5.ili",
+        "sha256": "d871203bee212e1375947c58276a7cec61c3e19a84df162fc589dc2ddff71124"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/5.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2b5d116b1640205189967d00], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/5.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2b5d116b1640205189967d00\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/5.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":128},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/5.ili>\nInfo: ...compiler run done 2026-10-25 03:26:27\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 6,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/6.ili",
+        "sha256": "72ceb76bca498c180b329744f2a26ea76a0b3e39722d7813893cbde2d89be5fb"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-aaa40821f161a0649614cabd], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/6.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-aaa40821f161a0649614cabd\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/6.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/6.ili>\n<repo>/build/reports/stabilization/g2-temporal/6.ili:1:Formatted value \"24:00:00.000\" out of range.\n...compiler run failed 2026-10-25 03:26:27\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 7,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/7.ili",
+        "sha256": "a98542eeefceee385bf70e79046524a6d4b422bf513c8c8fd91614367097fa99"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/7.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-06910ae1a76f451a5376d9a8], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/7.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-06910ae1a76f451a5376d9a8\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/7.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/7.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/7.ili>\n<repo>/build/reports/stabilization/g2-temporal/7.ili:1:Formatted value \"00:60:00.000\" out of range.\n...compiler run failed 2026-10-25 03:26:27\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 8,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/8.ili",
+        "sha256": "c53fea7c75c662e0938d43943c1b38caf484b4733416242fe7e89d0031ba1766"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c71389b30556267984a201ed], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/8.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c71389b30556267984a201ed\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/8.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/8.ili>\n<repo>/build/reports/stabilization/g2-temporal/8.ili:1:Formatted value \"00:00:60.000\" out of range.\n...compiler run failed 2026-10-25 03:26:28\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 9,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/9.ili",
+        "sha256": "4110931a18a20b1d0965451beafc1fceadab67532a76e688f0e42ac473e665db"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/9.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e8d21a503904518080d33b6f], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/9.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e8d21a503904518080d33b6f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/9.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":128},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/9.ili>\nInfo: ...compiler run done 2026-10-25 03:26:28\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 10,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/10.ili",
+        "sha256": "a290759af61495a25d9b19337f00de9fcec3a83e8990a579d120746404df9f41"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/10.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/10.ili>\n<repo>/build/reports/stabilization/g2-temporal/10.ili:1:expecting POSINT, found 'INTERLIS'\n<repo>/build/reports/stabilization/g2-temporal/10.ili:1:Attribute \"date\" in STRUCTURE F.S should be a NumericType.\n<repo>/build/reports/stabilization/g2-temporal/10.ili:1:There is no attribute \"XMLDate\" in STRUCTURE F.S.\n<repo>/build/reports/stabilization/g2-temporal/10.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.AttributeDef.getDomainResolvingAliases()\" because \"attrdef\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.AttributeDef.getDomainResolvingAliases()\" because \"attrdef\" is null\n...compiler run failed 2026-10-25 03:26:28\n",
+          "processError": true
+        }
+      }
+    },
+    {
+      "id": 11,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/11.ili",
+        "sha256": "2fcd5cfca70d07fdfe58236da72e15eb3abdecd3c27ce96a67f079fffe569145"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/11.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-90bf722a9929f4a6f8197dc4], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/11.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-90bf722a9929f4a6f8197dc4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/11.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":169},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/11.ili>\nInfo: ...compiler run done 2026-10-25 03:26:28\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 12,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/12.ili",
+        "sha256": "794f8a1babfa090f1bc303a563c28c960b951703a556edb518f074396f505733"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f3efe90c6c6503fd954a59c4], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/12.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f3efe90c6c6503fd954a59c4\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/12.ili\",\"revision\":\"1\",\"startOffset\":116,\"endOffset\":136},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"FORMATTED,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/12.ili>\n<repo>/build/reports/stabilization/g2-temporal/12.ili:1:CLASS C must be declared as abstract. It is not part of a topic.\n<repo>/build/reports/stabilization/g2-temporal/12.ili:1:Formatted value \"2010-13-01\" out of range.\n...compiler run failed 2026-10-25 03:26:28\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 13,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/13.ili",
+        "sha256": "5af90902c7b214eaf087b43acc7e89dd90e4d5af44353445d2c04917c14fa784"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/13.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-e80296f49ca09cfe9c8543ed], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/13.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-e80296f49ca09cfe9c8543ed\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/13.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":123},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/13.ili>\nInfo: ...compiler run done 2026-10-25 03:26:28\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 14,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/14.ili",
+        "sha256": "0d9aff2e3b5e4445bd22d629f164b7dcd92c39b329b0f846e8fb86f62018f398"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2515cf239ebbc99a022adb05], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/14.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2515cf239ebbc99a022adb05\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/14.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":127},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/14.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/14.ili>\nInfo: ...compiler run done 2026-10-25 03:26:29\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 15,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/15.ili",
+        "sha256": "512f165ba5c9028e348ba0ff67307ad555f31a9daabb39755a4622bd974680e5"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/15.ili>\nInfo: ...compiler run done 2026-10-25 03:26:29\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 16,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/16.ili",
+        "sha256": "f1b83e65470c0ecd16c1c14340ce2cee9f8d4737468d4659ffe4b96950ba2018"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/16.ili>\nInfo: ...compiler run done 2026-10-25 03:26:29\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 17,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/17.ili",
+        "sha256": "851438102b85b5ba5927f1889468693d96d4a5513ce445134256eaa73fa8e0ae"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9e282473dd7f8a8f7a2a86dd], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/17.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9e282473dd7f8a8f7a2a86dd\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/17.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":125},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/17.ili>\n<repo>/build/reports/stabilization/g2-temporal/17.ili:1:Formatted value \"1581-01-01\" out of range.\n...compiler run failed 2026-10-25 03:26:29\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 18,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/18.ili",
+        "sha256": "5e1245706000f4cd90fd1ec69f4af53b5eae013e1c8418760b659a009688d5f9"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/18.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-790d227137761c0bc6b5a0e4], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/18.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-790d227137761c0bc6b5a0e4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/18.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":128},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/18.ili>\nInfo: ...compiler run done 2026-10-25 03:26:30\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 19,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/19.ili",
+        "sha256": "8fe51954cb46250563296d0fb9eefdf236dea0780d9a570c6fef8ebb607382d0"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/19.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9cb5153d69dd2cc03cdd4cac], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/19.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9cb5153d69dd2cc03cdd4cac\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/19.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/19.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/19.ili>\n<repo>/build/reports/stabilization/g2-temporal/19.ili:1:Formatted value \"24:00:00.000\" out of range.\n...compiler run failed 2026-10-25 03:26:30\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 20,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/20.ili",
+        "sha256": "30ca890fb5e4993dce67c1bfc1fc5cd40eb9aaf17908318d66100b95654f7461"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/20.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4cc666f60aec839d66dbdc60], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/20.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4cc666f60aec839d66dbdc60\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/20.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/20.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/20.ili>\n<repo>/build/reports/stabilization/g2-temporal/20.ili:1:Formatted value \"00:60:00.000\" out of range.\n...compiler run failed 2026-10-25 03:26:30\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 21,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/21.ili",
+        "sha256": "57ff27870e430837a748423b0f15b9f1c9ea394874fe93d1564b45e7bc11e91b"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/21.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8a6fab29d14157238991de59], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/21.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8a6fab29d14157238991de59\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/21.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/21.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/21.ili>\n<repo>/build/reports/stabilization/g2-temporal/21.ili:1:Formatted value \"00:00:60.000\" out of range.\n...compiler run failed 2026-10-25 03:26:30\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 22,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/22.ili",
+        "sha256": "74fec81e62f275f82da16ee68246e11b803877ec5a19b259c2d97806d319dfc9"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/22.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-53a6be3354ca4600b0d3ca40], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/22.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-53a6be3354ca4600b0d3ca40\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/22.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":128},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/22.ili>\nInfo: ...compiler run done 2026-10-25 03:26:31\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 23,
+      "expected": "succeeded",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/23.ili",
+        "sha256": "02b22bdb3d51307cc2c3f2e9c97887ff7d28beca86da2d97dc5fe79e2ce5f0a8"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/23.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/23.ili>\n<repo>/build/reports/stabilization/g2-temporal/23.ili:1:expecting POSINT, found 'INTERLIS'\n<repo>/build/reports/stabilization/g2-temporal/23.ili:1:Attribute \"date\" in STRUCTURE F.S should be a NumericType.\n<repo>/build/reports/stabilization/g2-temporal/23.ili:1:There is no attribute \"XMLDate\" in STRUCTURE F.S.\n<repo>/build/reports/stabilization/g2-temporal/23.ili:Cannot invoke \"ch.interlis.ili2c.metamodel.AttributeDef.getDomainResolvingAliases()\" because \"attrdef\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.AttributeDef.getDomainResolvingAliases()\" because \"attrdef\" is null\n...compiler run failed 2026-10-25 03:26:31\n",
+          "processError": true
+        }
+      }
+    },
+    {
+      "id": 24,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/24.ili",
+        "sha256": "93a134f4848671350e15cc7a74aca21ec263fc4aa8f0a8214928d5ba3e6c9599"
+      },
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-85135ce295a86a269da5a830], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/24.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-85135ce295a86a269da5a830\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/24.ili\",\"revision\":\"1\",\"startOffset\":68,\"endOffset\":169},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/24.ili>\nInfo: ...compiler run done 2026-10-25 03:26:31\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 25,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/25.ili",
+        "sha256": "e33cf18c9b7ab16d502ea2a880a69cf698f2f3968309e9c93e77bdc6b7197321"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-eb0fc7564dd9171026026aef], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/25.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-eb0fc7564dd9171026026aef\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/25.ili\",\"revision\":\"1\",\"startOffset\":116,\"endOffset\":136},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"FORMATTED,TEXT*10\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/25.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/25.ili>\n<repo>/build/reports/stabilization/g2-temporal/25.ili:1:CLASS C must be declared as abstract. It is not part of a topic.\n<repo>/build/reports/stabilization/g2-temporal/25.ili:1:Formatted value \"2010-13-01\" out of range.\n...compiler run failed 2026-10-25 03:26:31\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 26,
+      "expected": "rejected",
+      "original": false,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/26.ili",
+        "sha256": "41e263acced6af441a95029b4b1cc3b5c830de8a5b6b32436812336286e7d247"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1fd890ebee79ed51879ad6d5], requestedRoots=[BySource[source=SourceId[value=file://<repo>/build/reports/stabilization/g2-temporal/26.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1fd890ebee79ed51879ad6d5\",\"code\":\"ILI-SEM-0005\",\"severity\":\"ERROR\",\"phase\":\"TYPE_CHECKING\",\"messageKey\":\"diagnostic.semantics.type\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-temporal/26.ili\",\"revision\":\"1\",\"startOffset\":138,\"endOffset\":156},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TYPE_NAME\",\"value\":\"FORMATTED,TEXT*8\"},{\"name\":\"expected\",\"kind\":\"TYPE_NAME\",\"value\":\"COMPARABLE\"}]}]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/26.ili>\n<repo>/build/reports/stabilization/g2-temporal/26.ili:1:CLASS C must be declared as abstract. It is not part of a topic.\n...compiler run failed 2026-10-25 03:26:31\n",
+          "processError": false
+        }
+      }
+    },
+    {
+      "id": 27,
+      "expected": "succeeded",
+      "original": true,
+      "source": {
+        "path": "build/reports/stabilization/g2-temporal/27.ili",
+        "sha256": "df09fe0b6a252b0c5a5cbca847406c6d67a961f04acf12aca12dcf901fb658e1"
+      },
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "<repo>/build/reports/stabilization/g2-temporal/27.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": "",
+          "processError": false
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-temporal/27.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-temporal/27.ili>\nInfo: ...compiler run done 2026-10-25 03:26:31\n",
+          "processError": false
+        }
+      }
+    }
+  ],
+  "processErrors": {
+    "own": 0,
+    "ili2c": 2
+  },
+  "interpretation": "No suite exception added. Original accepts in both compilers. Explicit widths and fractional digits follow 2.3 §2.8.6 / 2.4 §3.8.6. Nested structure format follows BaseAttrRef in those sections; ili2c processes fail internally on the new direct nested probe. Reference outcomes are observations, not normative verdicts.",
+  "artifacts": {
+    "interlis-cli/build/install/interlis-cli/lib/ST4-4.3.4.jar": "f927ac384c46d749f8b5ec68972a53aed21e00313509299616edb73bfa15ff33",
+    "interlis-cli/build/install/interlis-cli/lib/antlr-runtime-3.5.3.jar": "68bf9f5a33dfcb34033495c587e6236bef4e37aa6612919f5b1e843b90669fb9",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-4.13.2.jar": "e6f0b10d2ad206f338afe16867fc47148b6729d6e3a260ea28379b91f03a3657",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-cli/build/install/interlis-cli/lib/icu4j-72.1.jar": "3df572b240a68d13b5cd778ad2393e885d26411434cd8f098ac5987ea2e64ce3",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-cli-0.2.0-SNAPSHOT.jar": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "b9180ed9ba4576a8d54c8a74256ef6fe4eb086f42529e6aef258417ded47974b",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-model-0.2.0-SNAPSHOT.jar": "1051216097300c763439e51d185bf1046f6f20bb3ed5f6c70b541859c72c728c",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "a89a620b4465f8fcf9e587243a076d456edda7ca1e2c121da9831c34a54be378",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "732dfe77fddc21270b942033997d59b5b03b09d87af8192a8350c457e6efa581",
+    "interlis-cli/build/install/interlis-cli/lib/org.abego.treelayout.core-1.0.3.jar": "fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326"
+  },
+  "reproduce": "Generate the 28 cases from the temporalCases block in interlis-wasm-teavm/stabilization-contract.cjs; run built interlis-cli check --json and ili2c 5.6.9 -o0 in separate processes. Original bytes are pinned under testdata/conformance/g2-xml-date/FormattedType.ili."
+}

@@ -170,6 +170,14 @@ Die öffentliche SDK-Fabrik lautet `Workspaces.create(CompilerEngine engine, Wor
 | `InputFingerprint` | Algorithmuskennung und kanonischer Digest aller Capture-Eingaben; vom Snapshot-/Handle-Namensraum getrennt. |
 | `WorkspaceMetrics` | Unveränderliche Zähler für Parses, Reuse, semantische Neuanalysen, Cacheeinträge/-Evictions und Abbrüche. Laufzeiten und verworfene Veröffentlichungen erfasst der zuständige Host-Observer beziehungsweise PublicationController. |
 
+`parses` zählt tatsächliche Parseraufrufe des Workspace, `syntaxReuses` tatsächlich
+übernommene passende Syntaxsnapshots. `semanticAnalyses` zählt vom Workspace
+gestartete Engineaufrufe einschliesslich fehlgeschlagener/abgebrochener Aufrufe.
+Extern ausgeführte Capture-Analysen misst der Host; ihre Annahme zählt unter
+`acceptedAnalyses` beziehungsweise `staleAnalyses`. Eine Annahme darf nicht als
+zusätzliche Neuanalyse gezählt werden. Cachezähler bezeichnen tatsächlich
+gehaltene Einträge, keine Anzahl vorhandener Quelldateien.
+
 Collections sind defensiv kopiert, null ist in Pflichtfeldern oder Optional-Containern unzulässig. `UpdateReceipt.sourceRevision` ist bei Entfernung leer; der interne Tombstone wird dadurch nicht offengelegt. Bei Batchreceipts beziehen sich alle Workspace-Revisionsfelder auf denselben atomaren Übergang. API-Träger dürfen keine offenen Ressourcen und keine mutierbaren Builder enthalten.
 
 ### 2.4 Methodenverträge für Änderungen

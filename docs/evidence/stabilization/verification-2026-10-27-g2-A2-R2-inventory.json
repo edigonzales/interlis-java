@@ -1,0 +1,72 @@
+{
+  "step": "A2",
+  "subscope": "A2-R2 predefined/lexical inventory",
+  "acceptance": "REWORK",
+  "independentR2Review": "PENDING",
+  "requirements": [
+    "META-003",
+    "META-006",
+    "META-011",
+    "META-014",
+    "META-015",
+    "SEM-005",
+    "SEM-008",
+    "SEM-010",
+    "SEM-017",
+    "SYN-004",
+    "SYN-013",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "scope": "Explicit predefined source/norm inventory and planned assertions. No production semantic/API change, no declaration implementation claim.",
+  "catalogue": "testdata/g2/predefined-catalogue.json",
+  "catalogueSha256": "a0781dfa9905ab78fb9f5b7f38a12a65ce62652ce987103f5d02f774b3e9c24c",
+  "sourceInventory": "g2-source-inventory.json",
+  "sourceInventorySha256": "d3ab518a5de0e14c8237a1208f26432fe3e53badec0d26383face522278cd1b8",
+  "counts": {
+    "predefinedDeclarationsMembersConstraints": 130,
+    "specialValuesAndTypes": 21,
+    "reservedWords": {
+      "2.3": 154,
+      "2.4": 168
+    },
+    "features": 13,
+    "contextualTokens": 11,
+    "classificationRules": 4,
+    "exactNormExcerpts": {
+      "2.3": 132,
+      "2.4": 142
+    }
+  },
+  "commands": [
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 tools/reference/author_g2_predefined.py --out build/reports/g2/A2/r2/catalogue-reproduced.json",
+      "exitCode": 0,
+      "python": "3.12.14",
+      "pypdf": "6.10.0",
+      "result": "BYTE_IDENTICAL_TO_ADOPTED_CATALOGUE"
+    },
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 tools/reference/g2_inventory.py --norm23 build/norms/ili23.pdf --norm24 build/norms/ili24.pdf --out build/reports/g2/A2/r2/source-scan.json",
+      "exitCode": 0,
+      "result": "Exact source/norm locator checks; not semantic acceptance"
+    },
+    {
+      "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "exitCode": 0,
+      "tests": 26,
+      "python": "3.9.6",
+      "log": "build/reports/g2/A2/r2/gradle-evidence-tests.log",
+      "logSha256": "024cb060866e2a406a2fe69bbf7b8a717fb9cc2aa5ae6059c983f2a69073d150"
+    }
+  ],
+  "normativeExpectationsSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+  "baselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+  "newNormativeExceptions": 0,
+  "notExecuted": [
+    "No new compiler/JVM/portable/browser semantic run: no production semantic or API changes. A1 remains the prior full baseline.",
+    "No A2/phase-A total acceptance: R3 exact contract/case assertions and R4 whole-paragraph audit remain missing."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN"
+}

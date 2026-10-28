@@ -4,6 +4,8 @@ plugins {
 }
 apply from: rootProject.file('gradle/java-conventions.gradle')
 
+def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+
 dependencies {
     implementation project(':interlis-wasm-bridge')
     implementation project(':interlis-workspace')
@@ -36,13 +38,14 @@ teavm {
 
 tasks.register('wasmContractTest') {
     group = 'verification'
-    description = 'Runs the built TeaVM WasmGC module under the pinned Node runtime.'
+    timeout = java.time.Duration.ofSeconds(60)
+    description = 'Runs the built TeaVM WasmGC module under the configured Node runtime.'
     dependsOn 'buildWasmGC'
     doLast {
+        delete file('build/wasm-contract-result.json')
         providers.exec {
             workingDir = projectDir
-            commandLine 'node', '--experimental-wasm-exnref', 'wasm-contract.cjs'
-            ignoreExitValue = true
+            commandLine nodeExecutable.get(), '--experimental-wasm-exnref', 'wasm-contract.cjs'
         }.result.get()
         def report = file('build/wasm-contract-result.json')
         if (!report.exists()) {
@@ -60,6 +63,9 @@ tasks.register('prepareBrowserHarness', Copy) {
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
     dependsOn 'buildWasmGC'
     from 'src/main/web'
+    from('stabilization-contract.cjs') {
+        rename { 'stabilization-contract.js' }
+    }
     from(layout.buildDirectory.dir('generated/teavm/wasm-gc')) {
         include 'interlis-compiler.wasm'
         include 'interlis-compiler.wasm-runtime.js'
@@ -69,13 +75,14 @@ tasks.register('prepareBrowserHarness', Copy) {
 
 tasks.register('jsContractTest') {
     group = 'verification'
-    description = 'Runs the TeaVM JavaScript backend under the pinned Node runtime.'
+    timeout = java.time.Duration.ofSeconds(60)
+    description = 'Runs the TeaVM JavaScript backend under the configured Node runtime.'
     dependsOn 'generateJavaScript'
     doLast {
+        delete file('build/js-contract-result.json')
         providers.exec {
             workingDir = projectDir
-            commandLine 'node', 'js-contract.cjs'
-            ignoreExitValue = true
+            commandLine nodeExecutable.get(), 'js-contract.cjs'
         }.result.get()
         def report = file('build/js-contract-result.json')
         if (!report.exists()) {
@@ -92,7 +99,7 @@ tasks.register('diagramAdapterTest', Exec) {
     group = 'verification'
     description = 'Tests the TypeScript-contract diagram adapter without a browser.'
     workingDir = projectDir
-    commandLine 'node', 'src/main/web/diagram-adapter.test.cjs'
+    commandLine nodeExecutable.get(), 'src/main/web/diagram-adapter.test.cjs'
 }
 
 tasks.register('browserContractTest', Exec) {
@@ -100,7 +107,7 @@ tasks.register('browserContractTest', Exec) {
     description = 'Runs the browser matrix through Playwright (Chromium, Firefox, WebKit).'
     dependsOn 'prepareBrowserHarness', 'diagramAdapterTest'
     workingDir = projectDir
-    commandLine 'node', 'browser-contract.cjs'
+    commandLine nodeExecutable.get(), 'browser-contract.cjs'
 }
 
 tasks.register('safariContractTest', Exec) {
@@ -108,5 +115,9 @@ tasks.register('safariContractTest', Exec) {
     description = 'Attempts a real Safari WebDriver contract; fails visibly when remote automation is unavailable.'
     dependsOn 'prepareBrowserHarness'
     workingDir = projectDir
-    commandLine 'node', 'safari-contract.cjs'
+    commandLine nodeExecutable.get(), 'safari-contract.cjs'
+}
+
+tasks.named('prepareBrowserHarness') {
+    from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt'))
 }

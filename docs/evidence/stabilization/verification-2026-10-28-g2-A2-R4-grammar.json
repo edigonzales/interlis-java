@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-28",
+  "step": "A2",
+  "subscope": "R4 grammar occurrence worklist",
+  "acceptance": "PLANNED_NOT_ACCEPTED",
+  "productions": 321,
+  "occurrences": 1218,
+  "parserProductions": 125,
+  "lexerProductions": 196,
+  "grammarInventory": "docs/evidence/stabilization/g2-grammar-inventory.json",
+  "grammarInventorySha256": "f1e2daedf4be2a763504cd5592a91777752be622df4d7955f75253f0eb5179b0",
+  "sourceInventory": "g2-source-inventory.json",
+  "sourceInventorySha256": "722761ffbf4b55faee4b2e2d0fef9e3b7ae32648cb70390badbe5c21e0da000f",
+  "matrix": "g2-rule-matrix.json",
+  "matrixSha256": "88be0e337519674eb138f956968066b3d308c852a542203778785c0246b5563e",
+  "tools": {
+    "g2_grammar_inventory.py": "a44b8387c676efaa69d93f87ad7f50ae9552e0595d3258722d6bea6409ad90c8",
+    "test_g2_grammar_inventory.py": "3abe56e0115cdc814182e36d8394de41cc22ea0e78b9248220074d6d28ba3b7d"
+  },
+  "commands": [
+    "python3 tools/reference/g2_grammar_inventory.py --out build/reports/g2/A2/R4/grammar-inventory.json",
+    "./gradlew g2EvidenceTest --rerun-tasks --console=plain"
+  ],
+  "logs": {
+    "grammar": "build/reports/g2/A2/R4/grammar-inventory.log",
+    "grammarSha256": "0eb60cb336fe58f064243e28886e576dc192ae5b12e34d35351185a7e84d55ae",
+    "evidence": "build/reports/g2/A2/R4/g2-evidence-test-grammar.log",
+    "evidenceSha256": "28f21e45f40e415fcf04720b2af7d93e3b5616d1937429fff8dfde44c2c933a6"
+  },
+  "technicalTests": 50,
+  "compilerTests": 614,
+  "compilerFailures": 0,
+  "compilerErrors": 0,
+  "compilerSkipped": 0,
+  "acceptanceLimits": [
+    "Ownership and requirements only; no parser/lexer case is executed or accepted.",
+    "The 196 lexer productions are grammar-worklist rules until the matrix is expanded.",
+    "No independent review."
+  ],
+  "remaining": [
+    "Execute concrete parser/lexer acceptance for the 1218 occurrences.",
+    "Expand the matrix with the 196 lexer worklist rules or bind them to existing rules.",
+    "Complete the remaining R4 paragraph/builtin/contract work.",
+    "A2 overall review, A3 and phase A review."
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN"
+}

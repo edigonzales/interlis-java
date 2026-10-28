@@ -27,7 +27,7 @@ class CliApplicationTest {
         Run version = run("version");
         assertEquals(0, version.result().exitCode());
         assertTrue(version.out().contains("INTERLIS 2.3, 2.4"));
-        assertTrue(version.out().contains("api: 0.1"));
+        assertTrue(version.out().contains("api: 0.2"));
         assertTrue(version.out().contains("diagnostics: interlis-diagnostics/v1"));
         assertTrue(version.out().contains("protocol: interlis.compiler/1.0"));
         assertTrue(version.out().contains("format: 1.0"));
@@ -39,7 +39,7 @@ class CliApplicationTest {
         Run capabilities = run("capabilities");
         assertEquals(0, capabilities.result().exitCode());
         assertTrue(capabilities.out().contains("\"protocol\":\"interlis.compiler/1.0\""));
-        assertTrue(capabilities.out().contains("\"apiVersion\":\"0.1\""));
+        assertTrue(capabilities.out().contains("\"apiVersion\":\"0.2\""));
         assertTrue(capabilities.out().contains("\"diagnosticCatalogVersion\":\"interlis-diagnostics/v1\""));
         assertTrue(capabilities.out().contains("\"formatVersion\":\"1.0\""));
         assertTrue(capabilities.out().contains("\"diagramSchemaVersion\":\"1.0\""));
@@ -136,6 +136,21 @@ class CliApplicationTest {
         assertEquals(1, run.result().exitCode());
         assertTrue(run.out().startsWith("{"));
         assertTrue(run.out().contains("\"diagnostics\":["));
+    }
+
+    @Test
+    void brokenOutputNeverReportsSuccess() {
+        var broken = new PrintStream(new java.io.OutputStream() {
+            @Override public void write(int value) throws java.io.IOException {
+                throw new java.io.IOException("injected output failure");
+            }
+        });
+        var environment = new CliEnvironment(Path.of("").toAbsolutePath(),
+                new ByteArrayInputStream(new byte[0]), broken,
+                new PrintStream(new ByteArrayOutputStream()), Map.of());
+        assertEquals(CliTermination.OPERATIONAL_FAILURE,
+                new DefaultCompilerCli().run(java.util.List.of("version"), environment,
+                        CancellationToken.none()).termination());
     }
 
     private static Run run(String... args) {

@@ -242,7 +242,36 @@ class LspFeatureTest {
                 List.of(new FileEvent(watchedUri, FileChangeType.Changed))));
         assertTrue(server.workspaceForTest().source(
                 new guru.interlis.source.SourceId(watchedUri)).isPresent());
+        server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(
+                List.of(new FileEvent(watchedUri, FileChangeType.Deleted))));
+        assertTrue(server.workspaceForTest().source(
+                new guru.interlis.source.SourceId(watchedUri)).isEmpty());
+        Files.delete(watched);
         server.shutdown().get(2, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void oldDocumentVersionsAreIgnoredAndClosingRestoresDiskText() throws Exception {
+        Path path = Files.createTempFile("interlis-lsp-close", ".ili");
+        Files.writeString(path, MODEL);
+        String uri = path.toUri().toString();
+        var id = new guru.interlis.source.SourceId(uri);
+        InterlisLanguageServer server = server();
+        try {
+            var documents = server.textDocumentsForTest();
+            documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri, "interlis",
+                    3, MODEL.replace("Alpha", "Unsaved"))));
+            documents.didChange(new org.eclipse.lsp4j.DidChangeTextDocumentParams(
+                    new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(uri, 2),
+                    List.of(new org.eclipse.lsp4j.TextDocumentContentChangeEvent(MODEL))));
+            assertTrue(server.workspaceForTest().source(id).orElseThrow().text().contains("Unsaved"));
+            documents.didClose(new org.eclipse.lsp4j.DidCloseTextDocumentParams(
+                    new TextDocumentIdentifier(uri)));
+            assertEquals(MODEL, server.workspaceForTest().source(id).orElseThrow().text());
+        } finally {
+            server.shutdown().get(2, TimeUnit.SECONDS);
+            Files.delete(path);
+        }
     }
 
     private static InterlisLanguageServer server() {

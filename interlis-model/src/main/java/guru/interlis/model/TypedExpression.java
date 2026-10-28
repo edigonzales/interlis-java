@@ -7,7 +7,7 @@ import java.util.List;
 /** Closed typed expression hierarchy; original ranges stay available. */
 public sealed interface TypedExpression permits LiteralExpression, PathExpression,
         BinaryExpression, UnaryExpression, DefinedExpression, FunctionCallExpression,
-        ConstantExpression, UndefinedExpression, ErrorExpression {
+        SymbolValueExpression, ConstantExpression, ObjectSetExpression, InspectionExpression, UndefinedExpression, ErrorExpression {
 
     /**
      * Returns the {@code id} value.

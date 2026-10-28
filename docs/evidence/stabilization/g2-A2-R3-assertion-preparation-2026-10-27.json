@@ -1,0 +1,221 @@
+{
+  "scope": "R3 preparation only, no R3 acceptance",
+  "independentAcceptance": "MISSING_EVIDENCE",
+  "sourceSnapshot": "build/reports/g2/A2/r2-rework-input/manifest.json",
+  "existingAssertions": {
+    "scope": "Read-only R3 preparation; not adopted rule coverage or step acceptance",
+    "entries": [
+      {
+        "ruleId": "NORM:NAME.alphabet",
+        "candidateTest": "LexicalProfileContractTest.nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
+        "sourceSha256": "1f18119133850de21bd7388f2371f14dee2503b61b44549abfb16c07bd7e5bf6",
+        "methodStart": 5399,
+        "methodEnd": 6044,
+        "methodSha256": "f5a515735c7a8f59a564f022ec5aba8d1a833529fedff69799e4a1b0b87d04f5",
+        "actualAssertionFragments": [
+          "for(String invalid:List.of(",
+          "assertFalse(LanguageProfile.isIdentifier"
+        ],
+        "remainingGap": "PARTIAL: no dedicated A_a09 model identity/range assertion",
+        "executionEvidence": "A1 archived XML contains this original method; not newly run during preparation",
+        "acceptance": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:NAME.length",
+        "candidateTest": "LexicalProfileContractTest.nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
+        "sourceSha256": "1f18119133850de21bd7388f2371f14dee2503b61b44549abfb16c07bd7e5bf6",
+        "methodStart": 5399,
+        "methodEnd": 6044,
+        "methodSha256": "f5a515735c7a8f59a564f022ec5aba8d1a833529fedff69799e4a1b0b87d04f5",
+        "actualAssertionFragments": [
+          "\"A\".repeat(255)",
+          "\"A\".repeat(256)",
+          "assertFalse(syntax.diagnostics().isEmpty())"
+        ],
+        "remainingGap": "PARTIAL: boundary validity proven, complete original range and actual rename result still missing",
+        "executionEvidence": "A1 archived XML contains this original method; not newly run during preparation",
+        "acceptance": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:IMPORT.predefinedQualified",
+        "candidateTest": "PredefinedNameBindingContractTest.qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
+        "sourceSha256": "608e90d27dba979a2d884d8f46f53ac8266c78a0b9a7a690eeb5d6e8e27e317c",
+        "methodStart": 3521,
+        "methodEnd": 4495,
+        "methodSha256": "3d4211223be1aa75dcbb0065ced5508ef954b829bd126679260114df9d65b071",
+        "actualAssertionFragments": [
+          "assertEquals(1,refs.size(),family.name())",
+          "assertEquals(new Origin.PredefinedOrigin",
+          "bad(input(version,family.body().formatted(\"\")))"
+        ],
+        "remainingGap": "PARTIAL: actual canonical public origin and missing-import rejection, but selected predefined families only",
+        "executionEvidence": "A1 archived XML contains this original method; not newly run during preparation",
+        "acceptance": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:IMPORT.predefinedBare",
+        "candidateTest": "PredefinedNameBindingContractTest.qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
+        "sourceSha256": "608e90d27dba979a2d884d8f46f53ac8266c78a0b9a7a690eeb5d6e8e27e317c",
+        "methodStart": 3521,
+        "methodEnd": 4495,
+        "methodSha256": "3d4211223be1aa75dcbb0065ced5508ef954b829bd126679260114df9d65b071",
+        "actualAssertionFragments": [
+          "IMPORTS UNQUALIFIED INTERLIS",
+          "assertEquals(1,refs.size(),family.name())",
+          "bad(input(version,\"IMPORTS INTERLIS;\""
+        ],
+        "remainingGap": "PARTIAL: no exact bare-token query/range assertion in this method",
+        "executionEvidence": "A1 archived XML contains this original method; not newly run during preparation",
+        "acceptance": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:MODEL.translationStructure",
+        "candidateTest": "StructuredTranslationContractTest.versionedIdentifiersAndDocumentaryParameterNamesNeedNoNameHeuristics",
+        "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructuredTranslationContractTest.java",
+        "sourceSha256": "fee4edf0ad668bfec2fe02a04e559f9aaa9fa4d45b21af07f75fe8d247f3d570",
+        "methodStart": 1905,
+        "methodEnd": 2653,
+        "methodSha256": "5f7f83893603bf16cc8e32131e90d14a736a0b58ef5e356214638a0e9671d891",
+        "actualAssertionFragments": [
+          "model.translation().orElseThrow().correspondences()",
+          "assertEquals(\"Zeitpunkt\",graph.symbol(link.translated()).orElseThrow().name().value())"
+        ],
+        "remainingGap": "PARTIAL: a positive canonical correspondence example, no complete negative structure proof",
+        "executionEvidence": "A1 archived XML contains this original method; not newly run during preparation",
+        "acceptance": "MISSING_EVIDENCE"
+      }
+    ]
+  },
+  "requiredCases": {
+    "scope": "Concrete R3 preparation, no new normative expectations or test pass claims",
+    "cases": [
+      {
+        "ruleId": "NORM:NAME.case",
+        "ownerStep": "B3",
+        "positiveCase": "Two classes named A and a in one topic; attributes refer separately to A and a.",
+        "negativeCase": "A class extends MissingCase when only missingcase is declared.",
+        "requiredAssertions": [
+          "Distinct class SymbolIds and exact source name ranges",
+          "Each reference resolves its actual case-sensitive target",
+          "Wrong-case reference: source binding diagnostic and no CompiledSchema"
+        ],
+        "existingEvidence": "No exact current candidate test identified",
+        "status": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:STRING.singleLine",
+        "ownerStep": "B3",
+        "positiveCase": "One quoted literal with escaped quote/backslash and a Unicode escape, preserving raw and decoded values.",
+        "negativeCase": "Literal containing a physical newline; separately missing closing quote in STRICT and EDITOR.",
+        "requiredAssertions": [
+          "Raw source range and decoded text are separate",
+          "No valid schema from recovery",
+          "Following independent declaration retained with correct range"
+        ],
+        "existingEvidence": "TextLiteralContractTest covers decoded Unicode/length, not these lexical failure paths",
+        "status": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:COMMENT.nested",
+        "ownerStep": "B3",
+        "positiveCase": "Two nested block comments surrounding an ordinary declaration; include line comment text inside.",
+        "negativeCase": "Inner and outer unterminated comments separately.",
+        "requiredAssertions": [
+          "Reconstruct original source byte-for-text incl CRLF/Unicode",
+          "Every original comment character represented once",
+          "No internal error or valid schema when unterminated"
+        ],
+        "existingEvidence": "SyntaxContractTest reconstructsExactUnicodeAndComments only covers an ordinary line comment",
+        "status": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:EXPLANATION.delimiter",
+        "ownerStep": "B3",
+        "positiveCase": "Multiline explanation ending at the next double slash.",
+        "negativeCase": "Insert an extra bare token after the closing double slash.",
+        "requiredAssertions": [
+          "Explanation decoded/raw text and source range retained",
+          "Following text parsed as source, not swallowed",
+          "Expected source diagnostic on extra token, no valid schema"
+        ],
+        "existingEvidence": "No exact current candidate test identified",
+        "status": "MISSING_EVIDENCE"
+      },
+      {
+        "ruleId": "NORM:MODEL.typeMembers",
+        "ownerStep": "B2",
+        "positiveCase": "Separate TYPE MODEL controls containing units, domains, function declarations or line forms.",
+        "negativeCase": "Compare structures/classes/topics inside TYPE MODEL without changing current expectations before user approval.",
+        "requiredAssertions": [
+          "Public kind/identity/target of each permitted family",
+          "Original frozen uniqueLocal_DefinedInStructure source retained",
+          "Exact two-version norm passages, actual own/reference results and explicit user decision"
+        ],
+        "existingEvidence": "TYPE_MODEL_STRUCTURE_BOUNDARY remains pending",
+        "status": "USER_DECISION_PENDING"
+      }
+    ]
+  },
+  "freshSelectedRun": {
+    "scope": "R3 existing assertion preparation; four selected JVM methods freshly executed, not full R3 coverage/acceptance",
+    "sourceSnapshot": "build/reports/g2/A2/r2-rework-input/manifest.json",
+    "sourceDigest": "293bef845555da1a8687b8d252ffbec439ca452965767d42912a2cf1bf6e8ff4",
+    "processExitCode": 0,
+    "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew :interlis-compiler:test --tests guru.interlis.compiler.LexicalProfileContractTest.nameLengthAndInvalidCharactersAgreeForSyntaxAndRename --tests guru.interlis.compiler.PredefinedNameBindingContractTest.qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis --tests guru.interlis.compiler.StructuredTranslationContractTest.versionedIdentifiersAndDocumentaryParameterNamesNeedNoNameHeuristics --tests guru.interlis.compiler.ImportedTranslationContractTest.equalTypedWrongImportedTargetsRemainErrors --rerun-tasks --console=plain",
+    "reports": [
+      {
+        "file": "build/reports/g2/A2/r3-preparation/jvm/TEST-guru.interlis.compiler.ImportedTranslationContractTest.xml",
+        "sha256": "2dbdba7ff52bd8e6ab6c8db9a15717de3f48af2fd530f5323d0320a890e67139",
+        "suite": "guru.interlis.compiler.ImportedTranslationContractTest",
+        "tests": [
+          "equalTypedWrongImportedTargetsRemainErrors()"
+        ],
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "file": "build/reports/g2/A2/r3-preparation/jvm/TEST-guru.interlis.compiler.LexicalProfileContractTest.xml",
+        "sha256": "c5c6dc0e7c17950d68f1da25486a47386f7ef73b9bac2fb0b9f2a998ec434f1c",
+        "suite": "guru.interlis.compiler.LexicalProfileContractTest",
+        "tests": [
+          "nameLengthAndInvalidCharactersAgreeForSyntaxAndRename()"
+        ],
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "file": "build/reports/g2/A2/r3-preparation/jvm/TEST-guru.interlis.compiler.PredefinedNameBindingContractTest.xml",
+        "sha256": "a6aaceec208f45b71a30a97ed9edf7980ad2011764ad3dc7f981198a5e944f26",
+        "suite": "guru.interlis.compiler.PredefinedNameBindingContractTest",
+        "tests": [
+          "qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis()"
+        ],
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      },
+      {
+        "file": "build/reports/g2/A2/r3-preparation/jvm/TEST-guru.interlis.compiler.StructuredTranslationContractTest.xml",
+        "sha256": "ccba69038f83d5ddefebe24c476ff6bfaa8fc75de35bd2023084df8ec1900504",
+        "suite": "guru.interlis.compiler.StructuredTranslationContractTest",
+        "tests": [
+          "versionedIdentifiersAndDocumentaryParameterNamesNeedNoNameHeuristics()"
+        ],
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0"
+      }
+    ],
+    "log": "build/reports/g2/A2/r3-preparation/gradle-selected-cases.log",
+    "logSha256": "ac44d3c58cbf2eaf514e95840327e2b12baf612317757ff68bb7d23beb55615e",
+    "phaseAcceptance": "OPEN",
+    "normativeExpectationsChanged": false
+  },
+  "remainingCause": "Rule-specific numbered and unnumbered contracts, full exact case/assertion links and independent R3 review remain missing; the selected four passing methods do not close these gaps."
+}

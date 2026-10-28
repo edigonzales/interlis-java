@@ -5,10 +5,10 @@ import guru.interlis.source.SourceRange;
 import java.util.Optional;
 
 /** Closed semantic symbol hierarchy. */
-public sealed interface Symbol permits ModelSymbol, TopicSymbol, ClassSymbol,
+public sealed interface Symbol permits GraphicSymbol, DrawingRuleSymbol, ModelSymbol, TopicSymbol, ClassSymbol,
         StructureSymbol, AssociationSymbol, AttributeSymbol, RoleSymbol, DomainSymbol,
-        ConstraintSymbol, EnumElementSymbol, UnitSymbol, FunctionSymbol, ViewSymbol,
-        UnsupportedSymbol {
+        ConstraintSymbol, EnumElementSymbol, UnitSymbol, FunctionSymbol, ViewSymbol, ViewSymbol.Base,
+        MetadataBasketSymbol, MetaObjectSymbol, LineFormSymbol, ContextSymbol, ParameterSymbol, UnsupportedSymbol {
 
     /**
      * Returns the {@code header} value.

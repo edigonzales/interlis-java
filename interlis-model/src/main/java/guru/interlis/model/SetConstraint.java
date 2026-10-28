@@ -22,12 +22,11 @@ public record SetConstraint(Optional<String> name, SetConstraintScope scope,
         Objects.requireNonNull(condition, "condition");
     }
 
+    /** Conceptual extent; execution may inspect only the available baskets without narrowing this rule. */
     public enum SetConstraintScope {
-        /** The {@code LOCAL} constant. */
-        LOCAL,
-        /** The {@code BASKET} constant. */
-        BASKET,
-        /** The {@code TRANSFER} constant. */
-        TRANSFER
+        /** All objects of the class, including objects beyond a single transfer. */
+        GLOBAL,
+        /** Objects of the class within the current basket (INTERLIS 2.4). */
+        BASKET
     }
 }

@@ -14,7 +14,7 @@ import java.util.Objects;
  * @param restrictions restriction source names
  */
 public record ClassValueTypeSyntax(SyntaxNodeId id, SourceRange range, boolean structureValue,
-                                   List<String> restrictions) implements TypeSyntax {
+                                   List<NameSyntax> restrictions) implements TypeSyntax {
     /** Creates a validated instance. */
     public ClassValueTypeSyntax {
         Objects.requireNonNull(id, "id");
@@ -29,6 +29,6 @@ public record ClassValueTypeSyntax(SyntaxNodeId id, SourceRange range, boolean s
 
     @Override
     public List<SyntaxNode> children() {
-        return List.of();
+        return List.copyOf(restrictions);
     }
 }

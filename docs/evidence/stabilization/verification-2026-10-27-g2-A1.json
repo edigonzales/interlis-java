@@ -1,0 +1,157 @@
+{
+  "step": "A1",
+  "acceptance": "ABGENOMMEN",
+  "requirements": [
+    "TEST-001",
+    "TEST-004",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "sourceDigest": "49c76c5aabf479d5722601c7d0f4b6bf6d0107cd98702ebac4558f540556c180",
+  "input": "build/reports/g2/A1/input-v2/manifest.json",
+  "run": "build/reports/g2/A1/run-v2/manifest.json",
+  "runSha256": "336ec5dc6fe18cc7f8114d7d6c97eb2c9609617079ee2c9fa23cdcf233e13fba",
+  "packet": "build/reports/g2/A1/packet-v2/manifest.json",
+  "packetSha256": "73c1753bfb1d7d56f4c7a1114009d7254f7db3a801639faf9eff54ebc907486f",
+  "review": "g2-reviews/A1-attempt2.json",
+  "reviewSha256": "162f8620456b07e29cade263bd3a952c49c3dfc7dca7f5a74f7d3ea4a39e47be",
+  "jvm": {
+    "tests": 688,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0
+  },
+  "jvmXmlReports": 144,
+  "portableCasesPerRuntime": 3249,
+  "referenceSummary": {
+    "TOTAL": 593,
+    "XFAIL": 1,
+    "PASS": 574,
+    "ERROR": 0,
+    "FAIL": 18,
+    "XPASS": 0
+  },
+  "projectSummary": {
+    "PASS": 574,
+    "XFAIL": 19,
+    "FAIL": 0,
+    "XPASS": 0,
+    "ERROR": 0,
+    "TOTAL": 593
+  },
+  "processExitCode": 0,
+  "reports": {
+    "reference": {
+      "file": "reference.json",
+      "sha256": "0b224331c25caab75a62b8a15c611f0c20e1350b2c650374d445958f01d5ef09"
+    },
+    "project": {
+      "file": "project.json",
+      "sha256": "aabe26d998482427db1ad6cadc0601043b4f61fa076b2b9a8ede79e11a2379bb"
+    },
+    "teaVmJavaScript": {
+      "file": "teaVmJavaScript.json",
+      "sha256": "0ff8d936763e9764bd875cf2a89bdc1663ec6ab643eebf02867101dfedf599a8"
+    },
+    "teaVmWasmGC": {
+      "file": "teaVmWasmGC.json",
+      "sha256": "34b442c36c0ba1822c4bca74ba632cca864a70eecb4524b88525ea40bace6239"
+    },
+    "teaVmBrowsers": {
+      "file": "teaVmBrowsers.json",
+      "sha256": "23aa2ec5e76a73796ef46a8973cb6c28245a22820bcebe9c1e066f483eb447ec"
+    },
+    "safari": {
+      "file": "safari.json",
+      "sha256": "475255f12115684193430ba40983dbaf0a2469b3d4f20c2c0da684647103e1ef"
+    },
+    "webImageNode": {
+      "file": "webImageNode.json",
+      "sha256": "2a237003282f6bac3720715e6391b9a8e6d351f12d0291d36b67f8a2dd7a32b5"
+    },
+    "webImageBrowsers": {
+      "file": "webImageBrowsers.json",
+      "sha256": "2fdb3f764fc44ecfb655daba9c1b7ae846a441a0e7df75681e16243659b1a649"
+    },
+    "sdkProcesses": {
+      "file": "sdkProcesses.json",
+      "sha256": "accc7e431a9b953187864000dc773822eee64ae969b543ab84ab46f9014d1647"
+    }
+  },
+  "artifactHashes": {
+    "interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js": "c243699d666963318b9ed16388ecb2cb665347eb15ea8197a8d183f5d8cd4af7",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm": "592fc66e93273502ea67772e24d15755ff7f40e23db2ad82134367ecb98e973a",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js": "4fa1e0e0d686cc6e0a0d111e606cb876f7168bd695d9e3d639e7d5684453089b",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js": "98d121943d66def8571579c4ee3de30d811af2363c4b91064f351b56fb8bb232",
+    "interlis-wasm-webimage/build/webimage/interlis-compiler.js.wasm": "bd81c8a091afba84a5e8848ecbaa33ed9f7b05fd64bc3e5b64e0967eca4c8bbd",
+    "interlis-cli/build/install/interlis-cli/lib/ST4-4.3.4.jar": "f927ac384c46d749f8b5ec68972a53aed21e00313509299616edb73bfa15ff33",
+    "interlis-cli/build/install/interlis-cli/lib/antlr-runtime-3.5.3.jar": "68bf9f5a33dfcb34033495c587e6236bef4e37aa6612919f5b1e843b90669fb9",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-4.13.2.jar": "e6f0b10d2ad206f338afe16867fc47148b6729d6e3a260ea28379b91f03a3657",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-cli/build/install/interlis-cli/lib/icu4j-72.1.jar": "3df572b240a68d13b5cd778ad2393e885d26411434cd8f098ac5987ea2e64ce3",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-cli-0.2.0-SNAPSHOT.jar": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "6ea3886f03069a44d67ade2ffa4851cd357821b528ab5115e9f036541dd4065e",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-model-0.2.0-SNAPSHOT.jar": "2cef8908c4ccefd4e7076c314f4b3df034b8c81bb95bc2838f5a777c22d4c46a",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "1aa61e30866e3ecf4bf16569771da154e151436b4a8ae83ae1cdbdf40decc382",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "c952e3ca1e8a4f8f735abb9b5d8ecffcf1e3f867acc5d1053a6a40fc638ec593",
+    "interlis-cli/build/install/interlis-cli/lib/org.abego.treelayout.core-1.0.3.jar": "fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326"
+  },
+  "toolchains": {
+    "java": {
+      "command": [
+        "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+        "-version"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "openjdk version \"25.0.3\" 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)\n"
+    },
+    "gradle": {
+      "command": [
+        "/Users/stefan/sources/interlis-java/gradlew",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "\n------------------------------------------------------------\nGradle 9.8.1\n------------------------------------------------------------\n\nBuild time:    2026-10-07 16:57:46 UTC\nRevision:      39daf39feb60a18b1b6ddccde53366522fef516f\n\nKotlin:        2.4.10\nGroovy:        4.0.33\nAnt:           Apache Ant(TM) version 1.10.17 compiled on April 6 2026\nLauncher JVM:  25.0.3 (Eclipse Adoptium 25.0.3+9-LTS)\nDaemon JVM:    /Users/stefan/.sdkman/candidates/java/25.0.3-tem (no Daemon JVM specified, using current Java home)\nOS:            Mac OS X 15.8.1 aarch64\n\n",
+      "stderr": ""
+    },
+    "node": {
+      "command": [
+        "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "v24.22.0\n",
+      "stderr": ""
+    },
+    "graalVm": {
+      "command": [
+        "/Users/stefan/.sdkman/candidates/java/25.0.3-graal/bin/native-image",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "native-image 25.0.3 2026-04-21\nGraalVM Runtime Environment Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS-jvmci-b01)\nSubstrate VM Oracle GraalVM 25.0.3+9.1 (build 25.0.3+9-LTS, serial gc, compressed references)\n",
+      "stderr": ""
+    },
+    "binaryen": {
+      "command": [
+        "/Users/stefan/.cache/interlis-java/runtime/binaryen-version_133/bin/wasm-opt",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "wasm-opt version 133 (version_133)\n",
+      "stderr": ""
+    }
+  },
+  "pins": {
+    "docs/evidence/conformance/baseline.json": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+    "docs/evidence/conformance/normative-expectations.json": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+    "gradle/wrapper/gradle-wrapper.properties": "1b2244203df033c3b5a87e0e42ed92239584cd310803c4982c5b0e6f2454028f",
+    "gradle/libs.versions.toml": "4cfc5552515a459bbb7d15c6b0a4d54fe1912c2ff2d52a48af997b120349fe1e",
+    "gradle.properties": "49b9e59b3c515a83d6d352a3e44e89f671a2dbe064e1248f4964f93e4e887b3f"
+  },
+  "normativeApproval": false,
+  "g2": "OPEN",
+  "p3": "OPEN"
+}

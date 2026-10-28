@@ -1,0 +1,1630 @@
+{
+  "schemaVersion": "1.0",
+  "status": "PLANNED_NOT_ACCEPTED",
+  "purpose": "A2-R4 builtin-function worklist; signatures are implementation facts, not acceptance",
+  "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+  "requirements": [
+    "META-003",
+    "META-006",
+    "META-008",
+    "META-010",
+    "META-011",
+    "META-014",
+    "META-015",
+    "SEM-005",
+    "SEM-008",
+    "SEM-010",
+    "SEM-014",
+    "SEM-017",
+    "SEM-020",
+    "SRC-002",
+    "SRC-003",
+    "SRC-004",
+    "SRC-005",
+    "SYN-002",
+    "SYN-004",
+    "SYN-013",
+    "SYN-015",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "functions": [
+    {
+      "id": "BUILTIN:len",
+      "name": "len",
+      "result": "NUMERIC",
+      "arguments": [
+        "TEXT"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 30,
+      "matrixRule": "BUILTIN:len",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:30",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:len:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call len with TEXT and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:len:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call len with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:len:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for len in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:len:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of len where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:lenM",
+      "name": "lenM",
+      "result": "NUMERIC",
+      "arguments": [
+        "MTEXT"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 31,
+      "matrixRule": "BUILTIN:lenM",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:31",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:lenM:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call lenM with MTEXT and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:lenM:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call lenM with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:lenM:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for lenM in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:lenM:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of lenM where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:trim",
+      "name": "trim",
+      "result": "TEXT",
+      "arguments": [
+        "TEXT"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 32,
+      "matrixRule": "BUILTIN:trim",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:32",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:trim:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call trim with TEXT and assert TEXT.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:trim:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call trim with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:trim:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for trim in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:trim:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of trim where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:trimM",
+      "name": "trimM",
+      "result": "MTEXT",
+      "arguments": [
+        "MTEXT"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 33,
+      "matrixRule": "BUILTIN:trimM",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:33",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:trimM:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call trimM with MTEXT and assert MTEXT.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:trimM:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call trimM with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:trimM:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for trimM in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:trimM:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of trimM where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:objectCount",
+      "name": "objectCount",
+      "result": "NUMERIC",
+      "arguments": [
+        "OBJECTS"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 34,
+      "matrixRule": "BUILTIN:objectCount",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:34",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:objectCount:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call objectCount with OBJECTS and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:objectCount:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call objectCount with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:objectCount:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for objectCount in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:objectCount:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of objectCount where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:elementCount",
+      "name": "elementCount",
+      "result": "NUMERIC",
+      "arguments": [
+        "BAG"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 35,
+      "matrixRule": "BUILTIN:elementCount",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:35",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:elementCount:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call elementCount with BAG and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:elementCount:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call elementCount with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:elementCount:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for elementCount in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:elementCount:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of elementCount where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:myClass",
+      "name": "myClass",
+      "result": "CLASS_VALUE",
+      "arguments": [
+        "ANYSTRUCTURE"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 36,
+      "matrixRule": "BUILTIN:myClass",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:36",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:myClass:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call myClass with ANYSTRUCTURE and assert CLASS_VALUE.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:myClass:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call myClass with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:myClass:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for myClass in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:myClass:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of myClass where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:isSubClass",
+      "name": "isSubClass",
+      "result": "BOOLEAN",
+      "arguments": [
+        "CLASS_VALUE",
+        "CLASS_VALUE"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 37,
+      "matrixRule": "BUILTIN:isSubClass",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:37",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:isSubClass:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call isSubClass with CLASS_VALUE, CLASS_VALUE and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isSubClass:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call isSubClass with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isSubClass:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for isSubClass in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isSubClass:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of isSubClass where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:isOfClass",
+      "name": "isOfClass",
+      "result": "BOOLEAN",
+      "arguments": [
+        "ANYSTRUCTURE",
+        "CLASS_VALUE"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 38,
+      "matrixRule": "BUILTIN:isOfClass",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:38",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:isOfClass:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call isOfClass with ANYSTRUCTURE, CLASS_VALUE and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isOfClass:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call isOfClass with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isOfClass:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for isOfClass in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isOfClass:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of isOfClass where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:isEnumSubVal",
+      "name": "isEnumSubVal",
+      "result": "BOOLEAN",
+      "arguments": [
+        "ENUM_TREE",
+        "ENUM_TREE"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 39,
+      "matrixRule": "BUILTIN:isEnumSubVal",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:39",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:isEnumSubVal:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call isEnumSubVal with ENUM_TREE, ENUM_TREE and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isEnumSubVal:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call isEnumSubVal with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isEnumSubVal:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for isEnumSubVal in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:isEnumSubVal:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of isEnumSubVal where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:inEnumRange",
+      "name": "inEnumRange",
+      "result": "BOOLEAN",
+      "arguments": [
+        "ENUM",
+        "ENUM_TREE",
+        "ENUM_TREE"
+      ],
+      "since": "ILI23",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 40,
+      "matrixRule": "BUILTIN:inEnumRange",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:40",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:inEnumRange:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call inEnumRange with ENUM, ENUM_TREE, ENUM_TREE and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:inEnumRange:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call inEnumRange with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:inEnumRange:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for inEnumRange in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:inEnumRange:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of inEnumRange where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:convertUnit",
+      "name": "convertUnit",
+      "result": "NUMERIC",
+      "arguments": [
+        "NUMERIC"
+      ],
+      "since": "ILI23",
+      "rule": "CONVERT_UNIT",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 41,
+      "matrixRule": "BUILTIN:convertUnit",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:41",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:convertUnit:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call convertUnit with NUMERIC and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:convertUnit:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call convertUnit with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:convertUnit:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for convertUnit in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:convertUnit:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of convertUnit where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:areAreas",
+      "name": "areAreas",
+      "result": "BOOLEAN",
+      "arguments": [
+        "OBJECTS",
+        "ATTRIBUTE",
+        "ATTRIBUTE"
+      ],
+      "since": "ILI23",
+      "rule": "AREAS_ATTRIBUTE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 42,
+      "matrixRule": "BUILTIN:areAreas",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:42",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:areAreas:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call areAreas with OBJECTS, ATTRIBUTE, ATTRIBUTE and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call areAreas with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for areAreas in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of areAreas where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:length",
+      "name": "length",
+      "result": "NUMERIC",
+      "arguments": [
+        "POLYLINE"
+      ],
+      "since": "ILI24",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 43,
+      "matrixRule": "BUILTIN:length",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:43",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:length:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call length with POLYLINE and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:length:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call length with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:length:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for length in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:length:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of length where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:multilength",
+      "name": "multilength",
+      "result": "NUMERIC",
+      "arguments": [
+        "MULTIPOLYLINE"
+      ],
+      "since": "ILI24",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 44,
+      "matrixRule": "BUILTIN:multilength",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:44",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:multilength:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call multilength with MULTIPOLYLINE and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:multilength:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call multilength with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:multilength:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for multilength in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:multilength:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of multilength where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:surface",
+      "name": "surface",
+      "result": "NUMERIC",
+      "arguments": [
+        "SURFACE"
+      ],
+      "since": "ILI24",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 45,
+      "matrixRule": "BUILTIN:surface",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:45",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:surface:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call surface with SURFACE and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:surface:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call surface with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:surface:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for surface in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:surface:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of surface where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:multisurface",
+      "name": "multisurface",
+      "result": "NUMERIC",
+      "arguments": [
+        "MULTISURFACE"
+      ],
+      "since": "ILI24",
+      "rule": "SIMPLE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 46,
+      "matrixRule": "BUILTIN:multisurface",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:46",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:multisurface:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call multisurface with MULTISURFACE and assert NUMERIC.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:multisurface:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call multisurface with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:multisurface:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for multisurface in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:multisurface:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of multisurface where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:areAreas2",
+      "name": "areAreas2",
+      "result": "BOOLEAN",
+      "arguments": [
+        "OBJECTS",
+        "TEXT",
+        "TEXT"
+      ],
+      "since": "ILI24",
+      "rule": "AREAS_TEXT",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 49,
+      "matrixRule": "BUILTIN:areAreas2",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "USER_DECISION_PENDING",
+      "pendingUserDecision": "BUILTIN_AREAS2_AREAS3_NORM_PROFILE",
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:49",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:areAreas2:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call areAreas2 with OBJECTS, TEXT, TEXT and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas2:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call areAreas2 with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas2:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for areAreas2 in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas2:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of areAreas2 where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature/profile is a pending user decision; no normative change is made."
+    },
+    {
+      "id": "BUILTIN:areAreas3",
+      "name": "areAreas3",
+      "result": "BOOLEAN",
+      "arguments": [
+        "OBJECTS",
+        "TEXT",
+        "TEXT"
+      ],
+      "since": "ILI24",
+      "rule": "AREAS_TEXT",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 51,
+      "matrixRule": "BUILTIN:areAreas3",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "USER_DECISION_PENDING",
+      "pendingUserDecision": "BUILTIN_AREAS2_AREAS3_NORM_PROFILE",
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:51",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:areAreas3:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call areAreas3 with OBJECTS, TEXT, TEXT and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas3:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call areAreas3 with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas3:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for areAreas3 in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreas3:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of areAreas3 where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature/profile is a pending user decision; no normative change is made."
+    },
+    {
+      "id": "BUILTIN:areAreasWithoutGaps",
+      "name": "areAreasWithoutGaps",
+      "result": "BOOLEAN",
+      "arguments": [
+        "OBJECTS",
+        "ATTRIBUTE",
+        "ATTRIBUTE"
+      ],
+      "since": "ILI24",
+      "rule": "AREAS_ATTRIBUTE",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 53,
+      "matrixRule": "BUILTIN:areAreasWithoutGaps",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:53",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:areAreasWithoutGaps:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call areAreasWithoutGaps with OBJECTS, ATTRIBUTE, ATTRIBUTE and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreasWithoutGaps:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call areAreasWithoutGaps with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreasWithoutGaps:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for areAreasWithoutGaps in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreasWithoutGaps:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of areAreasWithoutGaps where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    },
+    {
+      "id": "BUILTIN:areAreasWithoutGaps2",
+      "name": "areAreasWithoutGaps2",
+      "result": "BOOLEAN",
+      "arguments": [
+        "OBJECTS",
+        "TEXT",
+        "TEXT"
+      ],
+      "since": "ILI24",
+      "rule": "AREAS_TEXT",
+      "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java",
+      "line": 55,
+      "matrixRule": "BUILTIN:areAreasWithoutGaps2",
+      "matrixRuleSource": "BUILTIN_WORKLIST",
+      "ownerStep": "E2",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-008",
+        "META-010",
+        "META-011",
+        "META-014",
+        "META-015",
+        "SEM-005",
+        "SEM-008",
+        "SEM-010",
+        "SEM-014",
+        "SEM-017",
+        "SEM-020",
+        "SRC-002",
+        "SRC-003",
+        "SRC-004",
+        "SRC-005",
+        "SYN-002",
+        "SYN-004",
+        "SYN-013",
+        "SYN-015",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "pendingUserDecision": null,
+      "implementation": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java:55",
+      "evidence": "SIGNATURE_ONLY",
+      "cases": [
+        {
+          "id": "BUILTIN:areAreasWithoutGaps2:P",
+          "kind": "POSITIVE",
+          "status": "PLANNED",
+          "description": "Call areAreasWithoutGaps2 with OBJECTS, TEXT, TEXT and assert BOOLEAN.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreasWithoutGaps2:N",
+          "kind": "NEGATIVE",
+          "status": "PLANNED",
+          "description": "Call areAreasWithoutGaps2 with a wrong argument count/type and assert a structured source/semantic diagnostic.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreasWithoutGaps2:C",
+          "kind": "CONTEXT",
+          "status": "PLANNED",
+          "description": "Assert the version/context rule for areAreasWithoutGaps2 in 2.3/2.4.",
+          "preserved": true
+        },
+        {
+          "id": "BUILTIN:areAreasWithoutGaps2:U",
+          "kind": "UNDEFINED",
+          "status": "PLANNED",
+          "description": "Assert the UNDEFINED/result behavior of areAreasWithoutGaps2 where the norm permits it.",
+          "preserved": true
+        }
+      ],
+      "remainingCause": "Signature is declared, but argument/result/context/UNDEFINED acceptance is still planned."
+    }
+  ],
+  "validation": {
+    "functions": 21,
+    "plannedCases": 84,
+    "userDecisions": 2,
+    "acceptance": "PLANNED_NOT_ACCEPTED"
+  },
+  "sourceSha256": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3"
+}

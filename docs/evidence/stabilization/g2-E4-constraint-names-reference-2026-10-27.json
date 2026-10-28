@@ -1,0 +1,824 @@
+{
+  "cases": [
+    {
+      "name": "class-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Rule:#true;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "3b3fcf4d13ccb1c8bd6c2b61ca5c99cc03b4fb235a33f549a64a55e496a11aec",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d012160ef2e7de4aa065cadb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d012160ef2e7de4aa065cadb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/0.ili\",\"revision\":\"1\",\"startOffset\":127,\"endOffset\":131},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/0.ili>\nInfo: ...compiler run done 2026-10-27 07:54:39\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "class-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Other:#true;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "6aeab73c6b2f6c78307114307d7f387a3eb1ee7fd69340f03cbe012b931f6a34",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/1.ili>\nInfo: ...compiler run done 2026-10-27 07:54:39\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "structure-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Rule:#true;END S;END F.",
+      "expected": "rejected",
+      "sha256": "a45b5243ac2309bbe641a12b65205b69467aed0d9ef083c5ba255e4e63c3ac20",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3bbd397769c62f013bd138a9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3bbd397769c62f013bd138a9\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/2.ili\",\"revision\":\"1\",\"startOffset\":123,\"endOffset\":127},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/2.ili>\nInfo: ...compiler run done 2026-10-27 07:54:40\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "structure-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Other:#true;END S;END F.",
+      "expected": "succeeded",
+      "sha256": "74937d9a563e180122a813b814faa3652254ee198743012d1bdf95cfdc664920",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/3.ili>\nInfo: ...compiler run done 2026-10-27 07:54:40\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "association-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=OID AS INTERLIS.UUIDOID;CLASS A=END A;CLASS B=END B;ASSOCIATION AB=a--A;b--B;MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Rule:#true;END AB;END T;END F.",
+      "expected": "rejected",
+      "sha256": "ab40dba0eee800395e29b9211515a836485c9ac8af93d80c5d6b9fac1b655d77",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c2835b15a4b035f4c23c3b9d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c2835b15a4b035f4c23c3b9d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/4.ili\",\"revision\":\"1\",\"startOffset\":196,\"endOffset\":200},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/4.ili>\nInfo: ...compiler run done 2026-10-27 07:54:40\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "association-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=OID AS INTERLIS.UUIDOID;CLASS A=END A;CLASS B=END B;ASSOCIATION AB=a--A;b--B;MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Other:#true;END AB;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "59a3047a6115371f36ee8dcdf5eb780c20674e80e1f775c1064e032725e747b2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/5.ili>\nInfo: ...compiler run done 2026-10-27 07:54:41\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "view-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=x:TEXT;END C;VIEW V PROJECTION OF C;=ALL OF C;MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Rule:#true;END V;END T;END F.",
+      "expected": "rejected",
+      "sha256": "dfc4cdd0064a6f3e64b5272c1531fdccfa50329cf878e5f5bae03b77aab28b3d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/6.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-edd417bc96d3b0b6289215bf], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-edd417bc96d3b0b6289215bf\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/6.ili\",\"revision\":\"1\",\"startOffset\":173,\"endOffset\":177},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/6.ili>\nInfo: ...compiler run done 2026-10-27 07:54:41\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "view-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=x:TEXT;END C;VIEW V PROJECTION OF C;=ALL OF C;MANDATORY CONSTRAINT Rule:#true;MANDATORY CONSTRAINT Other:#true;END V;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "c2f272cdf3566e22776de13261c75543e3a74b50427735a41260b8fab85736e2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/7.ili>\nInfo: ...compiler run done 2026-10-27 07:54:41\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "plausibility-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;CONSTRAINT Rule:>=90% #true;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "5e6a5cd7fe111e50d60f3fe0e5b785fbf4dca022961ab29d4c1d892d44c40de4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-cdc337a4d2eb6b9472164f65], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cdc337a4d2eb6b9472164f65\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/8.ili\",\"revision\":\"1\",\"startOffset\":129,\"endOffset\":133},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/8.ili>\nInfo: ...compiler run done 2026-10-27 07:54:42\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "plausibility-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;CONSTRAINT Other:>=90% #true;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "982cc34f7d4f1400d92e12bba96513e1b85c1b4ad061a8c1ef55aa267915ee7b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/9.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/9.ili>\nInfo: ...compiler run done 2026-10-27 07:54:42\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "unique-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;UNIQUE Rule:value;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "5e4c762d268abf14db7a0a4cf319d0efb3e16a5add8e92ebafc5181cda2bcc0c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7e011077ded0954c27192a92], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7e011077ded0954c27192a92\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/10.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":129},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/10.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/10.ili>\nInfo: ...compiler run done 2026-10-27 07:54:43\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "unique-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;UNIQUE Other:value;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "8e32c6681d774eed825a5d3bb4a09de88fdbd756f7428d32ed0c5836e110806c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/11.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/11.ili>\nInfo: ...compiler run done 2026-10-27 07:54:43\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "existence-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;EXISTENCE CONSTRAINT Rule:value REQUIRED IN F.T.C:value;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "37726997937a8ec4bebbaa3b7287bb08cafea9c603b2c3e0f50090a7a06d9dd7",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-18ac607fb0bf5a3234ead55c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-18ac607fb0bf5a3234ead55c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/12.ili\",\"revision\":\"1\",\"startOffset\":139,\"endOffset\":143},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/12.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/12.ili>\nInfo: ...compiler run done 2026-10-27 07:54:44\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "existence-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;EXISTENCE CONSTRAINT Other:value REQUIRED IN F.T.C:value;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "ba5839adb6354b135fc4891b6cdb4c54d386c05bd9de8a5e591c0785dbab816e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/13.ili>\nInfo: ...compiler run done 2026-10-27 07:54:44\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "set-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;SET CONSTRAINT Rule:INTERLIS.objectCount(ALL)>=0;END C;END T;END F.",
+      "expected": "rejected",
+      "sha256": "797572f498fffd015e1a10c4e6772932a7291e4de162fec45fc859362b0130ac",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b1dc7704c962f267ad4c8d9b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b1dc7704c962f267ad4c8d9b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/14.ili\",\"revision\":\"1\",\"startOffset\":133,\"endOffset\":137},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/14.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/14.ili>\nInfo: ...compiler run done 2026-10-27 07:54:44\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "set-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0..10;MANDATORY CONSTRAINT Rule:#true;SET CONSTRAINT Other:INTERLIS.objectCount(ALL)>=0;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "2a0891a5d29b552e2e5e62cf20f11b2d427083bcfa43283386c642169b78367a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/15.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/15.ili>\nInfo: ...compiler run done 2026-10-27 07:54:45\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "external-local-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=MANDATORY CONSTRAINT Rule:#true;END C;CONSTRAINTS OF C=MANDATORY CONSTRAINT Rule:#true;END;END T;END F.",
+      "expected": "rejected",
+      "sha256": "adbdbc04a70268a3537ad2d2d934e0dbc9cb9f756ad03ba5275d4481394c55a9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a9c23f7c8fbb422d5488d1ae], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a9c23f7c8fbb422d5488d1ae\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/16.ili\",\"revision\":\"1\",\"startOffset\":150,\"endOffset\":154},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/16.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/16.ili>\nInfo: ...compiler run done 2026-10-27 07:54:45\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "external-local-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=MANDATORY CONSTRAINT Rule:#true;END C;CONSTRAINTS OF C=MANDATORY CONSTRAINT Other:#true;END;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "f1b066835543fc596c8758f74f47d3af7edb07ca3365a92b65aafd4af126c671",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/17.ili>\nInfo: ...compiler run done 2026-10-27 07:54:46\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "external-twice-duplicate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=END C;CONSTRAINTS OF C=MANDATORY CONSTRAINT Rule:#true;END;CONSTRAINTS OF C=MANDATORY CONSTRAINT Rule:#true;END;END T;END F.",
+      "expected": "rejected",
+      "sha256": "08f695b0c67109c069a14557dbfe8d255c44c266cd15246dc4dd0d0817da8a02",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/18.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f78ba03c5db62f91e06d8fca], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f78ba03c5db62f91e06d8fca\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e4-constraint-names/processes/18.ili\",\"revision\":\"1\",\"startOffset\":171,\"endOffset\":175},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Rule\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"constraint names must be unique within their declaring class/CONSTRAINT_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/18.ili>\nInfo: ...compiler run done 2026-10-27 07:54:46\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "external-twice-distinct",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=END C;CONSTRAINTS OF C=MANDATORY CONSTRAINT Rule:#true;END;CONSTRAINTS OF C=MANDATORY CONSTRAINT Other:#true;END;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "ae1c51707820c2012a0d01d4b796c685f48602e76c7e5fce62e17c7e98bb4885",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/19.ili>\nInfo: ...compiler run done 2026-10-27 07:54:46\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "separate-scopes",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=MANDATORY CONSTRAINT Rule:#true;END C;CLASS D=MANDATORY CONSTRAINT Rule:#true;END D;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "d8ba4f45f42e1ad8c4e7cbf9f3fdc3269200d5a38308f64f085524c1c6bc7721",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/20.ili>\nInfo: ...compiler run done 2026-10-27 07:54:47\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "domain-class-separate",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0..10 CONSTRAINTS Rule:THIS>0;TOPIC T=CLASS C=MANDATORY CONSTRAINT Rule:#true;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "17a760b392d3dbc54cd3938de4fb3eff4ca8e69eda7a8a6640cf61dc67d4efcb",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/21.ili>\nInfo: ...compiler run done 2026-10-27 07:54:47\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "unnamed-2.3",
+      "text": "INTERLIS 2.3;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=MANDATORY CONSTRAINT #true;MANDATORY CONSTRAINT #true;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "a256473e2f97288db9e31959b3abb2d75c4353cef011733e994a14356ee3e238",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/22.ili>\nInfo: ...compiler run done 2026-10-27 07:54:47\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "unnamed-2.4",
+      "text": "INTERLIS 2.4;MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=MANDATORY CONSTRAINT #true;MANDATORY CONSTRAINT #true;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "c307ef5e24cd3fe82ea2e59d24b7cf284662cea01012c305bd7661b0043efcb1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e4-constraint-names/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e4-constraint-names/processes/23.ili>\nInfo: ...compiler run done 2026-10-27 07:54:48\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    }
+  ],
+  "ownExpected": 24,
+  "total": 24,
+  "referenceProcessErrors": 0,
+  "referenceAgreements": 14
+}

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class GeometryConstraintContractTest {
     @Test
-    void tooSmallOverlapIsRejected() {
+    void zeroOverlapIsRejected() {
         assertRejected("""
                 INTERLIS 2.3;
                 MODEL G AT "https://example.interlis.ch" VERSION "1.0" =
@@ -22,7 +22,7 @@ class GeometryConstraintContractTest {
                     DOMAIN Point = COORD 0.000 .. 100.000, 0.000 .. 100.000;
                     CLASS C =
                       shape : SURFACE WITH (STRAIGHTS) VERTEX Point
-                        WITHOUT OVERLAPS > 0.0001;
+                        WITHOUT OVERLAPS > 0;
                     END C;
                   END T;
                 END G.

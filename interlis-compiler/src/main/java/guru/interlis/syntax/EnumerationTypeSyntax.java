@@ -13,15 +13,17 @@ import java.util.Objects;
  * @param values the {@code values} component
  * @param ordered the {@code ordered} component
  * @param circular the {@code circular} component
+ * @param finalSubtrees closed sibling lists by parent path, with the root represented by an empty string
  */
 public record EnumerationTypeSyntax(SyntaxNodeId id, SourceRange range,
                                     List<EnumerationValueSyntax> values,
-                                    boolean ordered, boolean circular) implements TypeSyntax {
+                                    boolean ordered, boolean circular, java.util.Set<String> finalSubtrees) implements TypeSyntax {
     /** Creates a validated instance. */
     public EnumerationTypeSyntax {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(range, "range");
         values = List.copyOf(Objects.requireNonNull(values, "values"));
+        finalSubtrees = java.util.Set.copyOf(Objects.requireNonNull(finalSubtrees, "finalSubtrees"));
     }
 
     @Override
@@ -40,8 +42,9 @@ public record EnumerationTypeSyntax(SyntaxNodeId id, SourceRange range,
      * @param path name path
      * @param range source range
      * @param hasChildren whether the value declares nested enumeration values
+     * @param qualified whether the declared name itself contains dots, excluding enclosing nodes
      */
-    public record EnumerationValueSyntax(String path, SourceRange range, boolean hasChildren) {
+    public record EnumerationValueSyntax(String path, SourceRange range, boolean hasChildren, boolean qualified) {
         /** Creates a validated instance. */
         public EnumerationValueSyntax {
             Objects.requireNonNull(path, "path");

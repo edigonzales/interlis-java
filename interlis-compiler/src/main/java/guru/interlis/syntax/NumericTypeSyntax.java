@@ -9,7 +9,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Numeric range with optional open bounds.
+ * Numeric range with optional open bounds. Source order and invalid bounds are
+ * retained for semantic diagnostics; construction does not validate the language rule.
  *
  * @param id stable identifier
  * @param range source range
@@ -23,7 +24,7 @@ public record NumericTypeSyntax(SyntaxNodeId id, SourceRange range,
                                 Optional<DecimalLiteral> minimum,
                                 Optional<DecimalLiteral> maximum,
                                 boolean circular, NumericDirection direction,
-                                Optional<NameSyntax> unit)
+                                Optional<NameSyntax> unit, Optional<ReferenceSystem> referenceSystem)
         implements TypeSyntax {
     /** Creates a validated instance. */
     public NumericTypeSyntax {
@@ -33,10 +34,8 @@ public record NumericTypeSyntax(SyntaxNodeId id, SourceRange range,
         maximum = Objects.requireNonNull(maximum, "maximum");
         Objects.requireNonNull(direction, "direction");
         unit = Objects.requireNonNull(unit, "unit");
-        if (minimum.isPresent() && maximum.isPresent()
-                && minimum.get().exactValue().compareTo(maximum.get().exactValue()) > 0) {
-            throw new IllegalArgumentException("numeric syntax minimum exceeds maximum");
-        }
+        referenceSystem = Objects.requireNonNull(referenceSystem);
+
     }
 
     @Override
@@ -46,6 +45,10 @@ public record NumericTypeSyntax(SyntaxNodeId id, SourceRange range,
 
     @Override
     public List<SyntaxNode> children() {
-        return List.of();
+        java.util.ArrayList<SyntaxNode> children = new java.util.ArrayList<>();
+        unit.ifPresent(children::add); referenceSystem.ifPresent(r -> children.add(r.target())); return List.copyOf(children);
+    }
+    public record ReferenceSystem(NameSyntax target, boolean domain, java.util.OptionalInt axis) {
+        public ReferenceSystem { Objects.requireNonNull(target); Objects.requireNonNull(axis); }
     }
 }

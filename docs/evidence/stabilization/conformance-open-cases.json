@@ -1,0 +1,4733 @@
+{
+  "scope": "INTERLIS 2.3/2.4; unchanged pinned suite and baseline",
+  "runId": "71017e3a-1135-43e4-8b4b-1a5e019a429e",
+  "finishedAt": "2026-10-27T06:57:24.198275Z",
+  "summary": {
+    "TOTAL": 593,
+    "XFAIL": 1,
+    "PASS": 574,
+    "ERROR": 0,
+    "FAIL": 18,
+    "XPASS": 0
+  },
+  "falseAccepts": 0,
+  "featureOccurrences": {
+    "BUILTIN_SIGNATURE": 1,
+    "CONTEXT": 6,
+    "GRAPHIC": 1,
+    "LINE_FORM": 3,
+    "METADATA_BASKET": 6,
+    "NO_IMPLEMENTATION_GUARD": 9,
+    "RUNTIME_PARAMETER": 3,
+    "VIEW_SCHEMA": 27
+  },
+  "cases": [
+    {
+      "testId": "ili23.Assoc23Test.assocComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/assocComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001",
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 23:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocA3, rule=multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID)",
+        "line 29:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 67:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocB3, rule=multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID)",
+        "line 73:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3",
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run.",
+      "latestFollowUpEvidence": "view-inheritance-translations.md; verification-2026-10-21-view-inheritance.json",
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "remainingCauses": []
+    },
+    {
+      "testId": "ili23.Association23Test.association_AssociationAsTarget",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/association/association_AssociationAsTarget.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 23:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=a2b, rule=association target a2b requires its own OID/REFERENCE_ASSOCIATION_OID)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: an association target requires its own OID (2.7.1/3.7.1); retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.Association23Test.association_DerivedAssociationDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/association/association_DerivedAssociationDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 23:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/association_DerivedAssociationDef.ili",
+          "sha256": "77f80127bd7cf55a8575a9488a44e413b19bb9ff04ca1837709c2c9780f5e9ab",
+          "upstreamPath": "test/data/ili23/association/association_DerivedAssociationDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B3OriginalAcceptanceTest.java",
+          "method": "derivedAssociationRetainsViewBasisRoleTargetsAndJoinSelection"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.Class23Test.classComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/classComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 12:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClassA1, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 21:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicA2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 44:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClassB1, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 53:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicB2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.Classes23Test.class_AcceptingOidDefinition",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/class/class_AcceptingOidDefinition.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 5:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=class, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.CoordType23Test.coordTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/coordTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@307)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound identities, types, expressions, translations, navigation and affected projections verified.",
+      "latestFollowUpEvidence": "k4-metadata-inspections.md",
+      "completedDelivery": "K4/metadata-inspections",
+      "evidence": "k4-metadata-inspections.md"
+    },
+    {
+      "testId": "ili23.Expressions23Test.equals_runtimeParam",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/equals_runtimeParam.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "RUNTIME_PARAMETER"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 7:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@111)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K2",
+      "remainingCauses": [],
+      "evidence": "k2-parameters-class-functions.md"
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_BasenamePathElement",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_BasenamePathElement.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/expressions_BasenamePathElement.ili",
+          "sha256": "f8ab15abf38bcad79e30631460534c3b9bd8d5dce3130084a1ef5621e625d398",
+          "upstreamPath": "test/data/ili23/expressions/expressions_BasenamePathElement.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B1OriginalAcceptanceTest.java",
+          "method": "expressions_BasenamePathElement"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_BasenameToUnrenamedViewable",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_BasenameToUnrenamedViewable.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/expressions_BasenameToUnrenamedViewable.ili",
+          "sha256": "fbcbd5d981391c9878981f06cbc4899815c01a4cccfa15a543a811796972d978",
+          "upstreamPath": "test/data/ili23/expressions/expressions_BasenameToUnrenamedViewable.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B1OriginalAcceptanceTest.java",
+          "method": "expressions_BasenameToUnrenamedViewable"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ParentPathElement",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_ParentPathElement.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run.",
+      "latestFollowUpEvidence": "view-inheritance-translations.md; verification-2026-10-21-view-inheritance.json",
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "remainingCauses": []
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ThisAreaThatArea",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/expressions_ThisAreaThatArea.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 20:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3",
+        "C1",
+        "C3"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextAction": "Closed: geometry inspection implemented; original rejected only for norm-forbidden AREA ALL OF. Pinned positive control retains THISAREA/THATAREA.",
+      "latestFollowUpEvidence": "k4-metadata-inspections.md",
+      "nextDelivery": null,
+      "projectClassification": "XFAIL",
+      "remainingCauses": [],
+      "completedDelivery": "K4/metadata-inspections",
+      "normativeEvidence": "../conformance/normative-expectations.json"
+    },
+    {
+      "testId": "ili23.Expressions23Test.logical_function",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/expressions/logical_function.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "BUILTIN_SIGNATURE"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 11:28: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=BUILTIN_SIGNATURE, construct=BUILTIN_SIGNATURE)"
+      ],
+      "sections": [
+        "S2a"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K2",
+      "remainingCauses": [],
+      "evidence": "k2-parameters-class-functions.md"
+    },
+    {
+      "testId": "ili23.FormattedType23Test.simple + baseDomainRestricted",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/formattedType/FormattedType.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 11:6: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr1, rule=FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS)",
+        "line 12:6: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr2, rule=FORMAT bounds must fit the layout and component ranges/FORMAT_BOUNDS)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: XMLDate FORMAT requires two-digit month/day; retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Retain exact original source, bound public model/query tests and versioned positive/negative FORMAT controls.",
+      "completedDelivery": "G2-A",
+      "latestFollowUpEvidence": "verification-2026-10-25-g2-A.json",
+      "normativeCorrection": {
+        "previousDecision": "Incorrectly required Month/2 and Day/2 in INTERLIS 2.3.",
+        "decision": "Removed this exception only. 2.3 appendix A has no XMLDate widths; 2.4 has Year/4, Month/2, Day/2.",
+        "sourcePinUnchanged": true,
+        "referenceExpectationUnchanged": true,
+        "test": "PredefinedTemporalContractTest.unchangedPinnedOriginalIsAcceptedWithBothAttributeBounds"
+      }
+    },
+    {
+      "testId": "ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/iliconversion/iliconversion_CheckViewDefWithALLOF.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 17:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run.",
+      "latestFollowUpEvidence": "view-inheritance-translations.md; verification-2026-10-21-view-inheritance.json",
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "remainingCauses": []
+    },
+    {
+      "testId": "ili23.InterlisManual23Test.ilimanual_CoordSysAppendix",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/interlismanual/coordsys/ilimanual_CoordSysAppendix.ili",
+        "test/data/ili23/interlismanual/coordsys/ilimanual_CoordSysAppendixEx.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 9:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@185)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound identities, types, expressions, translations, navigation and affected projections verified.",
+      "latestFollowUpEvidence": "k4-metadata-inspections.md",
+      "completedDelivery": "K4/metadata-inspections",
+      "evidence": "k4-metadata-inspections.md"
+    },
+    {
+      "testId": "ili23.LineFormType23Test.lineFormTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/lineFormTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "LINE_FORM"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 9:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@229)",
+        "line 21:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@519)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K4/line-forms",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound declarations, structure identities, translation, public geometry data and source references verified.",
+      "evidence": "k4-line-forms.md"
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/lineTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "LINE_FORM"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 13:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@287)",
+        "line 42:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@1177)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K4/line-forms",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound declarations, structure identities, translation, public geometry data and source references verified.",
+      "evidence": "k4-line-forms.md"
+    },
+    {
+      "testId": "ili23.LineType23Test.lineTypeLineFormOrdering",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/lineTypeLineFormOrdering.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "LINE_FORM"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 10:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@248)",
+        "line 31:12: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=LINE_FORM, construct=unsupported@707)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K4/line-forms",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound declarations, structure identities, translation, public geometry data and source references verified.",
+      "evidence": "k4-line-forms.md"
+    },
+    {
+      "testId": "ili23.MetaDataBasket23Test.metaDataBasketComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/metaDataBasketComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 11:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@197)",
+        "line 13:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@236)",
+        "line 33:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@734)",
+        "line 35:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@773)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound identities, types, expressions, translations, navigation and affected projections verified.",
+      "latestFollowUpEvidence": "k4-metadata-inspections.md",
+      "completedDelivery": "K4/metadata-inspections",
+      "evidence": "k4-metadata-inspections.md"
+    },
+    {
+      "testId": "ili23.Models23Test.models_DomainAndRuntimeParam_SameName",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "RUNTIME_PARAMETER"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 5:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@96)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C1"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "XFAIL",
+      "completedDelivery": "K2",
+      "remainingCauses": [],
+      "evidence": "k2-parameters-class-functions.md",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.Models23Test.models_ImportedModelReferenceElements",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/models/models_ImportedModelReferenceElements.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 9:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@216)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound identities, types, expressions, translations, navigation and affected projections verified.",
+      "latestFollowUpEvidence": "k4-metadata-inspections.md",
+      "completedDelivery": "K4/metadata-inspections",
+      "evidence": "k4-metadata-inspections.md"
+    },
+    {
+      "testId": "ili23.NumericType23Test.numericTypeComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/numericTypeComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "METADATA_BASKET"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@308)",
+        "line 48:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@949)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "remainingCauses": [],
+      "nextAction": "Closed: bound identities, types, expressions, translations, navigation and affected projections verified.",
+      "latestFollowUpEvidence": "k4-metadata-inspections.md",
+      "completedDelivery": "K4/metadata-inspections",
+      "evidence": "k4-metadata-inspections.md"
+    },
+    {
+      "testId": "ili23.Role23Test.roleComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/roleComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001",
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 36:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocA2q, rule=HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT)",
+        "line 68:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 119:3: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=assocB2q, rule=HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT)",
+        "line 151:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run.",
+      "latestFollowUpEvidence": "view-inheritance-translations.md; verification-2026-10-21-view-inheritance.json",
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "remainingCauses": []
+    },
+    {
+      "testId": "ili23.RuntimeParameter23Test.runtimeParameterComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/runtimeParameterComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "RUNTIME_PARAMETER"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 6:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@103)",
+        "line 7:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@124)",
+        "line 16:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@285)",
+        "line 17:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=RUNTIME_PARAMETER, construct=unsupported@306)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C1"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "XFAIL",
+      "completedDelivery": "K2",
+      "remainingCauses": [],
+      "evidence": "k2-parameters-class-functions.md",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.Topic23Test.topicComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/topicComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 15:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicA2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)",
+        "line 43:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TopicB2, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/topics/topics_ExplicitBasketOidDefinition.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 4:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=topic, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/topics/topics_ExplicitTopicOidDefinition.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 4:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=topic, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili23.View23Test.abstractView_AbstractBaseInConcretViewDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/abstractView_AbstractBaseInConcretViewDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/abstractView_AbstractBaseInConcretViewDef.ili",
+          "sha256": "adbfbc80767809fec043a95fa4650925a45ee57f3750b0902c53385736a175fe",
+          "upstreamPath": "test/data/ili23/view/abstractView_AbstractBaseInConcretViewDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B1OriginalAcceptanceTest.java",
+          "method": "abstractView_AbstractBaseInConcretViewDef"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/abstractView_AcceptAbstractBaseInAbstractJoinDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/abstractView_AcceptAbstractBaseInAbstractJoinDef.ili",
+          "sha256": "1bb8dc29513d77fe819c9a1cd99267f953494d2f2aeffdaf1162c800a2e39d1f",
+          "upstreamPath": "test/data/ili23/view/abstractView_AcceptAbstractBaseInAbstractJoinDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B2OriginalAcceptanceTest.java",
+          "method": "abstractView_AcceptAbstractBaseInAbstractJoinDef"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasenameOfRenamedInspectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasenameOfRenamedInspectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasenameOfRenamedInspectionDef.ili",
+          "sha256": "bab88ff1742fd6fa97eac0917bd75ca5e831b8b095fd9acbebb8848cad0d3f01",
+          "upstreamPath": "test/data/ili23/view/view_AcceptBasenameOfRenamedInspectionDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B3OriginalAcceptanceTest.java",
+          "method": "renamedInspectionBindsItsAliasToTheInspectedElement"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasenameOfUnrenamedInspectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasenameOfUnrenamedInspectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 15:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasenameOfUnrenamedInspectionDef.ili",
+          "sha256": "60f8a8b1bdc756152481bdb016416fe6209761900b2fd788811bc97cb9b6588f",
+          "upstreamPath": "test/data/ili23/view/view_AcceptBasenameOfUnrenamedInspectionDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B3OriginalAcceptanceTest.java",
+          "method": "unrenamedInspectionUsesItsSourceNameAndInspectedMemberNamespace"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicInspectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicInspectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 24:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicInspectionDef.ili",
+          "sha256": "252123ee41c78a7871456f8ba92324966028b6c9760fb3a8321a47a4180688f0",
+          "upstreamPath": "test/data/ili23/view/view_AcceptBasicInspectionDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B3OriginalAcceptanceTest.java",
+          "method": "inspectionAllOfCopiesTheStructureAttributeAndRetainsItsOrigin"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicJoinDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicJoinDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicJoinDef.ili",
+          "sha256": "24f17e518ee1f39d96f2097eeeb8fdddd8a315409fd32667ad56e35d986ba246",
+          "upstreamPath": "test/data/ili23/view/view_AcceptBasicJoinDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B2OriginalAcceptanceTest.java",
+          "method": "view_AcceptBasicJoinDef"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicSelectionViewDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicSelectionViewDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 18:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicSelectionViewDef.ili",
+          "sha256": "5ba4881e403663dd364ba9c83e8495ec82f5719e2670f0bcda5e80300036b7b5",
+          "upstreamPath": "test/data/ili23/view/view_AcceptBasicSelectionViewDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B1OriginalAcceptanceTest.java",
+          "method": "view_AcceptBasicSelectionViewDef"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicUnionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicUnionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 21:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptBasicUnionDef.ili",
+          "sha256": "2cec307e7ba76115b9a88bfa98853c3a932e547ac8e6bc6b9a4fa2638e96f5d6",
+          "upstreamPath": "test/data/ili23/view/view_AcceptBasicUnionDef.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B2OriginalAcceptanceTest.java",
+          "method": "view_AcceptBasicUnionDef"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicViewProjectionDef",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptBasicViewProjectionDef.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run.",
+      "latestFollowUpEvidence": "view-inheritance-translations.md; verification-2026-10-21-view-inheritance.json",
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "remainingCauses": []
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptJoinDefWithoutBasenames",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptJoinDefWithoutBasenames.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptJoinDefWithoutBasenames.ili",
+          "sha256": "dcbed390e0426b937e5cf15c2bd7b7917c91e758a98a4dd02d72a815b51f02b1",
+          "upstreamPath": "test/data/ili23/view/view_AcceptJoinDefWithoutBasenames.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B2OriginalAcceptanceTest.java",
+          "method": "view_AcceptJoinDefWithoutBasenames"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptPARENTPathElement",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptPARENTPathElement.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 23:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3",
+        "C1",
+        "C3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Closed: bound identities, types, expressions, translations, navigation and affected projections verified.",
+      "latestFollowUpEvidence": "k4-metadata-inspections.md",
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "remainingCauses": [],
+      "completedDelivery": "K4/metadata-inspections",
+      "evidence": "k4-metadata-inspections.md"
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptSimpleBaseExtentionInView",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_AcceptSimpleBaseExtentionInView.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 21:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_AcceptSimpleBaseExtentionInView.ili",
+          "sha256": "6e7f77afca6a504a06152f4170332c5053b9bde0323d3123c10db7d7bff2a212",
+          "upstreamPath": "test/data/ili23/view/view_AcceptSimpleBaseExtentionInView.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B1OriginalAcceptanceTest.java",
+          "method": "view_AcceptSimpleBaseExtentionInView"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.View23Test.view_ObjectPathWithRolename",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/view/view_ObjectPathWithRolename.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 24:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 31:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 38:4: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/view_ObjectPathWithRolename.ili",
+          "sha256": "51375519395f29bd2e5273c60a838e44dab58ecf643c17399092b2be805ee143",
+          "upstreamPath": "test/data/ili23/view/view_ObjectPathWithRolename.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B3OriginalAcceptanceTest.java",
+          "method": "projectedRolePathsDistinguishParticipantsSingletonAccessAndObjectSets"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewAggregationComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewAggregationComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 13:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 34:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/viewAggregationComplete.ili",
+          "sha256": "9d3bdf27628da0de60290429f5e294fba2ab96641e0e2817033b3bc43d55c876",
+          "upstreamPath": "test/data/ili23/translation/viewAggregationComplete.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B2OriginalAcceptanceTest.java",
+          "method": "viewAggregationComplete"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewInspectionComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewInspectionComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 16:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 40:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/viewInspectionComplete.ili",
+          "sha256": "35c8242e52577fd495907728dda9f32a6ef66f85b88f340489251d123b7de894",
+          "upstreamPath": "test/data/ili23/translation/viewInspectionComplete.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B3OriginalAcceptanceTest.java",
+          "method": "translatedInspectionUsesTranslatedStructureParentAndCollectionPath"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewJoinComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewJoinComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 18:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 44:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/viewJoinComplete.ili",
+          "sha256": "073f11cccd19f2e1c8304970beafa273beca0f7f8f4bed1de8b5eb972846330f",
+          "upstreamPath": "test/data/ili23/translation/viewJoinComplete.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B2OriginalAcceptanceTest.java",
+          "method": "viewJoinComplete"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewProjectionComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewProjectionComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 13:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 21:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 27:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 32:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 42:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 63:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 71:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 77:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 82:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 92:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B1"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/viewProjectionComplete.ili",
+          "sha256": "4828dba7018df1f1d9f4ba1485a0252d87bd8998f3973921c762e5a858844ee9",
+          "upstreamPath": "test/data/ili23/translation/viewProjectionComplete.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B1OriginalAcceptanceTest.java",
+          "method": "viewProjectionComplete"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.ViewDef23Test.viewUnionComplete",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/ili23/translation/viewUnionComplete.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 18:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 46:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)"
+      ],
+      "sections": [
+        "S2b"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextAction": "Retain the pinned original, case-specific public schema/query assertions, reuse/projection checks and portable acceptance in the regular verification runs.",
+      "latestFollowUpEvidence": "b1-b3-original-acceptance.md; verification-2026-10-22-b1-b3-originals.json",
+      "remainingCauses": [],
+      "nextDelivery": null,
+      "completedDelivery": "B1-B3_ORIGINAL_ACCEPTANCE",
+      "acceptance": {
+        "source": {
+          "path": "testdata/conformance/b1-b3-acceptance/viewUnionComplete.ili",
+          "sha256": "3d94c801cc0ad33c83e83e3ff2747f0db0d256b27b0bdf64bdf98fb45e7adf07",
+          "upstreamPath": "test/data/ili23/translation/viewUnionComplete.ili"
+        },
+        "modelAndQueryTest": {
+          "path": "interlis-compiler/src/test/java/guru/interlis/compiler/B2OriginalAcceptanceTest.java",
+          "method": "viewUnionComplete"
+        },
+        "sharedEvidence": [
+          "OriginalViewAcceptanceSupport",
+          "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
+          "OriginalViewProjectionTest.allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram",
+          "OriginalViewPortableFixtureTest.test_portable_originals_match_pinned_source_bytes_and_all_model_roots",
+          "19 original process pairs against ili2c 5.6.9; 19 added portable cases on every recorded runtime"
+        ],
+        "requirements": [
+          "META-003",
+          "META-006",
+          "META-008",
+          "META-010",
+          "META-011",
+          "META-014",
+          "SEM-005",
+          "SEM-008",
+          "SEM-009",
+          "SEM-010",
+          "SEM-011",
+          "SEM-014",
+          "SEM-017",
+          "SYN-004",
+          "SYN-013",
+          "SYN-015",
+          "TEST-011",
+          "TEST-012",
+          "INC-009",
+          "INC-010",
+          "INC-012"
+        ],
+        "normativeExceptionAdded": false
+      }
+    },
+    {
+      "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
+      "languageVersion": "2.3",
+      "inputs": [
+        "test/data/metamodel/ViewableGetAttributesAndRoles2.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 22:2: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=topicB, rule=OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.3 requires CONTRACTED for OID AS; retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili24.Attribute24Test.attributeRef_RefAttrInClass",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/attribute/attributeRef_RefAttrInClass.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [],
+      "diagnosticCodes": [
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 8:4: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=attr, rule=reference target ClassA has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)"
+      ],
+      "sections": [
+        "S2a/S2b binding and typing"
+      ],
+      "assessment": "Norm deviation: INTERLIS 2.4 forbids references to NO OID classes (3.5.3); retain pinned reference expectation",
+      "deliveries": [
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "normativeExpectation": "reject",
+      "normativeEvidence": "../conformance/normative-expectations.json",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "projectClassification": "XFAIL",
+      "nextDelivery": null,
+      "remainingCauses": [],
+      "nextAction": "Closed by the pinned normative expectation and positive control; retained in each full conformance run."
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.contextInDifferentModel",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/contextInDifferentModel.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 32:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@648)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K3",
+      "remainingCauses": [],
+      "evidence": "k3-generic-contexts.md"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.contextInSameModel",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/contextInSameModel.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 20:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@456)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K3",
+      "remainingCauses": [],
+      "evidence": "k3-generic-contexts.md"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.genericInStructAttr",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/GenericInStructAttr.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 26:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@548)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K3",
+      "remainingCauses": [],
+      "evidence": "k3-generic-contexts.md"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContexts",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/multipleContexts.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@478)",
+        "line 23:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@517)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K3",
+      "remainingCauses": [],
+      "evidence": "k3-generic-contexts.md"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContextsB",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/multipleContextsB.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 21:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@473)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K3",
+      "remainingCauses": [],
+      "evidence": "k3-generic-contexts.md"
+    },
+    {
+      "testId": "ili24.GenericValueRanges24Test.multipleContextsExtending",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/genericValueRanges/multipleContextsExtending.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "CONTEXT"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001"
+      ],
+      "diagnostics": [
+        "line 20:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@426)",
+        "line 43:11: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=CONTEXT, construct=unsupported@900)"
+      ],
+      "sections": [
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "C2"
+      ],
+      "status": "CLOSED",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K3",
+      "remainingCauses": [],
+      "evidence": "k3-generic-contexts.md"
+    },
+    {
+      "testId": "ili24.Refhb24Test.roadsExgm2ien",
+      "languageVersion": "2.4",
+      "inputs": [
+        "test/data/ili24/refhb/RoadsExdm2ben.ili",
+        "test/data/ili24/refhb/AbstractSymbology.ili",
+        "test/data/ili24/refhb/RoadsExdm2ien.ili",
+        "test/data/ili24/refhb/StandardSymbology.ili",
+        "test/data/ili24/refhb/RoadsExgm2ien.ili"
+      ],
+      "expected": {
+        "outcome": "accept"
+      },
+      "actualOutcome": "rejected",
+      "classification": "FAIL",
+      "exitCode": 1,
+      "featureIds": [
+        "GRAPHIC",
+        "METADATA_BASKET",
+        "VIEW_SCHEMA"
+      ],
+      "diagnosticCodes": [
+        "ILI-IMPL-0001",
+        "ILI-SEM-0001",
+        "ILI-SEM-0010"
+      ],
+      "diagnostics": [
+        "line 34:39: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=INTERLIS)",
+        "line 43:41: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=INTERLIS)",
+        "line 50:43: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=INTERLIS)",
+        "line 55:42: ERROR ILI-SEM-0001 diagnostic.semantics.unresolved (name=INTERLIS)",
+        "line 41:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Street, rule=reference target Street has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 42:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=StreetAxis, rule=reference target StreetAxis has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 51:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Street, rule=reference target Street has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 52:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=StreetNamePosition, rule=reference target StreetNamePosition has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 12:3: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=METADATA_BASKET, construct=unsupported@255)",
+        "line 22:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@596)",
+        "line 51:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 58:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=VIEW_SCHEMA, construct=view formation and effective members are not fully modeled)",
+        "line 65:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@1773)",
+        "line 75:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@2034)",
+        "line 92:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@2551)",
+        "line 104:5: ERROR ILI-IMPL-0001 diagnostic.implementation.unsupported (feature=GRAPHIC, construct=unsupported@2885)",
+        "line 83:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 84:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineAttrs, rule=reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 89:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=FillColor, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 121:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Font, rule=reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 122:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Symbol, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 144:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 145:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle, rule=reference target LineStyle_Solid has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 149:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineAttrs, rule=reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 150:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle, rule=reference target LineStyle_Solid has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 165:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 166:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle_Dashed, rule=reference target LineStyle_Dashed has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 170:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineAttrs, rule=reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 171:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle_Dashed, rule=reference target LineStyle_Dashed has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 175:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=FontSymbRef, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 176:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ColorRef, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 183:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle_Pattern, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 183:5: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=LineStyle_Pattern, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 208:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Font, rule=reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 209:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TextSign, rule=reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 215:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 216:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TextSign, rule=reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 220:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClipFont, rule=reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 221:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=TextSign2, rule=reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 235:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Symbol, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 236:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=SymbolSign, rule=reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 240:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=ClipSymbol, rule=reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 241:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=SymbolSign2, rule=reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 245:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Color, rule=reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 246:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=SymbolSign, rule=reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 261:7: ERROR ILI-SEM-0010 diagnostic.semantics.inheritance (element=Style, rule=reference target LineStyle has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID)",
+        "line 262:7: ERROR ILI-SEM-0010 diagnostic.",
+        "... output truncated (21688 bytes total) ..."
+      ],
+      "sections": [
+        "S2b",
+        "S2c"
+      ],
+      "assessment": "Explicit incomplete support; implement required P2 feature",
+      "deliveries": [
+        "B3",
+        "C3",
+        "C4",
+        "D"
+      ],
+      "status": "CLOSED_NORMATIVE",
+      "referenceExpectation": "accept",
+      "currentObservation": {
+        "classification": "FAIL",
+        "actualOutcome": "rejected",
+        "exitCode": 1,
+        "timedOut": false
+      },
+      "nextAction": "Closed: graphics/signatures, target bindings and inspections verified; original rejected only for 49 pinned NO-OID violations. OID-only five-source control accepted and public graphics verified.",
+      "latestFollowUpEvidence": "k5-graphics.md",
+      "nextDelivery": null,
+      "projectClassification": "XFAIL",
+      "remainingCauses": [],
+      "completedDelivery": "K5",
+      "normativeEvidence": "../conformance/normative-expectations.json"
+    }
+  ],
+  "baselineSummary": {
+    "FAIL": 54,
+    "ERROR": 0,
+    "PASS": 538,
+    "XFAIL": 1,
+    "TOTAL": 593,
+    "XPASS": 0
+  },
+  "featureOccurrencesMeaning": "Baseline feature occurrences of the original 54 cases; current causes are in each currentObservation.",
+  "newCases": [
+    {
+      "testId": "ili23.Attributes23Test.attributePathType_ClassTypeRestriction",
+      "inputs": [
+        "test/data/ili23/attribute/attributePathType_ClassTypeRestriction.ili"
+      ],
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "currentObservation": {
+        "classification": "PASS",
+        "actualOutcome": "accepted",
+        "exitCode": 0,
+        "timedOut": false
+      },
+      "deliveries": [
+        "C1"
+      ],
+      "status": "CLOSED",
+      "assessment": "Previously skipped attribute derivation is now bound; class-valued builtin support remains incomplete.",
+      "nextDelivery": null,
+      "projectClassification": "PASS",
+      "completedDelivery": "K2",
+      "remainingCauses": [],
+      "evidence": "k2-parameters-class-functions.md"
+    }
+  ],
+  "progress": {
+    "newReferenceFailCases": 1,
+    "originalFailCases": 54,
+    "nowReferencePass": 19,
+    "remainingReferenceFail": 35,
+    "formallyClosedCases": 0,
+    "note": "Reference success is not full delivery acceptance. B1-B3 remain PARTIAL, C1-C4/D OPEN. Six additional numeric-unit regressions remain open."
+  },
+  "inspectionFollowUp": {
+    "scope": "B1-B3; WP-22/23 META-006/008/011/014 SEM-008/010/014 SYN-013/015 TEST-011/012",
+    "priorSummary": {
+      "XFAIL": 1,
+      "TOTAL": 593,
+      "XPASS": 0,
+      "FAIL": 36,
+      "ERROR": 0,
+      "PASS": 556
+    },
+    "currentSummary": {
+      "TOTAL": 593,
+      "XFAIL": 1,
+      "PASS": 556,
+      "ERROR": 0,
+      "FAIL": 36,
+      "XPASS": 0
+    },
+    "closedPreviouslyFailingSuiteCases": [],
+    "additionalRegressionEvidence": "inspection-factors.md; InspectionFactorContractTest; inspections-reference-comparison-2026-10-21.json",
+    "fixedFoundations": [
+      "Inspection with OF no longer collapses to its restriction path in the parser",
+      "Inspection factor DEPENDS ON checked after topic construction",
+      "Invalid PARENT/context continuation is a language error, not incomplete support",
+      "EXTENDED view attribute without inherited declaration rejected",
+      "Translation compares bound inspection/aggregation/base-extension targets"
+    ],
+    "verifiedFactorScope": [
+      "named and inline structure inspections",
+      "optional single-object restriction and subclass compatibility",
+      "rejection of scalar and multi-object restrictions",
+      "inherited inspection formation",
+      "nested element/parent identity",
+      "imports, file order, revision reuse and schema reachability"
+    ],
+    "remaining": [
+      "Full geometry/segment hierarchy (B3/C1/C3), guard retained",
+      "Remaining view inheritance/translation/path combinations and full B1-B3 case acceptance",
+      "Original type-range/OID/HIDING/metadata/graphic causes remain open",
+      "C1-C4/D and six numeric-unit regressions remain open"
+    ],
+    "p3": "OPEN"
+  },
+  "viewInheritanceFollowUp": {
+    "scope": "B1-B3; WP-22/23 META-006/008/011/014 SEM-008/010/014 RES-003/006 TEST-011/012",
+    "priorSummary": {
+      "TOTAL": 593,
+      "XFAIL": 1,
+      "PASS": 556,
+      "ERROR": 0,
+      "FAIL": 36,
+      "XPASS": 0
+    },
+    "currentSummary": {
+      "PASS": 556,
+      "XFAIL": 1,
+      "TOTAL": 593,
+      "XPASS": 0,
+      "FAIL": 36,
+      "ERROR": 0
+    },
+    "closedPreviouslyFailingSuiteCases": [],
+    "additionalRegressionEvidence": "view-inheritance-translations.md; ViewInheritanceTranslationContractTest; WorkspaceTest; view-inheritance-reference-comparison-2026-10-21.json",
+    "fixedFoundations": [
+      "View override mandatory/transient/domain identity checks share the existing attribute rules",
+      "MANDATORY without explicit type binds inherited ALL OF type identities",
+      "Effective view members preserve complete inheritance path and local override origin",
+      "UNION and abstraction checks include inherited derivation alternatives via the existing override chain",
+      "Translation correspondence includes synthetic AGGREGATES and preserves unchanged imported identities",
+      "View attribute translation checks bound type and override identities",
+      "Translation originals and their imports participate in compiler and workspace preparation/gating"
+    ],
+    "newOpenCases": [
+      {
+        "id": "VIEW_TRANSLATED_IMPORT_CLOSURE",
+        "languageVersions": [
+          "2.3",
+          "2.4"
+        ],
+        "expected": "succeeded",
+        "actual": "rejected: TRANSLATION_REFERENCE",
+        "referenceIli2c569": "succeeded",
+        "suiteCase": false,
+        "deliveries": [
+          "B1",
+          "B2",
+          "B3"
+        ],
+        "evidence": "view-translated-import-probes-2026-10-21.json",
+        "cause": "Symbol correspondence excludes the actually selected translated import models",
+        "nextAction": "Deferred until after K1-K6 unless proven blocker of a catalogued case. Map selected translated import closures using scoped bound identities."
+      }
+    ],
+    "remaining": [
+      "Full translated-import, derived-association and transfer combinations",
+      "Global name normalization still needs replacement by scoped bound correspondence",
+      "Geometry inspection B3/C1/C3 guard retained",
+      "Original range/OID/HIDING/metadata/graphic causes, C1-C4/D and six numeric-unit regressions remain open"
+    ],
+    "p3": "OPEN"
+  },
+  "projectSummary": {
+    "PASS": 574,
+    "XFAIL": 19,
+    "FAIL": 0,
+    "XPASS": 0,
+    "ERROR": 0,
+    "TOTAL": 593
+  },
+  "k1FollowUp": {
+    "baseline": {
+      "PASS": 556,
+      "XFAIL": 1,
+      "FAIL": 36,
+      "ERROR": 0,
+      "XPASS": 0,
+      "TOTAL": 593
+    },
+    "closedByImplementation": [],
+    "reviewedReferenceExceptions": [
+      "ili23.Assoc23Test.assocComplete",
+      "ili23.Association23Test.association_AssociationAsTarget",
+      "ili23.Class23Test.classComplete",
+      "ili23.Classes23Test.class_AcceptingOidDefinition",
+      "ili23.Expressions23Test.expressions_ParentPathElement",
+      "ili23.FormattedType23Test.simple + baseDomainRestricted",
+      "ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF",
+      "ili23.Role23Test.roleComplete",
+      "ili23.Topic23Test.topicComplete",
+      "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
+      "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
+      "ili23.View23Test.view_AcceptBasicViewProjectionDef",
+      "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
+      "ili24.Attribute24Test.attributeRef_RefAttrInClass"
+    ],
+    "remainingImplementationCases": 22,
+    "additionalMandatoryUnitRegressions": 6,
+    "nextDeliveries": [
+      "K2",
+      "K3",
+      "K4",
+      "K5",
+      "K6"
+    ],
+    "independentDeferredDefect": "VIEW_TRANSLATED_IMPORT_CLOSURE",
+    "evidence": "k1-normative-expectations.md",
+    "p3": "OPEN"
+  },
+  "k2FollowUp": {
+    "closedByImplementation": [
+      "ili23.Expressions23Test.equals_runtimeParam",
+      "ili23.Expressions23Test.logical_function",
+      "ili23.Attributes23Test.attributePathType_ClassTypeRestriction"
+    ],
+    "reviewedReferenceExceptions": [
+      "ili23.Models23Test.models_DomainAndRuntimeParam_SameName",
+      "ili23.RuntimeParameter23Test.runtimeParameterComplete"
+    ],
+    "remainingImplementationCases": 17,
+    "additionalMandatoryUnitRegressions": 6,
+    "nextDeliveries": [
+      "K3",
+      "K4",
+      "K5",
+      "K6"
+    ],
+    "necessaryFoundations": [
+      "Per-import UNQUALIFIED scope",
+      "Typed ATTRIBUTE OF / @argument and attribute constants replacing placeholder type",
+      "OF expression retention in selected schema"
+    ],
+    "independentDeferredDefect": "VIEW_TRANSLATED_IMPORT_CLOSURE",
+    "evidence": "k2-parameters-class-functions.md",
+    "p3": "OPEN"
+  },
+  "k3FollowUp": {
+    "closedByImplementation": [
+      "ili24.GenericValueRanges24Test.contextInDifferentModel",
+      "ili24.GenericValueRanges24Test.contextInSameModel",
+      "ili24.GenericValueRanges24Test.genericInStructAttr",
+      "ili24.GenericValueRanges24Test.multipleContexts",
+      "ili24.GenericValueRanges24Test.multipleContextsB",
+      "ili24.GenericValueRanges24Test.multipleContextsExtending"
+    ],
+    "reviewedReferenceExceptions": [],
+    "remainingImplementationCases": 11,
+    "additionalMandatoryUnitRegressions": 6,
+    "nextDeliveries": [
+      "K4",
+      "K5",
+      "K6"
+    ],
+    "necessaryFoundations": [
+      "Per-domain modifiers instead of entire DOMAIN block",
+      "Coordinate axes preserved in source order"
+    ],
+    "independentDeferredDefect": "VIEW_TRANSLATED_IMPORT_CLOSURE",
+    "evidence": "k3-generic-contexts.md",
+    "p3": "OPEN"
+  },
+  "k4LineFormsFollowUp": {
+    "closedByImplementation": [
+      "ili23.LineFormType23Test.lineFormTypeComplete",
+      "ili23.LineType23Test.lineTypeComplete",
+      "ili23.LineType23Test.lineTypeLineFormOrdering"
+    ],
+    "reviewedReferenceExceptions": [],
+    "remainingImplementationCases": 8,
+    "additionalMandatoryUnitRegressions": 6,
+    "nextDeliveries": [
+      "K4 metadata and geometry inspections",
+      "K5",
+      "K6"
+    ],
+    "necessaryFoundations": [
+      "Bound LineSegment hierarchy and effective inherited members",
+      "Canonical predefined unit/segment identities per language and closure retention"
+    ],
+    "newOpenCases": [
+      {
+        "id": "GEOMETRY_OVERLAP_PRECISION",
+        "languageVersions": [
+          "2.3",
+          "2.4"
+        ],
+        "suiteCase": false,
+        "requirements": [
+          "META-009",
+          "SEM-005",
+          "TEST-011/012"
+        ],
+        "expected": "accepted",
+        "actual": "rejected: OVERLAP_TOO_SMALL",
+        "referenceIli2c569": "accepted",
+        "cause": "Fixed 0.001 threshold rejects a 0.00001 tolerance for 0.000001 coordinate precision",
+        "nextAction": "After K6: replace the fixed threshold using verified norm-based precision/inheritance rules; preserve original overlapTooSmallFail rejection.",
+        "evidence": "k4-lines-reference-comparison-2026-10-21.json"
+      }
+    ],
+    "independentDeferredDefect": "VIEW_TRANSLATED_IMPORT_CLOSURE",
+    "evidence": "k4-line-forms.md",
+    "p3": "OPEN"
+  },
+  "k4MetadataFollowUp": {
+    "closedByImplementation": [
+      "ili23.CoordType23Test.coordTypeComplete",
+      "ili23.NumericType23Test.numericTypeComplete",
+      "ili23.MetaDataBasket23Test.metaDataBasketComplete",
+      "ili23.Models23Test.models_ImportedModelReferenceElements",
+      "ili23.InterlisManual23Test.ilimanual_CoordSysAppendix",
+      "ili23.View23Test.view_AcceptPARENTPathElement"
+    ],
+    "reviewedReferenceExceptions": [
+      "ili23.Expressions23Test.expressions_ThisAreaThatArea"
+    ],
+    "remainingImplementationCases": [
+      "ili24.Refhb24Test.roadsExgm2ien"
+    ],
+    "additionalMandatoryUnitRegressions": 6,
+    "nextDeliveries": [
+      "K5",
+      "K6"
+    ],
+    "necessaryFoundations": [
+      "Canonical METAOBJECT hierarchy with Name/UNIQUE and AXIS/SCALSYSTEM Unit parameters",
+      "Coordinate axes retain bound units/reference-system identities, indices and rotation",
+      "Domain direction reference without axis remains legal with ROTATION; conversion regression repaired",
+      "Contextual standard segment hierarchy with actual coordinate types and bound StartSegment constraint",
+      "INTERLIS 2.4 rejects LINE ATTRIBUTES; SurfaceEdge has LineAttrs only in 2.3",
+      "Diagram reference edges always have endpoint nodes; declared class/structure parameters are projected"
+    ],
+    "newOpenCases": [
+      {
+        "id": "INSPECTION_CUSTOM_SEGMENT",
+        "languageVersions": [
+          "2.3",
+          "2.4"
+        ],
+        "suiteCase": false,
+        "requirements": [
+          "META-006",
+          "SEM-010",
+          "TEST-011/012"
+        ],
+        "expected": "accepted with complete contextual members and constraints",
+        "actual": "rejected: ILI-IMPL-0001 / INSPECTION_CUSTOM_SEGMENT",
+        "referenceIli2c569": "accepted",
+        "reproduction": "additionalCases K4-metadata-probe-22 and K4-metadata-probe-50",
+        "nextAction": "After K6: contextualize declared custom-segment members, inherited members and constraints using existing structure/expression types; keep the guard until complete."
+      },
+      {
+        "id": "GEOMETRY_TYPE_COMPLETENESS",
+        "languageVersions": [
+          "2.3",
+          "2.4"
+        ],
+        "suiteCase": false,
+        "requirements": [
+          "META-009",
+          "SEM-005",
+          "TEST-011/012"
+        ],
+        "expected": "reject concrete incomplete AREA/SURFACE without WITHOUT OVERLAPS",
+        "actual": "accepted",
+        "referenceIli2c569": "rejected: unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)",
+        "reproduction": "controlAndOpenCases OPEN_GEOMETRY_COMPLETENESS/missing-overlap-{19,21,47,49}.ili; embedded source texts and hashes",
+        "nextAction": "After K6 with GEOMETRY_OVERLAP_PRECISION: implement norm-based completeness/abstraction/inheritance checks. No XFAIL or normative waiver."
+      }
+    ],
+    "previousIndependentOpenCases": [
+      "VIEW_TRANSLATED_IMPORT_CLOSURE",
+      "GEOMETRY_OVERLAP_PRECISION"
+    ],
+    "evidence": "k4-metadata-inspections.md",
+    "comparison": "k4-metadata-reference-comparison-2026-10-21.json",
+    "p3": "OPEN"
+  },
+  "currentStateMeaning": "g2FollowUp, summary/projectSummary/currentObservation and latestDelivery describe the current result. Earlier follow-ups, counts and manifests remain historical. CLOSED_NORMATIVE records earlier documented project decisions, not completion of the user’s independent normative review; 17 such reviews remain open. G2/P3 OPEN.",
+  "k5FollowUp": {
+    "closedByImplementation": [],
+    "reviewedReferenceExceptions": [
+      "ili24.Refhb24Test.roadsExgm2ien"
+    ],
+    "remainingImplementationCases": [],
+    "additionalMandatoryUnitRegressions": 6,
+    "nextDeliveries": [
+      "K6"
+    ],
+    "necessaryFoundations": [
+      "Structured graphics/signature parameters, expressions and ordered clauses; no source-wide graphic regex semantics",
+      "Preserve reserved SIGN/METAOBJECT tokens in qualified names",
+      "Resolve inherited qualified Topic members without copying identities and preserve model qualifier requirements",
+      "Use graphic basis for role/attribute paths and lexical graphic scope for functions/parameters/metaobjects",
+      "Shared abstract coordinate/geometry assignment through bound vertex domains",
+      "Public navigation, translation correspondence, schema expression retention and diagram relationships"
+    ],
+    "oidDecision": {
+      "diagnostics": 49,
+      "rules": [
+        "REFERENCE_TARGET_NO_OID"
+      ],
+      "byFile": {
+        "RoadsExdm2ben.ili": 4,
+        "StandardSymbology.ili": 45
+      },
+      "control": "five original files with only ten added OID declarations; both compilers accept"
+    },
+    "newOpenCases": [
+      {
+        "id": "GRAPHIC_RESPONSIBLE_SIGNATURE_CLASS",
+        "languageVersions": [
+          "2.3",
+          "2.4"
+        ],
+        "suiteCase": false,
+        "requirements": [
+          "META-010",
+          "SEM-005",
+          "SEM-010",
+          "TEST-011/012"
+        ],
+        "expected": "Resolve the responsible signature class according to 2.4 §3.16 / 2.3 §2.16; allow a base-class metaobject with compatible added parameters of the declared derived signature. Preserve explicit METAOBJECT OF target restrictions.",
+        "actual": "Base-class metaobject rejected by GRAPHIC_METAOBJECT_TYPE; same-class positive control accepted; unrelated class rejected.",
+        "referenceIli2c569": "All three variants accepted in both versions; reference acceptance alone does not decide the unrelated-class case.",
+        "reproduction": "openSignatureResponsibility: six embedded sources and process pairs in k5-graphics-reference-comparison-2026-10-21.json",
+        "nextAction": "After K6: settle responsible-class/parameter-owner binding and implement base-class sign reuse with targeted positive and negative public-model tests; no normative exception."
+      }
+    ],
+    "previousIndependentOpenCases": [
+      "VIEW_TRANSLATED_IMPORT_CLOSURE",
+      "GEOMETRY_OVERLAP_PRECISION",
+      "INSPECTION_CUSTOM_SEGMENT",
+      "GEOMETRY_TYPE_COMPLETENESS"
+    ],
+    "evidence": "k5-graphics.md",
+    "comparison": "k5-graphics-reference-comparison-2026-10-21.json",
+    "p3": "OPEN"
+  },
+  "latestDelivery": "G2-E4-constraint-names",
+  "remainingAdditionalMandatoryUnitRegressions": 0,
+  "unitRegressionCases": [
+    {
+      "testId": "2.3-numeric-unit-mismatch",
+      "suiteCase": false,
+      "languageVersion": "2.3",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-009",
+        "META-011",
+        "META-014",
+        "META-016",
+        "SEM-005",
+        "SEM-010",
+        "SEM-014",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "status": "CLOSED",
+      "completedDelivery": "K6",
+      "source": {
+        "path": "testdata/conformance/k6-units/2.3-numeric-unit-mismatch.ili",
+        "sha256": "a4f92a1c46f81c59e2cb46cca6d3e083e85e917daa570eab85ba6df52aa9b1b5"
+      },
+      "previousObservation": {
+        "ownExitCode": 0,
+        "ili2cExitCode": 1,
+        "evidence": "units-follow-on-probes-2026-10-21.json"
+      },
+      "currentObservation": {
+        "ownExitCode": 1,
+        "ili2cExitCode": 1,
+        "rule": "NUMERIC_UNIT_EXTENSION",
+        "diagnostics": [
+          {
+            "id": "diag-282c8c9e547b78063fec10fd",
+            "code": "ILI-SEM-0010",
+            "severity": "ERROR",
+            "phase": "SEMANTIC_CHECKING",
+            "messageKey": "diagnostic.semantics.inheritance",
+            "range": {
+              "source": "file://<repo>/testdata/conformance/k6-units/2.3-numeric-unit-mismatch.ili",
+              "revision": "1",
+              "startOffset": 176,
+              "endOffset": 200
+            },
+            "arguments": [
+              {
+                "name": "element",
+                "kind": "IDENTIFIER",
+                "value": "X"
+              },
+              {
+                "name": "rule",
+                "kind": "TEXT",
+                "value": "numeric unit does not specialize its base: numeric-concrete-unit-changed/NUMERIC_UNIT_EXTENSION"
+              }
+            ]
+          }
+        ]
+      },
+      "remainingCauses": [],
+      "nextAction": null,
+      "evidence": "k6-units.md"
+    },
+    {
+      "testId": "2.3-zero-divisor",
+      "suiteCase": false,
+      "languageVersion": "2.3",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-009",
+        "META-011",
+        "META-014",
+        "META-016",
+        "SEM-005",
+        "SEM-010",
+        "SEM-014",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "status": "CLOSED",
+      "completedDelivery": "K6",
+      "source": {
+        "path": "testdata/conformance/k6-units/2.3-zero-divisor.ili",
+        "sha256": "53390194d5ef450e680752cecbb102db8e563c68f964c0a0a0bb14590a6f5cd8"
+      },
+      "previousObservation": {
+        "ownExitCode": 0,
+        "ili2cExitCode": 1,
+        "evidence": "units-follow-on-probes-2026-10-21.json"
+      },
+      "currentObservation": {
+        "ownExitCode": 1,
+        "ili2cExitCode": 1,
+        "rule": "UNIT_CONVERSION_ZERO_DIVISOR",
+        "diagnostics": [
+          {
+            "id": "diag-ec2b2132b9a9aef8755e1eb0",
+            "code": "ILI-SEM-0010",
+            "severity": "ERROR",
+            "phase": "SEMANTIC_CHECKING",
+            "messageKey": "diagnostic.semantics.inheritance",
+            "range": {
+              "source": "file://<repo>/testdata/conformance/k6-units/2.3-zero-divisor.ili",
+              "revision": "1",
+              "startOffset": 81,
+              "endOffset": 82
+            },
+            "arguments": [
+              {
+                "name": "element",
+                "kind": "IDENTIFIER",
+                "value": "Z"
+              },
+              {
+                "name": "rule",
+                "kind": "TEXT",
+                "value": "unit conversion divides by zero/UNIT_CONVERSION_ZERO_DIVISOR"
+              }
+            ]
+          }
+        ]
+      },
+      "remainingCauses": [],
+      "nextAction": null,
+      "evidence": "k6-units.md"
+    },
+    {
+      "testId": "2.3-zero-factor",
+      "suiteCase": false,
+      "languageVersion": "2.3",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-009",
+        "META-011",
+        "META-014",
+        "META-016",
+        "SEM-005",
+        "SEM-010",
+        "SEM-014",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "status": "CLOSED",
+      "completedDelivery": "K6",
+      "source": {
+        "path": "testdata/conformance/k6-units/2.3-zero-factor.ili",
+        "sha256": "f3921b18949463b8f06633afe811b6e68428919e9c4046009a886ab956a1634c"
+      },
+      "previousObservation": {
+        "ownExitCode": 0,
+        "ili2cExitCode": 1,
+        "evidence": "units-follow-on-probes-2026-10-21.json"
+      },
+      "currentObservation": {
+        "ownExitCode": 1,
+        "ili2cExitCode": 1,
+        "rule": "UNIT_CONVERSION_ZERO_FACTOR",
+        "diagnostics": [
+          {
+            "id": "diag-0d989da1fa0f7e4040b8a17c",
+            "code": "ILI-SEM-0010",
+            "severity": "ERROR",
+            "phase": "SEMANTIC_CHECKING",
+            "messageKey": "diagnostic.semantics.inheritance",
+            "range": {
+              "source": "file://<repo>/testdata/conformance/k6-units/2.3-zero-factor.ili",
+              "revision": "1",
+              "startOffset": 77,
+              "endOffset": 78
+            },
+            "arguments": [
+              {
+                "name": "element",
+                "kind": "IDENTIFIER",
+                "value": "Z"
+              },
+              {
+                "name": "rule",
+                "kind": "TEXT",
+                "value": "unit conversion multiplies by zero/UNIT_CONVERSION_ZERO_FACTOR"
+              }
+            ]
+          }
+        ]
+      },
+      "remainingCauses": [],
+      "nextAction": null,
+      "evidence": "k6-units.md"
+    },
+    {
+      "testId": "2.4-numeric-unit-mismatch",
+      "suiteCase": false,
+      "languageVersion": "2.4",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-009",
+        "META-011",
+        "META-014",
+        "META-016",
+        "SEM-005",
+        "SEM-010",
+        "SEM-014",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "status": "CLOSED",
+      "completedDelivery": "K6",
+      "source": {
+        "path": "testdata/conformance/k6-units/2.4-numeric-unit-mismatch.ili",
+        "sha256": "5aa98b5d6cb5a55afcbf9cf800c25c123ffc9dc7b99e964f1fd941cfa6922812"
+      },
+      "previousObservation": {
+        "ownExitCode": 0,
+        "ili2cExitCode": 1,
+        "evidence": "units-follow-on-probes-2026-10-21.json"
+      },
+      "currentObservation": {
+        "ownExitCode": 1,
+        "ili2cExitCode": 1,
+        "rule": "NUMERIC_UNIT_EXTENSION",
+        "diagnostics": [
+          {
+            "id": "diag-f8adbd7b0a3b92fe12eeec80",
+            "code": "ILI-SEM-0010",
+            "severity": "ERROR",
+            "phase": "SEMANTIC_CHECKING",
+            "messageKey": "diagnostic.semantics.inheritance",
+            "range": {
+              "source": "file://<repo>/testdata/conformance/k6-units/2.4-numeric-unit-mismatch.ili",
+              "revision": "1",
+              "startOffset": 176,
+              "endOffset": 200
+            },
+            "arguments": [
+              {
+                "name": "element",
+                "kind": "IDENTIFIER",
+                "value": "X"
+              },
+              {
+                "name": "rule",
+                "kind": "TEXT",
+                "value": "numeric unit does not specialize its base: numeric-concrete-unit-changed/NUMERIC_UNIT_EXTENSION"
+              }
+            ]
+          }
+        ]
+      },
+      "remainingCauses": [],
+      "nextAction": null,
+      "evidence": "k6-units.md"
+    },
+    {
+      "testId": "2.4-zero-divisor",
+      "suiteCase": false,
+      "languageVersion": "2.4",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-009",
+        "META-011",
+        "META-014",
+        "META-016",
+        "SEM-005",
+        "SEM-010",
+        "SEM-014",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "status": "CLOSED",
+      "completedDelivery": "K6",
+      "source": {
+        "path": "testdata/conformance/k6-units/2.4-zero-divisor.ili",
+        "sha256": "c4f79f93a08265d8aca0b79add78b4e5807b4f6249b19771f8141ab3d5365195"
+      },
+      "previousObservation": {
+        "ownExitCode": 0,
+        "ili2cExitCode": 1,
+        "evidence": "units-follow-on-probes-2026-10-21.json"
+      },
+      "currentObservation": {
+        "ownExitCode": 1,
+        "ili2cExitCode": 1,
+        "rule": "UNIT_CONVERSION_ZERO_DIVISOR",
+        "diagnostics": [
+          {
+            "id": "diag-e94ccd68eefec17c4b5bc0c8",
+            "code": "ILI-SEM-0010",
+            "severity": "ERROR",
+            "phase": "SEMANTIC_CHECKING",
+            "messageKey": "diagnostic.semantics.inheritance",
+            "range": {
+              "source": "file://<repo>/testdata/conformance/k6-units/2.4-zero-divisor.ili",
+              "revision": "1",
+              "startOffset": 81,
+              "endOffset": 82
+            },
+            "arguments": [
+              {
+                "name": "element",
+                "kind": "IDENTIFIER",
+                "value": "Z"
+              },
+              {
+                "name": "rule",
+                "kind": "TEXT",
+                "value": "unit conversion divides by zero/UNIT_CONVERSION_ZERO_DIVISOR"
+              }
+            ]
+          }
+        ]
+      },
+      "remainingCauses": [],
+      "nextAction": null,
+      "evidence": "k6-units.md"
+    },
+    {
+      "testId": "2.4-zero-factor",
+      "suiteCase": false,
+      "languageVersion": "2.4",
+      "requirements": [
+        "META-003",
+        "META-006",
+        "META-009",
+        "META-011",
+        "META-014",
+        "META-016",
+        "SEM-005",
+        "SEM-010",
+        "SEM-014",
+        "TEST-011",
+        "TEST-012"
+      ],
+      "status": "CLOSED",
+      "completedDelivery": "K6",
+      "source": {
+        "path": "testdata/conformance/k6-units/2.4-zero-factor.ili",
+        "sha256": "8d19c92f584c456500b201105f0b63b849af83db94bcb953c5ac2f351d602510"
+      },
+      "previousObservation": {
+        "ownExitCode": 0,
+        "ili2cExitCode": 1,
+        "evidence": "units-follow-on-probes-2026-10-21.json"
+      },
+      "currentObservation": {
+        "ownExitCode": 1,
+        "ili2cExitCode": 1,
+        "rule": "UNIT_CONVERSION_ZERO_FACTOR",
+        "diagnostics": [
+          {
+            "id": "diag-46f2e0f903884df17148764a",
+            "code": "ILI-SEM-0010",
+            "severity": "ERROR",
+            "phase": "SEMANTIC_CHECKING",
+            "messageKey": "diagnostic.semantics.inheritance",
+            "range": {
+              "source": "file://<repo>/testdata/conformance/k6-units/2.4-zero-factor.ili",
+              "revision": "1",
+              "startOffset": 77,
+              "endOffset": 78
+            },
+            "arguments": [
+              {
+                "name": "element",
+                "kind": "IDENTIFIER",
+                "value": "Z"
+              },
+              {
+                "name": "rule",
+                "kind": "TEXT",
+                "value": "unit conversion multiplies by zero/UNIT_CONVERSION_ZERO_FACTOR"
+              }
+            ]
+          }
+        ]
+      },
+      "remainingCauses": [],
+      "nextAction": null,
+      "evidence": "k6-units.md"
+    }
+  ],
+  "k6FollowUp": {
+    "closedAdditionalRegressions": [
+      "2.3-numeric-unit-mismatch",
+      "2.3-zero-divisor",
+      "2.3-zero-factor",
+      "2.4-numeric-unit-mismatch",
+      "2.4-zero-divisor",
+      "2.4-zero-factor"
+    ],
+    "remainingImplementationCases": [],
+    "remainingAdditionalMandatoryUnitRegressions": 0,
+    "newSuiteExceptions": 0,
+    "necessaryFoundations": [
+      "Structured exact conversion factors shared by syntax/model; signed integer constants retained",
+      "Distinct zero multiplier/divisor source diagnostics; no rounded quotient/product",
+      "Effective unit inheritance before scalar domain/attribute expression binding",
+      "One bound-unit specialization rule for compiler and public canExtend; general assignment not broadened",
+      "Unit translations use bound targets and structured conversion values; legacy unit-text check removed",
+      "UTF-16 conversion definition/literal ranges remain correct with supplementary Unicode and CRLF"
+    ],
+    "newOpenCases": [],
+    "previousIndependentOpenCases": [
+      "VIEW_TRANSLATED_IMPORT_CLOSURE",
+      "GEOMETRY_OVERLAP_PRECISION",
+      "INSPECTION_CUSTOM_SEGMENT",
+      "GEOMETRY_TYPE_COMPLETENESS",
+      "GRAPHIC_RESPONSIBLE_SIGNATURE_CLASS"
+    ],
+    "nextAction": "First reconcile the 19 earlier B1-B3 acceptance cases using pinned sources and public model/query evidence. Then continue VIEW_TRANSLATED_IMPORT_CLOSURE, the three geometry findings and GRAPHIC_RESPONSIBLE_SIGNATURE_CLASS. Keep S0–S6 consumer/platform/performance obligations open.",
+    "normativeReview": "18 existing normative expectations remain project decisions validated by exact diagnostic/control tests. Independent second normative review remains outstanding; no stronger ili2c conformity claim.",
+    "scopeAcceptance": "K6 six additional regressions and associated controls verified; broader case acceptance remains open for the explicitly listed 19 B1-B3 cases. P2/P3 not fully accepted.",
+    "evidence": "k6-units.md",
+    "comparison": "k6-units-reference-comparison-2026-10-22.json",
+    "p3": "OPEN",
+    "remainingAcceptanceCases": [
+      "ili23.Association23Test.association_DerivedAssociationDef",
+      "ili23.Expressions23Test.expressions_BasenamePathElement",
+      "ili23.Expressions23Test.expressions_BasenameToUnrenamedViewable",
+      "ili23.View23Test.abstractView_AbstractBaseInConcretViewDef",
+      "ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef",
+      "ili23.View23Test.view_AcceptBasenameOfRenamedInspectionDef",
+      "ili23.View23Test.view_AcceptBasenameOfUnrenamedInspectionDef",
+      "ili23.View23Test.view_AcceptBasicInspectionDef",
+      "ili23.View23Test.view_AcceptBasicJoinDef",
+      "ili23.View23Test.view_AcceptBasicSelectionViewDef",
+      "ili23.View23Test.view_AcceptBasicUnionDef",
+      "ili23.View23Test.view_AcceptJoinDefWithoutBasenames",
+      "ili23.View23Test.view_AcceptSimpleBaseExtentionInView",
+      "ili23.View23Test.view_ObjectPathWithRolename",
+      "ili23.ViewDef23Test.viewAggregationComplete",
+      "ili23.ViewDef23Test.viewInspectionComplete",
+      "ili23.ViewDef23Test.viewJoinComplete",
+      "ili23.ViewDef23Test.viewProjectionComplete",
+      "ili23.ViewDef23Test.viewUnionComplete"
+    ],
+    "aggregateAcceptance": "OPEN: 19 earlier B1-B3 cases already have reference PASS, but their explicit semantic acceptance remains pending.",
+    "supersededBy": "b1b3AcceptanceFollowUp: the then-pending 19 earlier cases have now completed their original-source acceptance. Historical K6 manifest remains unchanged."
+  },
+  "remainingAcceptanceCases": [],
+  "b1b3AcceptanceFollowUp": {
+    "closedEarlierReferencePassCases": [
+      "ili23.Association23Test.association_DerivedAssociationDef",
+      "ili23.Expressions23Test.expressions_BasenamePathElement",
+      "ili23.Expressions23Test.expressions_BasenameToUnrenamedViewable",
+      "ili23.View23Test.abstractView_AbstractBaseInConcretViewDef",
+      "ili23.View23Test.abstractView_AcceptAbstractBaseInAbstractJoinDef",
+      "ili23.View23Test.view_AcceptBasenameOfRenamedInspectionDef",
+      "ili23.View23Test.view_AcceptBasenameOfUnrenamedInspectionDef",
+      "ili23.View23Test.view_AcceptBasicInspectionDef",
+      "ili23.View23Test.view_AcceptBasicJoinDef",
+      "ili23.View23Test.view_AcceptBasicSelectionViewDef",
+      "ili23.View23Test.view_AcceptBasicUnionDef",
+      "ili23.View23Test.view_AcceptJoinDefWithoutBasenames",
+      "ili23.View23Test.view_AcceptSimpleBaseExtentionInView",
+      "ili23.View23Test.view_ObjectPathWithRolename",
+      "ili23.ViewDef23Test.viewAggregationComplete",
+      "ili23.ViewDef23Test.viewInspectionComplete",
+      "ili23.ViewDef23Test.viewJoinComplete",
+      "ili23.ViewDef23Test.viewProjectionComplete",
+      "ili23.ViewDef23Test.viewUnionComplete"
+    ],
+    "newReferencePasses": 0,
+    "newSuiteExceptions": 0,
+    "remainingAcceptanceCases": [],
+    "necessaryFoundations": [
+      "Declaration order increments independently of ID allocation, including reused symbols",
+      "Model reuse anchors use ordinal 0 rather than the source offset",
+      "Constraint reuse anchors retain their owner and separate namespace, including unnamed constraints without public qualified names"
+    ],
+    "verification": {
+      "jvmTests": 434,
+      "wrapperTests": 16,
+      "portableCasesPerRuntime": 1565,
+      "originalProcessPairs": 19,
+      "ownExpected": 19,
+      "referenceExpected": 19
+    },
+    "newOpenCases": [],
+    "previousIndependentOpenCases": [
+      "VIEW_TRANSLATED_IMPORT_CLOSURE",
+      "GEOMETRY_OVERLAP_PRECISION",
+      "INSPECTION_CUSTOM_SEGMENT",
+      "GEOMETRY_TYPE_COMPLETENESS",
+      "GRAPHIC_RESPONSIBLE_SIGNATURE_CLASS"
+    ],
+    "nextAction": "Continue VIEW_TRANSLATED_IMPORT_CLOSURE, then GEOMETRY_OVERLAP_PRECISION, GEOMETRY_TYPE_COMPLETENESS, INSPECTION_CUSTOM_SEGMENT and GRAPHIC_RESPONSIBLE_SIGNATURE_CLASS. Independent review of 18 normative expectations and S0–S6 duties remain open.",
+    "scopeAcceptance": "All 19 named original-source B1–B3 cases have case-specific public model/query, reuse, projection and portable evidence. This is not acceptance of all language combinations or of P2/P3.",
+    "evidence": "b1-b3-original-acceptance.md",
+    "comparison": "b1-b3-original-reference-comparison-2026-10-22.json",
+    "p3": "OPEN"
+  },
+  "g2FollowUp": {
+    "matrix": "g2-rule-matrix.json",
+    "baseline": "verification-2026-10-24-g2-baseline.json",
+    "latestEvidence": "verification-2026-10-27-g2-E4-constraint-names.json",
+    "closed": [
+      "XMLDate 2.3 incorrect rejection / exception",
+      "VIEW_TRANSLATED_IMPORT_CLOSURE (2.3/2.4 pinned original and public model/query acceptance)",
+      "C original findings: fixed geometry threshold/versioned completeness and exact own segment originals (separate 2.3 normative gate remains open)",
+      "D: responsible signature class; six exact original sources and static model/query/inheritance/conditional controls",
+      "E1 partial: unknown INTERLIS domains, three simple predefined domains, FINAL domains and exact function/ALL-OF binding with public query/import/reuse contracts",
+      "E1: versioned empty function declarations/calls and METAOBJECT_TRANSLATION including public members, independent UNIQUE keys, paths, imports/inheritance/translation/reuse.",
+      "E1: versioned structured model-header options, IANA names/aliases, canonical translation transfer namespaces and inactive 2.4 CONTRACTED marker; no suite exception.",
+      "E1: original syntax recovery causes, documentary model language, versioned temporal syntax and SYMBOLOGY contract, visible duplicate properties and EXTENDED/EXTENDS conflict.",
+      "E2: mandatory domains and inherited flags, bound CLASS constraints, invalid numeric source ranges, versioned numeric extension, graph-scoped unit conversion relations and preserved invalid/pending query states.",
+      "E2: 2.4 canonical text literal length, positive declared widths, MTEXT control characters; pinned Unicode data and portable counts, unchanged original strings/ranges.",
+      "E3: ANYSTRUCTURE and ordered structure restrictions, shared function-object compatibility, abstract required values, BAG/LIST narrowing, imports/edits and 70-level structures/aliases. Existing roadsExgm2ien diagnostic evidence reviewed from 49 to 51; no new exception.",
+      "E2: shared extension for text domains, collection elements, coordinate dimension additions and effective inherited units/reference/direction/rotation; normative NFD text length in both 2.3 and 2.4. No new suite exception.",
+      "E4: enum formals/tree values, contextual enum/FORMAT constants and enum element references; all relation spellings including fixed <>; common comparison rules including OID equality; typed enum/2.4 geometry standard functions with public targets and UNQUALIFIED imports. No new suite exception.",
+      "E4 defined-argument contexts: numeric units and symbolic PI/LNBASE; revision-bound fragment and escaped string path coordinates; dependent ATTRIBUTE parameters including user functions; areAreas/2/3 and WithoutGaps variants with typed path bindings; convertUnit destination contexts; actual translated function targets. No new suite exception.",
+      "E4 shared UNDEFINED and empty TEXT value rules; explicit mandatory argument/attribute/signature-value errors; public function mandatory/result metadata and translations; required-domain query controls, imports and reuse. No new exception.",
+      "E2 shared FORMAT assignment/extension and nested/inherited bounds; actual inline attribute prefix binding; ErrorType/public query errors. E4 empty TEXT SurfaceBag uses canonical undefined root, including wrong-owner controls. No new exception.",
+      "E2 explicit numeric/coordinate abstraction, abstract concrete units including inherited ranges, invalid bound unit/reference targets with real ErrorType diagnostic IDs. Function/formal, inferred view, custom LineCoord and generic coordinate contexts preserved. All 62 added process cases agree with reference; no new exception.",
+      "E1 pinned complete reserved tables (154/168), contextual XML/REFSYS and new 2.3 identifiers, source/fragment/rename profiles, name lengths, owner-versioned boolean types. Stale ANTLR token vocabulary prevented and repeat generation hash equality proved. Recovery holes fixed, all 356 source process expectations pass. No new exception.",
+      "E5 source metadata/documentation retained with exact origins, duplicate conflicts diagnosed, docs and function explanation visible in hover, CRS checked on bound declarations. Function explanation presence compared independently of translated text. TeaVM empty metadata lookup defect avoided with immutable owned map. All 54 own process expectations pass; no new exception.",
+      "E5 removed source relexing/global name map/bounded type shape strings from translation checking. Bound type properties, expressions, enum topology/identity and FORMAT targets, collections and all mapped constraint definitions checked. Domain constraints now have correspondence and named constraints retain source name ranges. All 82 own process expectations pass; no new exception. Plausibility/set payload, GLOBAL/BASKET, source recovery, numeric budgets and parser-only ANTLR regeneration are verified. E4 body context/name uniqueness remains open.",
+      "E1 predefined OIDs now canonical per language with PredefinedOrigin, no artificial user-model owner, correct 2.3/2.4 bases/modifiers and bound source references. Identical UUIDOID import-signature/local-attribute calls are fixed in both versions. Public navigation, reverse source order, mixed profiles and fresh/reuse contracts pass. No new exception.",
+      "E2 simple named BAG/LIST elements bind domains or structures in 2.4, remain structure-only in 2.3; explicit structure restrictions remain strict. Public types, domain inheritance, target identity/navigation, imports/reverse source order and fresh/reuse edits verified. No new API/class or exception.",
+      "E5 geometric inspection translation maps actual contextualized segments/wrappers/members/constraints after owner/path/restriction/geometry checks, compares all new pairs and publishes final links. Exact tolerance spelling no longer affects equality. Both versions, own segments, two vertex contexts, surface/area, public links and fresh/reuse verified. No new exception.",
+      "E1 shared qualified/unqualified predefined name selection fixes missing UNQUALIFIED bindings of canonical domains, structures/bases and units; preserves primitive keyword syntax and local identities. Actual user-import ambiguity no longer substitutes builtin len. All 67 own/reference decisions and full runtime/browser checks pass. Single import priority remains normatively open; no exception.",
+      "E2 invalid scaled type mantissas are regular source syntax errors at original token ranges. Zero mantissas/signs/precision survive; domains, attributes, coordinate axes, OIDs, FORMAT components, fragments, imports/reverse source order and fresh/reuse verified. Six JVM methods/76 process controls, no exception.",
+      "E4 direct constraint name uniqueness across 2.4 local viewable bodies and same-topic external blocks; second name diagnostic ranges and public external name queries retained. Five JVM methods, 24 process cases, full runtime/browser checks pass. Inherited name scopes remain open; no new exception."
+    ],
+    "openDeliveries": [
+      "C independent 2.3 normative review; reference difference explicitly classified XFAIL",
+      "E remaining individual normative/builtin/type/model coverage, including additional LineCoord source abstraction",
+      "F actual typed overlay payloads and effects",
+      "G typed resolver candidates and repository/offline/lock host flow"
+    ],
+    "normativeReview": "18 normative reference exceptions require independent review, including the explicitly user-authorized 2.3 overlap XFAIL; INTERLIS 1 remains separate.",
+    "fullSemanticPortableComparison": "OPEN",
+    "realCorpusClosure": "OPEN",
+    "G2": "OPEN",
+    "P3": "OPEN",
+    "closedAdditionalFindings": [
+      "VIEW_TRANSLATED_IMPORT_CLOSURE",
+      "GEOMETRY_OVERLAP_PRECISION (original reproductions; separate 2.3 suite review OPEN)",
+      "GEOMETRY_TYPE_COMPLETENESS (version-correct 2.3/2.4 scope)",
+      "INSPECTION_CUSTOM_SEGMENT (two exact originals and public context-copy contracts)",
+      "GRAPHIC_RESPONSIBLE_SIGNATURE_CLASS",
+      "EMPTY_FUNCTION_PARAMETERS_23",
+      "PREDEFINED_METAOBJECT_TRANSLATION"
+    ],
+    "remainingAdditionalFindings": [
+      "OVERLAP_PRECISION_23_NORM_REVIEW",
+      "INSPECTION_LINECOORD_MEMBER_ABSTRACTION"
+    ],
+    "necessaryFoundations": [
+      "Map declared enum symbols as well as domain/class/attribute/view identities; three unchanged reference-PASS enum originals guard the initial regression.",
+      "EnumElementSymbol.ordinal is the effective enum position, not the global declaration counter.",
+      "Deduplicate repeated bound references by owner, source/revision/range, usage and target.",
+      "Bind original versions exactly in ImportBinder and the workspace resolver, including pending/dependency requests.",
+      "Check model-name uniqueness in the selected closure; an unselected inventory version cannot block it.",
+      "Bind predefined temporal structures and domains through ordinary EXTENDS references, with inherited FORMAT parts and bounds.",
+      "Unknown INTERLIS object bases must produce unresolved-name diagnostics, never an apparently valid schema without the requested base.",
+      "Bind canonical INTERLIS.LineCoord as a real domain, never as a generic synthetic fallback.",
+      "Do not establish implicit track width from an abstract/unbounded coordinate basis.",
+      "Resolve referenced units on demand through the existing builder before shared unit-ancestry checks; no file-order-dependent Cartesian rejection.",
+      "Use the existing semantic test normalizer for snapshot-local symbol IDs; compare complete record components and order, not allocator history.",
+      "Use BigDecimal.valueOf(2), supported by TeaVM, for exact squared tolerance comparison.",
+      "Keep HALIGNMENT/VALIGNMENT keyword tokens in structured name segments.",
+      "Use existing binder for functions and ALL-OF instead of qualifier/suffix fallback; remove synthetic domain substitute.",
+      "FINAL check uses indexed modifiers even when base construction has not finished.",
+      "Vordefinierte Attribute ohne Quelldeklarationsindex in der bestehenden Überschreibungsprüfung prüfen.",
+      "NAME/URI publizieren die intrinsischen Grenzen 255/1023; Syntax bleibt quellengetreu.",
+      "Struktur-/Collection-Overrides verwenden die vorhandenen gemeinsamen Typ-/Kardinalitätsregeln, einschliesslich canExtend-Gegenproben.",
+      "CLASS-RESTRICTION wird als Klassenwerttyp mit allen gebundenen Einschränkungen erhalten, statt als Domänenreferenz oder uneingeschränkter Klassenwert.",
+      "Gemeinsamer Binder unterstützt vordefinierte Metadatenklassen als Funktionsziel.",
+      "Profilprüfungen für Dokumente und Fragmente gemeinsam; fehlende/recoverte Klammern lösen keine Nullzugriffe aus."
+    ],
+    "verification": {
+      "jvmTests": 688,
+      "wrapperTests": 20,
+      "portableCasesPerRuntime": 3249,
+      "extraReferenceProcessPairs": 24,
+      "ownExpected": 24,
+      "referenceAgreements": 14,
+      "referenceProcessErrors": 0,
+      "portableQuerySessionsPerRuntime": 13,
+      "portableBudgetRecoverySessionsPerRuntime": 6,
+      "portableSyntaxRangeRecoverySessionsPerRuntime": 2,
+      "compilerRuntimeEvidence": "verification-2026-10-27-g2-E4-constraint-names.json"
+    },
+    "referenceExpectationsChanged": false,
+    "sourcePinsChanged": false,
+    "newSuiteExceptions": 0,
+    "nextAction": "Continue A2-R3: exact numbered/unnumbered contract, positive/negative model/query assertion and original-case mappings. Four selected original JVM methods and concrete five missing case families are prepared. Then A2-R4 complete paragraph/appendix/exception audit and full independent A2 review before A3. No free language fixes or new exceptions.",
+    "originalTranslationAcceptance": {
+      "translated-import-2.3.ili": {
+        "path": "testdata/conformance/g2-translations/translated-import-2.3.ili",
+        "sha256": "39a8f3f6bbd5287f0608d3208fc53a799f188d43bac43c5f65ec9ba3e59e0629",
+        "test": "ImportedTranslationContractTest.pinnedOriginalFindingRetainsTheImportedViewAndAttributeTargets"
+      },
+      "translated-import-2.4.ili": {
+        "path": "testdata/conformance/g2-translations/translated-import-2.4.ili",
+        "sha256": "d5705603281688cf11b88f3b18c2dc1b9e0692f436bccc0fe53e443c86556477",
+        "test": "ImportedTranslationContractTest.pinnedOriginalFindingRetainsTheImportedViewAndAttributeTargets"
+      }
+    },
+    "newOpenFindings": [
+      {
+        "id": "CLASS_MODEL_SCOPE_ABSTRACTION",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "status": "OPEN_NORMATIVE_AUDIT",
+        "delivery": "E1/E3",
+        "evidence": "g2-model-scope-probes-2026-10-25.json",
+        "remainingCause": "Observed acceptance difference for concrete class directly in a model; distinguish an explicit ABSTRACT obligation from implicit non-instantiability before changing compiler behavior or expectations."
+      },
+      {
+        "id": "CONTRACTED_TRANSLATION_24_NORM_REVIEW",
+        "versions": [
+          "2.4"
+        ],
+        "status": "CLOSED_IMPLEMENTED_AND_VERIFIED",
+        "delivery": "E1/E5",
+        "evidence": "g2-contracted-translation-probes-2026-10-25.json",
+        "remainingCause": null,
+        "verification": "verification-2026-10-25-g2-E-headers.json"
+      },
+      {
+        "id": "OVERLAP_PRECISION_23_NORM_REVIEW",
+        "status": "OPEN_NORMATIVE_AUDIT",
+        "delivery": "C / user normative review",
+        "evidence": "verification-2026-10-25-overlap-xfail.json",
+        "remainingCause": "Unchanged negative reference expectation versus accepted 2.3 original is an explicit user-authorized XFAIL, checked by clean acceptance and pinned positive/zero-negative controls. Independent normative review remains OPEN; no remaining suite FAIL.",
+        "classification": "XFAIL",
+        "authorization": "User explicitly requested XFAIL on 2026-10-25."
+      },
+      {
+        "id": "INSPECTION_LINECOORD_MEMBER_ABSTRACTION",
+        "status": "OPEN_NORMATIVE_AUDIT",
+        "delivery": "E2/E3",
+        "evidence": "g2-geometry-reference-2026-10-25.json",
+        "remainingCause": "Own compiler accepts extra source members middle/copy: INTERLIS.LineCoord and nested Data.p; ili2c rejects as abstract/incomplete. Decide source abstraction against segment contextualization. Original TEXT-only segment cases are accepted by both."
+      },
+      {
+        "id": "GRAPHIC_METAOBJECT_PARAMETER_FORWARD_TARGET",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "status": "OPEN_NORMATIVE_AUDIT",
+        "delivery": "E1/E5",
+        "evidence": "g2-signatures-reference-2026-10-25.json",
+        "reproduction": "Comparison 11/41: qualified Colour:METAOBJECT OF F.Signs.Colour with target class declared later; controls 66/67 move the same class before S.",
+        "remainingCause": "Own compiler accepts both orders. ili2c rejects the later target as missing/conflicting Colour but accepts both reordered controls. Decide required visibility/forward binding from the manuals before changing compiler behavior. No new suite exception."
+      },
+      {
+        "id": "EMPTY_FUNCTION_PARAMETERS_23",
+        "versions": [
+          "2.3"
+        ],
+        "status": "CLOSED_VERIFIED",
+        "delivery": "E1",
+        "evidence": "g2-E1-binding-reference-2026-10-25.json",
+        "remainingCause": null,
+        "verification": "verification-2026-10-25-g2-E1-functions-metadata.json",
+        "closedByRules": [
+          "PROFILE.emptyFunctionParameters",
+          "PROFILE.emptyFunctionArguments",
+          "PREDEFINED.metaobjectTranslation",
+          "PREDEFINED.metaobjectTranslation.uniqueKeys",
+          "INHERITANCE.predefinedAttributes",
+          "TYPE.nameUriBounds",
+          "BINDING.predefinedClassFunctionTargets"
+        ]
+      },
+      {
+        "id": "PREDEFINED_METAOBJECT_TRANSLATION",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "status": "CLOSED_VERIFIED",
+        "delivery": "E1",
+        "evidence": "g2-E1-binding-reference-2026-10-25.json",
+        "remainingCause": null,
+        "verification": "verification-2026-10-25-g2-E1-functions-metadata.json",
+        "closedByRules": [
+          "PROFILE.emptyFunctionParameters",
+          "PROFILE.emptyFunctionArguments",
+          "PREDEFINED.metaobjectTranslation",
+          "PREDEFINED.metaobjectTranslation.uniqueKeys",
+          "INHERITANCE.predefinedAttributes",
+          "TYPE.nameUriBounds",
+          "BINDING.predefinedClassFunctionTargets"
+        ]
+      },
+      {
+        "id": "RECOVERY_INCOMPLETE_FUNCTION_CLASSIFICATION",
+        "status": "OPEN_IMPLEMENTATION",
+        "delivery": "E1",
+        "evidence": "g2-E1-functions-metadata-reference-2026-10-25.json",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "remainingCause": "Malformed ordinary f( can still receive INCOMPLETE_SUPPORT/MISSING_ATTRIBUTE_TYPE in addition to source errors; this separate E1 classification issue remains OPEN, no internal error/schema."
+      },
+      {
+        "id": "MODEL_HEADER_OPTIONS",
+        "status": "CLOSED_IMPLEMENTED_AND_VERIFIED",
+        "delivery": "E1",
+        "evidence": "g2-E1-functions-metadata-reference-2026-10-25.json",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "remainingCause": null,
+        "verification": "verification-2026-10-25-g2-E-headers.json"
+      },
+      {
+        "id": "TYPE_MODEL_STRUCTURE_BOUNDARY",
+        "status": "OPEN_NORM_AUDIT",
+        "remainingCause": "2.3 §2.5.1 and 2.4 §3.5.1 list units/domains/functions/line forms, while existing uniqueLocal_DefinedInStructure and ili2c accept structures in TYPE MODEL. New blanket structure ban removed; no XFAIL. Compare exact structure-vs-domain scope before enforcing.",
+        "verification": "verification-2026-10-25-g2-E1-profiles.json"
+      },
+      {
+        "id": "SET_CONSTRAINT_BODY_CONTEXT",
+        "status": "OPEN_IMPLEMENTATION_AND_NORM_REVIEW",
+        "delivery": "E4",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "norm": {
+          "2.3": "2.12 S.60",
+          "2.4": "3.12 S.78"
+        },
+        "remainingCause": "SET body must not read individual attribute values; WHERE is individual. 2.4 additionally requires an OBJECTS-accepting function. Implement independently after E5 payload acceptance; keep original expectations unchanged until reviewed.",
+        "affectedOriginalCases": [
+          {
+            "testId": "ili23.Constraint23Test.setCstrt",
+            "path": "test/data/ili23/translation/setCstrt.ili",
+            "sha256": "5a288863cb325819f53f1f1b51dbb647707d5a5d75872f7452a9d175ccf266de"
+          },
+          {
+            "testId": "ili23.InterlisConversion23Test.iliconversion_ConversionOfSETCONSTRAINT",
+            "path": "test/data/ili23/iliconversion/iliconversion_ConversionOfSETCONSTRAINT.ili",
+            "sha256": "42d33199dbd5af2e2055a808cd0afca797a1c206e761e102b5de1193fc10ada7"
+          }
+        ]
+      },
+      {
+        "id": "CLASS_CONSTRAINT_NAME_UNIQUENESS",
+        "status": "OPEN_INHERITED_ACCEPTANCE",
+        "delivery": "E4",
+        "versions": [
+          "2.4"
+        ],
+        "norm": {
+          "2.4": "3.12 S.77"
+        },
+        "remainingCause": "Direct 2.4 bodies and same-topic external blocks are verified. Inherited class constraints and external constraints in derived-topic contexts remain a separate normative/model acceptance; do not close the full rule from local duplicate checks.",
+        "verification": "verification-2026-10-27-g2-E4-constraint-names.json"
+      },
+      {
+        "id": "NUMERIC_SCALED_BOUND_FORM",
+        "status": "VERIFIED_CLOSED",
+        "delivery": "E2",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "norm": {
+          "2.3": "2.8.5 S.41–42",
+          "2.4": "3.8.5 S.52"
+        },
+        "reproduction": "DOMAIN D=1.0e1..2.0e2;",
+        "remainingCause": null,
+        "verification": "verification-2026-10-27-g2-E2-scaled-boundaries.json"
+      },
+      {
+        "id": "NUMERIC_SUBDIVISION_RELATIONS",
+        "status": "OPEN_IMPLEMENTATION",
+        "delivery": "E2",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "norm": {
+          "2.3": "2.6.1 S.31; 2.8.5 S.41",
+          "2.4": "3.6.1 S.38–39; 3.8.5 S.52"
+        },
+        "reproduction": "STRUCTURE S=hours:0..23;SUBDIVISION minutes:TEXT;END S;",
+        "remainingCause": "Both own and ili2c accept a nonnumeric subdivision. Validate effective predecessor, integer parent, nonnegative numeric child and continuous circular period in a dedicated E2 delivery. No exception."
+      },
+      {
+        "id": "COLLECTION_NAMED_DOMAIN_24",
+        "status": "VERIFIED_CLOSED",
+        "delivery": "E2",
+        "versions": [
+          "2.4"
+        ],
+        "reproduction": "TOPIC T=CLASS C=identifiers:BAG OF INTERLIS.UUIDOID;END C;END T;",
+        "sha256": "6fc732a6ba540960f38653b16e22fdcfe130b0b6b39b221a977201d7cbac5d37",
+        "evidence": "build/reports/stabilization/g2-e1-oid-identities/baseline/collection-gap.json",
+        "remainingCause": null,
+        "verification": "verification-2026-10-27-g2-E2-named-collections.json"
+      },
+      {
+        "id": "TYPE_PUBLIC_OID_RELATIONS",
+        "status": "OPEN_IMPLEMENTATION",
+        "delivery": "E2",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "remainingCause": "Canonical predefined identity fixes identical imported OIDs. General public canAssign/canExtend OID relations still need shared versioned checks, including ANYOID and NOOID; do not claim complete OID compatibility from identity alone."
+      },
+      {
+        "id": "OID_MANDATORY_EXTENSION",
+        "status": "OPEN_NORM_AUDIT_AND_IMPLEMENTATION",
+        "delivery": "E2",
+        "versions": [
+          "2.4"
+        ],
+        "evidence": "build/reports/stabilization/g2-e2-named-collections/additional-open/oid-mandatory-extension.json",
+        "remainingCause": "Own compiler rejects Alias EXTENDS Identifier=MANDATORY for Identifier=OID TEXT*36; ili2c accepts. Evaluate concrete OID extension rule alongside general public OID relations; not a collection binding cause, no exception."
+      },
+      {
+        "id": "LINECOORD_ADDITIONAL_ATTRIBUTE_CONTEXT",
+        "status": "OPEN_NORM_AUDIT_AND_IMPLEMENTATION",
+        "delivery": "E2/E5",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "evidence": "build/reports/stabilization/g2-e5-geometry-context/linecoord-open-cases.json",
+        "remainingCause": "Additional unmarked LineCoord attributes in own segment structures are accepted by own compiler but rejected by ili2c as abstract/incomplete. Resolve admissible LineCoord contexts and ABSTRACT interactions separately. E5 translation positive controls instead use TEXT extra attributes plus inherited SegmentEndPoint contextualization. No exception and no assumption that reference rejection is wrong."
+      },
+      {
+        "id": "PREDEFINED_IMPORT_PRIORITY_AND_NAME_CATEGORY",
+        "status": "OPEN_NORM_REVIEW",
+        "delivery": "E1",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "norm": {
+          "2.3": "2.5.1 S.28 / 2.5.4 S.30–31",
+          "2.4": "3.5.1 S.34 / 3.5.4 S.38"
+        },
+        "remainingCause": "Single user UNQUALIFIED import plus INTERLIS builtin of same name currently resolves user declaration in both compilers; this priority is preserved, not newly accepted as normative. Resolve import equality/priority and same name in a different type-name category separately. Two actually competing user imports now remain ambiguous and cannot fall back to a builtin."
+      },
+      {
+        "id": "NUMERIC_SCALING_PAIR_AND_CONSTANT_PROFILE",
+        "status": "OPEN_NORM_AUDIT_AND_IMPLEMENTATION",
+        "delivery": "E2/E4",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "norm": {
+          "2.3": "2.2.4 S.24 / 2.8.5 S.41–42",
+          "2.4": "3.2.4 S.28 / 3.8.5 S.52"
+        },
+        "remainingCause": "Individual type mantissas now validated. Mixed scaled/unscaled bounds and exponent ordering remain separate; frozen positive examples use equal exponents, so do not globally require strictly less exponent without normative resolution. General constants/unit factors retain existing profile, including 1.0e1; two explicit process controls differ from ili2c, no exception."
+      },
+      {
+        "id": "BUILTIN_AREAS2_AREAS3_NORM_PROFILE",
+        "status": "OPEN_NORMATIVE_AUDIT",
+        "step": "E2",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "evidence": "g2-A2-areas-signature-observations-2026-10-27.json",
+        "remainingCause": "2.4 function chapter p87 declares areAreas2 OBJECTS, normative appendix p122 declares areAreas2 OBJECT and additional areAreas3 OBJECTS. Eight paired process observations retained, no new expectations or exceptions. User profile decision, bound public signatures and negative type checks still required. Separate E3 SET-body issue remains open.",
+        "sourcePins": {
+          "testdata/conformance/g2-norm-audit/areAreas2-all-2.4.ili": "3cb83910b3eba760b06b49ad78d4880d83d647381a4eefefd685949b75e4a403",
+          "testdata/conformance/g2-norm-audit/areAreas2-this-2.4.ili": "00e977026d5e57a1e087a9d36c00f8336fe2502469ea03e514038e987b2114db",
+          "testdata/conformance/g2-norm-audit/areAreas3-all-2.4.ili": "ebeed42fa843de76973f5febe217e97a2f882912bf12f71201638265eb2ae7e8",
+          "testdata/conformance/g2-norm-audit/areAreas3-this-2.4.ili": "c638fa820f3409e1dfafeb6c6b32ec8baf8c332b912c638ccb362231f1c4ba1d",
+          "testdata/conformance/g2-norm-audit/areAreas2-all-2.3.ili": "f07194439273107ae253636a3550919075dab8f87400c2c088394cc98a5cab95",
+          "testdata/conformance/g2-norm-audit/areAreas2-this-2.3.ili": "17b688411b712bae1c9ef4c04f0cb3a5a61c08b864ea3fa3b784d5c0bdc54dcb",
+          "testdata/conformance/g2-norm-audit/areAreas3-all-2.3.ili": "9294b6a927f2d0dbe5df0def1e40f1c8620e004ec916982a8e6a68cdc325969e",
+          "testdata/conformance/g2-norm-audit/areAreas3-this-2.3.ili": "8989de7a3740f26d5f6b65baa898d300248afcf85037cdc7f412c54cdafd5c27"
+        },
+        "newSuiteExceptions": 0
+      },
+      {
+        "id": "PREDEFINED_ORDINARY_GEOMETRY_STRUCTURE_BINDING",
+        "status": "OPEN_BINDING_REPRODUCTION_AND_NORM_MODEL_REVIEW",
+        "step": "B1",
+        "versions": [
+          "2.3",
+          "2.4"
+        ],
+        "evidence": "g2-A2-predefined-binding-observations-2026-10-27.json",
+        "originalCases": [
+          {
+            "language": "2.3",
+            "name": "structure-LineGeometry",
+            "sourceSha256": "c0b068c22a8c1c39a207062b0996039bb9793a8bc39152d7801ac4aea11e5eec",
+            "actualOwnExit": 1,
+            "actualReferenceExit": 0
+          },
+          {
+            "language": "2.3",
+            "name": "structure-SurfaceEdge",
+            "sourceSha256": "6ac3578926a2aa7754c7093f1b502adb6ccd6486b511cce296bf8dbace1f51f1",
+            "actualOwnExit": 1,
+            "actualReferenceExit": 0
+          },
+          {
+            "language": "2.3",
+            "name": "structure-SurfaceBoundary",
+            "sourceSha256": "a086fdf3d746a70c355d4bbdec3a28266ad2f1c1e8baa459a2d76538745cef1c",
+            "actualOwnExit": 1,
+            "actualReferenceExit": 0
+          },
+          {
+            "language": "2.4",
+            "name": "structure-LineGeometry",
+            "sourceSha256": "0fd31339d3d14b405c75a63d2182111cc6856d7f8eeda6bb97f3e9c1def38e3d",
+            "actualOwnExit": 1,
+            "actualReferenceExit": 0
+          },
+          {
+            "language": "2.4",
+            "name": "structure-SurfaceEdge",
+            "sourceSha256": "cfbbd8e20dface46ca0f88ed77580107c4d8a6b27a90b86e740a71d4c93a7ae8",
+            "actualOwnExit": 1,
+            "actualReferenceExit": 0
+          },
+          {
+            "language": "2.4",
+            "name": "structure-SurfaceBoundary",
+            "sourceSha256": "88b7ada58cce5c3d12ff7711082741668d319a1567062b21413f358ae9210bb8",
+            "actualOwnExit": 1,
+            "actualReferenceExit": 0
+          }
+        ],
+        "remainingCause": "Six ordinary structure-use outcomes differ: own unresolved SurfaceEdge/SurfaceBoundary/LineGeometry, reference accepts both versions. Inspect normative ordinary visibility and full public canonical model in B1; context inspection copies alone do not settle it. No normative outcome or XFAIL introduced. Qualified NAME/URI/BOOLEAN rejected by both, not a demand for new reserved-name syntax.",
+        "newSuiteExceptions": 0
+      }
+    ],
+    "temporalInheritanceFollowUp": {
+      "test": "PredefinedTemporalContractTest.predefinedDomainAndStructureInheritanceUseOrdinaryBoundTargets",
+      "evidence": "verification-2026-10-25-g2-bindings.json",
+      "scope": "Predefined temporal domain/structure EXTENDS uses normal bound targets; inherited FORMAT parts and bounds retained. Unknown INTERLIS object bases are diagnosed and block schema compilation."
+    },
+    "cAcceptance": {
+      "status": "OPEN_INDEPENDENT_NORMATIVE_REVIEW",
+      "evidence": "g2-geometry.md",
+      "verification": "verification-2026-10-25-g2-C.json",
+      "comparison": "g2-geometry-reference-2026-10-25.json",
+      "closedPreviousSuiteFail": 0,
+      "remainingSuiteFail": null,
+      "originalReproductionPins": {
+        "testdata/conformance/g2-geometry/custom-segment-2.3.ili": "5f5c65f5cfdf5f27aed43ccc210b0a0159d53337d1f83910cb1a1f94d871dee3",
+        "testdata/conformance/g2-geometry/custom-segment-2.4.ili": "810623b4d6ea0785963029c76c6ab0593840f4527bad4a3a8137afbec206b755",
+        "testdata/conformance/g2-geometry/fine-tolerance-2.3.ili": "e32e6ab7ea0b1d4a040bf1dee1e8a46f1ea3594c9e2179bd386f5f7662920124",
+        "testdata/conformance/g2-geometry/fine-tolerance-2.4.ili": "ab2d4922191650b6982b2c7a694bb7143748cee00b90a444d9622ae41ff1dc1b",
+        "testdata/conformance/g2-geometry/missing-overlap-19.ili": "7b1ff6ac859cb3482cebf36c1972a1bf5f7779fae4aff0863d9e180a07d3c639",
+        "testdata/conformance/g2-geometry/missing-overlap-21.ili": "b9ccd0b3effdfbe90c2da27427e153bba24978cdbad13f560063f87aa8495291",
+        "testdata/conformance/g2-geometry/missing-overlap-47.ili": "b27c9870817000d9fd33b9e81e738da73f2772b27a14ef3c427b4fc75163f14c",
+        "testdata/conformance/g2-geometry/missing-overlap-49.ili": "6ea78e720c7abce9a4fe2403999277430fad73ad5952868a0c72cd47894589d8"
+      },
+      "separateOpenCases": [
+        "OVERLAP_PRECISION_23_NORM_REVIEW",
+        "INSPECTION_LINECOORD_MEMBER_ABSTRACTION"
+      ],
+      "referenceExpectationsChanged": false,
+      "sourcePinsChanged": false,
+      "newSuiteExceptions": 1,
+      "classificationEvidence": "verification-2026-10-25-overlap-xfail.json",
+      "previousXfail": 18,
+      "currentXfail": 19,
+      "referenceFailClassifiedXfail": "ili23.LineType23Test.overlapTooSmallFail",
+      "authorization": "User explicitly requested XFAIL; independent normative review remains open."
+    },
+    "dAcceptance": {
+      "status": "VERIFIED_STATIC_COMPILER_SCOPE",
+      "evidence": "g2-signatures.md",
+      "verification": "verification-2026-10-25-g2-D.json",
+      "comparison": "g2-signatures-reference-2026-10-25.json",
+      "closedFinding": "GRAPHIC_RESPONSIBLE_SIGNATURE_CLASS",
+      "closedPreviouslyFailingSuiteCases": 0,
+      "newSuiteExceptions": 0,
+      "newIndependentFindings": [
+        "GRAPHIC_METAOBJECT_PARAMETER_FORWARD_TARGET"
+      ],
+      "remainingCauses": [],
+      "originalSourcePins": {
+        "testdata/conformance/g2-signatures/2.3-Derived.ili": "35a82b534d04edb6f479b38252315b577f70fea583b737ca4c37a6b531312bf1",
+        "testdata/conformance/g2-signatures/2.3-Other.ili": "a961c22e4ed546b088d18417de2fb8b4c1e83b4d5501bb7e64b60fee6c5888a1",
+        "testdata/conformance/g2-signatures/2.3-S.ili": "16d08a96323f91f27b7ed551f578bb3513ae4bfad27b5a4dfafc493ae6b73cbe",
+        "testdata/conformance/g2-signatures/2.4-Derived.ili": "6b258a1474625b82f64b0470331235daeb080d997a6352a80987561d8ace2db9",
+        "testdata/conformance/g2-signatures/2.4-Other.ili": "77a421d920fd6ff7e62efa45755fab69ea18fb5002bb6ac848f9eae4c42de6c4",
+        "testdata/conformance/g2-signatures/2.4-S.ili": "bc5e7e3f1d1f9962a6d3a4b0b78363d3ef31f54ec559441225f073212eacff52"
+      },
+      "staticLimits": "Static parameter presence/type checking only; no Boolean/enum condition solver, runtime definiteness proof, sign rendering or function execution.",
+      "additionalFollowUpScope": "E1/E5 name visibility: target class declared before/after parameter use; not a decided compiler defect, no XFAIL."
+    },
+    "eAcceptance": {
+      "status": "OPEN",
+      "verifiedPart": "Exact binding and three simple predefined domains",
+      "verifiedRules": [
+        "BINDING.predefinedUnknown",
+        "PREDEFINED.simpleDomains",
+        "DOMAIN.final",
+        "BINDING.qualifiedFunctionEnumTree",
+        "BINDING.importedFunctionEnumTree",
+        "PROFILE.emptyFunctionParameters",
+        "PROFILE.emptyFunctionArguments",
+        "PREDEFINED.metaobjectTranslation",
+        "PREDEFINED.metaobjectTranslation.uniqueKeys",
+        "INHERITANCE.predefinedAttributes",
+        "TYPE.nameUriBounds",
+        "BINDING.predefinedClassFunctionTargets",
+        "MODEL.header.NOINCREMENTALTRANSFER",
+        "MODEL.header.CHARSET",
+        "MODEL.header.XMLNS",
+        "MODEL.contractedTranslation24"
+      ],
+      "verification": "verification-2026-10-27-g2-E4-constraint-names.json",
+      "referenceComparison": "g2-E4-constraint-names-reference-2026-10-27.json",
+      "closedPreviouslyFailingSuiteCases": [],
+      "newSuiteExceptions": 0,
+      "remainingCauses": [
+        "Direct named 2.4 constraints share the declaring viewable namespace across constraint families and same-topic external blocks. Duplicate diagnostics point to the second original name token; external declarations retain name ranges for public queries. Classes/structures/associations/views, distinct scopes/unnamed constraints, imports/reverse order/fresh-reuse verified. Existing domain check retained; no new API/class.",
+        "Inherited constraint name scopes and external blocks in derived topics still require a separate normative/model acceptance; CLASS_CONSTRAINT_NAME_UNIQUENESS remains open for that remainder. Source reference compiler accepts ten deliberate duplicate controls, contrary to the direct uniqueness requirement of 2.4 section 3.12 p77; no frozen suite expectation or exception was changed.",
+        "Remaining E1 predefined contents/namespace category/priority, E2 subdivision/scaling/OID rules, E3/E4/E5 combinations, full norm inventory/graph parity/real corpora, F/G and P3 remain open."
+      ],
+      "latestVerifiedPart": "E4 direct named constraint namespaces"
+    },
+    "executionPlan": "g2-completion-plan.md",
+    "independentAcceptance": "A1_ACCEPTED_A2_REWORK_R3_R4",
+    "a2Inventory": {
+      "evidence": "verification-2026-10-27-g2-A2-inventory-progress.json",
+      "scope": "source occurrences and ten initial norm clauses only",
+      "acceptance": "REWORK",
+      "remainingCauses": [
+        "Full paragraph-level audit of both manuals and normative appendices",
+        "Unnumbered specification contracts and concrete model/query assertions",
+        "Both-version packets/user revalidation for 18 existing normative exceptions",
+        "Independent full A2 completeness review"
+      ],
+      "review": "g2-reviews/A2-R2-attempt2.json",
+      "closedReviewFindings": [
+        "A2-R1",
+        "A2-R2"
+      ],
+      "remainingReviewFindings": [
+        "A2-R3",
+        "A2-R4"
+      ],
+      "latestEvidence": "verification-2026-10-27-g2-A2-R2-reviewed.json",
+      "predefinedInventory": {
+        "evidence": "verification-2026-10-27-g2-A2-R2-reviewed.json",
+        "review": "g2-reviews/A2-R2-attempt2.json",
+        "status": "INVENTORY_ACCEPTED_NOT_LANGUAGE_ACCEPTED",
+        "declarationRows": 130,
+        "specialValuesAndTypes": 21,
+        "reservedWordCounts": {
+          "2.3": 154,
+          "2.4": 168
+        },
+        "features": 13,
+        "contextualTokens": 11,
+        "sourceObservationsAssignedTo": "B1",
+        "normativeExpectationsChanged": false
+      },
+      "r3Progress": {
+        "evidence": "verification-2026-10-28-g2-A2-R3-progress-v2.json",
+        "atomicRules": 22,
+        "partialAssertionLinks": 5,
+        "rawReportsChecked": true,
+        "independentAcceptance": "MISSING_EVIDENCE",
+        "caseSensitivityContract": "executed; B3 independent acceptance pending"
+      }
+    }
+  }
+}

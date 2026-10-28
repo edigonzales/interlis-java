@@ -14,7 +14,7 @@ import java.util.Objects;
  * @param arguments ordered arguments
  */
 public record FunctionCallExpressionSyntax(SyntaxNodeId id, SourceRange range,
-                                           String functionName,
+                                           NameSyntax functionName,
                                            List<ExpressionSyntax> arguments)
         implements ExpressionSyntax {
     /** Creates a validated instance. */
@@ -32,6 +32,9 @@ public record FunctionCallExpressionSyntax(SyntaxNodeId id, SourceRange range,
 
     @Override
     public List<SyntaxNode> children() {
-        return List.copyOf(arguments);
+        var children = new java.util.ArrayList<SyntaxNode>();
+        children.add(functionName);
+        children.addAll(arguments);
+        return List.copyOf(children);
     }
 }

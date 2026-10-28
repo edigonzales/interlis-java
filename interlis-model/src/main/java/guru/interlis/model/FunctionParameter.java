@@ -6,12 +6,13 @@ import java.util.Objects;
  * Declared function parameter.
  *
  * @param name parameter name
- * @param typeName source-level type name
+ * @param typeId declared type in the containing immutable semantic graph
+ * @param mandatory whether an undefined argument is excluded
  */
-public record FunctionParameter(String name, String typeName) {
+public record FunctionParameter(String name, TypeId typeId, boolean mandatory) {
     /** Creates a validated instance. */
     public FunctionParameter {
         Objects.requireNonNull(name, "name");
-        Objects.requireNonNull(typeName, "typeName");
+        Objects.requireNonNull(typeId, "typeId");
     }
 }

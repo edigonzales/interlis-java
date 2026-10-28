@@ -1,0 +1,221 @@
+{
+  "recordedAt": "2026-10-21T06:54:17.155590+00:00",
+  "cases": [
+    {
+      "case": "original-depends-follow-on",
+      "inputs": [
+        {
+          "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC A = OID AS INTERLIS.UUIDOID; CLASS Target = flag: BOOLEAN; END Target; END A; TOPIC Base = DEPENDS ON A; STRUCTURE S = ref: REFERENCE TO (EXTERNAL) F.A.Target; END S; END Base; TOPIC T = DEPENDS ON A; STRUCTURE Child EXTENDS F.Base.S = ref (EXTENDED): MANDATORY; MANDATORY CONSTRAINT ref->flag; END Child; END T; END F.",
+          "sha256": "3674293562511ab45859dada18fbd287b648f7bceb1e0f130a52dc186cce233b"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/original.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/original.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/original.ili>\nInfo: ...compiler run done 2026-10-21 08:54:10\n"
+        }
+      },
+      "assessment": "CLOSED: both compilers accept the exact previously recorded input, independently of source file ordering."
+    },
+    {
+      "case": "imported-domain-2.3-baseFirst-True",
+      "baseFirst": true,
+      "version": "2.3",
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Flag = BOOLEAN; TOPIC T = STRUCTURE S = flag: F.Flag; END S; END T; END F.",
+          "sha256": "194884e44bbaab941d034aec862358caa1eb624aa209c852ca5eea3d386146b1"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = IMPORTS F; TOPIC T = STRUCTURE Child EXTENDS F.T.S = flag (EXTENDED): MANDATORY; MANDATORY CONSTRAINT flag == #true; END Child; END T; END M.",
+          "sha256": "c4df816a3b3e8791d8080d55463915c3b52df9bd640f88a72d11c590d71f47d1"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili>\nInfo: ...compiler run done 2026-10-21 08:54:12\n"
+        }
+      },
+      "assessment": "CLOSED: both compilers accept the exact previously recorded input, independently of source file ordering."
+    },
+    {
+      "case": "imported-domain-2.3-baseFirst-False",
+      "baseFirst": false,
+      "version": "2.3",
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Flag = BOOLEAN; TOPIC T = STRUCTURE S = flag: F.Flag; END S; END T; END F.",
+          "sha256": "194884e44bbaab941d034aec862358caa1eb624aa209c852ca5eea3d386146b1"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili",
+          "source": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = IMPORTS F; TOPIC T = STRUCTURE Child EXTENDS F.T.S = flag (EXTENDED): MANDATORY; MANDATORY CONSTRAINT flag == #true; END Child; END T; END M.",
+          "sha256": "c4df816a3b3e8791d8080d55463915c3b52df9bd640f88a72d11c590d71f47d1"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili>\nInfo: ...compiler run done 2026-10-21 08:54:13\n"
+        }
+      },
+      "assessment": "CLOSED: both compilers accept the exact previously recorded input, independently of source file ordering."
+    },
+    {
+      "case": "imported-domain-2.4-baseFirst-True",
+      "baseFirst": true,
+      "version": "2.4",
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Flag = BOOLEAN; TOPIC T = STRUCTURE S = flag: F.Flag; END S; END T; END F.",
+          "sha256": "e5768ddb5e2028e5a9d0fef0665544c15f1af4edb889161f4da58d1eb1b23b67"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = IMPORTS F; TOPIC T = STRUCTURE Child EXTENDS F.T.S = flag (EXTENDED): MANDATORY; MANDATORY CONSTRAINT flag == #true; END Child; END T; END M.",
+          "sha256": "3f02821ea853d12c27e311e4f23e77a89ce23ea4ec4fa20d26cbc8a718ab4aa0"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-importer.ili>\nInfo: ...compiler run done 2026-10-21 08:54:15\n"
+        }
+      },
+      "assessment": "CLOSED: both compilers accept the exact previously recorded input, independently of source file ordering."
+    },
+    {
+      "case": "imported-domain-2.4-baseFirst-False",
+      "baseFirst": false,
+      "version": "2.4",
+      "inputs": [
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Flag = BOOLEAN; TOPIC T = STRUCTURE S = flag: F.Flag; END S; END T; END F.",
+          "sha256": "e5768ddb5e2028e5a9d0fef0665544c15f1af4edb889161f4da58d1eb1b23b67"
+        },
+        {
+          "path": "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili",
+          "source": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = IMPORTS F; TOPIC T = STRUCTURE Child EXTENDS F.T.S = flag (EXTENDED): MANDATORY; MANDATORY CONSTRAINT flag == #true; END Child; END T; END M.",
+          "sha256": "3f02821ea853d12c27e311e4f23e77a89ce23ea4ec4fa20d26cbc8a718ab4aa0"
+        }
+      ],
+      "runs": {
+        "current": {
+          "command": [
+            "/Users/stefan/sources/interlis-java/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili",
+            "/Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/z-base.ili>\nInfo: ilifile </Users/stefan/sources/interlis-java/build/reports/stabilization/alias-followon-inputs/a-importer.ili>\nInfo: ...compiler run done 2026-10-21 08:54:17\n"
+        }
+      },
+      "assessment": "CLOSED: both compilers accept the exact previously recorded input, independently of source file ordering."
+    }
+  ],
+  "verificationManifest": "verification-2026-10-21-alias.json",
+  "currentCompilerJarSha256": "73fe0e48eb06897d8113c4691f3ee0f0889756ecaf1dbff2df2b9ffaee546e47",
+  "rawReport": {
+    "path": "build/reports/stabilization/alias-follow-on-probes.json",
+    "sha256": "21565f65dce3f6ce478384a5a47eb44946bbeb43abc54f1b7bc68073ba48ab3b"
+  }
+}

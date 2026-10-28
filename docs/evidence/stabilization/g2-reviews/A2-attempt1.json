@@ -1,0 +1,156 @@
+{
+  "schemaVersion": "1.0",
+  "step": "A2",
+  "reviewedAt": "2026-10-27T09:32:01Z",
+  "verdict": "NACHARBEIT",
+  "requirements": [
+    "SYN-004",
+    "SYN-013",
+    "META-006",
+    "META-014",
+    "SEM-010",
+    "SEM-017",
+    "TEST-011",
+    "TEST-012"
+  ],
+  "scope": "Unabhängiges Review des eingefrorenen A2-Zwischenstands. Technische Prüfung der Hash-/Quellen-/Zitatkette, des Inventarscanners, der zehn initialen Normbedingungen und der 332 Legacy-Zuordnungen. Keine Normfreigabe, keine Sprachsemantikabnahme und keine Abnahme des ausdrücklich unvollständigen Gesamtumfangs A2.",
+  "reviewModelConfiguration": {
+    "requested": "gpt-5.6-sol",
+    "evidence": "Der explizite Modellparameter wurde beim Start dieses unabhängigen Reviewers vom Tool akzeptiert; daraus wird keine Selbstauskunft zur Modellidentität abgeleitet."
+  },
+  "packet": {
+    "manifest": "build/reports/g2/A2/packet/manifest.json",
+    "sha256": "5e9a456747ef4af6aced45490aec148ff8fb95764acdab5b7d5cdeb92ca3d34e",
+    "hashVerified": true,
+    "sourceBasis": "build/reports/g2/A2/input/source.tar.gz",
+    "sourceDigest": "1f6f01d45777cd8c13b5390e8619fc1ae705681159c800ef58034e425a4b6b6e",
+    "sourceFiles": 1083,
+    "beforeSourceDigest": "49c76c5aabf479d5722601c7d0f4b6bf6d0107cd98702ebac4558f540556c180",
+    "beforeFiles": 1075,
+    "changedSources": 12,
+    "patchReproducesAfterManifest": true
+  },
+  "verifiedTechnicalSubset": {
+    "inventoryRerunByteIdentical": true,
+    "sourceInventorySha256": "711b4f634c52cdd1bfcc41b179af910b935b69c0864833e953042846aaa3c2e7",
+    "parserProductions": 125,
+    "lexerProductions": 196,
+    "antlrGeneratedRuleCountsMatched": true,
+    "syntaxOccurrences": 1218,
+    "numberedSpecificationRequirements": 289,
+    "chapter17IndexSameSetAndOrder": true,
+    "functionSignatures": 21,
+    "functionRowsSameSet": true,
+    "legacyRows": 332,
+    "currentLegacyStepsMatchComputedSteps": true,
+    "atomicRules": 10,
+    "exactPdfReferences": 20,
+    "pdfReferencesExact": true,
+    "norm23Sha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+    "norm24Sha256": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069",
+    "pypdf": "6.10.0",
+    "candidateLinksPresent": 8,
+    "candidateLinksResolveSyntactically": true,
+    "baselineUnchanged": true,
+    "normativeExpectationsUnchanged": true,
+    "normativeExceptionsChanged": 0
+  },
+  "findings": [
+    {
+      "id": "A2-R1",
+      "severity": "BLOCKING",
+      "title": "Der Scanner bindet die verlangten Regelzuordnungen und Abnahmen nicht an seinen Nachweis",
+      "evidence": "legacy_step() berechnet Legacy-Schritte aus der ID neu und vergleicht sie nicht mit rules[].step. check_norm_excerpts() prüft nur Dokument, Seite, Seitenhash, Quote und Quotehash und gibt anschliessend nur Regel-IDs zurück. Schritt, Anforderungslinks, positive/negative/Modellabnahme und candidateTests der atomicRules werden weder in die Quellinventur übernommen noch in einem Invariantentest geprüft.",
+      "counterprobe": "Eine isolierte Mutation setzte SYN:interlis2def von B3 auf H3 und änderte bei NORM:NAME.alphabet Schritt B3 auf H3, requirements auf TEST-001, die negative Abnahme auf 'deliberately weakened' und den Kandidattest auf eine nicht vorhandene Methode. scan() und der Zitatcheck blieben unverändert.",
+      "impact": "Eine falsche Zuständigkeit, abgeschwächte Abnahme oder erfundene Fallzuordnung kann die vorhandenen zehn Inventurtests und den versionierten Scan passieren. Der Paketmanifesthash schützt den eingefrorenen Iststand, belegt aber nicht die fachliche Richtigkeit dieser Zuordnungen.",
+      "requiredWork": "Matrix-Schritte gegen die feste Zuordnung prüfen; die vollständigen Atomregel-Mappings in den reproduzierbaren Nachweis aufnehmen oder die ganze Matrix als semantischen Pin validieren; Schema-/Referenz-/Testlink-Invarianten und eine ablehnende Mutationsprobe ergänzen."
+    },
+    {
+      "id": "A2-R2",
+      "severity": "BLOCKING",
+      "title": "Die als Builtin-/Syntaxquellen dargestellte Inventur deckt weitere wirksame Sprachquellen nicht ab",
+      "evidence": "builtins enthält ausschliesslich die 21 Funktionssignaturen aus BuiltinFunctions.java. Nicht einzeln inventarisiert oder gepinnt sind insbesondere die versionsabhängigen RESERVED_23/RESERVED_24- und Kontexttabellen in LanguageProfile.java trotz tokens { RESERVED_WORD }, sowie die vordefinierten Domänen, OID-Typen, Einheiten, Klassen und Strukturen, die unter anderem in GraphBuilder, MetadataBindings, LineForms und PredefinedTemporal aufgebaut werden (zum Beispiel ANYUNIT, NOOID, LineSegment und METAOBJECT).",
+      "impact": "Die Zahl 21 ist als Zahl der Standardfunktionen korrekt, nicht als vollständiges Builtin-Inventar. Für B1/B2/B3 fehlen damit konkrete Quellobjekte, Versionsregeln, zuständige Schritte und spätere Abnahmen zusätzlich zum bereits bekannten Absatz-Audit.",
+      "requiredWork": "Den Bericht präzise als Funktionssignaturinventar bezeichnen und alle übrigen vordefinierten bzw. lexikalisch wirksamen Tabellen/Elemente einzeln inventarisieren, versionieren und B1/B2/B3 mit konkreten Abnahmen zuordnen."
+    },
+    {
+      "id": "A2-R3",
+      "severity": "BLOCKING",
+      "title": "Auch die zehn initialen Atomregeln besitzen noch keine belastbare Vertrags- und Fallzuordnung",
+      "evidence": "Alle zehn Regeln tragen identisch SYN-004/SYN-013/META-006/TEST-011/TEST-012, obwohl etwa Übersetzungsstruktur und vordefinierte Namensbindung zusätzliche regelnahe Modell-/Semantikverträge berühren. Drei Regeln (COMMENT.nested, EXPLANATION.delimiter, MODEL.typeMembers) haben keinen candidateTest. Der Kandidat für STRING.singleLine prüft Unicode-/Längenverhalten, aber weder Zeilenumbruch noch fehlenden Abschluss oder Escape-Fälle; der Kandidat für NAME.case prüft reservierte Tabellen/Mischschreibung, nicht die geforderte getrennte Identität von A und a bzw. eine falsch geschriebene Referenz. Bei MODEL.typeMembers ist die negative Abnahme ausdrücklich nur als ausstehende B2-Entscheidung formuliert.",
+      "impact": "Die 20 PDF-Auszüge sind exakt, aber die Aussage von konkreten positiven, negativen und Modell-/Queryabnahmen gilt noch nicht für alle zehn Regeln. Dies sind konkrete Instanzen der offen ausgewiesenen Fall-/Assertionslücke.",
+      "requiredWork": "Regelnahe nummerierte und unnummerierte Verträge zuordnen; pro Atomregel konkrete Modell-/Queryassertions und Original-/Gegenfälle benennen; fehlende oder sachfremde Kandidaten ersetzen beziehungsweise ergänzen; offene Nutzerentscheidung getrennt als Entscheidungsfall dokumentieren."
+    },
+    {
+      "id": "A2-R4",
+      "severity": "BLOCKING",
+      "title": "Der verpflichtende Gesamtumfang A2 fehlt weiterhin",
+      "evidence": "Der eingefrorene Bericht weist selbst TOC-Locator statt Sachabsatzinventar, fehlende unnummerierte Fach-/Methodenverträge, fehlende Syntax-zu-Norm-zu-AST/Modellzuordnung, fehlende konkrete Fälle und die ausstehende Revalidierung der 18 normativen Ausnahmen aus.",
+      "impact": "A2, Phase A, G2 und P3 bleiben offen; ein technisch grüner Scanner kann diese Vollständigkeitslücke nicht schliessen.",
+      "requiredWork": "Die in g2-A2-inventory.md aufgelisteten Restarbeiten ohne pauschale Restpunkte vollständig ausführen und danach ein neues eingefrorenes Paket unabhängig prüfen lassen."
+    }
+  ],
+  "counterprobes": [
+    {
+      "probe": "Mutation einer Legacy-Schrittzuordnung sowie von Schritt, Anforderungslinks, Negativabnahme und Kandidattest einer Atomregel bei unveränderten IDs/PDF-Quotes",
+      "result": "MUTATION_NOT_DETECTED",
+      "artifact": "build/reports/g2/A2/review/counterprobe-atomic-mapping.json",
+      "script": "build/reports/g2/A2/review/counterprobe_atomic_mapping.py"
+    }
+  ],
+  "commands": [
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 tools/reference/g2_evidence.py verify --snapshot ../input",
+      "cwd": "build/reports/g2/A2/review",
+      "result": "PASS",
+      "observation": "Archiv-, Manifest- und Normhashkette; Source-Digest 1f6f01d45777cd8c13b5390e8619fc1ae705681159c800ef58034e425a4b6b6e."
+    },
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 tools/reference/g2_evidence.py verify --snapshot ../input --sources",
+      "cwd": "build/reports/g2/A2/review",
+      "result": "NOT_APPLICABLE_IN_NESTED_EXTRACT",
+      "observation": "Exit 1: Die extrahierte Kopie enthält kein eigenes .git; git -C steigt deshalb zum übergeordneten Arbeitsrepository auf. Die 1083 extrahierten Dateien wurden stattdessen direkt gegen das Manifest verglichen."
+    },
+    {
+      "command": "patch -p1 --batch --forward -i ../../packet/changes.patch sowie unabhängiger vollständiger Dateihash-/Modusvergleich",
+      "cwd": "build/reports/g2/A2/review/audit-before",
+      "result": "PASS",
+      "observation": "12 deklarierte Änderungen reproduzieren 1083 After-Dateien aus 1075 A1-Dateien; keine fehlenden oder zusätzlichen Dateien."
+    },
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 tools/reference/g2_inventory.py --norm23 ../input/ili23.pdf --norm24 ../input/ili24.pdf --out build/reports/g2/A2/review-rerun/source-scan.json",
+      "cwd": "build/reports/g2/A2/review",
+      "result": "PASS",
+      "observation": "Byte-identischer SHA-256 711b4f634c52cdd1bfcc41b179af910b935b69c0864833e953042846aaa3c2e7."
+    },
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -m unittest discover -s tools/reference -p test_g2_inventory.py -v",
+      "cwd": "build/reports/g2/A2/review",
+      "result": "PASS",
+      "observation": "10 Tests bestanden."
+    },
+    {
+      "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "cwd": "build/reports/g2/A2/review",
+      "result": "PASS",
+      "observation": "19 Tests; BUILD SUCCESSFUL in 2s; eine Task ausgeführt."
+    },
+    {
+      "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew :interlis-compiler:generateGrammarSource --rerun-tasks --console=plain",
+      "cwd": "build/reports/g2/A2/review",
+      "result": "PASS_WITH_WARNING",
+      "observation": "Generierte ANTLR-ruleNames unabhängig als 125 Parser-/196 Lexerregeln nachgezählt; bestehende ANTLR-Warnung 154 für viewDef."
+    },
+    {
+      "command": "/Users/stefan/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 counterprobe_atomic_mapping.py",
+      "cwd": "build/reports/g2/A2/review",
+      "result": "MUTATION_NOT_DETECTED",
+      "observation": "Eigene relevante Gegenprobe belegt A2-R1."
+    }
+  ],
+  "notExecuted": [
+    "Kein Compiler-/Portable-/Browser-/SDK-Phasenlauf: Das A2-Paket ändert keine Produktionssemantik; die Phase ist wegen des fehlenden Inventars noch nicht abnahmefähig.",
+    "Keine Normentscheidung und keine Änderung der 18 bestehenden normativen Ausnahmen."
+  ],
+  "nextStep": "A2 vervollständigen und A2-R1 bis A2-R4 im nächsten eingefrorenen Paket schliessen; anschliessend neue unabhängige A2-Gesamtabnahme. A3 darf erst nach vollständigem A2 weitergeführt werden."
+}

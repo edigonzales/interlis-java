@@ -17,7 +17,7 @@ import java.util.Set;
 record DeclInfo(SymbolId id, SymbolKind kind, String name, Optional<SymbolId> owner,
                 int order, Origin origin, Optional<SourceRange> nameRange,
                 LanguageVersion language, Set<Modifier> modifiers, SyntaxNode syntax,
-                SourceId sourceId, String qualifiedName, Optional<String> featureId) {
+                SourceId sourceId, String qualifiedName, Optional<String> featureId, guru.interlis.syntax.SourceMetadata metadata) {
     DeclInfo {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(kind, "kind");
@@ -31,5 +31,6 @@ record DeclInfo(SymbolId id, SymbolKind kind, String name, Optional<SymbolId> ow
         Objects.requireNonNull(sourceId, "sourceId");
         Objects.requireNonNull(qualifiedName, "qualifiedName");
         featureId = Objects.requireNonNull(featureId, "featureId");
+        Objects.requireNonNull(metadata,"metadata");
     }
 }

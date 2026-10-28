@@ -150,6 +150,15 @@ Fehlerhafte Nutzereingabe liefert einen Snapshot. Abbruch wirft im Syntaxdienst 
 
 Ein wegen Budgetüberschreitung konsistent erzeugter Syntaxsnapshot bleibt ausdrücklich unvollständig. Im vollständigen Compilerlauf wird dieser Zustand nach Kapitel 06 zu `Cancelled(RESOURCE_LIMIT)` beziehungsweise bei `analyze` zur entsprechenden `OperationCancelledException`. Er ist kein abschliessendes Sprachgültigkeitsurteil.
 
+Leere Funktionsparameter- und Aufrufargumentlisten sind ein explizites
+Sprachprofilmerkmal: 2.3 verlangt mindestens einen Eintrag, 2.4 erlaubt die leere
+Liste (2.3 §2.13/2.14, 2.4 §3.13/3.14). STRICT, EDITOR und Ausdrucksfragmente
+verwenden denselben Vertrag. Eine versionswidrige leere Liste liefert
+`ILI-SYN-0006` am originalen Klammerbereich; erkannte Signaturen, Aufrufe und
+folgende Deklarationen bleiben für Queries erhalten. Fehlende oder durch
+Recovery eingesetzte Klammern dürfen keinen internen Fehler auslösen.
+Die fachliche Anzahl-/Typprüfung der Argumente bleibt zusätzlich erforderlich.
+
 ### 4.2 `SyntaxSnapshot`
 
 `public final class SyntaxSnapshot` enthält:
@@ -158,6 +167,7 @@ Ein wegen Budgetüberschreitung konsistent erzeugter Syntaxsnapshot bleibt ausdr
 |---|---|
 | `SourceText source()` | Originaltext und Revision; kein temporärer Ersatztext. |
 | `ParseMode mode()` | Verwendete Recoverystrategie, kein Gültigkeitsurteil. |
+| `ParseOptions options()` | Unveränderliche tatsächlich verwendete Optionen einschliesslich erwarteter Version und Arbeitsbudgets. |
 | `LanguageDetection language()` | Erkannte Version, roher Headerbereich und Erkennungszustand. |
 | `DocumentSyntax root()` | Eigene Wurzel, auch bei leerer/fehlerhafter Eingabe. |
 | `List<SyntaxToken> tokens()` | Unveränderliche Quellreihenfolge einschliesslich relevanter Hidden Tokens und EOF-Marker. |
@@ -171,11 +181,109 @@ Ein wegen Budgetüberschreitung konsistent erzeugter Syntaxsnapshot bleibt ausdr
 
 `consumedEntireInput()` kann trotz Syntaxfehlern `true` sein. Es darf daher in keinem Gate als alleiniger Erfolgsindikator verwendet werden. Umgekehrt darf ein leeres oder wegen eines Limits abgebrochenes Ergebnis nicht als fehlerfreier leerer Modellbestand erscheinen.
 
+Seit Vorab-API 0.2 nimmt der `SyntaxSnapshot`-Konstruktor `ParseOptions` anstelle
+eines einzelnen `ParseMode` entgegen. `mode()` ist die Sicht auf `options().mode()`.
+Wiederverwendung verlangt neben Quelle, Revision und Text dieselben Parseoptionen;
+ein früherer Lauf mit grösserem Budget darf ein später verlangtes Limit nicht umgehen.
+
 ### 4.3 Eigene Knoten, Tokens und Trivia
 
 Die geschlossene Syntaxhierarchie verwendet `sealed interface SyntaxNode`. Jeder Knoten besitzt `SyntaxNodeId id()`, `SyntaxKind kind()`, `SourceRange range()` und eine unveränderliche geordnete Kindliste. Ein fehlender Knoten besitzt einen Nullbreitenbereich, eine erwartete Syntaxkategorie und die Diagnose-ID. Übersprungener Quelltext wird über `SkippedSyntax` mit originalem Bereich und Ursache repräsentiert. `RecoveredSyntax` enthält sowohl bekannte Teilknoten als auch den Recoverygrund.
 
 Die Wurzel ist `DocumentSyntax`; darunter mindestens `HeaderSyntax`, `ModelSyntax`, `TopicSyntax`, `DeclarationSyntax`, `TypeSyntax`, `ExpressionSyntax`, `NameSyntax` und die expliziten Fehlerkategorien. `DeclarationSyntax`, `TypeSyntax` und `ExpressionSyntax` sind jeweils geschlossene Unterhierarchien. Ihre vollständige Variante folgt dem Fachkatalog aus [05](05-metamodell-und-typensystem.md); eine generische Liste beliebiger Properties ersetzt diese Varianten nicht.
+
+`ObjectArgumentTypeSyntax(id, range, base, restrictions, objects)` bewahrt
+`OBJECT OF` (`objects=false`) und `OBJECTS OF` (`objects=true`) aus einer
+Funktionssignatur. `base` ist ein optionaler
+`NameSyntax` (leer bei `ANYCLASS`), `restrictions` eine unveränderliche Liste von
+`NameSyntax` in Quellreihenfolge. Beide sind nullfrei. Die Namen bleiben Kinder
+mit eigenen revisionsgebundenen UTF-16-Bereichen für Bindung und Navigation;
+die Syntax enthält keine aufgelösten Symbolidentitäten.
+
+`ObjectSetExpressionSyntax(id, range, selection)` erhält `ALL` als eigene
+Ausdrucksvariante (`EXPRESSION_OBJECT_SET`). `selection` ist ein nullfreies
+`Optional<ObjectArgumentTypeSyntax>`; leer bedeutet Kontextauswahl. Explizite
+Basen und Einschränkungen bleiben geordnete Syntaxkinder mit Originalbereichen.
+`PathExpressionSyntax.segments()` enthält immutable `Segment(name,
+associationAccess, associationQualifier, index, range)`-Werte. Das Operatorflag erhält `\`, der Bereich des
+`NameSyntax` umfasst nur den Namen für Navigation/Rename, der Segmentbereich
+auch Operator und Klammerqualifikation. `associationQualifier` ist ein nullfreies
+`Optional<NameSyntax>` für `rolle[Assoziation]` mit eigenem Navigationsbereich.
+Kinder bleiben Rollenname, danach gegebenenfalls Qualifikator, in Pfadreihenfolge.
+Die Qualifikation bezeichnet eine Ausgangsrolle und darf nicht als Listenindex
+interpretiert werden. Alle Werte sind nullfrei, Bereiche an Quelle und Revision
+gebunden. `index` ist ein nullfreies `Optional<PathIndex>` für FIRST, LAST oder
+exakte numerische Positionen. Indizes sind keine Namensreferenzen und können
+nicht gleichzeitig Assoziationsqualifikatoren sein. Nullindizes bleiben in der
+Syntax darstellbar und werden bei der Bindung als Sprachfehler abgewiesen.
+Index-/Inspektionsschritte dürfen nicht still verschwinden.
+`ConstraintDeclarationSyntax.uniqueKeys()` enthält geordnete `ExpressionSyntax`-
+Pfade statt blosser Namen; nicht darstellbare Operatoren bleiben explizite
+`UnsupportedExpressionSyntax`. `localPrefix()` enthält optional den strukturierten
+LOCAL-Präfix, `basket()` den syntaktischen Geltungsbereich. LOCAL und globale
+Schlüssel sind alternative Formen. WHERE bleibt in `expression()`, der
+Constraintname in `name()`. `ExistenceConstraintSyntax.source()` und die
+Zielpfade sind ebenfalls Ausdruckssyntax; jede Zielalternative erhält zusätzlich
+ihren eigenen `NameSyntax`-Viewablebezug. Syntaxkinder umfassen sämtliche Pfade,
+Qualifikatoren und Zielreferenzen in Quellreihenfolge. Die Werte sind nullfrei
+und immutable; Namens- und Pfadbereiche beziehen sich auf dieselbe Quellrevision.
+UNIQUE-BASKET sowie benannte UNIQUE-/EXISTENCE-Constraints sind 2.4-Syntax.
+
+`EnumerationTypeSyntax.finalSubtrees()` hält geschlossene Geschwisterlisten
+als Elternpfade; der leere Pfad bezeichnet die Wurzel. `EnumerationValueSyntax`
+unterscheidet mit `qualified` einen geschriebenen Punktnamen von der durch
+Verschachtelung entstandenen Pfadform. Die Syntax enthält nur deklarierte
+Werte, das Modell zusätzlich geerbte Werte.
+
+`FormattedTypeSyntax` erhält `base`, `basedOnStructure`, `inheritance`,
+geordnete `parts` und optionale lexikalische Grenzen. Ein `Part` ist entweder
+ein Literal oder eine Attributreferenz mit optionaler exakter Stellenzahl
+beziehungsweise Formatdomäne. Basis-, Attribut- und Formatnamen bleiben
+`NameSyntax`-Kinder mit eigenen UTF-16-Bereichen. Grenzen ohne explizite Basis
+beziehen sich auf den geerbten Formattyp. `OidTypeSyntax.valueType()` enthält
+den optionalen strukturierten numerischen beziehungsweise textlichen
+Trägertyp; OID ANY hat keinen konkreten Träger. Unqualifiziertes `UUIDOID`
+bleibt eine aufzulösende Domänenreferenz, kein eingebauter Typalias.
+Alle Werte sind nullfrei und unveränderlich; Bereiche gehören zur Quellrevision.
+Collection-Elemente bewahren auch skalare Syntax, damit die Bindung deren
+Zulässigkeit nach Sprachversion prüfen kann.
+
+`ReferenceTypeSyntax(id, range, target, restrictions, external)` erhält den
+Primärnamen (einschliesslich ANYCLASS) und alle Einschränkungsnamen in
+Quellreihenfolge. `children()` liefert den Primärnamen vor den Restriktionen;
+auch in Collection-Elementen bleiben deren eigene UTF-16-Bereiche erhalten.
+Listen sind immutable und nullfrei. Semantische Zielauflösung erfolgt erst
+im Compiler, nicht durch erneute Auswertung des Quelltexts.
+
+`OidRuleSyntax(basket, domain, range)` erhält eine einzelne deklarierte OID-Regel.
+`domain: Optional<NameSyntax>` ist ausschliesslich bei explizitem NO OID leer;
+eine Basket-Regel benötigt einen Domänennamen. `TopicSyntax`,
+`ClassDeclarationSyntax` und `AssociationDeclarationSyntax` enthalten
+`oidRules(): List<OidRuleSyntax>` in Quellreihenfolge statt eines Rohtextstrings.
+Nur direkt im jeweiligen Kopf deklarierte Regeln werden erfasst. Die Namen
+sind Syntaxkinder vor den Mitgliedern und behalten ihre eigenen UTF-16-Bereiche
+für Bindung und Rename. Alle Werte sind nullfrei und immutable.
+
+`AssociationDeclarationSyntax.cardinality()` erhält eine explizite
+Assoziationskardinalität als `Optional<Cardinality>`; leer bedeutet bei einer
+Wurzel genau eine Beziehungsinstanz je Teilnehmerkombination, bei einer
+Erweiterung die geerbte Grenze. Die Rollenmultiplizität bleibt davon
+getrennt. Mehrere solche Beziehungsinstanzen verlangen eine OID-Deklaration.
+
+`RoleDeclarationSyntax.targets()` enthält eine nichtleere, unveränderliche Liste
+von `RoleDeclarationSyntax.Target(base, restrictions)` in Quellreihenfolge.
+Jeder nullfreie Wert bewahrt den Basisnamen (einschliesslich `ANYCLASS`) und
+alle Restriktionsnamen mit eigenen Quell-/Revisionsbereichen. Diese Namen sind
+Syntaxkinder; `OR`-Alternativen dürfen nicht auf das erste Ziel reduziert werden.
+`explicitCardinality` unterscheidet eine geschriebene Grenze von der bei einer
+überschriebenen Rolle zu erbenden Kardinalität.
+
+`FunctionDeclarationSyntax` enthält geordnete `FunctionParameterSyntax(name, type)`
+mit `TypeSyntax type` und `TypeSyntax returnType`. Diese Typknoten sind Kinder
+der Funktionsdeklaration und behalten ihre ursprünglichen UTF-16-Bereiche.
+`FunctionCallExpressionSyntax.functionName()` liefert `NameSyntax` mit allen
+qualifizierten Segmenten; seine Kindliste enthält zuerst den Namen und danach
+die Argumente in Quellreihenfolge. Die Werte sind nullfrei und unveränderlich.
 
 `SyntaxToken` enthält Tokenart, Originalbereich, Kanal und Herkunft `SOURCE`/`INSERTED`. Der Text kann über den Bereich ausgelesen werden; es ist keine obligatorische Stringkopie pro Token nötig. Ein eingefügtes Token ist kein Bestandteil der verlustfreien Rekonstruktion. `TriviaSpan` unterscheidet mindestens Dokumentationskommentar, sonstigen Kommentar und Whitespace-Gap. Wenn die Grammatik Whitespace überspringt, werden die Lücken zwischen Quellspans aus dem Originaltext erfasst. Der AST muss kein Objekt pro Leerzeichen anlegen.
 
@@ -269,3 +377,254 @@ Ein Fixture enthält vor einer gezielt fehlerhaften Deklaration den Kommentar `!
 | `SyntaxIdentityTest.duplicateDeclarationsAreNotMerged` | Identitätswiederverwendung vereinigt keine gleichnamigen Deklarationen. |
 
 Die Syntaxschicht ist erst abgeschlossen, wenn alle deklarierten Features diese Nachweise besitzen. Eine erfolgreiche Parsergenerierung, eine erfolgreiche Ausführung auf Wasm oder ein Test mit nur einem fehlerfreien Modell erfüllt diese Abnahme nicht.
+
+### Strukturierte Einheitenkomponenten
+
+`UnitDeclarationSyntax` erhält neben Basisname und Anzeigetext `designation`,
+`derivedFrom` und geordnete `Component(operator, unit)`-Werte. `name` und
+`nameRange` bezeichnen das operative Kurzzeichen, falls angegeben, sonst den
+Deklarationsnamen. Alle Namen sind Syntaxkinder mit exakten halb-offenen
+UTF-16-Bereichen. Die Zusammensetzung verwendet gemäss beiden Normprofilen nur
+Multiplikation und Division; ein Potenzoperator ist dort kein zulässiger Ersatz.
+Die Abstraktions-/Erweiterungsprüfung gehört zur Semantik in Kapitel 05.
+
+### Strukturierte View-Inhalte in Vorab-API 0.2
+
+`ViewDeclarationSyntax` erhält typisierte Formation, geordnete Basen und
+Basiserweiterungen, Selektionen, eine geordnete Folge aus `AllOf` und normalen
+Attributdeklarationen sowie Constraints. Alias- und Zielnamen besitzen eigene
+Bereiche. `AttributeDeclarationSyntax.derivations()` erhält alle Ausdrücke einer
+Zuweisung in Quellreihenfolge. `children()` macht die fachlichen Kindknoten
+zugänglich. Formation und Body werden nicht erneut aus Quelltextstrings
+interpretiert. Der verlustfreie Originaltext bleibt in `SyntaxSnapshot`.
+
+`AssociationDeclarationSyntax.derivedFrom` erhält die strukturierte lokale
+Basis; `RoleDeclarationSyntax.derivation` erhält den optionalen Zuweisungsausdruck.
+`AGGREGATION ... EQUAL` bewahrt sämtliche geordneten Pfade, auch bei mehreren
+Komponenten. Keine dieser Angaben darf aus einem zweiten Quelltextscan
+rekonstruiert werden.
+
+`InspectionExpressionSyntax` enthält genau eine benannte Sicht (`view`) oder
+Inline-Formation (`formation`) und eine optionale `restriction` für den
+nachgestellten OF-Objektpfad. Nur INSPECTION/AREA INSPECTION mit je einer Basis
+und einem geordneten Zerlegungspfad sind Inline-Formationen dieses Knotens.
+Der Parser MUSS den ganzen Faktor vor einem optionalen OF-Pfad erfassen;
+das Ersetzen des Faktors durch den OF-Pfad ist unzulässig. `children()` enthält
+die Namen, Formationsteile und Einschränkung in Quellreihenfolge. Alle Werte
+sind unveränderlich und nullfrei; Bereiche beziehen sich auf die Quellrevision.
+`SyntaxKind.EXPRESSION_INSPECTION` kennzeichnet diese Ausdrucksart.
+
+
+### Strukturierte Parameter- und Klassenwerte (API 0.2)
+
+`ParameterDeclarationSyntax` bewahrt Name, Namensbereich, MANDATORY und TypeSyntax;
+`ParameterExpressionSyntax` den qualifizierten PARAMETER-Namen. Namen und
+Restriktionen von `ClassValueTypeSyntax` sind `NameSyntax` mit UTF-16-Quellbereichen.
+`AttributePathTypeSyntax` trennt OF-Ausdruck, optionales @Argument und geordnete
+Typrestriktionen. `AttributeConstantExpressionSyntax` trennt optionales Viewable
+vom Attributnamen. Diese nullfreien, unveränderlichen Syntaxknoten gehören
+`interlis-compiler` / `guru.interlis.syntax`; Kinder enthalten die Teilknoten
+in fachlicher Reihenfolge. Der Syntaxsnapshot besitzt ihre Quellrevision.
+Fehler gehen durch die bestehenden Recovery-/Diagnoseverträge. UNQUALIFIED
+wirkt je Importname und wird nicht auf nachfolgende Namen übertragen.
+
+
+### CONTEXT und DEFERRED, Vorab-API 0.2
+
+`ContextDeclarationSyntax` in `guru.interlis.syntax` bewahrt Namen und
+Namensbereich sowie geordnete `Mapping(genericDomain, alternatives)` mit
+`NameSyntax`-Quellbereichen. `TopicSyntax.deferredGenerics` enthält ausschliesslich
+die direkt deklarierte Liste in Quellreihenfolge. Der Parser trennt Mapping-Zeilen
+strukturell. Domainmodifikatoren gelten nur für die jeweilige Deklaration, nicht
+für den ganzen DOMAIN-Block. Alle Listen sind defensiv kopiert und nullfrei;
+Knotenbereiche bleiben an Quelle, Revision und UTF-16 gebunden. Ungültige
+Versionen und Namen folgen den bestehenden Diagnose-/Recoveryverträgen.
+
+### Linienformen und Geometriekomponenten, Vorab-API 0.2
+
+`LineFormDeclarationSyntax` erhält Name, Namensbereich und den Strukturverweis
+als `NameSyntax`. `LineTypeSyntax.lineForms` enthält geordnete `NameSyntax`-Werte
+auch für STRAIGHTS/ARCS; `lineAttributes` ist ein exakter Strukturverweis.
+`directed` und `withoutOverlaps` bleiben getrennt von der optionalen
+Toleranzlexeme erhalten. Kinder enthalten Linienformen, Stützpunktdomain und
+Linienattributstruktur in dieser Quellreihenfolge. Die nullfreien Werte und
+Listen sind unveränderlich; alle Bereiche gehören zur Syntaxrevision.
+
+
+### K4: Metadaten und numerische Achsen, Vorab-API 0.2
+
+`MetadataBasketDeclarationSyntax` (compiler/syntax) erhält Basketart, FINAL,
+Topic- und Basisnamen sowie lokale `ObjectDeclaration`-Kinder in Quellreihenfolge.
+Jedes Objekt behält seinen Namenbereich und den Klassennamen der OBJECTS-OF-Gruppe.
+`NumericTypeSyntax.referenceSystem()` enthält optional `ReferenceSystem(target,
+domain, axis)`: `target` ist `NameSyntax`, `domain` unterscheidet Winkelklammern
+von Metaobjektbezügen, `axis` ist ein optionaler einsbasierter Index. Auch
+unbegrenztes NUMERIC erhält Einheit, Richtung und Referenzsystem.
+`CoordinateTypeSyntax.axes()` enthält vollständige `NumericTypeSyntax`-Kinder
+statt vorzeitig vereinfachter Wertebereiche; `rotation()` erhält beide
+Achsenindizes. `ParameterDeclarationSyntax.modifiers()` bewahrt die Marker
+von Klassen-/Strukturparametern. Alle Listen sind nullfrei und unveränderlich;
+Namenbereiche bleiben an die originale Quelle und Revision gebunden. Die
+semantische Bindung folgt Kapitel 05, nicht einer erneuten Quelltextsuche.
+
+### K5: Grafiken und Signaturzuweisungen, Vorab-API 0.2
+
+`GraphicDeclarationSyntax` (compiler/syntax) bewahrt Basis und Vererbung getrennt,
+Selektionsausdrücke sowie geordnete `Rule`-Kinder und den Endnamen. Jede Regel
+enthält eine optionale Signaturklasse und `Clause`-Werte mit optionaler
+WHERE-Bedingung. `Assignment` enthält den Parameternamen samt Bereich und eine
+geschlossene Variante `ExpressionValue`, `MetaObjectValue` oder `AccordingValue`.
+ACCORDING erhält den Selektor als strukturierten Ausdruck und geordnete
+Enumzuweisungen mit Anfangs-/Endpfad und Quellbereich. `MetaObjectTypeSyntax`
+erhält einen optionalen OF-Klassennamen. Alle Kinder, Listen und Bereiche sind
+unveränderlich, nullfrei und an die Quellrevision gebunden. Semantik entsteht
+über die Binder in Kapitel 05; kein vollständiger Quelltext wird erneut als
+Grafikregel interpretiert.
+
+### K6: Exakte Einheitenfaktoren, Vorab-API 0.2
+
+`UnitDeclarationSyntax` ergänzt `conversionFactors` und `conversionFunction`
+vor `definition`. Faktoren werden unmittelbar aus `derivedUnit` übernommen;
+`UnitSymbol.ConversionFactor` (model, Kapitel 05) wird als unveränderlicher
+Wert auch in der Syntax verwendet. Er enthält Operator, Konstantenart,
+optionalen exakten Dezimalwert und den UTF-16-Bereich der Konstante mit
+Quellrevision. Der erste Operator ist MULTIPLY, danach MULTIPLY oder DIVIDE.
+PI/LNBASE bleiben symbolisch. Vorzeichenbehaftete ganzzahlige Konstanten sind
+wie Dezimalzahlen zulässig. Syntax mit `[Einheit]` ohne Faktoren bedeutet
+Faktor eins; FUNCTION besitzt stattdessen eine optionale Erklärung inklusive
+Originalnotation. Keine Prüfung liest Zahlen erneut aus `definition`.
+Alle Listen sind nullfrei und unveränderlich; ungültige Zahlen und fehlende
+Ziele folgen den bestehenden Syntax-/Bindungsdiagnosen.
+
+Modellkopfoptionen werden über `ModelSyntax.options(): ModelOptions` erhalten.
+NOINCREMENTALTRANSFER, CHARSET und XMLNS sind 2.4-Profilmerkmale; 2.3 erhält
+ILI-SYN-0006 am Originaltoken. Zeichenketten werden dekodiert, ihr Original-
+Konstruktbereich bleibt über DeclaredOrigin erhalten. Fehlende Angaben bleiben
+leer und werden nicht als tatsächlich deklarierte Defaults vorgetäuscht.
+
+E1-Profile (SYN-004/013/015, SEM-005/010/014, META-003/014): DATE,
+TIMEOFDAY und DATETIME sind 2.4-Syntax; die XML-Domänen bleiben in beiden
+Versionen verfügbar. TYPE MODEL enthält die vorgesehenen Deklarationsfamilien;
+SYMBOLOGY benötigt nur in 2.3 CONTRACTED. Dokumentarische Familienempfehlungen
+für REFSYSTEM/SYMBOLOGY werden nicht als zusätzliche Quellfehler erzwungen.
+Wiederholte Properties liefern ILI-SYN-0007 am zweiten Token; Warnungsablehnung
+verwendet das gemeinsame Gate. EXTENDED und explizites EXTENDS am selben
+Klassen-/Strukturkopf sind unzulässig. Fehlende Attributtypen nach Parser-Recovery
+behalten die ursprüngliche Syntaxursache als ErrorType; sie erzeugen keine
+Implementierungssperre. E1ProfileSafetyContractTest und ModelKindContractTest
+prüfen diese Regeln; dies ist keine pauschale E1-/G2-Abnahme.
+
+E2 konkretisiert META-003/006/009/014 und SEM-005/010/014 gemäss Kapitel 05/06:
+DomainSymbol.mandatory(), gebundene CLASS-Domänen, unverfälschte fehlerhafte
+NumericTypeSyntax und QueryResult<UnitRelation> mit NOT_A_UNIT. Verbraucher
+verwenden die gemeinsame Typrelation. UnitRelationContractTest und
+DomainRestrictionContractTest prüfen Modell, Queries, Fehlursachen und Edits.
+Die weiterführende Normabnahme bleibt in g2-rule-matrix.json ausdrücklich offen.
+
+### E3: Gebundene Strukturwerte und Restriktionen
+
+`StructureValueType(id, origin, Optional<SymbolId> target, List<SymbolId> restrictions)`
+ersetzt den einzelnen obligatorischen Zielwert in API 0.2. Leeres target bedeutet
+ANYSTRUCTURE; ungelöste Namen erzeugen ErrorType. Restriktionen sind unveränderlich,
+nullfrei und in Quellreihenfolge gebunden. targetRoots() liefert die eingeschränkten
+Ziele beziehungsweise das Primärziel. StructureValueTypeSyntax erhält die Original-
+Namen und UTF-16-Bereiche; es gibt keine künstliche universelle Strukturdeklaration.
+
+Ein konkreter lauflokaler StructureBindings-Helfer verwendet den Aufbauzustand des
+GraphBuilder. Compiler und TypeRelations.canAssign verwenden dieselbe Relation:
+Strukturelemente passen zu ihren erlaubten Wurzeln; im FUNCTION_ARGUMENT-Kontext
+passen auch Objekte, deren Klasse die geforderte Struktur erweitert. ANYSTRUCTURE
+akzeptiert dort Strukturelemente und Einzelobjekte, keine Objektmengen oder Zahlen.
+Normale eingebettete Wertzuweisung behält ihre eigene Objekt-/Strukturgrenze.
+BAG kann bei Einschränkung zu LIST werden; die umgekehrte Richtung ist unzulässig.
+Kardinalität und Elementrestriktionen werden gemeinsam geprüft.
+
+Pflichtige beliebige Strukturen beziehungsweise Typen ohne verfügbare konkrete
+Struktur verlangen ein abstraktes Attribut. Konkrete Unterstrukturen anderer Themen
+werden nur über explizite passende Wurzeln berücksichtigt. Konkrete Klassen und
+Strukturen dürfen keine effektiven abstrakten Attribute behalten. Normbezug:
+2.3 §2.5.3/2.6.4/2.14; 2.4 §3.5.3/3.6.4/3.14. Nicht gemeinsame Mitglieder von
+Alternativen sind über einen gemeinsamen Pfad nicht statisch ansprechbar.
+
+Inspektionen, Kontextualisierung, Übersetzungen, generische Verwendungen, Diagramm-
+labels und öffentliche Queries erhalten Grundziel und Restriktionen. Vorhandene
+Konstruktorverbraucher und Tests werden direkt angepasst. Relevante Vererbungs-
+und Aliasketten verwenden besuchte IDs statt stiller Abschneidung bei 16/32/64;
+Abbruch und Arbeitsbudget bleiben aktiv. Keine neue Pass-/Plugin-Infrastruktur.
+
+### E1/E4: Vollständiger Dateiverbrauch und typisierte Funktionsnamen
+
+SYN-004/013/015: Der Syntaxdienst prüft den vollständigen Tokenverbrauch bis EOF;
+Tokens nach dem letzten Modell erhalten ILI-SYN-0004. Kommentare und Zwischenräume bleiben zulässig.
+Die beiden Ungleichheitsformen != und <> bilden beide NEQ ab; jede Relation
+bewahrt Operator und UTF-16-Originalbereich. EnumArgumentTypeSyntax stellt
+ENUMVAL/ENUMTREEVAL explizit dar. BuiltinFunctionExpressionSyntax erhält den
+Funktionsnamen als NameSyntax mit Segmentbereichen statt als String.
+
+### E4: Numerische Konstanten und Fragmentbereiche
+
+SYN-004/013/015 und SRC-002–005: LiteralExpressionSyntax und
+ConstantExpressionSyntax erhalten Optional<NameSyntax> unit. Numerische Lexeme
+und exakte Dezimalwerte enthalten die Einheit nicht; der Gesamtbereich und das
+Einheitenkind behalten die Originalbereiche. PI/LNBASE bleiben symbolisch.
+Fragmentdiagnosen und geparste Stringpfade beziehen sich auf originale UTF-16-
+Grenzen derselben Quelle/Revision, auch nach Unicode, CRLF und Escapes.
+Lexerfehler dürfen beim Fragmentparsen nicht verschwinden.
+
+FunctionDeclarationSyntax erhält returnMandatory als letzten Parameter, der
+verschachtelte FunctionParameterSyntax mandatory als letzten Parameter. Beide
+Booleanwerte stammen aus dem strukturierten ArgumentType; eine benannte
+Domänenpflicht wird erst bei der semantischen Bindung ergänzt.
+
+E1 Wortprofile (SYN-002/004/013): Massgeblich sind die vollständigen Tabellen
+reservierter Wörter in 2.3 §2.2.7 und 2.4 §3.2.7. Auch weiterhin reservierte
+Legacywörter dürfen keine Namen sein. Neue 2.4-Wörter bleiben in 2.3 zulässige
+Namen, sofern sie dort nicht bereits reserviert sind; DATE ist bereits in 2.3
+reserviert. XML ist kontextabhängig in BLACKBOX XML, kein allgemein reservierter
+Name. Quelle, Fragment und Rename verwenden dasselbe Profil. Ungültige
+2.4-Konstrukte in 2.3 bleiben Quellfehler; ihre Kennung kann vom Kontext abhängen.
+Namen haben höchstens 255 Zeichen. REFSYS-Literale sind ein 2.4-Konstrukt.
+
+### E5: Quell-Metaattribute und Dokumentation
+
+META-010/014: SyntaxSnapshot.metadata() liefert eine unveränderliche Map von
+Original-Tokenbereichen auf SourceMetadata. Dessen geordnete Attribute enthalten
+Schlüssel, Textwert und Bereich; Dokumentation enthält geordnete Text- und
+Bereichspaare. Alle Bereiche gehören zur Quelle/Revision des Snapshots.
+Das Projektprofil übernimmt führende !!@-Kommentare als durch Semikolon
+getrennte Schlüssel=Wert-Angaben; Werte sind einfache Tokens oder INTERLIS-
+Strings mit Escapes. Leere Annotationen sind erlaubt; fehlerhafte Zuweisungen
+erhalten Quellfehler. Dies ist ein dokumentiertes Kommentarprofil, kein neues
+INTERLIS-Schlüsselwort. /** ... */ liefert Dokumentation; übrige Kommentare
+bleiben unverändert als Trivia erhalten. Die Zuordnung gilt zum folgenden Token; reine Gruppenintroduktoren DOMAIN, UNIT,
+ATTRIBUTE und PARAMETER werden bis zur ersten Deklaration übergangen.
+Der Binder ordnet führende Gruppen vor Deklarationsbeginn und innerhalb des
+Präfixes bis zum deklarierten Namen zu, einschliesslich Enumwerten.
+
+FunctionDeclarationSyntax erhält Optional<SourceMetadata.Text> explanation als
+letzten Parameter. Die native Explanation-Produktion wird einmal strukturiert
+übernommen. Ihr Text und Bereich bleiben von Dokumentationskommentaren getrennt.
+
+`ConstraintDeclarationSyntax.plausibility()` bewahrt den exakten Dezimalwert,
+den Vergleichsoperator und den ursprünglichen Zahlenbereich der Prozentangabe.
+`where()` enthält nur die SET-Vorbedingung; der Hauptausdruck bleibt getrennt.
+`basket()` gilt für UNIQUE und SET. SET-Namen und `(BASKET)` gehören zu 2.4;
+`SET CONSTRAINT (LOCAL)` ist in keinem Profil gültig. Prozentangaben erlauben
+weder PI/LNBASE noch Einheiten. Fehlende Bedingungen aus der Parser-Recovery
+sind Quellfehler und keine Implementierungslücken.
+Die bestehenden Ziffern-/Exponentenbudgets gelten vor dem Aufbau exakter
+Dezimalwerte. Überschreitungen erzeugen eine explizite Budgetdiagnose im Syntax-
+resultat und RESOURCE_LIMIT beim Compilerlauf. Fragmentdiagnosen bewahren den
+ursprünglichen Quellbezug; ein Grenzfall lässt keine unbehandelte Ausnahme entweichen.
+
+### E2: Skalierte numerische Typgrenzen
+
+SYN-004/013/015: Skalierte Grenzen der gemeinsamen numeric-Produktion verwenden
+die Float-Mantisse aus 2.3 §2.2.4 S.24 / §2.8.5 S.41–42 und 2.4 §3.2.4 S.28 /
+§3.8.5 S.52. Sie beginnt nach optionalem Vorzeichen mit 0.; die erste
+Nachkommastelle ist von null verschieden oder die ganze Mantisse ist null.
+0.00e1 bleibt zulässig. Fehler erhalten ILI-SYN-0002/PARSING am ursprünglichen
+Literalbereich, auch in Fragmenten. Die Budgetprüfung erfolgt vor exakter
+Zahlenauswertung. Die unabhängigen Konstanten-/Faktorproduktionen und das
+Exponentenverhältnis beider Grenzen werden durch diesen Teilnachweis nicht
+abschliessend entschieden.

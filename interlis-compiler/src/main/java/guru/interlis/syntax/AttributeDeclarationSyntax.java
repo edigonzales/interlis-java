@@ -28,7 +28,7 @@ public record AttributeDeclarationSyntax(SyntaxNodeId id, SourceRange range, Str
                                          Optional<SourceRange> nameRange, boolean mandatory,
                                          boolean transientAttribute, boolean assigned,
                                          boolean continuous, boolean subdivision,
-                                         Set<Modifier> modifiers, TypeSyntax type)
+                                         Set<Modifier> modifiers, TypeSyntax type, List<ExpressionSyntax> derivations)
         implements DeclarationSyntax {
     /** Creates a validated instance. */
     public AttributeDeclarationSyntax {
@@ -38,6 +38,7 @@ public record AttributeDeclarationSyntax(SyntaxNodeId id, SourceRange range, Str
         nameRange = Objects.requireNonNull(nameRange, "nameRange");
         modifiers = Set.copyOf(Objects.requireNonNull(modifiers, "modifiers"));
         Objects.requireNonNull(type, "type");
+        derivations = List.copyOf(derivations);
     }
 
     @Override
@@ -47,6 +48,7 @@ public record AttributeDeclarationSyntax(SyntaxNodeId id, SourceRange range, Str
 
     @Override
     public List<SyntaxNode> children() {
-        return List.of(type);
+        var result = new java.util.ArrayList<SyntaxNode>();
+        result.add(type); result.addAll(derivations); return List.copyOf(result);
     }
 }

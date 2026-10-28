@@ -19,13 +19,13 @@ import java.util.Set;
  * @param modifiers modifiers
  * @param baseType optional base type
  * @param members member identifiers
- * @param oidRule optional raw OID rule
+ * @param oidRules declared OID rules in source order
  * @param endName optional name after END
  */
 public record ClassDeclarationSyntax(SyntaxNodeId id, SourceRange range, String name,
                                      Optional<SourceRange> nameRange, Set<Modifier> modifiers,
                                      Optional<NameSyntax> baseType, List<SyntaxNode> members,
-                                     Optional<String> oidRule, Optional<String> endName)
+                                     List<OidRuleSyntax> oidRules, Optional<String> endName)
         implements DeclarationSyntax {
     /** Creates a validated instance. */
     public ClassDeclarationSyntax {
@@ -36,7 +36,7 @@ public record ClassDeclarationSyntax(SyntaxNodeId id, SourceRange range, String 
         modifiers = Set.copyOf(Objects.requireNonNull(modifiers, "modifiers"));
         baseType = Objects.requireNonNull(baseType, "baseType");
         members = List.copyOf(Objects.requireNonNull(members, "members"));
-        oidRule = Objects.requireNonNull(oidRule, "oidRule");
+        oidRules = List.copyOf(Objects.requireNonNull(oidRules, "oidRules"));
         endName = Objects.requireNonNull(endName, "endName");
     }
 
@@ -49,6 +49,7 @@ public record ClassDeclarationSyntax(SyntaxNodeId id, SourceRange range, String 
     public List<SyntaxNode> children() {
         List<SyntaxNode> result = new ArrayList<>();
         baseType.ifPresent(result::add);
+        oidRules.forEach(rule -> rule.domain().ifPresent(result::add));
         result.addAll(members);
         return result;
     }

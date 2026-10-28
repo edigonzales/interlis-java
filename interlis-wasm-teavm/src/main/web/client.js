@@ -1,9 +1,12 @@
 (() => {
   let worker;
   let nextId = 1;
+  let workerGeneration = 0;
   const pending = new Map();
   function attach(candidate) {
+    const generation = workerGeneration;
     candidate.onmessage = (event) => {
+      if (candidate !== worker || generation !== workerGeneration) return;
       const {id, response, error} = event.data;
       const entry = pending.get(id);
       if (!entry) return;
@@ -13,6 +16,7 @@
     };
   }
   function newWorker() {
+    workerGeneration++;
     worker = new Worker('worker.js');
     attach(worker);
     return worker;
@@ -39,11 +43,12 @@
 
   const output = document.getElementById('output');
   const source = document.getElementById('source');
-  const state = {sessionId: null, revision: '0', snapshotId: null, schemaId: null, hasSource: false, diagramView: null, benchmarkRevision: null};
+  const state = {sessionId: null, revision: '0', sourceRevision: null, snapshotId: null, schemaId: null, hasSource: false, diagramView: null, benchmarkRevision: null};
 
   function resetState() {
     state.sessionId = null;
     state.revision = '0';
+    state.sourceRevision = null;
     state.snapshotId = null;
     state.schemaId = null;
     state.hasSource = false;
@@ -73,16 +78,29 @@
     return state.sessionId;
   }
 
+  async function discardResult() {
+    const snapshotId = state.snapshotId;
+    state.snapshotId = null;
+    state.schemaId = null;
+    state.diagramView = null;
+    if (snapshotId && state.sessionId) {
+      const response = await call(envelope('releaseSnapshot', state.sessionId, {snapshotId}));
+      if (response.status !== 'ok') throw new Error('snapshot release failed');
+    }
+  }
+
   async function replaceSource(text) {
     const sessionId = await openSession();
     const response = await call(envelope('updateSource', sessionId, {
       sourceId: 'memory:/browser.ili',
-      expectation: {kind: 'at', revision: state.revision},
+      expectation: {kind: 'at', revision: state.sourceRevision},
       change: {kind: 'replace', text}
     }));
     if (response.status !== 'ok') throw new Error(JSON.stringify(response));
     state.revision = response.result.workspaceRevision;
+    state.sourceRevision = response.result.sourceRevision;
     state.hasSource = true;
+    await discardResult();
     return response;
   }
 
@@ -95,16 +113,29 @@
     }));
     if (response.status !== 'ok') throw new Error(JSON.stringify(response));
     state.revision = response.result.workspaceRevision;
+    state.sourceRevision = response.result.sourceRevision;
     state.hasSource = true;
+    await discardResult();
   }
 
   async function analyze() {
+    const inputText = source.value;
     if (!state.hasSource) await openRevision();
-    else await replaceSource(source.value);
+    else await replaceSource(inputText);
+    const generation = workerGeneration;
+    const revision = state.revision;
+    const text = inputText;
     const response = await call(envelope('analyze', state.sessionId, {
       expectedWorkspaceRevision: state.revision,
       roots: [{kind: 'byName', modelName: 'Browser'}]
     }));
+    if (generation !== workerGeneration || revision !== state.revision || text !== source.value) {
+      if (generation === workerGeneration && response.result?.snapshotId
+          && response.result.snapshotId !== state.snapshotId) {
+        await call(envelope('releaseSnapshot', state.sessionId, {snapshotId: response.result.snapshotId}));
+      }
+      return response;
+    }
     if (response.status === 'ok') {
       state.snapshotId = response.result.snapshotId;
       output.textContent = JSON.stringify(response.result, null, 2);
@@ -115,12 +146,23 @@
   }
 
   async function compile() {
+    const inputText = source.value;
     if (!state.hasSource) await openRevision();
-    else await replaceSource(source.value);
+    else await replaceSource(inputText);
+    const generation = workerGeneration;
+    const revision = state.revision;
+    const text = inputText;
     const response = await call(envelope('compile', state.sessionId, {
       expectedWorkspaceRevision: state.revision,
       roots: [{kind: 'byName', modelName: 'Browser'}]
     }));
+    if (generation !== workerGeneration || revision !== state.revision || text !== source.value) {
+      if (generation === workerGeneration && response.result?.snapshotId
+          && response.result.snapshotId !== state.snapshotId) {
+        await call(envelope('releaseSnapshot', state.sessionId, {snapshotId: response.result.snapshotId}));
+      }
+      return response;
+    }
     if (response.status === 'ok' && response.result.outcome === 'succeeded') {
       state.schemaId = response.result.schemaId;
       state.snapshotId = response.result.snapshotId;
@@ -189,6 +231,9 @@
       expectedWorkspaceRevision: state.revision,
       roots: [{kind: 'byName', modelName: 'Browser'}]
     }));
+    if (rejected.status !== 'ok' || rejected.result.outcome !== 'rejected') {
+      throw new Error('invalid model was not rejected: ' + JSON.stringify(rejected));
+    }
     await replaceSource(source.value);
     const succeeded = await call(envelope('compile', sessionId, {
       expectedWorkspaceRevision: state.revision,
@@ -218,8 +263,15 @@
       throw new Error('diagram adapter stale check failed');
     }
     const restarted = await restartWorker();
+    if (restarted.status !== 'ok' || restarted.result.outcome !== 'succeeded') {
+      throw new Error('compile after restart failed: ' + JSON.stringify(restarted));
+    }
+    const stabilizationCases = await window.verifyInterlisStabilization({
+      handle: async request => JSON.stringify(await call(JSON.parse(request)))
+    });
     return {
       status: 'ok',
+      stabilizationCases,
       capabilities: capabilities.result.toolVersion,
       analyzeRevision: state.revision,
       rejectedOutcome: rejected.result ? rejected.result.outcome : rejected.status,
@@ -232,6 +284,8 @@
       workerRestartOutcome: restarted.result ? restarted.result.outcome : restarted.status
     };
   }
+
+  source.addEventListener('input', () => { discardResult().catch(error => { output.textContent = String(error); }); });
 
   document.getElementById('analyze').onclick = () => analyze();
   document.getElementById('compile').onclick = () => compile();

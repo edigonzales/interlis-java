@@ -1,7 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
-const {chromium, firefox, webkit} = require('../interlis-wasm-teavm/node_modules/playwright');
+const browserRequire = require('node:module').createRequire(
+  path.resolve(__dirname, '../interlis-wasm-teavm/package.json'));
+const {chromium, firefox, webkit} = browserRequire('playwright');
 
 async function serve(root) {
   const types = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -21,12 +23,7 @@ async function serve(root) {
 }
 
 (async () => {
-  const home = process.env.HOME;
-  const executables = {
-    chromium: path.join(home, 'Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'),
-    firefox: path.join(home, 'Library/Caches/ms-playwright/firefox-1543/firefox/Nightly.app/Contents/MacOS/firefox'),
-    webkit: path.join(home, 'Library/Caches/ms-playwright/webkit-2359/pw_run.sh')
-  };
+  fs.rmSync('build/webimage-browser/browser-results.json', {force: true});
   const root = path.resolve('build/webimage-browser');
   const server = await serve(root);
   const url = `http://127.0.0.1:${server.address().port}/`;
@@ -34,13 +31,22 @@ async function serve(root) {
   for (const [name, type] of [['chromium', chromium], ['firefox', firefox], ['webkit', webkit]]) {
     let browser;
     try {
-      const options = {headless: true};
-      if (fs.existsSync(executables[name])) options.executablePath = executables[name];
-      browser = await type.launch(options);
+      browser = await type.launch({headless: true});
       const page = await browser.newPage();
       await page.goto(url, {waitUntil: 'load'});
-      const result = await page.evaluate(() => window.webImageProbe);
-      results.push({browser: name, runtime: 'graalvm-web-image', status: 'passed', result});
+      let timeout;
+      const result = await Promise.race([
+        page.evaluate(() => window.webImageProbe),
+        new Promise((_, reject) => {
+          timeout = setTimeout(() => reject(new Error('Web Image browser probe exceeded 60 seconds')), 60000);
+        })
+      ]).finally(() => clearTimeout(timeout));
+      if (!result || result.status !== 'ok' || result.outcome !== 'succeeded') {
+        throw new Error('Web Image browser compilation failed: ' + JSON.stringify(result));
+      }
+      results.push({browser: name, browserVersion: browser.version(), node: process.version,
+        playwright: browserRequire('playwright/package.json').version,
+        runtime: 'graalvm-web-image', status: 'passed', result});
       console.log(`${name.toUpperCase()} WEBIMAGE PASS ${JSON.stringify(result)}`);
     } catch (error) {
       results.push({browser: name, runtime: 'graalvm-web-image', status: 'failed',

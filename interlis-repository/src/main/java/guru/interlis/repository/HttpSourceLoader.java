@@ -45,7 +45,7 @@ public final class HttpSourceLoader implements SourceLoader {
                         .timeout(policy.timeout())
                         .GET()
                         .build();
-                response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+                response = receive(request, policy, token);
                 if (response.statusCode() / 100 != 3) {
                     break;
                 }
@@ -105,4 +105,72 @@ public final class HttpSourceLoader implements SourceLoader {
                     "source request failed", e);
         }
     }
+    private HttpResponse<byte[]> receive(HttpRequest request, FetchPolicy policy,
+                                         CancellationToken token) throws IOException, InterruptedException {
+        var future = client.sendAsync(request, info -> new BoundedBody(policy.maxBytes()));
+        long started = System.nanoTime();
+        try {
+            while (true) {
+                token.throwIfCancellationRequested();
+                long remaining = policy.timeout().toNanos() - (System.nanoTime() - started);
+                if (remaining <= 0) throw new java.net.http.HttpTimeoutException("body timed out");
+                try {
+                    return future.get(Math.min(remaining, 50_000_000L),
+                            java.util.concurrent.TimeUnit.NANOSECONDS);
+                } catch (java.util.concurrent.TimeoutException waiting) {
+                    // Polling bounds cancellation latency even when no body bytes arrive.
+                } catch (java.util.concurrent.ExecutionException failed) {
+                    Throwable cause = failed.getCause();
+                    if (cause instanceof SourceLoadException loading) throw loading;
+                    if (cause instanceof IOException io) throw io;
+                    throw new IOException("HTTP body failed", cause);
+                }
+            }
+        } finally {
+            if (!future.isDone()) future.cancel(true);
+        }
+    }
+
+    /** Bounds received bytes before forwarding them to the accumulating subscriber. */
+    private static final class BoundedBody implements HttpResponse.BodySubscriber<byte[]> {
+        private final HttpResponse.BodySubscriber<byte[]> delegate = HttpResponse.BodySubscribers.ofByteArray();
+        private final long maximum;
+        private long received;
+        private java.util.concurrent.Flow.Subscription subscription;
+        private boolean failed;
+
+        BoundedBody(long maximum) { this.maximum = maximum; }
+
+        @Override
+        public java.util.concurrent.CompletionStage<byte[]> getBody() { return delegate.getBody(); }
+
+        @Override
+        public void onSubscribe(java.util.concurrent.Flow.Subscription subscription) {
+            this.subscription = subscription;
+            delegate.onSubscribe(subscription);
+        }
+
+        @Override
+        public void onNext(java.util.List<ByteBuffer> buffers) {
+            if (failed) return;
+            for (ByteBuffer buffer : buffers) {
+                if (buffer.remaining() > maximum - received) {
+                    failed = true;
+                    subscription.cancel();
+                    delegate.onError(new SourceLoadException(SourceLoadException.Reason.TOO_LARGE,
+                            "source exceeds configured byte limit", null));
+                    return;
+                }
+                received += buffer.remaining();
+            }
+            delegate.onNext(buffers);
+        }
+
+        @Override
+        public void onError(Throwable error) { if (!failed) delegate.onError(error); }
+
+        @Override
+        public void onComplete() { if (!failed) delegate.onComplete(); }
+    }
+
 }

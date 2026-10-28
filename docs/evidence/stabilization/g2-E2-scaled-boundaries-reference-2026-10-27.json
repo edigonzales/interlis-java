@@ -1,0 +1,2692 @@
+{
+  "cases": [
+    {
+      "name": "valid-0.00e1-0.10e2-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.00e1..0.10e2;END F.",
+      "expected": "succeeded",
+      "sha256": "43403a8c21507800192fea7da5cd5af241dad8f22fd038dbc17d1b2cdceed5e7",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/0.ili>\nInfo: ...compiler run done 2026-10-27 07:47:46\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-0.1e1-0.2e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.1e1..0.2e1;END F.",
+      "expected": "succeeded",
+      "sha256": "9273b6aa1825906dad06a7b693a2f15eb30a18ded8b4b28f5e0c164618c6f344",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/1.ili>\nInfo: ...compiler run done 2026-10-27 07:47:47\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid--0.0e0-0.0e0-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=-0.0e0..0.0e0;END F.",
+      "expected": "succeeded",
+      "sha256": "4f03ac53dc205cfb79f891e59e8660d59e9f366b1dbbf3d36b4a379c2a4e46a0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/2.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/2.ili>\nInfo: ...compiler run done 2026-10-27 07:47:47\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-+0.1E-2-+0.2E-1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=+0.1E-2..+0.2E-1;END F.",
+      "expected": "succeeded",
+      "sha256": "1f2868a51c6508c24e750c5f4e3375a8dacf1186db19d6699053a1c1ab674c03",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/3.ili>\nInfo: ...compiler run done 2026-10-27 07:47:47\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid--0.1e2-+0.2e3-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=-0.1e2..+0.2e3;END F.",
+      "expected": "succeeded",
+      "sha256": "0fe57a65adfcf8a543aa9986e4eb8a106b4358eb7bc3f4ed64d65c0be25accba",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/4.ili>\nInfo: ...compiler run done 2026-10-27 07:47:48\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-0.01-0.20-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.01..0.20;END F.",
+      "expected": "succeeded",
+      "sha256": "566cf44327b72ed0d347a84b8bd1ce4e3a8c94d6e85c2eeb333e6ba3be3e1ff8",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/5.ili>\nInfo: ...compiler run done 2026-10-27 07:47:48\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-0-10-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0..10;END F.",
+      "expected": "succeeded",
+      "sha256": "a4f809c40c2e24cf639d82580f3796519981461daafa44476ff6f710cb5d0ffe",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/6.ili>\nInfo: ...compiler run done 2026-10-27 07:47:48\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-domain-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.00e1..0.10e2;END F.",
+      "expected": "succeeded",
+      "sha256": "43403a8c21507800192fea7da5cd5af241dad8f22fd038dbc17d1b2cdceed5e7",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/7.ili>\nInfo: ...compiler run done 2026-10-27 07:47:49\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-1.0e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=1.0e1..0.2e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "f66d2f81afe4bb295c34a6b105d50887ad2803949d52106cf65804e438098557",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4f905a7570474b248eeee7ec], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4f905a7570474b248eeee7ec\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/8.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":106},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/8.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/8.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/8.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:49\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-2.0e2-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.1e1..2.0e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "f7058e4702587d00f8dec290fb0cf09fdd5bb2ac1f23b2421ea1cee2717139b1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/9.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-99e219861e35e2644b318ea8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-99e219861e35e2644b318ea8\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/9.ili\",\"revision\":\"1\",\"startOffset\":108,\"endOffset\":113},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/9.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/9.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/9.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:47:49\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "92ac66ba276797deb691089b75c7decdc2228ab408f582c00a2a0447552fc970",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-76cf31b2017b7df0722545ef], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-76cf31b2017b7df0722545ef\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/10.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":107},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/10.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/10.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/10.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:50\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain--0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=-0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "5888c83e99ad5ba4241b24c6bebd66778fa98af3f766eee16a34ac31cdd0ff60",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/11.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-90185d30b45ec3da2a7725ae], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-90185d30b45ec3da2a7725ae\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/11.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":108},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/11.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/11.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/11.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:50\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-+0.02e3-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.10e1..+0.02e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "5ea8983e68f4ebec6fe707c9814626090bac300fa489195c31bc2ffa839e19ac",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3660b74ecddd16cb2c92f605], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3660b74ecddd16cb2c92f605\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/12.ili\",\"revision\":\"1\",\"startOffset\":109,\"endOffset\":116},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/12.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/12.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/12.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/12.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/12.ili:3:DOMAIN D has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-27 07:47:50\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-attribute-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.00e1..0.10e2;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "200deb73f38a6b160e4fb52bf48e92c15049ca13b000f90992a54f1ed2b5418d",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/13.ili>\nInfo: ...compiler run done 2026-10-27 07:47:51\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-1.0e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:1.0e1..0.2e3;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "94f80b7d144d84735ef57f4c65c796ee88cfc5f6b4cc6953ae763e6300427283",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-361ac75c58a12e907cf27965], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-361ac75c58a12e907cf27965\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/14.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":119},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/14.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/14.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:51\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-2.0e2-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.1e1..2.0e2;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "142aecf9faa8286f91998a2b48213d0e2b4ec4c5b83bd28585f9e4cccc8a6c03",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/15.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b7cad0fd8c24933ce60fb59c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b7cad0fd8c24933ce60fb59c\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/15.ili\",\"revision\":\"1\",\"startOffset\":121,\"endOffset\":126},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/15.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/15.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/15.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:47:51\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.01e1..0.20e2;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "07eefeea622bc1999241c91fa4e515ed382363058639c096eed3c8d3344191e4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0df4b3e21219885c969eaadd], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0df4b3e21219885c969eaadd\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/16.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":120},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/16.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/16.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:52\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute--0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:-0.01e1..0.20e2;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "0634a60ab60bf5feecae405d073aa0483ada7403ce77ed963a3b0f1adb2c4495",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-716b809bc1226203cd39fc95], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-716b809bc1226203cd39fc95\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/17.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":121},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/17.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/17.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/17.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:52\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-+0.02e3-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.10e1..+0.02e3;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "d1fb2d0dd2208905679d8bf20b2d019c4186dc35c0d4ae01689d90d2abddc909",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/18.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f1b14ca95036dadfde0151a0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f1b14ca95036dadfde0151a0\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/18.ili\",\"revision\":\"1\",\"startOffset\":122,\"endOffset\":129},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/18.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/18.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/18.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/18.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/18.ili:3:The attribute value has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-27 07:47:53\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-coordinate-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.00e1..0.10e2,0.0..10.0;END F.",
+      "expected": "succeeded",
+      "sha256": "084b46ee5ec8b54a1bd78bb95d15a610953d19eeea0af2dcd913d05b2f64cc68",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/19.ili>\nInfo: ...compiler run done 2026-10-27 07:47:53\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-1.0e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 1.0e1..0.2e3,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "8ada347e53f6b42620a1f24d3d400985d1ec554ce271d8d1c9834ba84938f23c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/20.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4dd5a3cc8d698b9abaeadbca], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4dd5a3cc8d698b9abaeadbca\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/20.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":112},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/20.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/20.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/20.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/20.ili:3:null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n  null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n...compiler run failed 2026-10-27 07:47:53\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-2.0e2-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.1e1..2.0e2,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "3c7fad9f5bff427753a3d9a5e79cfbcdd8bc78cd11a93ababfe808ba1bb24e5a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/21.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3fb3c8b594589b7e6c59d9c2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3fb3c8b594589b7e6c59d9c2\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/21.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":119},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/21.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/21.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/21.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:47:54\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.01e1..0.20e2,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "36769793a238ffe21eda1f473d677fc6fd0207ca4db27fece900d53487a5beb2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/22.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2f82a6763dc1ef1425b17930], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2f82a6763dc1ef1425b17930\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/22.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":113},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/22.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/22.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/22.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/22.ili:3:null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n  null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n...compiler run failed 2026-10-27 07:47:54\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate--0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD -0.01e1..0.20e2,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "07a4fcf1aa0d5a75691d091cdd5940ecbd3edf10d5f91aa6b5b789b7756ced2f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/23.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-62db0c030d99664d9e5ada60], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-62db0c030d99664d9e5ada60\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/23.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":114},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/23.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/23.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/23.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/23.ili:3:null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n  null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n...compiler run failed 2026-10-27 07:47:54\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-+0.02e3-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.10e1..+0.02e3,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "0e89ed16c607964d7969ea00bf95f889164be4e9f8fd816e5ad26adaf4c35c7f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1766f12f5def705409f12ef4], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1766f12f5def705409f12ef4\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/24.ili\",\"revision\":\"1\",\"startOffset\":115,\"endOffset\":122},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/24.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/24.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/24.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/24.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/24.ili:3:DOMAIN P has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-27 07:47:55\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-oid-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.00e1..0.10e2;END F.",
+      "expected": "succeeded",
+      "sha256": "83969b3cb8f7f5eeff7447d6f8df5d5c418e8aa342eab89d0ab25c76714a846b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/25.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/25.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/25.ili>\nInfo: ...compiler run done 2026-10-27 07:47:55\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-1.0e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 1.0e1..0.2e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "6ea2db771857a5f86b5f0291acfef8c8122f649d69f8d6a3ee6f3c8e8006a2b1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-69cfa07e42c3d4e866f3d75c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-69cfa07e42c3d4e866f3d75c\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/26.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":117},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/26.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/26.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/26.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:55\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-2.0e2-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.1e1..2.0e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "f1adaeebc620ae20140f59a586b5609816dd6adf1c97432646900dcc8f1692a3",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/27.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9e32aefeafc31b9bf18abc37], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9e32aefeafc31b9bf18abc37\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/27.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":124},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/27.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/27.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/27.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:47:56\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "74dd19f5755b3577d80a313d61768acbd9b1f017c4b38faaeec80e12df6ef363",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b397c782d520c4dc35b80b72], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b397c782d520c4dc35b80b72\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/28.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":118},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/28.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/28.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/28.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:56\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid--0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID -0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "a2d46ca20533e9a04133eb06990590ce9521efa82b929c44d0df3b7114f3b710",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a86a0ce6916cf937341035a1], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a86a0ce6916cf937341035a1\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/29.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":119},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/29.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/29.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:47:56\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-+0.02e3-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.10e1..+0.02e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "90b8df454ea793d32862de02c97800e8d54cc4a35be90ed1e1f390ba9be309d0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3a8ab65bfca0adb3bc288fdb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3a8ab65bfca0adb3bc288fdb\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/30.ili\",\"revision\":\"1\",\"startOffset\":120,\"endOffset\":127},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/30.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/30.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/30.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/30.ili:3:unexpected token: e3\n...compiler run failed 2026-10-27 07:47:57\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-format-component-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.00e1..0.10e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "succeeded",
+      "sha256": "a74d80b6f560fd6c07991c92f3a8c753457df48b04c82db471bf022378971c88",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/31.ili>\nInfo: ...compiler run done 2026-10-27 07:47:57\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-1.0e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:1.0e1..0.2e3;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "f0d706271e32f016a2cdcd158cef09decbd4d796259f6099e19f4e8def20c212",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a7467714dd1923491ca396a6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a7467714dd1923491ca396a6\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/32.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":111},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/32.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/32.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/32.ili:3:Attribute \"x\" in STRUCTURE F.S should be a NumericType.\n...compiler run failed 2026-10-27 07:47:57\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-2.0e2-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.1e1..2.0e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "c45f1dc3b0ab2f5359c02e7415ab2665262eca1ffdc90b403832c3c5cfce87db",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/33.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ef0c8b5486328cb96e47a966], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ef0c8b5486328cb96e47a966\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/33.ili\",\"revision\":\"1\",\"startOffset\":113,\"endOffset\":118},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/33.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/33.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/33.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:47:58\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.01e1..0.20e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "6785f2165277730ff7f07f32d25ed9011efa2efcc1bce54c857288c7dc2c3b6b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-21dc31ac7b7f9e341e30d9af], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-21dc31ac7b7f9e341e30d9af\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/34.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":112},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/34.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/34.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/34.ili:3:Attribute \"x\" in STRUCTURE F.S should be a NumericType.\n...compiler run failed 2026-10-27 07:47:58\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component--0.01e1-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:-0.01e1..0.20e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "ebc22c2c5e755a25d56eb9c7077fc27ac87b786caa33f734b5037c8c01a84930",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/35.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b217d2150b35662e8129468b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-b217d2150b35662e8129468b\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/35.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":113},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/35.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/35.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/35.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/35.ili:3:Attribute \"x\" in STRUCTURE F.S should be a NumericType.\n...compiler run failed 2026-10-27 07:47:58\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-+0.02e3-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.10e1..+0.02e3;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "bda726e8b84df65a3ff98ffda09faa643aabfc45885df0db514ff5fc29f51cec",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8488d683a28ab7a8102ec3bd], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8488d683a28ab7a8102ec3bd\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/36.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":121},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/36.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/36.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/36.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/36.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/36.ili:3:The attribute x has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-27 07:47:59\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "independent-constants-2.3",
+      "text": "INTERLIS 2.3;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT scaled=1.0e1[INTERLIS.m];FUNCTION accepts(value:NUMERIC):BOOLEAN;TOPIC T=CLASS C=MANDATORY CONSTRAINT accepts(1.0e1) AND accepts(0.01e1);END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "894bcd5e94ee9477bcd72bf7915c35d5e59b9b76eba977ba88b2e5fd57dba814",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/37.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/37.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/37.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/37.ili:3:expecting '[', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/37.ili:3:unexpected token: e1\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/37.ili:3:unexpected token: e1\n...compiler run failed 2026-10-27 07:47:59\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-0.00e1-0.10e2-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.00e1..0.10e2;END F.",
+      "expected": "succeeded",
+      "sha256": "711a2825b2ca9ffb133d41c889b5ba119c6e6d73df2b7d0c9cbf9b4413511933",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/38.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/38.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/38.ili>\nInfo: ...compiler run done 2026-10-27 07:48:00\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-0.1e1-0.2e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.1e1..0.2e1;END F.",
+      "expected": "succeeded",
+      "sha256": "68fd7f4bbd0b9e690b9158d41506ccfc649806a6771e72fc8cf87af3899697c1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/39.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/39.ili>\nInfo: ...compiler run done 2026-10-27 07:48:00\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid--0.0e0-0.0e0-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=-0.0e0..0.0e0;END F.",
+      "expected": "succeeded",
+      "sha256": "bc714ef47425ef75c42c1995513975f8ff95e7733b5902b41d47ba12ec6b88f9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/40.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/40.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/40.ili>\nInfo: ...compiler run done 2026-10-27 07:48:00\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-+0.1E-2-+0.2E-1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=+0.1E-2..+0.2E-1;END F.",
+      "expected": "succeeded",
+      "sha256": "6568aa2b19076573f04103f18bbc09d4cf366413f9a61639d36991366c7235e0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/41.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/41.ili>\nInfo: ...compiler run done 2026-10-27 07:48:01\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid--0.1e2-+0.2e3-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=-0.1e2..+0.2e3;END F.",
+      "expected": "succeeded",
+      "sha256": "1a3eac01b2ca200d50a5a009e335a354e7a637bee881457004dc9a5feaa904d5",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/42.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/42.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/42.ili>\nInfo: ...compiler run done 2026-10-27 07:48:01\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-0.01-0.20-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.01..0.20;END F.",
+      "expected": "succeeded",
+      "sha256": "a72bdc81a994adbf15e3708a38afc092812e71ef9ad34389e247393be0a576f4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/43.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/43.ili>\nInfo: ...compiler run done 2026-10-27 07:48:01\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-0-10-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0..10;END F.",
+      "expected": "succeeded",
+      "sha256": "3c04a94a217a75120713cbfc0b34f1c3a4ce895061939791086b389c20d9249b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/44.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/44.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/44.ili>\nInfo: ...compiler run done 2026-10-27 07:48:02\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "valid-domain-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.00e1..0.10e2;END F.",
+      "expected": "succeeded",
+      "sha256": "711a2825b2ca9ffb133d41c889b5ba119c6e6d73df2b7d0c9cbf9b4413511933",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/45.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/45.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/45.ili>\nInfo: ...compiler run done 2026-10-27 07:48:02\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-1.0e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=1.0e1..0.2e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "ee185b4adfe172512ae275831978a0d46cb017074ea0de7f96f7ba323aaa3ad1",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/46.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c49edf8c762dcbf9263d3216], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c49edf8c762dcbf9263d3216\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/46.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":106},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/46.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/46.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/46.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:02\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-2.0e2-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.1e1..2.0e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "15a9fb34edee490d423e7586f665da789dd331381d6343512f36cd4516f91f09",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/47.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4e8df3b0d1353f98544cfb65], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4e8df3b0d1353f98544cfb65\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/47.ili\",\"revision\":\"1\",\"startOffset\":108,\"endOffset\":113},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/47.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/47.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/47.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:48:03\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "f43d1e31e6b55a16e0d4d769a1f1c16535f432fb40c8f817251e5104b19efc0f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/48.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-91986d9b4593679ffab27759], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-91986d9b4593679ffab27759\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/48.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":107},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/48.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/48.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/48.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:03\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain--0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=-0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "9b53070f17c68a03a06a658c73e980e5da47346e97df180826c79f292da2d99c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/49.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5a5302ca94ab658ecedc543f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5a5302ca94ab658ecedc543f\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/49.ili\",\"revision\":\"1\",\"startOffset\":101,\"endOffset\":108},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/49.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/49.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/49.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:03\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-domain-+0.02e3-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN D=0.10e1..+0.02e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "a6f1fb934e7be7ac3cede5cc86a0b0fe779cfbfb9f1a2615f97cbfbd0ff2fb07",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/50.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8f5509e4959b735887e3e50b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8f5509e4959b735887e3e50b\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/50.ili\",\"revision\":\"1\",\"startOffset\":109,\"endOffset\":116},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/50.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/50.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/50.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/50.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/50.ili:3:DOMAIN D has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-27 07:48:04\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-attribute-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.00e1..0.10e2;END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "25a3e3cc714fd377438250d6b82a2880608e58acb199edb88d457127bf6e43d4",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/51.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/51.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/51.ili>\nInfo: ...compiler run done 2026-10-27 07:48:04\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-1.0e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:1.0e1..0.2e3;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "800d079c5672bb72341ed25214e77eb1ad4173260a100944303bb113b41b5187",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/52.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-61e7df798709b9a81d743227], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-61e7df798709b9a81d743227\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/52.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":119},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/52.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/52.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/52.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:04\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-2.0e2-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.1e1..2.0e2;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "4826bb2f7d5cc9ad436c864b8c0c977b18c30ede058fed62ab81ea1a1c4f14ad",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/53.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-40a2c46acd303e36512b0f67], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-40a2c46acd303e36512b0f67\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/53.ili\",\"revision\":\"1\",\"startOffset\":121,\"endOffset\":126},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/53.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/53.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/53.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:48:05\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.01e1..0.20e2;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "5c617e81f7e059b97e68ddfc706c7a7a9d2d1fb695f1fdefeab415110f520e02",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/54.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7fca90cd5fd492a9eb98e99c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7fca90cd5fd492a9eb98e99c\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/54.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":120},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/54.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/54.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/54.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:05\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute--0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:-0.01e1..0.20e2;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "1a894abf32061882b983fd96001afe250eb487c2892335030ad952de992c0549",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/55.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-92f7656529f0d614b3ba4af5], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-92f7656529f0d614b3ba4af5\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/55.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":121},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/55.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/55.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/55.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:05\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-attribute-+0.02e3-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS C=value:0.10e1..+0.02e3;END C;END T;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "7d478fa58a36e5bbc5679c55bf8b0ffec1de443352e1fcb1e312f57c58b9e6b0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/56.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d23fcd94dd27538dcfeb6417], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d23fcd94dd27538dcfeb6417\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/56.ili\",\"revision\":\"1\",\"startOffset\":122,\"endOffset\":129},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/56.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/56.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/56.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/56.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/56.ili:3:The attribute value has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-27 07:48:06\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-coordinate-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.00e1..0.10e2,0.0..10.0;END F.",
+      "expected": "succeeded",
+      "sha256": "9635ca4f0ed0ca6112bf279a6cad776e599fa04a19629e607525e690dea05cfe",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/57.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/57.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/57.ili>\nInfo: ...compiler run done 2026-10-27 07:48:06\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-1.0e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 1.0e1..0.2e3,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "ee26345cb5ed1e81d9009ade6adc9d2ac52160e629c5860cba517196a89ef377",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/58.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-084267adcac974bcf17f7814], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-084267adcac974bcf17f7814\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/58.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":112},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/58.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/58.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/58.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/58.ili:3:null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n  null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n...compiler run failed 2026-10-27 07:48:07\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-2.0e2-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.1e1..2.0e2,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "df61a4b5b14d2cf143bb9b08ad1f6056fe5c1a080c80a3cc89bc7774dc78002f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/59.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9e503e31a11c66d1c06e2af3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9e503e31a11c66d1c06e2af3\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/59.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":119},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/59.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/59.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/59.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:48:07\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.01e1..0.20e2,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "37afaffdfdd47bab4d69a20de147d3ad936d89088821a1802ef8236ea2ef9fd8",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/60.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ea76e84985fb77c16a2f20f3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ea76e84985fb77c16a2f20f3\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/60.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":113},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/60.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/60.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/60.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/60.ili:3:null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n  null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n...compiler run failed 2026-10-27 07:48:07\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate--0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD -0.01e1..0.20e2,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "f67d1c005dc9459fc713b4b91e158ef0847ea30572a2add641091259cd28b105",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/61.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5126dcb930bab384120b0b44], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5126dcb930bab384120b0b44\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/61.ili\",\"revision\":\"1\",\"startOffset\":107,\"endOffset\":114},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/61.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/61.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/61.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/61.ili:3:null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n  null is not an acceptable value. If no other error message has appeared, this might indicate an internal compiler error which you are kindly requested to report to compiler@interlis.ch. Thank you.\n...compiler run failed 2026-10-27 07:48:08\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-coordinate-+0.02e3-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN P=COORD 0.10e1..+0.02e3,0.0..10.0;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "70af06f4cbb48bd2fc537d1fe42ee462dda36a476f7c79732615609ec7a9e13f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/62.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d2e0088cc2c5c70d248a6620], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d2e0088cc2c5c70d248a6620\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/62.ili\",\"revision\":\"1\",\"startOffset\":115,\"endOffset\":122},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/62.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/62.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/62.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/62.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/62.ili:3:DOMAIN P has an unexpected abstract/incomplete definition (missing min/max)\n...compiler run failed 2026-10-27 07:48:08\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-oid-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.00e1..0.10e2;END F.",
+      "expected": "succeeded",
+      "sha256": "74c8c5a290581be34ba098bcb1713f80fa2db41f9a1a833d6e186df06e0e23d0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/63.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/63.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/63.ili>\nInfo: ...compiler run done 2026-10-27 07:48:08\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-1.0e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 1.0e1..0.2e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "7b54030a07e564732ccb0b040d9655106ea81182df48874a5a234607a7119e82",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/64.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c801c93b34ba67a5f19654e7], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c801c93b34ba67a5f19654e7\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/64.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":117},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/64.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/64.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/64.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:09\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-2.0e2-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.1e1..2.0e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "5120e2408a3875eb9205ffbe96df9cfc7b214f00292500fd3f311d13ba9d9c95",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/65.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-94da65e4da30326a456ed81a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-94da65e4da30326a456ed81a\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/65.ili\",\"revision\":\"1\",\"startOffset\":119,\"endOffset\":124},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/65.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/65.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/65.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:48:09\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "22d56e2594a4487d0ca83c4c87bd23ccfcc703a3d169a2096a1cfa37a82fb486",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/66.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-61c1d16eb75cbdaf4495d858], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-61c1d16eb75cbdaf4495d858\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/66.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":118},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/66.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/66.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/66.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:09\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid--0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID -0.01e1..0.20e2;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "f9955e46d315a228ebdfbc4be842ab477f65ddb6bc395ce61a4646e87d9cbc75",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/67.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-1a19e80ffa0e1664a839de41], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-1a19e80ffa0e1664a839de41\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/67.ili\",\"revision\":\"1\",\"startOffset\":112,\"endOffset\":119},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/67.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/67.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/67.ili:3:expecting '..', found 'e1'\n...compiler run failed 2026-10-27 07:48:10\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-oid-+0.02e3-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=DOMAIN Identity=OID 0.10e1..+0.02e3;END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "5669e69e4169923fec22947159444dc6d8770dce1a5ac5838f968e521eefd785",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/68.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-fc5fee001562a3e073359fe3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-fc5fee001562a3e073359fe3\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/68.ili\",\"revision\":\"1\",\"startOffset\":120,\"endOffset\":127},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/68.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/68.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/68.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/68.ili:3:unexpected token: e3\n...compiler run failed 2026-10-27 07:48:10\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "valid-format-component-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.00e1..0.10e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "succeeded",
+      "sha256": "7150a1c0d452f9e8f3dc64529b1aeface52cbb483a977efc55bb587ffdd13bb9",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/69.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/69.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/69.ili>\nInfo: ...compiler run done 2026-10-27 07:48:10\n",
+          "observedOutcome": "accepted"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-1.0e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:1.0e1..0.2e3;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "1.0e1",
+      "sha256": "5f172dbb258b63bae0b806e232a869536188162a26450b1275e7a84c3c344374",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/70.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-4136cc484d1ef64d5c54b6cf], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-4136cc484d1ef64d5c54b6cf\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/70.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":111},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"1.0e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/70.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/70.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/70.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/70.ili:3:Attribute \"x\" in STRUCTURE F.S should be a NumericType.\n...compiler run failed 2026-10-27 07:48:11\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-2.0e2-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.1e1..2.0e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "2.0e2",
+      "sha256": "3fb00f0e3d9c198f6ba839a2a5ee441ca0e95e174cb50ede8c36800f454babad",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/71.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-15e2959aa4784b38ab6e1b28], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-15e2959aa4784b38ab6e1b28\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/71.ili\",\"revision\":\"1\",\"startOffset\":113,\"endOffset\":118},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"2.0e2\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/71.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/71.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/71.ili:3:unexpected token: e2\n...compiler run failed 2026-10-27 07:48:11\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.01e1..0.20e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "0.01e1",
+      "sha256": "26ae7ddf0ec0470bc2a928b1e58ed12297c0eff75b3e18eb3f52ba36fb4aa848",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/72.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6fb0d4fbc496e9d2f62b10cb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6fb0d4fbc496e9d2f62b10cb\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/72.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":112},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/72.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/72.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/72.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/72.ili:3:Attribute \"x\" in STRUCTURE F.S should be a NumericType.\n...compiler run failed 2026-10-27 07:48:11\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component--0.01e1-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:-0.01e1..0.20e2;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "-0.01e1",
+      "sha256": "4c9b4fb6eec4144b1dc0797ebba049938426c7e352ba3d6b4cecdfae1c94be45",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/73.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-534c1e538ba83f69bab738a0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-534c1e538ba83f69bab738a0\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/73.ili\",\"revision\":\"1\",\"startOffset\":106,\"endOffset\":113},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"-0.01e1\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/73.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/73.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/73.ili:3:expecting '..', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/73.ili:3:Attribute \"x\" in STRUCTURE F.S should be a NumericType.\n...compiler run failed 2026-10-27 07:48:12\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "bad-format-component-+0.02e3-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=STRUCTURE S=x:0.10e1..+0.02e3;END S;DOMAIN Form=FORMAT BASED ON S(x);END F.",
+      "expected": "rejected",
+      "diagnostic": "ILI-SYN-0002",
+      "badToken": "+0.02e3",
+      "sha256": "d6fab55e99ae006d673d13b6499b0898a8f733fc545cbd6aa3a7fffaca210c94",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/74.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-99fdbadc1dd34f1fa5cb0a91], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-99fdbadc1dd34f1fa5cb0a91\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e2-scaled-boundaries/processes/74.ili\",\"revision\":\"1\",\"startOffset\":114,\"endOffset\":121},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\"+0.02e3\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"scaled boundary with 0.nonzero-digits or 0.zeros mantissa\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/74.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/74.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/74.ili:3:The minimum value must not exceed the maximum value.\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/74.ili:3:unexpected token: e3\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/74.ili:3:The attribute x has an unexpected abstract/incomplete domain definition (missing min/max)\n...compiler run failed 2026-10-27 07:48:12\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    },
+    {
+      "name": "independent-constants-2.4",
+      "text": "INTERLIS 2.4;\r\n!! 🦊 source prefix\r\nCONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\"=UNIT scaled=1.0e1[INTERLIS.m];FUNCTION accepts(value:NUMERIC):BOOLEAN;TOPIC T=CLASS C=MANDATORY CONSTRAINT accepts(1.0e1) AND accepts(0.01e1);END C;END T;END F.",
+      "expected": "succeeded",
+      "sha256": "4fe964bcb83127f848a4c71cc4657ea4eae31a1fc4ed32d9cc67a63c01e3c869",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/75.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e2-scaled-boundaries/processes/75.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e2-scaled-boundaries/processes/75.ili>\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/75.ili:3:expecting '[', found 'e1'\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/75.ili:3:unexpected token: e1\nbuild/reports/stabilization/g2-e2-scaled-boundaries/processes/75.ili:3:unexpected token: e1\n...compiler run failed 2026-10-27 07:48:13\n",
+          "observedOutcome": "rejected"
+        }
+      }
+    }
+  ],
+  "ownExpected": 76,
+  "total": 76,
+  "referenceProcessErrors": 0,
+  "referenceAgreements": 74
+}

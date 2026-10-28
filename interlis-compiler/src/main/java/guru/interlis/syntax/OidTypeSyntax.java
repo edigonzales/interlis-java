@@ -12,13 +12,14 @@ import java.util.Objects;
  * @param range source range
  * @param oidKind the {@code oidKind} component
  */
-public record OidTypeSyntax(SyntaxNodeId id, SourceRange range, OidKind oidKind)
+public record OidTypeSyntax(SyntaxNodeId id, SourceRange range, OidKind oidKind, java.util.Optional<TypeSyntax> valueType)
         implements TypeSyntax {
     /** Creates a validated instance. */
     public OidTypeSyntax {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(range, "range");
         Objects.requireNonNull(oidKind, "oidKind");
+        Objects.requireNonNull(valueType, "valueType");
     }
 
     @Override
@@ -28,6 +29,6 @@ public record OidTypeSyntax(SyntaxNodeId id, SourceRange range, OidKind oidKind)
 
     @Override
     public java.util.List<SyntaxNode> children() {
-        return java.util.List.of();
+        return valueType.stream().map(SyntaxNode.class::cast).toList();
     }
 }

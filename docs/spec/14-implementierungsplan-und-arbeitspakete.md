@@ -1,5 +1,15 @@
 # Implementierungsplan und überprüfbare Arbeitspakete
 
+## Verbindliche G2-Fortsetzung ab 27.10.2026
+
+Die [beauftragte Folge A–I](../evidence/stabilization/g2-completion-plan.md)
+steuert den verbleibenden WP-20–27-Umfang. Sie ersetzt frühere Fortsetzungs-
+empfehlungen, nicht die Produktanforderungen. A1 sichert und reproduziert den
+Ausgangsstand, A2 vervollständigt die einzelne Regelzuordnung, A3 den semantischen
+Vergleich; erst anschliessend folgen die fachlichen Schritte B–H und Gesamtabnahme I.
+Unabhängige Schritte dürfen während ausstehender Nutzer-Normfreigaben fortgesetzt
+werden. Schritt- und Phasenreview sind verbindliche Abnahmen. P3 bleibt separat offen.
+
 ## 1. Ausführungsprinzip
 
 Die Arbeit folgt vertikalen fachlichen Abschnitten. Jeder Abschnitt enthält Modell/Syntax, Semantik, Diagnose, öffentliche Abfrage, relevante JVM-/WASM-Prüfung und Dokumentation. Ein klassisches Vorgehen „erst vollständiger Batchcompiler, dann irgendwann IDE und Browser“ erfüllt den Auftrag nicht.

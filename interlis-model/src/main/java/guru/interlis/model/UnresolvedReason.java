@@ -8,6 +8,8 @@ public enum UnresolvedReason {
     AMBIGUOUS_NAME,
     /** The {@code NOT_A_TYPE} constant. */
     NOT_A_TYPE,
+    /** A symbol was found but does not denote a measurement unit. */
+    NOT_A_UNIT,
     /** The {@code UNKNOWN_ID} constant. */
     UNKNOWN_ID,
     /** The {@code REFERENCE_UNRESOLVED} constant. */

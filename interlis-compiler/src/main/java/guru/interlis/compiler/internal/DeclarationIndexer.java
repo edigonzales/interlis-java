@@ -46,6 +46,9 @@ import java.util.Set;
 /** Indexes syntax declarations and reuses only unambiguous stable anchors. */
 final class DeclarationIndexer {
     private int counter;
+    private int declarationOrder;
+    private java.util.NavigableMap<Integer,guru.interlis.syntax.SourceMetadata> currentMetadata=new java.util.TreeMap<>();
+    private List<guru.interlis.syntax.SyntaxToken> currentTokens = List.of();
     private final Map<String, SymbolId> previous = new HashMap<>();
     private final Set<SymbolId> usedPrevious = new HashSet<>();
     private final Set<SymbolId> reservedPrevious = new HashSet<>();
@@ -61,12 +64,14 @@ final class DeclarationIndexer {
         List<SyntaxSnapshot> sorted = new ArrayList<>(snapshots);
         sorted.sort(Comparator.comparing(s -> s.source().id().value()));
         for (SyntaxSnapshot snapshot : sorted) {
+            currentTokens = snapshot.tokens();
+            currentMetadata.clear();snapshot.metadata().forEach((range,value)->currentMetadata.put(range.startOffset(),value));
             for (ModelSyntax model : snapshot.root().models()) {
                 SourceId sourceId = snapshot.source().id();
                 String name = model.name();
                 DeclInfo declaration = create(SymbolKind.MODEL, name, Optional.empty(),
-                        model.range(), Optional.of(model.range()), model.languageVersion(),
-                        Set.of(), model, sourceId, name, Optional.empty(), model.range().startOffset());
+                        model.range(), declarationNameRange(model, model.name()), model.languageVersion(),
+                        Set.of(), model, sourceId, name, Optional.empty(), 0);
                 modelEntries.add(new IndexedDeclarations.ModelEntry(
                         new ModelDecl(model, snapshot.source()), declaration));
                 register(snapshot.source().id(), declaration, null);
@@ -74,6 +79,24 @@ final class DeclarationIndexer {
             }
         }
         return new IndexedDeclarations(modelEntries, byId, children, byQualifiedName, modelOf);
+    }
+
+    private void walkEnumeration(DeclInfo declaration, EnumerationTypeSyntax enumeration) {
+        int ordinal=0;
+        for(var value:enumeration.values()) {
+            DeclInfo element=create(SymbolKind.ENUM_ELEMENT,value.path(),Optional.of(declaration.id()),value.range(),Optional.of(value.range()),
+                    declaration.language(),Set.of(),enumeration,declaration.sourceId(),declaration.qualifiedName()+"."+value.path(),Optional.empty(),ordinal++);
+            register(declaration.sourceId(),element,declaration.id());
+        }
+    }
+
+    private Optional<guru.interlis.source.SourceRange> declarationNameRange(SyntaxNode node, String name) {
+        return currentTokens.stream()
+                .filter(token -> token.kind() == guru.interlis.syntax.TokenKind.IDENTIFIER)
+                .filter(token -> token.text().equals(name))
+                .map(guru.interlis.syntax.SyntaxToken::range)
+                .filter(range -> range.startOffset() >= node.range().startOffset()
+                        && range.endOffset() <= node.range().endOffset()).findFirst();
     }
 
     private void preparePrevious(AnalysisReuse reuse) {
@@ -91,6 +114,14 @@ final class DeclarationIndexer {
                         .filter(e -> e.getValue().contains(symbol.id()))
                         .map(e -> e.getKey().toString())
                         .findFirst().orElse(symbol.name().value());
+                if (symbol.kind() == SymbolKind.CONSTRAINT && symbol.owner().isPresent()) {
+                    // Constraint anchors use their own namespace, including unnamed constraints
+                    // which intentionally have no public qualified name.
+                    qname = graph.qualifiedNames().entrySet().stream()
+                            .filter(e -> e.getValue().contains(symbol.owner().orElseThrow()))
+                            .map(e -> e.getKey() + "#" + symbol.name().value())
+                            .findFirst().orElse(qname);
+                }
                 String base = declared.range().source().value() + "|" + symbol.kind() + "|" + qname;
                 int ordinal = ordinals.merge(base, 1, Integer::sum) - 1;
                 previous.putIfAbsent(base + "|" + ordinal, symbol.id());
@@ -115,7 +146,7 @@ final class DeclarationIndexer {
         }
         if (node instanceof TopicSyntax topic) {
             DeclInfo declaration = create(SymbolKind.TOPIC, topic.name(), Optional.of(owner.id()),
-                    topic.range(), Optional.empty(), language, topic.modifiers(), topic,
+                    topic.range(), declarationNameRange(topic, topic.name()), language, topic.modifiers(), topic,
                     sourceId, owner.qualifiedName() + "." + topic.name(),
                     Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
@@ -152,6 +183,12 @@ final class DeclarationIndexer {
                     association.modifiers(), association, sourceId,
                     owner.qualifiedName() + "." + association.name(), Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
+            association.derivedFrom().ifPresent(base -> {
+                DeclInfo alias = create(SymbolKind.VIEW_BASE, base.alias().text(), Optional.of(declaration.id()),
+                        base.alias().range(), base.renamed() ? Optional.of(base.alias().range()) : Optional.empty(), language, Set.of(), base.target(), sourceId,
+                        declaration.qualifiedName() + "." + base.alias().text(), Optional.empty(), 0);
+                register(sourceId, alias, declaration.id());
+            });
             for (RoleDeclarationSyntax role : association.roles()) {
                 walkMember(role, declaration, sourceId, language);
             }
@@ -163,10 +200,59 @@ final class DeclarationIndexer {
             }
             return;
         }
+        if (node instanceof guru.interlis.syntax.GraphicDeclarationSyntax graphic) {
+            var declaration=create(SymbolKind.GRAPHIC,graphic.name(),Optional.of(owner.id()),graphic.range(),graphic.nameRange(),language,graphic.modifiers(),graphic,sourceId,owner.qualifiedName()+"."+graphic.name(),Optional.empty(),0);
+            register(sourceId,declaration,owner.id());
+            for(var rule:graphic.rules()) walkMember(rule,declaration,sourceId,language);
+            return;
+        }
+        if (node instanceof guru.interlis.syntax.GraphicDeclarationSyntax.Rule rule) {
+            var declaration=create(SymbolKind.DRAWING_RULE,rule.name(),Optional.of(owner.id()),rule.range(),rule.nameRange(),language,rule.modifiers(),rule,sourceId,owner.qualifiedName()+"."+rule.name(),Optional.empty(),0);
+            register(sourceId,declaration,owner.id()); return;
+        }
         if (node instanceof ViewDeclarationSyntax view) {
             DeclInfo declaration = create(SymbolKind.VIEW, view.name(), Optional.of(owner.id()),
                     view.range(), view.nameRange(), language, view.modifiers(), view, sourceId,
                     owner.qualifiedName() + "." + view.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id());
+            List<ViewDeclarationSyntax.Base> bases = new ArrayList<>();
+            view.formation().ifPresent(f -> bases.addAll(f.bases()));
+            view.baseExtensions().forEach(e -> bases.addAll(e.extensions()));
+            for (var base : bases) {
+                DeclInfo alias = create(SymbolKind.VIEW_BASE, base.alias().text(), Optional.of(declaration.id()),
+                        base.alias().range(), base.renamed() ? Optional.of(base.alias().range()) : Optional.empty(), language, Set.of(), base.target(), sourceId,
+                        declaration.qualifiedName() + "." + base.alias().text(), Optional.empty(), 0);
+                register(sourceId, alias, declaration.id());
+            }
+            for (var member : view.members()) if (member instanceof ViewDeclarationSyntax.Attribute attribute)
+                walkMember(attribute.declaration(), declaration, sourceId, language);
+            for (var constraint : view.constraints()) walkMember(constraint, declaration, sourceId, language);
+            return;
+        }
+        if (node instanceof guru.interlis.syntax.MetadataBasketDeclarationSyntax basket) {
+            DeclInfo declaration = create(SymbolKind.METADATA_BASKET, basket.name(), Optional.of(owner.id()),
+                    basket.range(), basket.nameRange(), language, basket.modifiers(), basket, sourceId,
+                    owner.qualifiedName() + "." + basket.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id());
+            for (var object : basket.objects()) walkMember(object, declaration, sourceId, language);
+            return;
+        }
+        if (node instanceof guru.interlis.syntax.MetadataBasketDeclarationSyntax.ObjectDeclaration object) {
+            DeclInfo declaration = create(SymbolKind.METAOBJECT, object.name(), Optional.of(owner.id()),
+                    object.range(), Optional.of(object.range()), language, Set.of(), object, sourceId,
+                    owner.qualifiedName() + "." + object.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id()); return;
+        }
+        if (node instanceof guru.interlis.syntax.ContextDeclarationSyntax context) {
+            DeclInfo declaration = create(SymbolKind.CONTEXT, context.name(), Optional.of(owner.id()),
+                    context.range(), context.nameRange(), language, Set.of(), context, sourceId,
+                    owner.qualifiedName() + "." + context.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id()); return;
+        }
+        if (node instanceof guru.interlis.syntax.ParameterDeclarationSyntax parameter) {
+            DeclInfo declaration = create(SymbolKind.PARAMETER, parameter.name(), Optional.of(owner.id()),
+                    parameter.range(), parameter.nameRange(), language, parameter.modifiers(), parameter, sourceId,
+                    owner.qualifiedName() + "." + parameter.name(), Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
             return;
         }
@@ -177,6 +263,12 @@ final class DeclarationIndexer {
                     owner.qualifiedName() + "." + function.name(), Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
             return;
+        }
+        if (node instanceof guru.interlis.syntax.LineFormDeclarationSyntax form) {
+            DeclInfo declaration = create(SymbolKind.LINE_FORM, form.name(), Optional.of(owner.id()),
+                    form.range(), form.nameRange(), language, Set.of(), form, sourceId,
+                    owner.qualifiedName() + "." + form.name(), Optional.empty(), 0);
+            register(sourceId, declaration, owner.id()); return;
         }
         if (node instanceof UnitDeclarationSyntax unit) {
             DeclInfo declaration = create(SymbolKind.UNIT, unit.name(), Optional.of(owner.id()),
@@ -192,17 +284,7 @@ final class DeclarationIndexer {
                     domain.range(), domain.nameRange(), language, domain.modifiers(), domain,
                     sourceId, owner.qualifiedName() + "." + domain.name(), Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
-            if (domain.type() instanceof EnumerationTypeSyntax enumeration) {
-                int ordinal = 0;
-                for (EnumerationTypeSyntax.EnumerationValueSyntax value : enumeration.values()) {
-                    DeclInfo element = create(SymbolKind.ENUM_ELEMENT, value.path(),
-                            Optional.of(declaration.id()), value.range(), Optional.of(value.range()),
-                            language, Set.of(), domain, sourceId,
-                            declaration.qualifiedName() + "." + value.path(), Optional.empty(),
-                            ordinal++);
-                    register(sourceId, element, declaration.id());
-                }
-            }
+            if(domain.type() instanceof EnumerationTypeSyntax enumeration)walkEnumeration(declaration,enumeration);
             for (ConstraintDeclarationSyntax constraint : domain.constraints()) {
                 walkMember(constraint, declaration, sourceId, language);
             }
@@ -214,6 +296,9 @@ final class DeclarationIndexer {
                     attribute.modifiers(), attribute, sourceId,
                     owner.qualifiedName() + "." + attribute.name(), Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
+            TypeSyntax type=attribute.type();
+            while(type instanceof guru.interlis.syntax.CollectionTypeSyntax collection)type=collection.elementType();
+            if(type instanceof EnumerationTypeSyntax enumeration)walkEnumeration(declaration,enumeration);
             return;
         }
         if (node instanceof RoleDeclarationSyntax role) {
@@ -227,7 +312,7 @@ final class DeclarationIndexer {
             String name = external.constraint().name().orElse(
                     "constraint@" + external.range().startOffset());
             DeclInfo declaration = create(SymbolKind.CONSTRAINT, name, Optional.of(owner.id()),
-                    external.range(), Optional.empty(), language, Set.of(), external, sourceId,
+                    external.range(), external.constraint().name().flatMap(n->declarationNameRange(external.constraint(),n)), language, Set.of(), external, sourceId,
                     owner.qualifiedName() + "#" + name, Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
             return;
@@ -235,7 +320,7 @@ final class DeclarationIndexer {
         if (node instanceof ConstraintDeclarationSyntax constraint) {
             String name = constraint.name().orElse("constraint@" + constraint.range().startOffset());
             DeclInfo declaration = create(SymbolKind.CONSTRAINT, name, Optional.of(owner.id()),
-                    constraint.range(), Optional.empty(), language, Set.of(), constraint, sourceId,
+                    constraint.range(), constraint.name().flatMap(n->declarationNameRange(constraint,n)), language, Set.of(), constraint, sourceId,
                     owner.qualifiedName() + "#" + name, Optional.empty(), 0);
             register(sourceId, declaration, owner.id());
             return;
@@ -269,8 +354,19 @@ final class DeclarationIndexer {
             } while (reservedPrevious.contains(id) || assigned.contains(id));
         }
         assigned.add(id);
-        return new DeclInfo(id, kind, name, owner, counter, new Origin.DeclaredOrigin(range),
-                nameRange, language, modifiers, syntax, sourceId, qualifiedName, featureId);
+        // Source order must not depend on whether an identity was reused or allocated.
+        return new DeclInfo(id, kind, name, owner, ++declarationOrder, new Origin.DeclaredOrigin(range),
+                nameRange, language, modifiers, syntax, sourceId, qualifiedName, featureId,sourceMetadata(range,nameRange));
+    }
+
+    private guru.interlis.syntax.SourceMetadata sourceMetadata(SourceRange range,Optional<SourceRange> name) {
+        var attributes=new ArrayList<guru.interlis.syntax.SourceMetadata.Attribute>();var documentation=new ArrayList<guru.interlis.syntax.SourceMetadata.Text>();
+        int end=name.map(SourceRange::startOffset).orElse(range.startOffset());
+        if(end<range.startOffset())end=range.startOffset();
+        for(var metadata:currentMetadata.subMap(range.startOffset(),true,end,true).values()) {
+            attributes.addAll(metadata.attributes());documentation.addAll(metadata.documentation());
+        }
+        return new guru.interlis.syntax.SourceMetadata(attributes,documentation);
     }
 
     private void register(SourceId sourceId, DeclInfo declaration, SymbolId owner) {

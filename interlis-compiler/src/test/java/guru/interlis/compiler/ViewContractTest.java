@@ -45,7 +45,7 @@ class ViewContractTest {
     }
 
     @Test
-    void viewFormationAndBodyArePreserved() {
+    void projectionPublishesBoundFormationAndMembers() {
         SourceText source = new SourceText(new SourceId("memory:/view.ili"),
                 new SourceRevision(1), """
                 INTERLIS 2.3;
@@ -64,13 +64,15 @@ class ViewContractTest {
         CompilationRequest request = new CompilationRequest(List.of(new ModelSelector.ByName("V",
                 Optional.empty(), Optional.empty())), SourceSet.of(Map.of(source.id(), source)),
                 CompilerOptions.defaults());
-        CompilationOutcome.Succeeded succeeded = assertInstanceOf(
-                CompilationOutcome.Succeeded.class,
+        var succeeded = assertInstanceOf(CompilationOutcome.Succeeded.class,
                 CompilerEngines.create().compile(request, CancellationToken.none()));
         ViewSymbol view = succeeded.analysis().semanticGraph().symbols().stream()
-                .filter(ViewSymbol.class::isInstance).map(ViewSymbol.class::cast)
-                .findFirst().orElseThrow();
-        assertTrue(view.formation().orElseThrow().contains("PROJECTION"));
-        assertTrue(view.body().orElseThrow().contains("ALL OF B"));
+                .filter(ViewSymbol.class::isInstance).map(ViewSymbol.class::cast).findFirst().orElseThrow();
+        assertInstanceOf(ViewSymbol.Projection.class, view.formation().orElseThrow());
+        assertTrue(view.members().size() == 1);
+        var graph = succeeded.analysis().semanticGraph();
+        var attribute = (guru.interlis.model.AttributeSymbol) graph.symbol(view.members().getFirst()).orElseThrow();
+        assertTrue(attribute.derivations().size() == 1);
+        assertTrue(graph.expression(attribute.derivations().getFirst()).isPresent());
     }
 }

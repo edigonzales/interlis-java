@@ -1,0 +1,166 @@
+{
+  "schemaVersion": "1.0",
+  "step": "A2",
+  "subreview": "A2-R2",
+  "reviewedAt": "2026-10-27T12:47:46Z",
+  "verdict": "NACHARBEIT",
+  "r2Disposition": {
+    "status": "CLOSED",
+    "reason": "The targeted rework closes both prior R2 blockers. All 21 special value/type rows now have explicit two-engine/source-profile scope and existing rule links; all 16 BuiltinFunctions.Value rows separately record exact current signature uses, positions and active versions. Value.OBJECT has zero current uses and only conditional future assertions. INTERLIS.areAreas2 retains both exact 2.4 sources without choosing a normative outcome.",
+    "blockingFindings": []
+  },
+  "scope": "Fresh independent read-only recheck of A2-R2-SPECIAL-SCOPE and A2-R2-OBJECT-ASSERTION against the frozen rework packet. The earlier 130-declaration and lexical completeness audit was not repeated. This review does not close A2-R3, A2-R4, full A2, or any language implementation acceptance.",
+  "reviewModelConfiguration": {
+    "requested": "gpt-5.6-sol",
+    "evidence": "The explicit model override was part of and accepted by the parent review dispatch. This is configuration evidence; no identity claim is inferred from model self-report."
+  },
+  "packet": {
+    "manifest": "build/reports/g2/A2/r2-rework-packet/manifest.json",
+    "sha256": "12e08755533798016516a8005b4ca5b271163e44dad2295ddacc35c7141e9b07",
+    "hashVerified": true,
+    "patchSha256": "667595fffdb3f12733b4c2c390707347621dc871081bb2a457fa49bccac4af79",
+    "previousReviewSha256": "bb839bf30fe46074e9ae7d4ccd6dfd0d6a9b32ba0cc287c36e0b4b86aa05d684",
+    "beforeManifestSha256": "f0a7ec5d43c1d9d1c6c16c56f5027be12a0dfdec5c4f88f717f48ed6bf578f96",
+    "beforeSourceDigest": "2ec0ae2fc12a40688a2fa6ca4a14eb08028006c84dfedd91900890900989802b",
+    "beforeFiles": 1105,
+    "afterManifestSha256": "de11a7aa4d00cec87855d9db72e653f0511b78e513cacac80f5afd1781c41d01",
+    "afterSourceDigest": "293bef845555da1a8687b8d252ffbec439ca452965767d42912a2cf1bf6e8ff4",
+    "afterFiles": 1108,
+    "changedSources": 11,
+    "archivesAndManifestsMatch": true,
+    "patchReproducesFrozenAfterSources": true,
+    "normHashesMatch": true,
+    "reportHashesMatch": true
+  },
+  "targetedVerification": {
+    "specialRows": 21,
+    "specialRowsWithExactLanguageScope": 21,
+    "specialRowsWithExistingRuleReferences": 21,
+    "builtinValueRows": 16,
+    "factorySignatures": 21,
+    "signatureUseRowsMatchIndependentParser": true,
+    "signaturePositionsAndVersionsMatch": true,
+    "object": {
+      "currentSignatureUses": 0,
+      "activeSignatureVersions": [],
+      "usageState": "NO_CURRENT_SIGNATURE_USES",
+      "pendingUserDecision": "BUILTIN_AREAS2_AREAS3_NORM_PROFILE",
+      "assertionsConditionalOnUserDecision": true
+    },
+    "areAreas2": {
+      "factoryArguments": [
+        "OBJECTS",
+        "TEXT",
+        "TEXT"
+      ],
+      "factoryLanguage": "2.4",
+      "appendixAPage122": "OBJECT",
+      "chapter314Page87": "OBJECTS",
+      "pendingUserDecision": "BUILTIN_AREAS2_AREAS3_NORM_PROFILE",
+      "normativeOutcomeChosen": false
+    },
+    "catalogueReproducedByteIdentically": true,
+    "sourceInventoryReproducedByteIdentically": true,
+    "retainedEarlierCountsNotReaudited": {
+      "declarations": 130,
+      "reservedWords23": 154,
+      "reservedWords24": 168,
+      "features": 13,
+      "contextualTokens": 11,
+      "classificationRules": 4
+    }
+  },
+  "findings": [
+    {
+      "id": "A2-R2-SPECIAL-SCOPE",
+      "severity": "BLOCKING",
+      "status": "CLOSED",
+      "evidence": "All 21 rows carry languages=[2.3,2.4], a scope meaning and nonempty ruleReferences whose IDs exist in the frozen rule matrix. For builtin variants, independent parsing of all 21 factory signatures matches the catalogued result/argument positions and active versions. Wrong active-version mutation is rejected."
+    },
+    {
+      "id": "A2-R2-OBJECT-ASSERTION",
+      "severity": "BLOCKING",
+      "status": "CLOSED",
+      "evidence": "Independent factory parsing finds no Value.OBJECT occurrence. The row records zero uses/no active versions and forbids an invented current OBJECT-formal test. Inventing such a use is rejected. The exact pinned PDF excerpts retain appendix OBJECT and chapter OBJECTS, while the current factory remains OBJECTS and the user decision remains pending."
+    },
+    {
+      "id": "A2-R3",
+      "severity": "BLOCKING_FOR_A2",
+      "status": "OPEN",
+      "evidence": "Rule-specific contract/case/assertion inventory remains explicitly outside this R2 recheck."
+    },
+    {
+      "id": "A2-R4",
+      "severity": "BLOCKING_FOR_A2",
+      "status": "OPEN",
+      "evidence": "Whole-paragraph, appendix, unnumbered-contract and exception audit remains explicitly outside this R2 recheck."
+    }
+  ],
+  "unchangedControls": {
+    "normativeExpectationsSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+    "conformanceBaselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+    "a1EvidenceProfileSha256": "a284801931c83a1befc2fa858b29a17656a6d842505c0db9cb8e833bd71b3289",
+    "buildGradleSha256": "9c13d2e233405bb679351e09fa83b12463f5f1a0c020a1a52a6b729e54df3ffa",
+    "gradlePropertiesSha256": "49b9e59b3c515a83d6d352a3e44e89f671a2dbe064e1248f4964f93e4e887b3f",
+    "newNormativeDecisions": 0,
+    "newXfailsOrExceptions": 0,
+    "productionOrPublicApiChanges": []
+  },
+  "counterprobe": {
+    "artifact": "build/reports/g2/A2/r2-recheck/counterprobe.json",
+    "script": "build/reports/g2/A2/r2-recheck/counterprobe.py",
+    "scriptSha256": "1a02986b7cbde02dc03ed0258de45126f1b3402f1c5ba1d6590e72ac31abc13a",
+    "artifactSha256": "223d713d6141ab497755a34e7d6ba5efefe4013129623699bfddf7be05f4c5f1",
+    "status": "PASS",
+    "mutationsDetected": [
+      "wrong MULTIPOLYLINE active version",
+      "invented OBJECT signature use",
+      "factory areAreas2 OBJECTS-to-OBJECT mutation changed the exact use, argument position and language"
+    ]
+  },
+  "commands": [
+    {
+      "command": "g2_evidence.py verify --snapshot build/reports/g2/A2/r2-rework-input --sources",
+      "cwd": "build/reports/g2/A2/r2-recheck/after",
+      "result": "PASS",
+      "observation": "Frozen source digest 293bef845555da1a8687b8d252ffbec439ca452965767d42912a2cf1bf6e8ff4."
+    },
+    {
+      "command": "python3 -m unittest discover -s tools/reference -p 'test_g2_*.py' -v",
+      "cwd": "build/reports/g2/A2/r2-recheck/after",
+      "result": "PASS",
+      "observation": "29/29 tests passed with Python 3.12.14."
+    },
+    {
+      "command": "JAVA_HOME=...25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+      "cwd": "build/reports/g2/A2/r2-recheck/after",
+      "result": "PASS",
+      "observation": "29 tests; BUILD SUCCESSFUL in 3s with Gradle 9.8.1 and Temurin 25.0.3."
+    },
+    {
+      "command": "author_g2_predefined.py --out build/reports/r2-recheck/catalogue-reproduced.json",
+      "cwd": "build/reports/g2/A2/r2-recheck/after",
+      "result": "PASS",
+      "observation": "Python 3.12.14 / pypdf 6.10.0; byte-identical SHA-256 7183312fc9dbfe3404972b970d01753eaf6dafdfb84a6fc9cd1ea51a2e3d563e."
+    },
+    {
+      "command": "g2_inventory.py --norm23 build/norms/ili23.pdf --norm24 build/norms/ili24.pdf --out build/reports/r2-recheck/source-scan.json",
+      "cwd": "build/reports/g2/A2/r2-recheck/after",
+      "result": "PASS",
+      "observation": "Exact norm excerpts and source anchors passed; byte-identical SHA-256 53add09d890c7ab07d1e236724594f8253a5dd1f476a1c9d5926607b1637e570."
+    },
+    {
+      "command": "python3 counterprobe.py --root .../r2-recheck --out .../counterprobe.json",
+      "cwd": "repository root",
+      "result": "PASS",
+      "observation": "Independent manifest/mode/patch audit, exact PDF excerpt check, independent signature parser and three mutations passed."
+    }
+  ],
+  "notExecuted": [
+    "No full compiler, portable, browser or SDK phase run: the packet changes no production/API/expectation behavior and this is a focused R2 evidence recheck.",
+    "No repeat of the full declaration/keyword audit already accepted by the first R2 review.",
+    "No clause-level semantic acceptance: A2-R3/R4 and later implementation steps remain open.",
+    "No approval of BUILTIN_AREAS2_AREAS3_NORM_PROFILE or any other normative exception."
+  ],
+  "nextStep": "Proceed to A2-R3 while retaining A2 as NACHARBEIT. A2-R4 and a fresh whole-A2 review remain mandatory before A3."
+}

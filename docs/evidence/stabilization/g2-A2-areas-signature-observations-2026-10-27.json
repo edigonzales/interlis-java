@@ -1,0 +1,353 @@
+{
+  "scope": "A2 both-version normative signature audit; actual behavior only. SET body context is a separate known E3 question. No expected outcomes, baselines or exceptions changed.",
+  "normDocument": "2.4",
+  "documentSha256": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069",
+  "chapter": "3.14 p87",
+  "appendix": "A p122",
+  "toolchain": {
+    "java": "openjdk version \"25.0.3\" 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)\n",
+    "ili2cJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e"
+  },
+  "cases": [
+    {
+      "id": "areAreas2-ALL",
+      "source": "testdata/conformance/g2-norm-audit/areAreas2-all-2.4.ili",
+      "sha256": "3cb83910b3eba760b06b49ad78d4880d83d647381a4eefefd685949b75e4a403",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas2-all-2.4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas2-all-2.4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas2-all-2.4.ili>\nInfo: ...compiler run done 2026-10-27 10:28:14\n"
+        }
+      }
+    },
+    {
+      "id": "areAreas2-THIS",
+      "source": "testdata/conformance/g2-norm-audit/areAreas2-this-2.4.ili",
+      "sha256": "00e977026d5e57a1e087a9d36c00f8336fe2502469ea03e514038e987b2114db",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas2-this-2.4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas2-this-2.4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas2-this-2.4.ili>\nInfo: ...compiler run done 2026-10-27 10:28:14\n"
+        }
+      }
+    },
+    {
+      "id": "areAreas3-ALL",
+      "source": "testdata/conformance/g2-norm-audit/areAreas3-all-2.4.ili",
+      "sha256": "ebeed42fa843de76973f5febe217e97a2f882912bf12f71201638265eb2ae7e8",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas3-all-2.4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas3-all-2.4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas3-all-2.4.ili>\ntestdata/conformance/g2-norm-audit/areAreas3-all-2.4.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-27 10:28:15\n"
+        }
+      }
+    },
+    {
+      "id": "areAreas3-THIS",
+      "source": "testdata/conformance/g2-norm-audit/areAreas3-this-2.4.ili",
+      "sha256": "c638fa820f3409e1dfafeb6c6b32ec8baf8c332b912c638ccb362231f1c4ba1d",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas3-this-2.4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas3-this-2.4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas3-this-2.4.ili>\ntestdata/conformance/g2-norm-audit/areAreas3-this-2.4.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-27 10:28:15\n"
+        }
+      }
+    },
+    {
+      "id": "areAreas2-ALL-23-control",
+      "source": "testdata/conformance/g2-norm-audit/areAreas2-all-2.3.ili",
+      "sha256": "f07194439273107ae253636a3550919075dab8f87400c2c088394cc98a5cab95",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas2-all-2.3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a010f79c17d7c84e193818ab], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a010f79c17d7c84e193818ab\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/testdata/conformance/g2-norm-audit/areAreas2-all-2.3.ili\",\"revision\":\"1\",\"startOffset\":206,\"endOffset\":265},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@206\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreas2/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas2-all-2.3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas2-all-2.3.ili>\nInfo: ...compiler run done 2026-10-27 10:29:13\n"
+        }
+      }
+    },
+    {
+      "id": "areAreas2-THIS-23-control",
+      "source": "testdata/conformance/g2-norm-audit/areAreas2-this-2.3.ili",
+      "sha256": "17b688411b712bae1c9ef4c04f0cb3a5a61c08b864ea3fa3b784d5c0bdc54dcb",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas2-this-2.3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ce434c20fbf2d354318dab3c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ce434c20fbf2d354318dab3c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/testdata/conformance/g2-norm-audit/areAreas2-this-2.3.ili\",\"revision\":\"1\",\"startOffset\":206,\"endOffset\":266},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@206\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreas2/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas2-this-2.3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas2-this-2.3.ili>\nInfo: ...compiler run done 2026-10-27 10:29:14\n"
+        }
+      }
+    },
+    {
+      "id": "areAreas3-ALL-23-control",
+      "source": "testdata/conformance/g2-norm-audit/areAreas3-all-2.3.ili",
+      "sha256": "9294b6a927f2d0dbe5df0def1e40f1c8620e004ec916982a8e6a68cdc325969e",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas3-all-2.3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6fef1dbadad7d9b6ebc3fb5d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6fef1dbadad7d9b6ebc3fb5d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/testdata/conformance/g2-norm-audit/areAreas3-all-2.3.ili\",\"revision\":\"1\",\"startOffset\":206,\"endOffset\":265},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@206\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreas3/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas3-all-2.3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas3-all-2.3.ili>\ntestdata/conformance/g2-norm-audit/areAreas3-all-2.3.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-27 10:29:14\n"
+        }
+      }
+    },
+    {
+      "id": "areAreas3-THIS-23-control",
+      "source": "testdata/conformance/g2-norm-audit/areAreas3-this-2.3.ili",
+      "sha256": "8989de7a3740f26d5f6b65baa898d300248afcf85037cdc7f412c54cdafd5c27",
+      "observed": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "testdata/conformance/g2-norm-audit/areAreas3-this-2.3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2a4a1a7a1de5721dddc7221e], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2a4a1a7a1de5721dddc7221e\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/testdata/conformance/g2-norm-audit/areAreas3-this-2.3.ili\",\"revision\":\"1\",\"startOffset\":206,\"endOffset\":266},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"constraint@206\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"Unknown standard function INTERLIS.areAreas3/BUILTIN_NAME\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "testdata/conformance/g2-norm-audit/areAreas3-this-2.3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <testdata/conformance/g2-norm-audit/areAreas3-this-2.3.ili>\ntestdata/conformance/g2-norm-audit/areAreas3-this-2.3.ili:1:There is no FUNCTION \"areAreas3\" in MODEL INTERLIS.\n...compiler run failed 2026-10-27 10:29:14\n"
+        }
+      }
+    }
+  ],
+  "normativeDecision": "NOT_MADE",
+  "responsibleStep": "E2",
+  "normEvidence": {
+    "2.4": {
+      "documentSha256": "a8fa2679615ed4bd6939055f3adfd799e0e101afdf7c4cdea9ba85d177e75069",
+      "url": "https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf",
+      "excerpts": [
+        {
+          "page": 87,
+          "section": "3.14",
+          "quote": "FUNCTION areAreas2 (Objects: OBJECTS OF ANYCLASS; \n                   SurfaceBag: TEXT; \n                   SurfaceAttr: TEXT): BOOLEAN;",
+          "quoteSha256": "340b99ea8fbd31178ec79868ddfafe5296662573fe9d7d267e451638456ca74e",
+          "extractedPageSha256": "7a6763d1df948f21a16ceaa8a39c4c1e065171365b0d686a194de0ca258b1e47",
+          "excerptStart": 780,
+          "excerptEnd": 916
+        },
+        {
+          "page": 122,
+          "section": "A",
+          "quote": "FUNCTION areAreas2 (Object: OBJECT OF ANYCLASS; \n                      SurfaceBag: TEXT; \n                      SurfaceAttr: TEXT): BOOLEAN;",
+          "quoteSha256": "4e88761fbeab74688c63f7d48c0aa0f5a012b2aa98148c998c22da8c826dba72",
+          "extractedPageSha256": "3c7e0600c37e51ad544e5fc2800c849614ba6770c7f5b879be0349fe77b43d7c",
+          "excerptStart": 1576,
+          "excerptEnd": 1716
+        },
+        {
+          "page": 122,
+          "section": "A",
+          "quote": "FUNCTION areAreas3 (Objects: OBJECTS OF ANYCLASS; \n                      SurfaceBag: TEXT; \n                      SurfaceAttr: TEXT): BOOLEAN;",
+          "quoteSha256": "d38012ace653fe742d209f6ab86a00cbcfbc2b2707cbc5954e5bb611d6e23a74",
+          "extractedPageSha256": "3c7e0600c37e51ad544e5fc2800c849614ba6770c7f5b879be0349fe77b43d7c",
+          "excerptStart": 1720,
+          "excerptEnd": 1862
+        }
+      ]
+    },
+    "2.3": {
+      "documentSha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+      "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+      "sections": [
+        "2.14",
+        "A"
+      ],
+      "pages": [
+        65,
+        66,
+        94,
+        95,
+        96,
+        97
+      ],
+      "extractedPageHashes": {
+        "65": "8bc10e7fdfe53a2b33eeaac334894d0afcbea508501617202de14c6b5de2b0f8",
+        "66": "6f096525aa712c10cf5210e1bcd31329a6c04fc4cb7b817696ebca58fdbf2af0",
+        "94": "587b697742b76cd95cd8852d2530798f834d6d197aa284f342bee2233c5c49c0",
+        "95": "9c60c8f06123f9aae8604f00181f285f88408d1198f8c0f73ae9abbff9fed233",
+        "96": "453c073ae40c4e35f646e92dee9662275177d785938ad697e3bd99d508a71fa7",
+        "97": "867ff971ebace5093ac89ae136108267cfe972c04480e19964cbc4ebd61ca7d9"
+      },
+      "nameOccurrenceCount": {
+        "areAreas2": 0,
+        "areAreas3": 0
+      },
+      "interpretationLimit": "Absence from these standard declarations is an observation; user normative profile decision still required."
+    }
+  },
+  "recommendation": "Propose retaining current 2.4 OBJECTS signatures for areAreas2 (chapter 3.14) and areAreas3 (appendix A), and their current absence in the 2.3 profile. This resolves the areAreas2 conflict in favor of the explicit function chapter and its SET example; not a user approval or changed expectation.",
+  "referenceDifferenceMeaning": "ili2c 5.6.9 accepts areAreas2 in both language versions and rejects areAreas3 as an unknown function in both. These observations alone do not decide normative correctness.",
+  "additionalImplementationScope": "E2 must verify bound public function parameters/results and negative argument cases after user decision; this name/signature probe does not close SET-body context E3.",
+  "ownArtifactHashes": {
+    "interlis-cli/build/install/interlis-cli/lib/ST4-4.3.4.jar": "f927ac384c46d749f8b5ec68972a53aed21e00313509299616edb73bfa15ff33",
+    "interlis-cli/build/install/interlis-cli/lib/antlr-runtime-3.5.3.jar": "68bf9f5a33dfcb34033495c587e6236bef4e37aa6612919f5b1e843b90669fb9",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-4.13.2.jar": "e6f0b10d2ad206f338afe16867fc47148b6729d6e3a260ea28379b91f03a3657",
+    "interlis-cli/build/install/interlis-cli/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-cli/build/install/interlis-cli/lib/icu4j-72.1.jar": "3df572b240a68d13b5cd778ad2393e885d26411434cd8f098ac5987ea2e64ce3",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-cli-0.2.0-SNAPSHOT.jar": "4dff2a3b7d7bba26cfdcbb6ca5172c80f799dbbd525ee34560023491f7948059",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "6ea3886f03069a44d67ade2ffa4851cd357821b528ab5115e9f036541dd4065e",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-model-0.2.0-SNAPSHOT.jar": "2cef8908c4ccefd4e7076c314f4b3df034b8c81bb95bc2838f5a777c22d4c46a",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "1aa61e30866e3ecf4bf16569771da154e151436b4a8ae83ae1cdbdf40decc382",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "0be5cb2bb5eb28ff567efee4e3dcc142f67db0b347fbfd0955b0a52911fe7960",
+    "interlis-cli/build/install/interlis-cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "c952e3ca1e8a4f8f735abb9b5d8ecffcf1e3f867acc5d1053a6a40fc638ec593",
+    "interlis-cli/build/install/interlis-cli/lib/org.abego.treelayout.core-1.0.3.jar": "fa5e31395c39c2e7d46aca0f81f72060931607b2fa41bd36038eb2cb6fb93326"
+  },
+  "ownArtifactBaseline": "build/reports/g2/A1/run-v2/manifest.json"
+}

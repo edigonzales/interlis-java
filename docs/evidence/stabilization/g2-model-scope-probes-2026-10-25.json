@@ -1,0 +1,70 @@
+{
+  "scope": "Additional observed difference, not a normative verdict or accepted exception. E1/E3 must distinguish an explicit ABSTRACT requirement from non-instantiability outside topics.",
+  "cases": [
+    {
+      "version": "2.3",
+      "source": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = CLASS C = value: TEXT; END C; END F.\n",
+      "sha256": "b6aae15063538430c29f2c78e14baa9d6377290b422e382aca032740582e3591",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-model-scope/model-scope-2.3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-model-scope/model-scope-2.3.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-model-scope/model-scope-2.3.ili>\nbuild/reports/stabilization/g2-model-scope/model-scope-2.3.ili:1:CLASS C must be declared as abstract. It is not part of a topic.\n...compiler run failed 2026-10-25 04:08:41\n"
+        }
+      }
+    },
+    {
+      "version": "2.4",
+      "source": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = CLASS C = value: TEXT; END C; END F.\n",
+      "sha256": "f26649be79b44013396e764804a4e746d5e9073e2de1db75800b361f9b2ae974",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-model-scope/model-scope-2.4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-model-scope/model-scope-2.4.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-model-scope/model-scope-2.4.ili>\nbuild/reports/stabilization/g2-model-scope/model-scope-2.4.ili:1:CLASS C must be declared as abstract. It is not part of a topic.\n...compiler run failed 2026-10-25 04:08:42\n"
+        }
+      }
+    }
+  ],
+  "sourceEvidenceManifest": "verification-2026-10-25-g2-B-final.json"
+}

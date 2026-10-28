@@ -1,0 +1,66 @@
+{
+  "step": "A2",
+  "subscope": "A2-R2 correction of SPECIAL-SCOPE and OBJECT-ASSERTION",
+  "acceptance": "REWORK",
+  "independentRecheck": "g2-reviews/A2-R2-attempt2.json",
+  "previousReview": "g2-reviews/A2-R2-attempt1.json",
+  "sourceInventorySha256": "53add09d890c7ab07d1e236724594f8253a5dd1f476a1c9d5926607b1637e570",
+  "technicalTests": 29,
+  "command": "JAVA_HOME=/Users/stefan/.sdkman/candidates/java/25.0.3-tem ./gradlew g2EvidenceTest --rerun-tasks --console=plain",
+  "exitCode": 0,
+  "log": "build/reports/g2/A2/r2-rework/gradle-evidence-tests.log",
+  "logSha256": "03cc06aa4d5611850694d6dbf0260a64342ad439cc925bac4f8e9e90a552b312",
+  "corrections": [
+    "All21 special rows have explicit both-engine/syntax scope and existing rule references",
+    "Builtin variants record actual typed signature uses, argument/result positions and active language versions",
+    "OBJECT has zero current uses; assertions conditional on explicit user norm decision",
+    "areAreas2 row directly retains chapter OBJECTS and appendix OBJECT with exact PDF excerpts"
+  ],
+  "normExcerptsChecked": {
+    "2.3": 132,
+    "2.4": 143
+  },
+  "normativeExpectationsChanged": false,
+  "newExceptions": 0,
+  "remaining": [
+    "A2-R3 rule-specific contract/case assertions",
+    "A2-R4 complete paragraph/contract/exception audit",
+    "Independent full A2 acceptance before A3"
+  ],
+  "g2": "OPEN",
+  "p3": "OPEN",
+  "r2Disposition": "CLOSED",
+  "previousEvidence": "verification-2026-10-27-g2-A2-R2-rework.json",
+  "reviewSha256": "0f70fbe2a7a699b999710560a19bd52cfa0221e9825e70060365f5980a57e168",
+  "reviewedSourceDigest": "293bef845555da1a8687b8d252ffbec439ca452965767d42912a2cf1bf6e8ff4",
+  "packet": {
+    "manifest": "build/reports/g2/A2/r2-rework-packet/manifest.json",
+    "sha256": "12e08755533798016516a8005b4ca5b271163e44dad2295ddacc35c7141e9b07",
+    "hashVerified": true,
+    "patchSha256": "667595fffdb3f12733b4c2c390707347621dc871081bb2a457fa49bccac4af79",
+    "previousReviewSha256": "bb839bf30fe46074e9ae7d4ccd6dfd0d6a9b32ba0cc287c36e0b4b86aa05d684",
+    "beforeManifestSha256": "f0a7ec5d43c1d9d1c6c16c56f5027be12a0dfdec5c4f88f717f48ed6bf578f96",
+    "beforeSourceDigest": "2ec0ae2fc12a40688a2fa6ca4a14eb08028006c84dfedd91900890900989802b",
+    "beforeFiles": 1105,
+    "afterManifestSha256": "de11a7aa4d00cec87855d9db72e653f0511b78e513cacac80f5afd1781c41d01",
+    "afterSourceDigest": "293bef845555da1a8687b8d252ffbec439ca452965767d42912a2cf1bf6e8ff4",
+    "afterFiles": 1108,
+    "changedSources": 11,
+    "archivesAndManifestsMatch": true,
+    "patchReproducesFrozenAfterSources": true,
+    "normHashesMatch": true,
+    "reportHashesMatch": true
+  },
+  "independentCounterprobes": {
+    "artifact": "build/reports/g2/A2/r2-recheck/counterprobe.json",
+    "script": "build/reports/g2/A2/r2-recheck/counterprobe.py",
+    "scriptSha256": "1a02986b7cbde02dc03ed0258de45126f1b3402f1c5ba1d6590e72ac31abc13a",
+    "artifactSha256": "223d713d6141ab497755a34e7d6ba5efefe4013129623699bfddf7be05f4c5f1",
+    "status": "PASS",
+    "mutationsDetected": [
+      "wrong MULTIPOLYLINE active version",
+      "invented OBJECT signature use",
+      "factory areAreas2 OBJECTS-to-OBJECT mutation changed the exact use, argument position and language"
+    ]
+  }
+}

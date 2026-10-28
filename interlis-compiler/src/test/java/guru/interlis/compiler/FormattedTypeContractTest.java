@@ -23,7 +23,7 @@ class FormattedTypeContractTest {
                 MODEL F AT "https://example.interlis.ch" VERSION "1.0" =
                   TOPIC T =
                     CLASS C =
-                      value : FORMAT INTERLIS.XMLDate "2010-1-1" .. "2110-12-31";
+                      value : FORMAT INTERLIS.XMLDate "2010-01-01" .. "2110-12-31";
                     END C;
                   END T;
                 END F.
@@ -36,9 +36,10 @@ class FormattedTypeContractTest {
                 CompilerEngines.create().compile(request, CancellationToken.none()));
         FormattedType type = succeeded.analysis().semanticGraph().types().stream()
                 .filter(FormattedType.class::isInstance).map(FormattedType.class::cast)
+                .filter(f -> f.minimum().isPresent())
                 .findFirst().orElseThrow();
         assertEquals("INTERLIS.XMLDate", type.formatName());
-        assertEquals(Optional.of("2010-1-1"), type.minimum());
+        assertEquals(Optional.of("2010-01-01"), type.minimum());
         assertEquals(Optional.of("2110-12-31"), type.maximum());
     }
 }

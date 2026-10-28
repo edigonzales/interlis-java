@@ -5,6 +5,7 @@
 <h1>GraalVM Web Image</h1>
 <pre id="out">loading…</pre>
 <script src="interlis-compiler.js"></script>
+<script src="stabilization-contract.js"></script>
 <script>
 window.webImageProbe = (async () => {
   for (let i = 0; i < 200 && typeof globalThis.interlisCompilerHandle !== 'function'; i++) {
@@ -41,7 +42,13 @@ END WebImage.
     roots: [{kind: 'byName', modelName: 'WebImage'}]
   });
   document.getElementById('out').textContent = JSON.stringify(compile, null, 2);
+  const closed = call('closeSession', sessionId);
+  if (closed.status !== 'ok') throw new Error('closeSession failed');
+  const stabilizationCases = await globalThis.verifyInterlisStabilization({
+    handle: globalThis.interlisCompilerHandle
+  });
   return {status: capabilities.status,
+    stabilizationCases,
     tool: capabilities.result && capabilities.result.toolVersion,
     outcome: compile.result && compile.result.outcome};
 })();

@@ -1,5 +1,11 @@
 # Build und Repository
 
+Der beauftragte G2-Abschluss verwendet für eingefrorene Revieweingaben und den
+vollständigen Ausgangslauf `tools/reference/g2_evidence.py`. `g2EvidenceTest`
+prüft dessen Fehlerpfade als Teil von `check`. Archive und Rohberichte liegen
+unter `build/reports/g2/`; die Hilfe schreibt keine Baselines oder Erwartungen.
+Das spätere G2-Gate bleibt vom P3-`releaseCheck` getrennt.
+
 ## 1. Entscheidung: Gradle mit Groovy-DSL
 
 Das Projekt verwendet **Gradle als einziges orchestrierendes Build-Tool**. Alle Buildskripte sind Groovy (`.gradle`), Java-Quellen verwenden Java 25 ohne Preview. Der Gradle-Wrapper gehört ins Repository. Maven wird nicht als zusätzliches Buildsystem eingeführt. Das historische Maven-POM des Syntaxspikes ist Referenzevidenz; P0 überführt dessen Ablauf in Gradle.
@@ -19,7 +25,14 @@ Maven Central und Maven-kompatible Veröffentlichungsmetadaten sind Repository-/
 | TeaVM | 0.16.0 als Startpin | dokumentierte DSL plus tatsächlicher Gradle-/Browserlauf |
 | Tests | JUnit Jupiter auf JUnit Platform | konkreter kompatibler BOM-/Engine-Pin bei P0, keine dynamischen Versionen |
 | Web Image | separat installierte geeignete Oracle-GraalVM-Version | eigener P1-Versuch, nicht still als Standard-JDK vorausgesetzt |
-| Node/Browser | geprüfte Pins je WASM-Testprofil | echte Versionsausgaben im Report |
+| Node/Browser | Node 24.22.0 für portable Hostprüfungen, Browserpins je Testprofil | echte Versionsausgaben im Report; `checkNodeRuntime` prüft den Node-Pin |
+
+`-PnodeExecutable=/absoluter/pfad/zu/node` bestimmt die Node-Ausführung für
+Vertragstests und Benchmarks; ohne Angabe wird `node` verwendet und dessen
+Version geprüft. Der Pin steht in `gradle.properties`. Node 22.23.1 bleibt wegen
+eines reproduzierten Stillstands im optimierenden V8-Wasm-Compiler ausserhalb
+dieses Hostprofils. Diagnoseversuche mit `--liftoff-only` ersetzen den Pin nicht.
+Der Produktionspfad im Browser bleibt TeaVM-WasmGC mit normaler Optimierung.
 
 Die offizielle Gradle-Matrix nennt Java 25-Unterstützung ab 9.1.0. Der am 18.10.2026 abgerufene aktuelle Dokumentationsstand bezeichnet sich als 9.8.1. **P0 muss einen tatsächlich verfügbaren und mit TeaVM getesteten 9.x-Patch fest eintragen**, vorzugsweise den dann aktuellen stabilen Patch. Dieser noch auszuführende Integrationsschritt ist keine offene Wahl des Build-Tools. Quelle: [Gradle-Kompatibilität](https://docs.gradle.org/current/userguide/compatibility.html).
 
@@ -153,6 +166,22 @@ Ab P1 hängt releaseCheck für die P1-Freigabe von check, checkPortable, checkBr
 
 Root-Tasks aggregieren nur vorhandene Module. `check` muss nach Einführung weiterer Module weiter sinnvoll bleiben. Ein optionales lokales Profil darf Toolchainfehlen sichtbar als `NOT_RUN` berichten; im freigabepflichtigen CI-Profil ist dasselbe Fehlen ein Gate-Fehler. Es gibt keine success-Task, die nur eine Datei mit Erfolgstext schreibt.
 
+Die vorhandenen TeaVM- und Web-Image-Contracttasks akzeptieren
+`-PnodeExecutable=/absoluter/pfad/zu/node`. Reports nennen die tatsächlich
+gestartete Runtime. Die Browserprüfung verwendet die zur gepinnten
+Playwright-Installation gehörenden Browser; hart codierte Pfade zu anderen
+Cacheversionen sind kein reproduzierbares Profil. Echtes Safari wird separat
+mit dem macOS-Treiber geprüft.
+
+Ein Erfolg erfordert sowohl bestandene Assertions als auch einen regulären
+erfolgreichen Prozessabschluss. Ein vor dem Timeout geschriebener PASS-Report,
+ignorierte Exitcodes oder absichtliches Beenden des Prozesses genügen nicht.
+Rohberichte werden unter Build-Ausgaben erzeugt; überprüfte Evidenz wird
+ausdrücklich mit Stand, Werkzeugversionen und Artefakthashes nach
+`docs/evidence/` übernommen. Normale Prüfläufe verändern weder Pins noch
+Erwartungen. Für P3 gehören Konformitäts-, Performance-, Distributions- und
+Plattformnachweise zu den Pflichtprüfungen; fehlende Nachweise halten G3 offen.
+
 Korpusbeschaffung, falls erforderlich, ist eine getrennte explizite Task mit festem Commit und Prüfsumme. Tests laufen gegen lokal bereitgestellte Bytes. Unit-Tests verwenden keine unstabilen Online-Modellserver. Integrationstests mit HTTP benötigen einen kontrollierten Testserver und festgelegte Antworten.
 
 ## 7. CI und lokale Entwicklung
@@ -183,3 +212,23 @@ Die Architekturregeln können zunächst mit kleinen gezielten Tests geprüft wer
 Die erste nutzbare CLI-Auslieferung ist eine `application`-Distribution mit `lib/` und Startskripten. Ein Fat-JAR wird erst ergänzt, wenn ein freigegebener Aufruf wie `java -jar ili2c.jar` es verlangt. Normale Bibliotheks-JARs bleiben unverschattet. Die konkrete Legacy-Mainclass und Dateibenennung werden über das CLI-Kompatibilitätsprofil getestet.
 
 WASM-Auslieferungen enthalten einen versionierten JS-Lader, das Wasm-Artefakt, eine Protokollversion und einen Ressourcen-/Buildmanifest. Das Builddatum ist Betriebsmetadatum, kein semantischer Modellfingerprint. Veröffentlichungen verwenden feste Versionsnummern und nachvollziehbare Releaseprofile. Eine Maven-kompatible Publikation ist mit Gradle möglich und verpflichtet Anwender nicht zur Verwendung von Maven.
+
+
+`conformanceWrapperTest` prüft mit Python-unittest die Fehlerpfade der
+versionierten Normerwartungen. `check` und `conformanceCheck` hängen davon ab.
+`conformanceCheck` erhält den rohen externen Bericht unter `build/conformance/`
+und schreibt die zusätzliche Normbewertung in den Projektbericht unter
+`build/reports/conformance/`; Erwartungen und Pins werden nie automatisch aktualisiert.
+
+Die funktionalen portablen Probeläufe werden nach den im selben Taskgraph
+angeforderten Compiler-/Native-Image-Builds und dem Referenzprozesslauf
+angeordnet und untereinander serialisiert. mustRunAfter fügt keine zusätzlich
+angeforderte Laufzeit hinzu; bestehende Timeouts/Budgets bleiben unverändert.
+Das verhindert konkurrierende CPU-/Speicherlast der Verifikationsprozesse,
+ist aber selbst kein Performance- oder Plattform-Abnahmenachweis.
+
+E1-Parsernachweis: Eine ausgeführte ANTLR-Regeneration darf keine Tokennummern
+aus früheren Ausgaben wiederverwenden. Der Generierungstask räumt sein eigenes
+generiertes Ausgabeverzeichnis vor der Neuerzeugung; Lexer/Parser und deren
+Tokenvokabular müssen zum gleichen Grammatikstand gehören. Quellverzeichnisse
+werden nicht verändert. Inkrementelle und frische Builds müssen übereinstimmen.

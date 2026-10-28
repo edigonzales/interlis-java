@@ -97,6 +97,65 @@ class HttpSourceLoaderTest {
         return failure.reason();
     }
 
+    @Test
+    void cancelsWhileWaitingForBodyBytes() throws Exception {
+        var headersSent = new java.util.concurrent.CountDownLatch(1);
+        var releaseServer = new java.util.concurrent.CountDownLatch(1);
+        String base = start(exchange -> {
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().write('x');
+            exchange.getResponseBody().flush();
+            headersSent.countDown();
+            try {
+                releaseServer.await(5, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            } finally {
+                exchange.close();
+            }
+        });
+        var cancelled = new java.util.concurrent.atomic.AtomicBoolean();
+        var result = java.util.concurrent.CompletableFuture.supplyAsync(() ->
+                new HttpSourceLoader().load(new SourceLocator(base + "/stream"),
+                        new FetchPolicy(false, 1024, Duration.ofSeconds(10)), cancelled::get));
+        try {
+            assertTrue(headersSent.await(2, java.util.concurrent.TimeUnit.SECONDS));
+            cancelled.set(true);
+            var failure = assertThrows(java.util.concurrent.ExecutionException.class,
+                    () -> result.get(1, java.util.concurrent.TimeUnit.SECONDS));
+            assertTrue(failure.getCause() instanceof guru.interlis.execution.OperationCancelledException);
+        } finally {
+            cancelled.set(true);
+            releaseServer.countDown();
+        }
+    }
+
+    @Test
+    void rejectsOversizeChunkedResponseBeforeServerFinishes() throws Exception {
+        var releaseServer = new java.util.concurrent.CountDownLatch(1);
+        String base = start(exchange -> {
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().write(new byte[1024]);
+            exchange.getResponseBody().flush();
+            try {
+                releaseServer.await(5, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+            } finally {
+                exchange.close();
+            }
+        });
+        var result = java.util.concurrent.CompletableFuture.supplyAsync(() ->
+                reason(new HttpSourceLoader(), base + "/stream",
+                        new FetchPolicy(false, 64, Duration.ofSeconds(10))));
+        try {
+            assertEquals(SourceLoadException.Reason.TOO_LARGE,
+                    result.get(2, java.util.concurrent.TimeUnit.SECONDS));
+        } finally {
+            releaseServer.countDown();
+        }
+    }
+
     private String start(Handler handler) {
         try {
             server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);

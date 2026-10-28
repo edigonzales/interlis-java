@@ -20,6 +20,7 @@ public record DiagramCompartment(String id, CompartmentKind kind,
     }
 
     public enum CompartmentKind {
+        PARAMETERS,
         /** The {@code ATTRIBUTES} constant. */
         ATTRIBUTES,
         /** The {@code ROLES} constant. */

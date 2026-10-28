@@ -1,0 +1,163 @@
+{
+  "recordedAt": "2026-10-25T09:09:14.546449+00:00",
+  "scope": "TEST-011/012: one user-authorized accepted-original reference exception",
+  "authorization": "User: Ah sorry falsch verstanden. Mache aus dem FAIL einen XFAIL.",
+  "case": "ili23.LineType23Test.overlapTooSmallFail",
+  "gate": "G2 OPEN; P3 OPEN; independent normative review OPEN",
+  "source": {
+    "baseCommit": "3820c6b5dead437cdaeb9569fbfe726abec25d6e",
+    "implementationTreeSha256": "f1bc68cd56a03dc8661b33200cb54e40d7e8fa305ce8c856b72b8bbea2148f95",
+    "workingTreeDirty": true,
+    "treeDigestMethod": "Sorted git cached/nonignored paths excluding docs; UTF8 path + NUL + exact bytes + NUL."
+  },
+  "host": {
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.8.1\nBuildVersion:\t\t24H32",
+    "model": "MacBookAir10,1",
+    "cpu": "Apple M1",
+    "memoryBytes": 17179869184,
+    "architecture": "arm64"
+  },
+  "toolchains": {
+    "java": "openjdk 25.0.3 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)",
+    "gradle": "9.8.1"
+  },
+  "norms": {
+    "2.3": {
+      "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+      "sha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+      "edition": "2006-04-13"
+    }
+  },
+  "commands": [
+    "JAVA_HOME=<home>/.sdkman/candidates/java/25.0.3-tem ./gradlew conformanceWrapperTest conformanceCheck --console=plain",
+    "Targeted JSON check of original, positive control and zero-tolerance control through evaluate_normative_case"
+  ],
+  "projectExitCode": 0,
+  "referenceRunnerExitCode": 1,
+  "wrapperTests": 20,
+  "projectSummary": {
+    "PASS": 574,
+    "XFAIL": 19,
+    "FAIL": 0,
+    "XPASS": 0,
+    "ERROR": 0,
+    "TOTAL": 593
+  },
+  "referenceSummary": {
+    "XPASS": 0,
+    "TOTAL": 593,
+    "XFAIL": 1,
+    "PASS": 574,
+    "ERROR": 0,
+    "FAIL": 18
+  },
+  "normativeAssessment": {
+    "testId": "ili23.LineType23Test.overlapTooSmallFail",
+    "referenceExpectation": {
+      "outcome": "reject"
+    },
+    "referenceClassification": "FAIL",
+    "actualOutcome": "accepted",
+    "ownExpectation": "accepted",
+    "norm": {
+      "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+      "sha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+      "sections": "2.8.12.2, S. 50",
+      "reason": "Die 2.3-Norm verlangt gleiche Einheiten, eine positive und unveränderliche Toleranz, nennt hier aber keine Präzisionsuntergrenze. Die explizite Stellenzahlregel in 2.4 wird nicht auf 2.3 übertragen.",
+      "reviewStatus": "Independent normative review remains OPEN; XFAIL explicitly requested by the user on 2026-10-25."
+    },
+    "result": "PASS",
+    "original": {
+      "command": [
+        "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "<home>/.cache/interlis-java/conformance/fixtures/fixtures/4ea207f388ef7d91b03d968cc1636f4de84e36ea/ili2c-4ea207f388ef7d91b03d968cc1636f4de84e36ea/test/data/ili23/lineType/OverlapTooSmallFail.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+      "stderr": ""
+    },
+    "positiveControl": {
+      "command": [
+        "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "<repo>/testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.positive.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+      "stderr": ""
+    },
+    "negativeControl": {
+      "command": [
+        "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+        "check",
+        "--json",
+        "<repo>/testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.zero.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-77d23834fc9c238b65b07bcf], requestedRoots=[BySource[source=SourceId[value=file://<repo>/testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.zero.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-77d23834fc9c238b65b07bcf\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.zero.ili\",\"revision\":\"1\",\"startOffset\":248,\"endOffset\":339},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Geometry\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"overlap tolerance must be greater than zero/OVERLAP_POSITIVE\"}]}]}\n",
+      "stderr": ""
+    }
+  },
+  "pins": {
+    "suite": {
+      "url": "https://codeberg.org/edigonzales/interlis-compiler-testsuite/archive/88576ffc4cd491dd72d2375eb897ea9f3f55d2c3.tar.gz",
+      "commit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+      "sha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe"
+    },
+    "baselineSha256": "33893a959bfeeb5d0ac21d9d1eeb0987b859e5cde0f86f283821429ac6b78a59",
+    "previousNormativeExpectationsSha256": "0be0cdb655990e3f22c1e391d0653f4ef53af4f18dd98077d02eabdb615b4ffc",
+    "normativeExpectationsSha256": "d4a662cd29e6352cc9dda429db00eeb46a5251da1e3aa87c3fba4b086ea908ad",
+    "original": [
+      {
+        "path": "test/data/ili23/lineType/OverlapTooSmallFail.ili",
+        "sha256": "bea6bc62dbf8c58fbf801ceadfb15e320a7fc92c410f5c5562329f26f75241e0"
+      }
+    ],
+    "positiveControls": [
+      {
+        "path": "testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.positive.ili",
+        "sha256": "482b45123bcfe57f65ca97d6cbfac4db46e2bbde5a2c056e5f07c5d42b70eaaa"
+      }
+    ],
+    "negativeControls": [
+      {
+        "path": "testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.zero.ili",
+        "sha256": "9416737451f673826bdcf40abede73552802cb569fcdb2c3896ad59a8eb770a8"
+      }
+    ]
+  },
+  "reports": {
+    "reference": {
+      "path": "build/reports/stabilization/g2-overlap-xfail/reference.json",
+      "sha256": "6f31fba020e13aeab5ed9422e8b91c80bb82b044e0e3ebb978dd5a0988803583"
+    },
+    "project": {
+      "path": "build/reports/stabilization/g2-overlap-xfail/project.json",
+      "sha256": "d0cbe8bfd8c11a1d7b01a3d631478b02f265aa4f976522c34d6942e7651921c8"
+    },
+    "assessment": {
+      "path": "build/reports/stabilization/g2-overlap-xfail/assessment.json",
+      "sha256": "28c9d703aaf1b6ed7ad465919344720692da227bed8d08443d7d23be6f4bb7f0"
+    }
+  },
+  "log": {
+    "path": "build/reports/stabilization/g2-overlap-xfail/verification.log",
+    "sha256": "23841f1eb8a8c677f9fcf5b661684b2c53277b96f83bfa0f62f3bc4ac0181c7b"
+  },
+  "retainedCompilerEvidence": {
+    "manifest": "docs/evidence/stabilization/verification-2026-10-25-g2-C.json",
+    "sha256": "07391ab224c444b5c0d4fe3ee10446a5ccb1b0fa6495611a0355c3920e16f382",
+    "jvmTests": 471,
+    "portableCases": 1676,
+    "rerun": false,
+    "reason": "Compiler/runtime code and all previously checked JVM/TeaVM/Web-Image artifacts unchanged; this delivery changes only conformance evaluation, controls and documentation.",
+    "artifactHashesVerified": true
+  },
+  "limitations": [
+    "User-authorized XFAIL classification does not complete independent normative review.",
+    "LineCoord source abstraction and other C/D–G/P3 obligations remain open. No compiler semantics or suite input/reference expectation changed."
+  ]
+}

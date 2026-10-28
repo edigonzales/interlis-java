@@ -1,0 +1,2709 @@
+{
+  "recordedAt": "2026-10-25T07:39:07.815378+00:00",
+  "reference": "ili2c 5.6.9",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "total": 60,
+  "ownExpected": 60,
+  "referenceAgreements": 38,
+  "cases": [
+    {
+      "id": 0,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/0/0.ili",
+          "sha256": "775928cbaa28bbd17c2483ed7a46ed6ea876ffabeb11e71e5533e90f91f5dc64",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN L (ABSTRACT)=POLYLINE; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/0/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/0/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/0/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:20\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 1,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/1/0.ili",
+          "sha256": "24c45aecb3bd6ce3c21486c841692432f3247cd14741f67c2726cc3faa5197b7",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN L=POLYLINE; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/1/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-21b89a6334351cc9fac4ba88], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-21b89a6334351cc9fac4ba88\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/1/0.ili\",\"revision\":\"1\",\"startOffset\":79,\"endOffset\":90},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/1/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/1/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/1/0.ili:1:DOMAIN L has an unexpected abstract/incomplete definition (missing line form)\n...compiler run failed 2026-10-25 08:38:20\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 2,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/2/0.ili",
+          "sha256": "7e7d7d6c4ba06b9ef6f5a5db71e452d9e975a0679441d995f3c7b81a536cf29b",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/2/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3e4963724db3bab5272ab617], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3e4963724db3bab5272ab617\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/2/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":145},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/2/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/2/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/2/0.ili:1:DOMAIN L has an unexpected abstract/incomplete definition (missing line form)\n...compiler run failed 2026-10-25 08:38:22\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 3,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/3/0.ili",
+          "sha256": "78d1094b9d08c030c60a484b1739de6a74bd964d202a4e68319e987f20248917",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN L=POLYLINE WITH (STRAIGHTS); END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/3/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-98e6de2c4a49768432ce4ad2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-98e6de2c4a49768432ce4ad2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/3/0.ili\",\"revision\":\"1\",\"startOffset\":79,\"endOffset\":107},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/3/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/3/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/3/0.ili:1:DOMAIN L has an unexpected abstract/incomplete definition (missing VERTEX)\n...compiler run failed 2026-10-25 08:38:22\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 4,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/4/0.ili",
+          "sha256": "85070f9ec649e9be0b4e3f4c290815581cdf5d4aee4cea5e6dc01c108a74a6a0",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN S=SURFACE WITH (STRAIGHTS) VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/4/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-db6bb7b5af223128f33ba702], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-db6bb7b5af223128f33ba702\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/4/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":161},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"S\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/4/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/4/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/4/0.ili:1:DOMAIN S has an unexpected abstract/incomplete definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:38:23\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 5,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/5/0.ili",
+          "sha256": "2ac20b11e96ce21a8e71a95a9bb3a05287e76438bd45f6743712788c310a42e1",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN S=SURFACE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-986f12909740223b9adb7d4f, diag-cbe83b1ba88fbb40f1c17a45], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-986f12909740223b9adb7d4f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":178},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"S\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"INTERLIS 2.3 WITHOUT OVERLAPS requires an explicit value/OVERLAP_VERSION\"}]},{\"id\":\"diag-cbe83b1ba88fbb40f1c17a45\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":178},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"S\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili:1:expecting '>', found ';'\n<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili:1:expecting ';', found 'null'\n<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili:1:expecting \"END\", found 'null'\n<repo>/build/reports/stabilization/g2-geometry-processes/5/0.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 08:38:23\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 6,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/6/0.ili",
+          "sha256": "d98bebfb3ffc86f55ea56c0d9e4e6b4ccdb95075d325b0ea3c191028f6e33e97",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.0001; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/6/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/6/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/6/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/6/0.ili:1:The maximal overlap must not undercut the accuracy of the coord domain.\n...compiler run failed 2026-10-25 08:38:24\n"
+        }
+      },
+      "normativeAssessment": "OPEN: 2.3 tolerance precision, user requested separate normative review without an automatic exception."
+    },
+    {
+      "id": 7,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/7/0.ili",
+          "sha256": "53b8105e4ce9c9ba0fb4d5efc6fe894141166fee7a0a7c33ba59d3647e4115ce",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000000..100.000000,0.000000..100.000000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.000010; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/7/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/7/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/7/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:24\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 8,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/8/0.ili",
+          "sha256": "5b1be903a88d5fef840114f08135f0fca81951c22c6186ad9384f7fbd018d77d",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/8/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2de8d1683e77ee08b0271401], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2de8d1683e77ee08b0271401\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/8/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":183},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"overlap tolerance must be greater than zero/OVERLAP_POSITIVE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/8/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/8/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:26\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 9,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/9/0.ili",
+          "sha256": "e4e4a308022511902e2a89e98d63c64938b5f790768f4528d714456adb3ad783",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.1e-2; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/9/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/9/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/9/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:26\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 10,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/10/0.ili",
+          "sha256": "efe759d63b250740a8aab3499710d436b3bfd0398cb4e104a2ae512fef3ad437",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.010; D EXTENDS L=POLYLINE WITHOUT OVERLAPS > 0.005; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/10/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-73f92de6a0671db1a52f1096], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-73f92de6a0671db1a52f1096\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/10/0.ili\",\"revision\":\"1\",\"startOffset\":188,\"endOffset\":234},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"geometry extension: geometry-tolerance-changed/GEOMETRY_EXTENSION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/10/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/10/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/10/0.ili:1:Cannot invoke \"ch.interlis.ili2c.metamodel.Domain.getType()\" because \"coord\" is null\n  Cannot invoke \"ch.interlis.ili2c.metamodel.Domain.getType()\" because \"coord\" is null\n...compiler run failed 2026-10-25 08:38:27\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 11,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/11/0.ili",
+          "sha256": "7a3fea1930c189239c397efa3ff3ca13f05132a209b70534333500b39628cd7d",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=DIRECTED POLYLINE WITH (STRAIGHTS) VERTEX P; D EXTENDS L=POLYLINE; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/11/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-473f15eae581719b52ffd905], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-473f15eae581719b52ffd905\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/11/0.ili\",\"revision\":\"1\",\"startOffset\":172,\"endOffset\":193},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"geometry extension: geometry-direction-removed/GEOMETRY_EXTENSION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/11/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/11/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/11/0.ili:1:An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n  An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n<repo>/build/reports/stabilization/g2-geometry-processes/11/0.ili:1:DOMAIN D has an unexpected abstract/incomplete definition (missing line form)\n<repo>/build/reports/stabilization/g2-geometry-processes/11/0.ili:1:An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n  An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n...compiler run failed 2026-10-25 08:38:27\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 12,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/12/0.ili",
+          "sha256": "3ebe4cd9ceffcd407c19a3ecd7111f32ea658776274c65ef0c4a619bb0ed4adf",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P; D EXTENDS L=POLYLINE WITH (STRAIGHTS,ARCS); END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/12/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-adaea621d989ed214b0b15b6], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-adaea621d989ed214b0b15b6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/12/0.ili\",\"revision\":\"1\",\"startOffset\":163,\"endOffset\":206},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"geometry extension: geometry-line-forms-widen/GEOMETRY_EXTENSION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/12/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/12/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/12/0.ili:1:A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n  A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n<repo>/build/reports/stabilization/g2-geometry-processes/12/0.ili:1:DOMAIN D has an unexpected abstract/incomplete definition (missing VERTEX)\n<repo>/build/reports/stabilization/g2-geometry-processes/12/0.ili:1:A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n  A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n...compiler run failed 2026-10-25 08:38:28\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 13,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/13/0.ili",
+          "sha256": "b1a0aeb74681d09cad03ac0f370e244361fdfbfdd3a66df243c801ee5dd245f9",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS,ARCS) VERTEX P; D EXTENDS L=DIRECTED POLYLINE WITH (STRAIGHTS); TOPIC T=CLASS C=l:D; END C; VIEW V INSPECTION OF c~C->l; = p:=c->Segments[FIRST]->SegmentEndPoint; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/13/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/13/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/13/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:28\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 14,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/14/0.ili",
+          "sha256": "5a3960f4cf332faf729f392dcded40b28ef7652b9aeb627f048b266df1310f13",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.00..100.00,0.000..100.000; L=POLYLINE WITH (STRAIGHTS) VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/14/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/14/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/14/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:29\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 15,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/15/0.ili",
+          "sha256": "b492f3771241d4ff3d8969911b1497d54bab8ec2836ad9eda750e547a56480f2",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; STRUCTURE S EXTENDS INTERLIS.LineSegment = middle:INTERLIS.LineCoord; MANDATORY CONSTRAINT DEFINED(middle); END S; LINE FORM Curve:S; TOPIC T=CLASS C=l:POLYLINE WITH (Curve) VERTEX P; END C; VIEW V INSPECTION OF c~C->l; = p:=c->Segments[FIRST]->SegmentEndPoint; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/15/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/15/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/15/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/15/0.ili:1:The attribute middle has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n...compiler run failed 2026-10-25 08:38:29\n"
+        }
+      },
+      "normativeAssessment": "OPEN E2/E3: source abstraction of additional LineCoord-valued members; successful contextual copying is not normative acceptance."
+    },
+    {
+      "id": 16,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/16/0.ili",
+          "sha256": "63811eb327629cf7a5957597ffc35b59aff883b0e27d51d15baa551d872b2e2e",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = STRUCTURE Foreign=label:TEXT; END Foreign; STRUCTURE Data=p:INTERLIS.LineCoord; END Data; STRUCTURE S EXTENDS INTERLIS.LineSegment = SegmentEndPoint(EXTENDED):MANDATORY; data:BAG OF Data; other:Foreign; copy:INTERLIS.LineCoord:=SegmentEndPoint; MANDATORY CONSTRAINT DEFINED(SegmentEndPoint); MANDATORY CONSTRAINT DEFINED(other); END S; LINE FORM Curve:S; END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/16/1.ili",
+          "sha256": "7e3297aa8d36e74f5ff72f7bc8885d92db0a72e235296e46bb2e219fda6db658",
+          "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN P2=COORD 0.00..100.00,0.00..100.00; P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000; TOPIC T=CLASS C=line2:POLYLINE WITH (Base.Curve) VERTEX P2; line3:POLYLINE WITH (Base.Curve) VERTEX P3; END C; VIEW V2 INSPECTION OF l~C->line2; = p:=l->Segments[FIRST]->SegmentEndPoint; END V2; VIEW V3 INSPECTION OF l~C->line3; = p:=l->Segments[FIRST]->SegmentEndPoint; END V3; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/16/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/16/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/16/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/16/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/16/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/16/1.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/16/0.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n<repo>/build/reports/stabilization/g2-geometry-processes/16/0.ili:1:The attribute SegmentEndPoint has an unexpected abstract/incomplete domain definition (missing min/max)\n<repo>/build/reports/stabilization/g2-geometry-processes/16/0.ili:1:The attribute copy has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n...compiler run failed 2026-10-25 08:38:30\n"
+        }
+      },
+      "normativeAssessment": "OPEN E2/E3: source abstraction of additional LineCoord-valued members; successful contextual copying is not normative acceptance."
+    },
+    {
+      "id": 17,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/17/0.ili",
+          "sha256": "7e3297aa8d36e74f5ff72f7bc8885d92db0a72e235296e46bb2e219fda6db658",
+          "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN P2=COORD 0.00..100.00,0.00..100.00; P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000; TOPIC T=CLASS C=line2:POLYLINE WITH (Base.Curve) VERTEX P2; line3:POLYLINE WITH (Base.Curve) VERTEX P3; END C; VIEW V2 INSPECTION OF l~C->line2; = p:=l->Segments[FIRST]->SegmentEndPoint; END V2; VIEW V3 INSPECTION OF l~C->line3; = p:=l->Segments[FIRST]->SegmentEndPoint; END V3; END T; END F."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/17/1.ili",
+          "sha256": "63811eb327629cf7a5957597ffc35b59aff883b0e27d51d15baa551d872b2e2e",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = STRUCTURE Foreign=label:TEXT; END Foreign; STRUCTURE Data=p:INTERLIS.LineCoord; END Data; STRUCTURE S EXTENDS INTERLIS.LineSegment = SegmentEndPoint(EXTENDED):MANDATORY; data:BAG OF Data; other:Foreign; copy:INTERLIS.LineCoord:=SegmentEndPoint; MANDATORY CONSTRAINT DEFINED(SegmentEndPoint); MANDATORY CONSTRAINT DEFINED(other); END S; LINE FORM Curve:S; END Base."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/17/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/17/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/17/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/17/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/17/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/17/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/17/1.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n<repo>/build/reports/stabilization/g2-geometry-processes/17/1.ili:1:The attribute SegmentEndPoint has an unexpected abstract/incomplete domain definition (missing min/max)\n<repo>/build/reports/stabilization/g2-geometry-processes/17/1.ili:1:The attribute copy has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n...compiler run failed 2026-10-25 08:38:31\n"
+        }
+      },
+      "normativeAssessment": "OPEN E2/E3: source abstraction of additional LineCoord-valued members; successful contextual copying is not normative acceptance."
+    },
+    {
+      "id": 18,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/18/0.ili",
+          "sha256": "0e7174cd0d8f8fa037884f0bec7973ba51b83bb4135ec27de9fe1a231a96e77c",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN L (ABSTRACT)=POLYLINE; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/18/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/18/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/18/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:31\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 19,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/19/0.ili",
+          "sha256": "0303689e05e06adde0d4a2efd7ce74db3b04d9d69f33df9481143821643da6a2",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN L=POLYLINE; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/19/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c812ff51b84c3eefa18964c9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c812ff51b84c3eefa18964c9\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/19/0.ili\",\"revision\":\"1\",\"startOffset\":79,\"endOffset\":90},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/19/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/19/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/19/0.ili:1:DOMAIN L has an unexpected abstract/incomplete definition (missing line form)\n...compiler run failed 2026-10-25 08:38:32\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 20,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/20/0.ili",
+          "sha256": "1c021a23697d54f3461754986359cb909982ff733353bcb86e0c555b91d1b61b",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/20/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a09c1c30a98f6d3afd79e8ca], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a09c1c30a98f6d3afd79e8ca\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/20/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":145},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/20/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/20/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/20/0.ili:1:DOMAIN L has an unexpected abstract/incomplete definition (missing line form)\n...compiler run failed 2026-10-25 08:38:33\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 21,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/21/0.ili",
+          "sha256": "6db61eecc8255b11f6ab9e43aece0816a5a16d28907f60b8ff7918bf1f5bbb7b",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN L=POLYLINE WITH (STRAIGHTS); END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/21/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-cf7d8b73538dd6bf397a938f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cf7d8b73538dd6bf397a938f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/21/0.ili\",\"revision\":\"1\",\"startOffset\":79,\"endOffset\":107},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/21/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/21/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/21/0.ili:1:DOMAIN L has an unexpected abstract/incomplete definition (missing VERTEX)\n...compiler run failed 2026-10-25 08:38:34\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 22,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/22/0.ili",
+          "sha256": "8c3a9eb419a73eb777a32c69bf1efd678b79ba5238f2c83f4bcb834ef2b7cffc",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN S=SURFACE WITH (STRAIGHTS) VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/22/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/22/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/22/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/22/0.ili:1:DOMAIN S has an unexpected abstract/incomplete definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:38:35\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 23,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/23/0.ili",
+          "sha256": "5ec5f88de515ec34445dcee8326c66be052c9fd728b38e83700bdd6971db1472",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN S=SURFACE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili:1:expecting '>', found ';'\n<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili:1:DOMAIN S has an unexpected abstract/incomplete definition (missing WITHOUT OVERLAPS)\n<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili:1:unexpected token: null\n<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili:1:expecting \"END\", found 'null'\n<repo>/build/reports/stabilization/g2-geometry-processes/23/0.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 08:38:36\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 24,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/24/0.ili",
+          "sha256": "de56ea0c467e89f12cc0dc2e5d6d386f05caddb21ec76a3d1da2dc3ff6b4baea",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.0001; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/24/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-55c12f1e58c16c6630154e6c], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-55c12f1e58c16c6630154e6c\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/24/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":188},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"overlap tolerance must have the vertex precision/OVERLAP_PRECISION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/24/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/24/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:36\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 25,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/25/0.ili",
+          "sha256": "519e12831622d8e99de6c10d6ef1502038cb0b8c4ecc8f39661716888a10376f",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000000..100.000000,0.000000..100.000000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.000010; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/25/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/25/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/25/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:38\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 26,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/26/0.ili",
+          "sha256": "18e6cb99dfe0ae0f2d4bb30891fc2032e36acf09c88e352a72f5743ef77e48aa",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/26/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-914929dc13499b391f22f717, diag-fd1fa940a1aee8123d4ff191], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-914929dc13499b391f22f717\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/26/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":183},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"overlap tolerance must be greater than zero/OVERLAP_POSITIVE\"}]},{\"id\":\"diag-fd1fa940a1aee8123d4ff191\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/26/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":183},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"overlap tolerance must have the vertex precision/OVERLAP_PRECISION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/26/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/26/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:38\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 27,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/27/0.ili",
+          "sha256": "8eac049c108847d6a59850e8a8cada4d0a655448204ebb6c464096b961cada2c",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.1e-2; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/27/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/27/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/27/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:39\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 28,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/28/0.ili",
+          "sha256": "a8a4957e86fb38c70324664ed8fa3b0ce530f2a922d2a351aef81a976e48bbd8",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P WITHOUT OVERLAPS > 0.010; D EXTENDS L=POLYLINE WITHOUT OVERLAPS > 0.005; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/28/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a1d93f2bc91de1bb1d85f1e5], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a1d93f2bc91de1bb1d85f1e5\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/28/0.ili\",\"revision\":\"1\",\"startOffset\":188,\"endOffset\":234},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"geometry extension: geometry-tolerance-changed/GEOMETRY_EXTENSION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/28/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/28/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:40\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 29,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/29/0.ili",
+          "sha256": "79e36106f906c3162fb25dffad3d5c143f7523a2f527ed164e80c6e60055a3ab",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=DIRECTED POLYLINE WITH (STRAIGHTS) VERTEX P; D EXTENDS L=POLYLINE; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/29/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-d9ebad239a050793dc053ab8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-d9ebad239a050793dc053ab8\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/29/0.ili\",\"revision\":\"1\",\"startOffset\":172,\"endOffset\":193},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"geometry extension: geometry-direction-removed/GEOMETRY_EXTENSION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/29/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/29/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/29/0.ili:1:An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n  An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n<repo>/build/reports/stabilization/g2-geometry-processes/29/0.ili:1:DOMAIN D has an unexpected abstract/incomplete definition (missing line form)\n<repo>/build/reports/stabilization/g2-geometry-processes/29/0.ili:1:An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n  An undirected polyline can not extend a directed polyline. Undirected polylines can only extend other undirected polylines.\n...compiler run failed 2026-10-25 08:38:40\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 30,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/30/0.ili",
+          "sha256": "14b03b1f61f8840afe13b5fdfc80d70d2a3bac6e61ef11a09e7215fbba0a2ea7",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P; D EXTENDS L=POLYLINE WITH (STRAIGHTS,ARCS); END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/30/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2cc6f07e8e52b2e96162be86], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2cc6f07e8e52b2e96162be86\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/30/0.ili\",\"revision\":\"1\",\"startOffset\":163,\"endOffset\":206},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"D\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"geometry extension: geometry-line-forms-widen/GEOMETRY_EXTENSION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/30/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/30/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/30/0.ili:1:A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n  A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n<repo>/build/reports/stabilization/g2-geometry-processes/30/0.ili:1:DOMAIN D has an unexpected abstract/incomplete definition (missing VERTEX)\n<repo>/build/reports/stabilization/g2-geometry-processes/30/0.ili:1:A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n  A POLYLINE, SURFACE or AREA must not add a new line form to those inherited. LINE FORM INTERLIS.ARCS is not allowed for the line type being extended.\n...compiler run failed 2026-10-25 08:38:41\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 31,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/31/0.ili",
+          "sha256": "18359a9b0416f7680a45eba1cdec36763c3a41eed8ed652ec8a93b19cedc9279",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; DOMAIN L=POLYLINE WITH (STRAIGHTS,ARCS) VERTEX P; D EXTENDS L=DIRECTED POLYLINE WITH (STRAIGHTS); TOPIC T=CLASS C=l:D; END C; VIEW V INSPECTION OF c~C->l; = p:=c->Segments[FIRST]->SegmentEndPoint; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/31/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/31/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/31/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:42\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 32,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/32/0.ili",
+          "sha256": "bedfd4ac6eab7739fe9e2f1677495794d0d3068792019074fc1a1a179c28a275",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.00..100.00,0.000..100.000; L=POLYLINE WITH (STRAIGHTS) VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/32/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-00c5abf29024952677eff155], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-00c5abf29024952677eff155\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/32/0.ili\",\"revision\":\"1\",\"startOffset\":116,\"endOffset\":153},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"line vertex axes must have the same numerical precision/LINE_VERTEX_PRECISION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/32/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/32/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:42\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 33,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/33/0.ili",
+          "sha256": "3c9be2ba39234e23760bcb2c32893a34fc0b06994496e61befc3ca81ede22a72",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..100.000,0.000..100.000; STRUCTURE S EXTENDS INTERLIS.LineSegment = middle:INTERLIS.LineCoord; MANDATORY CONSTRAINT DEFINED(middle); END S; LINE FORM Curve:S; TOPIC T=CLASS C=l:POLYLINE WITH (Curve) VERTEX P; END C; VIEW V INSPECTION OF c~C->l; = p:=c->Segments[FIRST]->SegmentEndPoint; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/33/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/33/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/33/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/33/0.ili:1:The attribute middle has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n...compiler run failed 2026-10-25 08:38:44\n"
+        }
+      },
+      "normativeAssessment": "OPEN E2/E3: source abstraction of additional LineCoord-valued members; successful contextual copying is not normative acceptance."
+    },
+    {
+      "id": 34,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/34/0.ili",
+          "sha256": "ec7d3c8c1efeb8628724371ac948cd75fafeebd23a5a892773a32e223f75f2d6",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = STRUCTURE Foreign=label:TEXT; END Foreign; STRUCTURE Data=p:INTERLIS.LineCoord; END Data; STRUCTURE S EXTENDS INTERLIS.LineSegment = SegmentEndPoint(EXTENDED):MANDATORY; data:BAG OF Data; other:Foreign; copy:INTERLIS.LineCoord:=SegmentEndPoint; MANDATORY CONSTRAINT DEFINED(SegmentEndPoint); MANDATORY CONSTRAINT DEFINED(other); END S; LINE FORM Curve:S; END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/34/1.ili",
+          "sha256": "4a6e072f34956d2d6108df83f095c37896a4553aa799eb36efc66cf698f3df7e",
+          "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN P2=COORD 0.00..100.00,0.00..100.00; P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000; TOPIC T=CLASS C=line2:POLYLINE WITH (Base.Curve) VERTEX P2; line3:POLYLINE WITH (Base.Curve) VERTEX P3; END C; VIEW V2 INSPECTION OF l~C->line2; = p:=l->Segments[FIRST]->SegmentEndPoint; END V2; VIEW V3 INSPECTION OF l~C->line3; = p:=l->Segments[FIRST]->SegmentEndPoint; END V3; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/34/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/34/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/34/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/34/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/34/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/34/1.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/34/0.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n<repo>/build/reports/stabilization/g2-geometry-processes/34/0.ili:1:The attribute SegmentEndPoint has an unexpected abstract/incomplete domain definition (missing min/max)\n<repo>/build/reports/stabilization/g2-geometry-processes/34/0.ili:1:The attribute copy has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n...compiler run failed 2026-10-25 08:38:44\n"
+        }
+      },
+      "normativeAssessment": "OPEN E2/E3: source abstraction of additional LineCoord-valued members; successful contextual copying is not normative acceptance."
+    },
+    {
+      "id": 35,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/35/0.ili",
+          "sha256": "4a6e072f34956d2d6108df83f095c37896a4553aa799eb36efc66cf698f3df7e",
+          "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN P2=COORD 0.00..100.00,0.00..100.00; P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000; TOPIC T=CLASS C=line2:POLYLINE WITH (Base.Curve) VERTEX P2; line3:POLYLINE WITH (Base.Curve) VERTEX P3; END C; VIEW V2 INSPECTION OF l~C->line2; = p:=l->Segments[FIRST]->SegmentEndPoint; END V2; VIEW V3 INSPECTION OF l~C->line3; = p:=l->Segments[FIRST]->SegmentEndPoint; END V3; END T; END F."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/35/1.ili",
+          "sha256": "ec7d3c8c1efeb8628724371ac948cd75fafeebd23a5a892773a32e223f75f2d6",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = STRUCTURE Foreign=label:TEXT; END Foreign; STRUCTURE Data=p:INTERLIS.LineCoord; END Data; STRUCTURE S EXTENDS INTERLIS.LineSegment = SegmentEndPoint(EXTENDED):MANDATORY; data:BAG OF Data; other:Foreign; copy:INTERLIS.LineCoord:=SegmentEndPoint; MANDATORY CONSTRAINT DEFINED(SegmentEndPoint); MANDATORY CONSTRAINT DEFINED(other); END S; LINE FORM Curve:S; END Base."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/35/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/35/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/35/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/35/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/35/1.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/35/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/35/1.ili:1:The attribute p has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n<repo>/build/reports/stabilization/g2-geometry-processes/35/1.ili:1:The attribute SegmentEndPoint has an unexpected abstract/incomplete domain definition (missing min/max)\n<repo>/build/reports/stabilization/g2-geometry-processes/35/1.ili:1:The attribute copy has an unexpected abstract/incomplete domain definition (DomainDef LineCoord is abstract)\n...compiler run failed 2026-10-25 08:38:46\n"
+        }
+      },
+      "normativeAssessment": "OPEN E2/E3: source abstraction of additional LineCoord-valued members; successful contextual copying is not normative acceptance."
+    },
+    {
+      "id": 36,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/36/0.ili",
+          "sha256": "55a68f5288ab1f048eeca830fc17067a7e9905af257ab292ce455ff6f139861b",
+          "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Kilometre[km]=1000 [INTERLIS.m]; Short[short]=0.001 [km]; DOMAIN P=COORD 0.000..100.000 [short],0.000..100.000 [short]; END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/36/1.ili",
+          "sha256": "6a1ceb4c38d3002c1083d936492dbe9e83438354d42a558068c390a553fb4949",
+          "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX Base.P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/36/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/36/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/36/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/36/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/36/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/36/1.ili>\nInfo: ...compiler run done 2026-10-25 08:38:46\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 37,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/37/0.ili",
+          "sha256": "55a68f5288ab1f048eeca830fc17067a7e9905af257ab292ce455ff6f139861b",
+          "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Kilometre[km]=1000 [INTERLIS.m]; Short[short]=0.001 [km]; DOMAIN P=COORD 0.000..100.000 [short],0.000..100.000 [short]; END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/37/1.ili",
+          "sha256": "6a1ceb4c38d3002c1083d936492dbe9e83438354d42a558068c390a553fb4949",
+          "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX Base.P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/37/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/37/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/37/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/37/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/37/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/37/1.ili>\nInfo: ...compiler run done 2026-10-25 08:38:47\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 38,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/38/0.ili",
+          "sha256": "cd5748d6b30494ce213abd70978bb83e87db08528aef816b2c3bb7b1dd8c2dcf",
+          "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Kilometre[km]=1000 [INTERLIS.m]; Short[short]=0.001 [km]; DOMAIN P=COORD 0.000..100.000 [short],0.000..100.000 [short]; END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/38/1.ili",
+          "sha256": "5f2b44f3df4aa2153f87d66bf8f8cc20c5b7f1c5e76f5537d8feec8e68622e5b",
+          "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX Base.P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/38/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/38/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/38/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/38/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/38/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/38/1.ili>\nInfo: ...compiler run done 2026-10-25 08:38:47\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 39,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/39/0.ili",
+          "sha256": "cd5748d6b30494ce213abd70978bb83e87db08528aef816b2c3bb7b1dd8c2dcf",
+          "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Kilometre[km]=1000 [INTERLIS.m]; Short[short]=0.001 [km]; DOMAIN P=COORD 0.000..100.000 [short],0.000..100.000 [short]; END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/39/1.ili",
+          "sha256": "5f2b44f3df4aa2153f87d66bf8f8cc20c5b7f1c5e76f5537d8feec8e68622e5b",
+          "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX Base.P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/39/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/39/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/39/0.ili",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/39/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/39/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/39/1.ili>\nInfo: ...compiler run done 2026-10-25 08:38:49\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 40,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/40/0.ili",
+          "sha256": "5f5c65f5cfdf5f27aed43ccc210b0a0159d53337d1f83910cb1a1f94d871dee3",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE S EXTENDS INTERLIS.LineSegment = x: TEXT; END S; LINE FORM Curve: S; TOPIC T = CLASS A = line: POLYLINE WITH (Curve) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/40/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/40/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/40/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:49\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 41,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/41/0.ili",
+          "sha256": "810623b4d6ea0785963029c76c6ab0593840f4527bad4a3a8137afbec206b755",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE S EXTENDS INTERLIS.LineSegment = x: TEXT; END S; LINE FORM Curve: S; TOPIC T = CLASS A = line: POLYLINE WITH (Curve) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/41/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/41/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/41/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:50\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 42,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/42/0.ili",
+          "sha256": "e32e6ab7ea0b1d4a040bf1dee1e8a46f1ea3594c9e2179bd386f5f7662920124",
+          "text": "INTERLIS 2.3; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.000000..100.000000,0.000000..100.000000; L = SURFACE WITH (STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS > 0.00001; END M.\n"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/42/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/42/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/42/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:50\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 43,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/43/0.ili",
+          "sha256": "ab2d4922191650b6982b2c7a694bb7143748cee00b90a444d9622ae41ff1dc1b",
+          "text": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.000000..100.000000,0.000000..100.000000; L = SURFACE WITH (STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS > 0.00001; END M.\n"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/43/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-ddf596546e493f856dec67b6], requestedRoots=[ByName[modelName=M, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-ddf596546e493f856dec67b6\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/43/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":194},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"overlap tolerance must have the vertex precision/OVERLAP_PRECISION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/43/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/43/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:52\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 44,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/44/0.ili",
+          "sha256": "7b1ff6ac859cb3482cebf36c1972a1bf5f7779fae4aff0863d9e180a07d3c639",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; TOPIC T = CLASS A = kind: TEXT*10; area: AREA WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V AREA INSPECTION OF edge~A->area; = left := THISAREA->kind; right := THATAREA->kind; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/44/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-203694d29a4b1756e388bd83, diag-618ca2809700bb68b6421501], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-203694d29a4b1756e388bd83\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/44/0.ili\",\"revision\":\"1\",\"startOffset\":143,\"endOffset\":216},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"A\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete owner retains an abstract geometry member/GEOMETRY_ABSTRACT_MEMBER\"}]},{\"id\":\"diag-618ca2809700bb68b6421501\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/44/0.ili\",\"revision\":\"1\",\"startOffset\":168,\"endOffset\":209},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"area\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/44/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/44/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/44/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:38:52\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 45,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/45/0.ili",
+          "sha256": "b9ccd0b3effdfbe90c2da27427e153bba24978cdbad13f560063f87aa8495291",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE Attrs = label: TEXT; END Attrs; TOPIC T = CLASS A = area: SURFACE WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V INSPECTION OF edge~A->area; = ALL OF edge; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/45/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-b4a3bed676fe2aefda01a7c4, diag-bfbd627c39b4e12fef92e800], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-bfbd627c39b4e12fef92e800\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/45/0.ili\",\"revision\":\"1\",\"startOffset\":185,\"endOffset\":246},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"A\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete owner retains an abstract geometry member/GEOMETRY_ABSTRACT_MEMBER\"}]},{\"id\":\"diag-b4a3bed676fe2aefda01a7c4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/45/0.ili\",\"revision\":\"1\",\"startOffset\":195,\"endOffset\":239},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"area\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/45/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/45/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/45/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:38:54\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 46,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/46/0.ili",
+          "sha256": "b27c9870817000d9fd33b9e81e738da73f2772b27a14ef3c427b4fc75163f14c",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; TOPIC T = CLASS A = kind: TEXT*10; area: AREA WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V AREA INSPECTION OF edge~A->area; = left := THISAREA->kind; right := THATAREA->kind; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/46/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/46/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/46/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/46/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:38:54\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 47,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/47/0.ili",
+          "sha256": "6ea78e720c7abce9a4fe2403999277430fad73ad5952868a0c72cd47894589d8",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE Attrs = label: TEXT; END Attrs; TOPIC T = CLASS A = area: SURFACE WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V INSPECTION OF edge~A->area; = ALL OF edge; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/47/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/47/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/47/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/47/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:38:55\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 48,
+      "expected": "succeeded",
+      "original": "testdata/conformance/g2-geometry/custom-segment-2.3.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/48/0.ili",
+          "sha256": "5f5c65f5cfdf5f27aed43ccc210b0a0159d53337d1f83910cb1a1f94d871dee3",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE S EXTENDS INTERLIS.LineSegment = x: TEXT; END S; LINE FORM Curve: S; TOPIC T = CLASS A = line: POLYLINE WITH (Curve) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/48/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/48/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/48/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:55\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 49,
+      "expected": "succeeded",
+      "original": "testdata/conformance/g2-geometry/custom-segment-2.4.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/49/0.ili",
+          "sha256": "810623b4d6ea0785963029c76c6ab0593840f4527bad4a3a8137afbec206b755",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE S EXTENDS INTERLIS.LineSegment = x: TEXT; END S; LINE FORM Curve: S; TOPIC T = CLASS A = line: POLYLINE WITH (Curve) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/49/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/49/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/49/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:56\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 50,
+      "expected": "succeeded",
+      "original": "testdata/conformance/g2-geometry/fine-tolerance-2.3.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/50/0.ili",
+          "sha256": "e32e6ab7ea0b1d4a040bf1dee1e8a46f1ea3594c9e2179bd386f5f7662920124",
+          "text": "INTERLIS 2.3; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.000000..100.000000,0.000000..100.000000; L = SURFACE WITH (STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS > 0.00001; END M.\n"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/50/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/50/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/50/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:57\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 51,
+      "expected": "rejected",
+      "original": "testdata/conformance/g2-geometry/fine-tolerance-2.4.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/51/0.ili",
+          "sha256": "ab2d4922191650b6982b2c7a694bb7143748cee00b90a444d9622ae41ff1dc1b",
+          "text": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.000000..100.000000,0.000000..100.000000; L = SURFACE WITH (STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS > 0.00001; END M.\n"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/51/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-626ede91764ecf0711542ab5], requestedRoots=[ByName[modelName=M, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-626ede91764ecf0711542ab5\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/51/0.ili\",\"revision\":\"1\",\"startOffset\":125,\"endOffset\":194},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"overlap tolerance must have the vertex precision/OVERLAP_PRECISION\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/51/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/51/0.ili>\nInfo: ...compiler run done 2026-10-25 08:38:58\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 52,
+      "expected": "rejected",
+      "original": "testdata/conformance/g2-geometry/missing-overlap-19.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/52/0.ili",
+          "sha256": "7b1ff6ac859cb3482cebf36c1972a1bf5f7779fae4aff0863d9e180a07d3c639",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; TOPIC T = CLASS A = kind: TEXT*10; area: AREA WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V AREA INSPECTION OF edge~A->area; = left := THISAREA->kind; right := THATAREA->kind; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/52/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-37259892f2fea060fb0e8f4b, diag-704968238d371bfc79f78db8], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-37259892f2fea060fb0e8f4b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/52/0.ili\",\"revision\":\"1\",\"startOffset\":143,\"endOffset\":216},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"A\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete owner retains an abstract geometry member/GEOMETRY_ABSTRACT_MEMBER\"}]},{\"id\":\"diag-704968238d371bfc79f78db8\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/52/0.ili\",\"revision\":\"1\",\"startOffset\":168,\"endOffset\":209},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"area\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/52/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/52/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/52/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:38:58\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 53,
+      "expected": "rejected",
+      "original": "testdata/conformance/g2-geometry/missing-overlap-21.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/53/0.ili",
+          "sha256": "b9ccd0b3effdfbe90c2da27427e153bba24978cdbad13f560063f87aa8495291",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE Attrs = label: TEXT; END Attrs; TOPIC T = CLASS A = area: SURFACE WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V INSPECTION OF edge~A->area; = ALL OF edge; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/53/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-7d9cdf38610d78df7539fbfc, diag-a99a351bf78361b00759001a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-7d9cdf38610d78df7539fbfc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/53/0.ili\",\"revision\":\"1\",\"startOffset\":185,\"endOffset\":246},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"A\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete owner retains an abstract geometry member/GEOMETRY_ABSTRACT_MEMBER\"}]},{\"id\":\"diag-a99a351bf78361b00759001a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/53/0.ili\",\"revision\":\"1\",\"startOffset\":195,\"endOffset\":239},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"area\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"concrete geometry requires line forms, concrete vertices and the versioned tolerance/GEOMETRY_INCOMPLETE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/53/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/53/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/53/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:39:00\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 54,
+      "expected": "succeeded",
+      "original": "testdata/conformance/g2-geometry/missing-overlap-47.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/54/0.ili",
+          "sha256": "b27c9870817000d9fd33b9e81e738da73f2772b27a14ef3c427b4fc75163f14c",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; TOPIC T = CLASS A = kind: TEXT*10; area: AREA WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V AREA INSPECTION OF edge~A->area; = left := THISAREA->kind; right := THATAREA->kind; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/54/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/54/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/54/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/54/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:39:00\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 55,
+      "expected": "succeeded",
+      "original": "testdata/conformance/g2-geometry/missing-overlap-49.ili",
+      "control": null,
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/55/0.ili",
+          "sha256": "6ea78e720c7abce9a4fe2403999277430fad73ad5952868a0c72cd47894589d8",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00..100.00,0.00..100.00,0.00..100.00; STRUCTURE Attrs = label: TEXT; END Attrs; TOPIC T = CLASS A = area: SURFACE WITH (STRAIGHTS) VERTEX Coord; END A; VIEW V INSPECTION OF edge~A->area; = ALL OF edge; END V; END T; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/55/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/55/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/55/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/55/0.ili:1:The attribute area has an unexpected abstract/incomplete domain definition (missing WITHOUT OVERLAPS)\n...compiler run failed 2026-10-25 08:39:02\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 56,
+      "expected": "succeeded",
+      "original": null,
+      "control": "same value, norm-prescribed precision",
+      "normativeReview": null,
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/56/0.ili",
+          "sha256": "7d6bb2fffa9aa41b61c54b746e0081fb76a47279f0088a8ddda0ae39b1103a3d",
+          "text": "INTERLIS 2.4; MODEL M AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.000000..100.000000,0.000000..100.000000; L = SURFACE WITH (STRAIGHTS) VERTEX Coord WITHOUT OVERLAPS > 0.000010; END M.\n"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/56/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/56/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/56/0.ili>\nInfo: ...compiler run done 2026-10-25 08:39:04\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 57,
+      "expected": "succeeded",
+      "original": "frozen suite ili23/lineType/OverlapTooSmallFail.ili",
+      "control": null,
+      "normativeReview": "OPEN, explicitly requested separate review; no suite exception",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/57/0.ili",
+          "sha256": "bea6bc62dbf8c58fbf801ceadfb15e320a7fc92c410f5c5562329f26f75241e0",
+          "text": "INTERLIS 2.3;\n\nMODEL OverlapTooSmallFail\n\tAT \"http://www.interlis.ch/ili2c/tests/\" \n\tVERSION \"2018-02-08\" =\n\n    \n  TOPIC TopicA =\n    \n\t\tDOMAIN\n\t\tPoint2D = COORD \n\t\t\t0.000 .. 200.000,\n\t\t\t0.000 .. 200.000,\n\t\t\tROTATION 2 -> 1;\n\n\t\tCLASS ClassA1 =\n\t\t\tGeometry: MANDATORY SURFACE WITH (STRAIGHTS) \n\t\t\t\tVERTEX Point2D WITHOUT OVERLAPS > 0.0001; !! fail: OVERLAPS too small \n\t\tEND ClassA1; \n        \n  END TopicA;\n\nEND OverlapTooSmallFail.\n\n"
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "OverlapTooSmallFail",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/57/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/57/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/57/0.ili>\n<repo>/build/reports/stabilization/g2-geometry-processes/57/0.ili:17:The maximal overlap must not undercut the accuracy of the coord domain.\n...compiler run failed 2026-10-25 08:39:05\n"
+        }
+      },
+      "normativeAssessment": "OPEN: 2.3 tolerance precision, user requested separate normative review without an automatic exception."
+    },
+    {
+      "id": 58,
+      "expected": "succeeded",
+      "original": null,
+      "control": null,
+      "normativeReview": "2.4 §3.8.12.2 Cartesian restriction; 2.3 separate profile",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/58/0.ili",
+          "sha256": "b0909b7b4934e17e1aeeee80085ac9477f7f17f4c38d8cb6c2e614ed2e0965f8",
+          "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..6.000 [INTERLIS.rad],0.000..6.000 [INTERLIS.rad]; L=POLYLINE WITH (STRAIGHTS) VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/58/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/58/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/58/0.ili>\nInfo: ...compiler run done 2026-10-25 08:39:06\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    },
+    {
+      "id": 59,
+      "expected": "rejected",
+      "original": null,
+      "control": null,
+      "normativeReview": "2.4 §3.8.12.2 Cartesian restriction; 2.3 separate profile",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-geometry-processes/59/0.ili",
+          "sha256": "792489f7bca052e5f328d14da4d70d9831fe26d5110201d2dc4bbd4725a97fb7",
+          "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN P=COORD 0.000..6.000 [INTERLIS.rad],0.000..6.000 [INTERLIS.rad]; L=POLYLINE WITH (STRAIGHTS) VERTEX P; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/59/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-5b7a2aee5f3737040c6943c1], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-5b7a2aee5f3737040c6943c1\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-geometry-processes/59/0.ili\",\"revision\":\"1\",\"startOffset\":133,\"endOffset\":170},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"L\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"line vertices require Cartesian coordinates with length units/LINE_VERTEX_CARTESIAN\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-geometry-processes/59/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-geometry-processes/59/0.ili>\nInfo: ...compiler run done 2026-10-25 08:39:07\n"
+        }
+      },
+      "normativeAssessment": "C versioned project expectation; compare the documented norm scope and the separate unchanged reference result. This record creates no suite exception."
+    }
+  ],
+  "processErrors": 0,
+  "interpretation": "60 own expected process outcomes, 38 agreements, 22 observed differences including duplicate original/control inputs. This is not a count of 22 independent norms or accepted exceptions. Reference and normative assessment are separate. In particular source abstraction of extra LineCoord members and the 2.3 precision reference expectation remain OPEN.",
+  "reproduce": "Recreate exact source bytes from each sources[].text, check sha256, then run the two recorded commands using the pinned ili2c 5.6.9 jar. Generated geometry cases use a valid issuer URI for the reference control; the eight pinned historical reproductions are byte-identical. CLI roots must match the recorded --root arguments."
+}

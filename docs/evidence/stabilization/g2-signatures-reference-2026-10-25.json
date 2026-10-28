@@ -1,0 +1,2765 @@
+{
+  "recordedAt": "2026-10-25T09:53:30.636628+00:00",
+  "reference": "ili2c 5.6.9",
+  "referenceJarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "total": 68,
+  "ownExpected": 68,
+  "referenceAgreements": 44,
+  "cases": [
+    {
+      "id": 0,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/0/0.ili",
+          "sha256": "484f8bd010c07756c80c99b6f758f56fa25aded4ef4d68880827502588872296",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/0/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/0/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/0/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:41\n"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/1/0.ili",
+          "sha256": "44bf4d7bd75ce06e2f5738234ce0976e99485cef088bfb96afed7875c9ec7f96",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/1/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/1/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/1/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:41\n"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/2/0.ili",
+          "sha256": "8e5f8b5e5ccaa355447527ead9b1729dcb96f778343cf58aae1a8b161a1b7b9f",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/2/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/2/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/2/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:43\n"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/3/0.ili",
+          "sha256": "ded003ce8adb9eb7e39890e79e2819fceef606ec0353229fe71e51a137c3a024",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; B := 2; C := 3); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/3/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/3/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/3/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:43\n"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/4/0.ili",
+          "sha256": "800890192f53f46edeb0423dc2c1e262c771892dd2984bc66b58d822a8253a18",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; C := 3); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/4/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-cd72196b6de025d255c85899], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-cd72196b6de025d255c85899\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/4/0.ili\",\"revision\":\"1\",\"startOffset\":555,\"endOffset\":609},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/4/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/4/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:45\n"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/5/0.ili",
+          "sha256": "48accd1fe9fc4e0611f765a4e0e212d8220dcf0354612e4d681e74b2848da17d",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/5/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3fa5ad244998057b635d130f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3fa5ad244998057b635d130f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/5/0.ili\",\"revision\":\"1\",\"startOffset\":555,\"endOffset\":604},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: A/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/5/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/5/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:45\n"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/6/0.ili",
+          "sha256": "b10fd4fa8295a47055173b3d089ecf2d49f02a94eb4d45630c79da816d8a04d8",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Derived: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/6/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-99ca396e09ead0310b950843], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-99ca396e09ead0310b950843\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/6/0.ili\",\"revision\":\"1\",\"startOffset\":561,\"endOffset\":604},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/6/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/6/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:47\n"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/7/0.ili",
+          "sha256": "94c8655b36ea885b35f63aba2fa6faa5f488bcaf1884127962abc945f7a6fb94",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Most: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/7/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c8e9872e0401427d934598fb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c8e9872e0401427d934598fb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/7/0.ili\",\"revision\":\"1\",\"startOffset\":558,\"endOffset\":612},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: C/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/7/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/7/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:47\n"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/8/0.ili",
+          "sha256": "647d40b56052d2fd4133cbb4215d40d6f186cdc0a7c3f8f0bc7e848921266924",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Other: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/8/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-87ad9cd4e5dc5f3ca8bcf31a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-87ad9cd4e5dc5f3ca8bcf31a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/8/0.ili\",\"revision\":\"1\",\"startOffset\":559,\"endOffset\":616},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/8/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/8/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:48\n"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/9/0.ili",
+          "sha256": "7ded1cdf658f242d8bfd62e88960eada8c59961b9e277f97105ce1e21b8ef561",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/9/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-53f7285575fe9905e26e825b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-53f7285575fe9905e26e825b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/9/0.ili\",\"revision\":\"1\",\"startOffset\":593,\"endOffset\":650},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/9/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/9/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/9/0.ili:1:There is no object \"Dot\" of class F.Signs.Derived in any data set defined by F.Library.\n...compiler run failed 2026-10-25 10:49:49\n"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/10/0.ili",
+          "sha256": "8ba1cf5e3767c27c799f43ab20890dd777f8b31ef86f0338560c363ed5bdab91",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Derived: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/10/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/10/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/10/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:50\n"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/11/0.ili",
+          "sha256": "73ab6f7a73f03c2936dcd92eadb736499a05168d6f1db594ed6fb6894ca8a394",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT OF F.Signs.Colour; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Paint}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/11/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/11/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/11/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/11/0.ili:1:There is no class or structure \"Colour\" in TOPIC F.Signs.\n<repo>/build/reports/stabilization/g2-signatures-processes/11/0.ili:1:There can not be a ClassDef \"Colour\" in TOPIC F.Signs because there is already a model element with the same name. Use a different name.\n...compiler run failed 2026-10-25 10:49:50\n"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/12/0.ili",
+          "sha256": "8adda4cc189d64ee46456eb1b4a67fbecace68a6b6d14f7bcbc262269222a5ee",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT OF F.Signs.Colour; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Dot}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/12/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-052e1f9c93770c8f2920f65b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-052e1f9c93770c8f2920f65b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/12/0.ili\",\"revision\":\"1\",\"startOffset\":617,\"endOffset\":677},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/12/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/12/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/12/0.ili:1:There is no class or structure \"Colour\" in TOPIC F.Signs.\n<repo>/build/reports/stabilization/g2-signatures-processes/12/0.ili:1:There can not be a ClassDef \"Colour\" in TOPIC F.Signs because there is already a model element with the same name. Use a different name.\n...compiler run failed 2026-10-25 10:49:52\n"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/13/0.ili",
+          "sha256": "0745591644e2726af9f80a4769bf5c4f69bd1ccc2ddf5c0c2b83d5d75f56469e",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Paint}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/13/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9a07597669a168daa4d562ee], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9a07597669a168daa4d562ee\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/13/0.ili\",\"revision\":\"1\",\"startOffset\":599,\"endOffset\":661},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/13/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/13/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/13/0.ili:1:There is no object \"Paint\" of class F.Signs.S in any data set defined by F.Library.\n...compiler run failed 2026-10-25 10:49:52\n"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/14/0.ili",
+          "sha256": "96e2291744d1cae8e19b32ff140acf8a8a12cb36d846ea1a59aad39000470887",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Dot}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/14/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/14/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/14/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:53\n"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/15/0.ili",
+          "sha256": "aa3e0b5bfcdcb71a8e664067d51eeabe95eaeb9d1e0a3dba45d6799242b3d442",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(A := 1); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/15/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-18c903d073d65baaa2312f6b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-18c903d073d65baaa2312f6b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/15/0.ili\",\"revision\":\"1\",\"startOffset\":666,\"endOffset\":709},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/15/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/15/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:54\n"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/16/0.ili",
+          "sha256": "4fdc1682de6afe3038cfcdf1e556e4ceb9595c3758e6a9a35805e36a0218f89d",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Derived: Special; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(Sign := {Special}; A := 1; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/16/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/16/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/16/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:55\n"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/17/0.ili",
+          "sha256": "9a623a156a08481d9f798d704d61895b1ea73e162fcdd67896bb62b191a5e9e1",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Most:(B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/17/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/17/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/17/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:55\n"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/18/0.ili",
+          "sha256": "194bf8c2e0442339ef0eda9512c269108ac99194b39fbb54580b9bac258cbfc1",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Most:(C := 3); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/18/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-bd9e41d82b42e03d27ce7b30], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-bd9e41d82b42e03d27ce7b30\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/18/0.ili\",\"revision\":\"1\",\"startOffset\":628,\"endOffset\":668},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/18/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/18/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:56\n"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/19/0.ili",
+          "sha256": "03eb9105862c5b6a4e9b8711511d22129d2c6f6f42b433b1a0ba477d198c1021",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/19/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-805620ac0993f1669e7dd2f4], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-805620ac0993f1669e7dd2f4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/19/0.ili\",\"revision\":\"1\",\"startOffset\":656,\"endOffset\":699},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incompatible signature parameter assignment/GRAPHIC_PARAMETER_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/19/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/19/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:57\n"
+        }
+      }
+    },
+    {
+      "id": 20,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/20/0.ili",
+          "sha256": "9f5b210ed7034e7fca5789accdb1fe7bb200cae349e261398d80b2a7347d0d1d",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 4); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/20/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/20/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/20/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:58\n"
+        }
+      }
+    },
+    {
+      "id": 21,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/21/0.ili",
+          "sha256": "e0af233e50ab87a877ad9d70ace3f89b5dea1d6c43d58705de06008fafe56eb5",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(A := 4; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/21/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/21/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/21/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:58\n"
+        }
+      }
+    },
+    {
+      "id": 22,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/22/0.ili",
+          "sha256": "de8ae3e47d9d07ebe601091d6b632ef24ff111aa8dc0e6a81636e02cfcd35d07",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:WHERE visible == #true (A := 4; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/22/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/22/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/22/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:59\n"
+        }
+      }
+    },
+    {
+      "id": 23,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/23/0.ili",
+          "sha256": "778e662e487c5170295a705a9b4ddc071823861fccd3ecd9ba3b2539873d54d7",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: WHERE visible == #true (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:WHERE visible == #true (A := 4; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/23/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/23/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/23/0.ili>\nInfo: ...compiler run done 2026-10-25 10:49:59\n"
+        }
+      }
+    },
+    {
+      "id": 24,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/24/0.ili",
+          "sha256": "dbc82bec03352ec4777e2c83db2a7cd8b2494a12df866b331eb93f5f42a0500e",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Derived: Special; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: WHERE visible == #true (Sign := ACCORDING kind ({Dot} WHEN IN #a,{Special} WHEN IN #b); A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/24/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/24/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/24/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:01\n"
+        }
+      }
+    },
+    {
+      "id": 25,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/25/0.ili",
+          "sha256": "1db865601a4c87ac309b2a6123018d5acab18ec7fe84829bc3374dab4eda5348",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Derived: Special; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: WHERE visible == #true (Sign := ACCORDING kind ({Dot} WHEN IN #a,{Special} WHEN IN #b); A := 1); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/25/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8bbcc16b12794f958461b9cd], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8bbcc16b12794f958461b9cd\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/25/0.ili\",\"revision\":\"1\",\"startOffset\":583,\"endOffset\":704},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/25/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/25/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:01\n"
+        }
+      }
+    },
+    {
+      "id": 26,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/26/0.ili",
+          "sha256": "f4bb6d612e61863bf4da997512a812d3c4bc29878b195b832c260f3636aa37e5",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Original.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/26/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/26/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/26/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:02\n"
+        }
+      }
+    },
+    {
+      "id": 27,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/27/0.ili",
+          "sha256": "c92bc3d0d87e5faf7df08cb0db5231672a8a8ddcabd905c994c5832d4b104f31",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Original.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Square}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/27/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-8996dd7fb580c72f0467bad5, diag-e4182032cb7e9c2b161583c3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-8996dd7fb580c72f0467bad5\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/27/0.ili\",\"revision\":\"1\",\"startOffset\":664,\"endOffset\":1326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translated drawing rule bindings or assignments differ/TRANSLATION_DRAWING_RULE\"}]},{\"id\":\"diag-e4182032cb7e9c2b161583c3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/27/0.ili\",\"revision\":\"1\",\"startOffset\":664,\"endOffset\":1326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/27/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/27/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:03\n"
+        }
+      }
+    },
+    {
+      "id": 28,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/28/0.ili",
+          "sha256": "52530d0d5241a1e89b141d534fcc831df3a0d658d9290561f218279bd2065638",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs;  END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/28/1.ili",
+          "sha256": "5f32e312a4c68981bb3b179d193834f1296020444d8d54d5eca950860fc598fc",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; SIGN BASKET Library ~ Base.Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Base.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/28/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/28/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/28/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/28/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/28/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/28/1.ili>\nInfo: ...compiler run done 2026-10-25 10:50:04\n"
+        }
+      }
+    },
+    {
+      "id": 29,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/29/0.ili",
+          "sha256": "52530d0d5241a1e89b141d534fcc831df3a0d658d9290561f218279bd2065638",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs;  END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/29/1.ili",
+          "sha256": "5f32e312a4c68981bb3b179d193834f1296020444d8d54d5eca950860fc598fc",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; SIGN BASKET Library ~ Base.Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Base.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/29/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/29/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/29/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/29/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/29/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/29/1.ili>\nInfo: ...compiler run done 2026-10-25 10:50:04\n"
+        }
+      }
+    },
+    {
+      "id": 30,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/30/0.ili",
+          "sha256": "461e4840c4286ad2894985e2ac8ecdb0a7a6d32a24773f313cad6c6d8692df98",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/30/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/30/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/30/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:06\n"
+        }
+      }
+    },
+    {
+      "id": 31,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/31/0.ili",
+          "sha256": "7f0ebeeb4f601ae1760d34d1626c33b2ed39538239022d9eb26945fa72f7d443",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/31/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/31/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/31/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:06\n"
+        }
+      }
+    },
+    {
+      "id": 32,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/32/0.ili",
+          "sha256": "95c6e505aa252432b7802e737a78141af175886f4aaa8bd65e0bb40a499e1b86",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/32/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/32/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/32/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:07\n"
+        }
+      }
+    },
+    {
+      "id": 33,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/33/0.ili",
+          "sha256": "7510ac463e741d43f85b9a8b1b9b37a60ee1d12e30bf44ac2b3eb85448305096",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; B := 2; C := 3); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/33/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/33/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/33/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:07\n"
+        }
+      }
+    },
+    {
+      "id": 34,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/34/0.ili",
+          "sha256": "ba8f6729b175f642c45a9ec3701cf58e94b92e0015e200ad7fe284b035e0a2ee",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; C := 3); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/34/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-16cf79f870605b6179e59728], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-16cf79f870605b6179e59728\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/34/0.ili\",\"revision\":\"1\",\"startOffset\":555,\"endOffset\":609},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/34/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/34/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:09\n"
+        }
+      }
+    },
+    {
+      "id": 35,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/35/0.ili",
+          "sha256": "6b591276fe542e04594cec408db89243ba8eac6db13c53efe557810e6e10334e",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/35/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-022cec8ef477c12cd1296343], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-022cec8ef477c12cd1296343\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/35/0.ili\",\"revision\":\"1\",\"startOffset\":555,\"endOffset\":604},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: A/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/35/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/35/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:09\n"
+        }
+      }
+    },
+    {
+      "id": 36,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/36/0.ili",
+          "sha256": "2693cf41943f8d5247b574a95a5c2c7b79905ce613ed488b73d06c9c40baac69",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Derived: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/36/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3b02d57e3363afb9f7502758], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3b02d57e3363afb9f7502758\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/36/0.ili\",\"revision\":\"1\",\"startOffset\":561,\"endOffset\":604},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/36/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/36/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:10\n"
+        }
+      }
+    },
+    {
+      "id": 37,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/37/0.ili",
+          "sha256": "50af2665271cc18784ebcef9ce38c88a45e62f23888864fc39f6c4b59e328a7d",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Most: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Most: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/37/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-c5a911e4046cf7f2e3a5e7d2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-c5a911e4046cf7f2e3a5e7d2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/37/0.ili\",\"revision\":\"1\",\"startOffset\":558,\"endOffset\":612},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: C/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/37/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/37/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:11\n"
+        }
+      }
+    },
+    {
+      "id": 38,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/38/0.ili",
+          "sha256": "65aa7e48ccc4b0c4564217bfcd84afb8d63e4da9f1799c60f79c5f3f88cf85b0",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Other: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/38/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-852495d2da50a5a43331273b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-852495d2da50a5a43331273b\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/38/0.ili\",\"revision\":\"1\",\"startOffset\":559,\"endOffset\":616},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/38/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/38/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:12\n"
+        }
+      }
+    },
+    {
+      "id": 39,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/39/0.ili",
+          "sha256": "93ad82dc7545c88a0c8b83da13223d2a0fdbcd8a5163893104ab371c227dfc15",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/39/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3d7e1004353cfe5cd62912eb], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3d7e1004353cfe5cd62912eb\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/39/0.ili\",\"revision\":\"1\",\"startOffset\":593,\"endOffset\":650},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/39/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/39/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/39/0.ili:1:There is no object \"Dot\" of class F.Signs.Derived in any data set defined by F.Library.\n...compiler run failed 2026-10-25 10:50:13\n"
+        }
+      }
+    },
+    {
+      "id": 40,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/40/0.ili",
+          "sha256": "a0fc0f4daaa939209ddcb14379c34354f4882a396ea06c812fd22f83f02c63c1",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF Derived: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/40/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/40/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/40/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:14\n"
+        }
+      }
+    },
+    {
+      "id": 41,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/41/0.ili",
+          "sha256": "94aa1f4c6234822cfe092e4d93e3da435ca0dcb8775d5d2481e0769ac1b38ad4",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT OF F.Signs.Colour; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Paint}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/41/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/41/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/41/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/41/0.ili:1:There is no class or structure \"Colour\" in TOPIC F.Signs.\n<repo>/build/reports/stabilization/g2-signatures-processes/41/0.ili:1:There can not be a ClassDef \"Colour\" in TOPIC F.Signs because there is already a model element with the same name. Use a different name.\n...compiler run failed 2026-10-25 10:50:15\n"
+        }
+      }
+    },
+    {
+      "id": 42,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/42/0.ili",
+          "sha256": "7328369d8ecc343b8d3ddbbfbc32875d9986caac420635c8a6d1484387eec180",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT OF F.Signs.Colour; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Dot}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/42/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-77cbde1c469fb7f270b9e73f], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-77cbde1c469fb7f270b9e73f\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/42/0.ili\",\"revision\":\"1\",\"startOffset\":617,\"endOffset\":677},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/42/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/42/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/42/0.ili:1:There is no class or structure \"Colour\" in TOPIC F.Signs.\n<repo>/build/reports/stabilization/g2-signatures-processes/42/0.ili:1:There can not be a ClassDef \"Colour\" in TOPIC F.Signs because there is already a model element with the same name. Use a different name.\n...compiler run failed 2026-10-25 10:50:16\n"
+        }
+      }
+    },
+    {
+      "id": 43,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/43/0.ili",
+          "sha256": "999eb8e29e8bfff88352f1212fd43798c672748d8f1e624b08b421cf4ed8a158",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Paint}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/43/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-64f3d6313dbc70f5e7195cc2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-64f3d6313dbc70f5e7195cc2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/43/0.ili\",\"revision\":\"1\",\"startOffset\":599,\"endOffset\":661},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/43/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/43/0.ili>\n<repo>/build/reports/stabilization/g2-signatures-processes/43/0.ili:1:There is no object \"Paint\" of class F.Signs.S in any data set defined by F.Library.\n...compiler run failed 2026-10-25 10:50:16\n"
+        }
+      }
+    },
+    {
+      "id": 44,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/44/0.ili",
+          "sha256": "42148263c43caed924fb4756c77b6a23a23964125bddba7090e3554357dc9d4a",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Dot}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/44/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/44/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/44/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:17\n"
+        }
+      }
+    },
+    {
+      "id": 45,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/45/0.ili",
+          "sha256": "b8a49468c70bafcb48fe7f6354d5653cb27ff2995650d8c8b7f218564ac3b296",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(A := 1); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/45/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-51c442450bbccfe3a03d93a9], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-51c442450bbccfe3a03d93a9\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/45/0.ili\",\"revision\":\"1\",\"startOffset\":666,\"endOffset\":709},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/45/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/45/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:18\n"
+        }
+      }
+    },
+    {
+      "id": 46,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/46/0.ili",
+          "sha256": "59a46f9dd4edfe3d6d631e030033a86a5b97aeea158a42fc07047a979c588825",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER Sign(EXTENDED):METAOBJECT OF Derived; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Derived: Special; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(Sign := {Special}; A := 1; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/46/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/46/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/46/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:18\n"
+        }
+      }
+    },
+    {
+      "id": 47,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/47/0.ili",
+          "sha256": "932ed2a1419f9134f8cc267baeb328b09901b7a680ae1ccbb922cb4604329c1b",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Most:(B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/47/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/47/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/47/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:19\n"
+        }
+      }
+    },
+    {
+      "id": 48,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/48/0.ili",
+          "sha256": "3c16ca097cef03034fdd46cfbd781f5999d94adcbfdb627a7ea93f140585b498",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Most:(C := 3); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/48/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6a568aee6fb802239eb7c136], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6a568aee6fb802239eb7c136\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/48/0.ili\",\"revision\":\"1\",\"startOffset\":628,\"endOffset\":668},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/48/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/48/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:20\n"
+        }
+      }
+    },
+    {
+      "id": 49,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/49/0.ili",
+          "sha256": "f094e5f32e43480cdcf2aa24bd3c6487dbaafd5dc87c8ef7a1561a83998f76e9",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/49/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a44a12a296f29f272b35b3b0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a44a12a296f29f272b35b3b0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/49/0.ili\",\"revision\":\"1\",\"startOffset\":656,\"endOffset\":699},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"incompatible signature parameter assignment/GRAPHIC_PARAMETER_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/49/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/49/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:20\n"
+        }
+      }
+    },
+    {
+      "id": 50,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/50/0.ili",
+          "sha256": "9b13e647d3f088b3402f14c79ac1197c6fb1f38733a03100933541c0725263ea",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 4); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/50/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/50/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/50/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:21\n"
+        }
+      }
+    },
+    {
+      "id": 51,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/51/0.ili",
+          "sha256": "d754945d1fe7b29446624d74a0f88637066387d954b3044eee65788abacf7f93",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:(A := 4; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/51/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/51/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/51/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:22\n"
+        }
+      }
+    },
+    {
+      "id": 52,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/52/0.ili",
+          "sha256": "85f16127c6e750646eef586423343b756b3392b4a62f342d10eec492da6c2054",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:WHERE visible == #true (A := 4; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/52/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/52/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/52/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:23\n"
+        }
+      }
+    },
+    {
+      "id": 53,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/53/0.ili",
+          "sha256": "5bf07880640ec74428d03a3ba749e9c984c2dda13021dce5b35a17844d88583a",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER A(EXTENDED):MANDATORY 0..5; B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: WHERE visible == #true (Sign := {Dot}; A := 9); END G; GRAPHIC H EXTENDS G = Draw(EXTENDED) OF F.Signs.Derived:WHERE visible == #true (A := 4; B := 2); END H; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/53/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/53/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/53/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:23\n"
+        }
+      }
+    },
+    {
+      "id": 54,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/54/0.ili",
+          "sha256": "541e637fb505855f63b12ccf3cefb1ba1a6e8496f802392f1c84b2a6a3eb9cf3",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Derived: Special; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: WHERE visible == #true (Sign := ACCORDING kind ({Dot} WHEN IN #a,{Special} WHEN IN #b); A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/54/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/54/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/54/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:24\n"
+        }
+      }
+    },
+    {
+      "id": 55,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/55/0.ili",
+          "sha256": "75e4ba6c207ce9d14dd6462a93183b1def319f6f33c77e122ebe9de2589b11a0",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Derived: Special; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: WHERE visible == #true (Sign := ACCORDING kind ({Dot} WHEN IN #a,{Special} WHEN IN #b); A := 1); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/55/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-2ef4f8a97122b0ed7bbc3a0d], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-2ef4f8a97122b0ed7bbc3a0d\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/55/0.ili\",\"revision\":\"1\",\"startOffset\":583,\"endOffset\":704},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"missing signature parameter: B/GRAPHIC_PARAMETER_MISSING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/55/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/55/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:25\n"
+        }
+      }
+    },
+    {
+      "id": 56,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/56/0.ili",
+          "sha256": "822b6646add4b7936abaad359b72bc19cc82500a8e11504fef3a10d5d0cf0b09",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Original.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/56/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/56/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/56/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:26\n"
+        }
+      }
+    },
+    {
+      "id": 57,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/57/0.ili",
+          "sha256": "ba05c993b4ede17768b9bf09f533d0b662b1d7df38a25d6fc8b2cf8f076d41fc",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Original AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Original.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END Original.CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot,Square; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.Derived: (Sign := {Square}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/57/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-f27013b291a7124eca6d48fc, diag-f27b3529e4aaa63284432056], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-f27b3529e4aaa63284432056\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/57/0.ili\",\"revision\":\"1\",\"startOffset\":664,\"endOffset\":1326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translated drawing rule bindings or assignments differ/TRANSLATION_DRAWING_RULE\"}]},{\"id\":\"diag-f27013b291a7124eca6d48fc\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/57/0.ili\",\"revision\":\"1\",\"startOffset\":664,\"endOffset\":1326},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"translation syntax does not match source model/TRANSLATION_STRUCTURE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/57/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/57/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:27\n"
+        }
+      }
+    },
+    {
+      "id": 58,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/58/0.ili",
+          "sha256": "fdf20db0c8faad76e5e9f5272b86a7e4b692630c48f63067c6643e1d999c44e8",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs;  END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/58/1.ili",
+          "sha256": "4f38b19625f9c01d0eecd0b7b6eb6b92c3e5dd42ad9c2f5c03c8aa8259cc907a",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; SIGN BASKET Library ~ Base.Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Base.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/58/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/58/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/58/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/58/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/58/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/58/1.ili>\nInfo: ...compiler run done 2026-10-25 10:50:28\n"
+        }
+      }
+    },
+    {
+      "id": 59,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/59/0.ili",
+          "sha256": "fdf20db0c8faad76e5e9f5272b86a7e4b692630c48f63067c6643e1d999c44e8",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other; CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; END Signs;  END Base."
+        },
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/59/1.ili",
+          "sha256": "4f38b19625f9c01d0eecd0b7b6eb6b92c3e5dd42ad9c2f5c03c8aa8259cc907a",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; SIGN BASKET Library ~ Base.Signs OBJECTS OF S: Dot; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF Base.Signs.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/59/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/59/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/59/0.ili",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/59/1.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/59/0.ili>\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/59/1.ili>\nInfo: ...compiler run done 2026-10-25 10:50:28\n"
+        }
+      }
+    },
+    {
+      "id": 60,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/60/0.ili",
+          "sha256": "35a82b534d04edb6f479b38252315b577f70fea583b737ca4c37a6b531312bf1",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Other EXTENDS INTERLIS.SIGN = END Other; END T; SIGN BASKET Library ~ T OBJECTS OF Derived: Dot; TOPIC Data = CLASS C = x: TEXT; END C; GRAPHIC G BASED ON C = Draw OF M.T.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END M."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/60/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/60/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/60/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:30\n"
+        }
+      }
+    },
+    {
+      "id": 61,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/61/0.ili",
+          "sha256": "a961c22e4ed546b088d18417de2fb8b4c1e83b4d5501bb7e64b60fee6c5888a1",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Other EXTENDS INTERLIS.SIGN = END Other; END T; SIGN BASKET Library ~ T OBJECTS OF Other: Dot; TOPIC Data = CLASS C = x: TEXT; END C; GRAPHIC G BASED ON C = Draw OF M.T.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END M."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/61/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-955865bd5d6b1454f4c20a37], requestedRoots=[ByName[modelName=M, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-955865bd5d6b1454f4c20a37\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/61/0.ili\",\"revision\":\"1\",\"startOffset\":383,\"endOffset\":436},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/61/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/61/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:30\n"
+        }
+      }
+    },
+    {
+      "id": 62,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/62/0.ili",
+          "sha256": "16d08a96323f91f27b7ed551f578bb3513ae4bfad27b5a4dfafc493ae6b73cbe",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Other EXTENDS INTERLIS.SIGN = END Other; END T; SIGN BASKET Library ~ T OBJECTS OF S: Dot; TOPIC Data = CLASS C = x: TEXT; END C; GRAPHIC G BASED ON C = Draw OF M.T.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END M."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/62/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/62/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/62/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:31\n"
+        }
+      }
+    },
+    {
+      "id": 63,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/63/0.ili",
+          "sha256": "6b258a1474625b82f64b0470331235daeb080d997a6352a80987561d8ace2db9",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Other EXTENDS INTERLIS.SIGN = END Other; END T; SIGN BASKET Library ~ T OBJECTS OF Derived: Dot; TOPIC Data = CLASS C = x: TEXT; END C; GRAPHIC G BASED ON C = Draw OF M.T.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END M."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/63/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/63/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/63/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:31\n"
+        }
+      }
+    },
+    {
+      "id": 64,
+      "expected": "rejected",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/64/0.ili",
+          "sha256": "77a421d920fd6ff7e62efa45755fab69ea18fb5002bb6ac848f9eae4c42de6c4",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Other EXTENDS INTERLIS.SIGN = END Other; END T; SIGN BASKET Library ~ T OBJECTS OF Other: Dot; TOPIC Data = CLASS C = x: TEXT; END C; GRAPHIC G BASED ON C = Draw OF M.T.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END M."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": false,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/64/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-181bb1b3b007827137006a10], requestedRoots=[ByName[modelName=M, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-181bb1b3b007827137006a10\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file://<repo>/build/reports/stabilization/g2-signatures-processes/64/0.ili\",\"revision\":\"1\",\"startOffset\":383,\"endOffset\":436},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"Draw\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"metadata object class does not match signature parameter/GRAPHIC_METAOBJECT_TYPE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/64/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/64/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:32\n"
+        }
+      }
+    },
+    {
+      "id": 65,
+      "expected": "succeeded",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/65/0.ili",
+          "sha256": "bc5e7e3f1d1f9962a6d3a4b0b78363d3ef31f54ec559441225f073212eacff52",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL M AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS S EXTENDS INTERLIS.SIGN = PARAMETER A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Other EXTENDS INTERLIS.SIGN = END Other; END T; SIGN BASKET Library ~ T OBJECTS OF S: Dot; TOPIC Data = CLASS C = x: TEXT; END C; GRAPHIC G BASED ON C = Draw OF M.T.Derived: (Sign := {Dot}; A := 1; B := 2); END G; END Data; END M."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "<repo>/interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "M",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/65/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "<repo>/build/reports/stabilization/g2-signatures-processes/65/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <<repo>/build/reports/stabilization/g2-signatures-processes/65/0.ili>\nInfo: ...compiler run done 2026-10-25 10:50:33\n"
+        }
+      }
+    },
+    {
+      "id": 66,
+      "expected": "succeeded",
+      "controlFor": 11,
+      "scope": "E1/E5 follow-on: target class declared before the parameter instead of after it",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/66/0.ili",
+          "sha256": "baf0b08870259b16ffe730452a7d0733861546224cece63ae62f15c5784add52",
+          "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT OF F.Signs.Colour; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other;  END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Paint}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-signatures-processes/66/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-signatures-processes/66/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-signatures-processes/66/0.ili>\nInfo: ...compiler run done 2026-10-25 10:53:30\n"
+        }
+      }
+    },
+    {
+      "id": 67,
+      "expected": "succeeded",
+      "controlFor": 41,
+      "scope": "E1/E5 follow-on: target class declared before the parameter instead of after it",
+      "sources": [
+        {
+          "path": "build/reports/stabilization/g2-signatures-processes/67/0.ili",
+          "sha256": "ed308a158cbe5b30e991c5a19e52f54dfc7c6d2ec64d5d69815a0c3ca2bd907f",
+          "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Signs = CLASS Colour EXTENDS INTERLIS.SIGN = END Colour; CLASS S EXTENDS INTERLIS.SIGN = PARAMETER Colour:METAOBJECT OF F.Signs.Colour; A: MANDATORY 0..10; END S; CLASS Derived EXTENDS S = PARAMETER B: MANDATORY 0..10; END Derived; CLASS Most EXTENDS Derived = PARAMETER C: MANDATORY 0..10; END Most; CLASS Other EXTENDS INTERLIS.SIGN = END Other;  END Signs; SIGN BASKET Library ~ Signs OBJECTS OF S: Dot OBJECTS OF Colour: Paint; TOPIC Data = CLASS Feature = kind:(a,b) ORDERED; visible:BOOLEAN; END Feature; GRAPHIC G BASED ON Feature = Draw OF F.Signs.S: (Sign := {Dot}; A := 1; Colour := {Paint}); END G; END Data; END F."
+        }
+      ],
+      "ownExpected": true,
+      "referenceAgreement": true,
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-signatures-processes/67/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "<home>/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "<home>/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-signatures-processes/67/0.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-signatures-processes/67/0.ili>\nInfo: ...compiler run done 2026-10-25 10:53:30\n"
+        }
+      }
+    }
+  ],
+  "processErrors": 0,
+  "interpretation": "All own expected outcomes are checked via structured CLI JSON: clean success or source errors without implementation guards. Reference disagreements, including the two Other originals, remain observable. Counts include controls and duplicates and do not mean that every disagreement is an independent ili2c defect. No new suite exception. Conditions use explicit Boolean comparison and explicit metaobject targets are qualified in added controls to avoid unrelated parsing/name-lookup effects. The final comparison also includes two E1/E5 controls moving Colour before its parameter use: both compilers accept these; the later declaration is accepted only by own compiler. This follow-on name-resolution rule is OPEN, not a decided normative exception.",
+  "reproduce": "Extract the signatureCases block and pinned originalSignatureCases from interlis-wasm-teavm/stabilization-contract.cjs, retaining verifySources roots. Recreate exact bytes from sources[].text, check hashes, run both recorded commands with ili2c 5.6.9. Original six inputs are byte-identical to the historical K5 findings. The last two controls are separately embedded exact sources with the Colour class declared before S; recreate them directly from sources[].text."
+}

@@ -79,6 +79,16 @@ public interface ModelResolutionService {
 
 `SourceProvider.snapshot()` liefert ausschliesslich bereits vorhandene Daten. Es darf keine IO-Aktion verstecken. `SourceInventory` enthält eine feste `WorkspaceRevision`, unveränderliche `SourceText`-Werte, einen Kopfindex und einen eingefrorenen Resolverkatalog. Neue Texte erhalten ihre Revision über den Workspace; ein Provider darf keine Revision vergeben.
 
+Der Konstruktor von `SourceInventory` erhält ab Vorab-API 0.2 neben Revision,
+Quellen und Katalog eine `Map<SourceId, SyntaxSnapshot>` mit bereits geparsten
+Quellen. Er führt keine Parserarbeit aus. Für jede Quelle müssen ID, Revision
+und Originaltext mit dem Snapshot übereinstimmen; fehlende beziehungsweise
+widersprüchliche Eingaben werden abgewiesen. `syntax()` stellt die defensiv
+kopierte, unveränderliche Zuordnung bereit. Die Header werden daraus in
+kanonischer Quellen- und anschliessender Deklarationsreihenfolge abgeleitet.
+Parsing und Closurevorbereitung finden ausserhalb des Workspace-Monitors statt;
+die Übernahme von Wiederverwendungsdaten bleibt an `acceptAnalysis` gebunden.
+
 ### 4.1 Trägerklassen
 
 | Klasse | Felder bzw. Methoden | Vertrag |
@@ -184,3 +194,13 @@ Ein Headercache wird durch exakten Textfingerprint, Quellrevision, Grammatik-/Pa
 `ResolutionContractTest` enthält mindestens: explizite Quelle schlägt gleichnamigen Serverkandidaten; Workspace-Override schlägt gespeicherten Text; zwei gleichrangige Versionen ohne Auswahl sind mehrdeutig; exakte Version wählt genau eine Definition; ein gefundener Importname mit falschem Header wird beanstandet; zwei Modelle in einer Datei teilen Textbesitz, behalten eigene Positionen; missingImport wird nach SourceUpdate aufgelöst; eine entfernte Abhängigkeit wird über die Closure invalidiert; verspäteter Download überschreibt keine Editoränderung; gleiche Texte behalten Revisionen; sourceRange mit alter Revision wird nicht verwendet.
 
 HTTP-Integrationstests verwenden einen lokalen kontrollierten Server. Der Test des Auswahlalgorithmus verwendet nur SourceInventory. Dadurch ist klar, ob ein Fehler aus IO, Modellbeschaffung oder Sprachbindung stammt.
+
+`TRANSLATION OF` begründet eine Prüfabhängigkeit auf das Originalmodell und
+dessen Import-Closure, ohne dessen Namensraum implizit zu importieren.
+Die Vorbereitung verwendet die vorhandenen `SourceInventory.syntax()`-Snapshots;
+es erfolgt kein zusätzliches Parsing. Positive, fehlende und mehrdeutige
+Originale erhalten `ResolutionDependency`-Einträge ohne künstliche ImportSites.
+Fehlende Originale bleiben als `PendingSourceRequest` sichtbar. Ein später
+hinzugefügtes Original oder Änderungen seiner Imports werden neu vorbereitet
+(RES-003/006). `WorkspaceTest` prüft Quellen in getrennten Dateien, Fehler und
+anschliessende Korrektur sowie das spätere Hinzufügen des Originals.

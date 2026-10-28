@@ -4,6 +4,7 @@ import guru.interlis.compiler.AnalysisSnapshot;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.AssociationSymbol;
+import guru.interlis.model.ViewSymbol;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.Cardinality;
 import guru.interlis.model.CardinalityUpper;
@@ -120,7 +121,9 @@ final class DefaultDiagramProjector implements DiagramProjector {
             }
             switch (symbol.kind()) {
                 case MODEL, TOPIC -> includeContainer(symbol);
-                case CLASS, STRUCTURE, ASSOCIATION, DOMAIN, VIEW -> includeNode(symbol);
+                case CLASS, STRUCTURE, ASSOCIATION, DOMAIN, VIEW, LINE_FORM, METAOBJECT, DRAWING_RULE -> includeNode(symbol);
+                case GRAPHIC -> { includeNode(symbol); ((guru.interlis.model.GraphicSymbol)symbol).rules().forEach(this::include); }
+                case METADATA_BASKET -> { includeNode(symbol); ((guru.interlis.model.MetadataBasketSymbol)symbol).objects().forEach(this::include); }
                 default -> {
                 }
             }
@@ -211,13 +214,12 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     addConstraints(structure.constraints(), constraints);
                 }
                 case AssociationSymbol association -> {
-                    for (SymbolId role : association.roles()) {
-                        addRole(role, attributes, roles, false, false);
-                    }
-                    for (SymbolId attribute : association.attributes()) {
-                        addAttribute(attribute, attributes, false, false);
-                    }
+                    addEffectiveMembers(symbol.id(), attributes, roles);
                     addConstraints(association.constraints(), constraints);
+                }
+                case guru.interlis.model.ViewSymbol view -> {
+                    addEffectiveMembers(symbol.id(), attributes, roles);
+                    addConstraints(view.constraints(), constraints);
                 }
                 case DomainSymbol domain -> {
                     // detail compartment carries the declared type label
@@ -230,6 +232,14 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 limited();
             }
             List<DiagramCompartment> result = new ArrayList<>();
+            List<SymbolId> declared = symbol instanceof ClassSymbol c ? c.members() : symbol instanceof StructureSymbol s ? s.members() : List.of();
+            List<DiagramMember> parameters = new ArrayList<>();
+            for (var id : declared) if (context.graph().symbol(id).orElse(null) instanceof guru.interlis.model.ParameterSymbol p) {
+                if (parameters.size() >= options.budget().maxMembersPerNode()) { limited(); break; }
+                parameters.add(new DiagramMember("member-" + id.value(), DiagramMember.MemberKind.PARAMETER, p.name().value(),
+                        options.showTypes() ? Optional.of(typeLabel(p.typeId())) : Optional.empty(), Optional.empty(), id, symbol.id(), false, p.overrides().isPresent(), anchor(p)));
+            }
+            if (!parameters.isEmpty()) result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-parameters", DiagramCompartment.CompartmentKind.PARAMETERS, parameters));
             if (!attributes.isEmpty()) {
                 result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-attributes",
                         DiagramCompartment.CompartmentKind.ATTRIBUTES, attributes));
@@ -342,12 +352,38 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 if (symbol == null) {
                     continue;
                 }
-                if (symbol instanceof ClassSymbol clazz) {
+                if (symbol instanceof guru.interlis.model.GraphicSymbol graphic) {
+                    graphic.baseGraphic().ifPresent(id->addInheritance(node.id(),id));
+                    graphic.basis().ifPresent(id->addMetadataReference(node.id(),graphic,id,"basis"));
+                } else if(symbol instanceof guru.interlis.model.DrawingRuleSymbol rule) {
+                    rule.signatureClass().ifPresent(id->addMetadataReference(node.id(),rule,id,"signature"));
+                    rule.owner().ifPresent(id->addMetadataReference(node.id(),rule,id,"graphic"));
+                    rule.overrides().ifPresent(id->addInheritance(node.id(),id));
+                } else if (symbol instanceof guru.interlis.model.MetadataBasketSymbol basket) {
+                    basket.topic().ifPresent(target -> addMetadataReference(node.id(), basket, target, "topic"));
+                    basket.baseBasket().ifPresent(base -> addInheritance(node.id(), base));
+                } else if (symbol instanceof guru.interlis.model.MetaObjectSymbol object) {
+                    object.objectClass().ifPresent(target -> addMetadataReference(node.id(), object, target, "class"));
+                    object.owner().ifPresent(target -> addMetadataReference(node.id(), object, target, "basket"));
+                } else if (symbol instanceof guru.interlis.model.LineFormSymbol form) {
+                    form.segmentStructure().ifPresent(target -> {
+                        String targetNode = ensureExternal(target, false);
+                        if (targetNode != null) addEdge(new DiagramEdge("edge-" + node.id() + "-segment", DiagramEdge.EdgeKind.REFERENCE,
+                                new DiagramEndpoint(node.id(), Optional.empty()), new DiagramEndpoint(targetNode, Optional.empty()),
+                                Optional.of(new SymbolRef(context.snapshotId(), form.id())), emptyEnd(), emptyEnd(), "segment", anchor(form)));
+                    });
+                } else if (symbol instanceof ClassSymbol clazz) {
                     clazz.baseType().ifPresent(base -> addInheritance(node.id(), base));
                 } else if (symbol instanceof StructureSymbol structure) {
                     structure.baseType().ifPresent(base -> addInheritance(node.id(), base));
+                } else if (symbol instanceof ViewSymbol view) {
+                    view.baseView().ifPresent(base -> addInheritance(node.id(), base));
+                    for (SymbolId basis : view.bases()) addViewDerivation(node.id(), basis);
                 } else if (symbol instanceof AssociationSymbol association) {
-                    for (SymbolId roleId : association.roles()) {
+                    association.derivedFrom().ifPresent(base -> addViewDerivation(node.id(), base));
+                    association.baseAssociation().ifPresent(base -> addInheritance(node.id(), base));
+                    for (SymbolId roleId : context.graph().effectiveMembers(association.id()).stream()
+                            .map(guru.interlis.model.EffectiveMember::declaredSymbol).toList()) {
                         Symbol roleSymbol = context.graph().symbol(roleId).orElse(null);
                         if (roleSymbol instanceof RoleSymbol role) {
                             addAssociationRole(node.id(), role);
@@ -355,6 +391,17 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     }
                 }
             }
+        }
+
+        private void addViewDerivation(String sourceNode, SymbolId basisId) {
+            var basis = (ViewSymbol.Base)context.graph().symbol(basisId).orElseThrow();
+            String targetNode = ensureExternal(basis.target(), false);
+            if (targetNode == null) return;
+            addEdge(new DiagramEdge("edge-" + sourceNode + "-derives-" + basisId.value(),
+                    DiagramEdge.EdgeKind.VIEW_DERIVATION, new DiagramEndpoint(sourceNode, Optional.empty()),
+                    new DiagramEndpoint(targetNode, Optional.empty()),
+                    Optional.of(new SymbolRef(context.snapshotId(), basis.id())),
+                    emptyEnd(), emptyEnd(), basis.name().value(), anchor(basis)));
         }
 
         private void addInheritance(String subtypeNode, SymbolId base) {
@@ -369,13 +416,19 @@ final class DefaultDiagramProjector implements DiagramProjector {
         }
 
         private void addAssociationRole(String associationNode, RoleSymbol role) {
-            String target = ensureExternal(role.target(), true);
+            for (SymbolId targetId : role.targetRoots()) {
+                addAssociationRoleTarget(associationNode, role, targetId);
+            }
+        }
+
+        private void addAssociationRoleTarget(String associationNode, RoleSymbol role, SymbolId targetId) {
+            String target = ensureExternal(targetId, true);
             if (target == null) {
                 return;
             }
             DiagramEdgeEnd end = new DiagramEdgeEnd(Optional.of(role.name().value()),
                     Optional.of(role.cardinality()), role.aggregation());
-            addEdge(new DiagramEdge("edge-" + associationNode + "-" + role.id().value(),
+            addEdge(new DiagramEdge("edge-" + associationNode + "-" + role.id().value() + "-" + targetId.value(),
                     DiagramEdge.EdgeKind.ASSOCIATION_ROLE,
                     new DiagramEndpoint(associationNode, Optional.empty()),
                     new DiagramEndpoint(target, Optional.empty()),
@@ -396,7 +449,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 return null;
             }
             DiagramNodeKind kind = nodeKind(symbol);
-            if (!options.visibleKinds().contains(kind)) {
+            if (!options.visibleKinds().contains(kind) && !(symbol instanceof TopicSymbol)) {
                 return null;
             }
             if (nodes.size() >= options.budget().maxNodes()) {
@@ -496,11 +549,22 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 case DomainReferenceType reference -> context.graph().symbol(reference.targetDomain())
                         .map(Symbol::name).map(guru.interlis.model.DeclaredName::value)
                         .orElse("DOMAIN");
+                case guru.interlis.model.StructureValueType structure -> structure.target()
+                        .flatMap(context.graph()::symbol).map(Symbol::name).map(guru.interlis.model.DeclaredName::value).orElse("ANYSTRUCTURE")
+                        + (structure.restrictions().isEmpty()?"":" RESTRICTION("+structure.restrictions().stream()
+                        .map(id -> context.graph().symbol(id).orElseThrow().name().value()).collect(java.util.stream.Collectors.joining(";"))+")");
                 case guru.interlis.model.CollectionType collection -> collection.collectionKind()
                         + " " + format(collection.cardinality()) + " OF "
                         + typeLabel(collection.elementType());
                 default -> descriptor.kind().name();
             };
+        }
+
+        private void addMetadataReference(String node, Symbol source, SymbolId target, String label) {
+            String other = ensureExternal(target, false);
+            if (other != null) addEdge(new DiagramEdge("edge-" + node + "-" + label, DiagramEdge.EdgeKind.REFERENCE,
+                    new DiagramEndpoint(node, Optional.empty()), new DiagramEndpoint(other, Optional.empty()),
+                    Optional.of(new SymbolRef(context.snapshotId(), source.id())), emptyEnd(), emptyEnd(), label, anchor(source)));
         }
 
         private static String format(Cardinality cardinality) {
@@ -516,6 +580,11 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 case ASSOCIATION -> DiagramNodeKind.ASSOCIATION;
                 case VIEW -> DiagramNodeKind.VIEW;
                 case DOMAIN -> DiagramNodeKind.DOMAIN;
+                case GRAPHIC -> DiagramNodeKind.GRAPHIC;
+                case DRAWING_RULE -> DiagramNodeKind.DRAWING_RULE;
+                case LINE_FORM -> DiagramNodeKind.LINE_FORM;
+                case METADATA_BASKET -> DiagramNodeKind.METADATA_BASKET;
+                case METAOBJECT -> DiagramNodeKind.METAOBJECT;
                 default -> DiagramNodeKind.EXTERNAL_REFERENCE;
             };
         }

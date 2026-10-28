@@ -1,0 +1,1195 @@
+{
+  "cases": [
+    {
+      "name": "DATE-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:DATE; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "bdf82a6cb2650dbf6e6a9d03b058842e33f8c08b99c9c369d11d29177be1b3bc",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-aa2ceacb1bec2f79dc4cc288], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-aa2ceacb1bec2f79dc4cc288\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/0.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":98},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"DATE/TIMEOFDAY/DATETIME\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/0.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/0.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/0.ili:1:There is neither a domain \"DATE\" in TOPIC F.T nor in MODEL F.\n...compiler run failed 2026-10-25 13:26:34\n"
+        }
+      }
+    },
+    {
+      "name": "TIMEOFDAY-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:TIMEOFDAY; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "1eb22794f4bad4d264826787a4b093e641518017eaefa9f68e4ec6a6a9181d71",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-6f4b61109d4b7d4a6b0a1c23], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-6f4b61109d4b7d4a6b0a1c23\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/1.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":103},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"DATE/TIMEOFDAY/DATETIME\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/1.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/1.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/1.ili:1:There is neither a domain \"TIMEOFDAY\" in TOPIC F.T nor in MODEL F.\n...compiler run failed 2026-10-25 13:26:34\n"
+        }
+      }
+    },
+    {
+      "name": "DATETIME-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:DATETIME; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "9fa35558bc8de03fea01441a2d12e7a17e6315da91874b49e126266913f7bb28",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-09416110795ebfa117b6a81b], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-09416110795ebfa117b6a81b\",\"code\":\"ILI-SYN-0006\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.versionConstruct\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/2.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":102},\"arguments\":[{\"name\":\"construct\",\"kind\":\"TEXT\",\"value\":\"DATE/TIMEOFDAY/DATETIME\"},{\"name\":\"language\",\"kind\":\"TEXT\",\"value\":\"2.3\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/2.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/2.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/2.ili:1:There is neither a domain \"DATETIME\" in TOPIC F.T nor in MODEL F.\n...compiler run failed 2026-10-25 13:26:35\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-3-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T(ABSTRACT,ABSTRACT)=END T; END F.",
+      "expected": "succeeded",
+      "sha256": "b6d2113b634290d4975f2b333a52967730a5ee35ceeeab257a967157371b30bb",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-20a9fbfbf5295c9140909f6f\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/3.ili\",\"revision\":\"1\",\"startOffset\":89,\"endOffset\":97},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/3.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/3.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/3.ili:1:ABSTRACT has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:35\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-4-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C(FINAL,FINAL)=END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "a18cef76edf55234d0c7e019dbae8a598738dbf533e9cd92771081200b19b444",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-840a376742137797b4c59915\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/4.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":99},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/4.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/4.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/4.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:35\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-5-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = STRUCTURE S(FINAL,FINAL)=END S; END F.",
+      "expected": "succeeded",
+      "sha256": "f228d4b1e9ba8e3cc3b887be5c44dd0dbaf168253f0c3e9de05b055af6ac5867",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-4c6cc88a59625ac3a9bb9e31\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/5.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":95},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/5.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/5.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/5.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:36\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-6-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL,FINAL)=0..10; END F.",
+      "expected": "succeeded",
+      "sha256": "c9b876bdf17db15acc8262e10e8bdbd1135faea31493a0bec82fc2987140fe13",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-1b317363f4760b7a74867d6d\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/6.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":92},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/6.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/6.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/6.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:36\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-7-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value(FINAL,FINAL):TEXT; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "1dab5a00b4970999cc5bf206bd46dbae2e3ec04726b17eae0f2c9124b3698378",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-e21f52f87f6eedb1c6fe1479\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/7.ili\",\"revision\":\"1\",\"startOffset\":100,\"endOffset\":105},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/7.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/7.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/7.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:36\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-8-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=OID AS INTERLIS.STANDARDOID; CLASS A=END A; CLASS B=END B; ASSOCIATION R=a(ORDERED,ORDERED)--{*}A; b--B; END R; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "37a91de8c0ac961a0d51d884d3276cb3bcd03a85ddc8c286aac3713e9bcba608",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-79af7529742cecb39c0b5933\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/8.ili\",\"revision\":\"1\",\"startOffset\":163,\"endOffset\":170},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"ORDERED\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/8.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/8.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/8.ili:1:ORDERED has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:37\n"
+        }
+      }
+    },
+    {
+      "name": "base-conflict-CLASS-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=CLASS C=END C; END Base; TOPIC T EXTENDS Base=CLASS C(EXTENDED) EXTENDS Base.C=END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "298e8501494d42cdbc23ade00cc9b9b9d7142dc3af41ee2da5b355e7d1b3b642",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/9.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0615d4dd6c01d4b679467779], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0615d4dd6c01d4b679467779\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/9.ili\",\"revision\":\"1\",\"startOffset\":129,\"endOffset\":168},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"C\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"EXTENDED and EXTENDS cannot be combined in one declaration/EXTENDED_EXPLICIT_BASE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/9.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/9.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/9.ili:1:It seems as if you were trying to refer to TOPIC F.Base. Please specify the model name as well.\n...compiler run failed 2026-10-25 13:26:37\n"
+        }
+      }
+    },
+    {
+      "name": "implicit-base-CLASS-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=CLASS C=END C; END Base; TOPIC T EXTENDS Base=CLASS C(EXTENDED)=END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "94d7a5cbf27b6715e550b0baaf9e9c5c46f1fd607cb27ae3aa6067c82d69ac0f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/10.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/10.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/10.ili>\nInfo: ...compiler run done 2026-10-25 13:26:37\n"
+        }
+      }
+    },
+    {
+      "name": "base-conflict-STRUCTURE-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=STRUCTURE C=END C; END Base; TOPIC T EXTENDS Base=STRUCTURE C(EXTENDED) EXTENDS Base.C=END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "571a9c3d19963466d5bbda933cb19c788b8e55a23ea747192d9b5bdb352bccb2",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/11.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-3ce649d336787ab43dd70bee], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-3ce649d336787ab43dd70bee\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/11.ili\",\"revision\":\"1\",\"startOffset\":133,\"endOffset\":176},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"C\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"EXTENDED and EXTENDS cannot be combined in one declaration/EXTENDED_EXPLICIT_BASE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/11.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/11.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/11.ili:1:It seems as if you were trying to refer to TOPIC F.Base. Please specify the model name as well.\n...compiler run failed 2026-10-25 13:26:38\n"
+        }
+      }
+    },
+    {
+      "name": "implicit-base-STRUCTURE-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=STRUCTURE C=END C; END Base; TOPIC T EXTENDS Base=STRUCTURE C(EXTENDED)=END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "8aab4cdf91bc4287f3e4a7f9c4d92869f6b3581130e2c96b42b11b070b2bc27a",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/12.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/12.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/12.ili>\nInfo: ...compiler run done 2026-10-25 13:26:38\n"
+        }
+      }
+    },
+    {
+      "name": "type-model-2.3",
+      "text": "INTERLIS 2.3; TYPE MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=TEXT; END F.",
+      "expected": "succeeded",
+      "sha256": "6c66c659bfd26b2d2eb9eeadda2ee2e73e2d23f4b709e305f642f380802f50d0",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/13.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/13.ili>\nInfo: ...compiler run done 2026-10-25 13:26:38\n"
+        }
+      }
+    },
+    {
+      "name": "type-model-topic-2.3",
+      "text": "INTERLIS 2.3; TYPE MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=END T; END F.",
+      "expected": "rejected",
+      "sha256": "b8f4e8867268dbc5124b398c331f4e8f04c986965af70f88129e428e52f81d37",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a3dc2b2a4818feab499e4af4], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a3dc2b2a4818feab499e4af4\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/14.ili\",\"revision\":\"1\",\"startOffset\":66,\"endOffset\":80},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"T\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"TYPE MODEL may only declare type definitions/TYPE_MODEL_CONTENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/14.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/14.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/14.ili:1:TOPIC F.T can not be part of TYPE MODEL F. Type models can not contain topics.\n...compiler run failed 2026-10-25 13:26:39\n"
+        }
+      }
+    },
+    {
+      "name": "symbology-2.3",
+      "text": "INTERLIS 2.3; SYMBOLOGY MODEL F AT \"https://example.org\" VERSION \"1\" =  END F.",
+      "expected": "rejected",
+      "sha256": "e39c5194f59e0c29576bf2c8cb6db2aa8ed973629c8147f6af0e14c60c14d153",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/15.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-0e7a566cf36c1f8c673b5ad2], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-0e7a566cf36c1f8c673b5ad2\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/15.ili\",\"revision\":\"1\",\"startOffset\":14,\"endOffset\":78},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"F\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"SYMBOLOGY MODEL requires CONTRACTED in INTERLIS 2.3/SYMBOLOGY_CONTRACTED\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/15.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/15.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/15.ili:1:SYMBOLOGY MODEL F must be contracted. A symbology model does not describe everything needed by an implementation, so specific support is required.\n  SYMBOLOGY MODEL F must be contracted. A symbology model does not describe everything needed by an implementation, so specific support is required.\n...compiler run failed 2026-10-25 13:26:39\n"
+        }
+      }
+    },
+    {
+      "name": "missing-type-2.3",
+      "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "3b5394791f1353fee7d602b8f65cb196676b75e91fb2f14080caeec21fd576cd",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-bf99508d86ea7b61585cde76], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-bf99508d86ea7b61585cde76\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/16.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":95},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\";\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'(','ALL','ANYSTRUCTURE','AREA','ATTRIBUTE','BAG','BLACKBOX','BOOLEAN','CLASS','COORD','DATE','DATETIME','DIRECTED','FORMAT','HALIGNMENT','INTERLIS','LIST','MANDATORY','MTEXT','MULTIAREA','MULTICOORD','MULTIPOLYLINE','MULTISURFACE','NAME','NUMERIC','OID','POLYLINE','REFERENCE','STRUCTURE','SURFACE','TEXT','TIMEOFDAY','URI','UUIDOID','VALIGNMENT',Dec,Name,Number,PosNumber,STRING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/16.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/16.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/16.ili:1:unexpected token: ;\nbuild/reports/stabilization/g2-e1-profiles/processes/16.ili:1:CLASS F.T.C should end with \"END C\", but \"END T\" was found.\nbuild/reports/stabilization/g2-e1-profiles/processes/16.ili:1:TOPIC F.T should end with \"END T\", but \"END F\" was found.\nbuild/reports/stabilization/g2-e1-profiles/processes/16.ili:1:expecting ';', found '.'\nbuild/reports/stabilization/g2-e1-profiles/processes/16.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-profiles/processes/16.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 13:26:39\n"
+        }
+      }
+    },
+    {
+      "name": "language-2.3",
+      "text": "INTERLIS 2.3; MODEL F (de_CH) AT \"https://example.org\" VERSION \"1\" = END F.",
+      "expected": "succeeded",
+      "sha256": "c84962acbd0665972a6c0bf502e020529dfc78702a9aaef6b182aac93cc990ec",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/17.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/17.ili>\nInfo: ...compiler run done 2026-10-25 13:26:40\n"
+        }
+      }
+    },
+    {
+      "name": "DATE-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:DATE; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "3f445ec3429c744159b3999d1918d289b49f63ffc1ca0eafde0f517f1b4f32ff",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/18.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/18.ili>\nInfo: ...compiler run done 2026-10-25 13:26:40\n"
+        }
+      }
+    },
+    {
+      "name": "TIMEOFDAY-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:TIMEOFDAY; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "8284d522d82477f33d59c3d39c1b174abd6cbfa2c44edafc4e223957fb811ddf",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/19.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/19.ili>\nInfo: ...compiler run done 2026-10-25 13:26:40\n"
+        }
+      }
+    },
+    {
+      "name": "DATETIME-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:DATETIME; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "5ba3c8038df0e62f8dbc2f1688bfa5e252395f85faad9805b9368a274d46a49f",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/20.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/20.ili>\nInfo: ...compiler run done 2026-10-25 13:26:41\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-21-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T(ABSTRACT,ABSTRACT)=END T; END F.",
+      "expected": "succeeded",
+      "sha256": "fbcf1a7ab41bb4ffe3b7feb5f428b8c52ae981fdfc5fd7de995cae8cccda222b",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-644eeaed4fd73f871eda0ffc\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/21.ili\",\"revision\":\"1\",\"startOffset\":89,\"endOffset\":97},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"ABSTRACT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/21.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/21.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/21.ili:1:ABSTRACT has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:41\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-22-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C(FINAL,FINAL)=END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "a6d5cc4a03bf283c656e7e3ca95b57c59bd80c7b7eecb60596605f23e05eeb81",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-9280fe05e4a076aac00a6a4e\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/22.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":99},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/22.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/22.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/22.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:41\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-23-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = STRUCTURE S(FINAL,FINAL)=END S; END F.",
+      "expected": "succeeded",
+      "sha256": "c358917ce133397169b4310ac67fc4ab4f588842a779b47a5bd98bb4e378ec35",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-f9eb8eb473aef626b0aa7281\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/23.ili\",\"revision\":\"1\",\"startOffset\":90,\"endOffset\":95},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/23.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/23.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/23.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:42\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-24-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D(FINAL,FINAL)=0..10; END F.",
+      "expected": "succeeded",
+      "sha256": "3d3d3eb65275def6ae577f0152dad02f74f1a83c600f15bf34897cec026ef691",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-d09d44328661da1c12d0aabb\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/24.ili\",\"revision\":\"1\",\"startOffset\":87,\"endOffset\":92},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/24.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/24.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/24.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:42\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-25-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value(FINAL,FINAL):TEXT; END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "d02c764e731be1fc6512b74d2a79b547af29e26a2cac19d787980cf73aa8940c",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/25.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-aa09e17695ebc22eba804141\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/25.ili\",\"revision\":\"1\",\"startOffset\":100,\"endOffset\":105},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"FINAL\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/25.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/25.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/25.ili:1:FINAL has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:42\n"
+        }
+      }
+    },
+    {
+      "name": "repeated-26-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=OID AS INTERLIS.STANDARDOID; CLASS A=END A; CLASS B=END B; ASSOCIATION R=a(ORDERED,ORDERED)--{*}A; b--B; END R; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "2154407b88a357ae45a42a957ea57b9f0a1a05039140a5e6d2672f4d6e99d153",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/26.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[{\"id\":\"diag-f119ceca3558fb6a8296b31d\",\"code\":\"ILI-SYN-0007\",\"severity\":\"WARNING\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.redundantProperty\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/26.ili\",\"revision\":\"1\",\"startOffset\":163,\"endOffset\":170},\"arguments\":[{\"name\":\"property\",\"kind\":\"TOKEN\",\"value\":\"ORDERED\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/26.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/26.ili>\nInfo: build/reports/stabilization/g2-e1-profiles/processes/26.ili:1:ORDERED has been specified several times.\nInfo: ...compiler run done 2026-10-25 13:26:43\n"
+        }
+      }
+    },
+    {
+      "name": "base-conflict-CLASS-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=CLASS C=END C; END Base; TOPIC T EXTENDS Base=CLASS C(EXTENDED) EXTENDS Base.C=END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "ab137d20acbd1602a0337f2b5dec9f7eb780cff681ea5eecf04ec4082100a301",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/27.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-178478b7c5423bcb844cb8a0], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-178478b7c5423bcb844cb8a0\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/27.ili\",\"revision\":\"1\",\"startOffset\":129,\"endOffset\":168},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"C\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"EXTENDED and EXTENDS cannot be combined in one declaration/EXTENDED_EXPLICIT_BASE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/27.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/27.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/27.ili:1:It seems as if you were trying to refer to TOPIC F.Base. Please specify the model name as well.\n...compiler run failed 2026-10-25 13:26:43\n"
+        }
+      }
+    },
+    {
+      "name": "implicit-base-CLASS-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=CLASS C=END C; END Base; TOPIC T EXTENDS Base=CLASS C(EXTENDED)=END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "d1ef694e5853dc20d6199ef0b34e43124066ef3b998a041f5eefc3ad846d5763",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/28.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/28.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/28.ili>\nInfo: ...compiler run done 2026-10-25 13:26:44\n"
+        }
+      }
+    },
+    {
+      "name": "base-conflict-STRUCTURE-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=STRUCTURE C=END C; END Base; TOPIC T EXTENDS Base=STRUCTURE C(EXTENDED) EXTENDS Base.C=END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "e3c2ab0abb7389179db415ed836dd34bd406d91e0eb553588066a53e18704220",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-9fdddeb898bc2e7424c1b99a], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-9fdddeb898bc2e7424c1b99a\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/29.ili\",\"revision\":\"1\",\"startOffset\":133,\"endOffset\":176},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"C\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"EXTENDED and EXTENDS cannot be combined in one declaration/EXTENDED_EXPLICIT_BASE\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/29.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/29.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/29.ili:1:It seems as if you were trying to refer to TOPIC F.Base. Please specify the model name as well.\n...compiler run failed 2026-10-25 13:26:44\n"
+        }
+      }
+    },
+    {
+      "name": "implicit-base-STRUCTURE-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC Base=STRUCTURE C=END C; END Base; TOPIC T EXTENDS Base=STRUCTURE C(EXTENDED)=END C; END T; END F.",
+      "expected": "succeeded",
+      "sha256": "3d9d517ca6d3b5b0fadcbb9c7b132c6480aa8d5387bd67b521fee6e49a9ac4eb",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/30.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/30.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/30.ili>\nInfo: ...compiler run done 2026-10-25 13:26:44\n"
+        }
+      }
+    },
+    {
+      "name": "type-model-2.4",
+      "text": "INTERLIS 2.4; TYPE MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN D=TEXT; END F.",
+      "expected": "succeeded",
+      "sha256": "dd6ee0b6dc9fdc6d48e9013fa8646eadca0d0ee5d3fd9cc26d4d5c0cd958355e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/31.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/31.ili>\nInfo: ...compiler run done 2026-10-25 13:26:45\n"
+        }
+      }
+    },
+    {
+      "name": "type-model-topic-2.4",
+      "text": "INTERLIS 2.4; TYPE MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=END T; END F.",
+      "expected": "rejected",
+      "sha256": "5546a9ce2430640318414c28fd9f3fab2987a0ca1843ae6ebcfc0df77331a12e",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-17050a929904b06f779b26c3], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-17050a929904b06f779b26c3\",\"code\":\"ILI-SEM-0010\",\"severity\":\"ERROR\",\"phase\":\"SEMANTIC_CHECKING\",\"messageKey\":\"diagnostic.semantics.inheritance\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/32.ili\",\"revision\":\"1\",\"startOffset\":66,\"endOffset\":80},\"arguments\":[{\"name\":\"element\",\"kind\":\"IDENTIFIER\",\"value\":\"T\"},{\"name\":\"rule\",\"kind\":\"TEXT\",\"value\":\"TYPE MODEL may only declare type definitions/TYPE_MODEL_CONTENT\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/32.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/32.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/32.ili:1:TOPIC F.T can not be part of TYPE MODEL F. Type models can not contain topics.\n...compiler run failed 2026-10-25 13:26:45\n"
+        }
+      }
+    },
+    {
+      "name": "symbology-2.4",
+      "text": "INTERLIS 2.4; SYMBOLOGY MODEL F AT \"https://example.org\" VERSION \"1\" =  END F.",
+      "expected": "succeeded",
+      "sha256": "968a879a23f2fafe681ac10728b5ec1100fae5d511cdf0ff7da090f094d2c6ff",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/33.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/33.ili>\nInfo: ...compiler run done 2026-10-25 13:26:45\n"
+        }
+      }
+    },
+    {
+      "name": "missing-type-2.4",
+      "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T=CLASS C=value:; END C; END T; END F.",
+      "expected": "rejected",
+      "sha256": "bc3abb2e8281f5b2979f12ce78f2b7c69597b1b7efd4324f06973c5f7afaae52",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a8c45aad77435e9f8d0bdad5], requestedRoots=[ByName[modelName=F, modelVersion=Optional.empty, sourceHint=Optional.empty]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a8c45aad77435e9f8d0bdad5\",\"code\":\"ILI-SYN-0002\",\"severity\":\"ERROR\",\"phase\":\"PARSING\",\"messageKey\":\"diagnostic.syntax.unexpected\",\"range\":{\"source\":\"file:///Users/stefan/sources/interlis-java/build/reports/stabilization/g2-e1-profiles/processes/34.ili\",\"revision\":\"1\",\"startOffset\":94,\"endOffset\":95},\"arguments\":[{\"name\":\"actual\",\"kind\":\"TOKEN\",\"value\":\";\"},{\"name\":\"expected\",\"kind\":\"IDENTIFIER_LIST\",\"value\":\"'(','ALL','ANYSTRUCTURE','AREA','ATTRIBUTE','BAG','BLACKBOX','BOOLEAN','CLASS','COORD','DATE','DATETIME','DIRECTED','FORMAT','HALIGNMENT','INTERLIS','LIST','MANDATORY','MTEXT','MULTIAREA','MULTICOORD','MULTIPOLYLINE','MULTISURFACE','NAME','NUMERIC','OID','POLYLINE','REFERENCE','STRUCTURE','SURFACE','TEXT','TIMEOFDAY','URI','UUIDOID','VALIGNMENT',Dec,Name,Number,PosNumber,STRING\"}]}]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/34.ili"
+          ],
+          "exitCode": 1,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/34.ili>\nbuild/reports/stabilization/g2-e1-profiles/processes/34.ili:1:unexpected token: ;\nbuild/reports/stabilization/g2-e1-profiles/processes/34.ili:1:CLASS F.T.C should end with \"END C\", but \"END T\" was found.\nbuild/reports/stabilization/g2-e1-profiles/processes/34.ili:1:TOPIC F.T should end with \"END T\", but \"END F\" was found.\nbuild/reports/stabilization/g2-e1-profiles/processes/34.ili:1:expecting ';', found '.'\nbuild/reports/stabilization/g2-e1-profiles/processes/34.ili:1:expecting \"END\", found 'null'\nbuild/reports/stabilization/g2-e1-profiles/processes/34.ili:1:expecting '.', found 'null'\n...compiler run failed 2026-10-25 13:26:46\n"
+        }
+      }
+    },
+    {
+      "name": "language-2.4",
+      "text": "INTERLIS 2.4; MODEL F (de_CH) AT \"https://example.org\" VERSION \"1\" = END F.",
+      "expected": "succeeded",
+      "sha256": "7f8e72e6f352f1ec41902161b173eae46d039d82e259317aece14632893cbac6",
+      "results": {
+        "own": {
+          "command": [
+            "interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+            "check",
+            "--json",
+            "--root",
+            "F",
+            "build/reports/stabilization/g2-e1-profiles/processes/35.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "{\"status\":\"ok\",\"diagnostics\":[]}\n",
+          "stderr": ""
+        },
+        "ili2c": {
+          "command": [
+            "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+            "-jar",
+            "/Users/stefan/.cache/interlis-java/ili2c.jar",
+            "-o0",
+            "build/reports/stabilization/g2-e1-profiles/processes/35.ili"
+          ],
+          "exitCode": 0,
+          "stdout": "",
+          "stderr": "Info: ili2c-5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722\nInfo: ilifile <build/reports/stabilization/g2-e1-profiles/processes/35.ili>\nInfo: ...compiler run done 2026-10-25 13:26:46\n"
+        }
+      }
+    }
+  ],
+  "ownExpected": 36,
+  "total": 36,
+  "referenceAgreements": 36
+}

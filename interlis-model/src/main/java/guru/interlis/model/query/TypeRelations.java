@@ -58,7 +58,7 @@ public final class TypeRelations {
         java.util.Set<TypeId> seen = new java.util.LinkedHashSet<>();
         TypeDescriptor current = descriptor;
         while (current instanceof DomainReferenceType reference) {
-            if (!seen.add(current.id()) || aliasPath.size() > 64) {
+            if (!seen.add(current.id())) {
                 return new QueryResult.NotAnalyzed<>(NotAnalyzedReason.PENDING);
             }
             aliasPath.add(reference.targetDomain());
@@ -71,6 +71,13 @@ public final class TypeRelations {
                         guru.interlis.model.UnresolvedReason.NAME_NOT_FOUND, List.of());
             }
         }
+        if (current instanceof guru.interlis.model.ErrorType error) return new QueryResult.Invalid<>(error.diagnosticIds());
+        if (current instanceof guru.interlis.model.PendingType pending) return new QueryResult.NotAnalyzed<>(switch(pending.reason()) {
+            case NOT_ANALYZED -> NotAnalyzedReason.NOT_REQUESTED;
+            case MISSING_IMPLEMENTATION -> NotAnalyzedReason.MISSING_IMPLEMENTATION;
+            case CANCELLED -> NotAnalyzedReason.CANCELLED;
+            case BUDGET_EXCEEDED -> NotAnalyzedReason.BUDGET_EXCEEDED;
+        });
         return new QueryResult.Known<>(new EffectiveType(descriptor.id(), current.id(), aliasPath));
     }
 
@@ -97,78 +104,50 @@ public final class TypeRelations {
         }
         TypeDescriptor s = graph.type(sourceResolved.known().orElseThrow().effectiveType()).orElseThrow();
         TypeDescriptor t = graph.type(targetResolved.known().orElseThrow().effectiveType()).orElseThrow();
-        return new QueryResult.Known<>(compare(s, t));
+        if(guru.interlis.model.internal.TypeCompatibility.isUndefined(s) && requiredDomain(target.type(),targetResolved.known().orElseThrow().aliasPath()))
+            return new QueryResult.Known<>(disallowed("mandatory-value-excludes-undefined"));
+        if(s instanceof guru.interlis.model.AttributePathType a && t instanceof guru.interlis.model.AttributePathType b
+                && !a.owner().equals(b.owner()) && (dependentOwner(a) || dependentOwner(b))) {
+            var valueOnly = new guru.interlis.model.AttributePathType(b.id(),b.origin(),Optional.empty(),b.restrictions());
+            var relation = assignment(a,valueOnly,context);
+            if(relation.decision()==RelationDecision.DISALLOWED)return new QueryResult.Known<>(relation);
+            return new QueryResult.NotAnalyzed<>(guru.interlis.model.NotAnalyzedReason.PENDING);
+        }
+        return new QueryResult.Known<>(assignment(s,t,context));
     }
 
-    private TypeRelation compare(TypeDescriptor source, TypeDescriptor target) {
-        if (source.id().equals(target.id())) {
-            return allowed("same-type");
-        }
-        if (source instanceof NumericType s && target instanceof NumericType t) {
-            return numericContained(s, t) ? allowed("numeric-range-contained")
-                    : disallowed("numeric-range-widens");
-        }
-        if (source instanceof TextType s && target instanceof TextType t) {
-            if (s.textKind() != t.textKind()) {
-                return disallowed("text-kind-differs");
-            }
-            if (t.maxLength().isPresent()
-                    && (s.maxLength().isEmpty() || s.maxLength().getAsInt() > t.maxLength().getAsInt())) {
-                return disallowed("text-length-widens");
-            }
-            return allowed("text-compatible");
-        }
-        if (source instanceof BooleanType && target instanceof BooleanType) {
-            return allowed("boolean-compatible");
-        }
-        if (source instanceof CollectionType s && target instanceof CollectionType t) {
-            if (s.collectionKind() != t.collectionKind()) {
-                return disallowed("collection-kind-differs");
-            }
-            TypeDescriptor se = graph.type(s.elementType()).orElseThrow();
-            TypeDescriptor te = graph.type(t.elementType()).orElseThrow();
-            TypeRelation element = compare(se, te);
-            if (element.decision() != RelationDecision.ALLOWED) {
-                return disallowed("collection-element-" + element.reason());
-            }
-            if (s.cardinality().lower().compareTo(t.cardinality().lower()) < 0
-                    || upperCompare(s, t) > 0) {
-                return disallowed("collection-cardinality-widens");
-            }
-            return allowed("collection-compatible");
-        }
-        return disallowed("incompatible-type-families");
+    private boolean requiredDomain(TypeId declared,List<guru.interlis.model.SymbolId> aliases) {
+        return aliases.stream().map(graph::symbol).flatMap(Optional::stream).filter(guru.interlis.model.DomainSymbol.class::isInstance)
+                    .map(guru.interlis.model.DomainSymbol.class::cast).anyMatch(guru.interlis.model.DomainSymbol::mandatory)
+                || graph.symbols().stream().filter(guru.interlis.model.DomainSymbol.class::isInstance).map(guru.interlis.model.DomainSymbol.class::cast)
+                    .anyMatch(domain->domain.typeId().equals(declared) && domain.mandatory());
     }
 
-    private static int upperCompare(CollectionType s, CollectionType t) {
-        if (t.cardinality().upper() instanceof guru.interlis.model.CardinalityUpper.Unbounded) {
-            return 0;
-        }
-        if (s.cardinality().upper() instanceof guru.interlis.model.CardinalityUpper.Unbounded) {
-            return 1;
-        }
-        var sf = (guru.interlis.model.CardinalityUpper.Finite) s.cardinality().upper();
-        var tf = (guru.interlis.model.CardinalityUpper.Finite) t.cardinality().upper();
-        return sf.value().compareTo(tf.value());
+    private TypeRelation assignment(TypeDescriptor s,TypeDescriptor t,AssignmentContext context) {
+        return guru.interlis.model.internal.TypeCompatibility.assign(s, t,
+                id -> resolveAliases(new TypeRef(graph.snapshotId(), id)).known()
+                        .flatMap(e -> graph.type(e.effectiveType())).orElse(null),
+                this::declarationBase,id -> graph.declaredType(id).flatMap(type->resolveAliases(new TypeRef(graph.snapshotId(),type)).known())
+                        .flatMap(e->graph.type(e.effectiveType())).orElse(null), context);
     }
 
-    private static boolean numericContained(NumericType source, NumericType target) {
-        return contained(source.range().minimum(), target.range().minimum(), true)
-                && contained(source.range().maximum(), target.range().maximum(), false);
+    private guru.interlis.model.SymbolId declarationBase(guru.interlis.model.SymbolId id) {
+        return switch(graph.symbol(id).orElse(null)) {
+            case guru.interlis.model.DomainSymbol x -> x.baseDomain().orElse(null);
+            case guru.interlis.model.ClassSymbol x -> x.baseType().orElse(null);
+            case guru.interlis.model.StructureSymbol x -> x.baseType().orElse(null);
+            case guru.interlis.model.AssociationSymbol x -> x.baseAssociation().orElse(null);
+            case guru.interlis.model.ViewSymbol x -> x.baseView().orElse(null);
+            case guru.interlis.model.AttributeSymbol x -> x.owner().map(this::declarationBase)
+                    .map(parent->graph.effectiveMembers(parent).stream().map(guru.interlis.model.EffectiveMember::declaredSymbol)
+                        .map(graph::symbol).flatMap(Optional::stream).filter(guru.interlis.model.AttributeSymbol.class::isInstance)
+                        .filter(member->member.name().value().equals(x.name().value())).map(guru.interlis.model.Symbol::id).findFirst().orElse(null)).orElse(null);
+            case null, default -> null;
+        };
     }
 
-    private static boolean contained(java.util.Optional<guru.interlis.model.DecimalLiteral> value,
-                                     java.util.Optional<guru.interlis.model.DecimalLiteral> bound,
-                                     boolean minimum) {
-        if (bound.isEmpty()) {
-            return true;
-        }
-        if (value.isEmpty()) {
-            return false;
-        }
-        BigDecimal v = value.get().exactValue();
-        BigDecimal b = bound.get().exactValue();
-        return minimum ? v.compareTo(b) >= 0 : v.compareTo(b) <= 0;
+    private static boolean dependentOwner(guru.interlis.model.AttributePathType type) {
+        return type.owner().filter(owner -> !(owner instanceof guru.interlis.model.AttributePathType.Viewable)).isPresent();
     }
 
     private static TypeRelation allowed(String reason) {
@@ -179,9 +158,29 @@ public final class TypeRelations {
         return new TypeRelation(RelationDecision.DISALLOWED, reason, List.of());
     }
 
+    /**
+     * Checks extension of alias-resolved types in this snapshot. Scalar numeric
+     * extension additionally preserves a concrete unit or specializes an
+     * abstract unit; it never treats convertibility as permission to change a
+     * unit. Effective inherited units must already be present in the graph.
+     * Unknown, invalid and pending type results retain the assignment query's
+     * corresponding result state; mismatched snapshots are rejected.
+     */
     public QueryResult<TypeRelation> canExtend(TypeRef derived, TypeRef base,
-                                               ExtensionContext context) {
+                                               ExtensionContext context, guru.interlis.model.LanguageVersion language) {
         Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(language, "language");
+        QueryResult<EffectiveType> derivedResolved = resolveAliases(derived);
+        QueryResult<EffectiveType> baseResolved = resolveAliases(base);
+        if (derivedResolved instanceof QueryResult.Known<EffectiveType> d
+                && baseResolved instanceof QueryResult.Known<EffectiveType> b)
+            return new QueryResult.Known<>(guru.interlis.model.internal.TypeCompatibility.extend(
+                    graph.type(d.value().effectiveType()).orElseThrow(), graph.type(b.value().effectiveType()).orElseThrow(), language,
+                    id -> resolveAliases(new TypeRef(graph.snapshotId(),id)).known().flatMap(e -> graph.type(e.effectiveType())).orElse(null),
+                    this::declarationBase, id -> graph.declaredType(id).flatMap(type -> resolveAliases(new TypeRef(graph.snapshotId(),type)).known())
+                            .flatMap(e -> graph.type(e.effectiveType())).orElse(null),
+                    id -> graph.symbol(id).filter(guru.interlis.model.UnitSymbol.class::isInstance)
+                            .map(guru.interlis.model.UnitSymbol.class::cast).orElse(null)));
         return canAssign(derived, base, AssignmentContext.NORMAL);
     }
 
@@ -193,29 +192,42 @@ public final class TypeRelations {
                 && r instanceof QueryResult.Known<EffectiveType> rk) {
             TypeDescriptor ld = graph.type(lk.value().effectiveType()).orElseThrow();
             TypeDescriptor rd = graph.type(rk.value().effectiveType()).orElseThrow();
-            if (ld instanceof NumericType && rd instanceof NumericType) {
-                return new QueryResult.Known<>(allowed("numeric-comparable"));
-            }
-            if (ld instanceof TextType && rd instanceof TextType
-                    && operator == ComparisonOperator.EQUALITY) {
-                return new QueryResult.Known<>(allowed("text-equality-comparable"));
-            }
-            if (ld instanceof BooleanType && rd instanceof BooleanType
-                    && operator == ComparisonOperator.EQUALITY) {
-                return new QueryResult.Known<>(allowed("boolean-equality-comparable"));
-            }
-            return new QueryResult.Known<>(disallowed("not-comparable"));
+            return new QueryResult.Known<>(guru.interlis.model.internal.TypeCompatibility.compare(ld,rd,operator,
+                    id -> graph.type(id).orElse(null),id -> graph.declaredType(id).flatMap(type -> resolveAliases(new TypeRef(graph.snapshotId(),type)).known())
+                            .flatMap(e -> graph.type(e.effectiveType())).orElse(null)));
         }
+        if (l instanceof QueryResult.Invalid<EffectiveType> invalid) return new QueryResult.Invalid<>(invalid.diagnosticIds());
+        if (r instanceof QueryResult.Invalid<EffectiveType> invalid) return new QueryResult.Invalid<>(invalid.diagnosticIds());
+        if (l instanceof QueryResult.Unresolved<EffectiveType> unresolved) return new QueryResult.Unresolved<>(unresolved.reason(), unresolved.candidates());
+        if (r instanceof QueryResult.Unresolved<EffectiveType> unresolved) return new QueryResult.Unresolved<>(unresolved.reason(), unresolved.candidates());
+        if (l instanceof QueryResult.NotAnalyzed<EffectiveType> pending) return new QueryResult.NotAnalyzed<>(pending.reason());
+        if (r instanceof QueryResult.NotAnalyzed<EffectiveType> pending) return new QueryResult.NotAnalyzed<>(pending.reason());
         return new QueryResult.NotAnalyzed<>(NotAnalyzedReason.PENDING);
     }
 
-    public UnitRelation compareUnits(guru.interlis.model.SymbolRef left,
-                                     guru.interlis.model.SymbolRef right) {
-        Objects.requireNonNull(left, "left");
-        Objects.requireNonNull(right, "right");
-        if (left.symbol().equals(right.symbol())) {
-            return new UnitRelation(RelationDecision.ALLOWED, "same-unit");
-        }
-        return new UnitRelation(RelationDecision.DISALLOWED, "different-unit");
+    /** Compares identities or statically declared conversion relationships in
+     * this snapshot, including composed units. No numeric factor or external
+     * function is executed. Abstract ancestry alone is not a conversion.
+     * Unknown IDs and non-unit symbols are Unresolved, incomplete dependency
+     * graphs are NotAnalyzed, and both snapshot references are checked first. */
+    public QueryResult<UnitRelation> compareUnits(guru.interlis.model.SymbolRef left,
+                                                 guru.interlis.model.SymbolRef right) {
+        Objects.requireNonNull(left, "left"); Objects.requireNonNull(right, "right");
+        if (!graph.snapshotId().equals(left.snapshot()))
+            throw new guru.interlis.model.SnapshotMismatchException(graph.snapshotId(), left.snapshot());
+        if (!graph.snapshotId().equals(right.snapshot()))
+            throw new guru.interlis.model.SnapshotMismatchException(graph.snapshotId(), right.snapshot());
+        var l = graph.symbol(left.symbol()).orElse(null); var r = graph.symbol(right.symbol()).orElse(null);
+        if (l == null || r == null) return new QueryResult.Unresolved<>(guru.interlis.model.UnresolvedReason.UNKNOWN_ID, List.of());
+        if (!(l instanceof guru.interlis.model.UnitSymbol) || !(r instanceof guru.interlis.model.UnitSymbol))
+            return new QueryResult.Unresolved<>(guru.interlis.model.UnresolvedReason.NOT_A_UNIT, List.of());
+        var incomplete = graph.references().stream()
+                .filter(reference -> !(reference.resolution() instanceof guru.interlis.model.BindingResolution.BoundTarget))
+                .map(reference -> reference.originalScope().value()).collect(java.util.stream.Collectors.toSet());
+        return guru.interlis.model.internal.TypeCompatibility.unitRelation(left.symbol(), right.symbol(),
+                id -> incomplete.contains(id.value()) ? null : graph.symbol(id).filter(guru.interlis.model.UnitSymbol.class::isInstance)
+                        .map(guru.interlis.model.UnitSymbol.class::cast).orElse(null))
+                .<QueryResult<UnitRelation>>map(QueryResult.Known::new)
+                .orElseGet(() -> new QueryResult.NotAnalyzed<>(NotAnalyzedReason.PENDING));
     }
 }
