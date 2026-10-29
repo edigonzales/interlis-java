@@ -15,4 +15,25 @@ class PythonFreeCheckTest {
         PythonFreeCheck.validate("docs/evidence/old.md","Historical "+"py"+"thon3 command");
         PythonFreeCheck.validate("tools/ok.cjs","spawn('node', ['contract.cjs'])");
     }
+    @Test void absoluteAndEnvWrappedShellCommandsFail() {
+        String interpreter="py"+"thon3";
+        for(String command:new String[]{
+                "exec /usr/bin/env "+interpreter+" \"$@\"",
+                "/usr/bin/env "+interpreter+" tool",
+                "command /usr/bin/"+interpreter+" tool",
+                "/usr/bin/"+interpreter+" tool",
+                "env -u UNUSED PROFILE=test "+interpreter+" tool",
+                "env -u UNUSED "+interpreter+" tool",
+                "env --unset=UNUSED "+interpreter+" tool",
+                "echo input | xargs "+interpreter+" tool",
+                "xargs -n 1 /usr/bin/env "+interpreter+" tool",
+                "xargs -I {} /usr/bin/"+interpreter+" {}",
+                "result=$(/usr/bin/"+interpreter+" --version)",
+                "result=`env "+interpreter+" --version`",
+                "run: /usr/bin/env "+interpreter+" tool",
+                "exec /usr/bin/"+"pi"+"p3 install dependency"}) {
+            assertThrows(Exception.class,()->PythonFreeCheck.validate("tools/a.sh",command),command);
+        }
+        PythonFreeCheck.validate("tools/a.sh","exec /usr/bin/env node contract.cjs");
+    }
 }

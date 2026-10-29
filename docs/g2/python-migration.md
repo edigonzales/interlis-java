@@ -127,3 +127,10 @@ darin `MOZ_DISABLE_CONTENT_SANDBOX=1`, weil sein zusätzlicher Sandboxstart sons
 mit EPERM scheitert; die äussere Interpreter-Ausführungssperre bleibt vererbt.
 Dies ist im Umgebungsreport ausdrücklich dokumentiert. Der unabhängige Reviewer
 muss den sauberen Kandidaten-SHA selbst prüfen.
+
+Erster unabhängiger L0B-3-Review: Die neue Env-Shellgegenprobe deckte eine
+Scannerlücke auf (Exit 0 für `exec /usr/bin/env python3`). Der nachkorrigierte
+Scanner erfasst auch diese sowie absolute Pfade, xargs und Substitutionen;
+die konkrete Gradle-Canary liefert nun Exit 1. Neue JUnit-Regressionen bestehen.
+Der erste Kandidat bleibt FAIL, der vollständige neue Phasenreview ist separat
+erforderlich; siehe [Lieferbericht](implementation/L0B-3.md).

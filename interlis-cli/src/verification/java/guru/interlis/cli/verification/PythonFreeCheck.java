@@ -8,6 +8,12 @@ import static guru.interlis.cli.verification.HostChecks.*;
 
 /** Repository canary; runtime absence is independently proved by the confined phase run. */
 public final class PythonFreeCheck {
+    private static final String COMMAND_PATH = "(?:[^\\s\"'`;|&]+/)?";
+    private static final String EXECUTABLE = COMMAND_PATH+"(?:py(?:thon|py)[0-9.]*|pip[0-9.]*|uvx?)(?:\\.exe)?";
+    private static final String ENV_PREFIX = "(?:"+COMMAND_PATH+"env\\s+(?:(?:-(?:u|C)\\s+[^\\s]+|-[^\\s]+|[A-Za-z_][A-Za-z_0-9]*=[^\\s]+)\\s+)*)?";
+    private static final String XARGS_PREFIX = "(?:"+COMMAND_PATH+"xargs\\s+(?:-[^\\s]+\\s+(?:[0-9]+\\s+|\\{\\}\\s+)?)*)?";
+    // Shell/YAML command starts, including absolute paths and env options/assignments.
+    private static final Pattern SHELL_COMMAND = Pattern.compile("(?im)(?:^|[;|&`]|\\$\\()\\s*(?:(?:run|command)\\s*:\\s*)?(?:(?:exec|command)\\s+)?"+XARGS_PREFIX+ENV_PREFIX+EXECUTABLE+"(?=\\s|$)");
     private static final Pattern COMMAND=Pattern.compile("(?im)(?:^#![^\\r\\n]*\\b|[\"'`](?:(?:/|\\./|\\.\\./|[A-Za-z]:[\\\\/])[^\"'`\\r\\n]*)?)(?:py(?:thon|py)[0-9.]*|pip[0-9.]*|uvx?)(?=[\"'`\\s]|$)|^\\s*(?:(?:run|command)\\s*:\\s*|exec\\s+)?(?:py(?:thon|py)[0-9.]*|pip[0-9.]*|uvx?)\\s");
     private PythonFreeCheck() { }
     static void validate(String path,String text) {
@@ -18,7 +24,7 @@ public final class PythonFreeCheck {
         // enforces an OS execution denial for the entire descendant process tree.
         if(path.equals("tools/verification/without-python.cjs"))return;
         boolean active=active(path);
-        if(active)require(!COMMAND.matcher(text).find(),"Active Python/pip command: "+path);
+        if(active)require(!COMMAND.matcher(text).find() && !SHELL_COMMAND.matcher(text).find(),"Active Python/pip command: "+path);
     }
     private static boolean active(String path) { return path.matches(".*\\.(gradle|sh|bat|cmd|ps1|cjs|mjs|js|java|ya?ml)$") || path.matches("(?:.*/)?package(?:-lock)?\\.json") || path.equals("gradlew");
     }
