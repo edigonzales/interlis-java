@@ -115,6 +115,21 @@ class LanguageFoundationContractTest {
             assertEquals(p.typeId(),endpoint.declaredType());
         }
     }
+    @Test void predefinedLineFormsPrecedeUnitsAndTypesInAppendixOrder() {
+        for(String v:List.of("2.3","2.4")) {
+            var out=ok(input(v,"","STRUCTURE H=line:INTERLIS.LineGeometry;END H;"
+                    +"DOMAIN P=COORD 0.00..100.00,0.00..100.00;"
+                    +"TOPIC T=CLASS C=line:POLYLINE WITH (STRAIGHTS,ARCS) VERTEX P;END C;END T;",1));
+            var graph=out.analysis().semanticGraph();
+            var model=(ModelSymbol)graph.symbol(out.analysis().queries().findQualifiedName(QualifiedName.of("INTERLIS")).getFirst().symbol()).orElseThrow();
+            assertEquals(List.of("STRAIGHTS","ARCS","ANYUNIT","LENGTH","LineCoord","isOfClass",
+                            "LineSegment","StartSegment","StraightSegment","ArcSegment","LineGeometry"),
+                    model.members().stream().map(id->graph.symbol(id).orElseThrow().name().value().replace("INTERLIS.","")).toList());
+            for(int i=1;i<model.members().size();i++)assertTrue(
+                    graph.symbol(model.members().get(i-1)).orElseThrow().header().declarationOrder()
+                            < graph.symbol(model.members().get(i)).orElseThrow().header().declarationOrder());
+        }
+    }
     @Test void mixedLanguageSnapshotsOwnEveryMaterializedPredefinedDeclaration() {
         for(boolean reversed:List.of(false,true))for(var roots:List.of(List.of("M23"),List.of("M24"),List.of("M23","M24"))) {
             Map<SourceId,SourceText> sources=new LinkedHashMap<>();

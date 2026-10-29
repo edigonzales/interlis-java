@@ -13,6 +13,11 @@
   der Closure; [unveränderter Bericht](reviews/L1-1-review-9cc8073-FAIL.md).
   F1 ist mit RED/GREEN-Regression für gemischte Quellen, Quellenreihenfolge
   und Fresh/Reuse korrigiert. Der neue Kandidat braucht einen vollständigen Review.
+- Zweiter L1-1-Review auf `35f09fb6d59fbe863588b0c79a09f45e0e55ffd0`:
+  F1 behoben, **FAIL** wegen STRAIGHTS-/ARCS-Reihenfolge;
+  [unveränderter Bericht](reviews/L1-1-review-35f09fb-FAIL.md). F2 ist mit
+  RED/GREEN-Reihenfolgetest in beiden Sprachen korrigiert; vollständiger
+  Abgleich der 76/83 gepinnten Anhang-A-Deklarationen erfolgreich.
 - L1-1 implementiert: gewöhnliche vordefinierte Geometriestrukturen,
   kanonische sprachabhängige INTERLIS-Modellowner, Import-/Präfixqueries und
   eindeutige kanonische gegenüber kontextbezogener Herkunft.
@@ -20,8 +25,10 @@
   abstrakte Klassen wie ili2c**, in 2.3 und 2.4. Topics, konkrete Klassen,
   Laufzeitparameter und Metadatenbehälter bleiben verboten. Die vorher
   freigegebene OID-/CONTRACTED-Kompatibilität bleibt erhalten.
-- Eigene Prüfungen: frisches `check --rerun-tasks` **Exit 0 / 24s / 45 Tasks**;
-  **738** reguläre JVM-, **136** Evidenz-, **15** Assertion- und **15** Hosttests,
+- Eigene Prüfungen: frischer vollständiger L1-1-Lauf
+  (`check checkPortable g2EvidenceTest conformanceCheck sdkProcessCheck pythonFreeCheck
+  --continue --rerun-tasks`) **Exit 0 / 2m 25s / 58 Tasks**;
+  **739** reguläre JVM-, **136** Evidenz-, **15** Assertion- und **15** Hosttests,
   alle ohne Fehler/Skips. Node-JS/WasmGC jeweils **3299** gemeinsame Fälle unter
   der OS-Interpreter-Ausführungssperre erfolgreich. Alle **6** gepinnten
   Geometrie-Originalquellen mit aktuellem Compiler und ili2c **Exit 0**.
@@ -39,3 +46,9 @@
   blockierenden Phase-0b-Beobachtungen bleiben im zugehörigen Review dokumentiert.
 
 Verbindlich: [Plan](EXECUTION_PLAN.md), [Reviewanweisung](OPENCODE_REVIEW_PROMPT.md).
+
+Nutzerentscheidungen für das folgende L1-2 sind eingegangen: bestehende
+kompatible skalierte Bereichsgrenzen weiter zulassen; breiteres bestehendes
+Exponentialprofil für allgemeine Konstanten und Einheitenfaktoren erhalten.
+Werteordnung, Genauigkeit und die strengeren Mantissenprüfungen an Typgrenzen
+bleiben erhalten. L1-2 ist noch nicht begonnen; sein Start wartet auf L1-1-PASS.

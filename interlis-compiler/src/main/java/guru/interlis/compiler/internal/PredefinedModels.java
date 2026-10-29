@@ -8,7 +8,7 @@ final class PredefinedModels {
     private PredefinedModels() { }
     static SymbolId id(LanguageVersion language) { return new SymbolId("predefined:"+language+":model:INTERLIS"); }
     // Appendix-A order, using actual binding names (unit designations are documentary).
-    private static final List<String> ORDER=List.of("ANYUNIT","DIMENSIONLESS","LENGTH","MASS","TIME","ELECTRIC_CURRENT",
+    private static final List<String> ORDER=List.of("STRAIGHTS","ARCS","ANYUNIT","DIMENSIONLESS","LENGTH","MASS","TIME","ELECTRIC_CURRENT",
             "TEMPERATURE","AMOUNT_OF_MATTER","ANGLE","SOLID_ANGLE","LUMINOUS_INTENSITY","MONEY","m","kg","s","A","K","mol","rad","sr","cd",
             "URI","NAME","INTERLIS_1_DATE","BOOLEAN","HALIGNMENT","VALIGNMENT","NOOID","ANYOID","I32OID","STANDARDOID","UUIDOID","LineCoord",
             "myClass","isSubClass","isOfClass","elementCount","objectCount","len","lenM","trim","trimM","isEnumSubVal","inEnumRange","convertUnit",

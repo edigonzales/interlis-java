@@ -59,8 +59,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java",
           "start": 0,
-          "end": 5660,
-          "sha256": "cdc41e3d773a31bde126510ddc1d9860ee37fefec6bc805b009a85149e2f69d6"
+          "end": 5679,
+          "sha256": "0b77f0f310f24d3c6a0f2896c87d070aeca77188320cf0d8cbbb2cfeecaa419f"
         }
       ],
       "sourceBindingNames": [

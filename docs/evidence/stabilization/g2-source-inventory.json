@@ -22007,8 +22007,8 @@
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/LanguageProfile.java": "69882c2155fada2aee243cb2c219d985deb6b908ae6b5184101452f05eb495fa",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/SyntaxTreeBuilder.java": "9e1ed18314ea40a34aa84c8a7dfb5bcb0a701ad427ec5af17337fca9e2c3e73b",
       "interlis-compiler/src/main/java/guru/interlis/compiler/query/LanguageQueryService.java": "4fd84a5177ff3d71759972c4369b37d439054f03a9f6df984525b081f015979e",
-      "testdata/g2/predefined-catalogue.json": "745ec11b10b3aa2e7ecb6e957052ddacbefbed37984ab74892e1aea78b02ec87",
-      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java": "cdc41e3d773a31bde126510ddc1d9860ee37fefec6bc805b009a85149e2f69d6"
+      "testdata/g2/predefined-catalogue.json": "899079d83e3e0d46bbd0f0b4b3a704ae8a1edd6bac5df6cda62b39ab8e408b9e",
+      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java": "0b77f0f310f24d3c6a0f2896c87d070aeca77188320cf0d8cbbb2cfeecaa419f"
     },
     "declarations": [
       {
@@ -22058,8 +22058,8 @@
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java",
             "start": 0,
-            "end": 5660,
-            "sha256": "cdc41e3d773a31bde126510ddc1d9860ee37fefec6bc805b009a85149e2f69d6",
+            "end": 5679,
+            "sha256": "0b77f0f310f24d3c6a0f2896c87d070aeca77188320cf0d8cbbb2cfeecaa419f",
             "line": 1
           }
         ],
