@@ -48,7 +48,7 @@ und die Linienformreihenfolge: 739 JVM-/136 Evidenz-/15 Assertion-/15 Hosttests,
 eigene Reviewerchecks. Der [unveränderte Bericht](g2/reviews/L1-1-review.md)
 belegt diesen Teilabschnitt; das vollständige Phase-1-Gate folgt erst in L1-3.
 Die drei inzwischen freigegebenen L1-2-Kompatibilitätsprofile und der operative
-Fortschritt stehen in STATUS; Unterteilungsimplementierung ist noch ausstehend.
+Fortschritt stehen in STATUS; die Unterteilungsimplementierung ist in L1-2 abgenommen.
 
 L1-2 (AC1-03/04; SYN-004/010/013/015, SRC-002/005, META-006/008/009/011/014/016,
 SEM-003/005/010/011/014/017/019, TEST-002/003/009/011/012) implementiert numerische
@@ -58,7 +58,10 @@ freigegeben. Aktuelle eigene Prüfungen: 753 JVM-/136 Evidenz-/15 Assertion-/15
 Hosttests ohne Fehler/Skips, 3365 Fälle je portabler Laufzeit. Eine neue korrekte
 Ablehnung im unveränderten T2-Positivfall ohne CIRCULAR wird als konkrete
 19. strenge Referenzausnahme auf Grundlage der bereits bestätigten
-CIRCULAR-Prüfung erfasst; die bisherigen 18 Einträge bleiben unverändert. L1-2 besitzt deshalb noch keine unabhängige Abnahme. Vollständige
+CIRCULAR-Prüfung erfasst; die bisherigen 18 Einträge bleiben unverändert. L1-2 hat am Code-SHA
+`39f48ca239c44b27a81e5562a58c717c90253534` den unabhängigen PASS erhalten;
+[unveränderter Review](g2/reviews/L1-2-review.md), gleiche frische Testzahlen
+und eigene Reviewer-Gegenproben. Phase 1 bleibt bis L1-3 offen. Vollständige
 Änderungen, Normstellen, Original-/Kontrollhashes, tatsächlich ausgeführte
 Kommandos und Grenzen stehen im [L1-2-Bericht](g2/implementation/L1-2.md).
 
