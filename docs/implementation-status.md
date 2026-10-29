@@ -29,7 +29,7 @@ Web Image. Freigegebene Metadaten- und 2.3-OID-Kompatibilitätsfixes sind enthal
 die sechs betroffenen Suitefälle bestehen, alle 18 Zusatzprüfungen bleiben aktiv.
 Details, öffentliche Verträge und tatsächliche Zahlen:
 [Lieferbericht](g2/implementation/L0B-3.md). Unabhängiges Urteil weiterhin separat
-in [STATUS](g2/STATUS.md); L1-1 ist nicht begonnen.
+in [STATUS](g2/STATUS.md).
 
 Phase 1 ist seit dem Nutzerauftrag vom 29.10.2026 durchgehend bis zur
 unabhängigen Phasenabnahme beauftragt. L1-1 (AC1-01/02; SRC-002/005,
@@ -40,6 +40,15 @@ Quellqueries. Die ausdrücklich freigegebene TYPE-MODEL-Kompatibilität erlaubt
 Strukturen und abstrakte Klassen in beiden Sprachen; Topics bleiben verboten.
 Der operative Status und unabhängige Teil-/Phasenurteile bleiben ausschliesslich
 in [STATUS](g2/STATUS.md); Phase 2 ist nicht begonnen.
+
+Der unabhängige L1-1-Nachweis auf `6cbf8de422cd8c0c8c9ec1ea900d729053ea660f`
+besteht nach den beiden dokumentierten Korrekturen für gemischte Snapshotsprachen
+und die Linienformreihenfolge: 739 JVM-/136 Evidenz-/15 Assertion-/15 Hosttests,
+3299 Fälle je portabler Laufzeit, T2-Projektprofil 580 PASS/13 XFAIL sowie 409
+eigene Reviewerchecks. Der [unveränderte Bericht](g2/reviews/L1-1-review.md)
+belegt diesen Teilabschnitt; das vollständige Phase-1-Gate folgt erst in L1-3.
+Die drei inzwischen freigegebenen L1-2-Kompatibilitätsprofile und der operative
+Fortschritt stehen in STATUS; Unterteilungsimplementierung ist noch ausstehend.
 
 ## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
