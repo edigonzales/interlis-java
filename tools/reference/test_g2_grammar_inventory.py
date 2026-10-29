@@ -22,7 +22,10 @@ class GrammarInventoryTest(unittest.TestCase):
         matrix = json.loads((ROOT / "docs/evidence/stabilization/g2-rule-matrix.json").read_text())
         validation = grammar.validate(data, source)
         self.assertEqual(321, validation["productions"])
-        self.assertEqual(1218, validation["occurrences"])
+        # L0A adds seven source occurrences in BlockComment's delimiter guards;
+        # every old production remains present, with the same owner/acceptance.
+        self.assertEqual(1225, validation["occurrences"])
+        self.assertEqual(validation["occurrences"], matrix["grammarInventory"]["occurrences"])
         self.assertEqual(125, validation["parserProductions"])
         self.assertEqual(196, validation["lexerProductions"])
         self.assertTrue(all(occurrence["acceptance"] == "PLANNED_NOT_ACCEPTED" for occurrence in data["occurrences"]))

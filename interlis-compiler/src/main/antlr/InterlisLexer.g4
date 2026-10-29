@@ -237,7 +237,12 @@ SingleLineComment : '!!' ~[\r\n]* -> channel(HIDDEN); // ignore comments
 
 // 3.2.8.2 Bloc de commentaire - Blockkommentar
 
-BlockComment : '/*' (BlockComment | .)*? '*/' -> channel(HIDDEN); // ignore comments
+// Delimiters must belong to the recursive rule, never to the ordinary-character
+// alternative: otherwise an unfinished outer comment can end at an inner close.
+BlockComment : '/*'
+    (BlockComment | {!(_input.LA(1) == '/' && _input.LA(2) == '*')
+                    && !(_input.LA(1) == '*' && _input.LA(2) == '/')}? .)*
+    '*/' -> channel(HIDDEN);
 
 // Ignore whitespace
 

@@ -1,6 +1,13 @@
 # Implementierungsstatus interlis-java
 
-## Aktuell: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
+Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
+geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
+L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
+äusseren Blockkommentar. Implementierung und tatsächliche Prüfläufe stehen im
+[Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.
+Die folgenden Abschnitte dokumentieren den historischen Stand vor dieser Lieferung.
+
+## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
 Massgeblich ist der [Ausführungs- und Reviewvertrag](evidence/stabilization/g2-completion-plan.md).
 Der kompakte [Phase-A-Status](evidence/stabilization/phase-a-dashboard.md) fasst Gates, Evidenz und offene Entscheidungen zusammen. Die vorhandenen A2-R3-/R4-/A3-Artefakte und Reviewpakete sind Zwischenstände; der vollständige A3-Testexport und semantische Vergleich fehlen. **A2/A3 sind nicht unabhängig abgenommen**, und 18 Normausnahmen sowie zwei Normprofile bleiben Nutzerentscheidungen.

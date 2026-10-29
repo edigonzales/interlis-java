@@ -6,6 +6,7 @@ Diagrammprojektion, CLI, TeaVM-WasmGC/JavaScript und einen GraalVM-Web-Image-
 Vergleich.
 
 - Spezifikation: [docs/spec/README.md](docs/spec/README.md)
+- Aktiver G2-Auftrag und Lieferfolge: [Plan](docs/g2/EXECUTION_PLAN.md), [Status](docs/g2/STATUS.md)
 - Fortschritt und offene Gates: [docs/implementation-status.md](docs/implementation-status.md)
 - Ausgeführte P1-Evidenz: [docs/evidence/p1/README.md](docs/evidence/p1/README.md)
 - Gepinnte ili2c-Referenzprofilprüfung: [docs/evidence/reference/README.md](docs/evidence/reference/README.md)

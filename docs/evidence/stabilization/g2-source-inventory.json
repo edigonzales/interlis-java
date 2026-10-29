@@ -4,7 +4,7 @@
   "acceptance": "MISSING_EVIDENCE",
   "pins": {
     "interlis-compiler/src/main/antlr/InterlisParser.g4": "9fd333fdba05d11d4b97810119b971fade90f974056afa39a7add0f593ee7915",
-    "interlis-compiler/src/main/antlr/InterlisLexer.g4": "7d67463e158bb48beaa0240e00f3c2e8cf7cc2e9c048c78987437b6bc4811164",
+    "interlis-compiler/src/main/antlr/InterlisLexer.g4": "07c4c8457dc657994b8f8c89664751f2f8efd874aafc89f49a25da271658b1bb",
     "docs/spec/00-auftrag-und-agentenregeln.md": "800322b4d895fc37692b2c2bc201e332cfd677664f948953cec7f3d757053fc9",
     "docs/spec/01-zielbild-und-anforderungen.md": "34fa7b08d0cb50d4ba51ef59398bf2f3987218c8795714bc37b7c73f56747214",
     "docs/spec/02-architektur-und-modulgrenzen.md": "02b0af3a36469edfb461149f102859e20a1a2732353564718ca7dd9d2afe45cc",
@@ -18,8 +18,8 @@
     "docs/spec/10-webassembly-und-portabilitaet.md": "0e2267006fbf2d0243e22cd17516f4d0ae26706df198bb21b0f1ec1cfae9e3dc",
     "docs/spec/11-visualisierung-und-projektionen.md": "154c9a04880df3e66bf22a9ab79147310ce29184759c81850141d14a98c21b4d",
     "docs/spec/12-transfer-validierung-und-datenbanken.md": "10f4692d846ae931ff0e78bbcfb571093c9253b39b5cf6529b5ddbd22fd49ff1",
-    "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "1d8f40223396167a95e8996b0cdbfcef9239de79c03d8db48616dcfa4d8f311d",
-    "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "be59f51ea60a1c29a24f56918865a197259b547b66d73c9ea4202e0c49debf82",
+    "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "9b209fbc6fa4b24a6dffaad4448bad07e5f569b4abf07a7862256553d423a0e0",
+    "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "14443b6b622d9f2bd36c5ad91a811cf41d4704c1d297ef4a6f14f75a833a9f88",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "95faf6b65f981c27bed37b7b348c34b9828c33f879fd6c365f5b01bc3bfa72e7",
     "docs/spec/16-api-register-und-vertragstests.md": "c38c5a9517131c5860c45793fcc72b8162d40c98d5a491a0be613ab63a298b88",
     "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "81419dfd99f4c8c3808d76160c83c005b9b32b4c372d82121c7d217100f68c03",
@@ -14713,47 +14713,111 @@
       "id": "LEX:BlockComment",
       "production": "BlockComment",
       "source": "interlis-compiler/src/main/antlr/InterlisLexer.g4",
-      "line": 240,
-      "sha256": "d25c4b5f8ed055f2168c4d64734d3509a97f7161b92185adf93e8dc6fbb6249c",
+      "line": 242,
+      "sha256": "e1d186fcf74e6f844a788501bec9bb8d3ca18ba81a84960e730a2d57d2db600b",
       "syntaxStep": "B3",
       "semanticStep": "B3",
       "occurrences": [
         {
           "id": "GRAMMAR:lexer:BlockComment:root/alt1",
           "kind": "ALTERNATIVE",
-          "start": 5373,
-          "end": 5403,
-          "line": 240,
-          "text": "'/*' (BlockComment | .)*? '*/'",
-          "sha256": "f3dcbf1356b00d816e1105b2b95dabc587fd77dbf24a517130edc2066c03e52b"
+          "start": 5535,
+          "end": 5690,
+          "line": 242,
+          "text": "'/*'\n    (BlockComment | {!(_input.LA(1) == '/' && _input.LA(2) == '*')\n                    && !(_input.LA(1) == '*' && _input.LA(2) == '/')}? .)*\n    '*/'",
+          "sha256": "af551d60e4341dd447358e7d9cb7569b6024b43ef81cc26ed40d6be504d4d543"
         },
         {
           "id": "GRAMMAR:lexer:BlockComment:root/group1/alt1",
           "kind": "ALTERNATIVE",
-          "start": 5379,
-          "end": 5391,
-          "line": 240,
+          "start": 5545,
+          "end": 5557,
+          "line": 243,
           "text": "BlockComment",
           "sha256": "22fd27e4414fecac9fca81ca1c654150336a2cd9bdaa7a986426d536ebd1aa1b"
         },
         {
           "id": "GRAMMAR:lexer:BlockComment:root/group1/alt2",
           "kind": "ALTERNATIVE",
-          "start": 5394,
-          "end": 5395,
-          "line": 240,
-          "text": ".",
-          "sha256": "cdb4ee2aea69cc6a83331bbe96dc2caa9a299d21329efb0336fc02a82e1839a8"
+          "start": 5560,
+          "end": 5679,
+          "line": 243,
+          "text": "{!(_input.LA(1) == '/' && _input.LA(2) == '*')\n                    && !(_input.LA(1) == '*' && _input.LA(2) == '/')}? .",
+          "sha256": "0438ee82d6b74e8b0a4bdecfb73fb8c19f9b7db82f8e1ea9b304d922216f56df"
         },
         {
-          "id": "GRAMMAR:lexer:BlockComment:root/quantifier1",
+          "id": "GRAMMAR:lexer:BlockComment:root/group1/group1/alt1",
+          "kind": "ALTERNATIVE",
+          "start": 5563,
+          "end": 5605,
+          "line": 243,
+          "text": "_input.LA(1) == '/' && _input.LA(2) == '*'",
+          "sha256": "f0b896f3e89357f3efe0883157aee16cff969000edf0f835f50477972e946a77"
+        },
+        {
+          "id": "GRAMMAR:lexer:BlockComment:root/group1/group1/group1/alt1",
+          "kind": "ALTERNATIVE",
+          "start": 5573,
+          "end": 5574,
+          "line": 243,
+          "text": "1",
+          "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+        },
+        {
+          "id": "GRAMMAR:lexer:BlockComment:root/group1/group1/group2/alt1",
+          "kind": "ALTERNATIVE",
+          "start": 5596,
+          "end": 5597,
+          "line": 243,
+          "text": "2",
+          "sha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"
+        },
+        {
+          "id": "GRAMMAR:lexer:BlockComment:root/group1/group2/alt1",
+          "kind": "ALTERNATIVE",
+          "start": 5632,
+          "end": 5674,
+          "line": 244,
+          "text": "_input.LA(1) == '*' && _input.LA(2) == '/'",
+          "sha256": "5bdafe5fe7e938e24b72ecf4320d00c3029a443edd78033ad7bd18113cb833f1"
+        },
+        {
+          "id": "GRAMMAR:lexer:BlockComment:root/group1/group2/group1/alt1",
+          "kind": "ALTERNATIVE",
+          "start": 5642,
+          "end": 5643,
+          "line": 244,
+          "text": "1",
+          "sha256": "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b"
+        },
+        {
+          "id": "GRAMMAR:lexer:BlockComment:root/group1/group2/group2/alt1",
+          "kind": "ALTERNATIVE",
+          "start": 5665,
+          "end": 5666,
+          "line": 244,
+          "text": "2",
+          "sha256": "d4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35"
+        },
+        {
+          "id": "GRAMMAR:lexer:BlockComment:root/group1/quantifier1",
+          "kind": "OPTIONAL",
+          "start": 5675,
+          "end": 5677,
+          "line": 244,
+          "text": "}?",
+          "sha256": "7861c4be0c6e834d359ac02d9109c143e8d97250c2dc642b582192e69293c8cc",
+          "nongreedy": false
+        },
+        {
+          "id": "GRAMMAR:lexer:BlockComment:root/quantifier2",
           "kind": "ZERO_OR_MORE",
-          "start": 5378,
-          "end": 5398,
-          "line": 240,
-          "text": "(BlockComment | .)*?",
-          "sha256": "200153977af13d5aeeed98329970f26a52c360f3bba9318640ebb4dda9319a13",
-          "nongreedy": true
+          "start": 5544,
+          "end": 5681,
+          "line": 243,
+          "text": "(BlockComment | {!(_input.LA(1) == '/' && _input.LA(2) == '*')\n                    && !(_input.LA(1) == '*' && _input.LA(2) == '/')}? .)*",
+          "sha256": "18f54078bb7d9bf6f5695537d0a518685dcc5d8fb727d1f71e54ac27bd9793a8",
+          "nongreedy": false
         }
       ]
     },
@@ -14761,7 +14825,7 @@
       "id": "LEX:WS",
       "production": "WS",
       "source": "interlis-compiler/src/main/antlr/InterlisLexer.g4",
-      "line": 244,
+      "line": 249,
       "sha256": "0a9f26bc023e348361680e382811db364e2db395ee582c8b095a5a25e8869a8a",
       "syntaxStep": "B3",
       "semanticStep": "B3",
@@ -14769,18 +14833,18 @@
         {
           "id": "GRAMMAR:lexer:WS:root/alt1",
           "kind": "ALTERNATIVE",
-          "start": 5471,
-          "end": 5481,
-          "line": 244,
+          "start": 5739,
+          "end": 5749,
+          "line": 249,
           "text": "[ \\t\\r\\n]+",
           "sha256": "441e15e9fdec88f063e42d135639a1332dc01d172fbb29d4ba66527de4e0c5c8"
         },
         {
           "id": "GRAMMAR:lexer:WS:root/quantifier1",
           "kind": "ONE_OR_MORE",
-          "start": 5471,
-          "end": 5481,
-          "line": 244,
+          "start": 5739,
+          "end": 5749,
+          "line": 249,
           "text": "[ \\t\\r\\n]+",
           "sha256": "441e15e9fdec88f063e42d135639a1332dc01d172fbb29d4ba66527de4e0c5c8",
           "nongreedy": false
@@ -16991,7 +17055,7 @@
       "phase": "P0",
       "acceptance": "Aktualisierte Anforderungs-/Abdeckungsmatrix.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 26,
+      "line": 29,
       "sourceLineSha256": "fc7da27b693f051dc22c817588ef600e5c19685ee3d8e6946b8d69db59c1ea57"
     },
     {
@@ -17000,7 +17064,7 @@
       "phase": "P0",
       "acceptance": "Manifest und überprüfte Downloads; kein stilles `latest`.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 27,
+      "line": 30,
       "sourceLineSha256": "5088b799d772cfce359e8f54fee8ec5ec9479ded2a57a1199cf4d8a42344b183"
     },
     {
@@ -17009,7 +17073,7 @@
       "phase": "P1",
       "acceptance": "Bericht mit ausgewähltem und ausgeschlossenem Umfang.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 28,
+      "line": 31,
       "sourceLineSha256": "1bf0912e1e6c83af7774255956ace1d1674abe0021ed909c3d76c3e94e934e9f"
     },
     {
@@ -17018,7 +17082,7 @@
       "phase": "P1/P2",
       "acceptance": "Typ-, Bindungs-, Reihenfolge- und Constraint-Goldens.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 29,
+      "line": 32,
       "sourceLineSha256": "81871bac7c88267ea24daf7c8f9bacce34e8f5487fbad5f66361ac3bdf91a8be"
     },
     {
@@ -17027,7 +17091,7 @@
       "phase": "P1",
       "acceptance": "Negativtests für Recovery und unvollständige Abdeckung.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 30,
+      "line": 33,
       "sourceLineSha256": "757a893a4992297eba48af3a6b664ee764a56bacd8f6db1433aec842a1bb01e6"
     },
     {
@@ -17036,7 +17100,7 @@
       "phase": "P1",
       "acceptance": "Deterministische Editiersequenzen und normalisierter Ergebnisvergleich.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 31,
+      "line": 34,
       "sourceLineSha256": "1ac0b56c19e2a60dd0e29901f97cd21e3da52eb434a4ba94462f17d6b7f821c7"
     },
     {
@@ -17045,7 +17109,7 @@
       "phase": "P1",
       "acceptance": "Maschinenlesbarer Paritätsbericht.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 32,
+      "line": 35,
       "sourceLineSha256": "297583d9bddcdd0271459743e28882fc880bcdf0af19d9fa08a83950f1400381"
     },
     {
@@ -17054,7 +17118,7 @@
       "phase": "P1/P3",
       "acceptance": "Ausführbare Browsermatrix mit Laufzeitvoraussetzungen.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 33,
+      "line": 36,
       "sourceLineSha256": "f1e42426fa9f9a6df8d0d26660e774d0831efa499ff8263e208f39b370a18a04"
     },
     {
@@ -17063,7 +17127,7 @@
       "phase": "P1/P2",
       "acceptance": "Reproduzierbare Seeds und kontrollierte Ressourcenlimits.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 34,
+      "line": 37,
       "sourceLineSha256": "6e1c06949df63ee0230046cb8901025625fafea50c7afdcd05c3961e45330e4d"
     },
     {
@@ -17072,7 +17136,7 @@
       "phase": "P3",
       "acceptance": "Versionierter Messbericht, ohne aus kleinen Beispielen abgeleitete Produktionszusagen.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 35,
+      "line": 38,
       "sourceLineSha256": "872cdc088528b5963f875e23d420771d0ee8368a22969aee36116024f6acd420"
     },
     {
@@ -17081,7 +17145,7 @@
       "phase": "P1",
       "acceptance": "Überprüfter Baselineeintrag; kein automatisches Umwandeln aller FAILs in XFAIL.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 36,
+      "line": 39,
       "sourceLineSha256": "8a5aff58d883e7cbc906d3a11b1c49bb2e8fdc56c4611190eeae0a73e164ba66"
     },
     {
@@ -17090,7 +17154,7 @@
       "phase": "P1",
       "acceptance": "Fixture-Metadaten mit Abschnitt/Quelle oder offenem Reviewstatus.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 37,
+      "line": 40,
       "sourceLineSha256": "deae52cf96009ed2d929dbc0ddd2746888cbe1266139bf08fe052a9e8e08413b"
     },
     {
@@ -17099,7 +17163,7 @@
       "phase": "P2",
       "acceptance": "Gefrorener Quellenbestand mit vollständig aufgelöster Abhängigkeit.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 38,
+      "line": 41,
       "sourceLineSha256": "e928972193ecc9662df5951c76820814cd67772ada4cd6cea20542c1b7e47924"
     },
     {
@@ -17108,7 +17172,7 @@
       "phase": "P1",
       "acceptance": "Zustands- und Integrationstests.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 39,
+      "line": 42,
       "sourceLineSha256": "638da8bdc7d735a200733f08794d5e4a14bf9e2d449c931b248c70ab5132ee47"
     },
     {
@@ -17117,7 +17181,7 @@
       "phase": "P0/P1",
       "acceptance": "Abhängigkeits- und öffentliche API-Prüfung.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 40,
+      "line": 43,
       "sourceLineSha256": "3356251bca6335b2204d1a979b26f0d92327151ec5ec1ffdb6da60f6b78dfd05"
     },
     {
@@ -17126,7 +17190,7 @@
       "phase": "P0",
       "acceptance": "Benannte Profile und Matrix; kein pauschaler Kompatibilitätsclaim.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 41,
+      "line": 44,
       "sourceLineSha256": "cb26315fd6d7710ae1557b02c9217161529e61400a971dba80d1e8933cc52af9"
     },
     {
@@ -17135,7 +17199,7 @@
       "phase": "P3",
       "acceptance": "Getrennte stdout-/stderr-/Exitcode-Fixtures.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 42,
+      "line": 45,
       "sourceLineSha256": "fb4a109e3329510d18d097c85ab50d286d7be9f565ec04b6136818c96b66361a"
     },
     {
@@ -17144,7 +17208,7 @@
       "phase": "P2",
       "acceptance": "Dokumentierte Entscheidung: Regression, bewusste Normkorrektur oder offener Fall.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 43,
+      "line": 46,
       "sourceLineSha256": "7c46b105b29892e49c8a5eea52d48bc2df19b38ee2e0be980b989022926fc14c"
     },
     {
@@ -17153,7 +17217,7 @@
       "phase": "zurückgestellt (nicht P3/P4)",
       "acceptance": "Eigener Auftrag mit gepinnten Verbrauchern; blosse Gettergleichheit genügt nicht.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 44,
+      "line": 47,
       "sourceLineSha256": "3ff46bb101427f2333f485a9b4d18d4bbfb4cebed1aeb99bbff23bcbe1b06af8"
     },
     {
@@ -17162,7 +17226,7 @@
       "phase": "P5",
       "acceptance": "Alt→Neu und Neu→Alt pro unterstütztem DB-Profil.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 45,
+      "line": 48,
       "sourceLineSha256": "92aa82f9edd3ccb0c410499ff4adfd8d8c16beb1675525fe34be76e5dcd7be66"
     },
     {
@@ -17171,7 +17235,7 @@
       "phase": "P5",
       "acceptance": "Mehrdeutigkeits- und Migrationsfälle mit alten Metadaten.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 46,
+      "line": 49,
       "sourceLineSha256": "a0136862c5e8c2e555c206a3d2c88bff5d0f971ccca4ea0024cd7e7e40767595"
     },
     {
@@ -17180,7 +17244,7 @@
       "phase": "P1/P4",
       "acceptance": "Gültiges Schema mit absichtlich begrenzter Projektion.",
       "source": "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md",
-      "line": 47,
+      "line": 50,
       "sourceLineSha256": "b6d2b7c89e5bc35eba1e543f71530c1d20e8e06c24255b4628c02566453f26f0"
     },
     {

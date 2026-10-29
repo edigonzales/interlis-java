@@ -1,14 +1,14 @@
 # Implementierungsplan und überprüfbare Arbeitspakete
 
-## Verbindliche G2-Fortsetzung ab 27.10.2026
+## Verbindliche G2-Fortsetzung ab 29.10.2026
 
-Die [beauftragte Folge A–I](../evidence/stabilization/g2-completion-plan.md)
-steuert den verbleibenden WP-20–27-Umfang. Sie ersetzt frühere Fortsetzungs-
-empfehlungen, nicht die Produktanforderungen. A1 sichert und reproduziert den
-Ausgangsstand, A2 vervollständigt die einzelne Regelzuordnung, A3 den semantischen
-Vergleich; erst anschliessend folgen die fachlichen Schritte B–H und Gesamtabnahme I.
-Unabhängige Schritte dürfen während ausstehender Nutzer-Normfreigaben fortgesetzt
-werden. Schritt- und Phasenreview sind verbindliche Abnahmen. P3 bleibt separat offen.
+Der [G2-Ausführungsplan](../g2/EXECUTION_PLAN.md) steuert organisatorisch den
+verbleibenden WP-20–27-Umfang und die Pythonentfernung. Der Stand steht in
+[STATUS.md](../g2/STATUS.md). Er ersetzt den früheren starren
+[A–I-Arbeitsablauf](../evidence/stabilization/g2-completion-plan.md), nicht die
+fachlichen Produktanforderungen oder historischen Nachweise. Jede Lieferung
+benötigt den unabhängigen OpenCode-Review des Kandidatencommits; nur dessen
+PASS gibt die nächste Lieferung frei. P3/P4/P5 bleiben separat offen.
 
 ## 1. Ausführungsprinzip
 

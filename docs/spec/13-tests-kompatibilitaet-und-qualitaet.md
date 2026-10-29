@@ -1,10 +1,13 @@
 # 13 – Tests, Kompatibilitätsnachweise und Qualitätsgates
 
-Für den Nutzerauftrag zum vollständigen G2-Abschluss vom 27.10.2026 gilt der
-[Ausführungs- und Reviewvertrag](../evidence/stabilization/g2-completion-plan.md).
-Jeder Schritt und jede Phase benötigen ein unabhängiges Review eines explizit
-konfigurierten anderen Modells am eingefrorenen Stand. Ausgeführte Prüfungen
-und Reviewabnahme sind getrennte Zustände. Normative Erwartungen und neue
+Für den Nutzerauftrag zum vollständigen G2-Abschluss vom 29.10.2026 gilt der
+[Ausführungs- und Reviewvertrag](../g2/EXECUTION_PLAN.md) mit dem
+[operativen Status](../g2/STATUS.md). Er ersetzt organisatorisch den früheren
+[A–I-Vertrag](../evidence/stabilization/g2-completion-plan.md). Jede Lieferung
+benötigt einen unabhängigen OpenCode-Review am Kandidatencommit; die letzte
+Lieferung einer regulären Phase umfasst zugleich das kumulative Phasengate.
+L0A hat seinen ausdrücklich engeren Pilotumfang. Ausgeführte Prüfungen und
+Reviewabnahme bleiben getrennte Zustände. Normative Erwartungen und neue
 Referenzausnahmen benötigen weiterhin die ausdrückliche Nutzerfreigabe.
 
 ## 1. Ziel und verbindliche Aussagegrenzen

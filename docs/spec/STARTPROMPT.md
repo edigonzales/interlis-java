@@ -1,5 +1,9 @@
 # Startauftrag für einen LLM-Coding-Agenten
 
+Der aktuelle G2-Fertigstellungsauftrag liegt unter [docs/g2/](../g2/CODEX_STARTPROMPT.md),
+mit [Ausführungsplan](../g2/EXECUTION_PLAN.md) und [Status](../g2/STATUS.md).
+Dieser Startprompt bleibt die Vorlage für die ursprüngliche Erstimplementierung.
+
 Den folgenden Auftrag zusammen mit diesem Spezifikationspaket im vorgesehenen Repository verwenden. Bei Übernahme liegen die Kapitel unter `docs/spec/` und die Referenzevidenz unter `docs/evidence/`; die beiden Arbeitsregeldateien liegen als `AGENTS.md` im Root und unter `docs/spec/`.
 
 **Aktivierung:** Der Text unter der Trennlinie ist eine Vorlage für einen ausdrücklichen Implementierungsauftrag. Das Lesen oder Überarbeiten dieser Datei allein startet P0/P1 nicht. Bei einem anderen aktuellen Nutzerauftrag bleibt dessen Umfang massgeblich.

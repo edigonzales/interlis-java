@@ -10,6 +10,10 @@ Bearbeite den tatsächlich erteilten Auftrag. Die Anwesenheit der Spezifikation 
 
 ## 2. Einstieg und massgebliche Dokumente
 
+Für den beauftragten G2-Abschluss gilt organisatorisch `docs/g2/EXECUTION_PLAN.md`;
+der operative Stand steht ausschliesslich in `docs/g2/STATUS.md`. Die fachlichen
+Spezifikationen und historischen Nachweise bleiben erhalten.
+
 1. Prüfe den Repositoryzustand und vorhandene Änderungen. Lies die für die betroffenen Pfade geltenden Arbeitsregeln sowie `docs/implementation-status.md`, falls vorhanden. Erhalte fremde Änderungen.
 2. Lies vor der ersten Implementierung `docs/spec/README.md`, `00-auftrag-und-agentenregeln.md`, `01-zielbild-und-anforderungen.md`, `02-architektur-und-modulgrenzen.md`, `03-build-und-repository.md` und `16-api-register-und-vertragstests.md` unter `docs/spec/`.
 3. Wähle das beauftragte Arbeitspaket aus `14-implementierungsplan-und-arbeitspakete.md`. Lies seine Fachkapitel und die relevanten Abnahmen aus `13-tests-kompatibilitaet-und-qualitaet.md`. Verwende `17-abdeckungsmatrix-und-review.md` zur Zuordnung der Anforderungs-IDs. Bereits gelesene unveränderte Kapitel müssen nicht für jeden kleinen Schritt erneut vollständig geladen werden.

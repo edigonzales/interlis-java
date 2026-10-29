@@ -8,6 +8,10 @@ Der Compiler wird als gemeinsame Bibliothek für Batch, IDE/LSP, Visualisierung 
 
 ## 1. Schnell beginnen
 
+Für die aktuelle G2-Fertigstellung gelten [Ausführungsplan](../g2/EXECUTION_PLAN.md),
+[Startauftrag](../g2/CODEX_STARTPROMPT.md) und [operativer Status](../g2/STATUS.md).
+Die folgende Erstimplementierungsanleitung bleibt als ursprünglicher Einstieg erhalten.
+
 1. Die `AGENTS.md` aus dem Paketwurzelverzeichnis als `AGENTS.md` ins Repository-Root übernehmen.
 2. Dieses Verzeichnis `spec/` einschliesslich seiner eigenen [AGENTS.md](AGENTS.md) nach `docs/spec/` übernehmen.
 3. Das beigefügte `evidence/` nach `docs/evidence/` übernehmen. Relative Evidenzverweise bleiben dadurch gültig.

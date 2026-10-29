@@ -1,5 +1,10 @@
 # Verbindlicher G2-Abschluss – Ausführungs- und Reviewvertrag
 
+**Historischer Arbeitsablauf:** Für den Auftrag vom 29.10.2026 gilt organisatorisch
+[docs/g2/EXECUTION_PLAN.md](../../g2/EXECUTION_PLAN.md), mit dem operativen Stand in
+[STATUS.md](../../g2/STATUS.md). Die folgenden A–I-Schritte und bisherigen Reviews
+bleiben historische Evidenz; fachliche Anforderungen werden dadurch nicht aufgehoben.
+
 Auftrag vom 27.10.2026: vollständige INTERLIS-2.3/2.4-Compilerabnahme gemäss
 WP-20–27. Die Folge A–I ersetzt alle früheren Fortsetzungsempfehlungen.
 Anforderungs-/Fall-IDs und historische Evidenz bleiben erhalten.
