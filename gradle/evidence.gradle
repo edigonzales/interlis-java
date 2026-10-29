@@ -1,0 +1,98 @@
+// Read-only checks of the existing G2 evidence, deliberately separate from normal CLI tests.
+import groovy.json.JsonSlurper
+import java.security.MessageDigest
+
+def matrixFile = rootProject.file('docs/evidence/stabilization/g2-rule-matrix.json')
+def matrix = new JsonSlurper().parse(matrixFile)
+def sha = { File file -> MessageDigest.getInstance('SHA-256').digest(file.bytes).encodeHex().toString() }
+
+tasks.register('prepareG2Norms') {
+    group = 'verification'
+    description = 'Verifies the two original, pinned INTERLIS PDFs used by G2 quotations.'
+    doLast {
+        def configured = System.getenv('INTERLIS_NORM_CACHE')
+        def cache = configured ? rootProject.file(configured) : new File(System.getProperty('user.home'), '.cache/interlis-java/norms')
+        cache.mkdirs()
+        matrix.documents.each { version, document ->
+            def name = "ili${version.replace('.', '')}.pdf"
+            def cached = new File(cache, name)
+            if (!cached.exists()) {
+                def temporary = File.createTempFile(name, '.download', cache)
+                try {
+                    def connection = new URI(document.url as String).toURL().openConnection()
+                    connection.connectTimeout = 180000
+                    connection.readTimeout = 180000
+                    connection.inputStream.withCloseable { input -> temporary.withOutputStream { it << input } }
+                    if (sha(temporary) != document.sha256) throw new GradleException("Changed norm PDF: $version")
+                    java.nio.file.Files.move(temporary.toPath(), cached.toPath())
+                } finally { temporary.delete() }
+            }
+            if (sha(cached) != document.sha256) throw new GradleException("Changed norm PDF: $version ($cached)")
+            def target = rootProject.file("build/norms/$name")
+            target.parentFile.mkdirs()
+            java.nio.file.Files.copy(cached.toPath(), target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        }
+    }
+}
+
+project(':interlis-compiler') {
+    plugins.withId('java') {
+        tasks.register('g2AssertionTest', Test) {
+            group = 'verification'
+            description = 'Fresh execution of the actual methods bound by G2 partial assertion evidence.'
+            testClassesDirs = sourceSets.test.output.classesDirs
+            classpath = sourceSets.test.runtimeClasspath
+            useJUnitPlatform()
+            def links = matrix.atomicRules.collectMany { it.observedAssertions ?: [] }
+                    .collect { "${it.jvmSuite}.${it.candidateTest.split('\\.')[1]}" }.unique().sort()
+            if (links.empty) throw new GradleException('No G2 assertion methods')
+            filter { links.each { includeTestsMatching(it) } }
+            reports.junitXml.outputLocation = layout.buildDirectory.dir('test-results/g2AssertionTest')
+            reports.html.outputLocation = layout.buildDirectory.dir('reports/tests/g2AssertionTest')
+            outputs.upToDateWhen { false }
+            outputs.cacheIf { false }
+            outputs.files(layout.buildDirectory.file('g2-assertion-start.txt'), layout.buildDirectory.file('g2-assertions.json'))
+            doFirst {
+                delete reports.junitXml.outputLocation
+                def marker = layout.buildDirectory.file('g2-assertion-start.txt').get().asFile
+                marker.parentFile.mkdirs()
+                marker.text = java.time.Instant.now().toString()
+            }
+            doLast {
+                def reports = reports.junitXml.outputLocation.get().asFile.listFiles()
+                        .findAll { it.name.endsWith('.xml') }.sort { it.name }
+                        .collectEntries { [(it.name): sha(it)] }
+                layout.buildDirectory.file('g2-assertions.json').get().asFile.text =
+                        groovy.json.JsonOutput.toJson(reports)
+            }
+        }
+    }
+}
+
+project(':interlis-cli') {
+    plugins.withId('java') {
+        sourceSets { evidenceTest }
+        configurations {
+            evidenceTestImplementation.extendsFrom testImplementation
+            evidenceTestRuntimeOnly.extendsFrom testRuntimeOnly
+        }
+        tasks.register('evidenceTest', Test) {
+            group = 'verification'
+            description = 'Read-only G2 source, norm and fresh assertion contracts, including negative canaries.'
+            dependsOn ':prepareG2Norms', ':interlis-compiler:g2AssertionTest'
+            testClassesDirs = sourceSets.evidenceTest.output.classesDirs
+            classpath = sourceSets.evidenceTest.runtimeClasspath
+            useJUnitPlatform()
+            systemProperty 'repo.root', rootProject.projectDir.absolutePath
+            inputs.files(rootProject.file('docs/evidence/stabilization'), rootProject.file('docs/spec'),
+                    rootProject.file('testdata/g2'), rootProject.file('testdata/conformance'),
+                    rootProject.file('interlis-compiler/src'), rootProject.file('interlis-model/src'),
+                    rootProject.file('interlis-wasm-teavm/stabilization-contract.cjs'),
+                    rootProject.file('build/norms'), rootProject.file('interlis-compiler/build/test-results/g2AssertionTest'),
+                    rootProject.file('interlis-compiler/build/g2-assertion-start.txt'), rootProject.file('interlis-compiler/build/g2-assertions.json'))
+                    .withPropertyName('g2EvidenceInputs').withPathSensitivity(PathSensitivity.RELATIVE)
+            outputs.upToDateWhen { false }
+            outputs.cacheIf { false }
+        }
+    }
+}

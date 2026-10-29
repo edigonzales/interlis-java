@@ -13,6 +13,14 @@ JUnit-Verträge für die zusätzlichen Normprüfungen. Nachweise und Abgrenzung:
 [Lieferbericht](g2/implementation/L0B-1.md), [Migrationsmatrix](g2/python-migration.md).
 Operativer Fortschritt und unabhängige Abnahme bleiben in `docs/g2/STATUS.md`.
 
+L0B-2 (AC0B-04–05; BUILD-001/004/007/008, TEST-002/003/009/011/012)
+ersetzt die aktiven Python-Evidenz-/Normprüfungen durch Java/JUnit und entfernt
+historische Autorenwerkzeuge. Quellen, Normpins, Zitatkoordinaten und offene
+Abnahmegrenzen bleiben gebunden; **25** weitere Pythondateien sind entfernt.
+Tatsächliche Nachweise: [Lieferbericht](g2/implementation/L0B-2.md).
+Operativer Status und unabhängiges Urteil bleiben ausschliesslich in
+[docs/g2/STATUS.md](g2/STATUS.md).
+
 ## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
 Massgeblich ist der [Ausführungs- und Reviewvertrag](evidence/stabilization/g2-completion-plan.md).

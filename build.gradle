@@ -91,11 +91,12 @@ tasks.register('releaseCheck') {
 
 apply from: 'gradle/conformance.gradle'
 
-tasks.register('g2EvidenceTest', Exec) {
+apply from: 'gradle/evidence.gradle'
+
+tasks.register('g2EvidenceTest') {
     group = 'verification'
     description = 'Checks G2 source inventory, frozen review inputs and evidence failure paths.'
-    workingDir = rootProject.projectDir
-    commandLine 'python3', '-m', 'unittest', 'discover', '-s', 'tools/reference', '-p', 'test_g2_*.py'
+    dependsOn ':interlis-cli:evidenceTest'
 }
 tasks.named('check') { dependsOn 'g2EvidenceTest' }
 

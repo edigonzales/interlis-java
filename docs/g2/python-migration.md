@@ -1,10 +1,9 @@
 # Python-Migration – einmalige Arbeitsmatrix
 
 Basis: `c671ce3aa943afcc53579b4cd488773afbd0206e`, `git ls-files '*.py'`: **36 Dateien**.
-Die Entscheidungen betreffen Funktionen, keine mechanischen 1:1-Ports. Nur die
-beiden L0B-1-Zeilen werden in dieser Lieferung entfernt. Alle anderen Zeilen
-sind geplante Zuordnungen; Verwendungs-/Ersatz- und Negativnachweise müssen vor
-jeder späteren Löschung tatsächlich ausgeführt werden. Historische Reports und
+Die Entscheidungen betreffen Funktionen, keine mechanischen 1:1-Ports. L0B-1 entfernt zwei Dateien; L0B-2 entfernt weitere **25** Dateien. Die neun
+L0B-3-Zeilen bleiben geplant. Die nötigen Altprüfungen erfolgten vor der Löschung; die
+Ersatz- und Negativnachweise stehen unten. Der unabhängige Review steht noch aus. Historische Reports und
 Normdaten bleiben erhalten, frühere Skriptfassungen sind über die Basis in Git
 wiederherstellbar. Diese Matrix ersetzt kein fachliches Gate.
 
@@ -50,6 +49,49 @@ Alle Pfade ohne Präfix liegen unter `tools/reference/`.
 | `tools/sdk/check_distribution.py` | PORT_MINIMAL / L0B-3 | Root `sdkProcessCheck` → Java-Prozessvertrag gegen gebaute Distribution, gleiche Quellen/Exports/Hashes; kaputtes Paket oder falscher Prozess muss scheitern. |
 
 L0B-1-Nachweise, tatsächliche Kommandos und Ergebnisse:
-[Implementierungsbericht](implementation/L0B-1.md). Für L0B-2/L0B-3 sind die
-angeführten Negativnachweise erst geplant. Der Python-freie Gesamtlauf und alle
+[Implementierungsbericht](implementation/L0B-1.md). Für L0B-2 siehe den tatsächlichen
+[Implementierungsbericht](implementation/L0B-2.md); nur L0B-3 bleibt geplant. Der Python-freie Gesamtlauf und alle
 Phaseninvarianten werden am letzten 0b-Kandidaten geprüft.
+
+## L0B-2: ausgeführte Ersatz- und Entbehrlichkeitsnachweise
+
+Der alte Root-Task importierte nur die zwölf `test_g2_*.py` und deren Hilfen.
+`rg` über Gradle, Shell, Node, YAML und die verbleibenden Pythondateien zeigt
+nach dem Ersatz **keinen** Aufruf/Import dieser 25 Dateien. Der Katalogautor
+hatte ausschliesslich einen manuellen Einstieg. Der alte Gate-Lauf vor Löschung
+lief mit **59 Tests, Exit 0**, auch mit einem leeren separaten Python-Bytecodecache.
+Die alten Testnamen sind im Rohbeleg `legacy-test-index.txt` aufgezeichnet.
+
+Alle Ersatzklassen liegen unter
+`interlis-cli/src/evidenceTest/java/guru/interlis/cli/evidence/`.
+
+| Alte Funktion / Dateien aus obiger Matrix | Tatsächlicher Ersatz / Negativnachweis |
+|---|---|
+| `g2_evidence.py`, `test_g2_evidence.py` | `AssertionEvidence{,Test}` prüft frische reale XML-Bytes, vollständige Suite/Klasse/Methode, Hashes, Fehler/Skips, Testdetails und unerwartete Suites. `RuntimeReports{,Test}` erhält Reportformat-, Browsermatrix-, Versions-, Portable-, SDK- und Roh-/Projektbilanz-Verträge inklusive der acht leeren Fehlgrünvarianten. Der alte Snapshot/Tar/Patch-Generator entfällt: unabhängiger Review nutzt bereits sauberen eigenen Checkout am exakten SHA. Seine drei Archiv-/Modus-Tests haben keinen aktiven Aufrufer mehr. Kein neues Paket-/Snapshotframework. |
+| `g2_inventory.py`, `test_g2_inventory.py` | `CatalogueEvidence.sources`, `AssertionEvidence`, `NormEvidence` mit jeweiligen JUnit-Tests prüfen aktuelle Quellenpins, unveränderte Regel-/Anforderungs-/Assertionzuordnung, Methodensignaturen, Fragmente, historische Laufhashbindung und frische XML. Die fünf Tests des eigenen ANTLR-Tokenizer-/Branch-Generators und der TOC-Generator entfallen mit diesem Autorwerkzeug. Quellenhashes, alle 1225 vorhandenen Occurrence-Bereiche und ihre vollständige Arbeitsliste bleiben aktiv geprüft; das echte ANTLR-/Compiler-Testgate bleibt erhalten. |
+| `g2_predefined.py`, `test_g2_predefined.py` | `CatalogueEvidence.predefined`, `languageProfile`, `signatures`, `signatureUses` samt Tests: alle 130 Deklarationen, 21 Sondertypen, Anker, Akzeptanztexte, Profile, neue Aufruf-/Origin-Produzenten, Worttabellen, tatsächliche Signaturpositionen und Versionen; OBJECT bleibt unbenutzt und entscheidungsabhängig. Verlust, Dublette, falscher Owner/Hash, schwächere Assertions, falsches Profil/Versions-/Nutzungsfeld scheitern. |
+| `g2_norm_inventory.py`, `test_g2_norm_inventory.py` | `NormEvidence{,Test}` bindet Original-PDF-SHA/Version und unveränderte pypdf-Seiten; exakte Codepoint-Bereiche, Zitate, Absatzhashes und vollständige Nicht-Whitespace-Abdeckung. Erzeugung neuer Absätze/Überschriften entfällt; fehlender Absatz, kaputter Bereich/Hash, falsche PDF/Version/Extraktor und Scheinabnahme scheitern. |
+| `g2_norm_crosswalk.py`, `test_g2_norm_crosswalk.py` | `NormEvidence.crosswalk` und `paragraphs`: alle 311 Abschnittslocators, Owner, Disposition und SECTION_LEVEL/PENDING-Grenze. Fehlender/doppelter/falscher Abschnitt, Owner oder Abnahmebehauptung scheitert. Automatische Owner-Vorschläge und das Umschreiben von Inventaren entfallen; die vorhandenen Daten bleiben unverändert. |
+| `g2_norm_conditions.py`, `test_g2_norm_conditions.py` | `NormEvidence.conditions`: 777 Bedingungen, 369 Compilerbedingungen, 1476 geplante Fallarten; Absatz-/Abschnittsdeckung, eindeutige Bindung, exaktes Zitat/Hash, Owner, offene/teilweise Evidenz. Fehlende Compilerbedingung, doppelter Absatz, falscher Owner/Kind/Hash und behauptete Ausführung scheitern. Clustering-/Vorschlagserzeugung entfällt. |
+| `g2_grammar_inventory.py`, `test_g2_grammar_inventory.py` | `CatalogueEvidence.grammar`: alle 321 Produktionen/1225 Occurrences mit Quellbereich/Hash, Reihenfolge, Owner und fehlender Abnahme; fremde, fehlende oder als VERIFIED markierte Occurrence scheitert. Kein neuer Inventargenerator. |
+| `g2_builtin_inventory.py`, `test_g2_builtin_inventory.py` | `CatalogueEvidence.builtins` samt Tests: 21 tatsächliche Signaturen, Argumente/Resultat, Version/Regel, 84 PLANNED-Fälle, beide offenen Entscheidungen. Multiline-Parsing und unbekannte Signatursyntax geprüft; geänderte/fehlende Signatur oder Scheinabnahme scheitert. Worklisterzeugung entfällt. |
+| `g2_spec_contracts.py`, `test_g2_spec_contracts.py` | `CatalogueEvidence.sources`, `specifications`: exakte 289 Anforderungsverträge, 12 explizite unnummerierte Zeilen, Quellenhashes und zulässiger Owner/Status. Fehlende/doppelte/unbekannte ID, geänderter Vertrag und falscher Zeilenhash scheitern. Neue Text-/Owner-Inventur entfällt. |
+| `g2_test_candidates.py`, `test_g2_test_candidates.py` | `CatalogueEvidence.candidates`: jede referenzierte Methode mit Klasse, @Test, Codepoint-Bereich und Körperhash sowie Entdeckungszahl bleibt gebunden; erfundene Methode, falsche Klasse/Hash und Abnahmebehauptung scheitern. Die erneute Keyword-Rangfolge ist nur Autorenheuristik, kein Beweis, und entfällt. Der eingefrorene Index ist unverändert CANDIDATE_ONLY; weder dieser noch eine historische Punktzahl wird als Semantikabnahme verwendet. |
+| `g2_normative_decisions.py`, `test_g2_normative_decisions.py` | `CatalogueEvidence.decisions`: alle 18 Erwartungen, beide Normversionen, offene Nutzerentscheidung und jedes tatsächlich zitierte Originalfragment. Manipulierte Erwartung/Quote/Hash oder fehlender Fall scheitert. Die Präsentations-/Headerbereinigung entfällt; JSON und Markdown bleiben erhalten. Vorhandene leere Locator-Einträge bleiben offene Lücken, keine Abnahme. |
+| `g2_a3_pairs.py`, `test_g2_a3_pairs.py` | `CatalogueEvidence.pairs`: dieselben drei JVM-Methoden mit vollständigem Quellen-/Körperhash und portable Marker. Fehlendes/falsches Paar, falscher JVM-Hash oder fehlender Marker scheitert. Der alte Portable-Gesamthash war bereits historisch und wurde auch vom Altvalidator nicht als aktueller Hash geprüft; keine neue Portable-Abnahme. |
+| `author_g2_predefined.py` | **DELETE_REDUNDANT** bestätigt: kein aktiver Aufrufer/Import nach Entfernung; erzeugter Katalog und alle obigen Positiv-/Negativprüfungen erhalten. |
+
+Historische Besonderheiten werden **nicht** durch Pinänderungen kaschiert:
+`matrix.inventoryPins` enthält den alten A1-Parser; aktuell gelten
+`latestGrammarSha256` und `sourceInventory.pins`. Einige historische Spec-
+Zeilennummern liegen vor Dokumenteinfügungen; exakte Texte/Zeilenhashes und
+aktuelle Quellenlocator bleiben geprüft. Der historische Markdownhash des
+Entscheidungspakets liegt vor dem aktiven Planhinweis; der bereits bisher aktive
+JSON-Paket-/Norm-/Erwartungsvertrag bleibt unverändert geprüft. Nur Kapitel 03
+beschreibt jetzt den neuen Buildweg; sein Quellenpin, aktuelle Zeilenlocator
+und der umschliessende Inventarhash werden sichtbar mechanisch nachgeführt.
+
+Das neue Gate verwendet keinen Python-Interpreter und benötigt kein pypdf.
+Es behauptet weder Pythonfreiheit des restlichen Projekts noch einen frischen
+Browser-/Safari-/Web-Image-Phasenlauf. **Neun** Pythondateien und das volle
+Python-freie Phasengate bleiben L0B-3.

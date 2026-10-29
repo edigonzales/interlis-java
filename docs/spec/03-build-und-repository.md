@@ -1,9 +1,11 @@
 # Build und Repository
 
-Der beauftragte G2-Abschluss verwendet für eingefrorene Revieweingaben und den
-vollständigen Ausgangslauf `tools/reference/g2_evidence.py`. `g2EvidenceTest`
-prüft dessen Fehlerpfade als Teil von `check`. Archive und Rohberichte liegen
-unter `build/reports/g2/`; die Hilfe schreibt keine Baselines oder Erwartungen.
+Der beauftragte G2-Abschluss prüft Quellen, Normbelege und frisch ausgeführte
+JUnit-Assertionbindungen über `g2EvidenceTest` als Teil von `check`. Die kleine
+Java-Testhilfe verwendet die gepinnten Original-PDFs und unverändert erhaltene
+`pypdf`-Textkoordinaten; sie schreibt keine Baselines oder Erwartungen.
+Revieweingaben sind saubere Checkouts des vollständigen Kandidaten-SHA.
+Rohberichte liegen unter `build/reports/g2/` und den JUnit-Ausgabeverzeichnissen.
 Das spätere G2-Gate bleibt vom P3-`releaseCheck` getrennt.
 
 ## 1. Entscheidung: Gradle mit Groovy-DSL
