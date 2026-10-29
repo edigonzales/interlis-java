@@ -36,6 +36,29 @@ class ScaledBoundaryContractTest {
             assertEquals(DecimalLiteral.parse(pair.getLast()).precision(),range.maximum().orElseThrow().precision());
         }
     }
+    @Test void approvedMixedAndDecreasingExponentsKeepExactBoundariesThroughDomainReferenceQueries() {
+        record Sample(String lower,String upper,String minimum,String maximum,int lowerExponent,int upperExponent) { }
+        for(String v:List.of("2.3","2.4"))for(var sample:List.of(
+                new Sample("0.1e1","0.2e1","1","2",1,1),
+                new Sample("-0.2e2","0.3e1","-20","3",2,1),
+                new Sample("0.1e1","20.0","1","20",1,0),
+                new Sample("0.0","0.2e2","0","20",0,2))) {
+            var out=ok(v,"DOMAIN Range="+sample.lower()+".."+sample.upper()+";STRUCTURE S=value:Range;END S;");
+            var graph=out.schema().semanticGraph();
+            var domain=graph.symbols().stream().filter(DomainSymbol.class::isInstance).map(DomainSymbol.class::cast)
+                    .filter(d->d.name().value().equals("Range")).findFirst().orElseThrow();
+            var attribute=graph.symbols().stream().filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
+                    .filter(a->a.name().value().equals("value")).findFirst().orElseThrow();
+            var resolved=new guru.interlis.model.query.TypeRelations(graph).resolveAliases(new TypeRef(graph.snapshotId(),attribute.declaredType())).known().orElseThrow();
+            assertEquals(domain.typeId(),resolved.effectiveType());
+            var range=assertInstanceOf(NumericType.class,graph.type(resolved.effectiveType()).orElseThrow()).range();
+            assertEquals(sample.lower(),range.minimum().orElseThrow().lexeme());assertEquals(sample.upper(),range.maximum().orElseThrow().lexeme());
+            assertEquals(0,new java.math.BigDecimal(sample.minimum()).compareTo(range.minimum().orElseThrow().exactValue()));
+            assertEquals(0,new java.math.BigDecimal(sample.maximum()).compareTo(range.maximum().orElseThrow().exactValue()));
+            assertEquals(new DecimalPrecision(1,sample.lowerExponent(),PrecisionOrigin.LEXICAL),range.minimum().orElseThrow().precision());
+            assertEquals(new DecimalPrecision(1,sample.upperExponent(),PrecisionOrigin.LEXICAL),range.maximum().orElseThrow().precision());
+        }
+    }
     @Test void malformedScaledBoundariesHaveOneSourceSyntaxErrorAtTheExactTokenInEveryNumericTypeContext() {
         var templates=List.of("DOMAIN D=%s;","TOPIC T=CLASS C=value:%s;END C;END T;", "DOMAIN P=COORD %s,0.0..10.0;",
                 "DOMAIN Identity=OID %s;","STRUCTURE S=x:%s;END S;DOMAIN Form=FORMAT BASED ON S(x);");

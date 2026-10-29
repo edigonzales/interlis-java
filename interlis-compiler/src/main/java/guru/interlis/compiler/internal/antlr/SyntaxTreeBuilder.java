@@ -765,6 +765,14 @@ final class SyntaxTreeBuilder {
         Token nameToken = context.Name() != null ? context.Name().getSymbol()
                 : (context.UUIDOID() != null ? context.UUIDOID().getSymbol() : null);
         String name = nameToken == null ? "<missing-attribute>" : nameToken.getText();
+        // The recovery grammar retains both flags; the language only permits
+        // CONTINUOUS as part of CONTINUOUS SUBDIVISION.
+        if(context.CONTINUOUS()!=null && context.SUBDIVISION()==null && nameToken!=null)
+            propertyDiagnostics.add(guru.interlis.diagnostics.DiagnosticDraft.of(
+                    new guru.interlis.diagnostics.DiagnosticCode("ILI-SYN-0002"),guru.interlis.diagnostics.Severity.ERROR,
+                    guru.interlis.diagnostics.Phase.PARSING,"diagnostic.syntax.unexpected")
+                    .at(tokenRange(nameToken)).argument(new guru.interlis.diagnostics.DiagnosticArgument.TokenArgument("actual",name))
+                    .argument(new guru.interlis.diagnostics.DiagnosticArgument.IdentifierListArgument("expected",List.of("SUBDIVISION"))));
         TypeResult type;
         if (context.attrTypeDef() != null) {
             type = buildAttrTypeDef(context.attrTypeDef());

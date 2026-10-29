@@ -10,6 +10,22 @@ Geometriestrukturen. Es entsteht keine neue öffentliche Signatur. Owner,
 Sprachversion, bedarfsabhängig materialisierte Mitglieder, Import-/Präfixziele
 und kanonische gegenüber kontextbezogener Herkunft sind in Kapitel 05 geregelt.
 
+L1-2 verwendet die bestehenden `AttributeSymbol`, `NumericType`, `NumericRange`,
+`DecimalLiteral`, `UnitSymbol`, `EffectiveMember`, `FormattedType` und
+`TypeRelations`-Verträge. Es entsteht keine neue öffentliche Nutzer-API.
+Unterteilungsmarker, effektive Vorgänger, exakte Faktorbedingungen und deren
+Diagnosen stehen in Kapitel 05, die ausdrücklich freigegebenen Profile in
+Kapitel 06/15. `NumericSubdivisionContractTest` und die erweiterten
+`ScaledBoundaryContractTest`-Domainqueries prüfen diese Inhalte über das
+öffentliche Schema beziehungsweise den abgelehnten Analyse-Snapshot.
+
+Der modulübergreifend erreichbare interne Einstieg
+`guru.interlis.model.internal.TypeCompatibility.definitelyDifferentUnitDimensions`
+verwendet die interne Dimensionszerlegung für einen ausschliesslichen
+Widerspruchsbeweis, ohne Umrechnungen zu erlauben. Seine Auflösung und
+Arbeitsbudgetprüfung stammen aus dem aufrufenden Analysegraphen; kein
+globaler Zustand und keine zusätzlichen veröffentlichten Modellwerte.
+
 Java-Blöcke in der Spezifikation zeigen Signaturen und Varianten; Bodies und Imports sind teilweise absichtlich ausgelassen. Das Repository MUSS zusätzlich tatsächlich kompilierende API-Beispiele enthalten. Die Spezifikation behauptet keine erfolgreiche Kompilierung der nur deklarativ abgebildeten Klassenblöcke.
 
 Vorab-API 0.2 konkretisiert die Funktionssignaturen mit `TypeId` in

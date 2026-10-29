@@ -122,3 +122,31 @@ Domänen-/Vererbungs-/Overrideprüfungen bleiben erhalten. Kapitel 06 beschreibt
 das Verhalten. Sechs bisherige Referenzausnahmen werden reguläre PASS-Fälle mit
 weiterhin geprüften Original-, Positiv- und Negativquellen. Die übrigen zwölf
 Ausnahmen bleiben unverändert; daraus folgt keine allgemeine Normfreigabe.
+
+### L1-2-Nutzerentscheidungen vom 29.10.2026: numerische Profile
+
+Betroffen sind META-006/008/009/011/014/016, SEM-003/005/010/011/014/017/019
+und AC1-03/AC1-04 des G2-Ausführungsplans. Die drei Antworten lauten wörtlich:
+
+1. **„Bestehende Fälle weiterhin zulassen (empfohlen)“**: gleiche/absteigende
+   oder gemischte Exponenten an numerischen Bereichsgrenzen werden erhalten.
+   Die vorgelegten Originalbeispiele akzeptieren unser Compiler und ili2c
+   in beiden Sprachen; die engere Norm-Paarbedingung wird bewusst nicht erzwungen.
+2. **„Breiteres bestehendes Profil erhalten (empfohlen)“**: allgemeine
+   Konstanten und Einheitenfaktoren behalten beispielsweise `1.0e1` und
+   `0.01e1`, trotz engerem ili2c-Verhalten. Die Normgrammatik und ihre
+   widersprüchlich weiteren Beispiele wurden offengelegt; die strengere
+   Mantissenprüfung für Typgrenzen bleibt getrennt.
+3. **„Bestehende Fälle zulassen, nachweisbare Faktorfehler ablehnen
+   (empfohlen)“**: kontinuierliche Unterteilungen ohne bestimmbaren Faktor,
+   beispielsweise einheitenlos oder über FUNCTION erklärt, bleiben gültig.
+   Alle anderen Unterteilungsbedingungen werden geprüft; bestimmbare
+   Faktoren exakt verglichen. FUNCTION-Erklärungen bleiben unausgeführt.
+
+Kapitel 05/06 beschreiben Verhalten und Abnahme. Die Gegenfälle wurden mit
+frischen eigenen CLI- und ili2c-5.6.9-Prozessen in beiden Sprachen erzeugt.
+Dies sind explizite Kompatibilitätsentscheidungen; Referenzakzeptanz allein
+ist weiterhin kein Normbeleg. Die übrigen klaren Unterteilungsregeln werden
+auch dann geprüft, wenn ili2c dieselben ungültigen Modelle akzeptiert.
+Suitepins und alle 18 Zusatzerwartungen bleiben erhalten. API-Register 16
+und Index 17 führen weiterhin die bestehenden Typen und Anforderungs-IDs.

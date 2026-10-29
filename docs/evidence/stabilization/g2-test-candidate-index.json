@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "status": "CANDIDATE_ONLY",
   "purpose": "Keyword candidates only; no assertion, execution or acceptance claim",
-  "testMethods": 624,
+  "testMethods": 638,
   "conditions": [
     {
       "id": "NORM:2.3:2.1:C01",
@@ -14556,8 +14556,8 @@
           "suite": "guru.interlis.compiler.ScaledBoundaryContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ScaledBoundaryContractTest.java",
           "method": "malformedScaledBoundariesHaveOneSourceSyntaxErrorAtTheExactTokenInEveryNumericTypeContext",
-          "methodStart": 2601,
-          "methodEnd": 4117,
+          "methodStart": 4768,
+          "methodEnd": 6284,
           "methodSha256": "dfdbbaf04c990459fa00ef005a358583ad946f663d46b40ebb3f630af9647a94",
           "score": 2,
           "status": "CANDIDATE_ONLY"

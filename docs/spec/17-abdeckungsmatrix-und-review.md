@@ -5,6 +5,13 @@ INTERLIS-Modellowner, gewöhnliche Geometriestrukturen und das ausdrücklich
 freigegebene TYPE-MODEL-Profil. Kanonische Verträge bleiben in Kapitel 05/06
 und API-Register 16; dieser Hinweis behauptet keine unabhängige Abnahme.
 
+L1-2 konkretisiert META-006/008/009/011/014/016 und
+SEM-003/005/010/011/014/017/019 für numerische Unterteilungen, exakte Faktoren
+und die drei ausdrücklichen Kompatibilitätsprofile. Kapitel 05/06/15/16 sind
+die Vertragsquellen. Neue Regressionen und vorhandene Typfamilienprüfungen
+werden in der L1-2-Abnahme zusammen bewertet; dieser Index ersetzt weder
+deren Ausführung noch das unabhängige Urteil.
+
 Der laufende G2-Abschluss folgt dem [Ausführungsvertrag A–I](../evidence/stabilization/g2-completion-plan.md).
 Die versionierte G2-Regelmatrix trennt den vorhandenen Implementierungs-/Teststand
 von der unabhängigen Abnahme. Ein älteres VERIFIED ist ohne neues Review kein

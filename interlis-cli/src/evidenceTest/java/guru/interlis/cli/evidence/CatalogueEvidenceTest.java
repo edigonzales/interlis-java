@@ -30,8 +30,8 @@ class CatalogueEvidenceTest {
     }
     @Test void everyRecordedCandidateStillNamesTheExactTestMethod() throws Exception { CatalogueEvidence.candidates(data("test-candidate-index")); }
     @Test void a3JvmAndPortablePairBindingsRemainPresent() throws Exception { CatalogueEvidence.pairs(data("a3-semantic-pairs")); }
-    @Test void all18DecisionCasesKeepExpectationsQuotesAndExplicitUserStatus() throws Exception {
-        var packet = data("normative-decision-packet-2026-10-28"); CatalogueEvidence.decisions(packet, data("norm-inventory")); assertEquals(18, rows(packet,"cases").size());
+    @Test void all19DecisionCasesKeepExpectationsQuotesAndExplicitUserStatus() throws Exception {
+        var packet = data("normative-decision-packet-2026-10-28"); CatalogueEvidence.decisions(packet, data("norm-inventory")); assertEquals(19, rows(packet,"cases").size());
     }
     @ParameterizedTest @ValueSource(strings={"id", "acceptance", "ownerStep", "missing"})
     void foreignOrAcceptedGrammarOccurrenceFails(String key) throws Exception {

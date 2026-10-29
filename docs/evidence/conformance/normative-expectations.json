@@ -2376,6 +2376,89 @@
           }
         }
       ]
+    },
+    {
+      "testId": "ili23.Attribute23Test.attributeComplete",
+      "owner": "WP-20–25 / L1-2",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.6.1 / 2.8.5",
+        "reason": "CONTINUOUS SUBDIVISION requires a CIRCULAR numeric type; the original omits CIRCULAR on attrA6 and attrB6."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/attributeComplete.ili",
+          "sha256": "f42135b02ec698de9bc62059c01d6585bf57e2822605913f46ce30d4145c5443"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Attribute23Test.attributeComplete.ili",
+          "sha256": "a88d5c0874f7ac8656d3d5593a5c296a27bd0c55a2111c6e35e5b8b583c4af39"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "attrA6"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "continuous subdivision must be CIRCULAR/SUBDIVISION_CIRCULAR"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/attributeComplete.ili",
+            "revision": "1",
+            "startOffset": 368,
+            "endOffset": 405
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "attrB6"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "continuous subdivision must be CIRCULAR/SUBDIVISION_CIRCULAR"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/attributeComplete.ili",
+            "revision": "1",
+            "startOffset": 1246,
+            "endOffset": 1283
+          }
+        }
+      ],
+      "authorizationBasis": {
+        "date": "2026-10-29",
+        "kind": "RETAINED_APPROVED_CIRCULAR_RULE",
+        "userStatement": "Bestehende Fälle zulassen, nachweisbare Faktorfehler ablehnen (empfohlen)",
+        "questionCondition": "Numerischer Vorgänger, Ganzzahligkeit, nichtnegative Grenzen und CIRCULAR werden trotzdem geprüft; bekannte numerische Faktoren werden exakt verglichen.",
+        "meaning": "Records the concrete reference divergence implied by the retained CIRCULAR rule; does not claim a separate explicit user approval of this individual fixture."
+      }
     }
   ]
 }

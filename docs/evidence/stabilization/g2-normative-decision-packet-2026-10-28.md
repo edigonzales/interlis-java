@@ -1,5 +1,14 @@
 # Normative Referenzausnahmen – Nutzerentscheidung
 
+L1-2-Ergänzung vom 29.10.2026: Das aktive JSON enthält jetzt 19 Einträge.
+Die bisherigen 18 bleiben unverändert; ergänzt ist ausschliesslich
+`ili23.Attribute23Test.attributeComplete` mit zwei fehlenden CIRCULAR-Markern,
+exakten Diagnosen und gepinnter erfolgreicher CIRCULAR-Kontrolle. Die im
+freigegebenen numerischen Profil ausdrücklich erhaltene CIRCULAR-Prüfung ist
+die Grundlage; eine gesonderte explizite Freigabe des Fixture-Namens wird nicht
+behauptet. Die folgenden älteren Darstellungen bleiben historisch; aktueller
+Lieferstand und Abnahme stehen in [STATUS](../../g2/STATUS.md).
+
 Status: **PENDING_USER_REVALIDATION**. Keine Erwartung wurde geändert.
 
 **Nachweisprüfung offen:** Bei den ersten sechs OID-/CONTRACTED-Fällen beziehen

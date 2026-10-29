@@ -258,6 +258,21 @@ public final class TypeCompatibility {
                 left.equals(right) ? "same-unit" : same ? "declared-conversion-compatible" : "no-common-conversion-unit"));
     }
 
+    /**
+     * Proves different declared dimensions, without inferring conversion
+     * permission or a numerical ratio from abstract ancestry. False also
+     * includes unknown dimensions. Equal predefined abstract quantity keys
+     * describe the same dimension in 2.3/2.4 without merging symbol identities.
+     * Missing/cyclic dependencies cannot prove a mismatch; the caller's work
+     * callback also bounds traversal and dimension exponent arithmetic.
+     */
+    public static boolean definitelyDifferentUnitDimensions(SymbolId left,SymbolId right,
+            java.util.function.Function<SymbolId,UnitSymbol> lookup,Runnable step) {
+        java.util.Objects.requireNonNull(left,"left");java.util.Objects.requireNonNull(right,"right");
+        java.util.Objects.requireNonNull(lookup,"lookup");java.util.Objects.requireNonNull(step,"step");
+        return UnitDimensions.definitelyDifferent(left,right,lookup,step);
+    }
+
     /** The untyped undefined constant and a zero-length TEXT literal denote
      * the same undefined value. TEXT*0 cannot be a valid declared domain. */
     public static boolean isUndefined(TypeDescriptor type) {

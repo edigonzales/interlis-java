@@ -23,12 +23,20 @@ Reproduce:
 Since L0B-1, Gradle invokes the unchanged pinned `InterlisConformance.java`
 directly. `gradle/conformance.gradle` verifies the cached archive before every
 extraction, creates the same run configuration and preserves the raw runner exit.
-The CLI test helper `NormativeConformance` only assesses the 18 explicit project
+The CLI test helper `NormativeConformance` only assesses the 19 explicit project
 exceptions and writes the separate project report; it does not run or classify
 the suite. Its negative contracts and the 19 pinned portable originals are JUnit
 tests behind `conformanceWrapperTest`. This path no longer calls Python.
 The results below remain historical; current delivery evidence is in
 [L0B-1](../../g2/implementation/L0B-1.md).
+
+L1-2 retains the original 18 entries unchanged and adds the strict
+`ili23.Attribute23Test.attributeComplete` CIRCULAR case. The original source
+is pinned and rejected with exactly two semantic diagnostics; its positive
+control only adds CIRCULAR to the two continuous subdivisions. This follows
+the CIRCULAR rule retained in the user's approved numeric profile. The
+[L1-2 report](../../g2/implementation/L1-2.md) records the scope and independent
+review; no separate explicit user approval of that fixture name is claimed.
 
 The task is deliberately separate from `check` and `releaseCheck`: the
 external suite is large, network-dependent on first use, and its baseline is a

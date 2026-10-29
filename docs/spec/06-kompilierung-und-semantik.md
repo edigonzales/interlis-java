@@ -852,3 +852,52 @@ und ist das ausdrücklich gewählte Kompatibilitätsprofil zur engeren Aufzählu
 in 2.3 §2.5.1 bzw. 2.4 §3.5.1. TOPIC, konkrete Klassen, Laufzeitparameter und
 Metadatenbehälter bleiben dort unzulässig. Andere Modell- und Vererbungsregeln
 werden nicht aufgehoben. Originalquellen und Suitepins bleiben unverändert.
+
+### L1-2: freigegebene numerische Kompatibilitätsprofile
+
+Nutzerentscheidungen vom 29.10.2026, jeweils für 2.3 und 2.4:
+
+- Skalierte Bereichsgrenzen behalten das bestehende kompatible Profil.
+  Gleiche oder absteigende Exponenten sowie gemischte skalierte/unskalierte
+  Grenzen bleiben zulässig, etwa `0.1e1..0.2e1`, `-0.2e2..0.3e1` und
+  `0.1e1..20.0`. Dies weicht bewusst von der engeren Exponenten-/Paarvorgabe
+  in 2.3 §2.8.5/PDF41–42 und 2.4 §3.8.5/PDF52 ab. Werteordnung,
+  Genauigkeit und die bereits geltenden Mantissenprüfungen bleiben erhalten.
+- Allgemeine Zahlenkonstanten und Einheitenfaktoren behalten die breitere
+  Exponentialschreibweise, auch `1.0e1` und `0.01e1`. Der Compiler bewahrt
+  ihren exakten Wert, ihr Lexem und ihre Präzision. Die engere Prüfung
+  numerischer Typgrenzen wird nicht auf diese Kontexte übertragen. Die
+  frischen ili2c-5.6.9-Gegenfälle lehnen diese beiden Schreibweisen ab;
+  die Nutzerentscheidung bestätigt ausdrücklich unser bestehendes Profil.
+- Kontinuierliche Unterteilungen ohne bestimmbaren Faktor bleiben zulässig,
+  insbesondere ohne Einheiten oder mit lediglich beschriebener FUNCTION-
+  Umrechnung. Nur nachweisbare Faktorwidersprüche werden abgelehnt.
+  Numerischer Vorgänger, Ganzzahligkeit, nichtnegative Grenzen und CIRCULAR
+  werden dennoch geprüft; bekannte numerische Faktoren werden exakt
+  verglichen und FUNCTION-Erklärungen nicht ausgeführt. Der Unterschied
+  zwischen unbestimmtem Faktor und fehlender/fehlerhafter Bindung bleibt
+  erhalten. Kapitel 05 regelt die öffentlichen Werte und Fehlerpfade.
+
+Dies ändert keine Suite-Fall-ID, keine Originalquelle, keinen Suite-/Archivpin
+und keine der 18 gesonderten Conformance-Erwartungen. Es erlaubt keine
+pauschale numerische Normabweichung ausserhalb dieser ausdrücklich gewählten
+Profile. Sämtliche Nachweise gehören zum unabhängigen L1-2-Review.
+
+Die fortgeltende CIRCULAR-Prüfung deckt im Suite-Positivfall
+`ili23.Attribute23Test.attributeComplete` zwei fehlende CIRCULAR-Marker auf.
+Dieser konkrete Fall ergänzt die bisherigen 18 unveränderten Bewertungen als
+19. strenge Referenzausnahme: unverändertes Original und Hash, exakt zwei
+SEMANTIC_CHECKING-Diagnosen sowie eine erfolgreiche Kontrollquelle, die nur
+die beiden Marker ergänzt. Das erfasst die Konsequenz der im bestätigten
+Profil ausdrücklich erhaltenen CIRCULAR-Regel; eine gesonderte ausdrückliche
+Nutzerfreigabe dieses einzelnen Fixture-Namens wird nicht behauptet. Rohe
+Suiteklassifikation und Projektbewertung bleiben getrennt. Der unabhängige
+L1-2-Review prüft auch diese Herleitung und sämtliche Original-/Kontrollpins.
+
+Im freigegebenen Unterteilungsprofil ist eine fehlende deklarierte
+Umrechnungsroute von einem nachgewiesenen Dimensionswiderspruch zu unterscheiden.
+Einheiten mit gleicher abstrakter Grundgrösse ohne numerische Definition und
+vollständig unbestimmte Einheiten bleiben zulässig. Nur eine beweisbar
+widersprechende Dimensionszerlegung oder ein bestimmbarer falscher Faktor
+begründet SUBDIVISION_FACTOR. Die allgemeinen Zuweisungs-, Erweiterungs- und
+Umrechnungsrelationen werden dadurch nicht erweitert (Kapitel 05).

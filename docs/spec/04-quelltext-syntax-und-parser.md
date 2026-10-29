@@ -631,6 +631,20 @@ die Float-Mantisse aus 2.3 §2.2.4 S.24 / §2.8.5 S.41–42 und 2.4 §3.2.4 S.28
 Nachkommastelle ist von null verschieden oder die ganze Mantisse ist null.
 0.00e1 bleibt zulässig. Fehler erhalten ILI-SYN-0002/PARSING am ursprünglichen
 Literalbereich, auch in Fragmenten. Die Budgetprüfung erfolgt vor exakter
-Zahlenauswertung. Die unabhängigen Konstanten-/Faktorproduktionen und das
-Exponentenverhältnis beider Grenzen werden durch diesen Teilnachweis nicht
-abschliessend entschieden.
+Zahlenauswertung. Die zuvor getrennt offenen Konstanten-/Faktorproduktionen
+und das Exponentenverhältnis beider Grenzen sind durch die ausdrücklichen
+L1-2-Nutzerentscheidungen in Kapitel 06/15 geklärt: Das bestehende breitere
+Profil bleibt erhalten; die strengere Mantissenprüfung bleibt auf numerische
+Typgrenzen beschränkt.
+
+### L1-2: CONTINUOUS im Attributfragment
+
+SYN-004/010/013/015 und SRC-002/005: CONTINUOUS ist nur zusammen mit
+SUBDIVISION zulässig (2.3 §2.6.1/PDF31, 2.4 §3.6.1/PDF39). Die gemeinsame
+Syntaxbaumprüfung meldet fehlendes SUBDIVISION als ILI-SYN-0002/PARSING am
+folgenden Namen; die erwartete Tokenliste enthält SUBDIVISION. Die für
+Recovery weiter gefasste ANTLR-Produktion bleibt unverändert. Das rekonstruierte
+Attribut bewahrt die tatsächlich vorhandenen Marker. Vollquelle in EDITOR und
+STRICT sowie ATTRIBUTE_DECLARATION-Fragmente verwenden dieselbe Prüfung und
+die Original-UTF-16-Bereiche samt SourceRevision. Vollständiger
+Fragmentverbrauch bedeutet keine Fehlerfreiheit; Diagnostik bleibt separat.

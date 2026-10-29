@@ -3,7 +3,7 @@
   "status": "PENDING_USER_REVALIDATION",
   "purpose": "Prepare the 18 existing normative reference exceptions for explicit user revalidation; no expectation is changed.",
   "source": "docs/evidence/conformance/normative-expectations.json",
-  "sourceSha256": "441df2200043f4d9b62cf77751eb083bd9a4ef1cf3c0a7201d09974dbfd740ec",
+  "sourceSha256": "67244a8138bbe2c17e0feaecd7c08885be981904cb88d33cfaad980123a2e6c1",
   "normalization": "No change of previous authorizations, own expectations, reference outcomes or XFAIL status.",
   "cases": [
     {
@@ -5269,13 +5269,142 @@
         "OTHER_WITH_NORM_REASON"
       ],
       "review": "MISSING_EVIDENCE"
+    },
+    {
+      "testId": "ili23.Attribute23Test.attributeComplete",
+      "owner": "WP-20–25 / L1-2",
+      "languageVersion": "2.3",
+      "step": "C3",
+      "delivery": "L1-2",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "normSections": "2.6.1 / 2.8.5",
+      "normReason": "CONTINUOUS SUBDIVISION requires a CIRCULAR numeric type; the original omits CIRCULAR on attrA6 and attrB6.",
+      "normEvidence": [
+        {
+          "document": "2.3",
+          "section": "2.8.5",
+          "title": "Numerische Datentypen",
+          "page": 41,
+          "disposition": "COMPILER_RULE",
+          "ownerStep": "C3",
+          "paragraphs": [
+            {
+              "id": "NORM:2.3:2.8.5:p41:007",
+              "page": 41,
+              "quote": "2.8.5 Numerische Datentypen  \nDie wichtigste Angabe bei numerischen Datentypen ist der Minimal - und der Maximal -Wert inklusive Ste l-\nlenzahl (Nachkommastellen) sowie der Skalierungsf aktor. Zusätzlich kann angegeben werden, dass der \nTyp zirkulär ist (Schlüssel wort CIRCULA R), d.h. dass der in der letzten signifikant en Stelle um 1 erhöhte \nMaximalwert und der Minimalwert sachlich die gleiche Bedeutung haben (z.B. bei Winkel n 0 .. 359 Grad). \nIst das Attribut als eine kontinuierliche Unterteilung des Vorgängerattributs def iniert (vgl. Kapitel 2.6.1 \nAllgemeine Aussagen zu Attributen ), muss der Ty p als zirkulär definiert sein. Fehlt die Angabe des Min i-\nmal- und Maximal -Wertes (Schlüsselwort NUMERIC ), gilt der Werteber eich als abstr akt. \nDOMAIN \n  Winkel1 = 0.00 .. 359.99 CIRCULAR [degree]; !! richtig \n  Winkel2 = 0.00 .. 360.00 CIRCULAR [degree]; !! syntaktisch zwar richtig, \n                                              !! sachlich aber falsch, da damit \n                                              !! 360.01 dem Minimalwert 0.00 \n                                              !! entspricht ",
+              "quoteSha256": "762a7fc942ab02cf395efea28ae2bf96dfee5a8cf199c93823d21e0f5d7f0dd4",
+              "displayQuote": "2.8.5 Numerische Datentypen  \nDie wichtigste Angabe bei numerischen Datentypen ist der Minimal - und der Maximal -Wert inklusive Ste l-\nlenzahl (Nachkommastellen) sowie der Skalierungsf aktor. Zusätzlich kann angegeben werden, dass der \nTyp zirkulär ist (Schlüssel wort CIRCULA R), d.h. dass der in der letzten signifikant en Stelle um 1 erhöhte \nMaximalwert und der Minimalwert sachlich die gleiche Bedeutung haben (z.B. bei Winkel n 0 .. 359 Grad). \nIst das Attribut als eine kontinuierliche Unterteilung des Vorgängerattributs def iniert (vgl. Kapitel 2.6.1 \nAllgemeine Aussagen zu Attributen ), muss der Ty p als zirkulär definiert sein. Fehlt die Angabe des Min i-\nmal- und Maximal -Wertes (Schlüsselwort NUMERIC ), gilt der Werteber eich als abstr akt. \nDOMAIN \n  Winkel1 = 0.00 .. 359.99 CIRCULAR [degree]; !! richtig \n  Winkel2 = 0.00 .. 360.00 CIRCULAR [degree]; !! syntaktisch zwar richtig, \n                                              !! sachlich aber falsch, da damit \n                                              !! 360.01 dem Minimalwert 0.00 \n                                              !! entspricht ",
+              "selectedBy": "L1-2 exact continuous-subdivision CIRCULAR condition"
+            }
+          ]
+        },
+        {
+          "document": "2.4",
+          "section": "3.8.5",
+          "title": "Numerische Datentypen",
+          "page": 52,
+          "disposition": "COMPILER_RULE",
+          "ownerStep": "C3",
+          "paragraphs": [
+            {
+              "id": "NORM:2.4:3.8.5:p52:007",
+              "page": 52,
+              "quote": "3.8.5 Numerische Datentypen \nDie wichtigste Angabe bei numerischen Datentypen ist der Minimal- und der Maximal-Wert in-\nklusive Stellenzahl (Nachkommastellen) sowie der Skalierungsfaktor. Zusätzlich kann angege-\nben werden, dass der Typ zirkulär ist (Schlüsselwort CIRCULAR), d.h. dass der in der letzten \nsignifikanten Stelle um 1 erhöhte Maximalwert und der Minimalwert sachlich die gleiche Bedeu-\ntung haben (z.B. bei Winkeln 0 .. 359 Grad). Ist das Attribut als eine kontinuierliche Unterteilung \ndes Vorgängerattributs definiert (vgl. Kapitel 3.6.1 Allgemeine Aussagen zu Attributen), muss \nder Typ als zirkulär definiert sein. Fehlt die Angabe des Minimal- und Maximal-Wertes (Schlüs-\nselwort NUMERIC), gilt der Wertebereich als abstrakt. \nDOMAIN \n  Winkel1 = 0.00 .. 359.99 CIRCULAR [degree]; !! richtig \n  Winkel2 = 0.00 .. 360.00 CIRCULAR [degree]; !! syntaktisch zwar richtig, \n                                              !! sachlich aber falsch, da damit \n                                              !! 360.01 dem Minimalwert 0.00 \n                                              !! entspricht \nDie Stellenzahl muss beim Minimal- und beim Maximal-Wert übereinstimmen. Mit Hilfe der Ska-\nlierung können Float-Zahlen beschrieben werden, aber dann sind sowohl der Minimal- als auch \nder Maximal-Wert in Mantissendarstellung anzugeben, d.h. beginnend mit Null (0) und gefolgt \nvom Dezimalpunkt (.) muss die erste Ziffer nach dem Dezimalpunkt von Null (0) verschieden \nsein. Die Skalierung des Minimalwertes muss kleiner sein als die Skalierung des Maximalwer-\ntes. Die Schreibweise von Minimal- und Maximalwert bedeutet aber keineswegs eine Anwei-\nsung, wie die Werte transferiert werden sollen (ist ein Wertebereich mit 000 .. 999 definiert, be-\ndeutet das nicht, dass der Wert 7 als 007 transferiert wird). Eine Ausnahme von dieser Regel \nbilden die Float-Zahlen. Diese sind in Mantissendarstellung und mit Skalierung zu transferieren. ",
+              "quoteSha256": "2a5616b43ea736f9c6ec36d5bd868f1d47c735f22af1cc37e8193fee5c83b67f",
+              "displayQuote": "3.8.5 Numerische Datentypen \nDie wichtigste Angabe bei numerischen Datentypen ist der Minimal- und der Maximal-Wert in-\nklusive Stellenzahl (Nachkommastellen) sowie der Skalierungsfaktor. Zusätzlich kann angege-\nben werden, dass der Typ zirkulär ist (Schlüsselwort CIRCULAR), d.h. dass der in der letzten \nsignifikanten Stelle um 1 erhöhte Maximalwert und der Minimalwert sachlich die gleiche Bedeu-\ntung haben (z.B. bei Winkeln 0 .. 359 Grad). Ist das Attribut als eine kontinuierliche Unterteilung \ndes Vorgängerattributs definiert (vgl. Kapitel 3.6.1 Allgemeine Aussagen zu Attributen), muss \nder Typ als zirkulär definiert sein. Fehlt die Angabe des Minimal- und Maximal-Wertes (Schlüs-\nselwort NUMERIC), gilt der Wertebereich als abstrakt. \nDOMAIN \n  Winkel1 = 0.00 .. 359.99 CIRCULAR [degree]; !! richtig \n  Winkel2 = 0.00 .. 360.00 CIRCULAR [degree]; !! syntaktisch zwar richtig, \n                                              !! sachlich aber falsch, da damit \n                                              !! 360.01 dem Minimalwert 0.00 \n                                              !! entspricht \nDie Stellenzahl muss beim Minimal- und beim Maximal-Wert übereinstimmen. Mit Hilfe der Ska-\nlierung können Float-Zahlen beschrieben werden, aber dann sind sowohl der Minimal- als auch \nder Maximal-Wert in Mantissendarstellung anzugeben, d.h. beginnend mit Null (0) und gefolgt \nvom Dezimalpunkt (.) muss die erste Ziffer nach dem Dezimalpunkt von Null (0) verschieden \nsein. Die Skalierung des Minimalwertes muss kleiner sein als die Skalierung des Maximalwer-\ntes. Die Schreibweise von Minimal- und Maximalwert bedeutet aber keineswegs eine Anwei-\nsung, wie die Werte transferiert werden sollen (ist ein Wertebereich mit 000 .. 999 definiert, be-\ndeutet das nicht, dass der Wert 7 als 007 transferiert wird). Eine Ausnahme von dieser Regel \nbilden die Float-Zahlen. Diese sind in Mantissendarstellung und mit Skalierung zu transferieren. ",
+              "selectedBy": "L1-2 exact continuous-subdivision CIRCULAR condition"
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/attributeComplete.ili",
+          "sha256": "f42135b02ec698de9bc62059c01d6585bf57e2822605913f46ce30d4145c5443"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Attribute23Test.attributeComplete.ili",
+          "sha256": "a88d5c0874f7ac8656d3d5593a5c296a27bd0c55a2111c6e35e5b8b583c4af39"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "attrA6"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "continuous subdivision must be CIRCULAR/SUBDIVISION_CIRCULAR"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/attributeComplete.ili",
+            "revision": "1",
+            "startOffset": 368,
+            "endOffset": 405
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "attrB6"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "continuous subdivision must be CIRCULAR/SUBDIVISION_CIRCULAR"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/attributeComplete.ili",
+            "revision": "1",
+            "startOffset": 1246,
+            "endOffset": 1283
+          }
+        }
+      ],
+      "recommendation": "KEEP_EXISTING_PENDING_USER",
+      "recommendationBasis": "Concrete fixture consequence of the CIRCULAR rule retained in the approved numeric profile; global D2 revalidation and independent review are not claimed.",
+      "userDecision": "PENDING_USER_REVALIDATION",
+      "decisionOptions": [
+        "KEEP_EXISTING",
+        "CHANGE_TO_REFERENCE",
+        "OTHER_WITH_NORM_REASON"
+      ],
+      "review": "MISSING_EVIDENCE",
+      "authorizationBasis": {
+        "date": "2026-10-29",
+        "kind": "RETAINED_APPROVED_CIRCULAR_RULE",
+        "userStatement": "Bestehende Fälle zulassen, nachweisbare Faktorfehler ablehnen (empfohlen)",
+        "questionCondition": "Numerischer Vorgänger, Ganzzahligkeit, nichtnegative Grenzen und CIRCULAR werden trotzdem geprüft; bekannte numerische Faktoren werden exakt verglichen.",
+        "meaning": "Records the concrete reference divergence implied by the retained CIRCULAR rule; does not claim a separate explicit user approval of this individual fixture."
+      }
     }
   ],
   "validation": {
-    "cases": 18,
+    "cases": 19,
     "status": "PENDING_USER_REVALIDATION",
     "expectationsChanged": true,
     "approvedCompatibilityDecisions": 6,
-    "pendingDecisions": 12
+    "pendingDecisions": 13
   }
 }

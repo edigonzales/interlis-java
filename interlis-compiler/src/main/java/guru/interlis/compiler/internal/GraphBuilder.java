@@ -255,6 +255,7 @@ final class GraphBuilder {
         buildEffectiveTypes();
         validateFormattedUses();
         validateNumericUses();
+        new NumericSubdivisions(this).validate();
         buildReferences();
         validateAssociationRules();
         validateAttributeOverrides();

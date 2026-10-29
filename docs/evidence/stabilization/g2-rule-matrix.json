@@ -12021,7 +12021,7 @@
     "path": "g2-source-inventory.json",
     "scope": "All syntax occurrences, numbered requirements, actual standard-function names, 130 predefined declarations/members/constraints, 21 special values/type variants and explicit lexical profiles. Paragraph/method-contract/assertion audit still open.",
     "acceptance": "MISSING_EVIDENCE",
-    "sha256": "2028abfff56e44f02f50584f4b3bc1310cfa3817a6606f0756052f35240db79c"
+    "sha256": "6a86debf6974174b363727c747ecacad63604446f238f2bb6e874afbeacbc534"
   },
   "atomicRules": [
     {
@@ -13679,7 +13679,7 @@
         {
           "candidateTest": "ScaledBoundaryContractTest.scaledZeroSignsAndEqualExponentsKeepTheirDeclaredPrecisionAndValues",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ScaledBoundaryContractTest.java",
-          "sourceSha256": "741ebc2e0ffbec2200ad73792cff5c366341c32c779c9b0578268d93c6a60879",
+          "sourceSha256": "cb914c66a88dca555f554af42cd29e6cbe7804ba272a8b711a8e956060934e88",
           "methodStart": 1418,
           "methodEnd": 2596,
           "methodSha256": "a94a1006b7e9d47eea5e4463f1135a7cecebcc69d5d39215e8207e9178960a5d",
@@ -13771,8 +13771,8 @@
   "atomicRulesMeaning": "Initial manually sourced individual clauses; inventory remains incomplete. Each retains exact pinned PDF excerpts, planned assertions and any partial source/run metadata. No clause gains independent acceptance automatically.",
   "normativeDecisionQueue": {
     "source": "docs/evidence/conformance/normative-expectations.json",
-    "sourceSha256": "441df2200043f4d9b62cf77751eb083bd9a4ef1cf3c0a7201d09974dbfd740ec",
-    "scope": "18 retained project assessments: six user-approved legacy OID compatibility cases and twelve remaining normative exceptions.",
+    "sourceSha256": "67244a8138bbe2c17e0feaecd7c08885be981904cb88d33cfaad980123a2e6c1",
+    "scope": "19 explicit project assessments: the existing six approved legacy OID cases and twelve strict exceptions are unchanged; one additional strict CIRCULAR countercase follows the retained L1-2 rule.",
     "cases": [
       {
         "testId": "ili23.Class23Test.classComplete",
@@ -13947,6 +13947,17 @@
         "reviewInThisPlan": "MISSING_EVIDENCE",
         "userDecisionInThisPlan": "PENDING_REVALIDATION",
         "remainingCause": "Both-version original norm excerpts, original and countercase diagnostics, recommendation and explicit user decision must be reviewed separately; existing expectation remains unchanged."
+      },
+      {
+        "testId": "ili23.Attribute23Test.attributeComplete",
+        "step": "C3",
+        "delivery": "L1-2",
+        "existingCaseSha256": "f30e92269e9a29fc699b2efe55ae13b4f9bcc6c81976ae9373af5bccd833ed7e",
+        "existingOwnExpectation": "rejected",
+        "currentOwnExpectation": "rejected",
+        "reviewInThisPlan": "MISSING_EVIDENCE",
+        "userDecisionInThisPlan": "PENDING_USER_REVALIDATION",
+        "remainingCause": "Concrete CIRCULAR original/control and exact diagnostics require independent L1-2 review; global D2 packet remains unaccepted."
       }
     ],
     "separateProfileException": "INTERLIS 1 unsupported; not a normative 2.3/2.4 exception"
@@ -14027,15 +14038,15 @@
   },
   "normativeDecisionPacket": {
     "path": "g2-normative-decision-packet-2026-10-28.json",
-    "sha256": "c6c9c9e4383ae0707bad13094566edb824938f4a32450b2f2083153732ae840f",
+    "sha256": "a3b5a715a8a1f6742d11ee79730aaecb8528206d753b31dd60e08ce51b961cb1",
     "markdown": "g2-normative-decision-packet-2026-10-28.md",
-    "markdownSha256": "98bc0341c48c755b7cd2117f6fff931d87dadec75e5120087183a59b4cd4fd21",
+    "markdownSha256": "2b9e7ce55390b488d15bf8bf3a0168b4ccb46239d262b315bb29d41734e4d34d",
     "status": "PENDING_USER_REVALIDATION",
-    "cases": 18,
+    "cases": 19,
     "expectationsChanged": true,
-    "remainingCause": "User must revalidate both versions; no expectation was changed and no independent review accepted the packet.",
+    "remainingCause": "Six approved legacy compatibility entries are preserved. Strict norm entries retain global D2 revalidation status; L1-2 adds the concrete retained CIRCULAR rule case without claiming packet acceptance.",
     "approvedCompatibilityDecisions": 6,
-    "pendingDecisions": 12
+    "pendingDecisions": 13
   },
   "grammarInventory": {
     "path": "g2-grammar-inventory.json",
@@ -14070,9 +14081,9 @@
   },
   "testCandidateIndex": {
     "path": "g2-test-candidate-index.json",
-    "sha256": "c8110f9d9b93d63690c4111c632d966dc0c780589aa6a02ebda98b360988496a",
+    "sha256": "7307420c7319d1903077c8a8347aaabe68ab40312985d6a685894a34437ccb84",
     "acceptance": "CANDIDATE_ONLY",
-    "testMethods": 624,
+    "testMethods": 638,
     "conditions": 621,
     "requirements": 80,
     "withCandidate": 669,

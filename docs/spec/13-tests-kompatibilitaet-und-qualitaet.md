@@ -10,6 +10,23 @@ L0A hat seinen ausdrücklich engeren Pilotumfang. Ausgeführte Prüfungen und
 Reviewabnahme bleiben getrennte Zustände. Normative Erwartungen und neue
 Referenzausnahmen benötigen weiterhin die ausdrückliche Nutzerfreigabe.
 
+L1-2 prüft Unterteilungsregeln mit öffentlichen `NumericRange`-/`UnitSymbol`-/
+Format-/Mitgliederwerten, exakten Diagnosebereichen, Domainqueries und
+Fresh/Reuse. Abstrakte Spezialisierung, unveränderte gegenüber geänderter
+Vererbung, symbolische Kürzung, nicht abbrechende Dezimalbrüche sowie grosse
+und tiefe Einheitenabhängigkeiten erhalten gezielte Fälle. Ein gültiger
+aufwendiger Vergleich muss mit kleinem Budget kontrolliert abbrechen und
+mit grösserem Budget bestehen können. Dieselben neuen funktionalen Fälle
+laufen über den gemeinsamen portablen Vertrag; ein Node-Erfolg bleibt vom
+vollständigen Browser-/Safari-/Web-Image-Phasengate getrennt.
+
+Der aktuelle L1-2-Abgleich ergänzt genau eine CIRCULAR-Referenzausnahme zu den
+18 unveränderten früheren Bewertungen. Alle 19 verlangen weiterhin gepinnte
+Original-/Kontrollquellen und exakte strukturierte Diagnosen beziehungsweise
+sauberen Erfolg. Die Bestätigung der fortgeltenden CIRCULAR-Regel, die konkrete
+Normabweichung des Fixtures und die unabhängige Prüfung bleiben im Bericht
+erkennbar; keine neue Quelle oder globale XFAIL-Ausnahme wird still aufgenommen.
+
 ## 1. Ziel und verbindliche Aussagegrenzen
 
 Dieses Dokument legt fest, wie ein Coding-Agent Fortschritt und Korrektheit nachweist. Ein erfolgreicher Build, eine grüne kleine Testsuite oder ein lesbares Diagramm genügt nicht als Beleg für einen vollständigen INTERLIS-Compiler. Jede Aussage zur Sprach-, CLI-, Laufzeit- oder Datenbankkompatibilität braucht einen benannten Umfang, gepinnte Referenzen und tatsächlich ausgeführte Tests.

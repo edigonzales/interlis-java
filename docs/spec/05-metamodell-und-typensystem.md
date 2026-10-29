@@ -1057,8 +1057,10 @@ bei vorhandener `derivedFrom` ohne FUNCTION bedeutet Identitätsumrechnung.
 
 Null wird je Konstante exakt geprüft. Multiplikation mit null und Division
 durch null verhindern das Schema mit verschiedenen Regelkennungen und dem
-Konstantenbereich. Ein Gesamtprodukt oder Quotient wird nicht berechnet;
-PI/LNBASE werden nicht gerundet und FUNCTION wird nicht ausgeführt.
+Konstantenbereich. Die Repräsentation berechnet kein Gesamtprodukt und keinen
+Quotienten; der unten beschriebene Unterteilungsvergleich darf bekannte
+Faktoren gezielt exakt vergleichen. PI/LNBASE werden nicht gerundet und
+FUNCTION wird nicht ausgeführt.
 Übersetzungsvergleiche verwenden Operatoren, Konstantenarten, exakte Zahlen
 und gebundene Einheitenziele. Zahlenformatierung und Quellbereiche sind keine
 numerische Umrechnungsidentität.
@@ -1484,3 +1486,87 @@ Bedingungen benötigen keinen künstlich öffentlichen Namen. Der vorhandene
 ConstraintSymbol bewahrt den tatsächlichen Namen und seinen Quellbereich,
 auch für CONSTRAINTS OF. Struktur-, Assoziations- und Viewkörper verwenden
 dieselbe direkte Namensprüfung wie Klassen.
+
+### L1-2: numerische Unterteilungen und exakte Faktorbedingungen
+
+META-006/008/009/011/014/016 und SEM-003/005/010/011/014/017/019:
+`AttributeSymbol.subdivision()` und `continuous()` behalten die tatsächlichen
+Quellmarker. SUBDIVISION verlangt einen skalaren numerischen Typ und ein
+unmittelbar vorausgehendes numerisches Attribut in der effektiven
+Attributreihenfolge. Rollen sind keine Vorgängerattribute. Der Vorgänger muss
+ganzzahlige Genauigkeit besitzen; ganzzahlige Endpunktwerte allein machen
+beispielsweise `0.0..23.0` nicht zu einem ganzzahligen Typ. Die Unterteilung
+hat einen nichtnegativen Bereich. Abstrakte, noch unbestimmte numerische
+Grenzen erhalten keine erfundenen Werte und werden bei Konkretisierung geprüft.
+Aliase beziehungsweise benannte Domainbezüge werden mit der bestehenden
+Typauflösung aufgelöst; Collections werden nicht zu skalaren Typen umgedeutet.
+
+CONTINUOUS verlangt SUBDIVISION und einen CIRCULAR-Typ. Der Parser meldet
+fehlendes SUBDIVISION als `ILI-SYN-0002` in Phase PARSING am folgenden
+Attributnamen. Der wiederhergestellte Syntaxbaum behält beide tatsächlichen
+Marker; Editor-/Strict-Modus und Deklarationsfragmente verwenden dieselbe
+Prüfung mit Original-UTF-16-Bereichen und Revisionen. Vollständiger
+Fragmentverbrauch ist von Fehlerfreiheit getrennt. Die Recovery-Grammatik
+bleibt erhalten; ihr breiterer Erkennungsraum ist keine Sprachfreigabe.
+
+Die Kreisperiode ist Maximalwert minus Minimalwert plus der letzten
+signifikanten Einheit des Maximalwertes: `0..59` und `0.000..59.999` ergeben
+jeweils 60. Dies folgt aus 2.3 §2.8.5/PDF41 und §2.8.7/PDF44 bzw.
+2.4 §3.8.5/PDF52 und §3.8.7/PDF55; der reine Abstand 59 wäre falsch.
+Bei bestimmbaren Faktoren muss diese Periode dem Faktor von Vorgänger- zu
+Unterteilungseinheit entsprechen. Abgeleitete und zusammengesetzte Einheiten,
+Multiplikation und Division verwenden exakte rationale Zahlen; keine
+Double-Werte und keine gerundete Dezimaldivision. Gemeinsame Abhängigkeiten
+und symbolische PI-/LNBASE-Terme werden vor der Berechnung gekürzt.
+EXTENDS einer abstrakten Einheit begründet keinen Umrechnungsfaktor.
+Bei einer noch abstrakten Vorgängereinheit prüft die gemeinsame numerische
+Einheitenrelation die zulässige Spezialisierung. Eine passende Einheit bleibt
+bis zur Konkretisierung legal aufgeschoben; eine andere Dimension bleibt
+ein Fehler. So darf beispielsweise TIME später zu Stunden konkretisiert
+werden, während bereits eine Minutenunterteilung definiert ist.
+
+Eine FUNCTION-Umrechnung wird nie ausgeführt. Ein gemeinsamer solcher
+Einheitenstamm kann trotzdem einen bekannten relativen Faktor tragen, etwa
+`h=60[u]` gegenüber `u`. Fehlt ein bestimmbarer Faktor, etwa bei einheitenlosen
+Attributen oder einer verbleibenden FUNCTION-Umrechnung, gilt das ausdrücklich
+freigegebene Profil aus Kapitel 06: nur nachweisbare Faktorwidersprüche werden
+abgelehnt. Bekannte inkompatible Einheiten bleiben Fehler. PI/LNBASE bleiben
+symbolisch: Ein verbleibender einzelner transzendenter Faktor kann keiner
+endlichen rationalen Periode entsprechen; eine allgemeine algebraische
+Unabhängigkeit beider Konstanten wird nicht vorausgesetzt. Eine fehlende
+Einheitenbindung ist weiterhin ein Bindungsfehler und kein erlaubter
+unbestimmter Faktor.
+
+Die Prüfung verwendet die endgültigen effektiven Mitglieder und Typen und
+prüft geerbte Unterteilungen im Kontext der Erweiterung erneut. Diagnosen
+`ILI-SEM-0010` unterscheiden fehlenden Vorgänger, nichtnumerische Typen, nichtganzzahligen Vorgänger, negative Grenzen, fehlendes CIRCULAR und
+Faktorwidersprüche. Bei einem nur in der Erweiterung ungültigen geerbten
+Element liegt die Diagnose am Benutzerkontext. Bereits fehlerhafte Typen
+erzeugen keine zusätzliche Ersatzdiagnose. Dieselbe unverändert geerbte
+Unterteilungsbeziehung wird einmal an ihrer ursprünglichen Deklaration
+diagnostiziert; ein anderer effektiver Vorgänger begründet einen neuen
+Prüfkontext. Quellfehler verhindern das Schema;
+Abbruch oder ausgeschöpftes semantisches Arbeitsbudget bleiben kontrollierte
+Ressourcenabbrüche. Iterative Einheitenprüfung und begrenzte Ganzzahlarbeit
+gelten auch für tiefe beziehungsweise sehr grosse Faktorabhängigkeiten.
+Vor der Periodenbildung wird zudem die erforderliche Dezimalausrichtung
+belastet, damit ein erhöhtes lexikalisches Exponentenbudget weder eine
+unbegrenzte Ganzzahlallokation noch einen internen Arithmetikfehler auslöst.
+
+Die normativ ausdrücklich optionale Referenzsystem-Konsistenzprüfung für
+Unterteilungen wird nicht zu einer zusätzlichen Compilerpflicht erklärt
+(2.3 §2.6.1/PDF31, 2.4 §3.6.1/PDF38–39). Die vorhandenen öffentlichen Typ-,
+Einheiten-, Herkunfts-, Reihenfolge- und Formatwerte bleiben nullfrei,
+unveränderlich und snapshotgebunden. Es entsteht keine neue öffentliche API.
+
+Fehlende deklarierte Umrechenbarkeit ist kein Beweis eines Dimensionsfehlers.
+Zwei konkrete Einheiten mit demselben abstrakten TIME-Vorfahren ohne
+Umrechnungsdefinition sowie vollständig unbestimmte Einheiten behalten einen
+unbekannten Faktor und sind im freigegebenen Unterteilungsprofil zulässig.
+Eine exakte Dimensionszerlegung kann dagegen bekannte widersprechende
+Grundgrössen, auch in Produkten und Quotienten, nachweisen. Unbestimmte
+Grundgrössen bleiben symbolisch und dürfen nur bei identischer Bindung gekürzt
+werden. Gleiche vordefinierte abstrakte Grössen beider Sprachversionen haben
+dieselbe Dimension; ihre Symbolidentitäten bleiben verschieden. Diese
+Dimensionsaussage erteilt keine Umrechnungserlaubnis: Die bestehende öffentliche
+Unit-Relation bleibt ohne deklarierten Umrechnungspfad DISALLOWED.

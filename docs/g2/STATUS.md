@@ -3,7 +3,7 @@
 - Auftrag: **gesamte Phase 1** autonom bis zum unabhängigen Phasen-PASS,
   ohne manuelle Stopps zwischen L1-1, L1-2 und L1-3. Die Kandidatencommits,
   unabhängigen Reviews und PASS-Gates bleiben verbindlich. Phase 2 beginnt nicht.
-- Aktuelle Lieferung: **L1-2**, AC1-03/AC1-04, **IN_PROGRESS**.
+- Aktuelle Lieferung: **L1-2**, AC1-03/AC1-04, **AWAITING_REVIEW**.
 - Basis: L1-1-Code `6cbf8de422cd8c0c8c9ec1ea900d729053ea660f`;
   anschliessender Dokumentcommit speichert nur den unveränderten Bericht/Status.
 - Letzter unabhängiger PASS: **L1-1**, AC1-01/AC1-02,
@@ -23,9 +23,26 @@
   Suite-/Archiv-/Original-/Normzitatpins und die sechs freigegebenen
   OID-/CONTRACTED-Erwartungen unverändert. **0** getrackte `.py`;
   OS-Interpreterproben ENOENT/EPERM, `pythonFreeCheck` erfolgreich.
-- L1-2 vorbereitet: Unterteilungsregeln und CONTINUOUS-ohne-SUBDIVISION sind
-  als aktuelle Falschakzeptanzen reproduziert; Referenzparität allein genügt
-  für die Unterteilungsregeln nicht. Implementierung und Abnahme stehen aus.
+- L1-2 implementiert und gezielt geprüft: Unterteilungsregeln, exakte Faktoren,
+  CONTINUOUS-ohne-SUBDIVISION, Domainqueries und freigegebene Profile.
+  **20** gezielte numerische Tests erfolgreich. Letzter OS-gesperrter Vollauf
+  `checkPortable g2EvidenceTest conformanceCheck sdkProcessCheck pythonFreeCheck --continue
+  --rerun-tasks`: **Exit 0 / 2m 16s / 58 Tasks**, **753** reguläre JVM-Tests
+  (davon **644** Compiler), **136** Evidenz-/ **15** Assertion-/ **15** Hosttests,
+  alle ohne Fehler/Skips. Aktuell Node-JS/WasmGC jeweils **3365** Fälle
+  erfolgreich, darunter Ressourcenabbruch. Unabhängige Abnahme steht aus.
+- Früher L1-2-T2-Zwischenlauf: **FAIL**, Projekt **579 PASS / 13 XFAIL / 1 FAIL**.
+  Neuer Konflikt: `ili23.Attribute23Test.attributeComplete` enthält kontinuierliche
+  Unterteilungen ohne CIRCULAR. Originalhash `f42135b02ec698de9bc62059c01d6585bf57e2822605913f46ce30d4145c5443`,
+  eigener Exit 1, ili2c Exit 0; Kontrolle mit ausschliesslich ergänztem CIRCULAR
+  bei beiden Exit 0. Die bereits bestätigte fortgeltende CIRCULAR-Prüfung
+  bleibt massgeblich. Genau dieser Gegenfall ergänzt die bisherigen 18
+  unveränderten Bewertungen als strenge 19. Ausnahme mit Original-/Kontrollhash
+  und exakt zwei Diagnosen. Gezielter neuer Assessmentlauf **PASS**;
+  vollständiger aktueller Lauf **PASS**: **579 PASS / 14 XFAIL / 0 FAIL**,
+  roh **579 PASS / 13 FAIL / 1 XFAIL**, alle **19** Assessments PASS.
+  Unabhängige Prüfung steht noch aus.
+  Eine separate explizite Freigabe des einzelnen Fixture-Namens wird nicht behauptet.
 - Ausdrückliche Nutzerentscheidungen, beide Sprachen:
   - TYPE MODEL: Strukturen und abstrakte Klassen wie ili2c zulassen.
   - Skalierte Grenzen: bestehende gleiche/absteigende/gemischte Exponentenfälle
@@ -36,10 +53,12 @@
     nachweisbare Faktorfehler ablehnen. Numerischer Vorgänger, Ganzzahligkeit,
     nichtnegative Grenzen und CIRCULAR werden geprüft; bekannte numerische
     Faktoren exakt verglichen; FUNCTION-Erklärungen nicht ausgeführt.
-- Nachweise: [L1-1-Implementierungsbericht](implementation/L1-1.md).
-- Nächster Schritt: L1-2 mit RED/GREEN-Regressionsfällen, öffentlichen
-  Modell-/Queryinhalten und freigegebenen Profilen umsetzen, Kandidat committen
-  und unabhängig prüfen. Nach PASS automatisch L1-3 beginnen.
+- Nachweise: [L1-1-Implementierungsbericht](implementation/L1-1.md),
+  [L1-2-Implementierungsbericht mit konkretem Konflikt](implementation/L1-2.md).
+- Nächster Schritt: den erfolgreichen aktuellen L1-2-Stand als Kandidat committen
+  und unabhängig prüfen. Der Review umfasst auch
+  die Herleitung der konkreten CIRCULAR-Ausnahme aus der bestätigten Regel.
+  Nach PASS automatisch L1-3 beginnen.
 - Vollständige Browser-/Safari-/Web-Image-Regression und kumulative
   **AC1-01–08** sind im selben L1-3-Review fällig. **Phase 1 hat noch keinen PASS.**
 

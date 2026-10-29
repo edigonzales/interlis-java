@@ -46,6 +46,64 @@ async function verifyStabilization(api) {
     await verify(model('TOPIC T=END T;').replace('CONTRACTED MODEL', 'CONTRACTED TYPE MODEL'), 'rejected');
     foundationCases += 4;
   }
+  // L1-2: exact subdivision relations and the explicitly approved numeric profiles.
+  let numericSubdivisionCases = 0;
+  for (const version of ['2.3', '2.4']) {
+    const model = body => `INTERLIS ${version}; CONTRACTED MODEL F AT "https://example.org" VERSION "1" = ${body} END F.`;
+    const clock = 'STRUCTURE Clock=Hours:0..23 CIRCULAR[INTERLIS.h];CONTINUOUS SUBDIVISION Minutes:0..59 CIRCULAR[INTERLIS.min];'
+      + 'CONTINUOUS SUBDIVISION Seconds:0.000..59.999 CIRCULAR[INTERLIS.s];END Clock;'
+      + 'DOMAIN Stamp=FORMAT BASED ON Clock(Hours/2 ":" Minutes/2 ":" Seconds);';
+    const cases = [
+      [clock, 'succeeded'],
+      ['UNIT coarse=1[INTERLIS.s];fine=1/3[INTERLIS.s];STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..2 CIRCULAR[fine];END S;', 'succeeded'],
+      ['UNIT a=3[INTERLIS.s];b=1[INTERLIS.s];coarse=(a*b);fine=(b*b);STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..2 CIRCULAR[fine];END S;', 'succeeded'],
+      ['UNIT coarse=3*PI[INTERLIS.s];fine=PI[INTERLIS.s];STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..2 CIRCULAR[fine];END S;', 'succeeded'],
+      ['UNIT coarse=3*LNBASE[INTERLIS.s];fine=LNBASE[INTERLIS.s];STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..2 CIRCULAR[fine];END S;', 'succeeded'],
+      ['STRUCTURE S=P:0..23;CONTINUOUS SUBDIVISION V:0..59 CIRCULAR;END S;', 'succeeded'],
+      ['UNIT first EXTENDS INTERLIS.TIME;second EXTENDS INTERLIS.TIME;STRUCTURE S=P:0..23[first];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[second];END S;', 'succeeded'],
+      ['UNIT first;second;STRUCTURE S=P:0..23[first];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[second];END S;', 'succeeded'],
+      ['UNIT coarse=(INTERLIS.m/INTERLIS.s);fine=(INTERLIS.m*INTERLIS.m);STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[fine];END S;', 'rejected'],
+      ['UNIT unknown;unitless=(unknown/unknown);STRUCTURE S=P:0..23[unitless];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[INTERLIS.s];END S;', 'rejected'],
+      ['UNIT u=FUNCTION // external conversion // [INTERLIS.s];STRUCTURE S=P:0..23[u];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[INTERLIS.s];END S;', 'succeeded'],
+      ['UNIT u=FUNCTION // external conversion // [INTERLIS.s];h=60[u];STRUCTURE S=P:0..23[h];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[u];END S;', 'succeeded'],
+      ['STRUCTURE S=P:0..23[INTERLIS.s];CONTINUOUS SUBDIVISION V:0..0 CIRCULAR[INTERLIS.s];END S;', 'succeeded'],
+      ['STRUCTURE Base(ABSTRACT)=P(ABSTRACT):NUMERIC[INTERLIS.TIME];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[INTERLIS.min];END Base;STRUCTURE Child EXTENDS Base=P(EXTENDED):0..23[INTERLIS.h];END Child;', 'succeeded'],
+      ['STRUCTURE S(ABSTRACT)=P(ABSTRACT):NUMERIC[INTERLIS.TIME];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[INTERLIS.m];END S;', 'rejected'],
+      ['UNIT hundred=100[INTERLIS.s];STRUCTURE S=P:0..23[hundred];CONTINUOUS SUBDIVISION V:0.00e1..0.99e2 CIRCULAR[INTERLIS.s];END S;', 'succeeded'],
+      ['UNIT scaled=1.0e1[INTERLIS.m];FUNCTION accepts(v:NUMERIC):BOOLEAN;TOPIC T=CLASS C=MANDATORY CONSTRAINT accepts(1.0e1) AND accepts(0.01e1);END C;END T;', 'succeeded'],
+      ['STRUCTURE S=SUBDIVISION V:0..59;END S;', 'rejected'],
+      ['STRUCTURE S=P:TEXT;SUBDIVISION V:0..59;END S;', 'rejected'],
+      ['STRUCTURE S=P:0..23;SUBDIVISION V:TEXT;END S;', 'rejected'],
+      ['STRUCTURE S=P:0.0..23.0;SUBDIVISION V:0..59;END S;', 'rejected'],
+      ['STRUCTURE S=P:0..23;SUBDIVISION V:-1..59;END S;', 'rejected'],
+      ['STRUCTURE S=P:0..23[INTERLIS.h];CONTINUOUS SUBDIVISION V:0..59[INTERLIS.min];END S;', 'rejected'],
+      ['STRUCTURE S=P:0..23;CONTINUOUS V:0..59 CIRCULAR;END S;', 'rejected'],
+      ['STRUCTURE S=P:0..23[INTERLIS.h];CONTINUOUS SUBDIVISION V:0..58 CIRCULAR[INTERLIS.min];END S;', 'rejected'],
+      ['STRUCTURE S=P:0..23[INTERLIS.h];CONTINUOUS SUBDIVISION V:0..59 CIRCULAR[INTERLIS.m];END S;', 'rejected'],
+      ['UNIT coarse=1[INTERLIS.s];fine=1/3[INTERLIS.s];STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..1 CIRCULAR[fine];END S;', 'rejected'],
+      ['UNIT coarse=PI[INTERLIS.s];STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..2 CIRCULAR[INTERLIS.s];END S;', 'rejected']
+    ];
+    for (const bounds of ['0.1e1..0.2e1', '-0.2e2..0.3e1', '0.1e1..20.0', '0.0..0.2e2'])
+      cases.push([`DOMAIN D=${bounds};`, 'succeeded']);
+    const large='9'.repeat(1000), square=(BigInt(large)*BigInt(large)).toString();
+    cases.push([`UNIT a=${large}[INTERLIS.s];b=${square}[INTERLIS.s];`
+      + `coarse=(${Array(80).fill('a').join('*')});fine=(${[...Array(40).fill('b'),...Array(40).fill('INTERLIS.s')].join('*')});`
+      + 'STRUCTURE S=P:0..23[coarse];CONTINUOUS SUBDIVISION V:0..0 CIRCULAR[fine];END S;', 'cancelled']);
+    for (const [body, expected] of cases) {
+      const text=model(body), sourceId='memory:/numeric-subdivision.ili';
+      await verifySources([{sourceId,text}],expected,['F'],body===clock ? async(sessionId,compiled)=>{
+        const query=async(offset,kind)=>call('query',sessionId,{snapshotId:compiled.snapshotId,
+          query:{kind,sourceId,revision:'1',startOffset:offset,endOffset:offset}});
+        const declaration=await query(text.indexOf('Seconds:'),'symbolAt');
+        const reference=await query(text.lastIndexOf('Seconds'),'symbolAt');
+        const definition=await query(text.lastIndexOf('Seconds'),'definition');
+        if(declaration.kind!=='known'||reference.kind!=='known'||definition.kind!=='definition'
+            ||declaration.symbolId!==reference.symbolId||declaration.symbolId!==definition.symbolId)
+          throw new Error('FORMAT subdivision lost its exact attribute target '+JSON.stringify({declaration,reference,definition}));
+      } : undefined);
+      numericSubdivisionCases++;
+    }
+  }
   // L0B-3: legacy function annotations retain source validity in every backend.
   let legacyMetadataCases = 0;
   for (const version of ['2.3', '2.4']) for (const newline of ['\n', '\r\n']) {
@@ -1760,7 +1818,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;
