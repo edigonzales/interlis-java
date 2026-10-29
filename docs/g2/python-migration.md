@@ -3,7 +3,7 @@
 Basis: `c671ce3aa943afcc53579b4cd488773afbd0206e`, `git ls-files '*.py'`: **36 Dateien**.
 Die Entscheidungen betreffen Funktionen, keine mechanischen 1:1-Ports. L0B-1 entfernt zwei Dateien; L0B-2 entfernt weitere **25** Dateien. Die neun
 L0B-3-Zeilen bleiben geplant. Die nötigen Altprüfungen erfolgten vor der Löschung; die
-Ersatz- und Negativnachweise stehen unten. Der unabhängige Review steht noch aus. Historische Reports und
+Ersatz- und Negativnachweise stehen unten. Unabhängiges Urteil und geprüfter SHA stehen in [STATUS.md](STATUS.md). Historische Reports und
 Normdaten bleiben erhalten, frühere Skriptfassungen sind über die Basis in Git
 wiederherstellbar. Diese Matrix ersetzt kein fachliches Gate.
 
