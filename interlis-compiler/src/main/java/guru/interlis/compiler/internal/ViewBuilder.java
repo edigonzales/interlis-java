@@ -403,7 +403,7 @@ final class ViewBuilder {
         var start = context.symbol(g.lines.predefined(owner, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
         TypeId segments = collection(owner, segment);
         var lineGeometry = syntheticStructure(owner, geometry, "LineGeometry", Map.of("Segments", segments));
-        startConstraint(owner, lineGeometry, segment, start);
+        g.lines.startConstraint(owner, lineGeometry, segment, start, owner.syntax().range());
         registerGeometryElement(lineGeometry, geometry, context, GeometryElementRole.LINE_GEOMETRY);
         if (geometry.geometryKind() == GeometryKind.POLYLINE || geometry.geometryKind() == GeometryKind.MULTIPOLYLINE) return lineGeometry;
         TypeId polyline = g.nextTypeId();
@@ -425,28 +425,6 @@ final class ViewBuilder {
         return boundary;
     }
 
-    private void startConstraint(DeclInfo owner, SymbolId line, SymbolId segment, SymbolId start) {
-        var structure = (StructureSymbol)g.symbols.get(line);
-        if (!structure.constraints().isEmpty()) return;
-        var range = owner.syntax().range();
-        SymbolId attribute = structure.members().getFirst();
-        TypeId element = g.nextTypeId(); g.types.put(element, new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
-        ExpressionId path = new ExpressionId(line.value() + ":first");
-        g.expressions.put(path, new PathExpression(path, element, ExpressionTypeState.RESOLVED, range, List.of(), new ObjectPath(List.of(
-                new PathStep.AttributeStep("Segments", attribute, range), new PathStep.IndexStep(new PathIndex(PathIndex.Kind.FIRST, Optional.empty()), element, range)))));
-        TypeId classType = g.nextTypeId(); g.types.put(classType, new ClassValueType(classType, structure.origin(), true, List.of(start)));
-        ExpressionId value = new ExpressionId(line.value() + ":start");
-        g.expressions.put(value, new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
-        TypeId bool = g.nextTypeId(); g.types.put(bool, new BooleanType(bool, structure.origin()));
-        ExpressionId call = new ExpressionId(line.value() + ":isStart");
-        g.expressions.put(call, new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(g.builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
-        SymbolId constraint = new SymbolId(line.value() + ":startConstraint");
-        var header = new SymbolHeader(constraint, SymbolKind.CONSTRAINT, DeclaredName.synthetic("StartSegment"), Optional.of(line), 0,
-                structure.origin(), Optional.empty(), owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
-        g.symbols.put(constraint, new ConstraintSymbol(header, new MandatoryConstraint(Optional.empty(), call), Optional.empty()));
-        g.symbols.put(line, new StructureSymbol(structure.header(), structure.baseType(), structure.members(), List.of(constraint)));
-    }
-
     private TypeId collection(DeclInfo owner, SymbolId structure) {
         TypeId element = g.nextTypeId(); g.types.put(element, new StructureValueType(element, owner.origin(), Optional.of(structure), List.of()));
         TypeId list = g.nextTypeId(); g.types.put(list, new CollectionType(list, owner.origin(), CollectionKind.LIST,
@@ -456,14 +434,17 @@ final class ViewBuilder {
     private SymbolId syntheticStructure(DeclInfo owner, GeometryType geometry, String name, Map<String, TypeId> fields) {
         SymbolId id = new SymbolId(owner.id().value() + ":inspection:" + geometry.id().value() + ":" + name);
         if (g.symbols.containsKey(id)) return id;
+        var canonical = g.lines.predefined(owner, "INTERLIS." + name, Set.of(SymbolKind.STRUCTURE)).orElseThrow();
         var header = new SymbolHeader(id, SymbolKind.STRUCTURE, DeclaredName.synthetic(name), Optional.of(owner.id()), 0,
-                new Origin.PredefinedOrigin(owner.language(), "INTERLIS." + name), Optional.empty(), owner.language(),
+                new Origin.DerivedOrigin(canonical, DerivationKind.CONTEXTUALIZATION), Optional.empty(), owner.language(),
                 Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
         List<SymbolId> attributes = new ArrayList<>(); List<EffectiveMember> effective = new ArrayList<>();
         for (var field : fields.entrySet()) {
             SymbolId attr = new SymbolId(id.value() + ":" + field.getKey());
+            var template = (StructureSymbol)g.symbols.get(canonical);
+            var original = template.members().stream().filter(member -> g.symbols.get(member).name().value().equals(field.getKey())).findFirst().orElseThrow();
             var h = new SymbolHeader(attr, SymbolKind.ATTRIBUTE, DeclaredName.synthetic(field.getKey()), Optional.of(id), attributes.size(),
-                    header.origin(), Optional.empty(), owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
+                    new Origin.DerivedOrigin(original, DerivationKind.CONTEXTUALIZATION), Optional.empty(), owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
             g.symbols.put(attr, new AttributeSymbol(h, field.getValue(), field.getKey().equals("SegmentEndPoint") || field.getKey().equals("ArcPoint"), false, false, false, Optional.empty(), List.of()));
             g.declaredTypes.put(attr, field.getValue()); attributes.add(attr);
             effective.add(new EffectiveMember(attr, id, List.of(id), effective.size(), EffectiveMemberOrigin.LOCAL, false));

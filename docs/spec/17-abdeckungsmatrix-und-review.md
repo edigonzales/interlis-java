@@ -1,5 +1,10 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+L1-1 präzisiert die bestehenden META-/SEM-Verträge für die vordefinierten
+INTERLIS-Modellowner, gewöhnliche Geometriestrukturen und das ausdrücklich
+freigegebene TYPE-MODEL-Profil. Kanonische Verträge bleiben in Kapitel 05/06
+und API-Register 16; dieser Hinweis behauptet keine unabhängige Abnahme.
+
 Der laufende G2-Abschluss folgt dem [Ausführungsvertrag A–I](../evidence/stabilization/g2-completion-plan.md).
 Die versionierte G2-Regelmatrix trennt den vorhandenen Implementierungs-/Teststand
 von der unabhängigen Abnahme. Ein älteres VERIFIED ist ohne neues Review kein

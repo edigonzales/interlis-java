@@ -129,6 +129,14 @@ Wenn ein unverändertes Altwerkzeug für den einmaligen Paritätsvergleich noch 
 
 ## 6. Phase 1 – Sprachfundament
 
+Nutzerauftrag vom 29.10.2026: Phase 1 wird durchgehend bis zum unabhängigen
+Phasen-PASS ausgeführt, ohne manuelle Stopps zwischen L1-1, L1-2 und L1-3.
+Die Kandidatencommits, separaten OpenCode-/DeepSeek-Direktreviews und PASS-Gates
+bleiben verbindlich. Technische Findings werden selbständig korrigiert und
+erneut geprüft; nach PASS beginnt automatisch der nächste Abschnitt. Nur eine
+neue fachliche Nutzerentscheidung oder ein ohne Nutzerhilfe unlösbarer Blocker
+erfordert Rückfrage. Phase 2 beginnt dadurch nicht automatisch.
+
 Der Schwerpunkt liegt auf realen Abweichungen und unvollständig nachgewiesenen Regeln aus bisherigen B–D-Schritten. `GraphBuilder.java` und `SyntaxTreeBuilder.java` bleiben bevorzugt Gegenstand **kleiner, gezielter Änderungen** statt eines spontanen Totalrefactorings.
 
 | Lieferung | ID | Verbindliche Abnahmebedingung |

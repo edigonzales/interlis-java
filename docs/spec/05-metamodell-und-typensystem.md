@@ -975,6 +975,16 @@ ExpressionId erreichbar. SurfaceEdge besitzt gerichtete Geometry; nur in 2.3
 kommt LineAttrs mit gebundener Struktur bzw. ANYSTRUCTURE hinzu. 2.4 hat
 Linienattribute abgeschafft (Vorwort, §3.15, Anhang A): LINE ATTRIBUTES wird als
 versionswidrig abgelehnt, nicht als Implementierungslücke. SurfaceBoundary enthält Lines.
+L1-1 bindet `INTERLIS.LineGeometry`, `INTERLIS.SurfaceEdge` und
+`INTERLIS.SurfaceBoundary` auch als gewöhnliche Strukturtypen. Die Deklarationen
+aus Anhang A bewahren LIST {0..*}, gerichtete aber noch unbestimmte POLYLINE,
+optionale Felder, nur in 2.3 ANYSTRUCTURE-LineAttrs und die echte gebundene
+StartSegment-Bedingung mit leerem vordefiniertem Ausdrucksbereich.
+Inspektionskopien erhalten `DerivedOrigin(canonical, CONTEXTUALIZATION)` statt
+derselben `PredefinedOrigin`; ihre Mitglieder und Bedingungen verweisen auf
+die entsprechenden kanonischen Deklarationen. Konkrete Stützpunkttypen bleiben
+auf die jeweilige Inspektion beschränkt. Die öffentliche Namensabfrage liefert
+die kanonische Deklaration eindeutig.
 Listen und Optionalität entsprechen den vordefinierten Deklarationen.
 AREA-Inspektionen erlauben THISAREA/THATAREA, aber kein ALL OF (2.3 §2.15,
 2.4 §3.15). Eigene Kurvensegmente verwenden dieselben kontextbezogenen
@@ -1413,6 +1423,17 @@ ohne die fachliche Bedeutung von GLOBAL zu verkleinern.
 
 Vordefinierte OID-Domänen besitzen innerhalb eines Sprachprofils eine kanonische
 Identität, `PredefinedOrigin` und keine künstliche Benutzermodell-Eigentümerschaft.
+L1-1 ergänzt den tatsächlichen vordefinierten Owner `INTERLIS` je Sprachversion:
+ein `ModelSymbol` mit `ModelKind.TYPE`, Sprache `en`, Issuer
+`http://www.interlis.ch/`, Version `2005-06-16` und CONTRACTED in 2.3 bzw.
+`2014-07-09` ohne CONTRACTED in 2.4. Seine `members()` enthalten die im
+Snapshot materialisierten vordefinierten Deklarationen in Anhang-A-Reihenfolge;
+die bisherige bedarfsabhängige Materialisierung wird dadurch nicht zur
+Vollinventur unbenutzter Deklarationen. Deren Owner ist dieses vordefinierte
+Modell; explizite `IMPORTS INTERLIS` besitzen sein kanonisches Ziel.
+Qualifizierte Quellreferenzen binden auch ihr INTERLIS-Präfix an dieses Modell.
+Es erhält keinen erfundenen Quellbereich und ist kein angefordertes Benutzer-
+Rootmodell. Gleiche Namen aus 2.3 und 2.4 behalten verschiedene Identitäten.
 2.3 definiert ANYOID/I32OID/STANDARDOID/UUIDOID ohne ABSTRACT/EXTENDS (2.8.9,
 Anhang A); 2.4 definiert NOOID, ANYOID(ABSTRACT) EXTENDS NOOID und die drei
 konkreten Domänen EXTENDS ANYOID (3.8.9, Anhang A). Trägerwerte und Herkunft

@@ -279,6 +279,7 @@ final class GraphBuilder {
             checkWork();
             languages.add(model.header().languageVersion());
         }
+        PredefinedModels.finish(this, languages);
         SemanticGraph graph = new SemanticGraph(
                 snapshotId,
                 symbols.values(), types.values(), expressions.values().stream().toList(),
@@ -1788,6 +1789,7 @@ final class GraphBuilder {
 
     private Map<SymbolId, TopicSymbol.GenericBinding> modelContexts(SymbolId model,
             Map<SymbolId, Map<SymbolId, TopicSymbol.GenericBinding>> completed, Set<SymbolId> active) {
+        if (symbols.get(model) instanceof ModelSymbol predefined && predefined.origin() instanceof Origin.PredefinedOrigin) return Map.of();
         if (completed.containsKey(model)) return completed.get(model);
         if (!active.add(model)) return Map.of(); // ImportBinder diagnoses cycles.
         Map<SymbolId, TopicSymbol.GenericBinding> result = new LinkedHashMap<>();
@@ -1884,7 +1886,8 @@ final class GraphBuilder {
         if (modelSyntax.modelKind() == guru.interlis.model.ModelKind.TYPE) {
             for (var child : index.children(decl.id())) {
                 checkWork();
-                if (Set.of(SymbolKind.TOPIC, SymbolKind.CLASS, SymbolKind.PARAMETER, SymbolKind.METADATA_BASKET).contains(child.kind()))
+                if (Set.of(SymbolKind.TOPIC, SymbolKind.PARAMETER, SymbolKind.METADATA_BASKET).contains(child.kind())
+                        || child.kind() == SymbolKind.CLASS && !child.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
                     emitRule(child, "TYPE MODEL may only declare type definitions", "TYPE_MODEL_CONTENT");
             }
         }
@@ -1937,6 +1940,7 @@ final class GraphBuilder {
                     break;
                 }
             }
+            if (site.modelName().equals("INTERLIS")) target = PredefinedModels.ensure(this, entry.declaration().language());
             imports.add(new ModelImport(site.modelName(), site.unqualified(), site.range(),
                     Optional.ofNullable(target)));
         }
@@ -5537,10 +5541,10 @@ final class GraphBuilder {
             checkWork();
             var segment = name.segments().get(i);
             if (i < name.segments().size() - 1) {
-                current = current == null ? null : index.byId(current).flatMap(DeclInfo::owner).orElse(null);
-                while (current != null && !index.byId(current).orElseThrow().name().equals(segment.text())) {
+                current = referenceOwner(current);
+                while (current != null && !referenceName(current).equals(segment.text())) {
                     checkWork();
-                    current = index.byId(current).flatMap(DeclInfo::owner).orElse(null);
+                    current = referenceOwner(current);
                 }
             }
             segments.addFirst(new ReferenceSegment(segment.text(), segment.range(), Optional.ofNullable(current)));
@@ -5551,6 +5555,23 @@ final class GraphBuilder {
                 : new BindingResolution.BoundTarget(target);
         references.put(id, new NameReference(id, new ScopeId(owner.id().value()), usage,
                 segments, name.range(), resolution));
+    }
+
+    private SymbolId referenceOwner(SymbolId symbol) {
+        if (symbol == null) return null;
+        var declaration = index.byId(symbol);
+        if (declaration.isPresent()) return declaration.orElseThrow().owner().orElse(null);
+        var value = symbols.get(symbol);
+        if (value == null) return null;
+        if (value.owner().isPresent()) return value.owner().orElseThrow();
+        return value.origin() instanceof Origin.PredefinedOrigin predefined && predefined.key().startsWith("INTERLIS.")
+                ? PredefinedModels.ensure(this, predefined.language()) : null;
+    }
+
+    private String referenceName(SymbolId symbol) {
+        return index.byId(symbol).map(DeclInfo::name).orElseGet(() -> {
+            String name = symbols.get(symbol).name().value(); return name.substring(name.lastIndexOf('.') + 1);
+        });
     }
 
     private AnalysisCoverage buildCoverage() {

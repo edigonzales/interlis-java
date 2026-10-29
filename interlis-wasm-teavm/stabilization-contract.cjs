@@ -31,6 +31,21 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L1-1: ordinary appendix-A structures and the approved TYPE MODEL profile.
+  let foundationCases = 0;
+  for (const version of ['2.3', '2.4']) {
+    const model = body => `INTERLIS ${version}; CONTRACTED MODEL F AT "https://example.org" VERSION "1" = ${body} END F.`;
+    for (const name of ['LineGeometry', 'SurfaceEdge', 'SurfaceBoundary']) {
+      await verify(model(`STRUCTURE Holder=value:INTERLIS.${name};END Holder;`), 'succeeded');
+      await verify(model(`IMPORTS UNQUALIFIED INTERLIS;STRUCTURE Holder=value:${name};END Holder;`), 'succeeded');
+      foundationCases += 2;
+    }
+    await verify(model('STRUCTURE Holder=value:SurfaceEdge;END Holder;'), 'rejected');
+    await verify(model('STRUCTURE Holder=value:INTERLIS.surfaceEdge;END Holder;'), 'rejected');
+    await verify(model('CLASS C(ABSTRACT)=END C;').replace('CONTRACTED MODEL', 'CONTRACTED TYPE MODEL'), 'succeeded');
+    await verify(model('TOPIC T=END T;').replace('CONTRACTED MODEL', 'CONTRACTED TYPE MODEL'), 'rejected');
+    foundationCases += 4;
+  }
   // L0B-3: legacy function annotations retain source validity in every backend.
   let legacyMetadataCases = 0;
   for (const version of ['2.3', '2.4']) for (const newline of ['\n', '\r\n']) {
@@ -1745,7 +1760,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

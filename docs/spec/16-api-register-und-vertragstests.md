@@ -4,6 +4,12 @@
 
 Dieses Register ordnet die gemeinsamen Typen, Fabriken und Dienste eindeutig einem Modul und Fachvertrag zu. Die vollständigen Signaturen und Methodenbedingungen stehen im verlinkten Kapitel. Eine Tabellenbeschreibung hier ist kein Auftrag, daneben eine zweite anders benannte Implementierung einzuführen. Nicht öffentliche Hilfsmethoden dürfen im jeweiligen Arbeitspaket angepasst werden, sofern die beobachtbaren Verträge und Abnahmen erhalten bleiben.
 
+L1-1 verwendet die bestehenden `ModelSymbol`, `StructureSymbol`, `Origin` und
+Querytypen für kanonische INTERLIS-Modellowner und gewöhnliche vordefinierte
+Geometriestrukturen. Es entsteht keine neue öffentliche Signatur. Owner,
+Sprachversion, bedarfsabhängig materialisierte Mitglieder, Import-/Präfixziele
+und kanonische gegenüber kontextbezogener Herkunft sind in Kapitel 05 geregelt.
+
 Java-Blöcke in der Spezifikation zeigen Signaturen und Varianten; Bodies und Imports sind teilweise absichtlich ausgelassen. Das Repository MUSS zusätzlich tatsächlich kompilierende API-Beispiele enthalten. Die Spezifikation behauptet keine erfolgreiche Kompilierung der nur deklarativ abgebildeten Klassenblöcke.
 
 Vorab-API 0.2 konkretisiert die Funktionssignaturen mit `TypeId` in

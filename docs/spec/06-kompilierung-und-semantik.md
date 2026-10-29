@@ -842,3 +842,13 @@ Sprachprofilregeln. Andere CONTRACTED-Voraussetzungen bleiben unverändert.
 Die sechs betroffenen Originalfälle werden reguläre PASS-Fälle und behalten
 zusätzliche gepinnte Positiv-/Negativkontrollen; die übrigen zwölf
 Referenzausnahmen und offenen Normentscheidungen sind davon nicht freigegeben.
+
+### L1-1: freigegebenes TYPE-MODEL-Kompatibilitätsprofil
+
+Nutzerentscheidung vom 29.10.2026: `TYPE MODEL` darf in INTERLIS 2.3 und 2.4
+neben Units, Domains, Funktionen und Linienformen auch Strukturen und abstrakte
+Klassen deklarieren. Dies entspricht dem frisch geprüften ili2c-5.6.9-Verhalten
+und ist das ausdrücklich gewählte Kompatibilitätsprofil zur engeren Aufzählung
+in 2.3 §2.5.1 bzw. 2.4 §3.5.1. TOPIC, konkrete Klassen, Laufzeitparameter und
+Metadatenbehälter bleiben dort unzulässig. Andere Modell- und Vererbungsregeln
+werden nicht aufgehoben. Originalquellen und Suitepins bleiben unverändert.

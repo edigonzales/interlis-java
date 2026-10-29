@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "status": "CANDIDATE_ONLY",
   "purpose": "Keyword candidates only; no assertion, execution or acceptance claim",
-  "testMethods": 615,
+  "testMethods": 622,
   "conditions": [
     {
       "id": "NORM:2.3:2.1:C01",
@@ -1782,8 +1782,8 @@
           "suite": "guru.interlis.compiler.PredefinedOidIdentityContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedOidIdentityContractTest.java",
           "method": "oidReferencesFunctionTypesCollectionsAndOidRulesRetainEachSourceReference",
-          "methodStart": 5428,
-          "methodEnd": 8555,
+          "methodStart": 5639,
+          "methodEnd": 8766,
           "methodSha256": "d9d724bb1e32c382cc475e88fd7a18fef7943f801b24fac0d212f3e7016dd296",
           "score": 49,
           "status": "CANDIDATE_ONLY"
@@ -5800,8 +5800,8 @@
           "suite": "guru.interlis.compiler.PredefinedOidIdentityContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedOidIdentityContractTest.java",
           "method": "predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance",
-          "methodStart": 4304,
-          "methodEnd": 5422,
+          "methodStart": 4515,
+          "methodEnd": 5633,
           "methodSha256": "de0fa1e22214a29a49e731fae3f76b6f1048f399f4f7c247868fed0d08eb639b",
           "score": 4,
           "status": "CANDIDATE_ONLY"
@@ -5828,8 +5828,8 @@
           "suite": "guru.interlis.compiler.PredefinedOidIdentityContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedOidIdentityContractTest.java",
           "method": "predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance",
-          "methodStart": 4304,
-          "methodEnd": 5422,
+          "methodStart": 4515,
+          "methodEnd": 5633,
           "methodSha256": "de0fa1e22214a29a49e731fae3f76b6f1048f399f4f7c247868fed0d08eb639b",
           "score": 4,
           "status": "CANDIDATE_ONLY"
@@ -6874,8 +6874,8 @@
           "suite": "guru.interlis.compiler.PredefinedOidIdentityContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedOidIdentityContractTest.java",
           "method": "oidReferencesFunctionTypesCollectionsAndOidRulesRetainEachSourceReference",
-          "methodStart": 5428,
-          "methodEnd": 8555,
+          "methodStart": 5639,
+          "methodEnd": 8766,
           "methodSha256": "d9d724bb1e32c382cc475e88fd7a18fef7943f801b24fac0d212f3e7016dd296",
           "score": 52,
           "status": "CANDIDATE_ONLY"
@@ -13210,8 +13210,8 @@
           "suite": "guru.interlis.compiler.ModelKindContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelKindContractTest.java",
           "method": "typeModelPermittedFamiliesExposePublicSymbolsAndQueries",
-          "methodStart": 3233,
-          "methodEnd": 5404,
+          "methodStart": 3380,
+          "methodEnd": 5551,
           "methodSha256": "556bf073c88b15c2d1bec9b5aa81937ad34b1c32e231d1ef4b4f7c2d485f6124",
           "score": 44,
           "status": "CANDIDATE_ONLY"

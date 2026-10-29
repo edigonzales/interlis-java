@@ -31,6 +31,16 @@ Details, öffentliche Verträge und tatsächliche Zahlen:
 [Lieferbericht](g2/implementation/L0B-3.md). Unabhängiges Urteil weiterhin separat
 in [STATUS](g2/STATUS.md); L1-1 ist nicht begonnen.
 
+Phase 1 ist seit dem Nutzerauftrag vom 29.10.2026 durchgehend bis zur
+unabhängigen Phasenabnahme beauftragt. L1-1 (AC1-01/02; SRC-002/005,
+SYN-002/004/005/006/015, META-003/006/008/010/011/014/015, SEM-003/005/010,
+TEST-003/009/011/012) ergänzt die gewöhnliche Bindung vordefinierter
+Geometriestrukturen, kanonische INTERLIS-Modellowner und deren Import-/
+Quellqueries. Die ausdrücklich freigegebene TYPE-MODEL-Kompatibilität erlaubt
+Strukturen und abstrakte Klassen in beiden Sprachen; Topics bleiben verboten.
+Der operative Status und unabhängige Teil-/Phasenurteile bleiben ausschliesslich
+in [STATUS](g2/STATUS.md); Phase 2 ist nicht begonnen.
+
 ## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
 Massgeblich ist der [Ausführungs- und Reviewvertrag](evidence/stabilization/g2-completion-plan.md).

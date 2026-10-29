@@ -48,7 +48,8 @@ class ModelKindContractTest {
             org.junit.jupiter.api.Assertions.assertInstanceOf(CompilationOutcome.Succeeded.class,compileProfile(version,"CONTRACTED TYPE",
                     "UNIT Distance; DOMAIN D=0..10; FUNCTION f(v:BOOLEAN):BOOLEAN;"));
             org.junit.jupiter.api.Assertions.assertInstanceOf(CompilationOutcome.Succeeded.class,compileProfile(version,"TYPE","STRUCTURE S=value:TEXT; END S;"));
-            for(var invalid:List.of("CLASS C (ABSTRACT)=END C;","TOPIC T=END T;","PARAMETER p:BOOLEAN;")) {
+            org.junit.jupiter.api.Assertions.assertInstanceOf(CompilationOutcome.Succeeded.class,compileProfile(version,"TYPE","CLASS C (ABSTRACT)=END C;"));
+            for(var invalid:List.of("CLASS C=END C;","TOPIC T=END T;","PARAMETER p:BOOLEAN;")) {
                 var rejected=org.junit.jupiter.api.Assertions.assertInstanceOf(CompilationOutcome.Rejected.class,compileProfile(version,"CONTRACTED TYPE",invalid));
                 assertTrue(rejected.analysis().diagnostics().toString().contains("TYPE_MODEL_CONTENT"));
                 org.junit.jupiter.api.Assertions.assertEquals(java.util.Set.of(RejectionReason.SOURCE_ERRORS),rejected.rejection().reasons());

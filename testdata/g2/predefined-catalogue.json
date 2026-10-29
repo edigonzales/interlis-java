@@ -46,15 +46,21 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 221398,
-          "end": 222790,
+          "start": 221826,
+          "end": 223218,
           "sha256": "b73bffff76736e80989af5e971eadaf8c9026b97e87fddcb4d1ff13781d4ef97"
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 222742,
-          "end": 225338,
+          "start": 223170,
+          "end": 225766,
           "sha256": "9ce183dde14c6d6ae63f6243cceaa10aa17555f9bf15ebd410bf02584129baa0"
+        },
+        {
+          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java",
+          "start": 0,
+          "end": 5180,
+          "sha256": "d284d46cd9545c5eefca0d41399b5a3f7b620535dbac302287b8e463beb7840f"
         }
       ],
       "sourceBindingNames": [
@@ -113,8 +119,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -173,8 +179,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -232,8 +238,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -292,8 +298,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -352,8 +358,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -412,8 +418,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -472,8 +478,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -532,8 +538,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -592,8 +598,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -652,8 +658,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -712,8 +718,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -772,8 +778,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -832,8 +838,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -892,8 +898,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -952,8 +958,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1012,8 +1018,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1072,8 +1078,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1132,8 +1138,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1192,8 +1198,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1252,8 +1258,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1312,8 +1318,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1372,8 +1378,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1432,8 +1438,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 149054,
-          "end": 151433,
+          "start": 149482,
+          "end": 151861,
           "sha256": "020f86b14961d07923fb00962bbd2beab0d0882ad14e01b3269eba7ed133e266"
         }
       ],
@@ -1792,8 +1798,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 234052,
-          "end": 241363,
+          "start": 234480,
+          "end": 241791,
           "sha256": "9b56cc1be0e99d2c755e0d22a0f3f3f61981866d2d829744b5be2f8e9337fd05"
         }
       ],
@@ -1852,8 +1858,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 234052,
-          "end": 241363,
+          "start": 234480,
+          "end": 241791,
           "sha256": "9b56cc1be0e99d2c755e0d22a0f3f3f61981866d2d829744b5be2f8e9337fd05"
         }
       ],
@@ -1912,8 +1918,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 221398,
-          "end": 222790,
+          "start": 221826,
+          "end": 223218,
           "sha256": "b73bffff76736e80989af5e971eadaf8c9026b97e87fddcb4d1ff13781d4ef97"
         }
       ],
@@ -1972,8 +1978,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -2032,8 +2038,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 221398,
-          "end": 222790,
+          "start": 221826,
+          "end": 223218,
           "sha256": "b73bffff76736e80989af5e971eadaf8c9026b97e87fddcb4d1ff13781d4ef97"
         }
       ],
@@ -2092,8 +2098,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 221398,
-          "end": 222790,
+          "start": 221826,
+          "end": 223218,
           "sha256": "b73bffff76736e80989af5e971eadaf8c9026b97e87fddcb4d1ff13781d4ef97"
         }
       ],
@@ -2141,8 +2147,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 222742,
-          "end": 225338,
+          "start": 223170,
+          "end": 225766,
           "sha256": "9ce183dde14c6d6ae63f6243cceaa10aa17555f9bf15ebd410bf02584129baa0"
         }
       ],
@@ -2201,8 +2207,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 222742,
-          "end": 225338,
+          "start": 223170,
+          "end": 225766,
           "sha256": "9ce183dde14c6d6ae63f6243cceaa10aa17555f9bf15ebd410bf02584129baa0"
         }
       ],
@@ -2261,8 +2267,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 222742,
-          "end": 225338,
+          "start": 223170,
+          "end": 225766,
           "sha256": "9ce183dde14c6d6ae63f6243cceaa10aa17555f9bf15ebd410bf02584129baa0"
         }
       ],
@@ -2321,8 +2327,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 222742,
-          "end": 225338,
+          "start": 223170,
+          "end": 225766,
           "sha256": "9ce183dde14c6d6ae63f6243cceaa10aa17555f9bf15ebd410bf02584129baa0"
         }
       ],
@@ -2381,8 +2387,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 222742,
-          "end": 225338,
+          "start": 223170,
+          "end": 225766,
           "sha256": "9ce183dde14c6d6ae63f6243cceaa10aa17555f9bf15ebd410bf02584129baa0"
         }
       ],
@@ -2442,8 +2448,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -2741,8 +2747,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -2801,8 +2807,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -2861,8 +2867,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -2921,8 +2927,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -2981,8 +2987,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -3041,8 +3047,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -3101,8 +3107,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -3161,8 +3167,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -3221,8 +3227,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -3281,8 +3287,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 259689,
-          "end": 279904,
+          "start": 260117,
+          "end": 280332,
           "sha256": "abe9090219556aab29c2d14cc74b35ada0668eae0f02cf7593d910d9b32873ae"
         }
       ],
@@ -4122,8 +4128,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -4182,8 +4188,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -4242,8 +4248,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -4302,8 +4308,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -4362,8 +4368,14 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
+        },
+        {
+          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
+          "start": 14965,
+          "end": 20157,
+          "sha256": "2121c4447703bb3e88da129281a434c0292e3657e63980bf56f6fcc9ef1abc1a"
         }
       ],
       "sourceBindingNames": [
@@ -4422,8 +4434,14 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
+        },
+        {
+          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
+          "start": 14965,
+          "end": 20157,
+          "sha256": "2121c4447703bb3e88da129281a434c0292e3657e63980bf56f6fcc9ef1abc1a"
         }
       ],
       "sourceBindingNames": [
@@ -4482,8 +4500,14 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
+        },
+        {
+          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
+          "start": 14965,
+          "end": 20157,
+          "sha256": "2121c4447703bb3e88da129281a434c0292e3657e63980bf56f6fcc9ef1abc1a"
         }
       ],
       "sourceBindingNames": [
@@ -5922,8 +5946,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -5982,8 +6006,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -6042,8 +6066,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
           "start": 11486,
-          "end": 16126,
-          "sha256": "b32f69d5b24719659a6671827960faa6da22c600d214847ce46ac3c8a74f748d"
+          "end": 21865,
+          "sha256": "06b00a0e3c03abf2b3e9afc00704921cd9f613e0a11b15325019c7dd57c10879"
         }
       ],
       "sourceBindingNames": [
@@ -6102,8 +6126,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
       "sourceBindingNames": [
@@ -6151,8 +6175,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
       "sourceBindingNames": [
@@ -6211,8 +6235,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
       "sourceBindingNames": [
@@ -6271,8 +6295,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
       "sourceBindingNames": [
@@ -6511,8 +6535,8 @@
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
           "start": 29051,
-          "end": 34601,
-          "sha256": "4b78026eb5c7137070661e17bb8249bc8e5d15a9953df00dc72288a3110c87dd"
+          "end": 32370,
+          "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
       "sourceBindingNames": [
@@ -6576,8 +6600,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -6642,8 +6666,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -6708,8 +6732,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -6774,8 +6798,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -6840,8 +6864,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -6906,8 +6930,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -6972,8 +6996,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7038,8 +7062,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7104,8 +7128,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7170,8 +7194,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7236,8 +7260,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7302,8 +7326,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7368,8 +7392,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7423,8 +7447,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7478,8 +7502,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7533,8 +7557,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7588,8 +7612,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7643,8 +7667,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7712,8 +7736,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7768,8 +7792,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7823,8 +7847,8 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7859,8 +7883,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 188358,
-          "end": 189063,
+          "start": 188786,
+          "end": 189491,
           "sha256": "b8388b6921f38cc18177867498c8a9a91680f4d524ec954f11174ed15f51d008"
         }
       ],
@@ -7887,8 +7911,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         }
       ],
@@ -7915,8 +7939,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 324935,
-          "end": 325609,
+          "start": 325363,
+          "end": 326037,
           "sha256": "1000cbd1efe7a1bb91b3a66423ee6d79a07c5596c03572ed96a4cedbc5fe8d91"
         }
       ],
@@ -7944,8 +7968,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 324258,
-          "end": 324984,
+          "start": 324686,
+          "end": 325412,
           "sha256": "ca36ae8229d12be79cdf37ca41949d62d84909f9a62d10a28f83a23327f5ea9f"
         }
       ],
@@ -7972,8 +7996,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 324258,
-          "end": 324984,
+          "start": 324686,
+          "end": 325412,
           "sha256": "ca36ae8229d12be79cdf37ca41949d62d84909f9a62d10a28f83a23327f5ea9f"
         }
       ],
@@ -8000,8 +8024,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8111,8 +8135,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8177,8 +8201,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8302,8 +8326,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8419,8 +8443,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8494,8 +8518,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8552,8 +8576,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8591,8 +8615,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8681,8 +8705,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8730,8 +8754,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8779,8 +8803,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8853,8 +8877,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8900,8 +8924,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8947,8 +8971,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -8994,8 +9018,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {
@@ -9041,8 +9065,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 279866,
-          "end": 283497,
+          "start": 280294,
+          "end": 283925,
           "sha256": "a83984b024a4eddf0c02cecf248ce8046084c00b253cd696559b4e0136f3d68b"
         },
         {

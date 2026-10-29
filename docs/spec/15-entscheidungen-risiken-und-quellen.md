@@ -1,5 +1,11 @@
 # Entscheidungen, offene Nachweise und Quellen
 
+L1-1 / Nutzerentscheidung 29.10.2026: TYPE MODEL akzeptiert in 2.3 und 2.4
+Strukturen und abstrakte Klassen wie ili2c; Topics bleiben verboten. Grundlage:
+engere Aufzählung in 2.3 §2.5.1 / 2.4 §3.5.1 und frisch ausgeführte Positiv-/
+Negativkontrollen mit ili2c 5.6.9. Fachlicher Vertrag: Kapitel 06; tatsächliche
+Prozessnachweise und Nutzerwortlaut im L1-1-Implementierungsbericht.
+
 ## 1. Status und Evidenzgrenze
 
 Die Spezifikation hat Stand 18. Oktober 2026. Sie verbindet Anforderungen aus dem Gespräch mit Repositoryanalyse und einem tatsächlich ausgeführten kleinen Portabilitätsversuch. Die neue Compilerimplementierung, ihre hier beschriebenen Java-APIs, ein Gradle-Produktbuild und die vollständigen Freigabetests sind zukünftige Arbeit.

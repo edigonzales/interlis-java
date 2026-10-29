@@ -42,7 +42,9 @@ class PredefinedOidIdentityContractTest {
         var graph=analysis.semanticGraph();var domain=predefined(analysis,shortName,version);
         var origin=new Origin.PredefinedOrigin(version,"INTERLIS."+shortName);
         assertEquals(origin,domain.origin());assertEquals(version,domain.languageVersion());
-        assertTrue(domain.owner().isEmpty());assertTrue(domain.nameRange().isEmpty());
+        var owner=assertInstanceOf(ModelSymbol.class,graph.symbol(domain.owner().orElseThrow()).orElseThrow());
+        assertEquals(new Origin.PredefinedOrigin(version,"INTERLIS"),owner.origin());assertTrue(owner.members().contains(domain.id()));
+        assertTrue(domain.nameRange().isEmpty());
         assertFalse(domain.header().has(Modifier.FINAL));
         assertEquals(version==LanguageVersion.ILI24 && shortName.equals("ANYOID"),domain.header().has(Modifier.ABSTRACT));
         String base=version==LanguageVersion.ILI23 || shortName.equals("NOOID")?null:shortName.equals("ANYOID")?"NOOID":"ANYOID";

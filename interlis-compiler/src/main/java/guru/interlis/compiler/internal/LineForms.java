@@ -169,7 +169,8 @@ final class LineForms {
         boolean form = name.equals("STRAIGHTS") || name.equals("ARCS");
         if (form && !kinds.contains(SymbolKind.LINE_FORM)) return Optional.empty();
         if (!form && (!kinds.contains(SymbolKind.STRUCTURE) || !Set.of("INTERLIS.LineSegment", "INTERLIS.StartSegment",
-                "INTERLIS.StraightSegment", "INTERLIS.ArcSegment").contains(name))) return Optional.empty();
+                "INTERLIS.StraightSegment", "INTERLIS.ArcSegment", "INTERLIS.SurfaceEdge",
+                "INTERLIS.SurfaceBoundary", "INTERLIS.LineGeometry").contains(name))) return Optional.empty();
         LanguageVersion language = context.language();
         SymbolId id = id(language, form ? name : name.substring(9));
         if (g.symbols.containsKey(id)) return Optional.of(id);
@@ -180,6 +181,8 @@ final class LineForms {
             return Optional.of(id);
         }
         String shortName = name.substring(9);
+        if (Set.of("SurfaceEdge", "SurfaceBoundary", "LineGeometry").contains(shortName))
+            return Optional.of(geometryStructure(context, shortName));
         Optional<SymbolId> base = shortName.equals("LineSegment") ? Optional.empty()
                 : predefined(context, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE));
         base.ifPresent(parent -> g.baseOf.put(id, parent));
@@ -204,6 +207,65 @@ final class LineForms {
         return Optional.of(id);
     }
 
+    /** Appendix-A declarations retain unspecified geometry rather than borrowing a source vertex. */
+    private SymbolId geometryStructure(DeclInfo context, String name) {
+        g.checkWork();
+        var language = context.language(); var h = header(language, name, SymbolKind.STRUCTURE, Optional.empty(), Set.of());
+        List<SymbolId> members = new ArrayList<>();
+        if (name.equals("SurfaceEdge")) {
+            TypeId geometry = g.nextTypeId();
+            g.types.put(geometry, new GeometryType(geometry, h.origin(), GeometryKind.POLYLINE, List.of(),
+                    Optional.empty(), Optional.empty(), true, false, Optional.empty()));
+            members.add(attribute(language, h.id(), "Geometry", geometry, false));
+            if (language == LanguageVersion.ILI23) {
+                TypeId attrs = g.nextTypeId(); g.types.put(attrs, new GenericType(attrs, h.origin(), "ANYSTRUCTURE"));
+                members.add(attribute(language, h.id(), "LineAttrs", attrs, false, 1));
+            }
+        } else {
+            String targetName = name.equals("SurfaceBoundary") ? "SurfaceEdge" : "LineSegment";
+            var target = predefined(context, "INTERLIS." + targetName, Set.of(SymbolKind.STRUCTURE)).orElseThrow();
+            TypeId element = g.nextTypeId(); g.types.put(element, new StructureValueType(element, h.origin(), Optional.of(target), List.of()));
+            TypeId list = g.nextTypeId(); g.types.put(list, new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.unboundedFrom(0), element));
+            members.add(attribute(language, h.id(), name.equals("SurfaceBoundary") ? "Lines" : "Segments", list, false));
+        }
+        g.symbols.put(h.id(), new StructureSymbol(h, Optional.empty(), members, List.of()));
+        List<EffectiveMember> effective = new ArrayList<>();
+        for (SymbolId member : members) effective.add(new EffectiveMember(member, h.id(), List.of(h.id()), effective.size(), EffectiveMemberOrigin.LOCAL, false));
+        g.effectiveMembers.put(h.id(), List.copyOf(effective));
+        if (name.equals("LineGeometry")) {
+            var segment = predefined(context, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
+            var start = predefined(context, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
+            var range = new guru.interlis.source.SourceRange(new guru.interlis.source.SourceId("predefined:/INTERLIS-" + language),
+                    guru.interlis.source.SourceRevision.initial(), 0, 0);
+            startConstraint(context, h.id(), segment, start, range);
+        }
+        return h.id();
+    }
+
+    void startConstraint(DeclInfo owner, SymbolId line, SymbolId segment, SymbolId start, guru.interlis.source.SourceRange range) {
+        var structure = (StructureSymbol)g.symbols.get(line);
+        if (!structure.constraints().isEmpty()) return;
+        SymbolId attribute = structure.members().getFirst();
+        TypeId element = g.nextTypeId(); g.types.put(element, new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
+        ExpressionId path = new ExpressionId(line.value() + ":first");
+        g.expressions.put(path, new PathExpression(path, element, ExpressionTypeState.RESOLVED, range, List.of(), new ObjectPath(List.of(
+                new PathStep.AttributeStep("Segments", attribute, range), new PathStep.IndexStep(new PathIndex(PathIndex.Kind.FIRST, Optional.empty()), element, range)))));
+        TypeId classType = g.nextTypeId(); g.types.put(classType, new ClassValueType(classType, structure.origin(), true, List.of(start)));
+        ExpressionId value = new ExpressionId(line.value() + ":start");
+        g.expressions.put(value, new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
+        TypeId bool = g.nextTypeId(); g.types.put(bool, new BooleanType(bool, structure.origin()));
+        ExpressionId call = new ExpressionId(line.value() + ":isStart");
+        g.expressions.put(call, new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(g.builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
+        SymbolId constraint = new SymbolId(line.value() + ":startConstraint");
+        Origin constraintOrigin = structure.origin() instanceof Origin.PredefinedOrigin predefined
+                ? new Origin.PredefinedOrigin(predefined.language(), predefined.key() + ".StartSegment")
+                : new Origin.DerivedOrigin(((StructureSymbol)g.symbols.get(((Origin.DerivedOrigin)structure.origin()).declaredAt())).constraints().getFirst(), DerivationKind.CONTEXTUALIZATION);
+        var header = new SymbolHeader(constraint, SymbolKind.CONSTRAINT, DeclaredName.synthetic("StartSegment"), Optional.of(line), 0,
+                constraintOrigin, Optional.empty(), owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
+        g.symbols.put(constraint, new ConstraintSymbol(header, new MandatoryConstraint(Optional.empty(), call), Optional.empty()));
+        g.symbols.put(line, new StructureSymbol(structure.header(), structure.baseType(), structure.members(), List.of(constraint)));
+    }
+
     private TypeId lineCoord(LanguageVersion language) {
         SymbolId domain = id(language, "LineCoord");
         if (g.declaredTypes.containsKey(domain)) return g.declaredTypes.get(domain);
@@ -215,10 +277,13 @@ final class LineForms {
     }
 
     private SymbolId attribute(LanguageVersion language, SymbolId owner, String name, TypeId type, boolean mandatory) {
+        return attribute(language, owner, name, type, mandatory, 0);
+    }
+    private SymbolId attribute(LanguageVersion language, SymbolId owner, String name, TypeId type, boolean mandatory, int order) {
         var h = header(language, owner.value().substring(owner.value().lastIndexOf(':') + 1) + "." + name,
                 SymbolKind.ATTRIBUTE, Optional.of(owner), Set.of());
         // Attribute names are local even though their predefined identity includes the owning structure.
-        h = new SymbolHeader(h.id(), h.kind(), DeclaredName.declared(name), h.owner(), h.declarationOrder(), h.origin(), h.nameRange(),
+        h = new SymbolHeader(h.id(), h.kind(), DeclaredName.declared(name), h.owner(), order, h.origin(), h.nameRange(),
                 h.languageVersion(), h.documentation(), h.metaAttributes(), h.modifiers(), h.oidRules());
         g.symbols.put(h.id(), new AttributeSymbol(h, type, mandatory, false, false, false, Optional.empty(), List.of()));
         g.declaredTypes.put(h.id(), type); return h.id();
