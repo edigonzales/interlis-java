@@ -1,309 +1,246 @@
-# `interlis-java`: G2-Abschluss mit schlanken Tests und ohne Python
+# INTERLIS Java – G2-Umsetzungsplan mit unabhängiger Abnahme
 
-**Verbindlicher Umsetzungsvorschlag für Codex; unabhängige Prüfung mit OpenCode / DeepSeek Flash 1017**  
-**Fassung:** 2.0, 28. Oktober 2026  
-**Untersuchter Repository-Stand:** `edigonzales/interlis-java`, `main`, Commit `29f079d558ac8acca411f9f2975e85d537672b10`  
-**Status:** Neuer Ausführungsauftrag zur Übernahme ins Repository; die beschriebenen Änderungen wurden noch **nicht** implementiert oder getestet.
+**Version 3.0 · 29. Oktober 2026 · Verbindliche Vorlage für Codex und OpenCode / DeepSeek Flash 1017**  
+Repository: [`edigonzales/interlis-java`](https://github.com/edigonzales/interlis-java)  
+Analysierte Ausgangsbasis: `29f079d558ac8acca411f9f2975e85d537672b10`. Der tatsächliche Arbeitsstand ist beim Start neu festzustellen.  
+Verfahrensvorbild: [`gretl-runtime-umsetzungsplan.md`](https://github.com/edigonzales/gretl-runtime/blob/main/docs/implementation/project-subprojects/gretl-runtime-umsetzungsplan.md).
 
-> **Leitsatz:** Nicht mehr die Verwaltung von Nachweisen optimieren, sondern die Zahl unabhängig bewiesener, korrekt implementierter INTERLIS-Sprachregeln erhöhen. Bestehende Beweise nicht wegwerfen. Die aktive Python-Abhängigkeit vollständig beseitigen, ohne das bewährte Testverhalten neu zu erfinden.
+**Auftrag:** Den Compiler für **INTERLIS 2.3 und 2.4** fachlich korrekt bis zum bestehenden **G2 / WP-20–27** abschliessen und **sämtlichen aktiven Python-Code samt Python-Laufzeitabhängigkeiten aus dem Repository entfernen**. Codex implementiert; ein unabhängiger OpenCode-Agent prüft. Der nächste abnahmeabhängige Lieferabschnitt beginnt **erst nach `PASS`**. Ein grüner Build oder eine unbestätigte Selbstabnahme genügt nicht.
 
-## 1. Auftrag, Grenzen und Rangfolge
+Dieser Plan ändert bewusst die **Arbeits- und Revieworganisation**, nicht die fachlichen Anforderungen. Das frühere starre A–I-Ausführungsverfahren in `docs/evidence/stabilization/g2-completion-plan.md` wird für diesen neuen Auftrag abgelöst; bestehende Normbezüge, Anforderungs-IDs, Originalfälle, Sicherheits- und Architekturverträge sowie historische Berichte bleiben erhalten. Ein Nutzerentscheid ist erforderlich, wenn eine fachliche Normerwartung, Referenzausnahme oder ein verbindlicher Scope verändert werden soll. **P3-Release-/Legacy-CLI-Abnahme, P4-Transfer/Validierung und P5-Datenbanken sind nicht Bestandteil dieses Auftrags.** Ihre bereits vorhandenen G2-relevanten Verbraucherregressionen bleiben bestehen.
 
-### 1.1 Zwei gleichrangige Muss-Ziele
+## 1. Warum der Prozess wie bei GRETL aufgebaut ist
 
-1. Den Compiler für **INTERLIS 2.3 und 2.4** fachlich korrekt und vollständig bis **G2 / WP-20–27** abschliessen. Eine angenommene Quelle ist nur dann korrekt kompiliert, wenn das resultierende öffentliche Schema semantisch stimmt; ein grüner Parser oder Exitcode allein reicht nicht.
-2. **Sämtlichen getrackten aktiven Python-Code aus `interlis-java` entfernen** und Build, Tests, Konformität, Referenzprüfungen, Benchmarks, SDK-Prüfungen, Evidenzprüfung und die notwendigen Reviewabläufe ohne Python betreiben. Dies ist ein hartes frühes Phasengate und ein dauerhaftes Qualitätskriterium.
+Das erfolgreiche GRETL-Verfahren ist die **einzige organisatorische Vorlage**:
 
-### 1.2 Ausdrückliche Umsteuerung des bisherigen Ablaufs
+- **Agent A / Codex:** Implementiert den beauftragten Umfang, liefert fachlich aussagekräftige Tests, führt die Pflichtprüfungen aus und erstellt einen **lokalen Kandidatencommit**.
+- **Agent B / OpenCode mit DeepSeek Flash 1017:** Prüft in einem **frischen Kontext und sauberen separaten Worktree** ausschliesslich den konkreten Commit; liest Code, Norm und Testassertions selbst, führt die erforderlichen Prüfungen aus und entwickelt eigene Gegenproben. Er verändert den Kandidaten nicht.
+- **Genau drei Reviewurteile:** `PASS`, `FAIL`, `BLOCKED`. Bei `FAIL` oder `BLOCKED` gibt es **keine Freigabe** des betroffenen Lieferabschnitts. Nach Korrektur folgt ein **neuer Commit und Review**.
+- **Kennzeichnung:** Alle `AC...`-IDs sind **Abnahmekriterien dieses G2-Ausführungsplans** und nicht mit den ursprünglichen Produktphasen P0–P5 oder historischen K1–K6-Arbeitspaketen zu verwechseln.
+- **Keine Doppelreviews:** Es gibt **einen unabhängigen Review je fachlich geschlossenem Lieferabschnitt**. Bei der **letzten Lieferung einer regulären Phase (ab 0b)** gehören die vollständigen Phasengates und die kumulative Prüfung aller bisherigen Lieferungen **zum selben Review**. Für den vorgeschalteten Pilot `L0A` gelten nur die expliziten Pilotkriterien. Ein zweiter rein administrativer Phasenreview entfällt.
 
-Diese Datei ersetzt nach expliziter Übernahme durch den Nutzer **nur die Ausführungsreihenfolge, die Testtaktung und die Revieworganisation** der bisherigen starren Schritte A–I in `docs/evidence/stabilization/g2-completion-plan.md`. Die vollständigen fachlichen Anforderungen und ihre Normbezüge bleiben bestehen. Insbesondere dürfen keine Normbedingungen, Python-gestützten Negativprüfungen oder bereits festgelegten Abnahmeverträge durch Umbenennen oder Löschen verschwinden.
+`interlis-java` ist sprachlich wesentlich breiter als das aktuelle GRETL-Verbesserungsvorhaben. Darum sind seine Fachphasen in **kleinere, aber zusammenhängende Lieferabschnitte** aufgeteilt. Diese sind grösser als Einzelregeln und kleiner als eine gesamte Compilerphase. Ein einzelner JUnit-Fix innerhalb eines Lieferabschnitts benötigt nicht automatisch eine eigene OpenCode-Abnahme.
 
-Die bestehenden Dokumente `AGENTS.md`, `docs/spec/04-*` bis `09-*`, `13-*`, `14-*`, `16-*` und `17-*` bleiben fachlich massgeblich. Bei echten fachlichen Widersprüchen gilt: Originalnorm und freigegebener Anforderungsvertrag vor Implementierung; erforderliche Nutzerentscheidung ausdrücklich festhalten. Historische Prüfberichte werden **nicht rückwirkend umgeschrieben**. Die neuen Steuerungsdateien erhalten einen einzigen aktiven Einstieg unter `docs/g2/`.
+### 1.1 Verbindlicher Zyklus für jeden Lieferabschnitt
 
-**Nicht beauftragt:** P3-Produktfreigabe und vollständige Legacy-CLI-Kompatibilität, P4 (Transfer/Validierung), P5 (DB), eine generelle Neuentwicklung der Architektur, zusätzliche Laufzeitframeworks oder eine neue allumfassende Testplattform. Vorhandene LSP-, CLI-, SDK- und Browserverträge bleiben jedoch Regressionspflicht für G2-relevante Änderungen.
+1. **Basis:** Prüfe `git status`, `git rev-parse HEAD`, Toolchain und die `PASS`-Abnahme des Vorgängers. Erhalte fremde Änderungen. Lies `AGENTS.md`, diesen Plan, die einschlägigen Spezifikationskapitel und die relevanten Originalnormen.
+2. **Umfang:** Benenne die konkreten Kriterien-IDs aus den Tabellen unten und die betroffenen bisherigen Anforderungs-/Norm-IDs. Vorhandene `PLANNED`-/`CANDIDATE_ONLY`-Einträge gelten nicht als Abnahmen. Zusätzliche Funde werden als reproduzierbare Folgefälle dokumentiert; das Paket wird nicht unkontrolliert ausgeweitet.
+3. **Implementieren:** Bei einem Compilerdefekt zuerst ein tatsächlich fehlschlagender Test (**RED**), dann kleinste korrekte Codeänderung (**GREEN**). Positiv-, Negativ- und soweit nötig öffentliche Metamodell-/Query-Assertions sowie relevante Varianten. Bei einer Python-Ablösung Alt-/Neu-Parität und negative Harness-Tests.
+4. **Prüfen:** Während der Entwicklung gezielt. Vor der Übergabe alle **für diesen Lieferabschnitt** festgelegten Prüfungen frisch ausführen; bei der letzten Lieferung einer regulären Phase ab 0b zusätzlich das **vollständige Phasengate** (für Pilot `L0A` nur dessen festgelegte Checks). Keine übersprungenen Pflichtprüfungen oder manipulierten Erwartungen.
+5. **Commit:** `git diff --check`, Code, Tests und einen **kurzen Implementierungsbericht** committen. Danach den **vollen SHA** mit `git rev-parse HEAD` ermitteln. Den Commit-SHA **nicht in denselben Commit hineinschreiben**.
+6. **Handoff:** Dem Reviewer `LIEFERABSCHNITT`, `BASE_SHA`, `CANDIDATE_SHA`, die Kriterien-IDs, den Berichtsordner und den Reviewprompt geben. Liegt keine unabhängige OpenCode-Ausführung vor, lautet der Stand `AWAITING_REVIEW`; Codex darf kein `PASS` behaupten.
+7. **OpenCode:** Eigenständig prüfen und **mindestens eine neue fachlich relevante Gegenprobe je risikotragendem Lieferabschnitt** ausführen. Bei `FAIL` konkrete Findings, bei `BLOCKED` konkrete fehlende Voraussetzung oder Nutzerentscheidung nennen.
+8. **Nacharbeit:** Codex behebt ausschliesslich die begründeten Findings im selben Lieferabschnitt, committet einen neuen SHA und lässt ihn erneut prüfen. Erst ein `PASS` auf den **aktuellen Kandidaten-SHA** gibt den nächsten Abschnitt frei.
 
-## 2. Verifizierte Ausgangslage und Erkenntnisse aus den anderen Compilern
+**Zustände:** `PLANNED`, `IN_PROGRESS`, `AWAITING_REVIEW`, `PASS`, `FAIL`, `BLOCKED`. `BLOCKED` wird zusätzlich begründet (`NORM_DECISION`, `INFRA`, `MISSING_EVIDENCE` usw.), ist aber **kein viertes Reviewurteil**. Bei einer Normentscheidung dürfen unabhängig umsetzbare Aufgaben innerhalb der aktuellen Phase weiterbearbeitet werden; **die betroffene Lieferung und die nächste Phase bleiben gesperrt**, bis die Abnahme vollständig möglich ist.
 
-### 2.1 `interlis-java` am untersuchten Commit
+### 1.2 Was die drei Urteile bedeuten
 
-Laut versionierten Status-/Dashboardberichten, **nicht durch hier ausgeführte neue Tests**:
-
-- 700 JVM-Tests und 3'257 portable Testfälle je ausgewiesener Laufzeit zuletzt grün.
-- Externe Conformance-Suite: **593 ausgewählte Fälle**, Projektbewertung **574 PASS / 19 XFAIL / 0 FAIL / 0 ERROR / 0 XPASS**. Davon sind **18 normative, noch nicht neu freigegebene Referenzabweichungen** und **ein separat geführter INTERLIS-1-Profilfall**. Die rohe Runnerbilanz und die Projektbewertung müssen getrennt sichtbar bleiben.
-- **369** inventarisierte Compilerregel-Bedingungen mit **1'476 geplanten Fällen**; erst **19** Bedingungen mit atomaren Assertion-Verknüpfungen. `CANDIDATE_ONLY` ist **kein** Wirksamkeitsbeweis. **80** weitere G2-Anforderungen sind ohne konkrete Abnahme.
-- A1 und A2-R1/R2 haben unabhängige Teilabnahmen. A2-R3/R4 und A3 sind nicht als Gesamtumfang abgenommen; neueste Zwischenreviews nennen konkrete Nachweis- und Compilerlücken.
-- Der aktuelle Git-Baum enthält **36 `.py`-Dateien** (33 unter `tools/reference/`, zwei unter `tools/performance/`, eine unter `tools/sdk/`, zusammen ca. 310 KB). Mindestens `conformanceWrapperTest`, `g2EvidenceTest`, `conformanceCheck`, `geoCorpus`, `jvmBenchmark`, `sdkProcessCheck` rufen direkt Python aus Gradle auf.
-- Auffällige Produktionsschwerpunkte: `GraphBuilder.java` (~361 KB), `SyntaxTreeBuilder.java` (~122 KB). Kein grosser Refactor ohne reproduzierten Bedarf.
-
-Diese Zahlen sind Momentaufnahmen. **Codex muss zu Beginn `git rev-parse HEAD`, `git status`, vorhandene Tasks und den neuesten Stand erneut prüfen**. Bei Abweichungen gilt das tatsächlich ausgecheckte Repository; kein historischer Wert wird als aktueller Testlauf ausgegeben.
-
-### 2.2 Vergleich als konkrete Architekturentscheidung
-
-| Quelle | Was besonders gut funktioniert | Was wir übernehmen / nicht übernehmen |
+| Urteil | Verbindliche Bedeutung | Konsequenz |
 |---|---|---|
-| [`claeis/ili2c`](https://github.com/claeis/ili2c) | JUnit-Tests mit vielen kleinen `.ili`-Originalfällen; teils direkte Metamodellassertions (`TransferDescription`); gültige und ungültige Gegenfälle | **Übernehmen:** kleine fachlich klare Modelle und Assertions auf tatsächliche Typen/Elemente. **Nicht übernehmen:** nur `assertNull`/`assertNotNull`, globale Loggingmuster und grosse Boilerplate-Mengen. |
-| [`edigonzales/ilic-fork`](https://github.com/edigonzales/ilic-fork) | Trennt externe gemeinsame Conformance-Suite (610 Fälle) von lokalen C++-/CLI-Regressionen, Snapshot-/Inkrementalitäts-, ABI- und WASM-Tests; CTest-Canary prüft echte Failures | **Übernehmen:** genau diese Trennung, kleine Testharnesses, Negative-Canaries, CI-Schichten. **Nicht übernehmen:** C++-spezifische Sanitizer als Java-Pflicht und einen zweiten Runner. |
-| [`edigonzales/interlis-java`](https://github.com/edigonzales/interlis-java) | Starke öffentliche Java-Semantik (`CompiledSchema`, Queries, Diagnosen), JVM-/TeaVM-/Browser- und Fresh/Reuse-Prüfung, unabhängige Reviews | **Behalten:** semantische Tiefe, Gating, Browserparität, strenge Ausnahmen. **Vereinfachen:** übergrosses Evidenzinventar, Python-Orchestrierung, doppelte Prüfpfade, starrer A–I-Prozess. |
+| **PASS** | Alle Kriterien dieses Lieferabschnitts sind am exakten SHA belegt; Pflichtprüfungen ausgeführt und erfolgreich; kein offenes Finding gegen ein Muss-Kriterium | Abschnitt freigeben; beim letzten Abschnitt zugleich Phasen-PASS |
+| **FAIL** | Mindestens ein Kriterium ist nachweislich verletzt: Compilerfehler, falsch akzeptierter Fall, verlorene Prüfung, Schein-PASS, abgeschwächte Erwartung usw. | Innerhalb desselben Abschnitts korrigieren; neuen SHA erneut prüfen |
+| **BLOCKED** | Ein erforderlicher Nachweis ist nicht möglich oder eine verbindliche Norm-/Nutzerentscheidung fehlt; ein fachliches PASS lässt sich nicht belastbar erteilen | Voraussetzung herstellen oder Nutzerentscheidung einholen; bis dahin keine Freigabe |
 
-**Zentraler Befund:** `ilic-fork` und `interlis-java` verwenden bereits dieselbe extern gepinnte [`interlis-compiler-testsuite`](https://codeberg.org/edigonzales/interlis-compiler-testsuite) mit dem in unserem Python-Skript festgelegten Commit `88576ffc4cd491dd72d2375eb897ea9f3f55d2c3`. Sie besitzt den ausführbaren **Java-Runner `InterlisConformance.java`**. `interlis-java` ruft ihn heute **aus Python** auf. Die Migration darf daher **keinen eigenen Conformance-Runner in Java duplizieren**. Der vorhandene Runner ist die einzige zuständige Instanz für Testfallauswahl, `PASS/XFAIL/FAIL/XPASS/ERROR` und Rohbericht.
+Nur die ausdrücklich **ausserhalb des beauftragten Umfangs** liegenden Leistungen (etwa P4/P5) dürfen als nicht erforderlich gelten. Ein vertraglich vorgeschriebener Browser-, Referenz-, Test- oder Modelllauf darf nicht nachträglich als „optional“ deklariert werden, um `PASS` zu erzielen.
 
-**Wichtige Ausnahme:** Unser `conformance_check.py` implementiert zusätzliche, strengere positive/negative Quellen- und Diagnoseprüfungen für 18 normative Abweichungen. **Diese projektspezifische Semantik muss erhalten bleiben**; sie darf nicht einfach durch eine pauschale zusätzliche XFAIL-Liste ersetzt werden.
+## 2. Feststehende Teststrategie – vier Ebenen
 
-## 3. Die künftige Testarchitektur: vier Ebenen, eine klare Wahrheit
+Wir übernehmen aus [`ili2c`](https://github.com/claeis/ili2c) dessen kleinen verständlichen `.ili`-Regressionsfälle und aus [`ilic-fork`](https://github.com/edigonzales/ilic-fork) die Trennung zwischen gemeinsamen Conformance-Fällen und lokalen Komponententests. Unsere stärkeren **öffentlichen Semantik-, Diagnose-, Snapshot- und Portabilitätsprüfungen** bleiben erhalten.
 
-### Ebene T1 – Fachliche JVM-Vertragstests (schnell, pro Änderung)
-
-JUnit 5 in den vorhandenen Modulen. Für eine konkrete Sprachregel mindestens:
-
-- **Positiv:** ein wirklich gültiges `.ili`-Modell und korrektes öffentliches `CompiledSchema`.
-- **Negativ:** ein minimal ungültiges Gegenmodell, **kein** gültiges Schema; erwartete fachliche Rejection und möglichst genaue Diagnose samt Bereich.
-- **Öffentliche Semantik:** Symbolidentität, gebundenes Ziel, Typrelation, Herkunft, effektive Member-/Transferreihenfolge, Constraint-/View-Inhalte oder Quellreferenz – nur die für diese Regel relevanten Teile.
-- **Grenze:** Grenzwert, Versionsunterschied oder Namens-/Importsituation, falls für die Regel relevant.
-
-Tests dürfen die Fachregel nicht einfach durch Spiegelung interner Implementierungsdetails bestätigen. Kleinere externe `.ili`-Fixtures wie bei `ili2c` sind bevorzugt, wo sie leichter zu lesen sind; Inline-Quellen sind für kompakte Varianten geeignet. Bestehende testseitige `CompilerTestSupport`-Methoden wiederverwenden.
-
-### Ebene T2 – Eine externe Compiler-Conformance-Suite (gemeinsam, unverfälscht)
-
-- Exakt **ein** gepinnter Java-Runner aus `interlis-compiler-testsuite`; keine zweite eigene Auswahl-/Statusmaschine.
-- Für G2 bewusst **2.3/2.4-Profil** mit der historisch dokumentierten Auswahl von **593** Fällen verwenden; die Suite insgesamt enthält 610 Fälle. Die Sonderbehandlung des als INTERLIS-1-Profilfall bekannten ausgewählten Falls muss transparent bleiben – ein Name mit `ili23` macht den Quellinhalt nicht automatisch zum INTERLIS-2-Modell.
-- **Raw-Runnerergebnis** und **projektspezifische normative Zusatzbewertung** getrennt ausgeben. Bei den 18 Fällen das Original, Kontrollquellen, Quell-Hashes, Diagnoseart/-argumente/-bereiche und Exitcodes weiterhin prüfen. Ein Referenzprozessabsturz ist `ERROR`, kein sachlicher Compilervergleich.
-- Baseline, Suite-Pin, Testselektion und XFAIL-Ausnahmen **niemals implizit aktualisieren**. Der zusätzliche Java-Postprozessor darf nur die explizit angeführten 18 geprüften Normausnahmen separat beurteilen, keine neue allgemeine Statusmaschine bauen. XPASS soll zur Prüfung führen, nicht still verschwinden.
-
-### Ebene T3 – Portabilität und Integrationsverträge (risikobasiert, vollständige Phasengates)
-
-JVM/TeaVM-JS/TeaVM-WasmGC, Node, echte Browser (inklusive Safari), Web Image, public Bridge, CLI/SDK, LSP und Diagramm. **Nicht jede lokale Compilerregel benötigt einen vollen Browsereinstieg.** Ein gezielter Bridge-/WASM-Regressionslauf ist bei betroffenem Adapter sofort fällig; die gesamte Browser- und Web-Image-Matrix ist spätestens am **verbindlichen Phasengate** frisch auszuführen. Wer eine Pflichtprüfung nicht ausführen kann, meldet `NOT_EXECUTED` und damit ein offenes Gate – keinen PASS.
-
-Semantikparität bedeutet Vergleich der tatsächlich exportierten Daten. Ein Completion-Ergebnis, in dem ein Member vorkommt, beweist z. B. nicht dessen **effektive Reihenfolge**. Fehlende Brückenfelder bleiben als Nachweislücke sichtbar. Nur für konkrete echte Produktbedürfnisse öffentliche Bridge-APIs vergrössern.
-
-### Ebene T4 – Echte gepinnte Modell-Closures (End-to-end vor G2)
-
-Gepinnte reale INTERLIS-2.3/2.4-Modelle einschliesslich transitiver Importe aus dem vereinbarten Modellindex (u. a. `geo.so.ch`). Teste direkte Compiler-/CLI-Ausführung, Offline-/Pin-/Lock-Verhalten und wesentliche öffentliche Schemaelemente. Nur „Exit 0“ reicht nicht. Stabile Quellen/Artefakthashes, Modellversionen und die Closure gehören zum Nachweis.
-
-### Ergänzende Qualitätsprüfung – Fehlgrün-Canary
-
-Die eigene Test-/Evidenztechnik benötigt wenige **negative Kontrolltests**: Ein absichtlich fehlender Conformance-Fall, ein duplizierter Fall, ein alter Bericht, eine unpassende JUnit-Klasse mit gleichem Methodennamen oder ein übersprungener Test muss zuverlässig **scheitern**. Das übernimmt die Grundidee des `ilic-fork`-Canarys, ohne wieder eine umfangreiche generische Evidenzplattform zu bauen.
-
-### Ausführungstaktung
-
-| Zeitpunkt | Pflicht | Ausdrücklich nicht erforderlich |
+| Ebene | Auftrag und fachliches Orakel | Ausführung |
 |---|---|---|
-| Während des Fixes | Betroffene T1-Tests; zuerst reproduzierendes Rot, danach Grün | Gesamte Browsermatrix bei jedem Edit |
-| Vor dem Feature-Review | Betroffene JVM-Modultests; gezielte T2-Fälle für die geänderte Regel, **volle** T2-Suite bei breit wirkender Parser-/Binder-/Typänderung; relevante T3-Adaptertests | Sämtliche historischen Inventargeneratoren oder die komplette Browsermatrix erneut starten |
-| Vor dem Review eines Werkzeugmigrationstickets | Identische Alt-/Neu-Eingaben und Fehlpfade; neue Java-Tests; echte Prozessläufe und Rohdaten | Reimplementierung von Tests, die nachweislich historisch und nicht mehr aktiv sind |
-| Vor Phasenabnahme | `check`, T2, `checkPortable`, `checkBrowser` inkl. echtem Safari, Web Image, relevante SDK-/LSP-Adapterverträge; Scope/T4 gemäss Phase | Eine grüne Datei oder ein alter Run als Ersatz für die Phase |
-| Vor G2-Gesamtabnahme | Alle T1–T4-Gates, G2-Regelmatrix, Normfreigaben, Python-free-Gate und exakter Review-SHA | Release-/P4-/P5-Zusagen |
+| **T1 – JUnit-Vertragstests** | Reale kleine INTERLIS-Modelle; gültig/ungültig; korrektes `CompiledSchema`, Symbolziel, Typrelation, Vererbung, Transferreihenfolge, Diagnosen und Source-Ranges über öffentliche APIs | Bei jeder betroffenen Implementierungsänderung; gezielte Tests zuerst |
+| **T2 – Gemeinsame Conformance** | Genau der **externe** [`interlis-compiler-testsuite`](https://codeberg.org/edigonzales/interlis-compiler-testsuite)-Runner `InterlisConformance.java`; festgelegte Fall-IDs und Rohklassifikation, getrennt davon unsere strengen Zusatzprüfungen zu normativen Ausnahmen | Gezielte Fälle während der Arbeit; vollständiger eingefrorener Lauf an Phasengates und bei breit wirkenden Änderungen |
+| **T3 – Portable/Integrationsverträge** | JVM/TeaVM-JS/WasmGC, Node, Chromium/Firefox/WebKit/**echtes Safari**, Web Image sowie betroffene CLI-/SDK-/LSP-/Diagramm-Verbraucher | Betroffene Verträge gezielt; **vollständig bei jeder Phasenabnahme** |
+| **T4 – Reale Modell-Closures** | Gepinnte echte 2.3-/2.4-Modelle mit transitiven Abhängigkeiten, Offline/Pins/Locks und öffentlichen Schema-Assertions; nicht nur Exitcode 0 | Beginn in Phase 3, **vollständiges Pflichtgate für G2-FINAL** |
 
-**Ziel:** Tests sind so streng wie nötig und so lokal wie möglich. Der Agent darf einen aktuellen, nicht betroffenen grünen Plattformnachweis zur Risikoabschätzung verwenden, **nicht** um eine fällige neue Phasenabnahme zu behaupten.
+**Gemeinsame Conformance-Basis:** In beiden neuen Compilerprojekten ist der Runner bereits Java. Der in `interlis-java` eingesetzte externe Suite-Commit lautet `88576ffc4cd491dd72d2375eb897ea9f3f55d2c3`; die archivierte Download-Prüfsumme lautet `6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe`. Laut untersuchtem Projektbericht sind **593 von 610 Fällen ausgewählt**, zuletzt **574 PASS / 19 XFAIL** in der **Projektbewertung** (18 normative Abweichungen plus ein separat behandelter INTERLIS-1-Profilfall). Das ist eine historische Baseline, **kein in diesem Plan neu ausgeführter Testlauf**. **Roher Suitebericht und projektbezogene Ausnahmeprüfung bleiben getrennt.**
 
-## 4. Ein Arbeitszyklus pro kleiner fachlicher Änderung
+Ein standardmässiger Conformance-Runner ist **keine** Einladung, einen eigenen zweiten Java-Runner zu bauen: unser Python-Wrapper `tools/reference/conformance_check.py` ruft den bestehenden Runner heute bereits auf. Nur unsere **zusätzlichen** normativen Original-/Kontrollquellen-, Hash-, Diagnose- und Exitprüfungen müssen nach Python-Abbau als minimaler Java-/JUnit-Vertrag erhalten bleiben. Nie XFAIL oder Erwartung automatisch ändern; Referenzabstürze und Timeouts sind keine fachlich korrekten Ablehnungen.
 
-1. **Ticket wählen:** Eine bekannte Fehlerquelle oder eine zusammenhängende Sprachregel; Normstellen/Anforderungs-IDs, vorhandene Implementierungsorte und die erwartete öffentliche Wirkung bestimmen. Keine neue Vollinventur.
-2. **Fehlschlag beweisen:** Original-`.ili` beibehalten, eine minimal reproduzierbare positive/negative/Boundary-Fixture schreiben; den Fehler vor dem Fix mit echtem Compiler nachweisen (Red). Konstruiere bei Bedarf mehrere Versionen/Importreihenfolgen.
-3. **Minimal beheben:** Richtige vorhandene Stelle (`ANTLR`, Syntaxlowering, Bindung, gemeinsame Typrelation, Expression/Constraint, Resolver); keine pauschale Diagnoseunterdrückung, keine spätere Backendlogik im Kern, kein globaler mutable State.
-4. **Öffentlich beweisen:** T1 inklusive semantischer Werte, Quellranges und Gate; gezielte T2-Fälle mit unverändertem Pin/Profil (volle T2-Suite bei breit wirkender Änderung und an jedem Phasengate); T3 gezielt, falls betroffen. Negative und positive Kontrollfälle dauerhaft ablegen.
-5. **Commit vor Review:** `git diff --check`, tatsächlich gelaufene Tests mit Exitcodes dokumentieren und eine **versionierte Review-Anfrage ohne selbstreferenziellen `head_sha`** zusammen mit Implementierung und Tests **lokal committen**. **Erst danach** `git rev-parse HEAD` bestimmen und SHA im ignorierten `build/review/<TICKET>/handoff.yaml` (oder als separate Übergabenachricht) an den Reviewer geben. Den eigenen Commit-SHA niemals nachträglich in denselben Commit hineinschreiben: Das wäre zirkulär. Kein Push oder Release ohne Auftrag.
-6. **Unabhängiger Review:** OpenCode/DeepSeek Flash 1017 auf isoliertem Worktree am konkreten SHA. Reviewer liest Norm/Original/Code, führt Tests selbst aus und **entwickelt mindestens einen neuen relevanten Gegenfall**, der nicht aus Codex-Tests übernommen wurde. Urteil und konkrete Findings.
-7. **Bei Nacharbeit:** Nur Findings beheben, neue SHA committen und den geänderten Umfang **erneut unabhängig prüfen**. Kein neues Reviewframework und keine neue grosse Planungsrunde.
-8. **Bei Annahme:** Ticket mit Testbeweisen und Review-SHA als `ACCEPTED` markieren; unabhängig offene Fachfragen als eigene Tickets erhalten; nächster fachlicher Schritt.
+**Fehlgrün-Canary:** Die Infrastruktur muss nachweislich scheitern, wenn z. B. eine Suite-Fall-ID fehlt oder doppelt vorkommt, ein JUnit-Fall aus der **falschen Klasse** mit gleichem Methodennamen stammt, ein Bericht alt/übersprungen ist, ein Originalhash nicht passt oder eine fehlgeschlagene Kontrolle fälschlich als Erfolg ausgewiesen wird. Wenige gezielte negative Tests genügen; kein neues allgemeines Evidenzframework.
 
-**Zustände strikt trennen:** `PLANNED`, `IMPLEMENTED`, `TESTED`, `REVIEWED_ACCEPTED`, `BLOCKED_NORM`, `BLOCKED_INFRA`. Eine Testkandidatenliste oder ein grüner Gradle-Task macht keine Regel automatisch zu `REVIEWED_ACCEPTED`.
+### 2.1 Prüftakt ohne Testexplosion
 
-### Reviewurteile
+- **Während des Fixes:** gezielte T1-Tests und lokal relevante T2-Fälle.
+- **Vor jedem Lieferabschnittsreview:** relevante Modul-/Prozesstests, betroffene T2-Fälle und berührte T3-Verträge; grössere Parser-/Binder-/Typänderungen erhalten zusätzlich T2 vollständig. Genau benennen, welche Tests fällig und ausgeführt sind.
+- **Beim letzten Lieferabschnitt von Phase 0b sowie Phasen 1–4:** `check`, volle T2-Conformance, `checkPortable`, `checkBrowser` inklusive realem Safari, Web Image und betroffene SDK-/LSP-/CLI-Verträge **frisch** auf demselben SHA. Ab Phase 0b zusätzlich `pythonFreeCheck` und die erforderlichen Python-freien Pfade. Die Prüfung früherer Lieferungen ist kumulativ. **Ausnahme `L0A`:** Dieser ausdrücklich kleine Pilot hat nur die Kriterien `AC0A-01` bis `AC0A-04` mit gezielten T1/T2- und bei Betroffenheit T3-Prüfungen; er behauptet keine vollständige Plattformabnahme. Vollständige technische Ausgangsgates werden spätestens in `L0B-3` nachgeholt.
+- **Beim G2-FINAL:** T1–T4 und alle offenen Norm-/Abnahmekriterien. Eine alte Plattformprüfung belegt keinen neuen Kandidaten. `-x test`, stille Skips, alte Rohreports und nur als PASS beschriftete JSON-Dateien sind kein Ersatz.
 
-- `ABGENOMMEN`: konkrete getestete Behauptungen am exakten SHA, unabhängige Ausführung und eigene Gegenprobe, keine blockierenden Befunde.
-- `NACHARBEIT`: reproduzierbarer Gegenfall oder konkrete fehlende Vertragsprüfung, mit präziser Abhilfe.
-- `WARTET_AUF_NORMFREIGABE`: eine echte offene INTERLIS-Auslegung; weder Testerwartung noch XFAIL wird ohne Nutzerentscheidung geändert.
-- `NICHT_PRUEFBAR`: Toolchain, Quellen, Snapshot oder auszuführende Tests fehlen. Kein fachliches PASS.
+Verfügbare Gradle-Einstiege vor der Migration: `:interlis-compiler:test`, `check`, `conformanceCheck`, `conformanceWrapperTest`, `g2EvidenceTest`, `checkPortable`, `checkBrowser`, `sdkProcessCheck`, `geoCorpus`, `jvmBenchmark`. Genaue aktuelle Task- und Plattformverfügbarkeit zu Beginn prüfen. `pythonFreeCheck` ist **neu zu implementieren**. Die Vollprofile werden um die tatsächlich erforderlichen Web-Image-Aufrufe ergänzt, soweit sie nicht bereits im jeweiligen Task enthalten sind. Ein fehlendes Pflicht-Tool ist `BLOCKED`, niemals `PASS`.
 
-## 5. Phase 0a – Schlanker Start und beweisbarer Pilotfix
+## 3. Phasenübersicht mit GRETL-kompatiblen Lieferabschnitten
 
-**Ziel:** Eine reale Sprachregel korrigieren und den neuen Implementierung/Review-Takt ausprobieren, bevor die Python-Migration beginnt.
+| Phase | Inhalt | Lieferabschnitte | Freigabe |
+|---|---|---|---|
+| **0a – Pilotfix** | Prozess an einem echten Compilerdefekt beweisen | `L0A` | `PASS` nach unabhängiger Gegenprobe |
+| **0b – Python entfernen** | Externer Java-Runner, aktive Evidenz-/Normprüfung, übrige Werkzeuge, Python-freier Build | `L0B-1` bis `L0B-3` | Letzter Review enthält vollständiges Python-freies Phasengate |
+| **1 – Sprachfundament** | Predefined/Syntax/Import, Typen/Units/OID/Geometrie, Vererbung/Assoziationen | `L1-1` bis `L1-3` | Vollständige Sprachgrundlagenregression und Plattformgates |
+| **2 – Erweiterte Semantik** | Ausdrücke/Funktionen/Constraints, Views, Übersetzungen/GENERIC/Grafik | `L2-1` bis `L2-3` | Öffentliche semantische Graphen korrekt, Gesamtregression |
+| **3 – Overlays und Modellauflösung** | Echte Overlaynutzdaten und reproduzierbare Modellbeschaffung | `L3-1` bis `L3-2` | Fresh/Reuse, Versionen, Offline-/Lockprofile, reale Closures |
+| **4 – Vollständiger G2-Abschluss** | Alle noch offenen Norm-/Assertion-Lücken, Differential-/T4-/Plattformabnahme | `L4-1` bis `L4-2` | Unabhängiges kumulatives `PASS` am endgültigen Produkt-SHA |
 
-**Lieferungen:**
+**Regel für Zuschnitt:** Die folgende Aufteilung ist verbindliche Arbeitsstruktur. Wenn ein Lieferabschnitt für eine seriöse Abnahme zu breit wird, darf Codex **vor der Umsetzung** begründet eine kleinere fachlich geschlossene Teillieferung vorschlagen; sie behält dieselben Muss-Kriterien und wird vor dem Start dokumentiert. **Nicht** allein für die Behebung eines einzelnen Findings einen neuen beliebigen Reviewabschnitt eröffnen. Ein Teilreview ersetzt keinen Abschluss der ursprünglichen Kriterien.
 
-1. Git-/Toolchainstand und Baseline prüfen. Nur bestehende Statusquellen lesen: `docs/implementation-status.md`, `docs/evidence/stabilization/phase-a-dashboard.md`, neuestes A2-R3-Review, normative Entscheidungsliste. Geschlossene A1/A2-R1/R2-Abnahmen nicht erneut erfinden.
-2. `docs/g2/README.md` als Einstieg und `docs/g2/WORK_QUEUE.md` mit wenigen konkreten Tickets anlegen; alte aktive A–I-Fortsetzungsanweisungen auf den hier übernommenen Plan verweisen lassen. Historische Berichte nicht rückdatieren.
-3. Bereits korrigierten XML-Klassenidentitätsfehler (`testcase@classname`/`testsuite@name`) als offenen Reviewauftrag notieren; ein technisches Mini-Review nur vorziehen, falls er die neue Beweiskette blockiert.
-4. **Erster Bug:** `G2-LEX-COMMENT-OUTER`. Mit `testdata/g2/a2-unterminated-nested-comment.ili` reproduzieren: verschachtelter Kommentar, innerer abgeschlossen, äusserer offen. `STRICT` muss ablehnen; `EDITOR` darf Recovery liefern, aber kein falsches gültiges Schema; 2.3/2.4; gültige verschachtelte Kommentare unverändert korrekt mit Source-/UTF-16-Bereichen. Der aktuelle `LexicalRecoveryContractTest` behandelt laut untersuchtem Stand nur `/* outer` als unterminierten Negativfall.
-5. Gezielte Tests, frisch ausgeführte Regression, Implementierungscommit, unabhängiger Reviewer und neue Gegenprobe. Ergebnis dokumentieren.
+## 4. Phase 0a – Pilotfix `L0A`
 
-**Gate P0a:** Bug ist wirklich behoben und am festgelegten SHA unabhängig akzeptiert; neue Queue/Planhierarchie eindeutig; ursprüngliche Referenz-/Normpins unverändert; keine scheinbare vollständige A2/A3-Abnahme behauptet.
+**Ziel:** Den dokumentierten Lexerfehler bei verschachtelten Kommentaren beheben und das Commit/Review-Verfahren erproben. `testdata/g2/a2-unterminated-nested-comment.ili` ist ein bekannter Reproduktionskandidat; das aktuelle Ist-Verhalten selbst prüfen. Der vorherige `LexicalRecoveryContractTest` prüfte laut untersuchtem Commit nur den einfach offenen Block als unterminierten Gegenfall.
 
-## 6. Phase 0b – Sämtliches Python entfernen (früh und verpflichtend)
-
-**Startbedingung:** P0a angenommen. **Endbedingung:** Keine getrackte `.py`-Datei, keine notwendige Python-Installation, keine aktiven Python-/pip-Kommandos und **alle erforderlichen Test-/Build-Einstiege funktionieren nachweislich ohne Python**. Einzelne nachfolgende Tickets dürfen technisch unabhängig laufen, G2-Phase 1 beginnt jedoch erst nach vollständiger P0b-Abnahme.
-
-### 6.1 Klassifizieren statt 1:1 portieren
-
-Erstelle **einmalig** eine kurze, vollständige 36-Dateien-Migrationsliste aus `git ls-files '*.py'`. Pro Datei genau eine Entscheidung, jeweils mit Nachweis:
-
-- `REUSE_EXTERNAL`: Die Funktion ist bereits im gepinnten **externen Java-Runner** verfügbar. Python-Orchestrierung entfernen, Java-Runner direkt aus Gradle starten.
-- `PORT_MINIMAL`: Ein **projektspezifisch notwendiger** Vertrag fehlt extern; als kleinste Java-/JUnit-Implementierung erhalten.
-- `REPLACE_WITH_TEST`: Ein bisheriges Script wird durch gezielte vorhandene oder neue JUnit-/Gradle-Vertragstests ersetzt; Funktion und Negativpfad bleiben erhalten.
-- `FREEZE_ARCHIVE`: Ein nur historisch benutzter Inventar-/PDF-Generator erzeugt bereits gepinnte, geprüfte Artefakte. Diese bleiben unveränderlich archiviert; ein dauerhaft notwendiger Prüfer bleibt in Java. Entfall der Generatorfunktion nur, wenn der unabhängige Review begründet, weshalb **keine aktuelle Reproduktionspflicht** verloren geht.
-- `DELETE_REDUNDANT`: Doppelte, unbenutzte oder durch andere Tests bereits vollständig gedeckte Logik; Löschung nur mit Verwendungsanalyse und Reviewerentscheid.
-
-**Kein pauschales „alle Skripte nach Java übersetzen“.** Es muss am Ende **null Python** geben, aber nicht 36 neue Java-Helferklassen.
-
-### 6.2 Migrationspakete in der vorgesehenen Reihenfolge
-
-| Ticket | Existierende Python-Schwerpunkte | Java-/Gradle-Lösung und harte Abnahme |
-|---|---|---|
-| `G2-JAVA-TOOLS-01` | `conformance_check.py`, `test_conformance_check.py`, `reference_check.py`, alte Vergleiche zu Units/Views | **Gepinnten externen `InterlisConformance.java` direkt aus Gradle starten.** Download/Pins und Kommandokonstruktion durch kleine Gradle-/Java-Integration; projektspezifische 18 Normausnahmen in eigenem minimalem Java-/JUnit-Prüfer mit Original-/Kontrollquelle/Diagnoseprüfung. `conformanceCheck` und `conformanceWrapperTest` bleiben echte Gates. Referenzprozess-Negativpfade. Keine zweite Fallklassifikations-Engine. |
-| `G2-JAVA-TOOLS-02` | `g2_evidence.py`, `g2_inventory.py`, `g2_a3_pairs.py`, `g2_test_candidates.py`, zugehörige Tests | Nur **laufend benötigte** Quell-/Hash-/JUnit-XML-/Assertion-Nachweise als kleine Java-Tests/Verifier erhalten. XML muss richtige `testsuite@name` **und** `testcase@classname` **und** `testcase@name` prüfen. Selbsttest: falsche Klasse bei gleicher Methode, fehlender/alter/übersprungener Bericht und unpassender SHA werden abgelehnt. `g2EvidenceTest` bleibt ausführbar; keine neue generische Snapshot-/Patchplattform. |
-| `G2-JAVA-TOOLS-03` | `g2_norm_*`, `g2_grammar_inventory.py`, `g2_builtin_inventory.py`, `g2_predefined.py`, `author_g2_predefined.py`, `g2_spec_contracts.py` usw. | Bereits vorhandene Norm-/Grammatik-/Builtin-/Requirements-/PDF-Inventare als **historische gepinnte Eingaben** erhalten. Die für weitere fachliche G2-Prüfung nötigen aktiven Invarianten zu Java/JUnit überführen; entbehrliche Erzeugungsketten löschen. Wenn Text aus gepinnten Norm-PDFs weiterhin dynamisch benötigt wird, Extraktionsprofil ausdrücklich validieren (PDFBox ist **nicht** codepoint-/pypdf-offsetkompatibel per Annahme). Kein stilles Repinning. |
-| `G2-JAVA-TOOLS-04` | `geo_corpus.py`, `generate_text_weights.py`, `benchmark_jvm.py`, `probe_wasm_exit.py`, `tools/sdk/check_distribution.py` und verbliebene Skripte | Für **aktive** Modell-Closure-/Performance-/SDK-/Prozessprüfungen kleine Java-/JUnit-/Gradle-Entrypoints; vorhandenes Node für bestehende Wasm-/Browser-Tests weiterverwenden. Bei einem Generator nur die versionierte Ausgabe plus überprüfte Herkunft einfrieren, sofern keine künftige Regeneration nötig ist. Bestehende Gradle-Tasknamen und Fehlerpfade behalten. |
-| `G2-JAVA-TOOLS-05` | Repo-weite Bereinigung, CI, README, Gradle, Guard | Alle `.py`-Dateien löschen; verwaiste Python-Aufrufe und erforderliche `pip`-Schritte entfernen. Neuer **`pythonFreeCheck`** prüft getrackte `.py`-Dateien und aktive Tool-/Taskaufrufe. Negative Canary erkennt absichtlich eingefügte Python-Datei/-Abhängigkeit. **Zusätzlich** realer Build-/Testlauf in einer Umgebung ohne Python-Interpreter (nicht bloss ein Grep-PASS). |
-
-Jedes Paket ist ein **separater testbarer Diff mit Commit und unabhängigem OpenCode-Review**. Nach G2-JAVA-TOOLS-01 läuft Conformance direkt über den bestehenden Java-Runner. Solange andere Python-Werkzeuge noch nicht migriert sind, wird der Teilstatus korrekt als `PARTIAL` geführt; insbesondere ist das globale P0b-Gate noch offen.
-
-### 6.3 Minimaler technischer Java-Zuschnitt (Vorschläge, nicht neue öffentliche APIs)
-
-Erst tatsächliche vorhandene Java-/Test- und Gradle-Strukturen untersuchen. Für gemeinsam benötigte Werkzeuglogik **maximal ein kleines testseitiges Tool-Paket bzw. Modul**, nur wenn Wiederverwendung eine echte Notwendigkeit ist. Sonst in bestehenden Test-SourceSets/Test-Fixtures und JavaExec-/Gradle-Aufgaben bleiben.
-
-| Verantwortung | Vorgeschlagener Typ / Methodenvertrag | Was ausdrücklich nicht implementiert wird |
-|---|---|---|
-| Externe Suite | `PinnedConformanceTask`/Gradle-Aufgabe: `verifyPin(Path archive, String sha256)`, `runExistingJavaRunner(Path runner, Path cli, Path selection, Path out)`, `verifyCaseSet(Set<String> expected, Report raw)`; frische Reports und Exitstatus prüfen | Kein eigener Testfall-Runner; keine eigene Implementierung von PASS/XFAIL/FAIL/ERROR |
-| Normative Ausnahmen | `NormativeExceptionVerifier.assess(Expectation e, RawCase c, Path cli)`: Quelle/Hash, Version, Original-/Kontrollprozesse, strukturierte Diagnosen (Code, Severity, Phase, Argumente, Range, Multiplizität), Ergebnis/Fehlergrund. `verifyAll(...)` kontrolliert exakte Fall-ID-Menge | Keine automatische „akzeptierte Abweichung“ aufgrund eines grünen Status; keine Änderung der 18 Erwartungen |
-| Nachweisintegrität | `JUnitXmlEvidenceVerifier.verify(Path xml, String suite, String className, String methodName, Instant runStart)`: eindeutige Suite, Klasse, Methode, frische Datei, kein Fehler/Skip; `ArtifactPinVerifier.verify(Path, sha256)` | Kein unnötiger Snapshot-Container mit eigener domänenspezifischer Sprache |
-| Prozessprüfungen | `CompilerProcessProbe.run(Path executable, List<Path> models, ... )`: Exit, stdout/stderr, Timeout, eindeutige `ACCEPTED`/`REJECTED`/`ERROR`/`TIMEOUT`-Klassifikation | Kein maskiertes `ERROR` als gültige Ablehnung |
-| Pythonfreiheit | `pythonFreeCheck`: prüft **getrackte** `.py` und aktive Build-/CI-/Skriptaufrufe; echte Python-freie CI-Jobausführung prüft zusätzlich Runtime-Abhängigkeiten | Kein Verbot, historische Berichte zu lesen, in denen alte Python-Befehle dokumentiert sind |
-
-Typnamen sind Vorschläge; keine Klasse erstellen, bevor ein konkreter Test eine aktuelle Aufgabe dafür nachweist. Methoden vor Implementation an reale Formatverträge und vorhandene Datenklassen anpassen. Die Java-Werkzeuge dürfen niemals als versteckter Wrapper Python starten.
-
-### 6.4 Unverzichtbare Paritäts- und Manipulationsnachweise
-
-- **Suite:** exakt dieselben ausgewählten Fall-IDs, gleicher Pin, gleiche Rohberichte/Status und Exitpolicy für identische Eingaben. Zusätzlich: fehlender, doppelter, unerwarteter oder XPASS-Fall muss sichtbar fehlschlagen.
-- **Normausnahmen:** gleiche 18 IDs, identische Original- und Kontrollquellen/Hashes, unveränderte semantische Diagnosesignaturen und die getrennte rohe/Projektbilanz. Der separate INTERLIS-1-Profilfall bleibt separat.
-- **Evidenz:** alte positive und negative Python-Selbsttests gegen den neuen Java-Prüfer als *Verhaltensvertrag* übernehmen. Bei einer Migration dürfen Alt-/Neu-Reports nicht allein deshalb als gleich gelten, weil ein Wrapper nur `PASS` ausgibt.
-- **Ausführbarkeit:**  `./gradlew check`, `conformanceCheck`, `conformanceWrapperTest`, `g2EvidenceTest`, `sdkProcessCheck`, aktive Referenz-/Corpus-/Performance-Tasks erfolgreich ohne Python ausführen. Toolchainbedingte andere Blocker gesondert ausweisen.
-- **Reproduzierbarkeit:** Originaldaten nicht entfernen; der Runner muss im frischen Checkout nach Zugriff auf einen gepinnten Download oder einen vorbefüllten geprüften Cache laufen. Tests melden externen Netz-/Referenzausfall ehrlich.
-
-**Gate P0b:** `git ls-files '*.py'` ohne Treffer; `pythonFreeCheck` inkl. Canary grün; sämtliche aktiven Ausführungswege Python-frei, im unabhängig geprüften Java-/Gradle-Build und separatem Umgebungslauf nachgewiesen. **Ohne P0b kein Start der grossen Fachphase 1 und keine G2-Freigabe.**
-
-## 7. Phase 1 – Sprachgrundlage (bisher B–D)
-
-Nach P0b fachliche Tickets in der Reihenfolge der tatsächlichen Risiken:
-
-1. **B1:** vordefinierte Modelle, Symbole, Typen, Units, OID und versionierte Builtins; konkret `SurfaceEdge`, `SurfaceBoundary`, `LineGeometry` korrekt öffentlich binden.
-2. **B2/B3:** Namensräume, Imports, Sichtbarkeit, Vorwärtsreferenzen, case sensitivity, Syntax-Alternativen, Recovery und klare Trennung `SOURCE_ERRORS` / `INCOMPLETE_SUPPORT` / `INTERNAL_FAILURE`. Offene `TYPE_MODEL_STRUCTURE_BOUNDARY` zur Entscheidung vorbereiten statt still ändern.
-3. **C1–C4:** numerische Unterteilungen, exakte Einheiten/Skalierung, Text/Enum/OID, FORMAT, Datum/Zeit, Geometrie, Collections und gemeinsame Typrelationen. `NUMERIC_SCALING_PAIR_AND_CONSTANT_PROFILE` separat offen halten.
-4. **D1–D3:** Vererbung, Assoziationen, Rollen, Restriktionen, effektive Mitglieder, Herkunft und **Transferreihenfolge**, unabhängig von Datei-/Importreihenfolge und Fresh/Reuse.
-
-**Komponenten:** vorhandene `InterlisLexer.g4`, `InterlisParser.g4`, `AntlrSyntaxService`, `SyntaxTreeBuilder`, `LanguageProfile`, `NameResolver`, `ImportBinder`, `GraphBuilder`, `StructureBindings`, `LineForms`, `TypeCompatibility`, `SemanticGraph`. Erst in tatsächliche Klassen lesen, dann kleine Änderung in der fachlich richtigen Stelle.
-
-**Gate Phase 1:** Jede betroffene G2-Regel ist mit eigenen fachlichen Positiv-/Negativ-/Queryassertions verifiziert und unabhängig geprüft oder als echte Normentscheidung *nicht* abgenommen; vollständige T1/T2/T3-Gates und neues Phasenreview. Keine still akzeptierte Implementierungslücke, kein falsches `CompiledSchema`.
-
-## 8. Phase 2 – Ausdrücke, Constraints, Views und Übersetzungen (bisher E–F)
-
-1. Objekt-/Attribut-/Rollenpfade mit Mengen/Indizes und Spezialkontexten; **21** Standardfunktionen, typrichtiges Argument-/Ergebnisverhalten und `UNDEFINED`. Externe Funktionen **nicht** ausführen.
-2. Alle Constraintfamilien einschliesslich SET/WHERE, Existence, Unique, Mandatory/Plausibility, External, vererbte Namen; öffentliche gebundene Struktur und korrekte Typrelation.
-3. Views: Projektion, Selektion, Join, Union, Aggregation, Inspektion, Ableitung, Vererbung, `ALL OF`; korrekte Schemaelemente und Referenzziele, nicht nur erfolgreiches Parsen.
-4. Übersetzte Import-Closures, Korrespondenzen, effektive **Reihenfolgen**, `CONTEXT/GENERIC/DEFERRED`, Metadaten, Grafik/Signatur und LineForms. `areAreas2`/`areAreas3` nur mit geklärter Normstelle ändern.
-
-**Komponenten:** `FunctionBindings`, `BuiltinFunctions`, `GraphBuilder`, `ViewBuilder`, `GraphicBuilder`, `MetadataBindings`, `DefaultSemanticQueries` sowie vorhandene öffentliche Metamodelltypen.
-
-**Gate Phase 2:** T1/T2/T3 vollständig; semantische Abnahme der E/F-Regeln; eigene Negativproben für falsche gleichnamige Ziele und verlorene/umgeordnete Mitglieder; frischer unabhängiger Phasenreview.
-
-## 9. Phase 3 – Echte Overlays und reproduzierbare Modellauflösung (bisher G–H)
-
-1. `SemanticOverlays` von Fingerprint-Platzhaltern zu echten, unveränderlichen Translation-/CRS-/Metaattribut-Nutzdaten; Zielidentität, Konfliktprüfung, Herkunft und öffentliche Wirkung.
-2. Inhaltliche Fingerprints; reine Overlaywechsel invalidieren die richtige Closure und erhalten unabhängige Symbole. Fresh/Reuse fachlich identisch.
-3. Repositoryindizes, Auswahl, lokale/HTTP-Hostbeschaffung, Versionen, transitive Importe, Offline, Pin/Lock, Mehrdeutigkeit, Abbruch, stale Input. Kein HTTP im Compilerkern.
-
-**Komponenten:** `SemanticOverlays`, `CompilationFingerprinter`, `DefaultWorkspace`, `DefaultModelResolutionService`, `ResolverCatalog`, `SourceProvider`, `CompilerServices`.
-
-**Gate Phase 3:** Effektive Daten und Resultate bei gleichen Inputs/Reihenfolgen identisch; differente Overlays bewirken die erwarteten Differenzen; Offline-/Lock-/Abbruchfehler reproduzierbar; vollständige T1/T2/T3, neue Gegenproben und unabhängiger Phasenreview.
-
-## 10. Phase 4 – Vollständige G2-Abnahme (bisher I)
-
-1. Die vorhandenen **369 Compilerbedingungen**, 80 offenen G2-Anforderungen, relevante Builtins/Predefined-Inhalte und Grammatikzweige **nicht nur inventarisieren**, sondern nach tatsächlichen fachlichen Assertions/Normbelegen, betroffenen öffentlichen Modellen und Versionen prüfen. `CANDIDATE_ONLY` bleibt offen. Es ist **nicht** mechanisch für jede Grammatik-Occurrence ein unnötiges Testquartett zu erzeugen; fachliche Bedingung statt Zahl optimieren.
-2. Vollständigen **A3-Semantikvergleich**: JVM/portable und wo möglich Referenztools. Verlorene Member, gleichnamige falsche Ziele, vertauschte Reihenfolgen und illegale Schemaannahme müssen als echte Gegenproben erkannt werden. Nur gemeinsame tatsächlich verfügbare Felder vergleichen; Abdeckungslücken explizit benennen.
-3. **18 normative Referenzausnahmen** einzeln mit korrekten Normstellen, minimalen Gegenfällen und tatsächlichen Compilerprozessen zur Nutzerentscheidung vorlegen; `TYPE_MODEL_STRUCTURE_BOUNDARY`, `NUMERIC_SCALING_PAIR_AND_CONSTANT_PROFILE`, `areAreas2/areAreas3` und weitere Profile ebenfalls. Besonders bei sechs OID-/CONTRACTED-Fällen wurden in bisherigen Berichten unpassende Auszüge benutzt – nicht ungeprüft übernehmen.
-4. T4 mit echten gepinnten 2.3/2.4-Closures samt transitiven Importen, Versionen, Offline-/Lock-Verhalten, öffentlichen Typen und Reihenfolge durchführen.
-5. T1–T4, `pythonFreeCheck`, CI-Reproduzierbarkeit, vollständigen G2-Regel-/Abnahmestatus und einen **neuen unabhängigen Gesamt-Review für exakt den letzten Commit** durchführen.
-
-**G2 ist nur abgenommen, wenn** keine unerkannte Implementierungslücke und kein ungeklärter `FAIL/ERROR/XPASS` existieren, alle notwendigen Normentscheidungen dokumentiert/freigegeben sind, die vollständigen G2-Regeln und Plattformen nachgewiesen wurden und OpenCode den exakten Schlussstand akzeptiert. Benutzerfreigegebene **rohe Referenzabweichungen** bleiben sichtbar, auch wenn das Projektprofil sie gesondert bewertet. Python ist vollständig entfernt. P3 ist damit **nicht** automatisch abgenommen.
-
-## 11. Prioritäten und fokussierte erste Tickets
-
-Nach P0a folgt zwingend P0b. Anschliessend: (1) **falsch angenommene ungültige Modelle**/falsches Schema, (2) **gültige zurückgewiesene Modelle**, (3) **falscher öffentlicher Graph trotz grünem Compile**, (4) Varianten von Import/Version/Recovery/Reuse, (5) fehlende Assertions ohne bekannten Defekt, (6) verbleibende Nachweistechnik.
-
-**Vorgeschlagene erste Fachkarten:**
-
-- `G2-LEX-COMMENT-OUTER`: Offener äusserer Blockkommentar trotz geschlossenem innerem; 2.3/2.4; STRICT/EDITOR; Range/Gate. Start in Phase 0a.
-- `G2-B1-PREDEFINED-LINE`: Binding von `SurfaceEdge`/`SurfaceBoundary`/`LineGeometry`; sechs bekannte Abweichungen, öffentliche Zielidentität und beide Sprachversionen.
-- `G2-A3-PUBLIC-GRAPH`: verlorener geerbter Member, falsches gleichnamiges Ziel, semantische Reihenfolge bei Übersetzung auf tatsächlich exportierten JVM-/portablen Feldern.
-- `G2-REVIEW-R3-XML-IDENTITY`: sehr kleiner Nachweisreview zum bereits korrigierten `testsuite@name`/`testcase@classname`-Problem, ohne neue Evidence-Architektur.
-
-**Optionaler Drei-Compiler-Gegenvergleich:** Bei strittigen Regel-/Normfragen denselben gepinnten `.ili`-Fall mit `ili2c`, `ilic-fork` und `interlis-java` ausführen. Ergebnis sauber unterscheiden: `ACCEPTED`, `REJECTED`, `ERROR`, `TIMEOUT`, `UNAVAILABLE`. Vergleich ist eine zusätzliche Diagnosequelle, **keine Normabstimmung nach Mehrheit**; `ilic-fork` wird nicht zum benötigten Produkt-/Build-Abhängigkeit jedes Tickets.
-
-## 12. Kleine, überprüfbare Abnahmeartefakte
-
-Pro Ticket eine **mit dem Code committete** kurze `docs/g2/review/<TICKET>-request.md` (Scope, `base_sha`, Tests, Belegpfade; **noch kein** eigener `head_sha`) sowie nach dem Commit ein **nicht mitzucommittendes** `build/review/<TICKET>/handoff.yaml` bzw. separate Übergabenachricht mit dem tatsächlichen `head_sha`. Rohreports liegen in `build/reports/` oder einem dauerhaften CI-Artefakt und können vom Reviewer neu erzeugt werden. Der Code-Commit selbst darf keine von seiner eigenen SHA abhängige Datei enthalten. Die **einzige** operative Queue bleibt `docs/g2/WORK_QUEUE.md`; historische Nachweisdokumente behalten den Status *historisch*.
-
-```yaml
-id: G2-LEX-COMMENT-OUTER
-kind: COMPILER_RULE  # oder JAVA_TOOLING
-base_sha: <voller-SHA>
-head_sha: <voller-SHA>
-requirements: [<echte-IDs>]
-norm_refs: [<genaue-INTERLIS-2.3-und-2.4-Stellen>]
-fixtures: [<Pfad-zu-original.ili>, <Pfad-zu-gegenprobe.ili>]
-public_contract: [<was-genau-nachweisbar-sein-muss>]
-executed_tests:
-  - command: <exakter-Aufruf>
-    exit: <Exitcode>
-    report: <Pfad-oder-CI-Artefakt>
-    sha256: <Report-SHA>
-not_executed: [<Pflichtprüfung-mit-Grund>]
-norm_decisions: [<offene-Entscheidungen>]
-review:
-  actual_model_id: <wirklich-eingestellter-provider/model-Wert>
-  reviewed_sha: <voller-SHA>
-  verdict: ABGENOMMEN|NACHARBEIT|WARTET_AUF_NORMFREIGABE|NICHT_PRUEFBAR
-```
-
-Das obige YAML ist **die Übergabemetadatei nach dem Commit**, nicht eine Datei, die mit `head_sha` in denselben Commit geschrieben wird. Der versionierte Request enthält nur vor dem Commit stabile Felder. Nach der Abnahme darf ein gesonderter Status-Commit den **geprüften Implementierungs-SHA** referenzieren; ein solcher Status-Commit gilt nicht selbst als unabhängig überprüfte Codeänderung. Das nächste Phasengate prüft deshalb den dann aktuellen Gesamt-SHA neu.
-
-Bei Java-Werkzeugmigration zusätzlich: `old_python_files`, `classification`, `replacement`, `old_run`, `new_run`, `invariant_checks`, `failure_canary`, `deleted_paths`, `python_free_evidence`. Kein Platzhalter gilt als erfüllter Nachweis.
-
-**Review-Verifikation:** Commit zuerst, separater frischer Worktree mit exakt diesem SHA danach. Der zweite Agent prüft ihn, schreibt den Review ausserhalb des Featurebranches und verändert die zu prüfenden Produktivquellen nicht. Eine Änderung nach Review erzeugt einen **neuen SHA und eine neue Prüfung**. Wenn OpenCode nicht automatisch aus Codex heraus aufgerufen werden kann, wird ein eigenständig ausführbarer Reviewauftrag ausgegeben; Codex darf ihn nicht fingieren.
-
-## 13. Reproduktionskommandos und Dateiablage
-
-Die **drei gelieferten Dateien** aus dieser Unterhaltung werden **im Repository-Root** wie folgt eingeordnet:
-
-| Gelieferte Datei | Ziel innerhalb `interlis-java` |
+| ID | Verbindliche Abnahmebedingung |
 |---|---|
-| `INTERLIS_G2_UMSETZUNGSPLAN.md` | `docs/g2/EXECUTION_PLAN.md` |
-| `CODEX_STARTPROMPT_INTERLIS_G2.md` | `docs/g2/CODEX_STARTPROMPT.md` |
-| `OPENCODE_REVIEW_PROMPT_INTERLIS_G2.md` | `docs/g2/OPENCODE_REVIEW_PROMPT.md` |
+| **AC0A-01** | Vorher-Nachweis: Offener äusserer Kommentar nach abgeschlossenem innerem Kommentar wird auf beiden Sprachversionen reproduziert; mindestens ein neuer Negativtest zeigt vor dem Fix tatsächlich `RED`. |
+| **AC0A-02** | Einfache und verschachtelte gültige Kommentare bleiben verlustfrei; offener äusserer/innerer Kommentar wird in 2.3 und 2.4 korrekt mit Syntaxdiagnostik behandelt. STRICT/EDITOR, Quellrekonstruktion/UTF-16-Bereiche und Compile-Gate bleiben korrekt. |
+| **AC0A-03** | Relevante JUnit-/Conformance-/bei Bedarf Parser-Portabilitätsprüfungen sind dokumentiert und ausgeführt; kein Originalpin, XFAIL oder Golden wurde gelockert. |
+| **AC0A-04** | Sauberer Kandidatencommit, kurzer Bericht und nachprüfbarer Handoff; der Reviewer muss einen **eigenen neuen Lexer-Gegenfall** ausführen. Der aktive Einstieg liegt unter `docs/g2/`, historische Reviews bleiben historisch. Der unabhängige Reviewer entscheidet danach über `PASS`. |
 
-Nach Einordnung beginnt Codex mit `docs/g2/CODEX_STARTPROMPT.md`. Alle Pfade in diesen Dokumenten beziehen sich auf den **Repository-Root**, nicht auf den temporären lokalen Dateiablageort. Das `docs/g2/`-Verzeichnis kann Codex oder der Nutzer anlegen. Das Lesen eines Prompts startet noch keine Implementierung; hierzu ist ein expliziter Nutzerauftrag nötig.
+**Erst nach `L0A: PASS` wird Phase 0b begonnen.** Das Pilot-PASS belegt nur den bezeichneten Fehlerfix und das unabhängige Verfahren, **nicht** die vollständigen Plattform- oder G2-Gates. Keine erneute grosse Norminventur als Vorbedingung dieses einfachen Fixes.
 
-**Bereits vorhandene Tasknamen** (vor Migration teils Python-gebunden; nicht ungeprüft als erfolgreich behaupten):
+## 5. Phase 0b – Python vollständig entfernen
 
-```bash
-./gradlew :interlis-compiler:test
-./gradlew check
-./gradlew conformanceCheck
-./gradlew checkPortable
-./gradlew checkBrowser
-./gradlew g2EvidenceTest
-./gradlew conformanceWrapperTest
-./gradlew sdkProcessCheck
+**Hartes Ziel:** Ausgehend von den beim untersuchten Commit **36 getrackten `.py`-Dateien** bleiben am Ende **null** getrackte Python-Dateien und **keine notwendige Python-/pip-Laufzeit** für aktiven Build, Tests, Conformance, Evidenz, Benchmarks, SDK und Reviews. Die Zahl zu Beginn mit `git ls-files '*.py'` erneut feststellen. **Keine mechanische 1:1-Portierung** aller 36 Dateien: den bestehenden Java-Runner wiederverwenden, wirksame Spezialverträge minimal nach Java/JUnit übernehmen und erwiesenermassen unnötige historische Generatoren entfernen, ohne Provenienz oder notwendige Reproduzierbarkeit zu verlieren.
+
+Pro alter Datei wird in **einer knappen Migrationsmatrix** der konkrete Verwendungsort und genau eine Entscheidung festgehalten: `REUSE_EXTERNAL`, `PORT_MINIMAL`, `REPLACE_WITH_TEST`, `FREEZE_ARCHIVE` oder `DELETE_REDUNDANT`. Jede Entscheidung hat einen Code-/Testnachweis. Die Matrix ist ein einmaliger Arbeitsnachweis, kein neues dauernd zu aktualisierendes Inventarframework.
+
+### `L0B-1`: Conformance und normative Sonderfälle nach Java
+
+| ID | Verbindliche Abnahmebedingung |
+|---|---|
+| **AC0B-01** | `conformanceCheck` verwendet **direkt** den vorhandenen gepinnten `InterlisConformance.java` und die unveränderte Fallmenge/Runner-Baseline; kein zweiter eigener Runner und keine heimliche Filteränderung. Echter Prozesslauf und korrekte frische Rohberichte. |
+| **AC0B-02** | Die 18 projektspezifischen Normabweichungen behalten ihre **separaten** Original-, Positiv-/Negativkontroll-, Hash-, Exit- und strukturierten Diagnoseprüfungen (einschliesslich Quellranges, Argumenten und Multiplizität); INTERLIS-1-Profilfall getrennt; Rohbilanz und Projektbilanz sichtbar. |
+| **AC0B-03** | Altes und neues Verhalten an denselben gepinnten Fällen verglichen. Negative Canarys für fehlende/duplizierte Test-ID, geänderten Hash, XPASS, falsche/fehlende Kontrolle und internen Fehler führen verlässlich zu Testfehlschlägen. Die betroffenen Python-Dateien und Aufrufe sind beseitigt. |
+
+### `L0B-2`: Aktive Evidenz/Normentests erhalten, Generatorballast abbauen
+
+| ID | Verbindliche Abnahmebedingung |
+|---|---|
+| **AC0B-04** | Benötigte JUnit-XML-, Quellen-/Artefakt-Hash- und Assertion-Bindungen sind als **kleine Java-/JUnit-Tests** erhalten. Suite **und** Klasse **und** Methode, Fehler, Skips und Frische werden geprüft; falsche Klasse bei identischem Methodennamen wird erkannt. `g2EvidenceTest` bleibt ein wirksames Gate. |
+| **AC0B-05** | Norm-/Grammatik-/Predefined-/Builtin-/Testkandidaten-Generatoren sind nach Gebrauch klassifiziert. Notwendige aktive Norm-/PDF-/Version-/Matrixverträge sind erhalten; rein historische Erzeugungsketten dürfen mit belegtem Grund entfallen. Gepinnte Evidenzen und Zitathashes werden nicht still verändert; insbesondere ist eine PDFBox-Extraktion nicht automatisch mit bisherigen `pypdf`-Offsets gleichzusetzen. |
+
+### `L0B-3`: Übrige Werkzeuge und vollständiges Python-freies Phasengate
+
+| ID | Verbindliche Abnahmebedingung |
+|---|---|
+| **AC0B-06** | SDK-/CLI-Prozessprüfungen, Referenz-/Corpus- und Performanceaufgaben (u. a. `geoCorpus`, `jvmBenchmark`) funktionieren über Java/Gradle und die bereits vorhandenen notwendigen Node-/Browserwerkzeuge; keine still deaktivierten oder nur scheinbar erfolgreichen Tasks. |
+| **AC0B-07** | `git ls-files '*.py'` ist leer; aktive Gradle-/CI-/Shell-/Node-/Reviewpfade brauchen keine Python-/pip-Binaries. `pythonFreeCheck` prüft dies mit einer **absichtlich fehlschlagenden** Canary. Historische Texte dürfen ehemalige Befehle weiter zitieren. |
+| **AC0B-08** | **Frischer Gesamtlauf ohne Python-Interpreter**: `check`, Conformance samt 18 Zusatzprüfungen, `g2EvidenceTest`, SDK und relevante Referenz-/Corpus-/Benchmark-Prüfungen, volle T3-Matrix inklusive Safari/Web Image und `pythonFreeCheck`. Der unabhängige Review dieser letzten Lieferung bewertet zugleich alle Kriterien der **Phase 0b**. |
+
+Wenn ein unverändertes Altwerkzeug für den einmaligen Paritätsvergleich noch Python benötigt, geschieht das **vor dessen Entfernung in einer isolierten Vergleichsumgebung**. Nach dem letzten Migrationsticket ist Python auch nicht mehr Teil der offiziellen Nachweisroutine. Ein nicht ausführbarer Pflichtpfad ist `BLOCKED`, nicht „durch Dokumentation ersetzt“.
+
+## 6. Phase 1 – Sprachfundament
+
+Der Schwerpunkt liegt auf realen Abweichungen und unvollständig nachgewiesenen Regeln aus bisherigen B–D-Schritten. `GraphBuilder.java` und `SyntaxTreeBuilder.java` bleiben bevorzugt Gegenstand **kleiner, gezielter Änderungen** statt eines spontanen Totalrefactorings.
+
+| Lieferung | ID | Verbindliche Abnahmebedingung |
+|---|---|---|
+| `L1-1` Predefined/Syntax/Import | **AC1-01** | Vordefinierte Modelle, Domains, Klassen/Strukturen/Units und versionsabhängige Namen sind öffentlich korrekt gebunden; insbesondere die dokumentierten `SurfaceEdge`/`SurfaceBoundary`/`LineGeometry`-Fälle. |
+|  | **AC1-02** | Lexer/Parser/Name- und Importregeln, Sichtbarkeit/Forward-References/Recovery sind für 2.3/2.4 mit positiven/negativen und öffentlichen Query-Fällen belegt; Fehler/Implementierungslücke/interner Fehler bleiben unterscheidbar. |
+| `L1-2` Typen/Einheiten/Geometrie | **AC1-03** | Numerische Unterteilungen, Skalierung, exakte Einheitenrelationen, OID und gemeinsame Typkompatibilität erfüllen die jeweilige Norm; zu jedem strittigen Profil liegt ein entscheidungsfähiger Norm-/Gegenfall vor. |
+|  | **AC1-04** | Text, Enum, FORMAT/Zeit, Coordinates/Geometrie, Collections/References und Typ-Queries erhalten tatsächliche Werte, Zielidentitäten und Grenzfälle in beiden Versionen. |
+| `L1-3` Vererbung/Assoziationen – **Phasengate** | **AC1-05** | Modell-/Topic-/Klassen-/Strukturvererbung, ABSTRACT/FINAL/EXTENDED, Override und vererbte Eigenschaften sind fachlich korrekt und öffentlich abfragbar. |
+|  | **AC1-06** | Association/Roles, Restriktionen, HIDING/EXTERNAL/OID/DEPENDS ON, effektive Ziele und Identitäten sind abgenommen. |
+|  | **AC1-07** | Effektive Mitglieder, Herkunft und **Transferreihenfolge** bleiben bei Import-/Dateireihenfolge und Fresh/Reuse identisch. |
+|  | **AC1-08** | Vollständige T1-/T2-/T3-Phasenregression und erneute Bewertung aller Kriterien `AC1-01` bis `AC1-07` auf dem neuen SHA; der unabhängige Reviewer entscheidet zugleich über **Phase 1**. |
+
+## 7. Phase 2 – Ausdrücke, Views, Übersetzungen und weitere Semantik
+
+| Lieferung | ID | Verbindliche Abnahmebedingung |
+|---|---|---|
+| `L2-1` Ausdrücke/Funktionen/Constraints | **AC2-01** | Objekt-/Attribut-/Rollenpfade inklusive Indizes, Mengen und Spezialkontexten liefern korrekte gebundene Ausdruckstypen und Referenzen. |
+|  | **AC2-02** | Alle relevanten 21 Builtins, ihre Signaturen/`UNDEFINED`-Semantik und die Constraintfamilien (inkl. SET/WHERE, UNIQUE, EXISTENCE, externe Constraints und Namensvererbung) sind öffentlich korrekt und mit Gegenfällen geprüft. Externe Funktionen werden nicht ausgeführt. |
+| `L2-2` Views/Inspektionen | **AC2-03** | Projection/Selection/Join/Union/Aggregation, abgeleitete Sichten, Inspektionen und `ALL OF` entsprechen der Norm und den tatsächlichen Bindungsregeln. |
+|  | **AC2-04** | Viewresultat enthält korrekte effektive Mitglieder, Typen, Zielidentitäten und Reihenfolgen; eine erfolgreiche Syntaxanalyse allein genügt nicht. |
+| `L2-3` Translation/Generics/Metadaten – **Phasengate** | **AC2-05** | Übersetzte Import-Closures besitzen die richtigen Korrespondenzen, ursprünglichen Ziele und Reihenfolgen, auch bei konkurrierenden gleichnamigen Symbolen. |
+|  | **AC2-06** | CONTEXT/GENERIC/DEFERRED, gebundene Metadaten, Linienformen sowie Grafik-/Signaturregeln sind fachlich verifiziert; `areAreas2/areAreas3` nur nach ausreichendem Normbeleg/Nutzerentscheidung. |
+|  | **AC2-07** | Vollständige T1-/T2-/T3-Regression und kumulative Kriterienprüfung `AC2-01` bis `AC2-06` auf demselben SHA; dieser Review entscheidet zugleich über **Phase 2**. |
+
+## 8. Phase 3 – Echte Overlays und Modellauflösung
+
+| Lieferung | ID | Verbindliche Abnahmebedingung |
+|---|---|---|
+| `L3-1` Overlaysemantik | **AC3-01** | `SemanticOverlays` verarbeitet **echte unveränderliche** Translation-/CRS-/Metaattribut-Daten statt nur Fingerprint-Platzhalter; Zielbindung, Mehrdeutigkeit, Konflikt, Herkunft und öffentliche Schemawirkung sind überprüft. |
+|  | **AC3-02** | Inhaltliche Fingerprints, reine Overlaywechsel, Isolation von Alias-/Importzuständen und Fresh/Reuse-Invalidation sind deterministisch. |
+| `L3-2` Modelldiscovery/Closure – **Phasengate** | **AC3-03** | Repositoryindizes, Quellauflösung und transitive Imports über lokale/Datei-/HTTP-Provider funktionieren ohne HTTP-/Dateisystemabhängigkeit des Compilerkerns. |
+|  | **AC3-04** | Versionen/Mehrdeutigkeit, Offline/Pins/Locks, Abbruch und Quelle-ändert-sich-während-Auflösung haben genaue Resultate und negative Tests; kein stiller Latest-Fallback. |
+|  | **AC3-05** | Mindestens repräsentative **gepinnt echte 2.3-/2.4-Closures** laufen mit öffentlichen Metamodell-Assertions; nicht bloss erfolgreichem Exitcode. |
+|  | **AC3-06** | Vollständige T1-/T2-/T3-Phasenregression und kumulative Prüfung `AC3-01` bis `AC3-05` auf demselben SHA; dieser Review entscheidet zugleich über **Phase 3**. |
+
+## 9. Phase 4 – Vollständiger G2-Abschluss
+
+Die bestehende detaillierte G2-Matrix wird **abgearbeitet**, nicht erneut durch einen grossen Generator ersetzt. Laut Ausgangsbericht gibt es 369 Compilerregel-Bedingungen, 1'476 geplante Fälle, 80 weitere G2-Anforderungen und zahlreiche nicht abgenommene Kandidatenlinks. Die Zahlen sind **Arbeitsvorrat, keine Erfolgsmessung**. Nicht jede Grammatik-Occurrence braucht ein künstliches Vierertestset; aber **jede normative fachliche Bedingung benötigt einen tragfähigen, ausgeführten Wirksamkeitsnachweis oder eine ausdrückliche offene Entscheidung**.
+
+| Lieferung | ID | Verbindliche Abnahmebedingung |
+|---|---|---|
+| `L4-1` Vollständigkeit und A3 | **AC4-01** | Sämtliche G2-pflichtigen Normbedingungen, Grammatikzweige, Builtins und 80 bislang offenen Anforderungen sind mit tatsächlichen Implementierungs-/JUnit-/öffentlichen Assertions verknüpft; `CANDIDATE_ONLY` gilt nicht als erledigt. Keine unerkannte Implementierungslücke. |
+|  | **AC4-02** | JVM-/Portable-/Referenz-Semantikvergleich erkennt verlorene Member, falsch gleichnamige Ziele, vertauschte Reihenfolgen und falsches gültiges `CompiledSchema` anhand wirklich verfügbarer Daten; Nichtvergleichbares bleibt offen ausgewiesen. |
+|  | **AC4-03** | Alle 18 Referenzabweichungen und strittigen Normprofile (u. a. TYPE MODEL, Numeric Scaling, `areAreas2/3`) sind mit passenden Normstellen, Original-/Gegenfällen und Empfehlung entscheidungsreif; keine Normentscheidung durch den Agenten. |
+| `L4-2` Kumulative Gesamtfreigabe | **AC4-04** | Erforderliche Nutzerentscheidungen sind tatsächlich getroffen und unverfälscht umgesetzt; Rohreferenzabweichungen bleiben sichtbar. **Ohne nötige Freigaben kein G2-PASS.** |
+|  | **AC4-05** | T4 führt reale gepinnte 2.3-/2.4-Closures mit transitiven Imports, Offline/Pins/Locks und öffentlichen Semantikassertions aus. |
+|  | **AC4-06** | T1–T4, volle Conformance, echte Safari-/Web-Image- und SDK-/CLI-/LSP-Verträge, `pythonFreeCheck` und Python-freier Build sind am **endgültigen Produkt-SHA** frisch erfolgreich; keine ungeklärten `FAIL/ERROR/XPASS`, keine Pflichtskips. |
+|  | **AC4-07** | Vollständiges unabhängiges Review der G2-Ergebnisse, Wechselwirkungen und Kriterien `AC4-01` bis `AC4-06` am **exakten Schluss-SHA**; ein `PASS` dieses Reviews ist die **G2-Freigabe**, nicht die Freigabe von P3/P4/P5. |
+
+**Normentscheidungen früh vorbereiten:** Die 18 bestehenden Referenzabweichungen umfassen dokumentierte OID-/CONTRACTED-, Assoziations-, Ausdrucks-, View- und Geometriefragen. Bei sechs frühen OID-/CONTRACTED-Fällen sind die bislang abgedruckten Normauszüge unzureichend. Den Nutzer nachweisbasiert und rechtzeitig entscheiden lassen; nicht erst am allerletzten Tag. Die Regelentscheidung bleibt ein Nutzerakt und darf auch bei zwei übereinstimmenden Referenzcompilern nicht aus einem Mehrheitsvotum abgeleitet werden.
+
+## 10. Einheitliche Berichte und Commitübergabe
+
+**Keine zusätzliche Reviewplattform bauen.** Pro Lieferabschnitt reicht ein kurzer versionierter Implementierungsbericht und ein separater unabhängiger Prüfbericht. Rohlogs/JSON/XML/Artefakte in `build/reports/` oder CI-Artefakten, nicht als grosse Sammlung im Git-Repository. Eine einzige `docs/g2/STATUS.md` enthält aktuelle Lieferung, Status, letzten `PASS`-SHA, offene Blocker und nächsten Schritt. Die bestehenden historischen A–I-/Evidenzdateien werden nicht umgeschrieben.
+
+Empfohlene Ablage:
+
+```text
+interlis-java/
+└── docs/g2/
+    ├── EXECUTION_PLAN.md
+    ├── CODEX_STARTPROMPT.md
+    ├── OPENCODE_REVIEW_PROMPT.md
+    ├── STATUS.md
+    ├── implementation/L1-2.md
+    └── reviews/L1-2-review.md
 ```
 
-**Nach P0b zusätzlich:** `./gradlew pythonFreeCheck` und frischer Test-/Buildlauf **ohne Python**. `pythonFreeCheck` ist ein neu zu implementierender Task, kein heute bereits vorhandener Task.
+**Implementierungsbericht (Agent A, vor dem Commit):**
 
-### Primärquellen
+```text
+Lieferabschnitt / Phase:
+Kriterien-IDs und betroffene Norm-/Spezifikations-IDs:
+Basiscommit (voller SHA):
+Bearbeitete Funktionen und nicht bearbeiteter Umfang:
+Red-Test / Reproduktion vor dem Fix:
+Geänderte Dateien und öffentliche Auswirkungen:
+Eigene ausgeführte Kommandos mit Exitcodes:
+Tests / Failures / Errors / Skips und Rohreportpfade:
+Conformance: Fallmenge / Rohbilanz / Projektbilanz / Pins:
+Fällige, aber nicht ausgeführte Prüfungen (mit Grund):
+Offene Norm-/Technikfragen und bestehende Regressionen:
+Nächster Schritt nach unabhängiger Abnahme:
+```
 
-- [`interlis-java` Status](https://github.com/edigonzales/interlis-java/blob/main/docs/implementation-status.md), [G2-A–I-Abschlussplan](https://github.com/edigonzales/interlis-java/blob/main/docs/evidence/stabilization/g2-completion-plan.md), [Phase-A-Dashboard](https://github.com/edigonzales/interlis-java/blob/main/docs/evidence/stabilization/phase-a-dashboard.md).
-- [A2-R3-Review](https://github.com/edigonzales/interlis-java/blob/main/docs/evidence/stabilization/g2-reviews/A2-R3-review-2026-10-28.md), [Normentscheidungspaket](https://github.com/edigonzales/interlis-java/blob/main/docs/evidence/stabilization/g2-normative-decision-packet-2026-10-28.md).
-- [`ili2c`-Regressionen](https://github.com/claeis/ili2c/tree/master/test), [`ilic-fork`-Conformance-Konzept](https://github.com/edigonzales/ilic-fork/blob/main/docs/conformance.md), [`ilic-fork`-Regressionsrunner](https://github.com/edigonzales/ilic-fork/blob/main/cmake/run_ilic_regression.cmake).
-- Externe [`interlis-compiler-testsuite`](https://codeberg.org/edigonzales/interlis-compiler-testsuite), Commit `88576ffc4cd491dd72d2375eb897ea9f3f55d2c3`; unser archivierter Download-Pin bleibt massgeblich.
+**Erst nach dem Commit** werden der volle `CANDIDATE_SHA` und die Berichtsreferenz an OpenCode übergeben. Dieser Handoff steht in einer separaten Nachricht oder ignorierten Datei unter `build/review/`, damit kein selbstreferenzieller Commit entsteht. OpenCode speichert seinen eigenen Report getrennt. Ein ausschliesslicher Dokumentationscommit, der einen **unveränderten** Reviewbericht ablegt und `STATUS.md` nach dem Review auf `PASS` setzt, darf folgen; er ändert nicht rückwirkend den geprüften **Produktcommit**. Jede spätere Änderung an Code, Tests, Build, Abhängigkeiten oder ausführbaren Beispielen verlangt einen neuen Kandidaten und Review.
 
----
+**Prüfbericht (Agent B, nach eigener Ausführung):**
 
-**Erfolg bedeutet:** mehr unabhängig verifizierte richtige INTERLIS-Semantik, weniger Test- und Dokumentationsballast, vollständige gemeinsame Conformance ohne versteckte Ausnahmen und ein nachweisbar **Python-freier** aktiver Entwicklungs-/Test-/Reviewweg. **Nicht**: mehr generierte Markdown- oder JSON-Dateien.
+```text
+Lieferabschnitt / Phase / ist Phasengate? ja-nein:
+Reviewer / tatsächlich gewählte OpenCode-provider/model-Konfiguration:
+Basiscommit / exakt geprüfter Kandidatencommit:
+Prüfumgebung und Toolchain:
+Je Kriterium: ID | erfüllt / verletzt / nicht prüfbar | eigener Beleg | Finding:
+Eigene neue Gegenprobe: Input, Hypothese, Kommando, tatsächlicher Output:
+Ausgeführte Pflichtkommandos / Exitcodes / Tests / Skips:
+Kumulierte Regressionen und vollständige Phasengates (falls fällig):
+Norm-/Suite-/XFAIL-Unverändertheit und verbleibende Entscheidungen:
+Offene BLOCKER / benötigte konkrete Nacharbeit:
+Urteil: PASS / FAIL / BLOCKED
+Begründung und nächster fachlicher Schritt:
+```
+
+Im Reviewer-Report sind in einer Tabelle **sämtliche Muss-Kriterien des Lieferabschnitts** zu behandeln. Beim letzten Lieferabschnitt zusätzlich **alle Muss-Kriterien der gesamten Phase**. Ein Reviewsatz „alle Tests grün“ ohne Kriterienbezug reicht nicht.
+
+## 11. Operativer Einstieg
+
+1. ZIP im Repository-Root so entpacken, dass die drei Dateien unter `docs/g2/` liegen.
+2. Codex den Text in `docs/g2/CODEX_STARTPROMPT.md` als Auftrag geben. Es beginnt **nur mit `L0A`**, nicht mit einer erneuten grossen Architekturplanung.
+3. Nach seinem lokalen Implementierungscommit den **vollen `CANDIDATE_SHA`** und `docs/g2/OPENCODE_REVIEW_PROMPT.md` in einem **separaten** OpenCode-Kontext mit DeepSeek Flash 1017 verwenden.
+4. Bei `FAIL`/`BLOCKED` nacharbeiten oder Voraussetzungen herstellen; bei `PASS` zum nächsten Lieferabschnitt wechseln. Ein Phasenwechsel benötigt das `PASS` des letzten Phasenabschnitts einschliesslich kumulativer Gates.
+
+**Erfolgsmass:** Korrekte, unabhängig nachgewiesene INTERLIS-Semantik bei steigender Normabdeckung, vollständige Pythonfreiheit und reproduzierbare Testprozesse. **Nicht:** Zahl der Dokumente, generierter Inventare oder grüner Tests ohne belastbare Assertions.
