@@ -1,0 +1,65 @@
+def hostNodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+def hostProfiles = [
+    pythonFreeCheck: ['PythonFreeCheck', []],
+    geoCorpus: ['GeoCorpus', []],
+    jvmBenchmark: ['JvmBenchmark', []],
+    sdkProcessCheck: ['SdkProcesses', []],
+    referenceCheck: ['ReferenceProcesses', ['profile']],
+    originalViewReferenceCheck: ['ReferenceProcesses', ['originals']],
+    viewReferenceCheck: ['ReferenceProcesses', ['views', hostNodeExecutable.get()]],
+    unitReferenceCheck: ['ReferenceProcesses', ['units', hostNodeExecutable.get()]]
+]
+project(':interlis-cli') {
+    plugins.withId('java') {
+        sourceSets {
+            verification
+            verificationTest {
+                compileClasspath += sourceSets.verification.output
+                runtimeClasspath += sourceSets.verification.output
+            }
+        }
+        configurations {
+            verificationImplementation.extendsFrom testImplementation
+            verificationRuntimeOnly.extendsFrom testRuntimeOnly
+            verificationTestImplementation.extendsFrom verificationImplementation
+            verificationTestRuntimeOnly.extendsFrom verificationRuntimeOnly
+        }
+        tasks.register('verificationTest', Test) {
+            testClassesDirs = sourceSets.verificationTest.output.classesDirs
+            classpath = sourceSets.verificationTest.runtimeClasspath
+            useJUnitPlatform()
+            systemProperty 'repo.root', rootProject.projectDir.absolutePath
+            inputs.dir(rootProject.file('docs/evidence/stabilization/registries/unicode-17.0.0'))
+            inputs.file(rootProject.file('interlis-compiler/src/main/java/guru/interlis/compiler/internal/TextLengths.java'))
+        }
+        tasks.named('check') { dependsOn 'verificationTest' }
+        hostProfiles.each { name, profile ->
+            tasks.register(name, JavaExec) {
+                group = 'verification'
+                description = "Runs the Java host verification profile ${name}."
+                dependsOn 'verificationClasses'
+                classpath = sourceSets.verification.runtimeClasspath
+                mainClass = "guru.interlis.cli.verification.${profile[0]}"
+                args rootProject.projectDir.absolutePath
+                args profile[1]
+                javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+                if (name in ['sdkProcessCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn 'installDist'
+                if (name == 'jvmBenchmark') dependsOn 'geoCorpus'
+                if (name == 'jvmBenchmark') mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':interlis-wasm-webimage:webImageProbe'
+                if (name in ['viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':checkNodeRuntime'
+                if (name in ['originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'referenceCheck'
+                if (name in ['viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'originalViewReferenceCheck'
+                if (name == 'unitReferenceCheck') mustRunAfter 'viewReferenceCheck'
+            }
+        }
+    }
+}
+hostProfiles.each { name, profile ->
+    tasks.register(name) {
+        group = 'verification'
+        description = "Runs the Java host verification profile ${name}."
+        dependsOn ":interlis-cli:${name}"
+    }
+}
+
+tasks.named('check') { dependsOn 'pythonFreeCheck' }

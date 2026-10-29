@@ -70,7 +70,7 @@ final class RuntimeReports {
                 && data.getAsJsonObject("suite").get("commit").equals(conformance.get("suiteCommit")),"Changed conformance selection");
         for(var a:rows(data,"normativeAssessments")) {
             var original=a.getAsJsonObject("original"); var control=a.getAsJsonObject("positiveControl");
-            require(s(a,"result").equals("PASS") && s(a,"referenceClassification").equals("FAIL") && Set.of("accepted","rejected").contains(s(a,"ownExpectation"))
+            require(s(a,"result").equals("PASS") && (s(a,"referenceClassification").equals("FAIL") || s(a,"referenceClassification").equals("PASS") && approvedCompatibility(a)) && Set.of("accepted","rejected").contains(s(a,"ownExpectation"))
                     && a.get("actualOutcome").equals(a.get("ownExpectation")) && !strings(original.get("command")).isEmpty() && !strings(control.get("command")).isEmpty()
                     && n(original,"exitCode")== (s(a,"ownExpectation").equals("accepted")?0:1) && n(control,"exitCode")==0,"Incomplete normative assessment");
         }
@@ -78,9 +78,19 @@ final class RuntimeReports {
     static void pair(JsonObject raw, JsonObject project) {
         require(project.get("referenceSummary").equals(raw.get("summary")) && project.get("referenceResult").equals(raw.get("overallResult")),"Raw/project summaries disagree");
         Set<String> failed=new HashSet<>(); for(var t:rows(rows(raw,"compilers").getFirst(),"tests")) if(s(t,"classification").equals("FAIL")) failed.add(s(t,"testId"));
-        var assessments=rows(project,"normativeAssessments"); require(ids(assessments,"testId").equals(failed) && assessments.size()==failed.size(),"Missing/duplicate normative assessment");
-        var summary=raw.getAsJsonObject("summary").deepCopy(); summary.addProperty("FAIL",n(summary,"FAIL")-assessments.size()); summary.addProperty("XFAIL",n(summary,"XFAIL")+assessments.size());
+        var assessments=rows(project,"normativeAssessments");Set<String> required=new HashSet<>(failed);
+        if(project.has("assessmentCaseIds")) require(ids(assessments,"testId").equals(new HashSet<>(strings(project.get("assessmentCaseIds")))),"Missing declared project assessment");
+        for(var a:assessments)if(approvedCompatibility(a)) {
+            require(rows(rows(raw,"compilers").getFirst(),"tests").stream().anyMatch(t->t.get("testId").equals(a.get("testId")) && s(t,"classification").equals("PASS")),"Compatibility assessment lacks raw PASS");required.add(s(a,"testId"));
+        }
+        require(ids(assessments,"testId").equals(required) && assessments.size()==required.size(),"Missing/duplicate normative assessment");
+        var summary=raw.getAsJsonObject("summary").deepCopy(); summary.addProperty("FAIL",n(summary,"FAIL")-failed.size()); summary.addProperty("XFAIL",n(summary,"XFAIL")+failed.size());
         require(summary.equals(project.get("summary")),"Unexplained classification change");
+    }
+    static boolean approvedCompatibility(JsonObject assessment) {
+        if(!assessment.has("compatibilityDecision"))return false;
+        var decision=assessment.getAsJsonObject("compatibilityDecision");
+        return s(decision,"id").equals("LEGACY_OID_23_WITHOUT_CONTRACTED") && s(decision,"userDecision").equals("APPROVED_USER");
     }
     static void sdk(JsonObject data) {
         List<List<String>> args=List.of(List.of("version"),List.of("version","--json"),List.of("capabilities"),

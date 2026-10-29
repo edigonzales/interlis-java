@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
 const os = require('node:os');
@@ -28,7 +29,7 @@ function serve(root) {
   const repoRoot = path.resolve(__dirname, '..');
   const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot,
     'docs/evidence/p3/geo-corpus.json'), 'utf8'));
-  const cache = path.join(os.homedir(), '.cache/interlis-java/geo-corpus');
+  const cache = path.resolve(repoRoot, process.env.GEO_CORPUS_CACHE || process.env.CONFORMANCE_CACHE || path.join(os.homedir(), '.cache/interlis-java/geo-corpus'));
   const home = process.env.HOME;
   const cached = {
     chromium: path.join(home, 'Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'),
@@ -55,7 +56,9 @@ function serve(root) {
         const page = await browser.newPage();
         await page.goto(url, {waitUntil: 'load'});
         await page.waitForFunction(() => Boolean(window.interlisBrowserTest), {timeout: 30000});
-        const text = fs.readFileSync(path.join(cache, entry.file.replaceAll('/', '__')), 'utf8');
+        const bytes = fs.readFileSync(path.join(cache, entry.file.replaceAll('/', '__')));
+        if (bytes.length !== entry.bytes || crypto.createHash('sha256').update(bytes).digest('hex') !== entry.sha256) throw new Error('Changed corpus bytes: ' + entry.file);
+        const text = bytes.toString('utf8');
         const run = () => page.evaluate(({text, model}) =>
           window.interlisBrowserTest.benchmark(text, model), {text, model: entry.model});
         await run();

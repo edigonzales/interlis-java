@@ -1,33 +1,51 @@
 package guru.interlis.model;
 
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
- * Immutable meta-attribute values; distinct from transfer data.
+ * Immutable source metadata, distinct from transfer data. All occurrences retain
+ * source order and provenance; the map indexes the first occurrence of each key.
  *
- * @param values the {@code values} component
+ * @param values null-free first-occurrence index
+ * @param entries null-free occurrences in source order, including repetitions
  */
-public record MetaAttributeSet(Map<String, Value> values) {
-    /** Creates a validated instance. */
+public record MetaAttributeSet(Map<String, Value> values, List<Entry> entries) {
+    /** Copies both inputs and rejects an index inconsistent with the occurrences. */
     public MetaAttributeSet {
-        var copy = new java.util.LinkedHashMap<String, Value>();
-        Objects.requireNonNull(values, "values").forEach((key,value) ->
-                copy.put(Objects.requireNonNull(key,"key"),Objects.requireNonNull(value,"value")));
-        values = java.util.Collections.unmodifiableMap(copy);
+        Objects.requireNonNull(values,"values");
+        entries=List.copyOf(Objects.requireNonNull(entries,"entries"));
+        var first=new LinkedHashMap<String,Value>();
+        for(var entry:entries)first.putIfAbsent(entry.key(),entry.value());
+        if(!first.equals(values))throw new IllegalArgumentException("metadata index differs from first occurrences");
+        values=Collections.unmodifiableMap(first);
     }
 
-    /** Immutable value with its original declared, derived or predefined provenance. */
-    public record Value(String text,Origin origin) {
-        public Value { Objects.requireNonNull(text);Objects.requireNonNull(origin); }
+    /** Retains the map constructor: each map entry becomes one ordered occurrence. */
+    public MetaAttributeSet(Map<String,Value> values) {
+        this(values,Objects.requireNonNull(values,"values").entrySet().stream().map(e->new Entry(e.getKey(),e.getValue())).toList());
     }
 
-    /**
-     * Returns the {@code empty} value.
-     *
-     * @return the value
+    /** One immutable occurrence.
+     * @param key non-null metadata key
+     * @param value non-null value retaining its original provenance
      */
-    public static MetaAttributeSet empty() {
-        return new MetaAttributeSet(Map.of());
+    public record Entry(String key,Value value) {
+        public Entry {Objects.requireNonNull(key,"key");Objects.requireNonNull(value,"value");}
     }
+
+    /** Immutable value with its original declared, derived or predefined provenance.
+     * @param text non-null decoded text, without normalization
+     * @param origin non-null original provenance, including source revision when declared
+     */
+    public record Value(String text,Origin origin) {
+        public Value {Objects.requireNonNull(text,"text");Objects.requireNonNull(origin,"origin");}
+    }
+
+    /** All occurrences of a non-null key, in source order; never null, empty when absent. */
+    public List<Value> values(String key) {
+        Objects.requireNonNull(key,"key");return entries.stream().filter(e->e.key().equals(key)).map(Entry::value).toList();
+    }
+
+    /** Empty immutable metadata. */
+    public static MetaAttributeSet empty() {return new MetaAttributeSet(Map.of());}
 }

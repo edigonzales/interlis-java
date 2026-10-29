@@ -105,3 +105,14 @@ Diese Herkunft rechtfertigt keine automatische Gleichsetzung der Implementierung
 Eine neue Entscheidung ergänzt ID, Problem, betrachtete Varianten, Entscheidung, betroffene Anforderungen, Abnahmetests und Migrationsfolgen. Reine Klassenumbenennungen benötigen keinen langen Aufsatz, aber ein konsistentes Register. Eine Änderung von Sprachsemantik, Snapshotgültigkeit, DB-Abbildung, Build-Tool oder Plattformzusage benötigt eine ausdrücklich erkennbare Entscheidung.
 
 Gepinnte Fakten werden bei einem Update erneut gelesen. Ein alter erfolgreicher Spike beweist keine neue Bibliotheksversion. Ebenso darf ein neuer Toolchainfehler nicht rückwirkend als Beweis ausgegeben werden, dass eine zuvor getestete Konfiguration nie funktioniert habe.
+
+### Nutzerentscheidung vom 29.10.2026: OID ohne CONTRACTED
+
+Für die Bestandskompatibilität nimmt der Compiler INTERLIS-2.3-`OID AS` und
+`BASKET OID AS` auch ohne `CONTRACTED` an. Der Nutzer hat die bewusste Abweichung
+von dieser nicht durchgesetzten Normvoraussetzung verlangt; die Entscheidung
+betrifft ausschliesslich diese OID-Bedingung. Andere CONTRACTED-Regeln und alle
+Domänen-/Vererbungs-/Overrideprüfungen bleiben erhalten. Kapitel 06 beschreibt
+das Verhalten. Sechs bisherige Referenzausnahmen werden reguläre PASS-Fälle mit
+weiterhin geprüften Original-, Positiv- und Negativquellen. Die übrigen zwölf
+Ausnahmen bleiben unverändert; daraus folgt keine allgemeine Normfreigabe.

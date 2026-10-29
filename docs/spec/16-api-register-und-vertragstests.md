@@ -561,7 +561,12 @@ E5 in API 0.2: SourceMetadata gehört zu interlis-compiler/guru.interlis.syntax
 und besitzt verschachtelte Attribute(key,text,range) und Text(text,range).
 SyntaxSnapshot erhält metadata als letzten Konstruktorparameter und eine
 gleichnamige immutable Abfrage. MetaAttributeSet.Value und Documentation
-gehören zu interlis-model/guru.interlis.model; Signaturen und Herkunft gemäss
+gehören zu interlis-model/guru.interlis.model. Ergänzung L0B-3:
+`MetaAttributeSet(Map<String,Value>,List<Entry>)`, `Entry(String,Value)`,
+`entries(): List<Entry>` und `values(String): List<Value>` erhalten wiederholte
+Funktionsparameter-Metadaten vollständig. Der einargumentige Map-Konstruktor und
+`values(): Map<String,Value>` bleiben der Erstvorkommensindex. Signaturen,
+Nullfreiheit, defensive Kopie, Reihenfolge, Konfliktprofil und Herkunft gemäss
 Kapitel 05. FunctionDeclarationSyntax(...,explanation) und
 FunctionSymbol(header,parameters,returnType,returnMandatory,explanation) werden
 direkt angepasst. Leere Werte verwenden die vorhandenen empty-Fabriken bzw.

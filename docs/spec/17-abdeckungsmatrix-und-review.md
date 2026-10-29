@@ -809,3 +809,8 @@ E4 direkte Constraintnamen (META-006/011/014, SEM-005/008/010/014, TEST-011/012)
 ConstraintNameContractTest prüft eindeutige Namen über direkte Constraintfamilien
 und same-topic CONSTRAINTS OF, zweite Namensbereiche und öffentliche Queries.
 Vererbte Namensräume bleiben im Fallkatalog ausdrücklich offen.
+
+L0B-3-Kompatibilität zu META-006/010/014/017: Die Verträge in Kapitel 04/05/16
+erhalten fortgesetzte Kommentarstrings mit Original-UTF-16-Bereichen und alle
+Vorkommen von `fn.param` an Funktionen. Bestehende Einzelwertkonflikte bleiben
+Fehler. Diese Konkretisierung fügt keine neue Anforderungs-ID hinzu.

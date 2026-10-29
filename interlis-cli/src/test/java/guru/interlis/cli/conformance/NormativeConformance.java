@@ -125,17 +125,25 @@ public final class NormativeConformance {
         evidence.add("referenceClassification", test.get("classification"));
         evidence.add("ownExpectation", entry.get("ownExpectation"));
         evidence.add("norm", entry.get("norm"));
+        if (entry.has("compatibilityDecision")) evidence.add("compatibilityDecision", entry.get("compatibilityDecision").deepCopy());
         evidence.addProperty("result", "FAIL");
         try {
             boolean rejected = text(entry, "ownExpectation").equals("rejected");
-            var expected = new JsonObject(); expected.addProperty("outcome", rejected ? "accept" : "reject");
+            boolean compatibility = entry.has("compatibilityDecision");
+            if (compatibility) {
+                var decision = entry.getAsJsonObject("compatibilityDecision");
+                require(text(decision,"id").equals("LEGACY_OID_23_WITHOUT_CONTRACTED")
+                        && text(decision,"userDecision").equals("APPROVED_USER")
+                        && text(entry,"languageVersion").equals("2.3") && text(entry,"ownExpectation").equals("accepted"), "unapproved compatibility case");
+            }
+            var expected = new JsonObject(); expected.addProperty("outcome", rejected || compatibility ? "accept" : "reject");
             require(Set.of("accepted", "rejected").contains(text(entry, "ownExpectation"))
                     && entry.get("referenceExpectation").equals(expected) && test.get("expectation").equals(expected)
                     && text(test, "languageVersion").equals(text(entry, "languageVersion"))
                     && !entry.getAsJsonObject("norm").isEmpty() && !test.get("timedOut").getAsBoolean()
                     && test.get("exitCode").getAsInt() == (rejected ? 1 : 0)
                     && test.get("actualOutcome").equals(entry.get("ownExpectation"))
-                    && text(test, "classification").equals("FAIL"), "reference result, language or expectation mismatch");
+                    && text(test, "classification").equals(compatibility ? "PASS" : "FAIL"), "reference result, language or expectation mismatch");
             var names = sourceNames(array(entry, "sources"));
             var command = strings(array(test, "command"));
             require(names.equals(strings(array(test, "inputs"))) && command.size() == names.size() + 2
@@ -196,7 +204,7 @@ public final class NormativeConformance {
             if (entry != null) {
                 var assessment = evaluate(root, cli, entry, test, run);
                 assessments.add(assessment);
-                if (text(assessment, "result").equals("PASS")) {
+                if (text(assessment, "result").equals("PASS") && text(test,"classification").equals("FAIL")) {
                     counts.addProperty("FAIL", counts.get("FAIL").getAsInt() - 1);
                     counts.addProperty("XFAIL", counts.get("XFAIL").getAsInt() + 1);
                 }
@@ -210,6 +218,7 @@ public final class NormativeConformance {
         result.add("referenceSummary", summary.get("summary").deepCopy());
         result.add("referenceResult", report.get("overallResult"));
         result.add("normativeAssessments", assessments);
+        result.add("assessmentCaseIds", JSON.toJsonTree(entries.keySet().stream().filter(selected::contains).toList()));
         result.addProperty("referenceReport", "build/conformance/report.json");
         return result;
     }
@@ -261,7 +270,7 @@ public final class NormativeConformance {
         require(!selected.isEmpty() && (!full || (suiteCases.size() == 610 && selected.size() == 593 && excluded == 17)),
                 "unexpected selected suite case set");
         var manifest = read(root.resolve("docs/evidence/conformance/normative-expectations.json"));
-        require(array(manifest, "cases").size() == 18, "expected exactly 18 explicit normative exceptions");
+        require(array(manifest, "cases").size() == 18, "expected exactly 18 explicit project assessments");
         Path cli = Path.of(text(array(config, "compilers").get(0).getAsJsonObject(), "source"));
         int exit = Integer.parseInt(Files.readString(output.resolve("runner-exit.txt")));
         var raw = read(output.resolve("summary.json"));

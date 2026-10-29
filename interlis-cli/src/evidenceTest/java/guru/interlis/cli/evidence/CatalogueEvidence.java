@@ -245,8 +245,11 @@ final class CatalogueEvidence {
         rows(inventory, "documents").forEach(d -> rows(d, "entries").forEach(r -> paragraphs.put(s(r, "id"), r)));
         for (var c : rows(packet, "cases")) {
             var original = rows(expected, "cases").stream().filter(r -> r.get("testId").equals(c.get("testId"))).findFirst().orElseThrow();
+            boolean approved = original.has("compatibilityDecision");
             require(c.get("ownExpectation").equals(original.get("ownExpectation")) && c.get("referenceExpectation").equals(original.get("referenceExpectation"))
-                    && s(c, "userDecision").equals("PENDING_USER_REVALIDATION") && rows(c, "normEvidence").stream().map(r -> s(r,"document")).collect(java.util.stream.Collectors.toSet()).equals(Set.of("2.3", "2.4")), "Changed normative expectation/decision");
+                    && s(c, "userDecision").equals(approved ? "APPROVED_COMPATIBILITY_DEVIATION" : "PENDING_USER_REVALIDATION")
+                    && (!approved || c.get("compatibilityDecision").equals(original.get("compatibilityDecision")))
+                    && rows(c, "normEvidence").stream().map(r -> s(r,"document")).collect(java.util.stream.Collectors.toSet()).equals(Set.of("2.3", "2.4")), "Changed normative expectation/decision");
             for (var norm : rows(c, "normEvidence")) {
                 // Empty locator-only entries are existing, unaccepted gaps. They do
                 // not certify semantics; every paragraph actually cited stays exact.

@@ -3,7 +3,7 @@
   "status": "PENDING_USER_REVALIDATION",
   "purpose": "Prepare the 18 existing normative reference exceptions for explicit user revalidation; no expectation is changed.",
   "source": "docs/evidence/conformance/normative-expectations.json",
-  "sourceSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
+  "sourceSha256": "441df2200043f4d9b62cf77751eb083bd9a4ef1cf3c0a7201d09974dbfd740ec",
   "normalization": "No change of previous authorizations, own expectations, reference outcomes or XFAIL status.",
   "cases": [
     {
@@ -14,7 +14,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "normSections": "2.5.1–2.5.2",
       "normReason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht.",
       "normEvidence": [
@@ -315,13 +315,21 @@
       ],
       "recommendation": "KEEP_EXISTING_PENDING_USER",
       "recommendationBasis": "Existing project decision and the recorded norm reason remain unchanged until the user revalidates both versions.",
-      "userDecision": "PENDING_USER_REVALIDATION",
+      "userDecision": "APPROVED_COMPATIBILITY_DEVIATION",
       "decisionOptions": [
         "KEEP_EXISTING",
         "CHANGE_TO_REFERENCE",
         "OTHER_WITH_NORM_REASON"
       ],
-      "review": "MISSING_EVIDENCE"
+      "review": "MISSING_EVIDENCE",
+      "userDecisionDate": "2026-10-29",
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Classes23Test.class_AcceptingOidDefinition",
@@ -331,7 +339,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "normSections": "2.5.1–2.5.2",
       "normReason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht.",
       "normEvidence": [
@@ -560,13 +568,21 @@
       ],
       "recommendation": "KEEP_EXISTING_PENDING_USER",
       "recommendationBasis": "Existing project decision and the recorded norm reason remain unchanged until the user revalidates both versions.",
-      "userDecision": "PENDING_USER_REVALIDATION",
+      "userDecision": "APPROVED_COMPATIBILITY_DEVIATION",
       "decisionOptions": [
         "KEEP_EXISTING",
         "CHANGE_TO_REFERENCE",
         "OTHER_WITH_NORM_REASON"
       ],
-      "review": "MISSING_EVIDENCE"
+      "review": "MISSING_EVIDENCE",
+      "userDecisionDate": "2026-10-29",
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Topic23Test.topicComplete",
@@ -576,7 +592,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "normSections": "2.5.1–2.5.2",
       "normReason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht.",
       "normEvidence": [
@@ -829,13 +845,21 @@
       ],
       "recommendation": "KEEP_EXISTING_PENDING_USER",
       "recommendationBasis": "Existing project decision and the recorded norm reason remain unchanged until the user revalidates both versions.",
-      "userDecision": "PENDING_USER_REVALIDATION",
+      "userDecision": "APPROVED_COMPATIBILITY_DEVIATION",
       "decisionOptions": [
         "KEEP_EXISTING",
         "CHANGE_TO_REFERENCE",
         "OTHER_WITH_NORM_REASON"
       ],
-      "review": "MISSING_EVIDENCE"
+      "review": "MISSING_EVIDENCE",
+      "userDecisionDate": "2026-10-29",
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
@@ -845,7 +869,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "normSections": "2.5.1–2.5.2",
       "normReason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht.",
       "normEvidence": [
@@ -1074,13 +1098,21 @@
       ],
       "recommendation": "KEEP_EXISTING_PENDING_USER",
       "recommendationBasis": "Existing project decision and the recorded norm reason remain unchanged until the user revalidates both versions.",
-      "userDecision": "PENDING_USER_REVALIDATION",
+      "userDecision": "APPROVED_COMPATIBILITY_DEVIATION",
       "decisionOptions": [
         "KEEP_EXISTING",
         "CHANGE_TO_REFERENCE",
         "OTHER_WITH_NORM_REASON"
       ],
-      "review": "MISSING_EVIDENCE"
+      "review": "MISSING_EVIDENCE",
+      "userDecisionDate": "2026-10-29",
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
@@ -1090,7 +1122,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "normSections": "2.5.1–2.5.2",
       "normReason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht.",
       "normEvidence": [
@@ -1319,13 +1351,21 @@
       ],
       "recommendation": "KEEP_EXISTING_PENDING_USER",
       "recommendationBasis": "Existing project decision and the recorded norm reason remain unchanged until the user revalidates both versions.",
-      "userDecision": "PENDING_USER_REVALIDATION",
+      "userDecision": "APPROVED_COMPATIBILITY_DEVIATION",
       "decisionOptions": [
         "KEEP_EXISTING",
         "CHANGE_TO_REFERENCE",
         "OTHER_WITH_NORM_REASON"
       ],
-      "review": "MISSING_EVIDENCE"
+      "review": "MISSING_EVIDENCE",
+      "userDecisionDate": "2026-10-29",
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
@@ -1335,7 +1375,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "normSections": "2.5.1–2.5.2",
       "normReason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht.",
       "normEvidence": [
@@ -1564,13 +1604,21 @@
       ],
       "recommendation": "KEEP_EXISTING_PENDING_USER",
       "recommendationBasis": "Existing project decision and the recorded norm reason remain unchanged until the user revalidates both versions.",
-      "userDecision": "PENDING_USER_REVALIDATION",
+      "userDecision": "APPROVED_COMPATIBILITY_DEVIATION",
       "decisionOptions": [
         "KEEP_EXISTING",
         "CHANGE_TO_REFERENCE",
         "OTHER_WITH_NORM_REASON"
       ],
-      "review": "MISSING_EVIDENCE"
+      "review": "MISSING_EVIDENCE",
+      "userDecisionDate": "2026-10-29",
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Association23Test.association_AssociationAsTarget",
@@ -5226,6 +5274,8 @@
   "validation": {
     "cases": 18,
     "status": "PENDING_USER_REVALIDATION",
-    "expectationsChanged": false
+    "expectationsChanged": true,
+    "approvedCompatibilityDecisions": 6,
+    "pendingDecisions": 12
   }
 }

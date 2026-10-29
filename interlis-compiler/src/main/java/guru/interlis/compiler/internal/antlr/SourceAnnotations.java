@@ -15,10 +15,27 @@ final class SourceAnnotations {
             AntlrOffsetMap offsets,DiagnosticCollector diagnostics,CancellationToken cancellation) {
         var result=new LinkedHashMap<SourceRange,SourceMetadata>();
         var attributes=new ArrayList<SourceMetadata.Attribute>();var documentation=new ArrayList<SourceMetadata.Text>();
-        for(var token:tokens.getTokens()) {
+        var all=tokens.getTokens();
+        for(int index=0;index<all.size();index++) {
+            var token=all.get(index);
             cancellation.throwIfCancellationRequested();String text=token.getText();
-            if(token.getType()==InterlisLexer.SingleLineComment && text.startsWith("!!@"))
-                attributes.addAll(new Values(source,offsets.tokenRange(token),text,diagnostics,cancellation).read());
+            if(token.getType()==InterlisLexer.SingleLineComment && text.startsWith("!!@")) {
+                var annotation=new Annotation(cancellation);var range=offsets.tokenRange(token);
+                annotation.append(text,range.startOffset());int end=range.endOffset();
+                while(annotation.quoted) {
+                    int next=index+1;
+                    while(next<all.size() && all.get(next).getText().chars().allMatch(Character::isWhitespace))next++;
+                    if(next>=all.size())break;
+                    var continuation=all.get(next);String content=continuation.getText();
+                    if(continuation.getType()!=InterlisLexer.SingleLineComment || !content.startsWith("!!@"))break;
+                    var following=offsets.tokenRange(continuation);
+                    String gap=source.text().substring(end,following.startOffset());
+                    if(!gap.chars().allMatch(Character::isWhitespace))break;
+                    annotation.append(gap,end);annotation.append(content.substring(3),following.startOffset()+3);
+                    end=following.endOffset();index=next;
+                }
+                attributes.addAll(new Values(source,annotation,diagnostics,cancellation).read());
+            }
             else if(token.getType()==InterlisLexer.BlockComment && text.startsWith("/**")) {
                 String content=(text.length()<5?"":text.substring(3,text.length()-2)).replaceAll("(?m)^\\s*\\* ?","").strip();
                 documentation.add(new SourceMetadata.Text(content,offsets.tokenRange(token)));
@@ -31,11 +48,28 @@ final class SourceAnnotations {
         return Map.copyOf(result);
     }
 
+    /** Maps logical continuation text back to the untouched UTF-16 source. */
+    private static final class Annotation {
+        final StringBuilder text=new StringBuilder();final List<Integer> positions=new ArrayList<>();
+        final CancellationToken cancellation;boolean quoted,escaped;int end;
+        Annotation(CancellationToken cancellation){this.cancellation=cancellation;}
+        void append(String content,int start) {
+            for(int i=0;i<content.length();i++) {
+                if((i&255)==0)cancellation.throwIfCancellationRequested();
+                char ch=content.charAt(i);text.append(ch);positions.add(start+i);
+                if(escaped)escaped=false;else if(quoted && ch=='\\')escaped=true;else if(ch=='"')quoted=!quoted;
+            }
+            end=start+content.length();
+        }
+        int start(int at){return at==positions.size()?end:positions.get(at);}
+        int end(int at){return at==0?start(0):positions.get(at-1)+1;}
+    }
+
     private static final class Values {
-        private final SourceText source;private final SourceRange range;private final String text;
+        private final SourceText source;private final Annotation annotation;private final String text;
         private final DiagnosticCollector diagnostics;private final CancellationToken cancellation;private int at=3;
-        Values(SourceText source,SourceRange range,String text,DiagnosticCollector diagnostics,CancellationToken cancellation) {
-            this.source=source;this.range=range;this.text=text;this.diagnostics=diagnostics;this.cancellation=cancellation;
+        Values(SourceText source,Annotation annotation,DiagnosticCollector diagnostics,CancellationToken cancellation) {
+            this.source=source;this.annotation=annotation;this.text=annotation.text.toString();this.diagnostics=diagnostics;this.cancellation=cancellation;
         }
         private boolean bare(char ch) { return !Character.isWhitespace(ch) && ch!='=' && ch!=';' && ch!=',' && ch!='"'; }
         private void whitespace() {while(at<text.length() && Character.isWhitespace(text.charAt(at)))advance();}
@@ -73,14 +107,14 @@ final class SourceAnnotations {
                 }
                 int end=at;whitespace();
                 if(at<text.length() && text.charAt(at)!=';') {error();break;}
-                result.add(new SourceMetadata.Attribute(key,value,source.range(range.startOffset()+start,range.startOffset()+end)));
+                result.add(new SourceMetadata.Attribute(key,value,source.range(annotation.start(start),annotation.end(end))));
                 if(at<text.length())advance();
             }
             return List.copyOf(result);
         }
         private void error() {
             diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0002"),Severity.ERROR,Phase.PARSING,"diagnostic.syntax.unexpected")
-                    .at(source.range(range.startOffset()+at,range.startOffset()+Math.min(text.length(),at+1)))
+                    .at(source.range(annotation.start(at),at==text.length()?annotation.start(at):annotation.start(at)+1))
                     .argument(new DiagnosticArgument.TokenArgument("actual",at==text.length()?"<end-of-annotation>":String.valueOf(text.charAt(at))))
                     .argument(new DiagnosticArgument.IdentifierListArgument("expected",List.of("metadata key=value"))));
         }

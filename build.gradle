@@ -93,6 +93,8 @@ apply from: 'gradle/conformance.gradle'
 
 apply from: 'gradle/evidence.gradle'
 
+apply from: 'gradle/host-verification.gradle'
+
 tasks.register('g2EvidenceTest') {
     group = 'verification'
     description = 'Checks G2 source inventory, frozen review inputs and evidence failure paths.'
@@ -100,21 +102,7 @@ tasks.register('g2EvidenceTest') {
 }
 tasks.named('check') { dependsOn 'g2EvidenceTest' }
 
-tasks.register('geoCorpus', Exec) {
-    group = 'verification'
-    description = 'Pins the official geo.so.ch corpus used by P3-4 measurements.'
-    workingDir = rootProject.projectDir
-    commandLine 'python3', 'tools/reference/geo_corpus.py'
-}
 
-tasks.register('jvmBenchmark', Exec) {
-    dependsOn 'geoCorpus'
-    group = 'verification'
-    description = 'Runs the pinned geo corpus through the JVM CLI.'
-    dependsOn ':interlis-cli:installDist'
-    workingDir = rootProject.projectDir
-    commandLine 'python3', 'tools/performance/benchmark_jvm.py'
-}
 
 tasks.register('wasmBenchmark', Exec) {
     dependsOn 'geoCorpus', 'checkNodeRuntime'
@@ -141,13 +129,9 @@ tasks.register('performanceCheck') {
     dependsOn 'geoCorpus', 'jvmBenchmark', 'wasmBenchmark', 'browserBenchmark'
 }
 
-tasks.register('sdkProcessCheck', Exec) {
-    group = 'verification'
-    description = 'Runs the installed CLI as a process and records exit codes/streams.'
-    dependsOn ':interlis-cli:installDist'
-    workingDir = rootProject.projectDir
-    commandLine 'python3', 'tools/sdk/check_distribution.py'
-}
+tasks.named('wasmBenchmark') { mustRunAfter 'checkPortable', 'checkBrowser', 'conformanceCheck', ':interlis-wasm-webimage:webImageProbe' }
+tasks.named('browserBenchmark') { mustRunAfter 'wasmBenchmark', 'checkPortable', 'checkBrowser', 'conformanceCheck', ':interlis-wasm-webimage:webImageProbe' }
+
 
 tasks.register('sdkPackage', Zip) {
     group = 'distribution'

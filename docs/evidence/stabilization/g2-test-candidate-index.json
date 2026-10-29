@@ -5839,8 +5839,8 @@
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatPrecisionOidBindingContractTest.java",
           "method": "oidContractsAreVersionSpecificAndAssociationRulesRemainBound",
           "methodStart": 11923,
-          "methodEnd": 12942,
-          "methodSha256": "1d2764f59aaef97b143bf15f200bfec39ed54dfc004343b7e50d0b9e4eea7ee7",
+          "methodEnd": 12943,
+          "methodSha256": "777130bef41a292afc12c4854a7409b452a06eb0f77b79a0be350f10573ee29f",
           "score": 2,
           "status": "CANDIDATE_ONLY"
         },

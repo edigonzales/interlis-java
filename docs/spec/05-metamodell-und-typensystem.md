@@ -1388,10 +1388,20 @@ einer String-Map. Value(text, origin) bewahrt den Wert und seine Herkunft.
 Documentation(text, ranges) enthält den aufbereiteten Text sowie die geordneten
 ursprünglichen Kommentarbereiche. FunctionSymbol erhält Documentation explanation
 als fünften Parameter. Alle Werte sind nullfrei, defensiv kopiert und immutable.
-Identische doppelte Metaangaben sind erlaubt; widersprüchliche Angaben sind
-Quellfehler. Die erste identische Angabe ist die primäre Herkunft; alle Angaben
-bleiben zusätzlich im SyntaxSnapshot verfügbar. Vererbte/projizierte Werte
-bewahren ihre ursprüngliche Herkunft.
+Identische doppelte Metaangaben sind erlaubt; widersprüchliche Angaben zu
+einwertigen Schlüsseln sind weiterhin Quellfehler. Das explizite kompatible
+Funktionsprofil erlaubt `fn.param` mehrfach an Funktionsdeklarationen. Alle
+Vorkommen bleiben als `MetaAttributeSet.Entry(key,value)` in `entries()` in
+Quellreihenfolge erhalten; `values(String key)` liefert eine unveränderliche
+Liste aller Vorkommen dieses Schlüssels, bei Fehlen die leere Liste.
+`values()` bleibt der kompatible Index auf das jeweils erste Vorkommen und
+dessen Herkunft. Der bestehende Konstruktor `MetaAttributeSet(Map)` bleibt
+verfügbar; der ergänzte Konstruktor `(Map,List<Entry>)` verlangt denselben
+Erstvorkommensindex. Beide Sammlungen sind defensiv kopiert, nullfrei und
+unveränderlich; spätere Mutationen einer Eingabesammlung ändern keine
+veröffentlichten Werte. Vererbte/projizierte Werte bewahren auch die vollständige
+Vorkommensliste und ihre ursprüngliche Herkunft. Andere Schlüssel und
+`fn.param` ausserhalb von Funktionen behalten die bisherigen Konfliktregeln.
 
 `PlausibilityConstraint` bewahrt tatsächlichen Prozentsatz und Operator;
 `SetConstraint.where()` ist der gebundene individuelle Filter und `condition()`

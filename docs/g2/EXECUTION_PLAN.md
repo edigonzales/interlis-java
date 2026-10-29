@@ -244,3 +244,12 @@ Im Reviewer-Report sind in einer Tabelle **sämtliche Muss-Kriterien des Liefera
 4. Bei `FAIL`/`BLOCKED` nacharbeiten oder Voraussetzungen herstellen; bei `PASS` zum nächsten Lieferabschnitt wechseln. Ein Phasenwechsel benötigt das `PASS` des letzten Phasenabschnitts einschliesslich kumulativer Gates.
 
 **Erfolgsmass:** Korrekte, unabhängig nachgewiesene INTERLIS-Semantik bei steigender Normabdeckung, vollständige Pythonfreiheit und reproduzierbare Testprozesse. **Nicht:** Zahl der Dokumente, generierter Inventare oder grüner Tests ohne belastbare Assertions.
+
+Nutzerentscheidung während L0B-3 (29.10.2026): Der notwendige Metadaten-
+Kompatibilitätsfix wird samt API-/Spec-/Regressionstests vorgezogen. Ausserdem
+werden INTERLIS-2.3-`OID AS`/`BASKET OID AS` ohne `CONTRACTED` für die verbreitete
+Bestandskompatibilität bewusst zugelassen (Kapitel 06/15). Die sechs dadurch
+regulär erfolgreichen Originalfälle bleiben unter den **18** strengen
+Zusatzprüfungen mit Original-/Positiv-/Negativpins erhalten; zwölf normative
+Referenzausnahmen bleiben offen. Corpus-/Suitepins und andere Normregeln werden
+nicht geändert. Dies ist keine allgemeine Freigabe der übrigen Normentscheidungen.

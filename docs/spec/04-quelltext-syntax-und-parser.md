@@ -593,7 +593,13 @@ Schlüssel, Textwert und Bereich; Dokumentation enthält geordnete Text- und
 Bereichspaare. Alle Bereiche gehören zur Quelle/Revision des Snapshots.
 Das Projektprofil übernimmt führende !!@-Kommentare als durch Semikolon
 getrennte Schlüssel=Wert-Angaben; Werte sind einfache Tokens oder INTERLIS-
-Strings mit Escapes. Leere Annotationen sind erlaubt; fehlerhafte Zuweisungen
+Strings mit Escapes. Ein geöffneter String darf über unmittelbar folgende
+`!!@`-Kommentarzeilen fortgesetzt werden; die Fortsetzungsmarker gehören nicht
+zum Textwert, physische Zeilenumbrüche und Einrückung bleiben erhalten.
+Wert- und Diagnosebereiche beziehen sich weiterhin auf die unveränderte
+Originalquelle in UTF-16, einschliesslich überspannter Marker. Ein nicht
+geschlossener String bleibt ein Quellfehler; eine folgende Deklaration wird
+nicht zur Fortsetzung. Leere Annotationen sind erlaubt; fehlerhafte Zuweisungen
 erhalten Quellfehler. Dies ist ein dokumentiertes Kommentarprofil, kein neues
 INTERLIS-Schlüsselwort. /** ... */ liefert Dokumentation; übrige Kommentare
 bleiben unverändert als Trivia erhalten. Die Zuordnung gilt zum folgenden Token; reine Gruppenintroduktoren DOMAIN, UNIT,

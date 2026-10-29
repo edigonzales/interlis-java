@@ -180,6 +180,31 @@ class NormativeConformanceContractTest {
         acceptedOriginal(); test.addProperty("classification", "XPASS"); counts.addProperty("FAIL", 0); counts.addProperty("XPASS", 1); fails();
         test.addProperty("classification", "FAIL"); counts.addProperty("FAIL", 1); counts.addProperty("XPASS", 0); entry.addProperty("ownExpectation", "anything"); fails();
     }
+    private JsonObject compatibility(List<ProcessResult> checks) {
+        entry.add("referenceExpectation", json("{\"outcome\":\"accept\"}"));
+        test.add("expectation", entry.get("referenceExpectation")); test.addProperty("classification", "PASS");
+        counts.addProperty("FAIL", 0); counts.addProperty("PASS", 1);
+        report.addProperty("overallResult", "PASS"); summary.addProperty("overallResult", "PASS");
+        var queue = new ArrayDeque<>(checks);
+        return NormativeConformance.assess(root, cli, "commit", "hash", Set.of("ili23.test"), true,
+                manifest, report, summary, 0, command -> queue.removeFirst());
+    }
+    @Test void approvedCompatibilityKeepsRawPassAndRunsAllPinnedControls() throws Exception {
+        var checks = acceptedOriginal();
+        entry.add("compatibilityDecision", json("{\"id\":\"LEGACY_OID_23_WITHOUT_CONTRACTED\",\"userDecision\":\"APPROVED_USER\"}"));
+        var assessed = compatibility(checks);
+        assertEquals("PASS", text(assessed,"overallResult"));
+        assertEquals(1, assessed.getAsJsonObject("summary").get("PASS").getAsInt());
+        assertEquals(0, assessed.getAsJsonObject("summary").get("XFAIL").getAsInt());
+        assertEquals("PASS", text(assessed.getAsJsonArray("normativeAssessments").get(0).getAsJsonObject(),"referenceClassification"));
+    }
+    @Test void rawPassCannotWaiveApprovalOrNegativeControl() throws Exception {
+        var checks = acceptedOriginal(); assertEquals("FAIL",text(compatibility(checks),"overallResult"));
+        entry.add("compatibilityDecision", json("{\"id\":\"LEGACY_OID_23_WITHOUT_CONTRACTED\",\"userDecision\":\"PENDING\"}"));
+        assertEquals("FAIL",text(compatibility(checks),"overallResult"));
+        entry.getAsJsonObject("compatibilityDecision").addProperty("userDecision","APPROVED_USER");
+        assertEquals("FAIL",text(compatibility(List.of(accepted(),accepted(),accepted())),"overallResult"));
+    }
     @Test void controlsOutsideRepositoryCannotBeWaived() {
         entry.add("positiveControls", list(json("{\"path\":\"../outside.ili\",\"sha256\":\"wrong\"}"))); fails();
     }

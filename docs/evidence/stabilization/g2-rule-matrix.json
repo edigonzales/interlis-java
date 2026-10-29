@@ -12021,7 +12021,7 @@
     "path": "g2-source-inventory.json",
     "scope": "All syntax occurrences, numbered requirements, actual standard-function names, 130 predefined declarations/members/constraints, 21 special values/type variants and explicit lexical profiles. Paragraph/method-contract/assertion audit still open.",
     "acceptance": "MISSING_EVIDENCE",
-    "sha256": "f58875f00f65919d5e8f22b3689cfe4ad279ee4ec43624b627b2e0f71a317e4f"
+    "sha256": "b4d8373d54af9b13f796634412dabb7599bed12f8af287f8b5f255b6bf9d7a6b"
   },
   "atomicRules": [
     {
@@ -13771,8 +13771,8 @@
   "atomicRulesMeaning": "Initial manually sourced individual clauses; inventory remains incomplete. Each retains exact pinned PDF excerpts, planned assertions and any partial source/run metadata. No clause gains independent acceptance automatically.",
   "normativeDecisionQueue": {
     "source": "docs/evidence/conformance/normative-expectations.json",
-    "sourceSha256": "2ea28d9a782d40433e1b2122207c6398acd8d53c5af2545f5a3fcf5bcdd2e5a9",
-    "scope": "18 existing normative exceptions; no change of previous authorizations or current expectations. New A–I revalidation pending.",
+    "sourceSha256": "441df2200043f4d9b62cf77751eb083bd9a4ef1cf3c0a7201d09974dbfd740ec",
+    "scope": "18 retained project assessments: six user-approved legacy OID compatibility cases and twelve remaining normative exceptions.",
     "cases": [
       {
         "testId": "ili23.Class23Test.classComplete",
@@ -13780,8 +13780,10 @@
         "existingCaseSha256": "83be605da23876eae9167bfff8b754c2a2258769b42e83c8596f9e09c5b1e892",
         "existingOwnExpectation": "rejected",
         "reviewInThisPlan": "MISSING_EVIDENCE",
-        "userDecisionInThisPlan": "PENDING_REVALIDATION",
-        "remainingCause": "Both-version original norm excerpts, original and countercase diagnostics, recommendation and explicit user decision must be reviewed separately; existing expectation remains unchanged."
+        "userDecisionInThisPlan": "APPROVED_COMPATIBILITY_DEVIATION",
+        "remainingCause": "User-approved legacy OID compatibility; original and countercontrol source pins remain enforced.",
+        "currentOwnExpectation": "accepted",
+        "compatibilityDecision": "LEGACY_OID_23_WITHOUT_CONTRACTED"
       },
       {
         "testId": "ili23.Classes23Test.class_AcceptingOidDefinition",
@@ -13789,8 +13791,10 @@
         "existingCaseSha256": "8b1106840d9b6178a6195b81c92034648528d9184a9e2191498f815fd2139017",
         "existingOwnExpectation": "rejected",
         "reviewInThisPlan": "MISSING_EVIDENCE",
-        "userDecisionInThisPlan": "PENDING_REVALIDATION",
-        "remainingCause": "Both-version original norm excerpts, original and countercase diagnostics, recommendation and explicit user decision must be reviewed separately; existing expectation remains unchanged."
+        "userDecisionInThisPlan": "APPROVED_COMPATIBILITY_DEVIATION",
+        "remainingCause": "User-approved legacy OID compatibility; original and countercontrol source pins remain enforced.",
+        "currentOwnExpectation": "accepted",
+        "compatibilityDecision": "LEGACY_OID_23_WITHOUT_CONTRACTED"
       },
       {
         "testId": "ili23.Topic23Test.topicComplete",
@@ -13798,8 +13802,10 @@
         "existingCaseSha256": "2eaae1b2f6ca8c664e5c3f9c127a69886693aa3f2d27f833bfb9785f38fe1c6a",
         "existingOwnExpectation": "rejected",
         "reviewInThisPlan": "MISSING_EVIDENCE",
-        "userDecisionInThisPlan": "PENDING_REVALIDATION",
-        "remainingCause": "Both-version original norm excerpts, original and countercase diagnostics, recommendation and explicit user decision must be reviewed separately; existing expectation remains unchanged."
+        "userDecisionInThisPlan": "APPROVED_COMPATIBILITY_DEVIATION",
+        "remainingCause": "User-approved legacy OID compatibility; original and countercontrol source pins remain enforced.",
+        "currentOwnExpectation": "accepted",
+        "compatibilityDecision": "LEGACY_OID_23_WITHOUT_CONTRACTED"
       },
       {
         "testId": "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
@@ -13807,8 +13813,10 @@
         "existingCaseSha256": "19937879398d39fd69d7228e80aa3ca23fab193ee326d3c7fa11d68631cac796",
         "existingOwnExpectation": "rejected",
         "reviewInThisPlan": "MISSING_EVIDENCE",
-        "userDecisionInThisPlan": "PENDING_REVALIDATION",
-        "remainingCause": "Both-version original norm excerpts, original and countercase diagnostics, recommendation and explicit user decision must be reviewed separately; existing expectation remains unchanged."
+        "userDecisionInThisPlan": "APPROVED_COMPATIBILITY_DEVIATION",
+        "remainingCause": "User-approved legacy OID compatibility; original and countercontrol source pins remain enforced.",
+        "currentOwnExpectation": "accepted",
+        "compatibilityDecision": "LEGACY_OID_23_WITHOUT_CONTRACTED"
       },
       {
         "testId": "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
@@ -13816,8 +13824,10 @@
         "existingCaseSha256": "69b8dfe01843f58214f1f0d774825100d2abdd11982e657b940d34bd2ec57c95",
         "existingOwnExpectation": "rejected",
         "reviewInThisPlan": "MISSING_EVIDENCE",
-        "userDecisionInThisPlan": "PENDING_REVALIDATION",
-        "remainingCause": "Both-version original norm excerpts, original and countercase diagnostics, recommendation and explicit user decision must be reviewed separately; existing expectation remains unchanged."
+        "userDecisionInThisPlan": "APPROVED_COMPATIBILITY_DEVIATION",
+        "remainingCause": "User-approved legacy OID compatibility; original and countercontrol source pins remain enforced.",
+        "currentOwnExpectation": "accepted",
+        "compatibilityDecision": "LEGACY_OID_23_WITHOUT_CONTRACTED"
       },
       {
         "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
@@ -13825,8 +13835,10 @@
         "existingCaseSha256": "84a685636d0f49890d67be504b844b7c402645379f360c5c009ad74c60776670",
         "existingOwnExpectation": "rejected",
         "reviewInThisPlan": "MISSING_EVIDENCE",
-        "userDecisionInThisPlan": "PENDING_REVALIDATION",
-        "remainingCause": "Both-version original norm excerpts, original and countercase diagnostics, recommendation and explicit user decision must be reviewed separately; existing expectation remains unchanged."
+        "userDecisionInThisPlan": "APPROVED_COMPATIBILITY_DEVIATION",
+        "remainingCause": "User-approved legacy OID compatibility; original and countercontrol source pins remain enforced.",
+        "currentOwnExpectation": "accepted",
+        "compatibilityDecision": "LEGACY_OID_23_WITHOUT_CONTRACTED"
       },
       {
         "testId": "ili23.Association23Test.association_AssociationAsTarget",
@@ -14015,13 +14027,15 @@
   },
   "normativeDecisionPacket": {
     "path": "g2-normative-decision-packet-2026-10-28.json",
-    "sha256": "77df55f7e72ba5827ec136cf9a1ef77f364c361f35398d901fa0df25a7929915",
+    "sha256": "c6c9c9e4383ae0707bad13094566edb824938f4a32450b2f2083153732ae840f",
     "markdown": "g2-normative-decision-packet-2026-10-28.md",
-    "markdownSha256": "dd231b726e809f936b523f8ac4a75b2ea573245061fda55b970275ab12cfa39e",
+    "markdownSha256": "98bc0341c48c755b7cd2117f6fff931d87dadec75e5120087183a59b4cd4fd21",
     "status": "PENDING_USER_REVALIDATION",
     "cases": 18,
-    "expectationsChanged": false,
-    "remainingCause": "User must revalidate both versions; no expectation was changed and no independent review accepted the packet."
+    "expectationsChanged": true,
+    "remainingCause": "User must revalidate both versions; no expectation was changed and no independent review accepted the packet.",
+    "approvedCompatibilityDecisions": 6,
+    "pendingDecisions": 12
   },
   "grammarInventory": {
     "path": "g2-grammar-inventory.json",
@@ -14056,7 +14070,7 @@
   },
   "testCandidateIndex": {
     "path": "g2-test-candidate-index.json",
-    "sha256": "e1c9a773437e7226ceeb4e871172fe3574caf39f0bf0a51e44a695ebd898d54c",
+    "sha256": "5176eabc023275f14e468f9796f7fa19178c5d8862989d599b48978ca3e34b61",
     "acceptance": "CANDIDATE_ONLY",
     "testMethods": 615,
     "conditions": 621,

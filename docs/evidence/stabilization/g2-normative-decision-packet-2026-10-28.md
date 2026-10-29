@@ -392,3 +392,13 @@ Linienzüge im Rahmen von Einzelflächen und Gebietseinteilungen (vgl.
 
 Entscheidung: **PENDING_USER_REVALIDATION**.
 
+
+## Nachtrag: Nutzerentscheidung vom 29.10.2026
+
+Der vorstehende Text bleibt der ursprüngliche Entscheidungsentwurf. Die sechs
+OID-/Basket-OID-Fälle sind inzwischen als bewusste Bestandskompatibilität ohne
+CONTRACTED freigegeben; ihr aktueller Status und die unveränderten Original-
+Normzitate stehen in der gleichnamigen JSON-Datei sowie in
+`docs/evidence/conformance/normative-expectations.json`. Die übrigen zwölf Fälle
+bleiben offen. Die neue Freigabe ist keine rückwirkende unabhängige Abnahme des
+ursprünglichen Pakets und keine allgemeine Freigabe anderer Normabweichungen.

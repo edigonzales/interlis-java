@@ -1,8 +1,8 @@
 # Python-Migration – einmalige Arbeitsmatrix
 
 Basis: `c671ce3aa943afcc53579b4cd488773afbd0206e`, `git ls-files '*.py'`: **36 Dateien**.
-Die Entscheidungen betreffen Funktionen, keine mechanischen 1:1-Ports. L0B-1 entfernt zwei Dateien; L0B-2 entfernt weitere **25** Dateien. Die neun
-L0B-3-Zeilen bleiben geplant. Die nötigen Altprüfungen erfolgten vor der Löschung; die
+Die Entscheidungen betreffen Funktionen, keine mechanischen 1:1-Ports. L0B-1 entfernt zwei Dateien; L0B-2 entfernt weitere **25** Dateien, L0B-3 die letzten **neun**.
+Damit bleiben **null** getrackte Pythondateien. Die nötigen Altprüfungen erfolgten vor der Löschung; die
 Ersatz- und Negativnachweise stehen unten. Unabhängiges Urteil und geprüfter SHA stehen in [STATUS.md](STATUS.md). Historische Reports und
 Normdaten bleiben erhalten, frühere Skriptfassungen sind über die Basis in Git
 wiederherstellbar. Diese Matrix ersetzt kein fachliches Gate.
@@ -50,8 +50,8 @@ Alle Pfade ohne Präfix liegen unter `tools/reference/`.
 
 L0B-1-Nachweise, tatsächliche Kommandos und Ergebnisse:
 [Implementierungsbericht](implementation/L0B-1.md). Für L0B-2 siehe den tatsächlichen
-[Implementierungsbericht](implementation/L0B-2.md); nur L0B-3 bleibt geplant. Der Python-freie Gesamtlauf und alle
-Phaseninvarianten werden am letzten 0b-Kandidaten geprüft.
+[Implementierungsbericht](implementation/L0B-2.md). L0B-3 samt tatsächlich ausgeführtem Python-freiem Gesamtlauf:
+[Implementierungsbericht](implementation/L0B-3.md). Das unabhängige Phasenurteil bleibt in STATUS getrennt.
 
 ## L0B-2: ausgeführte Ersatz- und Entbehrlichkeitsnachweise
 
@@ -91,7 +91,39 @@ JSON-Paket-/Norm-/Erwartungsvertrag bleibt unverändert geprüft. Nur Kapitel 03
 beschreibt jetzt den neuen Buildweg; sein Quellenpin, aktuelle Zeilenlocator
 und der umschliessende Inventarhash werden sichtbar mechanisch nachgeführt.
 
-Das neue Gate verwendet keinen Python-Interpreter und benötigt kein pypdf.
-Es behauptet weder Pythonfreiheit des restlichen Projekts noch einen frischen
-Browser-/Safari-/Web-Image-Phasenlauf. **Neun** Pythondateien und das volle
-Python-freie Phasengate bleiben L0B-3.
+Dieser L0B-2-Zwischenstand benötigte für das Evidenzgate kein Python/pypdf;
+neun Werkzeuge und das volle Phasengate waren damals noch offen.
+
+## L0B-3: ausgeführte Ersatz- und Entbehrlichkeitsnachweise
+
+Java-Hosthilfen liegen unter `interlis-cli/src/verification/java/guru/interlis/cli/verification/`;
+`gradle/host-verification.gradle` integriert sie ohne neue Runtimeabhängigkeit.
+Die vorhandenen Node-/Browserprüfungen bleiben aktiv. Historische Berichte und
+die alten Skriptfassungen im Basiscommit bleiben lesbar.
+
+| Datei / Entscheidung aus obiger Matrix | Tatsächlicher Ersatz und Gegenbeleg |
+|---|---|
+| `generate_text_weights.py` / FREEZE_ARCHIVE | Originale Unicode-17-Daten deterministisch archiviert und gegen bisherige SHA geprüft. `TextLengths.java` bytegleich. `UnicodeWeightsTest`: 100170 explizite NFD-Vergleiche, Quellen-/Tabellenhash und manipuliertes Gzip. Kein Generatorport. |
+| `compare_original_views.py` / REPLACE_WITH_TEST | `originalViewReferenceCheck`: dieselben 19 gepinnten Originalquellen, aktuelle CLI und ili2c 5.6.9 jeweils erfolgreich; bestehende öffentliche Graph-/Portable-Originalassertions bleiben aktiv. |
+| `compare_views.py` / REPLACE_WITH_TEST | `viewReferenceCheck`: dieselben gemeinsamen JS-Viewfälle über kleinen Node-Exporter; 134 eigene Erwartungen geprüft. Referenzbeobachtung separat: 102 Übereinstimmungen, 6 Referenzprozessfehler sichtbar. Keine Behauptung vollständiger Referenzparität. |
+| `compare_units.py` / REPLACE_WITH_TEST | `unitReferenceCheck`: 117 gemeinsame JS-Fälle plus 6 gepinnte Originale, alle 123 eigenen Erwartungen; Referenz 121 Übereinstimmungen, 0 Prozessfehler. Falscher Prozess/Outcome/Diagnosestruktur wird über `HostChecksTest` abgelehnt. Beide alten Vergleichsskripte scheiterten schon vor Migration an veralteten JS-Blockmarkern; der neue Exporter verwendet die tatsächlichen vorhandenen Blöcke. |
+| `reference_check.py` / PORT_MINIMAL | `referenceCheck`: identisches 5-Fall-Profil, ZIP-/JAR-Pins und ili2c-Version; aktuelle Fixturepins separat festgehalten. Alt-/Neu-Inputs, Argumente, Exits und Outcomes stimmen überein. Falsches JAR, defekte Distribution, Timeout/Exit und falsche Ergebnisstruktur scheitern. |
+| `geo_corpus.py` / PORT_MINIMAL | `geoCorpus`: alle 13 Originalpins und vollständige Indexmetadaten; fehlende/falsche/mehrdeutige Metadaten scheitern. Originalindex und zwei geänderte Livequellen exakt aus offiziellem Image wiederhergestellt; `corpus-seed.zip` erhält dieselben 14 Originaldateien offline. Kein Repin. |
+| `tools/performance/benchmark_jvm.py` / PORT_MINIMAL | `jvmBenchmark`: dieselben 13 Quellen und Check-/Formatprozesse, 1 Warmup und 3 Messungen; pro Kindprozess RSS mit expliziter Byteeinheit. Fehlender/fehlgeschlagener Prozess, Messung oder instabile Ausgabe scheitert. Der alte Pythonbenchmark scheiterte bereits an den Corpus-Metadaten; kein erfundener numerischer Paritätswert. |
+| `tools/performance/probe_wasm_exit.py` / DELETE_REDUNDANT | Kein aktiver Import/Aufruf. Historische Probe vor Löschung mit 8 erfolgreichen Standard-/Liftoff-Lade-/API-/Semantikprozessen ausgeführt. Aktive Node-/Wasm-Verträge mit Erfolg und echter Ablehnung sowie Worker-Neustart frisch ausgeführt; kein paralleler manueller Runner nötig. |
+| `tools/sdk/check_distribution.py` / PORT_MINIMAL | `sdkProcessCheck`: dieselben 9 echten Distributionskommandos, Version/API, positive/negative Quelle, Format/Write/Usage und Artefaktstabilität. Alt-/Neu-Exits, stdout-Hashes und stdout/stderr-Zeilenzahlen identisch (nur temporärer Quellpfad normalisiert). Kaputtes Paket, falsche Version/Antwort und Prozessfehler scheitern. |
+
+`pythonFreeCheck` prüft getrackte und nicht ignorierte Eingaben samt aktiven
+Gradle-/Shell-/Node-/Java-/CI-Aufrufen. Echte zusätzliche `.py`- und Shell-
+Interpretercanarys lieferten jeweils Exit 1 und wurden entfernt. Der einzige
+enge Scanner-Ausnahmepfad ist der negative Interpreterprobe-/OS-Sperr-Harness
+`tools/verification/without-python.cjs`.
+
+Der vollständige kumulative Lauf war erfolgreich in dessen privatem PATH mit
+vererbter macOS-`process-exec`-Sperre: PATH-Proben ENOENT, absolute
+`/usr/bin/python3` und `/usr/bin/pip3` EPERM. Installationen auf dem Host bleiben
+vorhanden, sind in dieser Ausführungsumgebung nicht ausführbar. Firefox benötigt
+darin `MOZ_DISABLE_CONTENT_SANDBOX=1`, weil sein zusätzlicher Sandboxstart sonst
+mit EPERM scheitert; die äussere Interpreter-Ausführungssperre bleibt vererbt.
+Dies ist im Umgebungsreport ausdrücklich dokumentiert. Der unabhängige Reviewer
+muss den sauberen Kandidaten-SHA selbst prüfen.

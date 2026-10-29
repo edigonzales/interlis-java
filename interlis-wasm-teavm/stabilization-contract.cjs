@@ -31,6 +31,16 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L0B-3: legacy function annotations retain source validity in every backend.
+  let legacyMetadataCases = 0;
+  for (const version of ['2.3', '2.4']) for (const newline of ['\n', '\r\n']) {
+    const wrap = body => ('INTERLIS ' + version + ';\nCONTRACTED MODEL F AT "x" VERSION "1" =\n' + body + '\nEND F.').replaceAll('\n', newline);
+    await verify(wrap('!!@ fn.description="🦊";\n!!@ fn.param="url address";\n!!@ fn.param="prefix namespace";\n!!@ fn.return="First line\n!!@ second line";\nFUNCTION f(url:TEXT;prefix:TEXT):BOOLEAN;'), 'succeeded');
+    await verify(wrap('!!@ label=one;label=two\nDOMAIN D=TEXT;'), 'rejected');
+    await verify(wrap('!!@ fn.return="open\nFUNCTION f(url:TEXT):BOOLEAN;'), 'rejected');
+    legacyMetadataCases += 3;
+  }
+
   // L0A: nested delimiters must have the same validity on JVM and TeaVM.
   let nestedCommentCases = 0;
   for (const version of ['2.3', '2.4']) {
@@ -469,7 +479,7 @@ CLASS A = value: Pair; MANDATORY CONSTRAINT value == "15-5/5"; END A; END T;`;
       ['TOPIC T = CLASS A = END A; CLASS B (ABSTRACT) EXTENDS A = OID AS INTERLIS.ANYOID; END B; END T;','rejected'],
       ['TOPIC T (ABSTRACT) = CLASS A = END A; CLASS B (ABSTRACT) EXTENDS A = OID AS INTERLIS.ANYOID; END B; END T;','succeeded']);
     for (const [body,expected] of rows) { await verify(wrap(body),expected); formatOidCases++; }
-    await verify(wrap(association).replace('CONTRACTED ',''),version === '2.3' ? 'rejected' : 'succeeded'); formatOidCases++;
+    await verify(wrap(association).replace('CONTRACTED ',''), 'succeeded'); formatOidCases++;
     const original = 'DOMAIN FirstId = OID TEXT*36; SecondId = OID TEXT*36; TOPIC T = BASKET OID AS FirstId; OID AS SecondId; CLASS A = END A; END T;';
     const translation = body => wrap(body).replace(`INTERLIS ${version}; `,'').replace('VERSION "1" =','VERSION "1" TRANSLATION OF Base ["1"] =');
     const originalModel = body => wrap(body).replace('MODEL F ','MODEL Base ').replace('END F.','END Base.');
@@ -1735,7 +1745,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

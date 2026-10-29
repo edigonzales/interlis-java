@@ -183,7 +183,7 @@ class FormatPrecisionOidBindingContractTest {
             bad(version,multiple.replace("OID AS INTERLIS.UUIDOID;", "NO OID;"));
             bad(version,multiple.replace("OID AS INTERLIS.UUIDOID;", ""));
         }
-        assertInstanceOf(CompilationOutcome.Rejected.class,compile(model("2.3",body).replace("CONTRACTED ","")));
+        assertInstanceOf(CompilationOutcome.Succeeded.class,compile(model("2.3",body).replace("CONTRACTED ","")));
         assertInstanceOf(CompilationOutcome.Succeeded.class,compile(model("2.4",body).replace("CONTRACTED ","")));
     }
 }

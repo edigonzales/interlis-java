@@ -830,3 +830,15 @@ keine zusätzliche Namenspflicht. Vererbte Constraintnamensräume und externe
 Bedingungen in abgeleiteten Themen sind eine gesonderte offene Abnahme.
 ConstraintNameContractTest prüft direkte Körper, unterschiedliche Familien,
 externe Blöcke, öffentliche Quellqueries, Imports und Fresh/Reuse-Edits.
+
+### L0B-3: freigegebene OID-Kompatibilität
+
+Nutzerentscheidung vom 29.10.2026: `OID AS` und `BASKET OID AS` werden in
+INTERLIS 2.3 auch ohne `CONTRACTED` angenommen. Dies ist eine ausdrückliche
+Kompatibilitätsabweichung zur älteren Normvoraussetzung (2.3 §2.5.1–2.5.2),
+entsprechend ili2c und verbreiteten Bestandsmodellen. Sie ändert weder die
+OID-Domänenbindung noch Vererbung/Override, ANYOID-, NO-OID- oder
+Sprachprofilregeln. Andere CONTRACTED-Voraussetzungen bleiben unverändert.
+Die sechs betroffenen Originalfälle werden reguläre PASS-Fälle und behalten
+zusätzliche gepinnte Positiv-/Negativkontrollen; die übrigen zwölf
+Referenzausnahmen und offenen Normentscheidungen sind davon nicht freigegeben.

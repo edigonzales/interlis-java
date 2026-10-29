@@ -1,0 +1,8 @@
+INTERLIS 2.3;
+MODEL LegacyOidWrongDomain AT "https://example.org" VERSION "1" =
+  DOMAIN NotOid = TEXT;
+  TOPIC T =
+    OID AS NotOid;
+    CLASS C = END C;
+  END T;
+END LegacyOidWrongDomain.

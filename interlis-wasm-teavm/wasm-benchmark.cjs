@@ -1,3 +1,4 @@
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -24,7 +25,7 @@ function wasmPath() {
   const root = path.resolve(__dirname, '..');
   const manifest = JSON.parse(fs.readFileSync(path.join(root,
     'docs/evidence/p3/geo-corpus.json'), 'utf8'));
-  const cache = path.join(os.homedir(), '.cache/interlis-java/geo-corpus');
+  const cache = path.resolve(root, process.env.GEO_CORPUS_CACHE || process.env.CONFORMANCE_CACHE || path.join(os.homedir(), '.cache/interlis-java/geo-corpus'));
   require(runtimePath());
   const api = (await globalThis.TeaVM.wasmGC.load(wasmPath())).exports;
   let counter = 0;
@@ -42,7 +43,9 @@ function wasmPath() {
   for (const entry of manifest.models) {
     if (!entry.runtimes.includes('wasm')) continue;
     const file = path.join(cache, entry.file.replaceAll('/', '__'));
-    const text = fs.readFileSync(file, 'utf8');
+    const bytes = fs.readFileSync(file);
+    if (bytes.length !== entry.bytes || crypto.createHash('sha256').update(bytes).digest('hex') !== entry.sha256) throw new Error('Changed corpus bytes: ' + entry.file);
+    const text = bytes.toString('utf8');
     const sourceId = 'memory:/bench/' + entry.model + '.ili';
     let sourceRevision = null;
     const run = () => {

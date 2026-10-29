@@ -10,16 +10,17 @@ full INTERLIS 2.3/2.4 conformance.
 | Source | `https://downloads.interlis.ch/ili2c/ili2c-5.6.9.zip` |
 | SHA-256 | `0d6fc5dc739a490ef6b027072d58281bb0731c932f03d95662f83d20dc07c8ee` |
 | Java | Temurin 25.0.2+10 |
-| Runner | `tools/reference/reference_check.py` |
+| Historischer Runner | Pythonchecker am Basiscommit `abde84ef666184e128827894d63e176709e7c3db` |
 
 Reproduce:
 
 ```sh
-python3 tools/reference/reference_check.py
+./gradlew referenceCheck
 ```
 
-The runner verifies the zip hash, extracts `ili2c.jar` into a cache, and runs
-the explicit cases. It writes `reference-results.json` with commands, exit
+The Java host checker verifies the original zip and JAR hashes, extracts a fresh
+`ili2c.jar` from verified bytes, and runs
+the same five explicit cases. It writes `build/reports/reference/reference-results.json` with commands, exit
 codes, fixture SHA-256 values and output excerpts. The report uses only
 **PASS/FAIL** for this profile; no XFAIL/XPASS/ERROR entries are used.
 
@@ -42,3 +43,7 @@ dependencies so that the reference-valid fixture is also accepted by P1.
 `ReferenceFixtureParityTest` runs the same positive/negative profile through the
 new engine. The reference output remains evidence about the reference tool, not
 a claim that the new compiler implements all of ili2c.
+
+The dated report here remains historical. Current fixture hashes, verified
+against the old checker before L0B-3 removal, are in
+`gradle/reference-fixtures.properties`; no old report is overwritten.

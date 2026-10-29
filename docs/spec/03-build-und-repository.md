@@ -240,3 +240,16 @@ aus früheren Ausgaben wiederverwenden. Der Generierungstask räumt sein eigenes
 generiertes Ausgabeverzeichnis vor der Neuerzeugung; Lexer/Parser und deren
 Tokenvokabular müssen zum gleichen Grammatikstand gehören. Quellverzeichnisse
 werden nicht verändert. Inkrementelle und frische Builds müssen übereinstimmen.
+
+### L0B-3: Java-Hostprüfungen und Pythonfreiheit
+
+`geoCorpus`, `jvmBenchmark`, `sdkProcessCheck`, `referenceCheck` und die
+Original-/View-/Unit-Referenzvergleiche verwenden das separate CLI-SourceSet
+`verification`; seine Gson-/JUnit-Abhängigkeiten gehören nicht zur Distribution.
+`verificationTest` prüft Fehlerpfade und das eingefrorene Unicode-NFD-Orakel.
+`pythonFreeCheck` ist Teil von `check` und prüft getrackte sowie nicht ignorierte
+Eingaben mit Negativcanarys. Historische Texte bleiben lesbar. Das abschliessende
+0b-Gate läuft zusätzlich mit gesperrtem Interpreterzugriff einschliesslich
+absoluter Aufrufe, nicht nur mit einem bereinigten PATH. Kein älterer Gradle-
+Daemon darf für diesen Nachweis verwendet werden. Plattform-/Prozessreports
+bleiben frisch und an dieselben geprüften Eingaben gebunden.

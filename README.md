@@ -13,8 +13,8 @@ Vergleich.
 
 ## Voraussetzungen
 
-- JDK 25 (Temurin 25.0.2+10 ist verifiziert), keine Preview-Features
-- Node.js 22.23.1 für portable Verträge
+- JDK 25 (Temurin 25.0.3+9 ist verifiziert), keine Preview-Features
+- Node.js 24.22.0 für portable Verträge
 - Für Browserverträge: lokal installierte Playwright-Browser
 - Optional für Web Image: Oracle GraalVM 25.4.4, `wasm-as` aus Binaryen >= 119
 
@@ -28,7 +28,8 @@ Der Gradle-Wrapper ist gepinnt (9.8.1). Maven/Ant sind keine Build-Einstiege.
 ./gradlew conformanceCheck     # gepinnte externe Suite und getrennte Projektbewertung
 ./gradlew :interlis-cli:installDist
 ./gradlew :interlis-lsp:installDist
-python3 tools/reference/reference_check.py   # gepinntes ili2c-Referenzprofil
+./gradlew referenceCheck       # gepinntes ili2c-Referenzprofil
+./gradlew pythonFreeCheck      # Quellen-/Buildpfade ohne Python-Abhängigkeit
 ```
 
 Portable Browserverträge (Chromium/Firefox/WebKit):
@@ -80,7 +81,7 @@ Ablehnung, 2 bei Bedienfehlern, 3 bei internem Fehler, 4 bei Abbruch.
 
 ```sh
 ./gradlew :interlis-wasm-teavm:prepareBrowserHarness
-cd interlis-wasm-teavm/build/web && python3 -m http.server 8080
+jwebserver -p 8080 -d interlis-wasm-teavm/build/web
 # http://127.0.0.1:8080/
 ```
 

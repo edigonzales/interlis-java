@@ -3353,9 +3353,6 @@ final class GraphBuilder {
                 if (!(effectiveDescriptor(declaredTypes.get(domain.orElseThrow())) instanceof guru.interlis.model.OidType)) {
                     emitRule(decl, "OID AS must bind an OID domain", "OID_DOMAIN"); continue;
                 }
-                var model = index.modelOfSymbol(id).flatMap(index::byId).map(d -> (guru.interlis.syntax.ModelSyntax)d.syntax());
-                if (decl.language() == guru.interlis.model.LanguageVersion.ILI23 && model.filter(m -> !m.contracted()).isPresent())
-                    emitRule(decl, "OID AS requires a CONTRACTED model in INTERLIS 2.3", "OID_CONTRACTED");
             }
             var own = new guru.interlis.model.OidRule(rule.basket(), domain, new Origin.DeclaredOrigin(rule.range()));
             var previous = inherited.stream().filter(r -> r.basket() == own.basket()).findFirst();
@@ -3480,9 +3477,13 @@ final class GraphBuilder {
 
     SymbolHeader header(DeclInfo decl) {
         var values=new LinkedHashMap<String,MetaAttributeSet.Value>();
+        var entries=new ArrayList<MetaAttributeSet.Entry>();
         for(var attribute:decl.metadata().attributes()) {
-            var previous=values.putIfAbsent(attribute.key(),new MetaAttributeSet.Value(attribute.text(),new Origin.DeclaredOrigin(attribute.range())));
-            if(previous!=null && !previous.text().equals(attribute.text()))emitRule(decl,"conflicting source metaattribute: "+attribute.key(),"METAATTRIBUTE_CONFLICT",attribute.range());
+            var value=new MetaAttributeSet.Value(attribute.text(),new Origin.DeclaredOrigin(attribute.range()));
+            entries.add(new MetaAttributeSet.Entry(attribute.key(),value));
+            var previous=values.putIfAbsent(attribute.key(),value);
+            boolean repeatable=attribute.key().equals("fn.param") && decl.syntax() instanceof FunctionDeclarationSyntax;
+            if(previous!=null && !previous.text().equals(attribute.text()) && !repeatable)emitRule(decl,"conflicting source metaattribute: "+attribute.key(),"METAATTRIBUTE_CONFLICT",attribute.range());
         }
         var documentation=new Documentation(decl.metadata().documentation().stream().map(guru.interlis.syntax.SourceMetadata.Text::text).collect(java.util.stream.Collectors.joining("\n\n")),
                 decl.metadata().documentation().stream().map(guru.interlis.syntax.SourceMetadata.Text::range).toList());
@@ -3496,7 +3497,7 @@ final class GraphBuilder {
         if (decl.kind() == SymbolKind.DOMAIN && mandatoryDomain(decl.id())) modifiers.add(guru.interlis.model.Modifier.MANDATORY);
         return new SymbolHeader(decl.id(), decl.kind(), declaredName, decl.owner(),
                 decl.order(), decl.origin(), decl.nameRange(), decl.language(),
-                documentation, new MetaAttributeSet(values), modifiers, List.of());
+                documentation, new MetaAttributeSet(values,entries), modifiers, List.of());
     }
 
     private static boolean isSyntheticName(String name) {

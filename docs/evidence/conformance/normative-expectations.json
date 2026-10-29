@@ -10,7 +10,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "norm": {
         "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
         "sections": "2.5.1–2.5.2",
@@ -34,98 +34,39 @@
           "severity": "ERROR",
           "phase": "SEMANTIC_CHECKING",
           "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
           "arguments": [
             {
               "name": "element",
               "kind": "IDENTIFIER",
-              "value": "ClassA1"
+              "value": "T"
             },
             {
               "name": "rule",
               "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
             }
-          ],
-          "range": {
-            "source": "test/data/ili23/translation/classComplete.ili",
-            "revision": "1",
-            "startOffset": 198,
-            "endOffset": 245
-          }
-        },
-        {
-          "code": "ILI-SEM-0010",
-          "severity": "ERROR",
-          "phase": "SEMANTIC_CHECKING",
-          "messageKey": "diagnostic.semantics.inheritance",
-          "arguments": [
-            {
-              "name": "element",
-              "kind": "IDENTIFIER",
-              "value": "ClassB1"
-            },
-            {
-              "name": "rule",
-              "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
-            }
-          ],
-          "range": {
-            "source": "test/data/ili23/translation/classComplete.ili",
-            "revision": "1",
-            "startOffset": 685,
-            "endOffset": 732
-          }
-        },
-        {
-          "code": "ILI-SEM-0010",
-          "severity": "ERROR",
-          "phase": "SEMANTIC_CHECKING",
-          "messageKey": "diagnostic.semantics.inheritance",
-          "arguments": [
-            {
-              "name": "element",
-              "kind": "IDENTIFIER",
-              "value": "TopicA2"
-            },
-            {
-              "name": "rule",
-              "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
-            }
-          ],
-          "range": {
-            "source": "test/data/ili23/translation/classComplete.ili",
-            "revision": "1",
-            "startOffset": 323,
-            "endOffset": 455
-          }
-        },
-        {
-          "code": "ILI-SEM-0010",
-          "severity": "ERROR",
-          "phase": "SEMANTIC_CHECKING",
-          "messageKey": "diagnostic.semantics.inheritance",
-          "arguments": [
-            {
-              "name": "element",
-              "kind": "IDENTIFIER",
-              "value": "TopicB2"
-            },
-            {
-              "name": "rule",
-              "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
-            }
-          ],
-          "range": {
-            "source": "test/data/ili23/translation/classComplete.ili",
-            "revision": "1",
-            "startOffset": 810,
-            "endOffset": 942
-          }
+          ]
         }
-      ]
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Classes23Test.class_AcceptingOidDefinition",
@@ -134,7 +75,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "norm": {
         "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
         "sections": "2.5.1–2.5.2",
@@ -158,26 +99,39 @@
           "severity": "ERROR",
           "phase": "SEMANTIC_CHECKING",
           "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
           "arguments": [
             {
               "name": "element",
               "kind": "IDENTIFIER",
-              "value": "class"
+              "value": "T"
             },
             {
               "name": "rule",
               "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
             }
-          ],
-          "range": {
-            "source": "test/data/ili23/class/class_AcceptingOidDefinition.ili",
-            "revision": "1",
-            "startOffset": 99,
-            "endOffset": 153
-          }
+          ]
         }
-      ]
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Topic23Test.topicComplete",
@@ -186,7 +140,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "norm": {
         "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
         "sections": "2.5.1–2.5.2",
@@ -210,50 +164,39 @@
           "severity": "ERROR",
           "phase": "SEMANTIC_CHECKING",
           "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
           "arguments": [
             {
               "name": "element",
               "kind": "IDENTIFIER",
-              "value": "TopicA2"
+              "value": "T"
             },
             {
               "name": "rule",
               "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
             }
-          ],
-          "range": {
-            "source": "test/data/ili23/translation/topicComplete.ili",
-            "revision": "1",
-            "startOffset": 202,
-            "endOffset": 327
-          }
-        },
-        {
-          "code": "ILI-SEM-0010",
-          "severity": "ERROR",
-          "phase": "SEMANTIC_CHECKING",
-          "messageKey": "diagnostic.semantics.inheritance",
-          "arguments": [
-            {
-              "name": "element",
-              "kind": "IDENTIFIER",
-              "value": "TopicB2"
-            },
-            {
-              "name": "rule",
-              "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
-            }
-          ],
-          "range": {
-            "source": "test/data/ili23/translation/topicComplete.ili",
-            "revision": "1",
-            "startOffset": 599,
-            "endOffset": 724
-          }
+          ]
         }
-      ]
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
@@ -262,7 +205,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "norm": {
         "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
         "sections": "2.5.1–2.5.2",
@@ -286,26 +229,39 @@
           "severity": "ERROR",
           "phase": "SEMANTIC_CHECKING",
           "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
           "arguments": [
             {
               "name": "element",
               "kind": "IDENTIFIER",
-              "value": "topic"
+              "value": "T"
             },
             {
               "name": "rule",
               "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
             }
-          ],
-          "range": {
-            "source": "test/data/ili23/topics/topics_ExplicitBasketOidDefinition.ili",
-            "revision": "1",
-            "startOffset": 83,
-            "endOffset": 164
-          }
+          ]
         }
-      ]
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
@@ -314,7 +270,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "norm": {
         "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
         "sections": "2.5.1–2.5.2",
@@ -338,26 +294,39 @@
           "severity": "ERROR",
           "phase": "SEMANTIC_CHECKING",
           "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
           "arguments": [
             {
               "name": "element",
               "kind": "IDENTIFIER",
-              "value": "topic"
+              "value": "T"
             },
             {
               "name": "rule",
               "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
             }
-          ],
-          "range": {
-            "source": "test/data/ili23/topics/topics_ExplicitTopicOidDefinition.ili",
-            "revision": "1",
-            "startOffset": 83,
-            "endOffset": 171
-          }
+          ]
         }
-      ]
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
@@ -366,7 +335,7 @@
       "referenceExpectation": {
         "outcome": "accept"
       },
-      "ownExpectation": "rejected",
+      "ownExpectation": "accepted",
       "norm": {
         "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
         "sections": "2.5.1–2.5.2",
@@ -390,26 +359,39 @@
           "severity": "ERROR",
           "phase": "SEMANTIC_CHECKING",
           "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
           "arguments": [
             {
               "name": "element",
               "kind": "IDENTIFIER",
-              "value": "topicB"
+              "value": "T"
             },
             {
               "name": "rule",
               "kind": "TEXT",
-              "value": "OID AS requires a CONTRACTED model in INTERLIS 2.3/OID_CONTRACTED"
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
             }
-          ],
-          "range": {
-            "source": "test/data/metamodel/ViewableGetAttributesAndRoles2.ili",
-            "revision": "1",
-            "startOffset": 357,
-            "endOffset": 785
-          }
+          ]
         }
-      ]
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
     },
     {
       "testId": "ili23.Association23Test.association_AssociationAsTarget",

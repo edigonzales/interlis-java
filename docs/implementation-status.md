@@ -21,6 +21,16 @@ Tatsächliche Nachweise: [Lieferbericht](g2/implementation/L0B-2.md).
 Operativer Status und unabhängiges Urteil bleiben ausschliesslich in
 [docs/g2/STATUS.md](g2/STATUS.md).
 
+L0B-3 (AC0B-06–08, kumulativ AC0B-01–08; BUILD-001/004/007/008,
+TEST-002/003/009/011/012) entfernt die letzten neun Pythonwerkzeuge und ersetzt
+aktive SDK-/Referenz-/Corpus-/Messprüfungen durch Java/Gradle. Der vollständige
+Gesamtlauf mit gesperrtem Pythonzugriff besteht einschliesslich realem Safari und
+Web Image. Freigegebene Metadaten- und 2.3-OID-Kompatibilitätsfixes sind enthalten;
+die sechs betroffenen Suitefälle bestehen, alle 18 Zusatzprüfungen bleiben aktiv.
+Details, öffentliche Verträge und tatsächliche Zahlen:
+[Lieferbericht](g2/implementation/L0B-3.md). Unabhängiges Urteil weiterhin separat
+in [STATUS](g2/STATUS.md); L1-1 ist nicht begonnen.
+
 ## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
 Massgeblich ist der [Ausführungs- und Reviewvertrag](evidence/stabilization/g2-completion-plan.md).

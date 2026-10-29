@@ -1,30 +1,28 @@
 # G2 – operativer Status
 
-- Aktuelle Lieferung: **L0B-2**, AC0B-04 bis AC0B-05.
-- Status: **PASS** – unabhängiger OpenCode-Review vom 29.10.2026,
-  beide Kriterien erfüllt; [Prüfbericht](reviews/L0B-2-review.md),
-  [Implementierungsbericht](implementation/L0B-2.md).
-- Letzter unabhängiger PASS-SHA: `411585a650b4da42cc09dd0efbf3157697dcc178`,
-  Basis `2d33c71c7afde03b8f43a7923e0eaeb1a69d9045`.
-  Eigener Review-Worktree: `/tmp/interlis-java-L0B-2-review-411585a`.
-- Reviewprovider: **DeepSeek direkt**, `deepseek/deepseek-flash`
-  (Anzeige „DeepSeek V4.1 Flash 1017“), OpenCode v2.0.28, frischer Kontext,
-  Prozess-Exit **0**. Handoff und Rohlog: `build/review/L0B-2/{handoff.txt,opencode.jsonl}`.
-- Unabhängig frisch geprüft: **728** reguläre JVM-Tests, **136** Java-Evidenztests,
-  zusätzlich **15** Compiler-Assertionmethoden (27 gebundene Evidenzlinks),
-  0 Fehler/Skips; volle T2 **593/610**, Projektbilanz **574 PASS / 19 XFAIL**,
-  alle **18** strengen Zusatzbewertungen bestehen.
-- Eigene Review-Gegenproben: falsche JUnit-Klasse bei richtiger Methode und
-  aktualisiertem Hash → Exit **1**; falsches Cache-PDF → Exit **1**.
-  Originalextraktion unabhängig bestätigt: **435** Seiten, **2721** Absätze,
-  **311** Abschnitte, **369** Compilerbedingungen und **299** Exzerpte exakt.
-- Python: **34 → 9** getrackte Dateien; `g2EvidenceTest` verwendet Java.
-  [Migrationsmatrix](python-migration.md) begründet alle 25 weiteren Löschungen.
-  Keine Pythonfreiheitsbehauptung des Gesamtprojekts.
-- Fehlende Voraussetzungen für L0B-2: **keine**, keine offenen Muss-Findings.
-  Normentscheidungen und volle Safari-/Browser-/Web-Image-/Pythonfreiheitsgates
-  bleiben offen; L0B-3 ist das kumulative 0b-Phasengate.
-- Nächster fachlicher Schritt: **L0B-3** (übrige Werkzeuge und Python-freies
-  Gesamtphasengate). Noch nicht begonnen.
+- Aktuelle Lieferung: **L0B-3**, AC0B-06 bis AC0B-08 und kumulatives Phase-0b-Gate.
+- Status: **AWAITING_REVIEW** – neun verbleibende Pythondateien entfernt; Java-
+  Hostprüfungen, Pythonfreiheitscanarys und die freigegebenen Kompatibilitätsfixes
+  implementiert. Vollständiger abschliessender Lauf erfolgreich; unabhängiger Review offen.
+- Letzter unabhängiger PASS-SHA: `411585a650b4da42cc09dd0efbf3157697dcc178`
+  (L0B-2), [Prüfbericht](reviews/L0B-2-review.md).
+- L0B-3-Basis: `abde84ef666184e128827894d63e176709e7c3db`.
+- Nutzerentscheidungen vom 29.10.2026: Metadaten-Kompatibilitätsfix samt API/Spec
+  vorziehen; 2.3-OID/BASKET-OID ohne CONTRACTED bewusst zulassen. Andere
+  Normregeln und die verbleibenden zwölf Referenzausnahmen bleiben unverändert.
+- Quellenpins des 13-Modell-Corpus unverändert; fehlende Originale einschliesslich
+  des exakten Index wurden aus dem offiziellen Image `1.2.1817` wiederhergestellt.
+- Eigene Abschlussprüfung: JVM-Benchmark **13/13**; `check` und volle T2 grün,
+  Projekt **580 PASS / 13 XFAIL**, alle **18** Zusatzprüfungen weiter aktiv.
+- Python: **0** getrackte `.py`. Tatsächlicher Gesamtphasennachweis mit
+  vererbter OS-Ausführungssperre erfolgreich: **5m 27s**, 79 Tasks ausgeführt.
+  JVM **730** regulär, **136** Evidenz, **14** Host-/Kompatibilitätstests und
+  **15** frische Assertionmethoden; alle ohne Fehler/Skips. Portable-/Browser-/
+  Safari-/Web-Image-Läufe jeweils **3279** Fälle erfolgreich.
+- Nachweise und Grenzen: [Implementierungsbericht](implementation/L0B-3.md).
+- Reviewprovider bleibt **DeepSeek direkt**, `deepseek/deepseek-flash`
+  („DeepSeek V4.1 Flash 1017“), OpenCode v2.0.28 in frischem Kontext.
+- Nächster Schritt: Kandidatencommit unabhängig prüfen lassen.
+  **L1-1 erst nach PASS.**
 
 Verbindlich: [Plan](EXECUTION_PLAN.md), [Reviewanweisung](OPENCODE_REVIEW_PROMPT.md).

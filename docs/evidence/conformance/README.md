@@ -67,3 +67,17 @@ The former `ERROR` `ili24.Attribute24Test.text_List` (`LIST {0..*} OF
 TEXT*20`) was a real lowering bug: an optional `structureRef()` list was
 checked with `!= null` instead of `isEmpty()`. It is fixed and covered by
 `CollectionTypeContractTest`; the case is now PASS.
+
+## L0B-3: freigegebene OID-Kompatibilität (29.10.2026)
+
+Die Nutzerentscheidung erlaubt 2.3-OID- und Basket-OID-Regeln ohne CONTRACTED.
+Sechs bisherige Normausnahmen sind dadurch reguläre PASS-Fälle. Der externe
+Runner, Suite-/Archivpins, Sprachfilter und Originalquellen sind unverändert.
+Alle **18** expliziten Projektprüfungen bleiben aktiv: sechs freigegebene
+Kompatibilitätsfälle und zwölf verbleibende normative Abweichungen. Die sechs
+Fälle behalten Original-/Positivkontrollen und erhalten eine gepinnte negative
+OID-Domänenkontrolle mit exakten strukturierten Diagnosen. Fehlende Freigabe,
+fehlende/falsche Kontrolle, Hash-/Exit-/Diagnoseabweichung oder XPASS scheitern.
+Reguläre rohe PASS werden nicht als XFAIL umklassifiziert. Aktuelle Bilanz bei
+voller Auswahl: roh **580 PASS / 12 FAIL / 1 XFAIL**, Projekt **580 PASS / 13 XFAIL**.
+Die ältere Ergebnisbeschreibung oben bleibt als datierter Nachweis erhalten.
