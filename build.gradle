@@ -89,13 +89,7 @@ tasks.register('releaseCheck') {
 }
 
 
-tasks.register('conformanceWrapperTest', Exec) {
-    group = 'verification'
-    description = 'Checks failure paths of reviewed normative expectations.'
-    workingDir = rootProject.projectDir
-    commandLine 'python3', '-m', 'unittest', 'discover', '-s', 'tools/reference', '-p', 'test_conformance_check.py'
-}
-tasks.named('check') { dependsOn 'conformanceWrapperTest' }
+apply from: 'gradle/conformance.gradle'
 
 tasks.register('g2EvidenceTest', Exec) {
     group = 'verification'
@@ -104,14 +98,6 @@ tasks.register('g2EvidenceTest', Exec) {
     commandLine 'python3', '-m', 'unittest', 'discover', '-s', 'tools/reference', '-p', 'test_g2_*.py'
 }
 tasks.named('check') { dependsOn 'g2EvidenceTest' }
-
-tasks.register('conformanceCheck', Exec) {
-    group = 'verification'
-    description = 'Runs the pinned external INTERLIS 2.3/2.4 conformance suite.'
-    dependsOn ':interlis-cli:installDist', 'conformanceWrapperTest'
-    workingDir = rootProject.projectDir
-    commandLine 'python3', 'tools/reference/conformance_check.py'
-}
 
 tasks.register('geoCorpus', Exec) {
     group = 'verification'

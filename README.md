@@ -25,7 +25,7 @@ Der Gradle-Wrapper ist gepinnt (9.8.1). Maven/Ant sind keine Build-Einstiege.
 ```sh
 ./gradlew check                # JVM-Tests + SDK-Beispiel gegen gebaute JARs
 ./gradlew checkPortable        # JVM + TeaVM WasmGC/JS unter Node
-./gradlew conformanceCheck     # externe 2.3/2.4-Conformance-Suite; derzeit erwartet rot
+./gradlew conformanceCheck     # gepinnte externe Suite und getrennte Projektbewertung
 ./gradlew :interlis-cli:installDist
 ./gradlew :interlis-lsp:installDist
 python3 tools/reference/reference_check.py   # gepinntes ili2c-Referenzprofil

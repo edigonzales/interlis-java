@@ -1,0 +1,113 @@
+// The suite owns execution, classification and raw reports. This project only
+// prepares its pinned inputs and validates the explicit normative exceptions.
+def pin = new Properties()
+rootProject.file('gradle/conformance-suite.properties').withInputStream { pin.load(it) }
+def cache = providers.environmentVariable('CONFORMANCE_CACHE')
+        .orElse(new File(System.getProperty('user.home'), '.cache/interlis-java/conformance').path)
+def suite = layout.buildDirectory.dir('conformance-suite')
+def output = layout.buildDirectory.dir('conformance')
+def filter = providers.environmentVariable('CONFORMANCE_FILTER').orElse('^(ili23|ili24)\\.')
+
+tasks.register('prepareConformanceSuite') {
+    group = 'verification'
+    description = 'Verifies and extracts the pinned external Java conformance runner.'
+    doLast {
+        def archive = new File(cache.get(), "suite-${pin.commit}.tar.gz")
+        archive.parentFile.mkdirs()
+        if (!archive.isFile()) {
+            def connection = URI.create(pin.url).toURL().openConnection()
+            connection.connectTimeout = 180000
+            connection.readTimeout = 180000
+            def temporary = new File(archive.parentFile, archive.name + '.part')
+            try {
+                connection.inputStream.withCloseable { input ->
+                    temporary.withOutputStream { it << input }
+                }
+                java.nio.file.Files.move(temporary.toPath(), archive.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            } finally {
+                temporary.delete()
+            }
+        }
+        def digest = java.security.MessageDigest.getInstance('SHA-256')
+        archive.withInputStream { input ->
+            byte[] buffer = new byte[65536]
+            int size
+            while ((size = input.read(buffer)) != -1) digest.update(buffer, 0, size)
+        }
+        def actual = java.util.HexFormat.of().formatHex(digest.digest())
+        if (actual != pin.sha256) throw new GradleException("Suite archive hash mismatch: ${actual}")
+        // Always extract from verified bytes, including when the shared cache
+        // already contains a directory left by another checkout.
+        delete suite
+        copy {
+            from tarTree(resources.gzip(archive))
+            into suite
+            eachFile { details ->
+                details.relativePath = new RelativePath(!details.directory,
+                        details.relativePath.segments.drop(1) as String[])
+            }
+            includeEmptyDirs = false
+        }
+        if (!suite.get().file('InterlisConformance.java').asFile.isFile()) {
+            throw new GradleException('Pinned conformance runner missing after extraction')
+        }
+    }
+}
+
+tasks.register('runConformanceSuite', Exec) {
+    group = 'verification'
+    description = 'Directly runs the pinned external InterlisConformance.java; preserves its raw exit and reports.'
+    dependsOn 'prepareConformanceSuite', ':interlis-cli:installDist', 'conformanceWrapperTest'
+    timeout = java.time.Duration.ofMinutes(30)
+    doFirst {
+        def dir = output.get().asFile
+        dir.mkdirs()
+        delete new File(dir, 'summary.json'), new File(dir, 'report.json'),
+                new File(dir, 'report.junit.xml'), new File(dir, 'normative-assessment.json'),
+                new File(dir, 'runner-exit.txt'), layout.buildDirectory.file('reports/conformance/conformance-summary.json')
+        def cliName = System.getProperty('os.name').startsWith('Windows') ? 'interlis-cli.bat' : 'interlis-cli'
+        def cli = project(':interlis-cli').layout.buildDirectory.file("install/interlis-cli/bin/${cliName}").get().asFile
+        def config = [suite: suite.get().file('suite/test-cases.json').asFile.absolutePath,
+                      outputDirectory: dir.absolutePath,
+                      cacheDirectory: new File(cache.get(), 'fixtures').absolutePath,
+                      timeoutSeconds: 60, parallelism: 4, xpassPolicy: 'fail', filter: filter.get(),
+                      compilers: [[id: 'interlis-java', source: cli.absolutePath,
+                                   command: ['{compiler}', 'check', '{files}'], acceptedExitCodes: [0],
+                                   rejectedExitCodes: [1], internalErrorPatterns: ['internal failure:', 'Exception in thread'],
+                                   baseline: rootProject.file('docs/evidence/conformance/baseline.json').absolutePath]]]
+        def configFile = new File(dir, 'run-config.json')
+        configFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config)) + '\n'
+        new File(dir, 'run-start.txt').text = System.currentTimeMillis().toString()
+        def launcher = project(':interlis-cli').javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(25)
+        }.get()
+        workingDir rootProject.projectDir
+        commandLine launcher.executablePath.asFile, suite.get().file('InterlisConformance.java').asFile,
+                'run', '--config', configFile
+        standardOutput = new FileOutputStream(new File(dir, 'conformance.log'))
+        errorOutput = standardOutput
+        ignoreExitValue = true
+    }
+    doLast {
+        standardOutput.close()
+        def exit = executionResult.get().exitValue
+        new File(output.get().asFile, 'runner-exit.txt').text = exit.toString()
+        if (!(exit in [0, 1])) {
+            throw new GradleException("Conformance runner process failed: exit ${exit}; see build/conformance/conformance.log")
+        }
+    }
+}
+
+tasks.register('conformanceWrapperTest') {
+    group = 'verification'
+    description = 'JUnit failure paths for normative exceptions and pinned portable fixtures.'
+    dependsOn ':interlis-cli:test'
+}
+tasks.named('check') { dependsOn 'conformanceWrapperTest' }
+
+tasks.register('conformanceCheck') {
+    group = 'verification'
+    description = 'Pinned external Java suite plus separate normative JUnit-contract assessment.'
+    dependsOn ':interlis-cli:conformanceAssessment'
+}

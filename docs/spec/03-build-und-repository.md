@@ -214,11 +214,17 @@ Die erste nutzbare CLI-Auslieferung ist eine `application`-Distribution mit `lib
 WASM-Auslieferungen enthalten einen versionierten JS-Lader, das Wasm-Artefakt, eine Protokollversion und einen Ressourcen-/Buildmanifest. Das Builddatum ist Betriebsmetadatum, kein semantischer Modellfingerprint. Veröffentlichungen verwenden feste Versionsnummern und nachvollziehbare Releaseprofile. Eine Maven-kompatible Publikation ist mit Gradle möglich und verpflichtet Anwender nicht zur Verwendung von Maven.
 
 
-`conformanceWrapperTest` prüft mit Python-unittest die Fehlerpfade der
-versionierten Normerwartungen. `check` und `conformanceCheck` hängen davon ab.
-`conformanceCheck` erhält den rohen externen Bericht unter `build/conformance/`
-und schreibt die zusätzliche Normbewertung in den Projektbericht unter
-`build/reports/conformance/`; Erwartungen und Pins werden nie automatisch aktualisiert.
+`conformanceWrapperTest` prüft mit JUnit im CLI-Testquellensatz die Fehlerpfade
+der versionierten Normerwartungen und die gepinnten portablen Originalfixtures.
+`check` und `conformanceCheck` hängen davon ab. `conformanceCheck` startet den
+unveränderten externen `InterlisConformance.java` direkt aus Gradle mit Java 25;
+Archivprüfung, Konfiguration und direkte Prozessausführung stehen in
+`gradle/conformance.gradle`, die Pins in `gradle/conformance-suite.properties`.
+Der rohe Bericht und Runner-Exit bleiben unter `build/conformance/` erhalten.
+Eine separate Java-Testhilfe bewertet ausschliesslich die expliziten
+Normabweichungen mit Original-/Kontrollhashes und strukturierten Diagnosen und
+schreibt den Projektbericht unter `build/reports/conformance/`. Die Suite bleibt
+alleiniger Runner; Erwartungen, Baseline und Pins werden nie automatisch aktualisiert.
 
 Die funktionalen portablen Probeläufe werden nach den im selben Taskgraph
 angeforderten Compiler-/Native-Image-Builds und dem Referenzprozesslauf

@@ -8,7 +8,7 @@
     "docs/spec/00-auftrag-und-agentenregeln.md": "800322b4d895fc37692b2c2bc201e332cfd677664f948953cec7f3d757053fc9",
     "docs/spec/01-zielbild-und-anforderungen.md": "34fa7b08d0cb50d4ba51ef59398bf2f3987218c8795714bc37b7c73f56747214",
     "docs/spec/02-architektur-und-modulgrenzen.md": "02b0af3a36469edfb461149f102859e20a1a2732353564718ca7dd9d2afe45cc",
-    "docs/spec/03-build-und-repository.md": "a36480c5cc51dcc1c6450d7a8d99b2676a6b1349171d2c446feb1c6404e4faf0",
+    "docs/spec/03-build-und-repository.md": "5c173881d4e68747dc36f9f29b645a4b2480a2c2928f3b6cd8444a1b8c3b2924",
     "docs/spec/04-quelltext-syntax-und-parser.md": "e04d893dbdb415e2b756578ab62fa6f0756cbc58380c95d7221c4add4da21273",
     "docs/spec/05-metamodell-und-typensystem.md": "b4834b64c1220e820f9ae0da52aadf7a9cf39d3d6bae61d47c4ba7e025f39da5",
     "docs/spec/06-kompilierung-und-semantik.md": "518e5753d1cf0b0533c42cc7e49e067069fee66d00a19ab33c4b6e8268a4f92e",

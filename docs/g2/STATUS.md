@@ -1,23 +1,23 @@
 # G2 – operativer Status
 
-- Aktuelle Lieferung: **L0A**, AC0A-01 bis AC0A-04.
-- Status: **PASS** – unabhängiger OpenCode-Review vom 29.10.2026,
-  alle vier Kriterien erfüllt; [Prüfbericht](reviews/L0A-review.md),
-  [Implementierungsbericht](implementation/L0A.md).
-- Letzter unabhängiger PASS-SHA: `a36bca9e6a71bcd1a15c8f5577d97a74b11b9fc1`, Basis
-  `865c99bab6ccea4ca3900d897381fa3a2a41fe39`. Sauberer separater Review-Worktree:
-  `/tmp/interlis-java-L0A-review-a36bca9`.
-- Reviewprovider: **DeepSeek direkt**, OpenCode v2.0.28 mit `deepseek/deepseek-flash`
-  (Anzeige „DeepSeek V4.1 Flash 1017“), gemäss Nutzerkorrektur auch für weitere Reviews.
-  Der frühere OpenRouter-Blocker ist damit behoben. Aufruf, Handoff und Rohlog:
-  `build/review/L0A/{handoff-deepseek.txt,opencode-deepseek.jsonl}`.
-- Unabhängig frisch geprüft: **706 JVM-Tests**, volle T2 (Projekt 574 PASS / 19 XFAIL;
-  roh 574 PASS / 18 FAIL / 1 XFAIL), je **3267** TeaVM-JS-/WasmGC-Fälle,
-  59 Evidenz-/20 Wrappertests, SDK-Beispiel. Eigene Reviewer-Gegenprobe:
-  **328 Checks, 0 Fehler** am Kandidaten; 64 Fehler am Basiscommit.
-- Fehlende Voraussetzungen für L0A: **keine**; keine offenen Reviewer-Findings.
-  Das Pilot-PASS erteilt keine Norm-, Plattformgesamt- oder G2-Gesamtfreigabe.
-- Nächster fachlicher Schritt: **L0B-1** nach Plan (Conformance/normative Sonderfälle
-  nach Java). Noch nicht begonnen; dieser Auftrag hat nur den L0A-Review wiederholt.
+- Aktuelle Lieferung: **L0B-1**, AC0B-01 bis AC0B-03.
+- Status: **AWAITING_REVIEW** – direkter gepinnter Java-Runner und Java-/JUnit-Normprüfungen
+  implementiert; 728 JVM-Tests, volle T2 und Alt-/Neu-Parität für 593 Fälle und
+  alle 18 Normbewertungen geprüft. Manipuliertes Archiv wird abgelehnt.
+  [Implementierungsbericht](implementation/L0B-1.md).
+- Basis: `c671ce3aa943afcc53579b4cd488773afbd0206e`, beim Start sauber.
+- Letzter unabhängiger PASS-SHA: **L0A**,
+  `a36bca9e6a71bcd1a15c8f5577d97a74b11b9fc1`;
+  [Prüfbericht](reviews/L0A-review.md).
+- Reviewprovider: **DeepSeek direkt**, `deepseek/deepseek-flash`
+  (Anzeige „DeepSeek V4.1 Flash 1017“), OpenCode v2.0.28, frischer Kontext und
+  sauberer separater Worktree je Kandidat.
+- Python: 36 Dateien an der Basis; zwei Dateien in L0B-1 entfernt, 34 verbleiben.
+  Die [Migrationsmatrix](python-migration.md) erfasst alle 36; restliche Migration
+  und Python-freies Phasengate bleiben L0B-2/L0B-3 vorbehalten.
+- Fehlende Voraussetzungen: unabhängiges Urteil für den L0B-1-Kandidaten
+  einschliesslich eigener neuer Manipulationsprobe. Kein selbst erteiltes PASS.
+- Nächster Schritt: Bericht und Kandidat committen, OpenCode
+  direkt über DeepSeek prüfen lassen. **L0B-2 beginnt erst nach PASS.**
 
 Verbindlich: [Plan](EXECUTION_PLAN.md), [Reviewanweisung](OPENCODE_REVIEW_PROMPT.md).

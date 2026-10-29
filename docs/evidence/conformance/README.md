@@ -20,6 +20,16 @@ Reproduce:
 ./gradlew conformanceCheck
 ```
 
+Since L0B-1, Gradle invokes the unchanged pinned `InterlisConformance.java`
+directly. `gradle/conformance.gradle` verifies the cached archive before every
+extraction, creates the same run configuration and preserves the raw runner exit.
+The CLI test helper `NormativeConformance` only assesses the 18 explicit project
+exceptions and writes the separate project report; it does not run or classify
+the suite. Its negative contracts and the 19 pinned portable originals are JUnit
+tests behind `conformanceWrapperTest`. This path no longer calls Python.
+The results below remain historical; current delivery evidence is in
+[L0B-1](../../g2/implementation/L0B-1.md).
+
 The task is deliberately separate from `check` and `releaseCheck`: the
 external suite is large, network-dependent on first use, and its baseline is a
 compatibility observation, not a P1 release gate. The full runner report stays

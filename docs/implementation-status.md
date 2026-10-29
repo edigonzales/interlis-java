@@ -7,6 +7,12 @@ L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
 [Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.
 Die folgenden Abschnitte dokumentieren den historischen Stand vor dieser Lieferung.
 
+L0B-1 (AC0B-01–03; BUILD-001/002/004/007/008, TEST-002/003/009/011/012)
+ersetzt den Python-Conformancepfad durch den direkten externen Java-Runner und
+JUnit-Verträge für die zusätzlichen Normprüfungen. Nachweise und Abgrenzung:
+[Lieferbericht](g2/implementation/L0B-1.md), [Migrationsmatrix](g2/python-migration.md).
+Operativer Fortschritt und unabhängige Abnahme bleiben in `docs/g2/STATUS.md`.
+
 ## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
 Massgeblich ist der [Ausführungs- und Reviewvertrag](evidence/stabilization/g2-completion-plan.md).
