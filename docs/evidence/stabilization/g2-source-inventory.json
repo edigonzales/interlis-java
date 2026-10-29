@@ -10,7 +10,7 @@
     "docs/spec/02-architektur-und-modulgrenzen.md": "02b0af3a36469edfb461149f102859e20a1a2732353564718ca7dd9d2afe45cc",
     "docs/spec/03-build-und-repository.md": "ce101774fee4fedfc4058091cc2efe75fb3d7f6fffe1f6e56f2ef1f387725451",
     "docs/spec/04-quelltext-syntax-und-parser.md": "30ca30935a368cd273e26f1342bf1d0c66be0ff4ac12872daa14a7f962657cd0",
-    "docs/spec/05-metamodell-und-typensystem.md": "cc803f5b39945fb1ca36e635acc3b9ff706dd25ed6c78c457319bd13a88358b1",
+    "docs/spec/05-metamodell-und-typensystem.md": "581c9a3e0608b674b84d8981cd2be92d02ff4eda6152ea907c28d8ece78893d4",
     "docs/spec/06-kompilierung-und-semantik.md": "17167a0b1deaa8bd6ec3ed3941e83ef426fd9486cb53e0fa29dac12f3ab4912b",
     "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "f669ca95abac84234c9526928dac83588898025f3c3dbfd5c8afc7dfe6d9c700",
     "docs/spec/08-modellaufloesung-und-repositories.md": "173f6a2444823166cb8c1ee9f2c49ed01e80ab69ca11f228d57c33f8695eb396",
@@ -22007,8 +22007,8 @@
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/LanguageProfile.java": "69882c2155fada2aee243cb2c219d985deb6b908ae6b5184101452f05eb495fa",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/SyntaxTreeBuilder.java": "9e1ed18314ea40a34aa84c8a7dfb5bcb0a701ad427ec5af17337fca9e2c3e73b",
       "interlis-compiler/src/main/java/guru/interlis/compiler/query/LanguageQueryService.java": "4fd84a5177ff3d71759972c4369b37d439054f03a9f6df984525b081f015979e",
-      "testdata/g2/predefined-catalogue.json": "d04f03ca224bfc9605ea4ff3b463730e8a133a3d96d26d0fb1906d88883b7285",
-      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java": "d284d46cd9545c5eefca0d41399b5a3f7b620535dbac302287b8e463beb7840f"
+      "testdata/g2/predefined-catalogue.json": "745ec11b10b3aa2e7ecb6e957052ddacbefbed37984ab74892e1aea78b02ec87",
+      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java": "cdc41e3d773a31bde126510ddc1d9860ee37fefec6bc805b009a85149e2f69d6"
     },
     "declarations": [
       {
@@ -22058,8 +22058,8 @@
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java",
             "start": 0,
-            "end": 5180,
-            "sha256": "d284d46cd9545c5eefca0d41399b5a3f7b620535dbac302287b8e463beb7840f",
+            "end": 5660,
+            "sha256": "cdc41e3d773a31bde126510ddc1d9860ee37fefec6bc805b009a85149e2f69d6",
             "line": 1
           }
         ],
@@ -31397,13 +31397,13 @@
       },
       {
         "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java",
-        "line": 22,
+        "line": 30,
         "coveredBySourceCatalogue": true,
         "review": "REVIEW_SOURCE_FACTORY_OR_CONTEXT_COPY"
       },
       {
         "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java",
-        "line": 40,
+        "line": 48,
         "coveredBySourceCatalogue": true,
         "review": "REVIEW_SOURCE_FACTORY_OR_CONTEXT_COPY"
       },

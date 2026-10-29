@@ -1434,6 +1434,9 @@ Modell; explizite `IMPORTS INTERLIS` besitzen sein kanonisches Ziel.
 Qualifizierte Quellreferenzen binden auch ihr INTERLIS-Präfix an dieses Modell.
 Es erhält keinen erfundenen Quellbereich und ist kein angefordertes Benutzer-
 Rootmodell. Gleiche Namen aus 2.3 und 2.4 behalten verschiedene Identitäten.
+Der Ownervertrag gilt für jede im Analyse-Snapshot materialisierte Sprache,
+auch wenn deren Benutzermodell ausserhalb der angeforderten Closure liegt.
+Die Sprachmenge der gewählten Closure wird dadurch nicht erweitert.
 2.3 definiert ANYOID/I32OID/STANDARDOID/UUIDOID ohne ABSTRACT/EXTENDS (2.8.9,
 Anhang A); 2.4 definiert NOOID, ANYOID(ABSTRACT) EXTENDS NOOID und die drei
 konkreten Domänen EXTENDS ANYOID (3.8.9, Anhang A). Trägerwerte und Herkunft

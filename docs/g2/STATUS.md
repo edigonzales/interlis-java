@@ -8,6 +8,11 @@
 - Letzter unabhängiger PASS: **L0B-3 / Phase 0b**, Code
   `d67b0a669ac41261078fe02dafe1544e2c1ef3bb`,
   [unveränderter Bericht](reviews/L0B-3-review.md).
+- Erster L1-1-Review auf `9cc8073409781e4fa3c48f4334f7de6c2d9220fd`: **FAIL**
+  wegen eines unvollständigen Predefined-Owners in einer Sprache ausserhalb
+  der Closure; [unveränderter Bericht](reviews/L1-1-review-9cc8073-FAIL.md).
+  F1 ist mit RED/GREEN-Regression für gemischte Quellen, Quellenreihenfolge
+  und Fresh/Reuse korrigiert. Der neue Kandidat braucht einen vollständigen Review.
 - L1-1 implementiert: gewöhnliche vordefinierte Geometriestrukturen,
   kanonische sprachabhängige INTERLIS-Modellowner, Import-/Präfixqueries und
   eindeutige kanonische gegenüber kontextbezogener Herkunft.
@@ -15,8 +20,8 @@
   abstrakte Klassen wie ili2c**, in 2.3 und 2.4. Topics, konkrete Klassen,
   Laufzeitparameter und Metadatenbehälter bleiben verboten. Die vorher
   freigegebene OID-/CONTRACTED-Kompatibilität bleibt erhalten.
-- Eigene Prüfungen: frisches `check --rerun-tasks` **Exit 0 / 21s / 45 Tasks**;
-  **737** reguläre JVM-, **136** Evidenz-, **15** Assertion- und **15** Hosttests,
+- Eigene Prüfungen: frisches `check --rerun-tasks` **Exit 0 / 24s / 45 Tasks**;
+  **738** reguläre JVM-, **136** Evidenz-, **15** Assertion- und **15** Hosttests,
   alle ohne Fehler/Skips. Node-JS/WasmGC jeweils **3299** gemeinsame Fälle unter
   der OS-Interpreter-Ausführungssperre erfolgreich. Alle **6** gepinnten
   Geometrie-Originalquellen mit aktuellem Compiler und ili2c **Exit 0**.

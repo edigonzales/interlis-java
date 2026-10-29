@@ -18,7 +18,15 @@ final class PredefinedModels {
             "LineSegment","StartSegment","StraightSegment","ArcSegment","SurfaceEdge","SurfaceBoundary","LineGeometry",
             "areAreasWithoutGaps","areAreasWithoutGaps2");
     static void finish(GraphBuilder graph, Set<LanguageVersion> languages) {
-        for(var language:languages) {
+        // Analysis also publishes declarations outside the requested closure.
+        // Their predefined values need owners even when their language is not
+        // part of the selected schema's language set.
+        Set<LanguageVersion> materialized=new LinkedHashSet<>(languages);
+        for(var symbol:graph.symbols.values()) {
+            graph.checkWork();
+            if(symbol.origin() instanceof Origin.PredefinedOrigin p)materialized.add(p.language());
+        }
+        for(var language:materialized) {
             graph.checkWork();var model=id(language);var origin=new Origin.PredefinedOrigin(language,"INTERLIS");
             var members=graph.symbols.values().stream().filter(s->s.owner().isEmpty()
                     && s.origin() instanceof Origin.PredefinedOrigin p && p.language()==language && p.key().startsWith("INTERLIS."))

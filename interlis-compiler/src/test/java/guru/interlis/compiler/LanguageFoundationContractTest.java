@@ -115,6 +115,38 @@ class LanguageFoundationContractTest {
             assertEquals(p.typeId(),endpoint.declaredType());
         }
     }
+    @Test void mixedLanguageSnapshotsOwnEveryMaterializedPredefinedDeclaration() {
+        for(boolean reversed:List.of(false,true))for(var roots:List.of(List.of("M23"),List.of("M24"),List.of("M23","M24"))) {
+            Map<SourceId,SourceText> sources=new LinkedHashMap<>();
+            for(String v:reversed?List.of("2.4","2.3"):List.of("2.3","2.4")) {
+                String name=v.equals("2.3")?"M23":"M24";
+                var source=new SourceText(new SourceId("memory:/"+name+".ili"),new SourceRevision(1),
+                        "INTERLIS "+v+";CONTRACTED MODEL "+name+" AT \"https://example.org\" VERSION \"1\"="
+                                +"IMPORTS INTERLIS;STRUCTURE H=line:INTERLIS.LineGeometry;END H;END "+name+".");
+                sources.put(source.id(),source);
+            }
+            var request=request(roots,sources,List.of(),CompilerOptions.defaults());
+            var fresh=ok(request).analysis();var engine=CompilerEngines.create();
+            var reused=engine.analyze(request,new AnalysisReuse(Optional.of(fresh),fresh.syntaxSnapshots()),CancellationToken.none());
+            for(var analysis:List.of(fresh,reused)) {
+                var graph=analysis.semanticGraph();
+                assertEquals(new HashSet<>(roots.stream().map(n->n.equals("M23")?LanguageVersion.ILI23:LanguageVersion.ILI24).toList()),graph.languageVersions());
+                assertEquals(2,analysis.queries().findQualifiedName(QualifiedName.of("INTERLIS")).size());
+                assertEquals(2,analysis.queries().findQualifiedName(QualifiedName.of("INTERLIS","LineGeometry")).size());
+                for(var symbol:graph.symbols())if(symbol.origin() instanceof Origin.PredefinedOrigin p
+                        && p.key().startsWith("INTERLIS.") && !p.key().substring(9).contains(".")) {
+                    var owner=assertInstanceOf(ModelSymbol.class,graph.symbol(symbol.owner().orElseThrow()).orElseThrow());
+                    assertEquals(p.language(),owner.header().languageVersion());
+                    assertTrue(owner.members().contains(symbol.id()),symbol.id().toString());
+                }
+                for(var id:analysis.queries().findQualifiedName(QualifiedName.of("INTERLIS"))) {
+                    var model=(ModelSymbol)graph.symbol(id.symbol()).orElseThrow();
+                    assertFalse(model.members().isEmpty());
+                    for(var member:model.members())assertEquals(Optional.of(model.id()),graph.symbol(member).orElseThrow().owner());
+                }
+            }
+        }
+    }
     @Test void predefinedModelAndExplicitImportsExposeTheVersionedCanonicalOwner() {
         for(String v:List.of("2.3","2.4")) {
             var out=ok(input(v,"IMPORTS INTERLIS;","STRUCTURE Holder=edge:INTERLIS.SurfaceEdge;id:INTERLIS.UUIDOID;END Holder;",1));
