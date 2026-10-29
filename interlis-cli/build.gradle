@@ -21,6 +21,10 @@ application {
 
 tasks.named('test') {
     systemProperty 'repo.root', rootProject.projectDir.absolutePath
+    inputs.dir(rootProject.file('testdata/conformance/b1-b3-acceptance'))
+            .withPropertyName('pinnedOriginalViewFixtures').withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(rootProject.file('interlis-wasm-teavm/stabilization-contract.cjs'))
+            .withPropertyName('portableOriginalViewFixtures').withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 tasks.register('conformanceAssessment', JavaExec) {

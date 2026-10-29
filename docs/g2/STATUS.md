@@ -4,6 +4,8 @@
 - Status: **AWAITING_REVIEW** – direkter gepinnter Java-Runner und Java-/JUnit-Normprüfungen
   implementiert; 728 JVM-Tests, volle T2 und Alt-/Neu-Parität für 593 Fälle und
   alle 18 Normbewertungen geprüft. Manipuliertes Archiv wird abgelehnt.
+  Revision 2 deklariert externe Fixture-/JS-Dateien als JUnit-Task-Eingaben;
+  reale Cache-Gegenproben verhindern nachgewiesenes Fehlgrün ohne `--rerun-tasks`.
   [Implementierungsbericht](implementation/L0B-1.md).
 - Basis: `c671ce3aa943afcc53579b4cd488773afbd0206e`, beim Start sauber.
 - Letzter unabhängiger PASS-SHA: **L0A**,
@@ -17,6 +19,8 @@
   und Python-freies Phasengate bleiben L0B-2/L0B-3 vorbehalten.
 - Fehlende Voraussetzungen: unabhängiges Urteil für den L0B-1-Kandidaten
   einschliesslich eigener neuer Manipulationsprobe. Kein selbst erteiltes PASS.
+  Das erste Reviewer-PASS gilt nur für den ersten Kandidaten; die zusätzliche
+  Cachekorrektur benötigt einen neuen Review des aktuellen Commitstands.
 - Nächster Schritt: Bericht und Kandidat committen, OpenCode
   direkt über DeepSeek prüfen lassen. **L0B-2 beginnt erst nach PASS.**
 
