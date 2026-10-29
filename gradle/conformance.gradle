@@ -4,6 +4,7 @@ def pin = new Properties()
 rootProject.file('gradle/conformance-suite.properties').withInputStream { pin.load(it) }
 def cache = providers.environmentVariable('CONFORMANCE_CACHE')
         .orElse(new File(System.getProperty('user.home'), '.cache/interlis-java/conformance').path)
+        .map { rootProject.file(it).absolutePath }
 def suite = layout.buildDirectory.dir('conformance-suite')
 def output = layout.buildDirectory.dir('conformance')
 def filter = providers.environmentVariable('CONFORMANCE_FILTER').orElse('^(ili23|ili24)\\.')
