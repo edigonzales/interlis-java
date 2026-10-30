@@ -548,14 +548,13 @@
       "section": "2.8",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
+      "scope": "INTERLIS2.3: Domain-Deklaration, MANDATORY-Fortsetzung, notwendige ABSTRACT-Angabe und kompatible EXTENDS-Typverfeinerung. Datenwerte und ihre Ausführung bleiben P4; Domainconstraints sind hier keine2.3-Sprachpflicht.",
       "links": [
         "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
         "DomainRestrictionContractTest.mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap",
-        "NumericAbstractionContractTest.incompleteNumericAndCoordinateDomainsRequireAnExplicitAbstractDeclaration",
-        "ExpressionConstraintContractTest.domainConstraintsAreBoundToTheirOwnTypeAndRemainInDeclarationOrder"
+        "NumericAbstractionContractTest.incompleteNumericAndCoordinateDomainsRequireAnExplicitAbstractDeclaration"
       ],
-      "resolution": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung."
+      "resolution": "INTERLIS2.3: Domain-Deklaration, MANDATORY-Fortsetzung, notwendige ABSTRACT-Angabe und kompatible EXTENDS-Typverfeinerung. Datenwerte und ihre Ausführung bleiben P4; Domainconstraints sind hier keine2.3-Sprachpflicht."
     },
     {
       "id": "NORM:2.3:2.8:C02",
@@ -563,17 +562,16 @@
       "section": "2.8",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
+      "scope": "INTERLIS2.3: qualifizierter DomainRef und deklarative BaseType-Familien mit tatsächlichen öffentlichen Typ-/Zielassertions. Keine Behauptung von2.4-Domainconstraints in2.3.",
       "links": [
         "TypeFamilyContractTest.oidBlackboxAndAlignmentTypesAreModeled",
         "ImportedDomainTypeContractTest.singleElementEnumsAndComposedUnitsKeepTheirDeclaredKind",
         "NumericConstantBindingContractTest.explicitUnitsHaveActualTargetsAndExactNumbersInBothVersions",
         "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
         "DomainRestrictionContractTest.mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap",
-        "NumericAbstractionContractTest.incompleteNumericAndCoordinateDomainsRequireAnExplicitAbstractDeclaration",
-        "ExpressionConstraintContractTest.domainConstraintsAreBoundToTheirOwnTypeAndRemainInDeclarationOrder"
+        "NumericAbstractionContractTest.incompleteNumericAndCoordinateDomainsRequireAnExplicitAbstractDeclaration"
       ],
-      "resolution": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung."
+      "resolution": "INTERLIS2.3: qualifizierter DomainRef und deklarative BaseType-Familien mit tatsächlichen öffentlichen Typ-/Zielassertions. Keine Behauptung von2.4-Domainconstraints in2.3."
     },
     {
       "id": "NORM:2.3:2.8:C03",
@@ -581,17 +579,16 @@
       "section": "2.8",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
+      "scope": "INTERLIS2.3: Konstanten im geprüften Typ-/Wertebereichskontext, insbesondere exakt gebundene Zahlen/Einheiten und Enumwerte; deklarative Typ-/Aliasregeln zusätzlich verknüpft. Keine Behauptung von2.4-Domainconstraints in2.3.",
       "links": [
         "TypeFamilyContractTest.oidBlackboxAndAlignmentTypesAreModeled",
         "ImportedDomainTypeContractTest.singleElementEnumsAndComposedUnitsKeepTheirDeclaredKind",
         "NumericConstantBindingContractTest.explicitUnitsHaveActualTargetsAndExactNumbersInBothVersions",
         "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
         "DomainRestrictionContractTest.mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap",
-        "NumericAbstractionContractTest.incompleteNumericAndCoordinateDomainsRequireAnExplicitAbstractDeclaration",
-        "ExpressionConstraintContractTest.domainConstraintsAreBoundToTheirOwnTypeAndRemainInDeclarationOrder"
+        "NumericAbstractionContractTest.incompleteNumericAndCoordinateDomainsRequireAnExplicitAbstractDeclaration"
       ],
-      "resolution": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung."
+      "resolution": "INTERLIS2.3: Konstanten im geprüften Typ-/Wertebereichskontext, insbesondere exakt gebundene Zahlen/Einheiten und Enumwerte; deklarative Typ-/Aliasregeln zusätzlich verknüpft. Keine Behauptung von2.4-Domainconstraints in2.3."
     },
     {
       "id": "NORM:2.3:2.8.1:C01",

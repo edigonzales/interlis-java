@@ -3,19 +3,14 @@
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
-**Gesamte G2-Phase4 ist autonom beauftragt und in Arbeit**, aktuell L4-1
-(AC4-01–03), danach ohne Teilphasenstopp L4-2 (AC4-04–07). Noch kein
-Phase4-/G2-PASS. Die Norm-, Grammatik-, Builtin- und80 Anforderungs-IDs
-werden mit tatsächlichen öffentlichen Assertions abgeglichen; Kandidatenlinks
-werden nicht als Abnahme gezählt. Reale A3-Projektionen vergleichen vier
-Quellen über JVM/ili2c/JS/WasmGC und erkennen acht gezielte Mutationen.
-Neue Red/Green-Befunde: mehrrollige Aggregation, ORDERED-Abschwächung,
-mehrdeutige/deletierte Identitätskontinuität, Enum-Reuse,2.4-Kilogrammbezeichnung
-und zuvor nicht durchgesetzte Syntaxbudgets. Zwölf historische Fälle sind
-ausdrücklich im bestehenden Profil bestätigt; modellweite2.3-Rollenziele
-bleiben nach zusätzlicher ausdrücklicher Entscheidung wieili2c zulässig.
-Aktuelle Details/Nachweise und nächster Schritt ausschliesslich in
-[STATUS](g2/STATUS.md); unabhängige L4-Lieferungsreviews stehen noch aus.
+**G2-Phase 4 ist autonom in Arbeit; L4-1 ist unabhängig PASS** am Produktcommit
+`e3a57c072bf93ff2351d6aa6fc551f4e562c4437`; [Review](g2/reviews/L4-1-review.md).
+Alle Muss-Findings sind geschlossen. Der volle unabhängige Lauf mit 80 Tasks,
+1063 JUnit ohne Fehler/Skips und 3548 Fällen je Backend/Browser/echtem Safari/
+Web Image bestand im vollständig Python-gesperrten OpenCode-Prozess.
+**Aktuell L4-2, ohne Teilphasenstopp:** Die kumulative G2-Abnahme am endgültigen
+Produkt-SHA steht noch aus. Operativer Stand ausschliesslich in
+[STATUS](g2/STATUS.md); [L4-2-Nachweiszuordnung](g2/implementation/L4-2.md).
 
 **G2-Phase3 ist vollständig und unabhängig mit PASS abgeschlossen**, kumulativ
 AC3-01–AC3-06. Schlussproduktcommit

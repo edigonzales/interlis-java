@@ -1,31 +1,28 @@
 # G2 – operativer Status
 
-- Auftrag **gesamte Phase4 autonom**: **IN_PROGRESS**, aktuelle Lieferung **L4-1**
-  (AC4-01–AC4-03), danach ohne Teilphasenstopp L4-2 (AC4-04–AC4-07).
-  Ausgangscommit `4a84068624cffde4549186c53cf23b9aaad7b179`.
-  Einzelabgleich der Norm-/Grammatik-/Builtin-/Anforderungsnachweise und A3;
-  unabhängige Reviews über OpenCode mit direkter DeepSeek API.
-  GlobalD2: alle zwölf verbliebenen historischen Fälle am30.10.2026 ausdrücklich
-  bestätigt; [unverfälschter Entscheidungsnachweis](implementation/L4-1-decisions.md).
-  Zusätzliche Antworten sind erfasst: modellweite2.3-Rollenziele bleiben
-  kompatibel; äussere Typnamen werden strikt gesperrt; gültige relative
-  Herausgeber-URI-Referenzen bleiben zulässig. [Umsetzung](implementation/L4-1.md).
-  Die strikte Namensregel gilt auch für das unveränderte Metadata-Corpusoriginal;
-  neues explizites Messprofil elf Positivfälle/zwei exakte Negativfälle mit
-  separat umbenannten Positivkontrollen. Keine Original-/Index-/Suitepinänderung.
-  Erstkandidat `5d54c9dcf4fa6f8d5226c233d6d117287281e636`: unabhängiger
-  Vollauf80Tasks/1063JUnit/3548jeBackend vollständig grün, Review dennoch
-  **FAIL AC4-01** wegen falscher Transfer-/Whitespace- und areAreas-Zuordnungen.
-  [Unveränderter Erstbericht](reviews/L4-1-review-before-link-fix.md).
-  Enge Nachweiskorrektur umgesetzt, Compiler/Tests/Build/Pins unverändert;
-  g2EvidenceTest erneut PASS. Neuer Kandidat und voller erneuter Review folgen.
-  Kandidat `b804c47f6a51110039556931b3cb4cee2a256be0`: alle80Tasks erneut
-  erfolgreich im vollständig Python-gesperrten OpenCode-Prozess; fachlich
-  **FAIL AC4-01/F5** wegen eines weiteren falschen Attributtyp-Grammatiklinks.
-  [Unveränderter Bericht](reviews/L4-1-review-before-attribute-link-fix.md).
-  Der Attributnachweis wird auf tatsächlich ausgeführte öffentliche Typ-/Ziel-/
-  Pflichtwert-/Collection-/Referenzassertions präzisiert; keine Compileränderung.
-  Frühere Freigaben gelten fort; unabhängige L4-Endabnahme noch offen. Kein Phase4-/G2-PASS vor vollständiger unabhängiger Abnahme.
+- **Phase 4 autonom: IN_PROGRESS, aktuell L4-2.** AC4-04–07 und kumulativ
+  AC4-01–07. Noch keine Phase-4-/G2-Gesamtfreigabe.
+- **L4-1 PASS**, unabhängig geprüfter Produktcommit
+  `e3a57c072bf93ff2351d6aa6fc551f4e562c4437`.
+  [Unveränderter Review](reviews/L4-1-review.md), SHA-256
+  `1c2aea5b446e956f34d9aa64d23c0cbc8f00d73002f96447c6b1bd8e14fefae5`.
+  OpenCode 2.0.28, DeepSeek direkt `deepseek/deepseek-flash`, sauberer eigener
+  Worktree, gesamter Prozess OS-Python-gesperrt, CLI-Exit 0, äusseres Manifest passed.
+- Voller unabhängiger Lauf: Exit 0, 6m19s, 80 Tasks; 1063 JUnit ohne Fehler/Skips,
+  3548 je Portable/Browser/echtem Safari/Web Image, 21/21 Normassessments,
+  SDK9/ZIP/LSP, Referenz-/Corpus-/Messpfade, Pythonfreiheit mit 1288 Inputs.
+- F1–F5 sind geschlossen; frühere FAIL-Berichte bleiben unverändert erhalten.
+  O1 wird in L4-2 redaktionell präzisiert: 2.3-Domain-/Typ-/Konstantenscopes
+  ohne falsches 2.4-Domainconstraintlabel. Keine Compiler-/API-/Test-/Build-/Pinänderung.
+- Sämtliche nötigen Nutzerentscheidungen sind gegeben und umgesetzt. 369 Normcluster
+  (285 Compiler / 84 ausserhalb), 80 Anforderungen, 321 Produktionen mit 1225
+  Occurrences, 21 Builtins, 130 Predefined, 21 Sondertypen, 264 Methodenbindungen.
+  Corpus: 13 unveränderte Originale, elf Compileerfolge und zwei exakte
+  Namensraumablehnungen mit minimal umbenannten Positivkontrollen; 13 Formate.
+- Nächster Schritt: [L4-2-Gesamtreview](implementation/L4-2.md) am separaten
+  Schluss-SHA, vollständige frische T1–T4-/Conformance-/Safari-/WebImage-/SDK-/CLI-/
+  LSP-/Pythonfrei-Abnahme im vollständig gesperrten OpenCode-Prozess. Ohne diesen
+  PASS keine G2-Freigabe; danach ausschliesslich Dokumentationsabschluss.
 
 - Auftrag **gesamte Phase3 autonom**: vollständig abgeschlossen, ohne manuelle
   Stopps zwischen L3-1 und L3-2. **L3-2 / PHASE3: PASS**, kumulativ
