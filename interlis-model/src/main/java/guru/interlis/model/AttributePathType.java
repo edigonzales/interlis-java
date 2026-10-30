@@ -14,8 +14,11 @@ public record AttributePathType(TypeId id, Origin origin, Optional<Owner> owner,
         Objects.requireNonNull(id); Objects.requireNonNull(origin); Objects.requireNonNull(owner);
         restrictions = List.copyOf(restrictions);
     }
-    /** Closed owner choices: class-valued attribute path, function argument or constant's class. */
+    /** Closed owner choices: class-valued expression, function argument or constant's class. */
     public sealed interface Owner permits ClassAttribute, Argument, Viewable { }
+    /** A bound class-valued expression in this snapshot: a declared OF path or
+     * the actual argument of a call with a dependent ATTRIBUTE result. No
+     * expression is evaluated, and the function's declared type is unchanged. */
     public record ClassAttribute(ExpressionId path) implements Owner {
         public ClassAttribute { Objects.requireNonNull(path); }
     }

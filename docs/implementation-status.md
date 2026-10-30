@@ -2,6 +2,14 @@
 
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
+
+Seit dem Nutzerauftrag vom 30.10.2026 wird die gesamte G2-Phase 2 autonom
+bearbeitet: L2-1 (WP-22, AC2-01/02), danach L2-2 und L2-3 mit unabhängigen
+OpenCode-/DeepSeek-Direktreviews und kumulativem T1/T2/T3-Gate. Der aktuelle
+Abschnitt ergänzt die abhängige Funktionsargument-/Ergebnisbindung und
+präzisiert EXISTENCE-Fehler. Implementierung, offene Profilentscheidungen und
+tatsächliche Nachweise: [L2-1](g2/implementation/L2-1.md). Operativer Fortschritt
+und unabhängiges Urteil ausschliesslich in STATUS.
 L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
 äusseren Blockkommentar. Implementierung und tatsächliche Prüfläufe stehen im
 [Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.
@@ -40,7 +48,7 @@ Geometriestrukturen, kanonische INTERLIS-Modellowner und deren Import-/
 Quellqueries. Die ausdrücklich freigegebene TYPE-MODEL-Kompatibilität erlaubt
 Strukturen und abstrakte Klassen in beiden Sprachen; Topics bleiben verboten.
 Der operative Status und unabhängige Teil-/Phasenurteile bleiben ausschliesslich
-in [STATUS](g2/STATUS.md); Phase 2 ist nicht begonnen.
+in [STATUS](g2/STATUS.md); Phase 2 ist seit dem neuen Auftrag in Bearbeitung.
 
 Der unabhängige L1-1-Nachweis auf `6cbf8de422cd8c0c8c9ec1ea900d729053ea660f`
 besteht nach den beiden dokumentierten Korrekturen für gemischte Snapshotsprachen

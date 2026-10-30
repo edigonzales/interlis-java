@@ -157,13 +157,14 @@ class ConstraintPathBindingContractTest {
         }
     }
 
-    @Test void unimplementedExistenceTypeFamiliesRemainExplicitCoverageGaps() {
+    @Test void incompatibleResolvedExistenceEnumerationsAreSourceErrors() {
         for (String version : List.of("2.3", "2.4")) {
             for (String type : List.of("(one, two)")) {
                 var result = bad(version, "TOPIC T = STRUCTURE S = code: TEXT; END S; CLASS A = value: " + type
                         + "; END A; CLASS B = value: (one, three)"
                         + "; EXISTENCE CONSTRAINT value REQUIRED IN A:value; END B; END T;");
-                assertTrue(result.rejection().reasons().contains(RejectionReason.INCOMPLETE_SUPPORT));
+                assertEquals(java.util.Set.of(RejectionReason.SOURCE_ERRORS),result.rejection().reasons());
+                assertTrue(result.analysis().diagnostics().stream().anyMatch(d->d.code().value().equals("ILI-SEM-0005")));
             }
         }
     }

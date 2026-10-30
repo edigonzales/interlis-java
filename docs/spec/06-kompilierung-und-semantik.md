@@ -696,7 +696,11 @@ Aufrufen prüfen gebundene Funktionsziele und Pfadreferenzen. Funktionsausführu
 ist davon nicht umfasst.
 
 Die abhängigen ATTRIBUTE-Parameter werden mit den tatsächlichen Argumenten
-geprüft (einschliesslich benutzerdefinierter Funktionen). Ohne konkreten
+geprüft (einschliesslich benutzerdefinierter Funktionen). Konstanten werden
+im tatsächlichen OF-Kontext gebunden, auch bei verketteten oder späteren
+Argumentabhängigkeiten; die veröffentlichte Reihenfolge bleibt die
+Quellreihenfolge. Abhängige ATTRIBUTE-Ergebnistypen werden pro erfolgreichem
+Aufruf gebunden; formale Deklarationen bleiben unverändert. Ohne konkreten
 Aufrufkontext liefert die öffentliche Zuweisungsabfrage für passende Werttypen
 mit noch abhängiger Eigentümeridentität NotAnalyzed(PENDING); unpassende
 Werttypen bleiben DISALLOWED. areAreas und die 2.4-WithoutGaps-Variante prüfen

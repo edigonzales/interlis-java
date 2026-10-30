@@ -1,5 +1,23 @@
 # G2 – operativer Status
 
+- Aktueller Auftrag vom **30.10.2026: gesamte Phase 2 autonom**, einschliesslich
+  unabhängiger OpenCode-Reviews über DeepSeek direkt. Kein manueller Stopp
+  zwischen L2-1/L2-2/L2-3; kein Beginn von Phase 3.
+- Aktuelle Lieferung **L2-1**, AC2-01/AC2-02, **IN_PROGRESS**. Basis
+  `81ad019` (Dokumentnachtrag nach dem Phase-1-PASS). Fachlicher Einstieg:
+  WP-22, Ausdrücke/Pfade, Funktionen und sämtliche Constraintfamilien.
+- L2-1 implementiert: abhängige ATTRIBUTE-Argument-/Ergebnisbindung,
+  präzise EXISTENCE-Quellfehler, zwölf neue öffentliche JVM-Testmethoden und
+  18 portable Fälle. Eigene JVM-/Conformance-/Evidenz-/SDK-Prüfungen grün,
+  Portable nach fachlich begründeter Korrektur historischer Testquellen grün
+  (JS/WasmGC jeweils3423). [Nachweise und offene Profile](implementation/L2-1.md).
+- Drei bereits gestellte Nutzerentscheidungen sind noch offen: areAreas2/3,
+  OBJECTS-Funktionen in 2.4-Einzelobjektbedingungen und direkter Objektkontext
+  im SET-Hauptausdruck. Keine Empfehlung gilt als Freigabe. Unabhängiger
+  Kandidatenreview wird durchgeführt; kein nächster Lieferabschnitt vor PASS.
+- Noch kein Phase-2-PASS. Der nachfolgend dokumentierte Phase-1-PASS bleibt
+  die letzte unabhängige kumulative Abnahme.
+
 - Auftrag **gesamte Phase 1 autonom**: abgeschlossen, ohne manuelle Stopps zwischen
   den Lieferungen. **L1-3 / PHASE 1: PASS**, kumulativ **AC1-01 bis AC1-08**.
 - Unabhängig geprüfter Produktcommit: `62c0870a58db677a796143aa8f89578f2e3d7f43`.
@@ -59,7 +77,7 @@ Fortgeltende ausdrückliche Nutzerentscheidungen für beide Sprachen:
   freigegeben**; [Entscheidungsnachtrag](implementation/L1-2.md#ausdrückliche-einzelfreigabe-vom-30102026).
 
 **Keine offenen Phase-1-Blocker oder ausgelassenen fälligen Prüfungen.**
-Phase2 wurde nicht begonnen. Nächster fachlicher Abschnitt gemäss Plan ist L2-1.
+Phase 2 wird nun mit L2-1 bearbeitet; der frühere Phase-1-Abschluss bleibt unverändert.
 Die globale D2-Revalidierung bleibt PENDING_USER_REVALIDATION; dieser PASS ist
 keine globale G2-/P3-/P4-/P5-Freigabe. Frühere FAIL-Berichte und Rohbelege bleiben erhalten.
 Der Abschlusscommit und der spätere Entscheidungsnachtrag betreffen ausschliesslich

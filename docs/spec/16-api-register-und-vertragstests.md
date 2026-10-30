@@ -340,6 +340,13 @@ vorbereitete `ClassValueTypeSyntax` (compiler/syntax). Kapitel 05 besitzt
 Semantik, TypeRelations, Quellqueries und Schemaauswahl verwenden dieselben
 Identitäten. `ParameterClassFunctionContractTest` und portable Verträge prüfen
 den in Kapitel 05 beschriebenen Teilumfang. Keine parallelen Alt-/Neu-Fassaden.
+`DependentFunctionArgumentsContractTest` ergänzt die abhängige Aufrufbindung:
+Konstanten verwenden den tatsächlichen OF-Kontext, klassenwertige Ausdrücke
+behalten ihre gebundene Identität, und abhängige ATTRIBUTE-Rückgabetypen
+werden je Aufruf gebunden, ohne die formale Deklaration zu verändern.
+`AttributePathType.ClassAttribute.path()` kann hierfür neben dem deklarierten
+OF-Pfad einen klassenwertigen tatsächlichen Ausdruck desselben Snapshots
+referenzieren. Kapitel 05 besitzt den fachlichen Vertrag; keine neue Signatur.
 
 
 ### K3: Generische Koordinatenkontexte

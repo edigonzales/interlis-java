@@ -178,9 +178,27 @@ nullfrei, unveränderlich und an denselben Graphsnapshot gebunden. Die Konstrukt
 kopieren Listen; fehlerhafte Bindungen verhindern das Schema. Es werden keine
 Laufzeitwerte erzeugt. `ParameterClassFunctionContractTest` prüft öffentliche
 Inhalte, Namespaces, Imports, Versionen, Übersetzungen und negative Typ-/Scopefälle.
-Die vollständige abhängige Prüfung von `ATTRIBUTE OF @argument` bei Aufrufen
-bleibt eine ausstehende Typfamilienpflicht; die Deklarationsbindung ist kein
+Bei Aufrufen liefert `ATTRIBUTE OF @argument` den Bindungskontext einer
+unqualifizierten Attributpfadkonstante aus dem tatsächlichen Argument.
+Verkettete Abhängigkeiten werden vor der abhängigen Konstante gebunden;
+die veröffentlichte Argumentliste bleibt dennoch in Quellreihenfolge.
+Dies gilt auch für eine zulässige Abhängigkeit auf ein späteres Argument.
+Explizit angegebene Klassenziele bleiben unverändert und werden exakt gegen
+den erforderlichen Owner geprüft; ein bloss verwandter Klassenname genügt
+nicht (2.3 §2.8.11/PDF46–47, 2.4 §3.8.11/PDF59–60: keine Subklasse).
+Ein fehlgeschlagenes abhängiges Argument liefert keinen Ersatzkontext aus
+dem aufrufenden Owner. Allgemeine ATTRIBUTE-Parameter ohne OF behalten
+den gewöhnlichen lexikalischen Kontext. Diese Aufrufbindung ist kein
 Vollständigkeitsnachweis für sämtliche Attributpfadoperationen.
+Ein tatsächlich übergebener ATTRIBUTE-Wert mit `OF` auf genau denselben
+gebundenen klassenwertigen Ausdruck erfüllt den abhängigen Ownervertrag;
+eine gleiche Typrestriktion allein ersetzt diese Wertidentität nicht.
+Bei einem abhängigen ATTRIBUTE-Rückgabetyp besitzt jeder erfolgreiche
+Aufruf einen eigenen gebundenen Typ: konstante Klassenziele bleiben
+`Viewable`, klassenwertige tatsächliche Ausdrücke bleiben als
+`ClassAttribute(ExpressionId)` im selben Snapshot erreichbar. Die formale
+Rückgabetypdeklaration und ihre `Argument`-Abhängigkeit bleiben unverändert.
+Externe Funktionen werden dabei nicht ausgeführt.
 
 In Vorab-API 0.2 repräsentiert `FunctionParameter(String name, TypeId typeId, boolean mandatory)`
 einen Parameter; `FunctionSymbol.returnType()` liefert ebenfalls `TypeId`.

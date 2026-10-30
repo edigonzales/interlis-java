@@ -52,7 +52,7 @@ class AreaFunctionContractTest {
     @Test void attributeFunctionsRejectWrongOwnersWrongValuesAndArity() {
         for(String v:List.of("2.3","2.4")) {
             bad(v,"TOPIC T="+STRUCTURES+"CLASS C=bag:BAG OF S; SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>S->text);END C;END T;","FUNCTION_ATTRIBUTE");
-            bad(v,"TOPIC T="+STRUCTURES+"CLASS C=bag:BAG OF S;surface:"+SURFACE+";SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>surface);END C;END T;","FUNCTION_ATTRIBUTE");
+            bad(v,"TOPIC T="+STRUCTURES+"CLASS C=bag:BAG OF S;surface:"+SURFACE+";SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>C->surface);END C;END T;","FUNCTION_ATTRIBUTE");
             bad(v,direct("areAreas","ALL,UNDEFINED,123"),"FUNCTION_ATTRIBUTE");
             bad(v,direct("areAreas","ALL,UNDEFINED"),"ILI-SEM-0005");
         }

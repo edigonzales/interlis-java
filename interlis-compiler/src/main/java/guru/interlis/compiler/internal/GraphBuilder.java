@@ -1066,6 +1066,10 @@ final class GraphBuilder {
     }
 
     /** Structural expression comparison uses bound identities; documentary spelling is irrelevant. */
+    boolean sameBoundExpression(ExpressionId source,ExpressionId target) {
+        return sameExpression(source,target,Map.of());
+    }
+
     private boolean sameExpression(ExpressionId source,ExpressionId target,Map<SymbolId,SymbolId> map) {
         checkWork();var a=expressions.get(source);var b=expressions.get(target);
         if(a==null || b==null || a.getClass()!=b.getClass())return false;
@@ -3135,8 +3139,7 @@ final class GraphBuilder {
                 if (!source.error() && !path.error() && !existenceCompatible(source.typeId(), path.typeId())) {
                     TypeDescriptor from = effectiveDescriptor(source.typeId()), to = effectiveDescriptor(path.typeId());
                     boolean familyPending = from.kind() == to.kind() && switch (from.kind()) {
-                        case GEOMETRY, ENUMERATION, FORMATTED,
-                                CLASS_VALUE, GENERIC, DEFERRED, PENDING -> true;
+                        case GENERIC, DEFERRED, PENDING -> true;
                         default -> false;
                     };
                     if (familyPending) emitUnsupported(decl.sourceId(), target.path().range(),
@@ -4160,11 +4163,19 @@ final class GraphBuilder {
     }
 
     private ExpressionResult attributeConstantExpression(ExpressionId id, guru.interlis.syntax.AttributeConstantExpressionSyntax syntax, SymbolId owner) {
+        return attributeConstantExpression(id,syntax,owner,expressionContext(owner));
+    }
+
+    ExpressionResult contextualAttributeConstant(guru.interlis.syntax.AttributeConstantExpressionSyntax syntax,SymbolId owner,SymbolId context) {
+        return attributeConstantExpression(new ExpressionId("expr-"+(++expressionCounter)),syntax,owner,context);
+    }
+
+    private ExpressionResult attributeConstantExpression(ExpressionId id, guru.interlis.syntax.AttributeConstantExpressionSyntax syntax, SymbolId owner,SymbolId context) {
         var declaration = index.byId(owner).orElseThrow();
         List<DiagnosticId> errors = new ArrayList<>();
         Optional<SymbolId> viewable = syntax.viewable().isPresent()
                 ? bindTarget(declaration, syntax.viewable().orElseThrow(), Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE, SymbolKind.ASSOCIATION, SymbolKind.VIEW), ReferenceUsage.EXPRESSION, errors)
-                : Optional.of(expressionContext(owner));
+                : Optional.of(context);
         Optional<SymbolId> attribute = viewable.flatMap(target -> findMember(target, syntax.attribute().text()))
                 .filter(target -> index.byId(target).map(DeclInfo::kind).orElse(null) == SymbolKind.ATTRIBUTE || symbols.get(target) instanceof AttributeSymbol);
         recordReference(declaration, syntax.attribute(), attribute.orElse(null), ReferenceUsage.EXPRESSION);
@@ -4202,6 +4213,19 @@ final class GraphBuilder {
         return new ExpressionResult(id, type, true);
     }
 
+    ExpressionResult failedFunctionArgument(SourceRange range,List<DiagnosticId> causes) {
+        return failedValueExpression(new ExpressionId("expr-"+(++expressionCounter)),range,causes);
+    }
+
+    ExpressionResult blockedFunctionArgument(SourceRange range,ExpressionResult dependency,DeclInfo owner) {
+        var descriptor=effectiveDescriptor(dependency.typeId());var source=expressions.get(dependency.id()).range();
+        var causes=descriptor instanceof ErrorType error?error.diagnosticIds():collector.snapshot().stream()
+                .filter(d->d.severity()==Severity.ERROR&&d.primaryRange().filter(r->r.source().equals(source.source())&&r.revision().equals(source.revision())
+                        &&r.startOffset()<=source.endOffset()&&r.endOffset()>=source.startOffset()).isPresent()).map(guru.interlis.diagnostics.Diagnostic::id).toList();
+        if(causes.isEmpty())causes=List.of(emitRule(owner,"invalid actual attribute owner argument","FUNCTION_ATTRIBUTE_DEPENDENCY",range));
+        return failedFunctionArgument(range,causes);
+    }
+
     private ExpressionResult enumerationConstantExpression(ExpressionId id,
                                                            EnumerationConstantExpressionSyntax syntax,
                                                            SymbolId owner) {
@@ -4225,15 +4249,12 @@ final class GraphBuilder {
     private ExpressionResult builtinFunctionExpression(ExpressionId id,
                                                        BuiltinFunctionExpressionSyntax syntax,
                                                        SymbolId owner) {
-        List<ExpressionResult> arguments = new ArrayList<>();
-        for (var argument : syntax.arguments()) {
-            checkWork();
-            arguments.add(buildExpression(argument, owner));
-        }
         var signature = BuiltinFunctions.find(syntax.functionName().segments().getLast().text()).orElse(null);
         var declaration = index.byId(owner).orElseThrow();
-        boolean error = arguments.stream().anyMatch(ExpressionResult::error);
         boolean available=signature!=null && (signature.since()!=guru.interlis.model.LanguageVersion.ILI24 || declaration.language()==guru.interlis.model.LanguageVersion.ILI24);
+        List<ExpressionResult> arguments=new ArrayList<>(functions.arguments(available?builtinDeclaration(signature,declaration.language()):null,
+                syntax.arguments(),declaration,available?signature.rule():BuiltinFunctions.Rule.SIMPLE));
+        boolean error = arguments.stream().anyMatch(ExpressionResult::error);
         TypeId type;
         if (signature == null || signature.since() == guru.interlis.model.LanguageVersion.ILI24
                 && declaration.language() != guru.interlis.model.LanguageVersion.ILI24) {
@@ -4393,14 +4414,13 @@ final class GraphBuilder {
         var selected=resolveName(index.byId(owner).orElseThrow(),syntax.functionName(),Set.of(SymbolKind.FUNCTION),true);
         if(selected.target().map(symbols::get).filter(f->f instanceof FunctionSymbol && f.origin() instanceof Origin.PredefinedOrigin).isPresent())
             return builtinFunctionExpression(id,new BuiltinFunctionExpressionSyntax(syntax.id(),syntax.range(),syntax.functionName(),syntax.arguments()),owner);
-        List<ExpressionResult> arguments = new ArrayList<>();
-        for (var argument : syntax.arguments()) arguments.add(buildExpression(argument, owner));
-        List<ExpressionId> children = arguments.stream().map(ExpressionResult::id).toList();
         List<DiagnosticId> bindingErrors = new ArrayList<>();
         Optional<SymbolId> target = bindTarget(index.byId(owner).orElseThrow(), syntax.functionName(),
                 Set.of(SymbolKind.FUNCTION), ReferenceUsage.EXPRESSION, bindingErrors);
         FunctionSymbol function = target.flatMap(index::byId).map(this::buildSymbol)
                 .filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast).orElse(null);
+        List<ExpressionResult> arguments=new ArrayList<>(functions.arguments(function,syntax.arguments(),index.byId(owner).orElseThrow(),BuiltinFunctions.Rule.SIMPLE));
+        List<ExpressionId> children = arguments.stream().map(ExpressionResult::id).toList();
         boolean error = arguments.stream().anyMatch(ExpressionResult::error);
         TypeId type;
         if (function == null) {
@@ -4432,6 +4452,7 @@ final class GraphBuilder {
             }
         }
         if (!error) error = functions.bind(function,arguments,index.byId(owner).orElseThrow(),syntax.range(),BuiltinFunctions.Rule.SIMPLE).error();
+        if (!error) type=functions.returnType(function,arguments,syntax.range());
         expressions.put(id, new guru.interlis.model.FunctionCallExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,

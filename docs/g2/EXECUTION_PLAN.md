@@ -152,6 +152,15 @@ Der Schwerpunkt liegt auf realen Abweichungen und unvollständig nachgewiesenen 
 
 ## 7. Phase 2 – Ausdrücke, Views, Übersetzungen und weitere Semantik
 
+Nutzerauftrag vom 30.10.2026: Die gesamte Phase 2 wird durchgehend bis zum
+unabhängigen Phasen-PASS ausgeführt, ohne manuelle Stopps zwischen L2-1, L2-2
+und L2-3. Kandidatencommits, unabhängige OpenCode-Reviews über die direkte
+DeepSeek API und die PASS-Gates bleiben verbindlich. Technische Findings
+werden selbständig korrigiert und am neuen Kandidaten erneut geprüft;
+nach einem Teil-PASS beginnt automatisch der nächste Abschnitt. Echte neue
+fachliche Entscheidungen werden mit Norm-/Gegenfall vorbereitet; unabhängige
+Arbeit wird während einer Rückfrage fortgesetzt. Phase 3 beginnt dadurch nicht.
+
 | Lieferung | ID | Verbindliche Abnahmebedingung |
 |---|---|---|
 | `L2-1` Ausdrücke/Funktionen/Constraints | **AC2-01** | Objekt-/Attribut-/Rollenpfade inklusive Indizes, Mengen und Spezialkontexten liefern korrekte gebundene Ausdruckstypen und Referenzen. |
