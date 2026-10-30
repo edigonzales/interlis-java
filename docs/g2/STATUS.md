@@ -40,9 +40,16 @@
   Eigene neue Reviewer-Gegenprobe:76Checks/0Fehler. Nicht blockierende
   Beobachtungen zur geerbten Assoziationsbasis und konservativer Rollenpflicht
   bleiben im Bericht sichtbar. [Implementierung](implementation/L2-2.md).
-- Aktuelle Lieferung **L2-3 IN_PROGRESS**, kumulatives Phase-2-Gate:
+- Aktuelle Lieferung **L2-3 REVIEW_PENDING**, kumulatives Phase-2-Gate:
   Translation/Import-Closures, GENERIC/DEFERRED, Metadaten, Linienformen und
-  Grafik-/Signaturen; danach frische vollständige T1/T2/T3-Abnahme.
+  Grafik-/Signaturen. LineCoord-Quellabstraktion und geerbte Assoziationsbasen
+  korrigiert; sechs neue öffentliche JVM-Verträge,16 neue portable Fälle.
+  Eigener voller T1/T2/T3-Lauf Exit0/4m33s/71ausgeführteTasks:803reguläreJVM,
+  137Evidenz-/15Assertion-/15Hosttests ohneFehler/Skips;SDK9,Pythonfrei1212.
+  Alle portablen Node-/Browser-/WebImage-Pfade je3487PASS, echtesSafari27.0.
+  T2-Projekt577PASS/16XFAIL,0FAIL/ERROR/XPASS,21/21Normprüfungen.
+  Unabhängiger kumulativer Review am Schlusskandidaten folgt.
+  [Implementierung/Nachweise](implementation/L2-3.md).
 - **Noch kein Phase-2-PASS.** L2-3 muss kumulativ AC2-01–06 sowie frische volle
   T1/T2/T3-Gates am Schluss-SHA prüfen, einschliesslich Browsermatrix, echtem
   Safari, WebImage und CLI/SDK/LSP. L2-1 belegt ausdrücklich keinen Browserlauf.

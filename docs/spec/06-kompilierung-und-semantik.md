@@ -925,3 +925,14 @@ vollständig unbestimmte Einheiten bleiben zulässig. Nur eine beweisbar
 widersprechende Dimensionszerlegung oder ein bestimmbarer falscher Faktor
 begründet SUBDIVISION_FACTOR. Die allgemeinen Zuweisungs-, Erweiterungs- und
 Umrechnungsrelationen werden dadurch nicht erweitert (Kapitel 05).
+
+L2-3 (WP-24/25; SEM-005/006/008/010/011/014/017/019): Einfache Namen
+verwenden im Topic dieselbe geerbte Mitgliedersuche wie lokale qualifizierte
+Typbindungen. Lokale Deklarationen gehen geerbten vor; Topicnamen selbst
+werden im umgebenden Modell aufgelöst, weil Topics keine Topics enthalten.
+Geerbte Assoziationsbasen bleiben ursprüngliche Deklarationen, ihre Teilnehmer
+werden im aktuellen Topic kontextualisiert. Die Quelle selbst deklarierter
+LineCoord-Attribute benötigt ABSTRACT; eine spätere Inspektionskonkretisierung
+ist keine Ausnahme vom Quellvertrag (Kapitel05). Import-/Translations-Closures
+behalten tatsächliche Korrespondenzen und geordnete Generic-/Metadaten-/Linienformziele.
+Öffentliche Gegenfälle: `Phase2ClosureContractTest`; keine Runtimeausführung.

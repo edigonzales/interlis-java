@@ -20,6 +20,10 @@ AREA-Verbot, die versionsgerechte Rollenübernahme und die gemeinsame
 Teilnehmernavigation samt öffentlichen Resultat-/Reihenfolge-/Importtests.
 L2-2 wurde am Produktcommit30ef129 unabhängig mit PASS abgenommen; L2-3
 führt die restliche Phase2 und ihre kumulativen Plattformgates durch.
+[L2-3](g2/implementation/L2-3.md) ergänzt tatsächliche übersetzte Rollen-/
+Metadaten-/Linienform-/Generic-Closures, die fehlende LineCoord-Quellabstraktion
+und geerbte Assoziationsbasen. Die volle T1/T2/T3-Ausführung und unabhängige
+kumulative Abnahme werden am Schlussprodukt durchgeführt.
 L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
 äusseren Blockkommentar. Implementierung und tatsächliche Prüfläufe stehen im
 [Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.

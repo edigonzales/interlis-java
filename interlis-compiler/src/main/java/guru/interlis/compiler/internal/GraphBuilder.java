@@ -2711,9 +2711,6 @@ final class GraphBuilder {
                     || type instanceof CoordinateType coordinate && coordinate.axes().stream().anyMatch(axis->axis.minimum().isEmpty() || axis.maximum().isEmpty());
             if(!incomplete || declaration.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))continue;
             if(declaration.syntax() instanceof AttributeDeclarationSyntax attribute && attribute.type() instanceof GenericTypeSyntax inferred && inferred.name().equals("INFERRED"))continue;
-            // LineCoord is a vertex-dependent placeholder in custom segment structures,
-            // specialized by the shared inspection contextualizer, not a concrete domain.
-            if(type instanceof CoordinateType && type.origin() instanceof Origin.PredefinedOrigin predefined && predefined.key().equals("INTERLIS.LineCoord"))continue;
             boolean generic=declaration.language()==guru.interlis.model.LanguageVersion.ILI24 && type instanceof CoordinateType
                     && (declaration.modifiers().contains(guru.interlis.model.Modifier.GENERIC) || genericCoordinateType(entry.getValue(),new HashSet<>()));
             if(!generic)emitRule(declaration,"incomplete numeric or coordinate declaration requires ABSTRACT","NUMERIC_ABSTRACT");

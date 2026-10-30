@@ -31,6 +31,42 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L2-3: source abstraction and cross-feature import/translation identities.
+  let phase2ClosureCases=0;
+  for(const version of ['2.3','2.4']) {
+    const model=(name,original,body)=>`CONTRACTED MODEL ${name} AT "https://example.org" VERSION "1" ${original?'TRANSLATION OF '+original+'["1"] ':''}=${body}END ${name}.`;
+    const wrap=body=>`INTERLIS ${version};`+model('F',null,body);
+    for(const body of ['TOPIC T=CLASS C=p:INTERLIS.LineCoord;END C;END T;',
+      'TOPIC T(ABSTRACT)=CLASS C(ABSTRACT)=p:INTERLIS.LineCoord;END C;END T;',
+      'STRUCTURE S EXTENDS INTERLIS.LineSegment=p:INTERLIS.LineCoord;END S;LINE FORM Curve:S;']) {
+      await verify(wrap(body),'rejected');phase2ClosureCases++;
+    }
+    await verify(wrap('PARAMETER runtimePoint:INTERLIS.LineCoord;STRUCTURE S(ABSTRACT) EXTENDS INTERLIS.LineSegment=p(ABSTRACT):INTERLIS.LineCoord;END S;LINE FORM Curve:S;DOMAIN P=COORD 0.00..10.00,0.00..10.00;TOPIC T=CLASS A=line:POLYLINE WITH(Curve) VERTEX P;END A;VIEW V INSPECTION OF seg~A->line;=point:=seg->Segments[FIRST]->SegmentEndPoint;END V;END T;'),'succeeded');phase2ClosureCases++;
+    const inherited=wrap('TOPIC Base=OID AS INTERLIS.UUIDOID;CLASS A=flag:BOOLEAN;END A;CLASS B=name:TEXT;END B;ASSOCIATION Link=a--{1}A;b--{*}B;label:TEXT;END Link;END Base;TOPIC Local EXTENDS Base=CLASS A(EXTENDED)=local:TEXT;END A;VIEW V PROJECTION OF src~Link;=ALL OF src;END V;END Local;');
+    await verifySources([{sourceId:'memory:/stabilization.ili',text:inherited}],'succeeded',['F'],async(sessionId,compiled)=>{
+      const query=(offset,kind)=>call('query',sessionId,{snapshotId:compiled.snapshotId,query:{kind,sourceId:'memory:/stabilization.ili',revision:'1',startOffset:offset,endOffset:offset}});
+      const declaration=await query(inherited.indexOf('Link=a'),'symbolAt');
+      const reference=await query(inherited.indexOf('src~Link')+4,'definition');
+      if(declaration.kind!=='known'||reference.kind!=='definition'||declaration.symbolId!==reference.symbolId)throw new Error('Inherited association basis lost its actual declaration '+JSON.stringify({declaration,reference}));
+    });phase2ClosureCases++;
+    const shared='TOPIC Systems=CLASS CS EXTENDS INTERLIS.COORDSYSTEM=END CS;END Systems;REFSYSTEM BASKET Library~Systems OBJECTS OF CS:World,Other;STRUCTURE Segment EXTENDS INTERLIS.LineSegment=tag:TEXT;END Segment;LINE FORM Curve:Segment;DOMAIN P=COORD 0.00..10.00{Library.World[1]},0.00..10.00{Library.World[2]};Q=COORD 0.00..10.00{Library.World[1]},0.00..10.00{Library.World[2]};'+(version==='2.4'?'G(GENERIC)=COORD NUMERIC,NUMERIC;CONTEXT ctx=G=P;':'');
+    const base='IMPORTS Original;DOMAIN Line=POLYLINE WITH(Original.Curve) VERTEX Original.P;TOPIC Data=CLASS C=position:Original.'+(version==='2.4'?'G':'P')+';line:Line;END C;END Data;';
+    const use=base.replaceAll('Original.','Translated.').replace('IMPORTS Original;','IMPORTS Translated;');
+    const prefix=`INTERLIS ${version};`+model('Original',null,shared)+model('Translated','Original',shared)+model('Base',null,base);
+    const good=prefix+model('F','Base',use);
+    await verifySources([{sourceId:'memory:/stabilization.ili',text:good}],'succeeded',['F'],async(sessionId,compiled)=>{
+      const query=(offset,kind)=>call('query',sessionId,{snapshotId:compiled.snapshotId,query:{kind,sourceId:'memory:/stabilization.ili',revision:'1',startOffset:offset,endOffset:offset}});
+      const declaration=await query(good.indexOf('P=COORD',good.indexOf('MODEL Translated')),'symbolAt');
+      const reference=await query(good.lastIndexOf('VERTEX Translated.P')+18,'definition');
+      if(declaration.kind!=='known'||reference.kind!=='definition'||declaration.symbolId!==reference.symbolId)throw new Error('Translated geometric vertex lost its bound import identity '+JSON.stringify({declaration,reference}));
+    });phase2ClosureCases++;
+    await verify(prefix+model('F','Base',use.replace('VERTEX Translated.P','VERTEX Translated.Q')),'rejected');phase2ClosureCases++;
+  }
+  for(const wrong of [false,true]) {
+    const shared='DOMAIN G(GENERIC)=COORD NUMERIC,NUMERIC;A=COORD 0..10,0..10;B=COORD 20..30,20..30;CONTEXT ctx=G=A OR B;';
+    const model=(name,body)=>`MODEL ${name} AT "https://example.org" VERSION "1"=${body}END ${name}.`;
+    await verify('INTERLIS 2.4;'+model('West',shared)+model('East',shared)+model('F','IMPORTS West,East;TOPIC T=DEFERRED GENERICS West.G,East.G;CLASS C=p:'+(wrong?'East':'West')+'.G;q:East.G;END C;END T;'),wrong?'rejected':'succeeded');phase2ClosureCases++;
+  }
   // L2-2: inherited formation restrictions and actual copied participant paths.
   let viewFoundationCases=0;
   for(const version of ['2.3','2.4']) {
@@ -1591,14 +1627,14 @@ CLASS A = value: Pair; MANDATORY CONSTRAINT value == "15-5/5"; END A; END T;`;
       [coord+'DOMAIN L=POLYLINE WITH (STRAIGHTS) VERTEX P; D EXTENDS L=POLYLINE WITH (STRAIGHTS,ARCS);', 'rejected'],
       [coord+'DOMAIN L=POLYLINE WITH (STRAIGHTS,ARCS) VERTEX P; D EXTENDS L=DIRECTED POLYLINE WITH (STRAIGHTS); TOPIC T=CLASS C=l:D; END C; VIEW V INSPECTION OF c~C->l; = p:=c->Segments[FIRST]->SegmentEndPoint; END V; END T;', 'succeeded'],
       ['DOMAIN P=COORD 0.00..100.00,0.000..100.000; L=POLYLINE WITH (STRAIGHTS) VERTEX P;', version==='2.3'?'succeeded':'rejected'],
-      [coord+'STRUCTURE S EXTENDS INTERLIS.LineSegment = middle:INTERLIS.LineCoord; MANDATORY CONSTRAINT DEFINED(middle); END S; LINE FORM Curve:S; TOPIC T=CLASS C=l:POLYLINE WITH (Curve) VERTEX P; END C; VIEW V INSPECTION OF c~C->l; = p:=c->Segments[FIRST]->SegmentEndPoint; END V; END T;', 'succeeded']
+      [coord+'STRUCTURE S(ABSTRACT) EXTENDS INTERLIS.LineSegment = middle(ABSTRACT):INTERLIS.LineCoord; MANDATORY CONSTRAINT DEFINED(middle); END S; LINE FORM Curve:S; TOPIC T=CLASS C=l:POLYLINE WITH (Curve) VERTEX P; END C; VIEW V INSPECTION OF c~C->l; = p:=c->Segments[FIRST]->SegmentEndPoint; END V; END T;', 'succeeded']
     ];
     for (const [body, expected] of cases) {
       await verify(`INTERLIS ${version}; CONTRACTED MODEL F AT "x" VERSION "1" = ${body} END F.`,expected); geometryCases++;
     }
     for (const reversed of [false,true]) {
       const sources = [
-        {sourceId:'memory:/g2-segments/base.ili',text:`INTERLIS ${version}; CONTRACTED MODEL Base AT "x" VERSION "1" = STRUCTURE Foreign=label:TEXT; END Foreign; STRUCTURE Data=p:INTERLIS.LineCoord; END Data; STRUCTURE S EXTENDS INTERLIS.LineSegment = SegmentEndPoint(EXTENDED):MANDATORY; data:BAG OF Data; other:Foreign; copy:INTERLIS.LineCoord:=SegmentEndPoint; MANDATORY CONSTRAINT DEFINED(SegmentEndPoint); MANDATORY CONSTRAINT DEFINED(other); END S; LINE FORM Curve:S; END Base.`},
+        {sourceId:'memory:/g2-segments/base.ili',text:`INTERLIS ${version}; CONTRACTED MODEL Base AT "x" VERSION "1" = STRUCTURE Foreign=label:TEXT; END Foreign; STRUCTURE Data(ABSTRACT)=p(ABSTRACT):INTERLIS.LineCoord; END Data; STRUCTURE S(ABSTRACT) EXTENDS INTERLIS.LineSegment = SegmentEndPoint(EXTENDED,ABSTRACT):MANDATORY; data:BAG OF Data; other:Foreign; copy(ABSTRACT):INTERLIS.LineCoord:=SegmentEndPoint; MANDATORY CONSTRAINT DEFINED(SegmentEndPoint); MANDATORY CONSTRAINT DEFINED(other); END S; LINE FORM Curve:S; END Base.`},
         {sourceId:'memory:/g2-segments/use.ili',text:`INTERLIS ${version}; MODEL F AT "x" VERSION "1" = IMPORTS Base; DOMAIN P2=COORD 0.00..100.00,0.00..100.00; P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000; TOPIC T=CLASS C=line2:POLYLINE WITH (Base.Curve) VERTEX P2; line3:POLYLINE WITH (Base.Curve) VERTEX P3; END C; VIEW V2 INSPECTION OF l~C->line2; = p:=l->Segments[FIRST]->SegmentEndPoint; END V2; VIEW V3 INSPECTION OF l~C->line3; = p:=l->Segments[FIRST]->SegmentEndPoint; END V3; END T; END F.`}
       ];
       if(reversed)sources.reverse(); await verifySources(sources,'succeeded'); geometryCases++;
@@ -1947,7 +1983,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

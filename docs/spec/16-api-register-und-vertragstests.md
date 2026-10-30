@@ -628,3 +628,9 @@ der Hauptbedingung, unveränderlich und in ursprünglichen UTF-16-Bereichen.
 Beschränkung auf einen Transfer. `StructuredTranslationContractTest` prüft
 Syntax, Modell, Korrespondenzen und Navigation; NumericLiteralBudgetContractTest
 prüft kontrollierte Compiler-/Fragmentgrenzen.
+
+Phase-2-Closure-Verträge werden zusätzlich durch `Phase2ClosureContractTest`
+gesichert: übersetzte Rollen-ALL-OF-Korrespondenzen, ursprüngliche importierte
+Metadaten-/Linienform-/Generic-Ziele und Reihenfolgen, gleichnamige getrennte
+Generic-Domains, Fresh/Reuse nach Fehler und Erholung, geerbte Viewbasen mit
+aktuellen Teilnehmerzielen sowie LineCoord-Quellabstraktion. Keine neue öffentliche API.

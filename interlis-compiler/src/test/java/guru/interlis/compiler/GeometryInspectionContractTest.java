@@ -80,7 +80,7 @@ class GeometryInspectionContractTest {
 
     @Test void customSegmentsPreserveMembersConstraintsAndCanonicalIdentity() {
         for (String v : List.of("2.3","2.4")) {
-            var g=ok(model(v,"STRUCTURE S EXTENDS INTERLIS.LineSegment = x: TEXT; middle: INTERLIS.LineCoord; MANDATORY CONSTRAINT DEFINED(middle); END S; LINE FORM Curve: S; "+line().replace("STRAIGHTS,ARCS","Curve")));
+            var g=ok(model(v,"STRUCTURE S(ABSTRACT) EXTENDS INTERLIS.LineSegment = x: TEXT; middle(ABSTRACT): INTERLIS.LineCoord; MANDATORY CONSTRAINT DEFINED(middle); END S; LINE FORM Curve: S; "+line().replace("STRAIGHTS,ARCS","Curve")));
             var original=(StructureSymbol)named(g,"S");
             var contextual=g.symbols().stream().filter(StructureSymbol.class::isInstance).map(StructureSymbol.class::cast)
                     .filter(s->s.origin() instanceof Origin.DerivedOrigin d && d.declaredAt().equals(original.id())).findFirst().orElseThrow();
@@ -102,8 +102,8 @@ class GeometryInspectionContractTest {
         for (String version:List.of("2.3","2.4")) for (boolean reverse:List.of(false,true)) {
             var base=CompilerTestSupport.source("memory:/base.ili","INTERLIS "+version+"; CONTRACTED MODEL Base AT \"x\" VERSION \"1\" = "
                     +"STRUCTURE Foreign=label:TEXT; END Foreign; "
-                    +"STRUCTURE Data=p:INTERLIS.LineCoord; END Data; STRUCTURE S EXTENDS INTERLIS.LineSegment = "
-                    +"SegmentEndPoint(EXTENDED):MANDATORY; data:BAG OF Data; other:Foreign; copy:INTERLIS.LineCoord:=SegmentEndPoint; "
+                    +"STRUCTURE Data(ABSTRACT)=p(ABSTRACT):INTERLIS.LineCoord; END Data; STRUCTURE S(ABSTRACT) EXTENDS INTERLIS.LineSegment = "
+                    +"SegmentEndPoint(EXTENDED,ABSTRACT):MANDATORY; data:BAG OF Data; other:Foreign; copy(ABSTRACT):INTERLIS.LineCoord:=SegmentEndPoint; "
                     +"MANDATORY CONSTRAINT DEFINED(SegmentEndPoint); MANDATORY CONSTRAINT DEFINED(other); END S; LINE FORM Curve:S; END Base.");
             var source=CompilerTestSupport.source("memory:/inspection.ili", "INTERLIS "+version+"; CONTRACTED MODEL M AT \"x\" VERSION \"1\" = IMPORTS Base; "
                     +"DOMAIN P2=COORD 0.00..100.00,0.00..100.00; P3=COORD 0.000..100.000,0.000..100.000,0.000..100.000; "

@@ -79,11 +79,7 @@ final class NameResolver {
         } else {
             String simple = segments.getFirst();
             for (SymbolId scope : scopeChain(owner)) {
-                for (DeclInfo child : index.children(scope)) {
-                    if (child.name().equals(simple) && expected.contains(child.kind())) {
-                        candidates.add(child.id());
-                    }
-                }
+                candidates.addAll(lexicalMembers(scope, simple, expected));
                 if (!candidates.isEmpty()) break;
             }
             for (ImportTargets.Target target : candidates.isEmpty() ? importsOf(owner) : List.<ImportTargets.Target>of()) {
@@ -118,13 +114,20 @@ final class NameResolver {
         if(name.segments().size()!=1)return new Resolution(Status.UNRESOLVED,Optional.empty(),List.of());
         String simple=name.segments().getFirst().text();
         for(SymbolId scope:scopeChain(owner)) {
-            List<SymbolId> candidates=index.byId(scope).filter(d->d.kind()==SymbolKind.TOPIC).isPresent()
-                    ? topicMembers(scope,simple,expected,new LinkedHashSet<>())
-                    : index.children(scope).stream().filter(d->d.name().equals(simple) && expected.contains(d.kind())).map(DeclInfo::id).toList();
+            List<SymbolId> candidates=lexicalMembers(scope,simple,expected);
             if(candidates.size()==1)return new Resolution(Status.BOUND,Optional.of(candidates.getFirst()),List.of());
             if(candidates.size()>1)return new Resolution(Status.AMBIGUOUS,Optional.empty(),candidates.stream().sorted(Comparator.comparing(SymbolId::value)).toList());
         }
         return new Resolution(Status.UNRESOLVED,Optional.empty(),List.of());
+    }
+
+    /** Topics inherit their members, but cannot contain topics. A topic's base
+     * name must therefore resolve in its enclosing model without re-entering
+     * the inheritance lookup being established. */
+    private List<SymbolId> lexicalMembers(SymbolId scope,String name,Set<SymbolKind> kinds) {
+        if (!kinds.contains(SymbolKind.TOPIC) && index.byId(scope).filter(d->d.kind()==SymbolKind.TOPIC).isPresent())
+            return topicMembers(scope,name,kinds,new LinkedHashSet<>());
+        return index.children(scope).stream().filter(d->d.name().equals(name) && kinds.contains(d.kind())).map(DeclInfo::id).toList();
     }
 
     private List<SymbolId> topicMembers(SymbolId topic,String name,Set<SymbolKind> kinds,Set<SymbolId> seen) {

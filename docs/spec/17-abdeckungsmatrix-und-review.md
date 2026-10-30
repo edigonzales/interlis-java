@@ -840,3 +840,11 @@ effektive Reihenfolge, vererbter AREA-/UNION-Ausschluss für ALL OF sowie
 versionsgerechte Rollenübernahme und nachfolgende Teilnehmernavigation.
 `ViewFoundationContractTest` und der gemeinsame portable Vertrag ergänzen
 die bestehenden View-/Inspektions-/Übersetzungsprüfungen.
+
+L2-3 konkretisiert WP-24/25 und die kumulative Phase2, META-003/006/007/010/011/014,
+SEM-005/006/008/010/011/014/017/019 sowie TEST-002/003/009/011/012. Kapitel05/06
+bleiben Vertragsquelle: tatsächliche übersetzte Importziele, Korrespondenzen und
+Reihenfolge, getrennte gleichnamige Generic-Bindungen, Quellenabstraktion vor
+Inspektionskonkretisierung und gemeinsame geerbte Namensauflösung.
+`Phase2ClosureContractTest` ergänzt die bestehenden Translation-/Generic-/Metadaten-/
+Linienform-/Grafikverträge; das Phasenurteil verlangt frische volle T1/T2/T3-Nachweise.

@@ -1038,8 +1038,12 @@ AREA-Inspektionen erlauben THISAREA/THATAREA, aber kein ALL OF (2.3 §2.15,
 eigene Formationssyntax. Eigene Kurvensegmente verwenden dieselben kontextbezogenen
 Struktur-, Typ- und Ausdruckswerte wie die Standardsegmente. Die frühere
 pauschale Sperre INSPECTION_CUSTOM_SEGMENT entfällt bei vollständiger Bindung.
-Die gesonderte Prüfung der Quellabstraktion selbst deklarierter LineCoord-Member
-ist als offene G2-Regel dokumentiert und wird nicht durch die Kontextkopie ersetzt.
+Selbst deklarierte Attribute mit dem abstrakten `INTERLIS.LineCoord` müssen
+auch in eigenen Linienstrukturen ausdrücklich ABSTRACT sein (2.3 §2.6.1,
+PDF31; 2.4 §3.6.1, PDF38). Eine abstrakte Besitzerklasse allein genügt nicht.
+Die spätere Kontextkopie ersetzt diese Prüfung der Quelle nicht; kanonische
+vordefinierte Mitglieder bleiben unverändert. Legale externe Parametersignaturen
+und GENERIC-Koordinaten behalten ihre eigenen Regeln.
 
 Alle Werte sind unveränderlich, nullfrei und snapshotgebunden; Sammlungen werden
 kopiert. Aufbauzustand gehört dem Compilerlauf, Budget und Abbruch werden über
