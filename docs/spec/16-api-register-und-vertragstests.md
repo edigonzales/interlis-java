@@ -326,7 +326,11 @@ View-Vererbungsverträge werden zusätzlich durch
 `ViewInheritanceTranslationContractTest` geprüft: unmittelbare `overrides()`-Kette,
 lokale Ableitungslisten in Basis-vor-Erweiterung-Reihenfolge, vollständiger
 effektiver Vererbungspfad, MANDATORY nach ALL OF, importierte Identitäten und
-AGGREGATES-Korrespondenz in Übersetzungen. Keine neue öffentliche Signatur.
+AGGREGATES-Korrespondenz in Übersetzungen. `ViewFoundationContractTest` ergänzt
+gebundene Projektions-/Selektions-/Join-/Union-/Aggregations- und
+Inspektionsresultate, das vererbte AREA-Verbot und versionsgerechtes `ALL OF`
+samt Rollenherkunft und navigierbaren Teilnehmerzielen in 2.4. Keine neue
+öffentliche Signatur.
 
 
 ### Parameter- und Klassenwerte, Vorab-API 0.2

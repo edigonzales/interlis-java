@@ -32,7 +32,10 @@
   Blocker wurden durch die tatsächlichen Antworten und R3 erledigt.
 - Aktuelle Lieferung **L2-2 IN_PROGRESS**, AC2-03/AC2-04, WP-23:
   Views/Inspektionen, ALL OF, effektive Mitglieder, Typen, Ziele und Reihenfolge.
-  Der vorbereitende Gegenfall zur vererbten AREA-Inspektion wird nun bearbeitet.
+  Vererbtes AREA-ALL-OF, 2.4-Rollenübernahme und anschliessende
+  Teilnehmernavigation korrigiert; neun neue JVM-Verträge und zwölf portable
+  Quellen-/Queryfälle. Eigener Lauf und unabhängiger Review werden abgeschlossen.
+  [Implementierung/Nachweise](implementation/L2-2.md).
 - **Noch kein Phase-2-PASS.** L2-3 muss kumulativ AC2-01–06 sowie frische volle
   T1/T2/T3-Gates am Schluss-SHA prüfen, einschliesslich Browsermatrix, echtem
   Safari, WebImage und CLI/SDK/LSP. L2-1 belegt ausdrücklich keinen Browserlauf.

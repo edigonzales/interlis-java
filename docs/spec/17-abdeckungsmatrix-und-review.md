@@ -833,3 +833,10 @@ L0B-3-Kompatibilität zu META-006/010/014/017: Die Verträge in Kapitel 04/05/16
 erhalten fortgesetzte Kommentarstrings mit Original-UTF-16-Bereichen und alle
 Vorkommen von `fn.param` an Funktionen. Bestehende Einzelwertkonflikte bleiben
 Fehler. Diese Konkretisierung fügt keine neue Anforderungs-ID hinzu.
+
+L2-2 konkretisiert WP-23, META-003/006/011/014, SEM-005/008/010/014/017/019
+und TEST-011/012 gemäss Kapitel 05/06: öffentliche gebundene Viewformationen,
+effektive Reihenfolge, vererbter AREA-/UNION-Ausschluss für ALL OF sowie
+versionsgerechte Rollenübernahme und nachfolgende Teilnehmernavigation.
+`ViewFoundationContractTest` und der gemeinsame portable Vertrag ergänzen
+die bestehenden View-/Inspektions-/Übersetzungsprüfungen.

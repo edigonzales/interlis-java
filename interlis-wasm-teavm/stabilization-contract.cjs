@@ -31,6 +31,28 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L2-2: inherited formation restrictions and actual copied participant paths.
+  let viewFoundationCases=0;
+  for(const version of ['2.3','2.4']) {
+    const wrap=body=>`INTERLIS ${version};CONTRACTED MODEL F AT "https://example.org" VERSION "1"=${body}END F.`;
+    for(const area of [true,false]) for(const middle of [false,true]) {
+      const text=wrap('DOMAIN P=COORD 0.00..100.00,0.00..100.00;TOPIC T=CLASS A=shape:'+(area?'AREA':'SURFACE')+' WITH(STRAIGHTS) VERTEX P WITHOUT OVERLAPS>0.01;END A;'
+        +'VIEW V '+(area?'AREA ':'')+'INSPECTION OF edge~A->shape;=END V;'+(middle?'VIEW W EXTENDS V=END W;':'')
+        +'VIEW Z EXTENDS '+(middle?'W':'V')+'=ALL OF edge;END Z;END T;');
+      await verify(text,area?'rejected':'succeeded');viewFoundationCases++;
+    }
+    await verify(wrap('TOPIC T=CLASS A=code:TEXT;END A;CLASS B=code:TEXT;END B;VIEW V UNION OF a~A,b~B;=END V;VIEW W EXTENDS V=ALL OF a;END W;END T;'),'rejected');viewFoundationCases++;
+    const text=wrap('TOPIC T=OID AS INTERLIS.UUIDOID;CLASS A=END A;CLASS B=name:TEXT;END B;ASSOCIATION Link=a--{1}A;b--{*}B;END Link;'
+      +'VIEW V PROJECTION OF rel~Link;=ALL OF rel;END V;VIEW W PROJECTION OF src~V;=name:=src->b->name;END W;END T;');
+    await verifySources([{sourceId:'memory:/stabilization.ili',text}],version==='2.4'?'succeeded':'rejected',['F'],async(sessionId,compiled)=>{
+      if(version==='2.3')return; // ALL OF does not publish the role in this version.
+      const query=(offset,kind)=>call('query',sessionId,{snapshotId:compiled.snapshotId,query:{kind,sourceId:'memory:/stabilization.ili',revision:'1',startOffset:offset,endOffset:offset}});
+      const declaration=await query(text.indexOf('name:TEXT'),'symbolAt');
+      const reference=await query(text.indexOf('->b->name')+5,'definition');
+      if(declaration.kind!=='known'||reference.kind!=='definition'||declaration.symbolId!==reference.symbolId)
+        throw new Error('Copied view participant path lost its actual target '+JSON.stringify({declaration,reference}));
+    });viewFoundationCases++;
+  }
   // L2-1: approved profiles and a SET condition without individual object values.
   let setConditionContextCases=0;
   for(const version of ['2.3','2.4']) {
@@ -1925,7 +1947,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

@@ -179,6 +179,7 @@ final class ViewBuilder {
                 g.checkWork();
                 if (item instanceof ViewDeclarationSyntax.AllOf all) {
                     if (formation.orElse(null) instanceof ViewSymbol.Union
+                            || formation.orElse(null) instanceof ViewSymbol.Inspection inherited && inherited.area()
                             || syntax.formation().map(f -> f.kind() == ViewDeclarationSyntax.FormationKind.AREA_INSPECTION).orElse(false))
                         g.emitRule(decl, "ALL OF is not allowed in UNION or AREA INSPECTION", "VIEW_ALL_OF");
                     var base = member(decl.id(), all.base().text()).map(g.symbols::get).orElse(null);
@@ -192,6 +193,10 @@ final class ViewBuilder {
                     }
                     for (SymbolId id : inherited) {
                         g.checkWork();
+                        if (g.symbols.get(id) instanceof RoleSymbol role && decl.language()==LanguageVersion.ILI24) {
+                            includeRole(decl,basis,all,role,result,scope);
+                            continue;
+                        }
                         if (!(g.symbols.get(id) instanceof AttributeSymbol attribute)) continue;
                         var copyId = new SymbolId(decl.id().value() + ":all:" + basis.id().value() + ":" + id.value());
                         var h = new SymbolHeader(copyId, SymbolKind.ATTRIBUTE, attribute.name(), Optional.of(decl.id()), result.size(),
@@ -283,6 +288,25 @@ final class ViewBuilder {
         List<ExpressionId> result = new ArrayList<>();
         for (int i = chain.size() - 1; i >= 0; i--) result.addAll(chain.get(i).derivations());
         return result;
+    }
+
+    /** 2.4 ALL OF also expands owned association roles as ordinary derived
+     * attributes. Their value is one participant of this basis row, irrespective
+     * of the relationship cardinality. The source role stays reachable through
+     * both origin and path; optional joins do not promise a mandatory value. */
+    private void includeRole(DeclInfo owner,ViewSymbol.Base basis,ViewDeclarationSyntax.AllOf all,
+            RoleSymbol role,List<SymbolId> result,List<SymbolId> scope) {
+        var id=new SymbolId(owner.id().value()+":all:"+basis.id().value()+":"+role.id().value());
+        var type=g.roleValueType(role,owner.id(),all.base().range());
+        var modifiers=new HashSet<>(role.header().modifiers());modifiers.retainAll(Set.of(Modifier.ABSTRACT,Modifier.FINAL));
+        var header=new SymbolHeader(id,SymbolKind.ATTRIBUTE,role.name(),Optional.of(owner.id()),result.size(),
+                new Origin.DerivedOrigin(role.id(),DerivationKind.ALIAS),Optional.empty(),owner.language(),
+                role.header().documentation(),role.header().metaAttributes(),modifiers,List.of());
+        var expressionId=new ExpressionId(id.value()+":expression");
+        g.expressions.put(expressionId,new PathExpression(expressionId,type,ExpressionTypeState.RESOLVED,all.base().range(),List.of(),
+                new ObjectPath(List.of(new PathStep.ViewBaseStep(basis.id(),basisTarget(basis),all.base().range()),
+                        new PathStep.RoleStep(role.name().value(),role.id(),all.base().range())))));
+        add(owner,new AttributeSymbol(header,type,false,false,false,false,Optional.empty(),List.of(expressionId)),result,scope);
     }
 
     record Inspected(ExpressionId path, SymbolId element, SymbolId parent, boolean area) {}

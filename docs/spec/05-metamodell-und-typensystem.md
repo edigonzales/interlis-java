@@ -824,7 +824,14 @@ Basis vor Erweiterung, wobei die letzte definierte Alternative gilt. Die gewähl
 Schema-Sicht enthält diese Ausdrücke samt ihrer Typen. `EffectiveMember` behält
 für Views den Weg vom deklarierenden Besitzer bis zur aktuellen Sicht und
 unterscheidet lokale Überschreibung von blosser Vererbung. `ALL OF` erzeugt Attribute mit Herkunftsverweis,
-keine zweite Attributvariante. `AGGREGATES` ist zugänglich, gehört aber nicht
+keine zweite Attributvariante. In 2.3 übernimmt `ALL OF` die Attribute; in 2.4
+zusätzlich die deklarierten Rollen in ihrer effektiven Reihenfolge (2.3 §2.15,
+PDF69; 2.4 §3.15, PDF91). Kopierte Rollen bleiben gewöhnliche abgeleitete
+Attribute mit `DerivedOrigin(originalRole, ALIAS)` und gebundenem `RoleStep`.
+Ihr Objekttyp bezeichnet den einzelnen Teilnehmer der Basiszeile, auch bei
+mehrwertiger Beziehungskardinalität; seine tatsächlichen Ziele bleiben für
+weitere Pfadschritte verfügbar. Rollenmerkmale werden nicht zu Attributmerkmalen.
+`AGGREGATES` ist zugänglich, gehört aber nicht
 zur Liste der transferierten View-Mitglieder. `PathStep.ViewBaseStep` erhält
 lokale Basisidentität und fachliches Ziel.
 
@@ -1027,7 +1034,8 @@ auf die jeweilige Inspektion beschränkt. Die öffentliche Namensabfrage liefert
 die kanonische Deklaration eindeutig.
 Listen und Optionalität entsprechen den vordefinierten Deklarationen.
 AREA-Inspektionen erlauben THISAREA/THATAREA, aber kein ALL OF (2.3 §2.15,
-2.4 §3.15). Eigene Kurvensegmente verwenden dieselben kontextbezogenen
+2.4 §3.15); dieses Verbot gilt auch für von ihnen abgeleitete Sichten ohne
+eigene Formationssyntax. Eigene Kurvensegmente verwenden dieselben kontextbezogenen
 Struktur-, Typ- und Ausdruckswerte wie die Standardsegmente. Die frühere
 pauschale Sperre INSPECTION_CUSTOM_SEGMENT entfällt bei vollständiger Bindung.
 Die gesonderte Prüfung der Quellabstraktion selbst deklarierter LineCoord-Member

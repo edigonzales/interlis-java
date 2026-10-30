@@ -4786,6 +4786,11 @@ final class GraphBuilder {
                     currentScope = views.geometryElement(index.byId(owner).orElseThrow(), geometry, false);
                 } else if (!incomingMany && descriptor instanceof StructureValueType structure) {
                     currentScope = structures.target(structure);
+                } else if (!incomingMany && descriptor instanceof guru.interlis.model.ObjectArgumentType object) {
+                    // Derived view values can retain a participant object type.
+                    // Continue at its actual roots just as for a bound role.
+                    var roots = object.restrictions().isEmpty() ? object.base().stream().toList() : object.restrictions();
+                    currentScope = commonObjectScope(roots.stream().map(t -> contextualObject(t, contextTopic)).toList());
                 } else if (incomingMany) {
                     DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), name.range(),
                             "multiple attribute values", "single attribute value");
@@ -4964,6 +4969,12 @@ final class GraphBuilder {
         return new guru.interlis.model.ObjectArgumentType(id, new Origin.DeclaredOrigin(range),
                 !any && roots.size() == 1 ? Optional.of(roots.getFirst()) : Optional.empty(),
                 any || roots.size() == 1 ? List.of() : roots, many);
+    }
+
+    /** Same participant-value type as an ordinary role path, for implicit 2.4
+     * ALL OF values. One basis row denotes one link, not all its peer links. */
+    TypeId roleValueType(RoleSymbol role,SymbolId owner,SourceRange range) {
+        TypeId id=nextTypeId();types.put(id,rolePathType(id,role,scopeRoot(owner),range,false));return id;
     }
 
     TypeId objectPathType(SymbolId target, SourceRange range) {

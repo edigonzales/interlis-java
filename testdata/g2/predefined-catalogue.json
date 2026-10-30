@@ -4367,8 +4367,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         },
         {
@@ -4433,8 +4433,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         },
         {
@@ -4499,8 +4499,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         },
         {
@@ -6125,8 +6125,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
@@ -6174,8 +6174,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
@@ -6234,8 +6234,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
@@ -6294,8 +6294,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
@@ -6534,8 +6534,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-          "start": 29051,
-          "end": 32370,
+          "start": 31086,
+          "end": 34405,
           "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f"
         }
       ],
@@ -7939,8 +7939,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 331919,
-          "end": 332593,
+          "start": 332790,
+          "end": 333464,
           "sha256": "1000cbd1efe7a1bb91b3a66423ee6d79a07c5596c03572ed96a4cedbc5fe8d91"
         }
       ],
@@ -7968,8 +7968,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 331242,
-          "end": 331968,
+          "start": 332113,
+          "end": 332839,
           "sha256": "ca36ae8229d12be79cdf37ca41949d62d84909f9a62d10a28f83a23327f5ea9f"
         }
       ],
@@ -7996,8 +7996,8 @@
       "sourceAnchors": [
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-          "start": 331242,
-          "end": 331968,
+          "start": 332113,
+          "end": 332839,
           "sha256": "ca36ae8229d12be79cdf37ca41949d62d84909f9a62d10a28f83a23327f5ea9f"
         }
       ],

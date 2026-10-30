@@ -15,6 +15,9 @@ individuelle Objektwerte geprüft, WHERE und die beiden bestätigten
 Kompatibilitätsprofile bleiben erhalten. Nachweise und Abnahme im Lieferbericht.
 L2-1 hat am Produktcommit900706a den unabhängigen PASS für AC2-01/02 erhalten;
 der autonome Auftrag läuft mit L2-2 (WP-23, Views/Inspektionen) weiter.
+Der [L2-2-Lieferbericht](g2/implementation/L2-2.md) beschreibt das vererbte
+AREA-Verbot, die versionsgerechte Rollenübernahme und die gemeinsame
+Teilnehmernavigation samt öffentlichen Resultat-/Reihenfolge-/Importtests.
 L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
 äusseren Blockkommentar. Implementierung und tatsächliche Prüfläufe stehen im
 [Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.

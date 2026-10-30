@@ -10,7 +10,7 @@
     "docs/spec/02-architektur-und-modulgrenzen.md": "02b0af3a36469edfb461149f102859e20a1a2732353564718ca7dd9d2afe45cc",
     "docs/spec/03-build-und-repository.md": "ce101774fee4fedfc4058091cc2efe75fb3d7f6fffe1f6e56f2ef1f387725451",
     "docs/spec/04-quelltext-syntax-und-parser.md": "3b50cd20e9e577d424d3cead7b2d9ff9658ae949dfc5343edfed058233990b5f",
-    "docs/spec/05-metamodell-und-typensystem.md": "e092ea5a702e4e6eb2fb5e1ecbb8e2bf5a8ddb13fc5e9a792585c52e7a88ceb4",
+    "docs/spec/05-metamodell-und-typensystem.md": "e0d0d85a698a107b2a1a34dc43e1bdb737f7b48bdc7d4496149ab1b72724b5fb",
     "docs/spec/06-kompilierung-und-semantik.md": "6ae241fda84238d6cc141b78694edc5eac5954320e5208b75908610dcd17236c",
     "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "f669ca95abac84234c9526928dac83588898025f3c3dbfd5c8afc7dfe6d9c700",
     "docs/spec/08-modellaufloesung-und-repositories.md": "173f6a2444823166cb8c1ee9f2c49ed01e80ab69ca11f228d57c33f8695eb396",
@@ -21,7 +21,7 @@
     "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "3390752dfa7b7ae85de7942a0b09ade37f9c87f1828c35216877b29ba007b27d",
     "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "14443b6b622d9f2bd36c5ad91a811cf41d4704c1d297ef4a6f14f75a833a9f88",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "b497d8d62808b9a9566469c3a45e710d045ad85bb380bbaf6e06cd88ca270e65",
-    "docs/spec/16-api-register-und-vertragstests.md": "82955f753bed9dc2f7bf7ef5e3c9241d23a38ae8aff9a64f42758026c847479b",
+    "docs/spec/16-api-register-und-vertragstests.md": "b2dc7cf8d9e861398967ec6acb6e576f452afb612f75d8cadd3f9d5eb397a766",
     "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "81419dfd99f4c8c3808d76160c83c005b9b32b4c372d82121c7d217100f68c03",
     "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3"
   },
@@ -21998,16 +21998,16 @@
     "catalogue": "testdata/g2/predefined-catalogue.json",
     "sourceHashes": {
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3",
-      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java": "c5d2b760661ee6d177c1954e677c1d4a79f47b639dcb20bdbf79cfbb83ed03db",
+      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java": "2d00827296ae4ff284941c5625c37e6ed999456048c520976dbafc40c8b7c379",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java": "36e7bf7607d2a4f1921724b43ca39697bea26f2c0d6b09ba3bd49f5753229aee",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/MetadataBindings.java": "88466e1732721f6f6691e89f7b015af846bb493a7bc1e410b874c4b1b958b826",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedTemporal.java": "05973399ddfd7bc813e46481bba3a5a7b09ab4bb53caa30e14fb5126b5518930",
-      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java": "aef10103cc1f2bad62f8117f773ce956c383b0abfa79710e6f6e9d09dc6b1eea",
+      "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java": "f92009bf42cd9d4dc46bb7ac7bc5176435653ed96b20cdadd9167d490703b861",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/AntlrSyntaxService.java": "ea9776621f950ea24c14846b26a6c62bef2ee5755442e912b42fac42d2419105",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/LanguageProfile.java": "69882c2155fada2aee243cb2c219d985deb6b908ae6b5184101452f05eb495fa",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/SyntaxTreeBuilder.java": "2108ed38fe4551d5c743767a4a50c3c7462181ad0161804bf8663779a4e838b8",
       "interlis-compiler/src/main/java/guru/interlis/compiler/query/LanguageQueryService.java": "4fd84a5177ff3d71759972c4369b37d439054f03a9f6df984525b081f015979e",
-      "testdata/g2/predefined-catalogue.json": "593153fcfd668d1f0b5128925aea43c0496fe93db9676fa82dd3cde9e9bc8090",
+      "testdata/g2/predefined-catalogue.json": "715d9b89885161ad52ab0fb14d635a45aa78ee2f1f5438bdf346f646437a74c8",
       "interlis-compiler/src/main/java/guru/interlis/compiler/internal/PredefinedModels.java": "0b77f0f310f24d3c6a0f2896c87d070aeca77188320cf0d8cbbb2cfeecaa419f"
     },
     "declarations": [
@@ -26438,10 +26438,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           },
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
@@ -26506,10 +26506,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           },
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
@@ -26574,10 +26574,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           },
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/LineForms.java",
@@ -28228,10 +28228,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           }
         ],
         "sourceBindingNames": [
@@ -28278,10 +28278,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           }
         ],
         "sourceBindingNames": [
@@ -28339,10 +28339,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           }
         ],
         "sourceBindingNames": [
@@ -28400,10 +28400,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           }
         ],
         "sourceBindingNames": [
@@ -28644,10 +28644,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/ViewBuilder.java",
-            "start": 29051,
-            "end": 32370,
+            "start": 31086,
+            "end": 34405,
             "sha256": "98bbb9cbaf3ad71347b33e3b8649d9de7590e1f9671b33c2d75a4851fef7569f",
-            "line": 392
+            "line": 416
           }
         ],
         "sourceBindingNames": [
@@ -30094,10 +30094,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-            "start": 331919,
-            "end": 332593,
+            "start": 332790,
+            "end": 333464,
             "sha256": "1000cbd1efe7a1bb91b3a66423ee6d79a07c5596c03572ed96a4cedbc5fe8d91",
-            "line": 5090
+            "line": 5101
           }
         ],
         "actualRepresentation": "A resolved UndefinedExpression has an explicitly undefined type, never ErrorType/PendingType; contextual mandatory/optional rules remain E2.",
@@ -30124,10 +30124,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-            "start": 331242,
-            "end": 331968,
+            "start": 332113,
+            "end": 332839,
             "sha256": "ca36ae8229d12be79cdf37ca41949d62d84909f9a62d10a28f83a23327f5ea9f",
-            "line": 5081
+            "line": 5092
           }
         ],
         "actualRepresentation": "Symbolic numeric constant, optionally unit-qualified; no rounded exact decimal replacement.",
@@ -30153,10 +30153,10 @@
         "sourceAnchors": [
           {
             "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-            "start": 331242,
-            "end": 331968,
+            "start": 332113,
+            "end": 332839,
             "sha256": "ca36ae8229d12be79cdf37ca41949d62d84909f9a62d10a28f83a23327f5ea9f",
-            "line": 5081
+            "line": 5092
           }
         ],
         "actualRepresentation": "Symbolic numeric constant, optionally unit-qualified; no rounded exact decimal replacement.",
@@ -31373,7 +31373,7 @@
       },
       {
         "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/GraphBuilder.java",
-        "line": 5093,
+        "line": 5104,
         "coveredBySourceCatalogue": true,
         "review": "REVIEW_SOURCE_FACTORY_OR_CONTEXT_COPY"
       },
