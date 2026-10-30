@@ -699,6 +699,16 @@ Jede Zeile erhält in der Implementierung mindestens einen positiven, einen rele
 
 `EffectiveMember` enthält das deklarierende Symbol, den effektiven Besitzer, den Überschreibungs-/Vererbungsweg, die fachliche Position und die Herkunftsart. Die Reihenfolge wird durch `EffectiveMemberResolver.resolve(SymbolRef)` aus den Sprach- und Transferregeln ermittelt. Eine alphabetische Sortierung oder eine zufällige Mapiteration ist unzulässig.
 
+Der `inheritancePath` führt vom Besitzer der tatsächlich ausgewählten
+Memberdeklaration über jede Zwischenstufe zum effektiven Besitzer, jeweils
+einmal. Ein lokales Mitglied hat nur seinen eigenen Besitzer im Pfad; ein
+überschriebenes Mitglied beginnt beim Besitzer der überschreibenden
+Deklaration. Gegenüber dem abgefragten Besitzer ist ein geerbtes Override
+`INHERITED`, während `overridden` dessen Überschreibungsbezug erhält. Ein dort
+lokal deklariertes Override ist `OVERRIDDEN`. `AttributeSymbol.overrides`
+bewahrt daneben die tatsächliche Basiseigenschaft. Diese Verträge gelten
+gleich für Klassen, Strukturen und Assoziationen sowie für beide Sprachen.
+
 Eine Überschreibung darf die durch die fachlichen Regeln definierte Position nicht unbemerkt verändern. Eingebettete Assoziationsrollen werden als solche markiert; sie werden nicht zu gewöhnlichen Attributen umetikettiert. Für eine Diagrammoption „nur eigene Attribute“ wird nach Herkunft gefiltert. Für Transfer-/DB-Pläne wird die vollständige effektive Information verwendet.
 
 `TranslationLink` verbindet Original- und Übersetzungssymbole mit überprüfter Korrespondenz. Ein Transfername wird erst unter einem ausgewählten Transfer-/Sprachprofil bestimmt. Die Entscheidung ist nicht in `SymbolId` kodiert. Konflikte und fehlende Entsprechungen bleiben fachliche Diagnostik; eine Übersetzung ist keine globale Umbenennung aller Symbole im Graphen.

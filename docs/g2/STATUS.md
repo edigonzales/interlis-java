@@ -3,7 +3,7 @@
 - Auftrag: **gesamte Phase 1** autonom bis zum unabhängigen Phasen-PASS,
   ohne manuelle Stopps zwischen L1-1, L1-2 und L1-3. Die Kandidatencommits,
   unabhängigen Reviews und PASS-Gates bleiben verbindlich. Phase 2 beginnt nicht.
-- Aktuelle Lieferung: **L1-3**, AC1-05–08 und kumulatives Phasengate, **IN_PROGRESS**.
+- Aktuelle Lieferung: **L1-3**, AC1-05–08 und kumulatives Phasengate, **AWAITING_REVIEW**.
 - Basis: L1-2-Code `39f48ca239c44b27a81e5562a58c717c90253534`;
   anschliessender Dokumentcommit speichert nur den unveränderten Bericht/Status.
 - Letzter unabhängiger PASS: **L1-2**, AC1-03/AC1-04,
@@ -58,9 +58,18 @@
     Faktoren exakt verglichen; FUNCTION-Erklärungen nicht ausgeführt.
 - Nachweise: [L1-1-Implementierungsbericht](implementation/L1-1.md),
   [L1-2-Implementierungsbericht mit konkretem Konflikt](implementation/L1-2.md).
-- Nächster Schritt: L1-3-Vererbung, Assoziationen, effektive Herkunft und
-  Transferreihenfolge anhand öffentlicher Gegenproben vervollständigen. Danach
-  volle T1/T2/T3-Matrix und unabhängige kumulative AC1-01–08-Abnahme.
+- L1-3 implementiert und selbst vollständig geprüft: Besitzerpfade/Herkunft,
+  FINAL/EXTENDED, importierte finale Basen, gemeinsame Assoziationsattributregeln
+  und Topiczyklen; zwölf neue öffentliche JVM-Methoden und40 portable Fälle.
+  Eigener voller OS-gesperrter Lauf **Exit0/4m12s/71 Tasks**: **765** JVM-
+  (davon656 Compiler),136 Evidenz-/15 Assertion-/15 Hosttests,0 Fehler/Skips;
+  Node-JS/WasmGC, Chromium/Firefox/WebKit, echtes Safari und Web Image jeweils
+  **3405** Fälle PASS, SDK9, LSP-Tests/Distribution, SDK-Paket, Diagrammadapter.
+  T2 erneut579 PASS/14 XFAIL,19 Assessments; alle19 Manifestobjekte unverändert.
+- Nächster Schritt: Kandidatencommit und frischer unabhängiger kumulativer
+  L1-3-Review über DeepSeek direkt. Sämtliche AC1-01–08 und volle T1/T2/T3-
+  Gates sind auf dem neuen SHA erneut zu prüfen; eigener Lauf ist keine
+  unabhängige Phasenfreigabe. [Implementierungsbericht](implementation/L1-3.md).
 - Vollständige Browser-/Safari-/Web-Image-Regression und kumulative
   **AC1-01–08** sind im selben L1-3-Review fällig. **Phase 1 hat noch keinen PASS.**
 

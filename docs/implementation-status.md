@@ -65,6 +65,17 @@ und eigene Reviewer-Gegenproben. Phase 1 bleibt bis L1-3 offen. Vollständige
 Änderungen, Normstellen, Original-/Kontrollhashes, tatsächlich ausgeführte
 Kommandos und Grenzen stehen im [L1-2-Bericht](g2/implementation/L1-2.md).
 
+L1-3 (AC1-05–08; META-001/003/004/008/011/014/016,
+SEM-002/003/005/007/008/009/010/011/017/019/020) korrigiert effektive
+Besitzerpfade, FINAL-/EXTENDED-Prüfungen, gemeinsame Assoziationsattributregeln
+und Topiczyklen. Eigener voller OS-gesperrter Lauf: Exit0,4m12s,71 Tasks,
+765 JVM-/136 Evidenz-/15 Assertion-/15 Hosttests ohne Fehler/Skips; alle
+portablen/Browser-/Safari-/Web-Image-Läufe je3405 PASS, T2-Projekt579/14,
+SDK9 sowie SDK-Paket/LSP-Distribution. Die zwölf neuen öffentlichen
+Regressionstests und40 gemeinsamen portablen Fälle sind ausgeführt.
+[Bericht](g2/implementation/L1-3.md). Die unabhängige kumulative
+AC1-01–08-Abnahme steht noch aus; Phase1 hat noch keinen PASS.
+
 ## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
 Massgeblich ist der [Ausführungs- und Reviewvertrag](evidence/stabilization/g2-completion-plan.md).

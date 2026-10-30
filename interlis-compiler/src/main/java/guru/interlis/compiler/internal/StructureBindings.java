@@ -51,12 +51,12 @@ final class StructureBindings {
         }
         for(Symbol owner:g.symbols.values()) {
             g.checkWork();
-            if(!(owner instanceof ClassSymbol || owner instanceof StructureSymbol) || owner.header().has(Modifier.ABSTRACT))continue;
+            if(!(owner instanceof ClassSymbol || owner instanceof StructureSymbol || owner instanceof AssociationSymbol) || owner.header().has(Modifier.ABSTRACT))continue;
             DeclInfo declaration=g.index.byId(owner.id()).orElse(null);
             if(declaration==null)continue;
             for(var member:g.effectiveMembers.getOrDefault(owner.id(),List.of()))
                 if(g.symbols.get(member.declaredSymbol()) instanceof AttributeSymbol attribute && attribute.header().has(Modifier.ABSTRACT))
-                    g.emitRule(declaration,"concrete class/structure retains an abstract attribute","ABSTRACT_MEMBER");
+                    g.emitRule(declaration,"concrete viewable retains an abstract attribute","ABSTRACT_MEMBER");
         }
     }
 

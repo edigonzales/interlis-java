@@ -241,6 +241,7 @@ final class GraphBuilder {
             checkWork();
             buildModel(entry);
         }
+        validateTopicInheritanceCycles();
         validateUnits();
         resolveOverridesAndEffectiveMembers();
         structures.validate();
@@ -1302,7 +1303,7 @@ final class GraphBuilder {
     private void validateAttributeOverrides() {
         for (Symbol symbol : symbols.values()) {
             checkWork();
-            if (!(symbol instanceof ClassSymbol) && !(symbol instanceof StructureSymbol)) {
+            if (!(symbol instanceof ClassSymbol) && !(symbol instanceof StructureSymbol) && !(symbol instanceof AssociationSymbol)) {
                 continue;
             }
             SymbolId base = baseOf.get(symbol.id());
@@ -1310,7 +1311,8 @@ final class GraphBuilder {
                 continue;
             }
             List<SymbolId> members = symbol instanceof ClassSymbol classSymbol
-                    ? classSymbol.members() : ((StructureSymbol) symbol).members();
+                    ? classSymbol.members() : symbol instanceof StructureSymbol structure ? structure.members()
+                    : ((AssociationSymbol) symbol).attributes();
             for (SymbolId member : members) {
                 checkWork();
                 Symbol memberSymbol = symbols.get(member);
@@ -1365,7 +1367,8 @@ final class GraphBuilder {
             Symbol symbol = symbols.get(current);
             List<SymbolId> members = symbol instanceof ClassSymbol classSymbol
                     ? classSymbol.members()
-                    : symbol instanceof StructureSymbol structure ? structure.members() : List.of();
+                    : symbol instanceof StructureSymbol structure ? structure.members()
+                    : symbol instanceof AssociationSymbol association ? association.attributes() : List.of();
             for (SymbolId member : members) {
                 checkWork();
                 Symbol memberSymbol = symbols.get(member);
@@ -2032,6 +2035,14 @@ final class GraphBuilder {
         return symbol;
     }
 
+    private void validateTopicInheritanceCycles() {
+        for (Symbol symbol : symbols.values()) {
+            checkWork();
+            if (symbol instanceof TopicSymbol && hasCycle(baseChain(symbol.id())))
+                index.byId(symbol.id()).ifPresent(this::emitCycle);
+        }
+    }
+
     private TopicSymbol buildTopic(DeclInfo decl) {
         TopicSyntax syntax = (TopicSyntax) decl.syntax();
         for (DeclInfo child : index.children(decl.id())) {
@@ -2055,6 +2066,8 @@ final class GraphBuilder {
             return resolved;
         });
         base.ifPresent(id -> baseOf.put(decl.id(), id));
+        if (base.filter(this::isFinalDeclaration).isPresent())
+            emitRule(decl, "cannot extend FINAL topic", "TOPIC_FINAL");
         if (base.isPresent() && symbols.get(base.orElseThrow()) instanceof TopicSymbol baseTopic) {
             boolean abstractBase = baseTopic.header().modifiers()
                     .contains(guru.interlis.model.Modifier.ABSTRACT);
@@ -2230,10 +2243,16 @@ final class GraphBuilder {
         }
         base.ifPresent(id -> {
             baseOf.put(owner, id);
-            if (symbols.containsKey(id) && symbols.get(id).header().has(guru.interlis.model.Modifier.FINAL))
+            if (isFinalDeclaration(id))
                 emitRule(decl, "cannot extend FINAL object type", "OBJECT_FINAL");
         });
         return base;
+    }
+
+    /** Declaration metadata is available before an imported base is built. */
+    private boolean isFinalDeclaration(SymbolId id) {
+        return index.byId(id).map(info -> info.modifiers().contains(guru.interlis.model.Modifier.FINAL))
+                .orElseGet(() -> symbols.containsKey(id) && symbols.get(id).header().has(guru.interlis.model.Modifier.FINAL));
     }
 
     private AssociationSymbol buildAssociation(DeclInfo decl) {
@@ -5305,7 +5324,7 @@ final class GraphBuilder {
                         String name = symbols.get(member).name().value();
                         Integer existing = positions.get(name);
                         int position = existing == null ? result.size() : existing;
-                        var effective = new EffectiveMember(member, decl.id(), pathTo(chain, depth, decl.id()), position,
+                        var effective = new EffectiveMember(member, decl.id(), pathTo(chain, depth), position,
                                 EffectiveMemberOrigin.INHERITED, existing != null);
                         if (existing == null) { positions.put(name, position); result.add(effective); }
                         else result.set(position, effective);
@@ -5318,23 +5337,28 @@ final class GraphBuilder {
                     }
                     Integer existing = positions.get(attribute.name());
                     if (existing != null) {
-                        if (!attribute.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
+                        if (depth == 0 && !attribute.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
                             emitRule(attribute, "override requires EXTENDED", "OVERRIDE");
                         }
                         EffectiveMember old = result.get(existing);
+                        if (depth == 0 && attribute.kind() == SymbolKind.ATTRIBUTE && isFinalDeclaration(old.declaredSymbol()))
+                            emitRule(attribute, "cannot override FINAL attribute", "ATTRIBUTE_FINAL");
                         result.set(existing, new EffectiveMember(attribute.id(), decl.id(),
-                                pathTo(chain, depth, decl.id()), existing,
-                                EffectiveMemberOrigin.OVERRIDDEN, true));
+                                pathTo(chain, depth), existing,
+                                depth == 0 ? EffectiveMemberOrigin.OVERRIDDEN : EffectiveMemberOrigin.INHERITED, true));
                         AttributeSymbol override = attribute.kind() == SymbolKind.ATTRIBUTE
                                 ? overrideAttribute(attribute.id(), old.declaredSymbol()) : null;
                         if (override != null) {
                             symbols.put(attribute.id(), override);
                         }
                     } else {
+                        if (depth == 0 && attribute.kind() == SymbolKind.ATTRIBUTE
+                                && attribute.modifiers().contains(guru.interlis.model.Modifier.EXTENDED))
+                            emitRule(attribute, "EXTENDED attribute needs an inherited attribute", "EXTENDED_BASE");
                         int position = result.size();
                         positions.put(attribute.name(), position);
                         result.add(new EffectiveMember(attribute.id(), decl.id(),
-                                pathTo(chain, depth, decl.id()), position,
+                                pathTo(chain, depth), position,
                                 depth == 0 ? EffectiveMemberOrigin.LOCAL
                                         : EffectiveMemberOrigin.INHERITED, false));
                     }
@@ -5427,13 +5451,12 @@ final class GraphBuilder {
         return List.copyOf(result);
     }
 
-    private List<SymbolId> pathTo(List<SymbolId> chain, int depth, SymbolId derived) {
+    private List<SymbolId> pathTo(List<SymbolId> chain, int depth) {
         List<SymbolId> result = new ArrayList<>();
-        for (int i = depth; i < chain.size(); i++) {
+        for (int i = depth; i >= 0; i--) {
             checkWork();
             result.add(chain.get(i));
         }
-        result.add(derived);
         return List.copyOf(result);
     }
 

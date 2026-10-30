@@ -1,5 +1,15 @@
 # 13 – Tests, Kompatibilitätsnachweise und Qualitätsgates
 
+L1-3 prüft AC1-05–08 mit tatsächlichen dreistufigen Klassen-/Struktur-/
+Assoziationsgraphen, vollständigen Besitzerpfaden und Herkunftsarten,
+finalen importierten Basistypen in beiden Quellenordnungen, finalen und
+verwaisten EXTENDED-Attributen, gemeinsamen Assoziationsattributregeln sowie
+öffentlichen Definitionsqueries nach Importrevisionen. Die kumulative
+Phase-1-Abnahme verlangt zusätzlich alle AC1-01–07 am selben Kandidaten und
+frische volle T1-/T2-/T3-Prüfungen einschliesslich realem Safari und Web Image.
+Ein erfolgreicher Node-Lauf belegt diese Browserprüfungen nicht. Die bestehenden
+19 strengen Conformance-Assessments und sämtliche Norm-/Suitepins bleiben aktiv.
+
 Für den Nutzerauftrag zum vollständigen G2-Abschluss vom 29.10.2026 gilt der
 [Ausführungs- und Reviewvertrag](../g2/EXECUTION_PLAN.md) mit dem
 [operativen Status](../g2/STATUS.md). Er ersetzt organisatorisch den früheren

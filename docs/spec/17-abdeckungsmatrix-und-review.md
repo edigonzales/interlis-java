@@ -1,5 +1,12 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+L1-3 ordnet AC1-05–07 den bestehenden META-001/003/004/008/011/014/016 und
+SEM-002/003/005/007/008/009/010/011/017/019/020 zu: Vererbung, finale und
+abstrakte Eigenschaften, gebundene Rollen-/Attributziele, vollständige
+Besitzerpfade und fachliche Reihenfolge über Imports und Fresh/Reuse.
+AC1-08 verlangt die kumulative AC1-01–07- sowie T1-/T2-/T3-Abnahme desselben
+Kandidaten. Dieser Eintrag ist eine Vertragszuordnung, kein Prüfstatus.
+
 L1-1 präzisiert die bestehenden META-/SEM-Verträge für die vordefinierten
 INTERLIS-Modellowner, gewöhnliche Geometriestrukturen und das ausdrücklich
 freigegebene TYPE-MODEL-Profil. Kanonische Verträge bleiben in Kapitel 05/06

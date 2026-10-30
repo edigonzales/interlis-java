@@ -386,6 +386,16 @@ Mehrdeutigkeit bleibt ein eigener Ausgang. Ein expliziter Name darf nicht nach D
 
 `InheritanceChecker.check(SymbolId derived, SymbolId base, RuleContext context)` prüft zulässige Elementarten, Final-/Abstract-/Extended-Regeln, Topickontext, Zyklen und weitere versionierte Bedingungen. `AttributeOverrideChecker.check(...)` prüft den Bezug zur tatsächlichen Basiseigenschaft, Typ-/Kardinalitäts-/Definiertheitseinschränkungen und erlaubte Modifier. Ein gleicher Name allein ist kein bestätigtes Override.
 
+FINAL wird anhand der gebundenen Deklaration geprüft, auch wenn ein importierter
+Basistyp in der kanonischen Quellenordnung erst später aufgebaut wird.
+Finale Topics, Klassen und Strukturen dürfen nicht erweitert, finale Attribute
+nicht überschrieben werden. EXTENDED an einem Attribut verlangt eine tatsächliche
+geerbte Basiseigenschaft. Assoziationsattribute verwenden dieselbe gemeinsame
+Override-, MANDATORY- und Typprüfung wie Klassen-/Strukturattribute; konkrete
+Assoziationen müssen geerbte abstrakte Attribute konkretisieren. Die bestehende
+Behandlung geerbter abstrakter Rollendeklarationen wird dadurch nicht erweitert
+oder verschärft: Deren ursprüngliche Marker und Identitäten bleiben sichtbar.
+
 `EffectiveMemberResolver` arbeitet danach auf einer nachweislich verwertbaren Vererbungskette. Bei ungültiger Basis kann es die sicher bekannten lokalen Mitglieder für IDE-Zwecke ausgeben, muss aber die vollständige effektive Sicht als blockiert beziehungsweise ungültig markieren. Es darf nicht eine lokale Liste als vollständige Transferreihenfolge ausgeben.
 
 ### 6.3 Typen und Ausdrücke

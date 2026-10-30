@@ -28,6 +28,13 @@ globaler Zustand und keine zusätzlichen veröffentlichten Modellwerte.
 
 Java-Blöcke in der Spezifikation zeigen Signaturen und Varianten; Bodies und Imports sind teilweise absichtlich ausgelassen. Das Repository MUSS zusätzlich tatsächlich kompilierende API-Beispiele enthalten. Die Spezifikation behauptet keine erfolgreiche Kompilierung der nur deklarativ abgebildeten Klassenblöcke.
 
+L1-3 präzisiert den bestehenden `EffectiveMember.inheritancePath`- und
+Herkunftsvertrag aus Kapitel 05 für Klassen, Strukturen und Assoziationen.
+`SemanticQueries.effectiveMembers`, die öffentlichen Symbolbezüge und
+`LanguageQueries.definition` verwenden dieselben gebundenen Deklarationen;
+es entstehen keine neuen Signaturen. Reihenfolge, Pfad und tatsächliches
+Override-Ziel werden auch nach Importrevisionen und Fresh/Reuse geprüft.
+
 Vorab-API 0.2 konkretisiert die Funktionssignaturen mit `TypeId` in
 `FunctionParameter`/`FunctionSymbol` (Kapitel 05), Funktionssyntax mit `TypeSyntax`
 und `NameSyntax` sowie `SyntaxSnapshot.options()` (Kapitel 04).
