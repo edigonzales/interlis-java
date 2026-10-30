@@ -23,7 +23,10 @@ führt die restliche Phase2 und ihre kumulativen Plattformgates durch.
 [L2-3](g2/implementation/L2-3.md) ergänzt tatsächliche übersetzte Rollen-/
 Metadaten-/Linienform-/Generic-Closures, die fehlende LineCoord-Quellabstraktion
 und geerbte Assoziationsbasen. Die volle T1/T2/T3-Ausführung und unabhängige
-kumulative Abnahme werden am Schlussprodukt durchgeführt.
+kumulative Abnahme sind am Schlussprodukt d358e3c durchgeführt und belegen
+AC2-01–07. Alle Pfade einschliesslich echtem Safari/Web Image, SDK/LSP,
+Conformance und Pythonfreiheit bestehen; Bericht, Transportprovenienz und
+aktueller Status stehen unter [STATUS](g2/STATUS.md). Phase3 wurde nicht begonnen.
 L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
 äusseren Blockkommentar. Implementierung und tatsächliche Prüfläufe stehen im
 [Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.

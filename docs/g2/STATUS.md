@@ -1,8 +1,40 @@
 # G2 – operativer Status
 
-- Aktueller Auftrag: **gesamte Phase 2 autonom**, einschliesslich unabhängiger
-  OpenCode-Reviews über DeepSeek direkt. Kein manueller Teilphasenstopp;
-  kein Beginn von Phase3.
+- Auftrag **gesamte Phase 2 autonom**: abgeschlossen, ohne manuelle Stopps
+  zwischen den Lieferungen. **L2-3 / PHASE 2: PASS**, kumulativ **AC2-01–AC2-07**.
+- Unabhängig geprüfter Schlussproduktcommit:
+  `d358e3c5e26b4db646124648f9b876ffa0d8b90b`.
+  [Unveränderter kumulativer Review](reviews/L2-3-review.md), SHA-256
+  `3b758ab895551e04912efc5ddb0fc7f7e6deba66a9addfd0d038f31e22e5561b`.
+  OpenCode v2.0.28, Provider DeepSeek direkt, `deepseek/deepseek-flash`,
+  neuer sauberer Worktree. Alle sieben Kriterien einzeln neu bewertet.
+- Unabhängiger voller Pflichtlauf: **Exit0 / 4m53s / 71 von71 Tasks ausgeführt**.
+  **970 JUnit-Fälle**, davon **803 reguläre JVM** (694Compiler),137Evidenz-,
+  15Assertion-,15Hosttests, jeweils **0Failures/Errors/Skips**. SDK9,
+  SDK-Paket/LSP-Distribution, Pythonfrei1213Inputs mit PATH-ENOENT/absolutem EPERM.
+  Git-Head des vollständigen Laufmanifests ist exakt der Schlussproduktcommit,
+  dirty leer. Keine fällige Phase-2-Prüfung ausgelassen.
+- Je **3487 PASS**: TeaVM-JS/Node, WasmGC/Node, Web-Image-Node,
+  Web Image auf Chromium/Firefox/WebKit sowie TeaVM auf Chromium156.0.8078.4,
+  Firefox157.0/WebKit27.2 und **echtem Safari27.0 (20625.1.29.18.28)**.
+  Frischer Web-Image-Build, Worker-Neustart und Diagrammadapter belegt.
+- Eigene neue Reviewer-Gegenprobe: **22/22 Checks PASS** am Kandidaten;
+  dieselbe Probe reproduziert **vier Vorherfehler** am L2-3-Ausgangspunkt
+  (zweimal geerbte importierte Assoziationsbasis, zweimal LineCoord-Abstraktion).
+  Keine offenen Muss-Findings oder Blocker. Konservativ nicht mandatory kopierte
+  2.4-Rollen bleiben als nicht blockierende Beobachtung im Bericht sichtbar.
+- Transportprovenienz getrennt vom Testurteil: Die OpenCode-Sitzung endete mit
+  CLI-Exit1 nach einem zwischenzeitlichen `provider.transport`-Timeout
+  (HTTP200, „Timed out waiting for response data“). Danach folgten231 weitere
+  JSONL-Ereignisse mit vollständiger Prüfung/Berichtsspeicherung/Hashkontrolle
+  und abschliessender PASS-Antwort. Der Pflichtlauf endete nachweislich mit0;
+  ein erfolgreicher CLI-Exit wird nicht behauptet. Rohlog:
+  `build/review/L2-3/opencode.jsonl`; der unveränderte Reviewbericht und dessen
+  Schlussurteil sind vollständig vorhanden.
+- **Phase3 wurde nicht begonnen.** Nächster fachlicher Schritt ist Phase3
+  (echte Overlays/Modellauflösung), sobald beauftragt. Dieses Phase-2-PASS ist
+  keine globale G2-/P3-/P4-/P5-Freigabe; GlobalD2 bleibt getrennt
+  PENDING_USER_REVALIDATION. [Implementierung/Nachweise](implementation/L2-3.md).
 - **L2-1: PASS**, AC2-01/AC2-02. Unabhängig geprüfter Produktcommit
   `900706a177a047e6f7d0ffd34d9e4cb2853a2ad7`.
   [Unveränderter R3-/PASS-Bericht](reviews/L2-1-review.md), SHA-256
@@ -40,20 +72,6 @@
   Eigene neue Reviewer-Gegenprobe:76Checks/0Fehler. Nicht blockierende
   Beobachtungen zur geerbten Assoziationsbasis und konservativer Rollenpflicht
   bleiben im Bericht sichtbar. [Implementierung](implementation/L2-2.md).
-- Aktuelle Lieferung **L2-3 REVIEW_PENDING**, kumulatives Phase-2-Gate:
-  Translation/Import-Closures, GENERIC/DEFERRED, Metadaten, Linienformen und
-  Grafik-/Signaturen. LineCoord-Quellabstraktion und geerbte Assoziationsbasen
-  korrigiert; sechs neue öffentliche JVM-Verträge,16 neue portable Fälle.
-  Eigener voller T1/T2/T3-Lauf Exit0/4m33s/71ausgeführteTasks:803reguläreJVM,
-  137Evidenz-/15Assertion-/15Hosttests ohneFehler/Skips;SDK9,Pythonfrei1212.
-  Alle portablen Node-/Browser-/WebImage-Pfade je3487PASS, echtesSafari27.0.
-  T2-Projekt577PASS/16XFAIL,0FAIL/ERROR/XPASS,21/21Normprüfungen.
-  Unabhängiger kumulativer Review am Schlusskandidaten folgt.
-  [Implementierung/Nachweise](implementation/L2-3.md).
-- **Noch kein Phase-2-PASS.** L2-3 muss kumulativ AC2-01–06 sowie frische volle
-  T1/T2/T3-Gates am Schluss-SHA prüfen, einschliesslich Browsermatrix, echtem
-  Safari, WebImage und CLI/SDK/LSP. L2-1 belegt ausdrücklich keinen Browserlauf.
-  Nach jedem PASS geht es automatisch weiter. Phase3 bleibt ausserhalb des Auftrags.
 
 - Auftrag **gesamte Phase 1 autonom**: abgeschlossen, ohne manuelle Stopps zwischen
   den Lieferungen. **L1-3 / PHASE 1: PASS**, kumulativ **AC1-01 bis AC1-08**.
