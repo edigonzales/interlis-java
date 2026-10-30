@@ -299,9 +299,7 @@ final class GraphBuilder {
     }
 
     private void validateTypeNamespaces() {
-        var typeKinds=Set.of(SymbolKind.TOPIC,SymbolKind.CLASS,SymbolKind.STRUCTURE,SymbolKind.ASSOCIATION,
-                SymbolKind.VIEW,SymbolKind.GRAPHIC,SymbolKind.DOMAIN,SymbolKind.UNIT,SymbolKind.FUNCTION,
-                SymbolKind.LINE_FORM,SymbolKind.METADATA_BASKET);
+        var typeKinds=DeclarationNamespaces.TYPE_KINDS;
         var names=new LinkedHashMap<SymbolId,Set<String>>();
         var declarations=index.all().stream().sorted(Comparator.comparingInt(DeclInfo::order)).toList();
         for(var declaration:declarations) {

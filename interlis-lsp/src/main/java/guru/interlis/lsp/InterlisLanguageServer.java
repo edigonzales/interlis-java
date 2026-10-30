@@ -26,6 +26,9 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
     private final InterlisTextDocumentService textDocuments;
     private final InterlisWorkspaceService workspaceService;
     private volatile boolean shutdown;
+    private final java.util.concurrent.atomic.AtomicBoolean initializeStarted=new java.util.concurrent.atomic.AtomicBoolean();
+    private volatile boolean ready;
+    private java.util.function.IntConsumer processExit=ignored -> { };
 
     /**
      * Creates an instance.
@@ -33,19 +36,50 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
      * @param workspace the {@code workspace} argument
      */
     public InterlisLanguageServer(Workspace workspace) {
-        this.workspace = Objects.requireNonNull(workspace, "workspace");
-        this.textDocuments = new InterlisTextDocumentService(workspace);
-        this.workspaceService = new InterlisWorkspaceService(workspace, textDocuments);
+        this(workspace, guru.interlis.compiler.CompilerEngines.create(),
+                guru.interlis.compiler.CompilerServices.defaults());
     }
+
+    /** Uses an explicit reentrant engine and run services for detached background work. */
+    public InterlisLanguageServer(Workspace workspace, guru.interlis.compiler.CompilerEngine engine,
+                                 guru.interlis.compiler.CompilerServices services) {
+        this.workspace = Objects.requireNonNull(workspace, "workspace");
+        this.textDocuments = new InterlisTextDocumentService(workspace, engine, services);
+        this.workspaceService = new InterlisWorkspaceService(workspace, textDocuments);
+        textDocuments.requestGuard(this::requireReady);
+        workspaceService.requestGuard(this::requireReady);
+    }
+
+    private void requireReady() {
+        if(shutdown) throw LspFailures.error(org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidRequest,"server has shut down");
+        if(!ready) throw LspFailures.error(org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.ServerNotInitialized,"server is not initialized");
+    }
+
+    void processExit(java.util.function.IntConsumer handler) { processExit=Objects.requireNonNull(handler); }
 
     @Override
     public void connect(LanguageClient client) {
         Objects.requireNonNull(client, "client");
         textDocuments.sink(client::publishDiagnostics);
+        textDocuments.operationSink(message -> client.logMessage(new org.eclipse.lsp4j.MessageParams(
+                org.eclipse.lsp4j.MessageType.Error, message)));
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
+        if(params==null) return CompletableFuture.failedFuture(LspFailures.error(
+                org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,"initialize parameters are required"));
+        if(shutdown || !initializeStarted.compareAndSet(false,true)) return CompletableFuture.failedFuture(LspFailures.error(
+                org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidRequest,"initialize may run only once"));
+        var client=params.getCapabilities();
+        boolean versioned=client!=null && client.getWorkspace()!=null && client.getWorkspace().getWorkspaceEdit()!=null
+                && Boolean.TRUE.equals(client.getWorkspace().getWorkspaceEdit().getDocumentChanges());
+        textDocuments.versionedEdits(versioned);
+        var folders=new java.util.ArrayList<String>();
+        if(params.getWorkspaceFolders()!=null) for(var folder:params.getWorkspaceFolders()) folders.add(folder.getUri());
+        if(folders.isEmpty() && params.getRootUri()!=null) folders.add(params.getRootUri());
+        if(folders.isEmpty() && params.getRootPath()!=null) folders.add(java.nio.file.Path.of(params.getRootPath()).toAbsolutePath().toUri().toString());
         TextDocumentSyncOptions sync = new TextDocumentSyncOptions();
         sync.setOpenClose(true);
         sync.setChange(TextDocumentSyncKind.Incremental);
@@ -65,23 +99,30 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
         capabilities.setCodeActionProvider(true);
         capabilities.setDocumentFormattingProvider(true);
         capabilities.setSemanticTokensProvider(new SemanticTokensWithRegistrationOptions(
-                new SemanticTokensLegend(List.of("keyword", "number", "string", "enumMember",
-                        "function", "variable", "property"), List.of()), true, false));
+                new SemanticTokensLegend(InterlisTextDocumentService.TOKEN_TYPES, List.of()), true, false));
         capabilities.setFoldingRangeProvider(true);
-        return CompletableFuture.completedFuture(new InitializeResult(capabilities));
+        capabilities.setPositionEncoding("utf-16");
+        var result=new InitializeResult(capabilities);
+        result.setServerInfo(new org.eclipse.lsp4j.ServerInfo("interlis-java",guru.interlis.model.VersionManifest.current().toolVersion()));
+        return LspFutures.map(workspaceService.initializeProject(folders),ignored -> { ready=true; return result; },textDocuments::operation);
     }
 
     @Override
     public CompletableFuture<Object> shutdown() {
+        try { requireReady(); } catch(org.eclipse.lsp4j.jsonrpc.ResponseErrorException unavailable) { return CompletableFuture.failedFuture(unavailable); }
         shutdown = true;
         workspaceService.close();
+        textDocuments.close();
         workspace.close();
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void exit() {
+        workspaceService.close();
+        textDocuments.close();
         workspace.close();
+        processExit.accept(shutdown?0:1);
     }
 
     /**

@@ -28,6 +28,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Set;
 
 /** Default read-only query implementation over an immutable graph. */
 public final class DefaultSemanticQueries implements SemanticQueries {
@@ -143,13 +146,87 @@ public final class DefaultSemanticQueries implements SemanticQueries {
         Objects.requireNonNull(scope, "scope");
         Objects.requireNonNull(prefix, "prefix");
         check(scope.snapshot());
-        List<SymbolRef> result = graph.symbols().stream()
-                .filter(s -> s.name().value().startsWith(prefix.value()))
-                .sorted(Comparator.comparingInt(Symbol::declarationOrder)
-                        .thenComparing(s -> s.id().value()))
-                .map(s -> new SymbolRef(graph.snapshotId(), s.id()))
-                .toList();
-        return new QueryResult.Known<>(result);
+        Symbol owner = graph.symbol(new SymbolId(scope.scope().value())).orElse(null);
+        if (owner == null) return new QueryResult.Unresolved<>(guru.interlis.model.UnresolvedReason.UNKNOWN_ID, List.of());
+        var result = new ArrayList<SymbolRef>();
+        var names = new java.util.HashSet<String>();
+        var seen = new java.util.HashSet<SymbolId>();
+        Symbol current = owner;
+        guru.interlis.model.ModelSymbol model = null;
+        while (current != null && seen.add(current.id())) {
+            addVisible(result, names, scopeMembers(current), prefix);
+            if (current instanceof guru.interlis.model.ModelSymbol selected) model = selected;
+            current = current.owner().flatMap(graph::symbol).orElse(null);
+        }
+        if (model != null) {
+            var importedMembers = new ArrayList<Symbol>();
+            var qualifiers = new ArrayList<Symbol>(); qualifiers.add(model);
+            for (var imported : model.imports()) {
+                imported.targetModel().flatMap(graph::symbol).ifPresent(target -> {
+                    qualifiers.add(target);
+                    if (imported.unqualified()) importedMembers.addAll(scopeMembers(target));
+                });
+            }
+            addVisible(result, names, importedMembers, prefix);
+            addVisible(result, names, qualifiers, prefix);
+        }
+        var language = owner.languageVersion();
+        addVisible(result, names, graph.symbols().stream()
+                .filter(symbol -> symbol.origin() instanceof guru.interlis.model.Origin.PredefinedOrigin)
+                .filter(symbol -> symbol.owner().isEmpty() && symbol.languageVersion() == language)
+                .filter(symbol -> symbol.kind() != SymbolKind.ENUM_ELEMENT).toList(), prefix);
+        return new QueryResult.Known<>(List.copyOf(result));
+    }
+
+    private List<Symbol> scopeMembers(Symbol owner) {
+        var result = new LinkedHashMap<SymbolId,Symbol>();
+        graph.symbols().stream().filter(symbol -> symbol.owner().filter(owner.id()::equals).isPresent())
+                .forEach(symbol -> result.put(symbol.id(), symbol));
+        if (graph.hasEffectiveMembers(owner.id())) for (var member : graph.effectiveMembers(owner.id()))
+            graph.symbol(member.declaredSymbol()).ifPresent(symbol -> result.putIfAbsent(symbol.id(), symbol));
+        var seen = new java.util.HashSet<SymbolId>();
+        Symbol current = owner;
+        while (current instanceof guru.interlis.model.TopicSymbol topic && topic.baseTopic().isPresent()
+                && seen.add(current.id())) {
+            current = graph.symbol(topic.baseTopic().orElseThrow()).orElse(null);
+            if (current == null) break;
+            SymbolId base = current.id();
+            var occupied = result.values().stream().map(symbol -> namespace(symbol.kind()) + ":" + symbol.name().value())
+                    .collect(java.util.stream.Collectors.toSet());
+            graph.symbols().stream().filter(symbol -> symbol.owner().filter(base::equals).isPresent())
+                    .filter(symbol -> !occupied.contains(namespace(symbol.kind()) + ":" + symbol.name().value()))
+                    .forEach(symbol -> result.putIfAbsent(symbol.id(), symbol));
+        }
+        return List.copyOf(result.values());
+    }
+
+    @Override
+    public QueryResult<List<SymbolRef>> membersOf(SymbolRef owner) {
+        return symbol(owner).map(value -> scopeMembers(value).stream()
+                .filter(member -> !member.name().synthetic())
+                .map(member -> new SymbolRef(graph.snapshotId(), member.id())).toList());
+    }
+
+    private void addVisible(List<SymbolRef> result, Set<String> seen, List<Symbol> candidates,
+                            NamePrefix prefix) {
+        var local = new java.util.HashSet<String>();
+        candidates.stream().filter(symbol -> !symbol.name().synthetic() && symbol.name().value().startsWith(prefix.value()))
+                .sorted(Comparator.comparing((Symbol symbol) -> symbol.name().value()).thenComparing(symbol -> symbol.id().value()))
+                .forEach(symbol -> {
+                    String key = namespace(symbol.kind()) + ":" + symbol.name().value();
+                    if (!seen.contains(key)) {
+                        result.add(new SymbolRef(graph.snapshotId(), symbol.id())); local.add(key);
+                    }
+                });
+        seen.addAll(local);
+    }
+
+    private static String namespace(SymbolKind kind) {
+        return switch (kind) {
+            case CLASS, STRUCTURE, ASSOCIATION, DOMAIN, VIEW -> "TYPE";
+            case ATTRIBUTE, ROLE -> "MEMBER";
+            default -> kind.name();
+        };
     }
 
     @Override

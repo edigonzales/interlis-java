@@ -277,6 +277,20 @@ Ein Gettertest für jeden Record ist nicht erforderlich. Geprüft werden die tat
 
 ## 7. Workspace, LSP und Editierfolgen
 
+P3-2 ergänzt die konkreten öffentlichen Abnahmen:
+`P3DocumentSynchronizationTest` (atomare ungültige Batches, Vollersatz,
+Clientversionen, CRLF/UTF-16 und protokollgemässe Spaltenbegrenzung),
+`P3AnalysisSchedulingTest` (blockierte Engine, aktuelle Veröffentlichung und
+Supersedierung), `P3CompletionScopeContractTest`/`P3CompletionProtocolTest`
+(Scope, Qualifizierer, Sprachversion, Ersetzungsbereich und echte Trunkierung),
+`P3ProjectRenameTest` (geschlossene Quellen, ungespeicherter Clienttext,
+Versionsedits, Diskänderung, Schreibrecht und Watcherdiagnostik) und
+`P3PresentationConfigurationTest` (gebundene Tokens, mehrzeilige Kommentare,
+Formatoptionen und atomare Konfiguration). `LspErrorContractTest` prüft falsch
+typisierte Diagrammargumente ohne Exceptiondaten; `LspProcessTest` prüft echte
+stdio-Requests vor Initialisierung und Exit auch bei weiterhin offener Eingabe.
+Diese Fallliste beschreibt die Abnahme und behauptet für sich keinen Lauf.
+
 `EditScenario` besteht aus Startquellen und einer geordneten Liste von `Update`, `Remove`, `Add`, `Analyze`, `Compile`, `Query` und gegebenenfalls `Cancel`-Schritten. Alle Revisionen und erwarteten Konflikte sind explizit.
 
 `IncrementalParityRunner.run(EditScenario scenario)` erzeugt nach jedem relevanten Schritt sowohl den Workspace-Stand als auch eine frische Engineanalyse der gleichen Quellen, Optionen und Bindungen. Verglichen werden Diagnosen, semantische Abfragen, gültiger Compile-Status und ausgewählte Diagrammprojektionen. Implementierungsmetriken wie Cache-Treffer gehören in einen zusätzlichen Bericht.

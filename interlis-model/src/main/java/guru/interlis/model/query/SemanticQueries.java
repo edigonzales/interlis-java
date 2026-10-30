@@ -104,6 +104,16 @@ public interface SemanticQueries {
     QueryResult<List<SymbolRef>> visibleSymbols(ScopeRef scope, NamePrefix prefix);
 
     /**
+     * Returns members of a known qualifier without climbing its outer scopes.
+     * Uses published effective viewable members and topic inheritance, with local
+     * declarations before inherited ones. Results are immutable and snapshot-bound.
+     *
+     * @param owner qualifier declaration in this snapshot
+     * @return members, or the same typed unknown/foreign-reference result as symbol
+     */
+    QueryResult<List<SymbolRef>> membersOf(SymbolRef owner);
+
+    /**
      * Finds symbols by fully qualified name; the result may be empty.
      *
      * @param name canonical qualified name

@@ -5488,11 +5488,11 @@
       "processEvidence": [
         {
           "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java",
-          "sha256": "18b8b2fb58b64eab705e380104ef58d00e357c3d6e171779bb55bebf376a1ab5"
+          "sha256": "c029f6ee94e1f867f1ba71ec5b81defe33bda7840cfce5505298493c344c3552"
         },
         {
           "source": "interlis-lsp/src/main/java/guru/interlis/lsp/InterlisLanguageServer.java",
-          "sha256": "cff73ee7cabe75c48a19379f2654667ccadfdaf8b7a931a6392d219cbef61659"
+          "sha256": "b0a501a4c1f16c2f690daff4fc3ffea873f84e729b065396e38c03c786ae0634"
         }
       ],
       "resolution": "Frischer tatsächlicher LSP-stdio-Prozesstest und eigene Adapter; stdout enthält ausschliesslich JSON-RPC."
@@ -5580,7 +5580,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "14a7487e6a1c096169b5f0458ba24a170e726a9694a49885540621ecb22d0df2"
+          "sha256": "5cae79fde6a91ac353233406800fde94c79870e785eec3f75831abade583f245"
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
@@ -5588,7 +5588,7 @@
         },
         {
           "source": "docs/spec/05-metamodell-und-typensystem.md",
-          "sha256": "fd65a72a51c1c2f53cb8f74964098d6990dcdf3c97336de2681c4e7685cc0ad6"
+          "sha256": "54da24d1fb19d51fc1c733596f67b06ed39635b216312e700d33a6d6c70d22f5"
         },
         {
           "source": "docs/spec/06-kompilierung-und-semantik.md",
@@ -5596,7 +5596,7 @@
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-          "sha256": "1c18bafa9d5995eb540853f89ab0265e8dc5300493b596cfbcf87c7bca4c22d9"
+          "sha256": "304af27e6b7218c64c377610d14bd884ab4f1b08ded925a68240255eda97db29"
         }
       ],
       "resolution": "Fach-/Register-/Javadocreview ist eine Inspektionsabnahme; öffentliche Invarianten zusätzlich direkt getestet."
@@ -5637,7 +5637,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "14a7487e6a1c096169b5f0458ba24a170e726a9694a49885540621ecb22d0df2"
+          "sha256": "5cae79fde6a91ac353233406800fde94c79870e785eec3f75831abade583f245"
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
@@ -5645,7 +5645,7 @@
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "3874179535328a00eb0d06a46345e97258052b12f991678b5de474e5c066baa3"
+          "sha256": "587d60f003ed0d5935bfa6bc751f43b2a3a25ff70a0e01dd10d1af9f7b96ed2c"
         }
       ],
       "resolution": "Synchron gepflegte Fachverträge/Register/Verbraucher und echte PublicSdk-/Bridge-Konstruktion; kein synthetisches Dokument-Golden."
@@ -14362,10 +14362,10 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspFeatureTest.java",
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "oldDocumentVersionsAreIgnoredAndClosingRestoresDiskText",
-      "methodStart": 13181,
-      "methodEnd": 14482,
-      "methodSha256": "7d906d44846992ed3509e8778cfa275ed487ff904ff2cfadabce749514d15c35",
-      "sourceSha256": "0e1aa3284952f4898dfb5fe8d24847a7d4da212ab7adc271b01e6ffc67d478dc",
+      "methodStart": 13453,
+      "methodEnd": 14909,
+      "methodSha256": "0213a5722db90db83a72c5faa28a18cd4de238a81d2687ea8ad81152b74d51ef",
+      "sourceSha256": "c94771fa74baaff24399e4534c1b2492e76a7554432bd24cebb2c84fde56f7d7",
       "observations": [
         "close/reopen restores disk text"
       ]
@@ -14374,10 +14374,10 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspServerTest.java",
       "suite": "guru.interlis.lsp.LspServerTest",
       "method": "openChangeDiagnosticsAndQueries",
-      "methodStart": 1974,
-      "methodEnd": 4240,
-      "methodSha256": "09c51d48c1ba510c0926bb0b18d7d9db18440937dcc153a0e693f266ad19a859",
-      "sourceSha256": "9cdd7922b2924c8eeffbea93a456bd8d8c8524348766178a98eaf144c7d332fc",
+      "methodStart": 2328,
+      "methodEnd": 4754,
+      "methodSha256": "8369ffc29869072ca4601329097e586227df287b497c0bc0f9f2e9d8534de33e",
+      "sourceSha256": "b95a279ebe5e5d6239bf0f9cbe36800b10663bd59c0679d06e8ce46dc45d7bed",
       "observations": [
         "editor diagnostics/queries",
         "LSP diagnostics",
@@ -14615,10 +14615,10 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspFeatureTest.java",
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "renameIsRejectedWhenSourceChangedAfterAnalysis",
-      "methodStart": 10538,
-      "methodEnd": 11814,
+      "methodStart": 10659,
+      "methodEnd": 11935,
       "methodSha256": "16dbba9ec80f4d7349782d4f99fa57d59ff35bffc2534704f309acba258b4f5d",
-      "sourceSha256": "0e1aa3284952f4898dfb5fe8d24847a7d4da212ab7adc271b01e6ffc67d478dc",
+      "sourceSha256": "c94771fa74baaff24399e4534c1b2492e76a7554432bd24cebb2c84fde56f7d7",
       "observations": [
         "changed document rejected"
       ]
@@ -14677,10 +14677,10 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspFeatureTest.java",
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "configurationAndWatchedFilesRefreshAreAccepted",
-      "methodStart": 11820,
-      "methodEnd": 13175,
-      "methodSha256": "036a7523e1e221774a2a8c6c1ce91cbd950725b8fcba93f266d80f170a2eefe5",
-      "sourceSha256": "0e1aa3284952f4898dfb5fe8d24847a7d4da212ab7adc271b01e6ffc67d478dc",
+      "methodStart": 11941,
+      "methodEnd": 13447,
+      "methodSha256": "e23c330d0fb38fd340f08dbff3ec5e0e3139edb6d95d5c46c8c2b683b76a8455",
+      "sourceSha256": "c94771fa74baaff24399e4534c1b2492e76a7554432bd24cebb2c84fde56f7d7",
       "observations": [
         "operations"
       ]
@@ -15103,7 +15103,7 @@
     "docs/evidence/stabilization/g2-grammar-inventory.json": "f935941ae2c7e3608c1a63060bbd80d787545d5644ef2596319dfa76b7acfedd",
     "docs/evidence/stabilization/g2-builtin-inventory.json": "e1c8f2489a31712e807a47ea5a0dbd53d3e43c9218c8167ca66539cb5b1f9a50",
     "docs/evidence/stabilization/g2-spec-contract-inventory.json": "e2bd1dcf3b627987de6c459ff0c5dc99c634215a36e5ea6ad04b7516dd50a968",
-    "testdata/g2/predefined-catalogue.json": "904865c242ffc3765e5ec98c1ab9c6d5b3e123812118c091c5a1cec6c2097517",
+    "testdata/g2/predefined-catalogue.json": "8262c026b8fe465f62a83a5418b1a208d87d3d6ac864aaf24907cb92169994e6",
     "testdata/g2/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
   }
 }

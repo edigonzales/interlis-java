@@ -15,4 +15,9 @@ public record ScopeId(String value) {
             throw new IllegalArgumentException("ScopeId must not be blank");
         }
     }
+
+    /** Canonical lexical lookup anchor owned by a semantic declaration. */
+    public static ScopeId forOwner(SymbolId owner) {
+        return new ScopeId(Objects.requireNonNull(owner, "owner").value());
+    }
 }

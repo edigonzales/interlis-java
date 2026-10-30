@@ -101,11 +101,25 @@ Die Implementierung ergänzt Nullprüfungen und defensive Kopien. `Known.value` 
 | `QueryResult<List<EffectiveMember>> effectiveMembers(SymbolRef viewable)` | Fachliche, deterministische Reihenfolge von Attributen und Rollen. |
 | `QueryResult<SymbolRef> resolveReference(ReferenceId reference)` | An diese Querysicht gebundene Referenzauflösung. |
 | `QueryResult<List<SymbolRef>> visibleSymbols(ScopeRef scope, NamePrefix prefix)` | Sichtbarkeit nach Sprachregeln; kein globales FQN-Matching. |
+| `QueryResult<List<SymbolRef>> membersOf(SymbolRef owner)` | Nur Mitglieder des Qualifizierers; effektive Viewable-Mitglieder und Topic-Vererbung, ohne Aufstieg in äussere Scopes. |
 | `List<SymbolRef> findQualifiedName(QualifiedName name)` | Alle Kandidaten; ein Duplikat ist kein Erfolg mit dem ersten Treffer. |
 | `Optional<SymbolRef> rebindSymbol(SymbolId id)` | Explizite ID-Suche im aktuellen Snapshot. |
 | `List<NameReference> referencesTo(SymbolRef target)` | Originale Referenzvorkommen, einschliesslich Namenssegmenten. |
 
 Eine nackte `ReferenceId` ist in `resolveReference` ausdrücklich lokal zur bereits gebundenen Querysicht. Wird sie ausserhalb dieser Sicht transportiert, muss sie zusammen mit deren `SnapshotId` übertragen werden; Browser-/LSP-DTOs enthalten diesen Kontext. Diese Regel gilt für alle kompakten ID-Listen in Resultaten.
+
+`ScopeId.forOwner(SymbolId)` erzeugt den kanonischen Lookupanker einer Deklaration;
+`ScopeRef` ergänzt die Snapshotidentität. Ein unbekannter Anker ergibt
+`Unresolved(UNKNOWN_ID)`, eine fremde Snapshotidentität die bestehende
+`SnapshotMismatchException`. `visibleSymbols` betrachtet zuerst lokale und
+effektive Mitglieder, danach äussere Scopes, unqualifizierte Importe und
+sprachversionspassende vordefinierte Namen. Verdeckte äussere Namen werden
+nicht zusätzlich angeboten; mehrdeutige gleichrangige Kandidaten bleiben
+getrennt. Die Reihenfolge ist lokal vor aussen und innerhalb eines Rangs
+deterministisch nach Name/Identität. `membersOf` erhält deklarierte Reihenfolge
+und ergänzt geerbte Mitglieder; lokale Topic-Mitglieder verdecken geerbte
+Namen derselben Namenskategorie. Beide Ergebnisse sind unveränderlich,
+nullfrei und an diese Querysicht gebunden; es erfolgen keine Mutation oder I/O.
 
 ## 4. Semantischer Graph und Symbolhierarchie
 

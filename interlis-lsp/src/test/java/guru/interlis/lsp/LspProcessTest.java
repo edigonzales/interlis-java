@@ -31,6 +31,8 @@ class LspProcessTest {
                 .start();
         try (OutputStream input = process.getOutputStream();
              InputStream output = new BufferedInputStream(process.getInputStream())) {
+            send(input,"{\"jsonrpc\":\"2.0\",\"id\":99,\"method\":\"workspace/executeCommand\",\"params\":{\"command\":\"interlis.compile\"}}");
+            assertTrue(readResponse(output,99).contains("-32002"));
             send(input, """
                     {"jsonrpc":"2.0","id":1,"method":"initialize","params":{
                       "processId":null,"rootUri":null,"capabilities":{}
@@ -83,12 +85,33 @@ class LspProcessTest {
             String compiled = readResponse(output, 4);
             assertTrue(compiled.contains("succeeded"), compiled);
 
+            var document=Map.of("uri",uri);
+            var cursor=Map.of("line",4,"character",8);
+            var features=List.of(
+                    Map.of("method","textDocument/hover","params",Map.of("textDocument",document,"position",cursor)),
+                    Map.of("method","textDocument/definition","params",Map.of("textDocument",document,"position",cursor)),
+                    Map.of("method","textDocument/references","params",Map.of("textDocument",document,"position",cursor,"context",Map.of("includeDeclaration",true))),
+                    Map.of("method","textDocument/rename","params",Map.of("textDocument",document,"position",cursor,"newName","renamedHeight")),
+                    Map.of("method","textDocument/completion","params",Map.of("textDocument",document,"position",cursor)),
+                    Map.of("method","textDocument/formatting","params",Map.of("textDocument",document,"options",Map.of("tabSize",4,"insertSpaces",true))),
+                    Map.of("method","textDocument/semanticTokens/full","params",Map.of("textDocument",document)),
+                    Map.of("method","textDocument/foldingRange","params",Map.of("textDocument",document)));
+            int featureId=10;
+            for(var feature:features) {
+                send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",featureId,"method",feature.get("method"),"params",feature.get("params"))));
+                String answer=readResponse(output,featureId++);
+                assertFalse(answer.contains("\"error\""),answer); assertFalse(answer.contains("\"result\":null"),answer);
+                if(feature.get("method").equals("textDocument/rename")) assertTrue(answer.contains("renamedHeight"),answer);
+                if(feature.get("method").equals("textDocument/completion")) assertTrue(answer.contains("replacementRange") || answer.contains("textEdit"),answer);
+            }
+
             send(input, "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"shutdown\",\"params\":null}");
             String shutdown = readResponse(output, 5);
             assertTrue(shutdown.contains("\"id\":5"), shutdown);
+            send(input,"{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"workspace/executeCommand\",\"params\":{\"command\":\"interlis.compile\"}}");
+            assertTrue(readResponse(output,6).contains("-32600"));
 
             send(input, "{\"jsonrpc\":\"2.0\",\"method\":\"exit\",\"params\":null}");
-            input.close();
             assertTrue(process.waitFor(10, TimeUnit.SECONDS), "LSP process did not exit");
             assertEquals(0, process.exitValue());
         } finally {
@@ -96,6 +119,15 @@ class LspProcessTest {
                 process.destroyForcibly();
             }
         }
+    }
+
+    @Test void exitWithoutShutdownTerminatesWithFailureWhileInputRemainsOpen() throws Exception {
+        var java=Path.of(System.getProperty("java.home"),"bin","java");
+        var process=new ProcessBuilder(java.toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main").start();
+        try {
+            send(process.getOutputStream(),"{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}");
+            assertTrue(process.waitFor(5,TimeUnit.SECONDS)); assertEquals(1,process.exitValue());
+        } finally { process.destroyForcibly(); }
     }
 
     private static String readResponse(InputStream input, int id) throws IOException {

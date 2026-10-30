@@ -67,6 +67,7 @@ import org.eclipse.lsp4j.ReferenceParams;
 import org.eclipse.lsp4j.RenameParams;
 import org.eclipse.lsp4j.RenameOptions;
 import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
@@ -99,22 +100,191 @@ import java.util.concurrent.atomic.AtomicReference;
 final class InterlisTextDocumentService implements TextDocumentService {
     private final Workspace workspace;
     private final Map<String, DocumentState> documents = new LinkedHashMap<>();
+    private final java.util.Set<String> unsynchronized = new java.util.HashSet<>();
+    private volatile java.util.function.Consumer<String> operations = ignored -> { };
+    private final AnalysisScheduler scheduler;
+    private final Map<String,ProjectSourceLoader.FileContent> closedFiles = new LinkedHashMap<>();
+    private volatile java.util.function.Consumer<String> externalReload;
+    private java.util.function.BiFunction<List<ProjectSourceLoader.FileContent>,CancellationToken,CompletableFuture<Void>> verifyFiles =
+            (files,token) -> failed(ResponseErrorCode.RequestFailed,"project file service is not initialized");
+    private boolean versionedEdits;
+    private long documentGeneration;
+    private final Map<String,Long> pendingFiles=new LinkedHashMap<>();
+    private CompletableFuture<Void> filesReady=CompletableFuture.completedFuture(null);
+    private Throwable filesFailure;
+    private final java.util.concurrent.atomic.AtomicInteger waitingRequests=new java.util.concurrent.atomic.AtomicInteger();
     private final LanguageQueries queries = LanguageQueries.create();
     private final AtomicReference<DiagnosticSink> sink = new AtomicReference<>();
+    private Runnable requestGuard=() -> { };
+    void requestGuard(Runnable guard) { requestGuard=Objects.requireNonNull(guard); }
 
-    InterlisTextDocumentService(Workspace workspace) {
+    InterlisTextDocumentService(Workspace workspace, guru.interlis.compiler.CompilerEngine engine,
+                                guru.interlis.compiler.CompilerServices services) {
         this.workspace = Objects.requireNonNull(workspace, "workspace");
+        scheduler = new AnalysisScheduler(workspace, engine, services, this::accepted,
+                message -> operations.accept(message));
     }
 
     void sink(DiagnosticSink sink) {
         this.sink.set(sink);
     }
 
+    void operationSink(java.util.function.Consumer<String> sink) {
+        operations = Objects.requireNonNull(sink, "sink");
+    }
+
+    void close() { scheduler.close(() -> {
+        filesReady.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing"));
+        pendingFiles.clear(); closedFiles.clear(); documents.clear(); unsynchronized.clear();
+    }); }
+
+    CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
+        try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
+        return afterFiles(scheduler::compile);
+    }
+
+    private <T> CompletableFuture<T> requestReady(java.util.function.BiFunction<HostView,CancellationToken,CompletableFuture<T>> action) {
+        try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
+        return afterFiles(() -> scheduler.requestNow(token -> {
+            HostView view=captureView();
+            return scheduler.detached(token,() -> action.apply(view,token));
+        }));
+    }
+
+    private record HostView(Map<String,DocumentState> documents,Map<SourceId,SourceText> sources,
+                            Map<String,ProjectSourceLoader.FileContent> closedFiles,java.util.Set<String> unsynchronized,
+                            boolean versionedEdits) {
+        Optional<SourceText> source(SourceId id) { return Optional.ofNullable(sources.get(id)); }
+    }
+
+    private HostView captureView() {
+        var sources=new LinkedHashMap<SourceId,SourceText>();
+        for(var id:workspace.state().sourceRevisions().keySet()) workspace.source(id).ifPresent(source -> sources.put(id,source));
+        return new HostView(Map.copyOf(documents),Map.copyOf(sources),Map.copyOf(closedFiles),java.util.Set.copyOf(unsynchronized),versionedEdits);
+    }
+
+    private <T> CompletableFuture<T> afterFiles(java.util.function.Supplier<CompletableFuture<T>> start) {
+        if(waitingRequests.incrementAndGet()>128) {
+            waitingRequests.decrementAndGet(); return failed(ResponseErrorCode.RequestFailed,"language request queue is full");
+        }
+        var active=new java.util.concurrent.atomic.AtomicReference<CompletableFuture<T>>();
+        var result=new CompletableFuture<T>() {
+            @Override public boolean cancel(boolean interrupt) {
+                boolean changed=super.cancel(interrupt); var running=active.get();
+                if(changed && running!=null) running.cancel(interrupt); return changed;
+            }
+        };
+        result.whenComplete((ignored,failure) -> waitingRequests.decrementAndGet());
+        try { scheduler.onOwner(() -> {
+            long captured=documentGeneration;
+            filesReady.whenComplete((ignored,failure) -> {
+                if(result.isDone()) return;
+                try { scheduler.onOwner(() -> {
+                    if(captured!=documentGeneration) result.completeExceptionally(LspFailures.error(ResponseErrorCode.ContentModified,"CONTENT_MODIFIED: workspace inputs changed"));
+                    else if(failure!=null) result.completeExceptionally(LspFailures.response(failure,operations));
+                    else {
+                        var current=start.get(); active.set(current);
+                        if(result.isCancelled()) current.cancel(false);
+                        current.whenComplete((value,problem) -> {
+                            if(problem!=null) result.completeExceptionally(LspFailures.response(problem,operations));
+                            else result.complete(value);
+                        });
+                    }
+                    return null;
+                }); } catch(RuntimeException closed) { result.completeExceptionally(LspFailures.response(closed,operations)); }
+            });
+            return null;
+        }); } catch(RuntimeException failure) { result.completeExceptionally(LspFailures.response(failure,operations)); }
+        return result;
+    }
+
+    boolean isOpen(String uri) { return scheduler.onOwner(() -> documents.containsKey(uri)); }
+
+    void beginExternal(String uri,long request) {
+        scheduler.onOwner(() -> {
+            documentGeneration++;
+            if(pendingFiles.isEmpty()) { filesReady=new CompletableFuture<>(); filesFailure=null; }
+            pendingFiles.put(uri,request); scheduler.invalidate(); return null;
+        });
+    }
+
+    private void finishExternal(String uri,long request,Throwable failure) {
+        if(!Objects.equals(pendingFiles.get(uri),request)) return;
+        if(failure!=null && filesFailure==null) filesFailure=failure;
+        pendingFiles.remove(uri);
+        if(pendingFiles.isEmpty()) {
+            reanalyzeOpenNow();
+            var completed=filesReady;
+            filesReady=CompletableFuture.completedFuture(null);
+            if(filesFailure==null) completed.complete(null); else completed.completeExceptionally(LspFailures.response(filesFailure,operations));
+            filesFailure=null;
+        }
+    }
+
+    void externalFailed(String uri,long request,Throwable failure) {
+        scheduler.onOwner(() -> {
+            if(Objects.equals(pendingFiles.get(uri),request) && !documents.containsKey(uri)) {
+                closedFiles.remove(uri); deleteExternalNow(uri);
+            }
+            finishExternal(uri,request,failure); return null;
+        });
+    }
+
+    void fileServices(java.util.function.Consumer<String> reload,
+            java.util.function.BiFunction<List<ProjectSourceLoader.FileContent>,CancellationToken,CompletableFuture<Void>> verify) {
+        externalReload=Objects.requireNonNull(reload);
+        scheduler.onOwner(() -> { verifyFiles=Objects.requireNonNull(verify); return null; });
+    }
+
+    void versionedEdits(boolean supported) { scheduler.onOwner(() -> { versionedEdits=supported; return null; }); }
+
+    void installProject(ProjectSourceLoader.Project project,java.util.function.Predicate<String> current) {
+        scheduler.onOwner(() -> {
+            var updates=new ArrayList<SourceUpdate>();
+            var acceptedFiles=new LinkedHashMap<String,ProjectSourceLoader.FileContent>();
+            for(var file:project.files()) {
+                var source=file.loaded(); String uri=source.sourceId().value();
+                if(!current.test(uri)) continue;
+                acceptedFiles.put(uri,file);
+                if(documents.containsKey(uri)) continue;
+                var previous=workspace.source(source.sourceId());
+                updates.add(new SourceUpdate(source.sourceId(),previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
+                        .orElseGet(SourceExpectation.Absent::new),new SourceChange.Replace(source.text())));
+            }
+            workspace.applyBatch(updates,workspace.currentRevision());
+            closedFiles.putAll(acceptedFiles); reanalyzeOpenNow(); return null;
+        });
+    }
+
+    void applyExternal(String uri,long request,Optional<ProjectSourceLoader.FileContent> file,java.util.function.BooleanSupplier current) {
+        scheduler.onOwner(() -> {
+            if(!current.getAsBoolean()) return null;
+            if(file.isPresent()) closedFiles.put(uri,file.get()); else closedFiles.remove(uri);
+            if(documents.containsKey(uri)) { finishExternal(uri,request,null); return null; }
+            if(file.isEmpty()) deleteExternalNow(uri);
+            else {
+                var id=new SourceId(uri); var previous=workspace.source(id);
+                workspace.update(new SourceUpdate(id,previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
+                        .orElseGet(SourceExpectation.Absent::new),new SourceChange.Replace(file.get().loaded().text())));
+            }
+            finishExternal(uri,request,null); return null;
+        });
+    }
+
+    void operation(String message) { try { operations.accept(message); } catch(RuntimeException unavailable) { /* disconnected client */ } }
+
     @Override
-    public synchronized void didOpen(DidOpenTextDocumentParams params) {
+    public void didOpen(DidOpenTextDocumentParams params) {
+        if(!notificationReady()) return;
+        scheduler.onOwner(() -> { didOpenNow(params); return null; });
+    }
+
+    private void didOpenNow(DidOpenTextDocumentParams params) {
+        documentGeneration++;
         String uri = params.getTextDocument().getUri();
         String text = params.getTextDocument().getText();
         SourceId sourceId = new SourceId(uri);
+        unsynchronized.remove(uri);
         var existing = workspace.source(sourceId);
         if (existing.isEmpty()) {
             workspace.update(new SourceUpdate(sourceId, new SourceExpectation.Absent(),
@@ -128,25 +298,55 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public synchronized void didChange(DidChangeTextDocumentParams params) {
+    public void didChange(DidChangeTextDocumentParams params) {
+        if(!notificationReady()) return;
+        scheduler.onOwner(() -> { didChangeNow(params); return null; });
+    }
+
+    private void didChangeNow(DidChangeTextDocumentParams params) {
         String uri = params.getTextDocument().getUri();
         DocumentState previous = documents.get(uri);
         if (previous == null || params.getTextDocument().getVersion() <= previous.lspVersion) {
             return;
         }
+        documentGeneration++;
         SourceId sourceId = new SourceId(uri);
         SourceText current = workspace.source(sourceId).orElseThrow(
                 () -> new IllegalStateException("document is not open: " + uri));
-        String text = materialize(current, params.getContentChanges());
+        if (unsynchronized.contains(uri) && (params.getContentChanges().isEmpty()
+                || params.getContentChanges().getFirst().getRange() != null)) {
+            documents.put(uri, new DocumentState(previous.sourceId, params.getTextDocument().getVersion(),
+                    previous.source, previous.analysis));
+            return;
+        }
+        String text;
+        try { text = materialize(current, params.getContentChanges()); }
+        catch (ResponseErrorException invalid) {
+            unsynchronized.add(uri);
+            scheduler.invalidate();
+            documents.put(uri, new DocumentState(previous.sourceId, params.getTextDocument().getVersion(),
+                    previous.source, previous.analysis));
+            operations.accept("Invalid didChange range for " + uri
+                    + "; full document resynchronization is required (full replacement or reopen).");
+            return;
+        }
+        unsynchronized.remove(uri);
         workspace.update(new SourceUpdate(sourceId,
                 new SourceExpectation.At(current.revision()), new SourceChange.Replace(text)));
         analyze(uri, params.getTextDocument().getVersion());
     }
 
     @Override
-    public synchronized void didClose(DidCloseTextDocumentParams params) {
+    public void didClose(DidCloseTextDocumentParams params) {
+        if(!notificationReady()) return;
+        scheduler.onOwner(() -> { didCloseNow(params); return null; });
+    }
+
+    private void didCloseNow(DidCloseTextDocumentParams params) {
         String uri = params.getTextDocument().getUri();
-        documents.remove(uri);
+        if(documents.remove(uri)==null) return;
+        documentGeneration++;
+        unsynchronized.remove(uri);
         SourceId id = new SourceId(uri);
         if (uri.startsWith("file:")) {
             reloadExternal(uri);
@@ -162,7 +362,17 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public synchronized void didSave(DidSaveTextDocumentParams params) {
+    public void didSave(DidSaveTextDocumentParams params) {
+        if(!notificationReady()) return;
+        scheduler.onOwner(() -> { didSaveNow(params); return null; });
+    }
+
+    boolean notificationReady() {
+        try { requestGuard.run(); return true; }
+        catch(ResponseErrorException unavailable) { operation(unavailable.getResponseError().getMessage()); return false; }
+    }
+
+    private void didSaveNow(DidSaveTextDocumentParams params) {
         String uri = params.getTextDocument().getUri();
         DocumentState state = documents.get(uri);
         if (state != null) {
@@ -172,14 +382,19 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<Hover> hover(HoverParams params) {
-        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+        var captured = copyParams(params, HoverParams.class);
+        return requestReady((view, token) -> hoverNow(view, captured, token));
+    }
+
+    private CompletableFuture<Hover> hoverNow(HostView view, HoverParams params, CancellationToken token) {
+        DocumentState state = requireState(view, params.getPosition(), params.getTextDocument());
         SourceRange cursor = cursor(state, params.getPosition());
         QueryResult<HoverInfo> result = queries.hover(state.analysis, cursor,
-                CancellationToken.none());
+                token);
         if (result instanceof QueryResult.Known<HoverInfo> known) {
             HoverInfo info = known.value();
-            MarkupContent content = new MarkupContent(MarkupKind.MARKDOWN,
-                    "```interlis\n" + info.signature() + "\n```"
+            MarkupContent content = new MarkupContent(MarkupKind.PLAINTEXT,
+                    info.signature()
                             + (info.documentation().isBlank() ? "" : "\n\n" + info.documentation()));
             return CompletableFuture.completedFuture(new Hover(content));
         }
@@ -187,15 +402,19 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<Either<List<? extends Location>, List<? extends org.eclipse.lsp4j.LocationLink>>>
-            definition(DefinitionParams params) {
-        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+    public CompletableFuture<Either<List<? extends Location>, List<? extends org.eclipse.lsp4j.LocationLink>>> definition(DefinitionParams params) {
+        var captured = copyParams(params, DefinitionParams.class);
+        return requestReady((view, token) -> definitionNow(view, captured, token));
+    }
+
+    private CompletableFuture<Either<List<? extends Location>, List<? extends org.eclipse.lsp4j.LocationLink>>> definitionNow(HostView view, DefinitionParams params, CancellationToken token) {
+        DocumentState state = requireState(view, params.getPosition(), params.getTextDocument());
         SourceRange cursor = cursor(state, params.getPosition());
         QueryResult<DefinitionTarget> result = queries.definition(state.analysis, cursor,
-                CancellationToken.none());
+                token);
         if (result instanceof QueryResult.Known<DefinitionTarget> known) {
             DefinitionTarget target = known.value();
-            SourceText targetSource = workspace.source(target.nameRange().source()).orElse(null);
+            SourceText targetSource = view.source(target.nameRange().source()).orElse(null);
             if (targetSource != null) {
                 return CompletableFuture.completedFuture(Either.forLeft(List.of(
                         new Location(target.nameRange().source().value(),
@@ -206,33 +425,42 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(
-            CompletionParams params) {
-        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
-        SourceText source = workspace.source(state.sourceId).orElseThrow();
+    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams params) {
+        var captured = copyParams(params, CompletionParams.class);
+        return requestReady((view, token) -> completionNow(view, captured, token));
+    }
+
+    private CompletableFuture<Either<List<CompletionItem>, CompletionList>> completionNow(HostView view, CompletionParams params, CancellationToken token) {
+        DocumentState state = requireState(view, params.getPosition(), params.getTextDocument());
+        SourceText source = view.source(state.sourceId).orElseThrow();
         int offset = offsetAt(source, params.getPosition());
         String prefix = prefixAt(source.text(), offset);
         CompletionResult result = queries.complete(state.analysis,
                 new CompletionQuery(cursor(state, params.getPosition()),
-                        new NamePrefix(prefix), 100), CancellationToken.none());
+                        new NamePrefix(prefix), 100), token);
         List<CompletionItem> items = new ArrayList<>();
+        int rank = 0;
         for (CompletionCandidate candidate : result.candidates()) {
             CompletionItem item = new CompletionItem(candidate.label());
             item.setKind(completionKind(candidate));
             item.setDetail(candidate.detail());
+            item.setInsertText(candidate.insertText());
+            item.setTextEdit(Either.forLeft(new TextEdit(toLspRange(state.source, result.replacementRange()), candidate.insertText())));
+            item.setSortText(String.format(java.util.Locale.ROOT, "%06d", rank++));
             items.add(item);
         }
-        return CompletableFuture.completedFuture(Either.forLeft(items));
+        return CompletableFuture.completedFuture(Either.forRight(new CompletionList(result.incomplete(), items)));
     }
 
     @Override
-    public CompletableFuture<List<Either<org.eclipse.lsp4j.SymbolInformation, DocumentSymbol>>>
-            documentSymbol(DocumentSymbolParams params) {
+    public CompletableFuture<List<Either<org.eclipse.lsp4j.SymbolInformation, DocumentSymbol>>> documentSymbol(DocumentSymbolParams params) {
+        var captured = copyParams(params, DocumentSymbolParams.class);
+        return requestReady((view, token) -> documentSymbolNow(view, captured, token));
+    }
+
+    private CompletableFuture<List<Either<org.eclipse.lsp4j.SymbolInformation, DocumentSymbol>>> documentSymbolNow(HostView view, DocumentSymbolParams params, CancellationToken token) {
         String uri = params.getTextDocument().getUri();
-        DocumentState state = documents.get(uri);
-        if (state == null) {
-            return CompletableFuture.completedFuture(List.of());
-        }
+        DocumentState state = requireState(view, new Position(0, 0), params.getTextDocument());
         List<Either<org.eclipse.lsp4j.SymbolInformation, DocumentSymbol>> result = new ArrayList<>();
         for (Symbol symbol : state.analysis.semanticGraph().declarationsInOrder()) {
             if (symbol.origin() instanceof guru.interlis.model.Origin.DeclaredOrigin declared
@@ -250,24 +478,29 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<List<? extends Location>> references(ReferenceParams params) {
-        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+        var captured = copyParams(params, ReferenceParams.class);
+        return requestReady((view, token) -> referencesNow(view, captured, token));
+    }
+
+    private CompletableFuture<List<? extends Location>> referencesNow(HostView view, ReferenceParams params, CancellationToken token) {
+        DocumentState state = requireState(view, params.getPosition(), params.getTextDocument());
         SourceRange cursor = cursor(state, params.getPosition());
         QueryResult<SymbolRef> selected = queries.symbolAt(state.analysis, cursor,
-                CancellationToken.none());
+                token);
         if (!(selected instanceof QueryResult.Known<SymbolRef> known)) {
             return CompletableFuture.completedFuture(List.of());
         }
         boolean includeDeclaration = params.getContext() == null
                 || params.getContext().isIncludeDeclaration();
         ReferenceResult result = queries.references(state.analysis, known.value(),
-                new ReferenceOptions(includeDeclaration), CancellationToken.none());
+                new ReferenceOptions(includeDeclaration), token);
+        if(!result.complete()) return failed(ResponseErrorCode.RequestFailed,"workspace reference search is incomplete");
         List<Location> locations = new ArrayList<>();
         for (var occurrence : result.references()) {
-            SourceText source = workspace.source(occurrence.range().source()).orElse(null);
-            if (source != null && source.revision().equals(occurrence.range().revision())) {
-                locations.add(new Location(occurrence.range().source().value(),
-                        toLspRange(source, occurrence.range())));
-            }
+            SourceText source = view.source(occurrence.range().source()).orElse(null);
+            if(source==null || !source.revision().equals(occurrence.range().revision()))
+                return failed(ResponseErrorCode.ContentModified,"CONTENT_MODIFIED: reference source changed");
+            locations.add(new Location(occurrence.range().source().value(),toLspRange(source,occurrence.range())));
         }
         return CompletableFuture.completedFuture(locations);
     }
@@ -275,27 +508,40 @@ final class InterlisTextDocumentService implements TextDocumentService {
     @Override
     public CompletableFuture<Either3<Range, org.eclipse.lsp4j.PrepareRenameResult,
             PrepareRenameDefaultBehavior>> prepareRename(PrepareRenameParams params) {
-        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+        var captured = copyParams(params, PrepareRenameParams.class);
+        return requestReady((view, token) -> prepareRenameNow(view, captured, token));
+    }
+
+    private CompletableFuture<Either3<Range, org.eclipse.lsp4j.PrepareRenameResult,
+            PrepareRenameDefaultBehavior>> prepareRenameNow(HostView view, PrepareRenameParams params, CancellationToken token) {
+        DocumentState state = requireState(view, params.getPosition(), params.getTextDocument());
         RenamePreparation preparation = queries.prepareRename(state.analysis,
-                cursor(state, params.getPosition()), CancellationToken.none());
+                cursor(state, params.getPosition()), token);
         if (!preparation.allowed()) {
             return failed(ResponseErrorCode.RequestFailed,
                     preparation.reason().orElse("rename is not allowed"));
         }
         SourceRange range = preparation.range().orElseThrow();
-        if (!documents.containsKey(range.source().value())) {
+        if (!editable(view,range.source())) {
             return failed(ResponseErrorCode.RequestFailed,
-                    "rename target is not an editable open source");
+                    "rename target is not an editable workspace source");
         }
+        SourceText targetSource=view.source(range.source()).orElseThrow();
         return CompletableFuture.completedFuture(Either3.forFirst(
-                toLspRange(state.source, range)));
+                toLspRange(targetSource, range)));
     }
 
     @Override
     public CompletableFuture<WorkspaceEdit> rename(RenameParams params) {
-        DocumentState state = requireState(params.getPosition(), params.getTextDocument());
+        var captured = copyParams(params, RenameParams.class);
+        return requestReady((view, token) -> renameNow(view, captured, token));
+    }
+
+    private CompletableFuture<WorkspaceEdit> renameNow(HostView view, RenameParams params, CancellationToken token) {
+        DocumentState state = requireState(view, params.getPosition(), params.getTextDocument());
+        if(params.getNewName()==null) return failed(ResponseErrorCode.InvalidParams,"newName is required");
         QueryResult<SymbolRef> selected = queries.symbolAt(state.analysis,
-                cursor(state, params.getPosition()), CancellationToken.none());
+                cursor(state, params.getPosition()), token);
         if (!(selected instanceof QueryResult.Known<SymbolRef> known)) {
             return failed(ResponseErrorCode.RequestFailed, "no editable symbol at cursor");
         }
@@ -303,7 +549,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         try {
             plan = queries.planRename(state.analysis, new RenameRequest(known.value(),
                     params.getNewName(), state.analysis.sourceRevisions()),
-                    CancellationToken.none());
+                    token);
         } catch (IllegalArgumentException invalidName) {
             return failed(ResponseErrorCode.InvalidParams, invalidName.getMessage());
         }
@@ -313,13 +559,15 @@ final class InterlisTextDocumentService implements TextDocumentService {
             return failed(code, plan.reason().orElse("rename could not be planned"));
         }
         Map<String, List<TextEdit>> changes = new LinkedHashMap<>();
+        var versioned=new ArrayList<Either<TextDocumentEdit,org.eclipse.lsp4j.ResourceOperation>>();
+        var closed=new ArrayList<ProjectSourceLoader.FileContent>();
         for (var document : plan.edits()) {
-            if (!documents.containsKey(document.source().value())) {
+            if (!editable(view,document.source())) {
                 return failed(ResponseErrorCode.RequestFailed,
-                        "rename would modify a non-open/read-only source: "
+                        "rename would modify an unavailable/read-only source: "
                                 + document.source().value());
             }
-            SourceText source = workspace.source(document.source()).orElse(null);
+            SourceText source = view.source(document.source()).orElse(null);
             if (source == null || !source.revision().equals(document.expected())) {
                 return failed(ResponseErrorCode.ContentModified, "CONTENT_MODIFIED");
             }
@@ -328,19 +576,39 @@ final class InterlisTextDocumentService implements TextDocumentService {
                             edit.replacement()))
                     .toList();
             changes.put(document.source().value(), edits);
+            var open=view.documents().get(document.source().value());
+            versioned.add(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(
+                    document.source().value(),open==null?null:open.lspVersion),edits)));
+            if(open==null) closed.add(view.closedFiles().get(document.source().value()));
         }
         WorkspaceEdit edit = new WorkspaceEdit();
-        edit.setChanges(changes);
-        return CompletableFuture.completedFuture(edit);
+        if(view.versionedEdits()) { edit.setChanges(null); edit.setDocumentChanges(versioned); } else edit.setChanges(changes);
+        return closed.isEmpty() ? CompletableFuture.completedFuture(edit)
+                : verifyFiles.apply(List.copyOf(closed),token).thenApply(ignored -> edit);
+    }
+
+    private static boolean editable(HostView view,SourceId id) {
+        var known=view.closedFiles().get(id.value());
+        return view.documents().containsKey(id.value()) ? known==null || known.editable() : known!=null && known.editable();
     }
 
     @Override
     public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
-        DocumentState state = requireState(new Position(0, 0), params.getTextDocument());
+        var captured = copyParams(params, DocumentFormattingParams.class);
+        return requestReady((view, token) -> formattingNow(view, captured, token));
+    }
+
+    private CompletableFuture<List<? extends TextEdit>> formattingNow(HostView view, DocumentFormattingParams params, CancellationToken token) {
+        DocumentState state = requireState(view, new Position(0, 0), params.getTextDocument());
+        var preferences=params.getOptions();
+        if(preferences==null || preferences.getTabSize()<1 || preferences.getTabSize()>16)
+            return failed(ResponseErrorCode.InvalidParams,"tabSize must be between 1 and 16");
         FormatOutcome outcome = ModelFormatters.create().format(state.source,
-                FormatOptions.defaults(), CancellationToken.none());
-        if (!(outcome instanceof FormatOutcome.Formatted formatted)
-                || formatted.text().equals(state.source.text())) {
+                new FormatOptions(preferences.getTabSize(),FormatOptions.LineEnding.PRESERVE,true), token);
+        if(outcome instanceof FormatOutcome.Cancelled cancelled) return failed(ResponseErrorCode.RequestCancelled,"formatting cancelled: "+cancelled.reason());
+        if(outcome instanceof FormatOutcome.Rejected) return failed(ResponseErrorCode.RequestFailed,"source cannot be formatted without changing its meaning");
+        var formatted=(FormatOutcome.Formatted)outcome;
+        if (formatted.text().equals(state.source.text())) {
             return CompletableFuture.completedFuture(List.of());
         }
         return CompletableFuture.completedFuture(List.of(new TextEdit(
@@ -350,9 +618,14 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(CodeActionParams params) {
-        DocumentState state = requireState(params.getRange().getStart(), params.getTextDocument());
+        var captured = copyParams(params, CodeActionParams.class);
+        return requestReady((view, token) -> codeActionNow(view, captured, token));
+    }
+
+    private CompletableFuture<List<Either<Command, CodeAction>>> codeActionNow(HostView view, CodeActionParams params, CancellationToken token) {
+        DocumentState state = requireState(view, params.getRange().getStart(), params.getTextDocument());
         FormatOutcome outcome = ModelFormatters.create().format(state.source,
-                FormatOptions.defaults(), CancellationToken.none());
+                FormatOptions.defaults(), token);
         if (!(outcome instanceof FormatOutcome.Formatted formatted)
                 || formatted.text().equals(state.source.text())) {
             return CompletableFuture.completedFuture(List.of());
@@ -367,53 +640,55 @@ final class InterlisTextDocumentService implements TextDocumentService {
         return CompletableFuture.completedFuture(List.of(Either.forRight(action)));
     }
 
-    synchronized void configurationChanged() {
-        reanalyzeOpen();
+    void configurationChanged(Object settings) {
+        scheduler.onOwner(() -> {
+            guru.interlis.workspace.WorkspaceConfiguration configuration;
+            try { configuration=LspConfiguration.read(settings,workspace.configuration()); }
+            catch(IllegalArgumentException | ArithmeticException invalid) {
+                operation("Invalid INTERLIS configuration; previous configuration retained"); return null;
+            }
+            var receipt=workspace.configure(configuration,workspace.state().revision());
+            if(receipt.changed()) { documentGeneration++; reanalyzeOpenNow(); }
+            return null;
+        });
     }
 
-    synchronized void reloadExternal(String uri) {
-        if (documents.containsKey(uri) || !uri.startsWith("file:")) {
-            return;
-        }
-        try {
-            java.net.URI fileUri = java.net.URI.create(uri);
-            if (!java.nio.file.Files.exists(java.nio.file.Path.of(fileUri))) {
-                deleteExternal(uri);
-                return;
-            }
-            guru.interlis.repository.FileSourceLoader loader =
-                    new guru.interlis.repository.FileSourceLoader(java.nio.file.Path.of("."));
-            var loaded = loader.load(new guru.interlis.repository.SourceLocator(
-                            java.nio.file.Path.of(fileUri).toString()),
-                    guru.interlis.repository.FetchPolicy.defaults(), CancellationToken.none());
-            SourceId sourceId = new SourceId(uri);
-            var existing = workspace.source(sourceId);
-            if (existing.isPresent() && existing.get().text().equals(loaded.text())) {
-                return;
-            }
-            SourceExpectation expectation = existing
-                    .<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
-                    .orElseGet(SourceExpectation.Absent::new);
-            workspace.update(new SourceUpdate(sourceId, expectation,
-                    new SourceChange.Replace(loaded.text())));
-        } catch (RuntimeException ignored) {
-            // A watched file may disappear between notification and read.
-        }
+    void reloadExternal(String uri) { Objects.requireNonNull(externalReload,"project file service").accept(uri); }
+
+    void deleteExternal(String uri) {
+        scheduler.onOwner(() -> {
+            if(documents.containsKey(uri)) return null;
+            documentGeneration++; closedFiles.remove(uri); deleteExternalNow(uri);
+            var request=pendingFiles.get(uri);
+            if(request!=null) finishExternal(uri,request,null); else reanalyzeOpenNow();
+            return null;
+        });
     }
 
-    synchronized void deleteExternal(String uri) {
+    private void deleteExternalNow(String uri) {
         if (documents.containsKey(uri)) return;
         SourceId id = new SourceId(uri);
         workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
     }
 
-    synchronized void reanalyzeOpen() {
+    void reanalyzeOpen() {
+        scheduler.onOwner(() -> { reanalyzeOpenNow(); return null; });
+    }
+
+    private void reanalyzeOpenNow() {
         for (String uri : List.copyOf(documents.keySet())) {
             DocumentState state = documents.get(uri);
             if (state != null) {
-                analyze(uri, state.lspVersion);
+                documents.put(uri,new DocumentState(state.sourceId,state.lspVersion,state.source,null));
             }
         }
+        if(pendingFiles.isEmpty()) scheduler.schedule(); else scheduler.invalidate();
+    }
+
+    private static <T> T copyParams(T value, Class<T> type) {
+        if(value==null) throw LspFailures.error(ResponseErrorCode.InvalidParams,"parameters are required");
+        var gson = new com.google.gson.Gson();
+        return gson.fromJson(gson.toJsonTree(value), type);
     }
 
     private static <T> CompletableFuture<T> failed(ResponseErrorCode code, String message) {
@@ -423,16 +698,27 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     @Override
     public CompletableFuture<SemanticTokens> semanticTokensFull(SemanticTokensParams params) {
-        DocumentState state = requireState(new Position(0, 0), params.getTextDocument());
-        List<Integer> data = semanticTokens(state);
+        var captured = copyParams(params, SemanticTokensParams.class);
+        return requestReady((view, token) -> semanticTokensFullNow(view, captured, token));
+    }
+
+    private CompletableFuture<SemanticTokens> semanticTokensFullNow(HostView view, SemanticTokensParams params, CancellationToken token) {
+        DocumentState state = requireState(view, new Position(0, 0), params.getTextDocument());
+        List<Integer> data = semanticTokens(state,token);
         return CompletableFuture.completedFuture(new SemanticTokens(data));
     }
 
     @Override
     public CompletableFuture<List<FoldingRange>> foldingRange(FoldingRangeRequestParams params) {
-        DocumentState state = requireState(new Position(0, 0), params.getTextDocument());
+        var captured = copyParams(params, FoldingRangeRequestParams.class);
+        return requestReady((view, token) -> foldingRangeNow(view, captured, token));
+    }
+
+    private CompletableFuture<List<FoldingRange>> foldingRangeNow(HostView view, FoldingRangeRequestParams params, CancellationToken token) {
+        DocumentState state = requireState(view, new Position(0, 0), params.getTextDocument());
         List<FoldingRange> ranges = new ArrayList<>();
         for (Symbol symbol : state.analysis.semanticGraph().declarationsInOrder()) {
+            token.throwIfCancellationRequested();
             if (symbol.origin() instanceof guru.interlis.model.Origin.DeclaredOrigin declared
                     && declared.range().source().equals(state.sourceId)) {
                 var range = toLspRange(state.source, declared.range());
@@ -442,56 +728,80 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 }
             }
         }
+        state.analysis.syntaxSnapshot(state.sourceId).ifPresent(syntax -> {
+            for(var trivia:syntax.trivia()) {
+                token.throwIfCancellationRequested();
+                if(trivia.kind()==guru.interlis.syntax.TriviaKind.WHITESPACE_GAP) continue;
+                var range=toLspRange(state.source,trivia.range());
+                if(range.getEnd().getLine()>range.getStart().getLine()) {
+                    var fold=new FoldingRange(range.getStart().getLine(),range.getEnd().getLine());
+                    fold.setKind("comment"); ranges.add(fold);
+                }
+            }
+        });
         ranges.sort(Comparator.comparingInt(FoldingRange::getStartLine)
                 .thenComparingInt(FoldingRange::getEndLine));
         return CompletableFuture.completedFuture(ranges);
     }
 
-    private static List<Integer> semanticTokens(DocumentState state) {
-        List<SyntaxToken> tokens = new ArrayList<>();
-        for (SyntaxToken token : state.analysis.syntaxSnapshot(state.sourceId)
-                .map(snapshot -> snapshot.tokens()).orElse(List.of())) {
-            if (token.kind() != guru.interlis.syntax.TokenKind.EOF
-                    && token.kind() != guru.interlis.syntax.TokenKind.PUNCTUATION) {
-                tokens.add(token);
+    static final List<String> TOKEN_TYPES=List.of("keyword","number","string","enumMember","function","variable","property","namespace","class","type","comment");
+
+    private List<Integer> semanticTokens(DocumentState state,CancellationToken cancellation) {
+        record Span(SourceRange range,int type) { }
+        var spans=new ArrayList<Span>();
+        state.analysis.syntaxSnapshot(state.sourceId).ifPresent(syntax -> {
+            for(var token:syntax.tokens()) {
+                cancellation.throwIfCancellationRequested();
+                int type=switch(token.kind()) {
+                    case KEYWORD -> 0; case NUMBER -> 1; case STRING -> 2;
+                    case IDENTIFIER -> {
+                        var result=queries.symbolAt(state.analysis,state.source.range(token.range().startOffset(),token.range().startOffset()),cancellation);
+                        if(result instanceof QueryResult.Known<SymbolRef> known) {
+                            var symbol=state.analysis.semanticGraph().symbol(known.value().symbol()).orElseThrow();
+                            yield switch(symbol.kind()) {
+                                case MODEL,TOPIC,CONTEXT,METADATA_BASKET -> 7;
+                                case CLASS,STRUCTURE,ASSOCIATION,VIEW -> 8;
+                                case DOMAIN,UNIT,LINE_FORM -> 9;
+                                case FUNCTION -> 4; case ENUM_ELEMENT -> 3;
+                                case ATTRIBUTE,ROLE -> 6; default -> 5;
+                            };
+                        }
+                        yield 5;
+                    }
+                    default -> -1;
+                };
+                if(type>=0) spans.add(new Span(token.range(),type));
             }
-        }
-        tokens.sort(Comparator.comparingInt(token -> token.range().startOffset()));
+            for(var trivia:syntax.trivia()) if(trivia.kind()!=guru.interlis.syntax.TriviaKind.WHITESPACE_GAP) spans.add(new Span(trivia.range(),10));
+        });
+        spans.sort(Comparator.comparingInt(span -> span.range().startOffset()));
         List<Integer> data = new ArrayList<>();
         int lastLine = 0;
         int lastCharacter = 0;
-        for (SyntaxToken token : tokens) {
-            var start = state.source.lineMap().positionAt(token.range().startOffset());
-            int type = switch (token.kind()) {
-                case KEYWORD -> 0;
-                case NUMBER -> 1;
-                case STRING -> 2;
-                case IDENTIFIER -> 5;
-                default -> 6;
-            };
-            int deltaLine = start.line() - lastLine;
-            int deltaCharacter = deltaLine == 0 ? start.character() - lastCharacter
-                    : start.character();
-            int length = Math.max(1, token.range().length());
-            data.add(deltaLine);
-            data.add(deltaCharacter);
-            data.add(length);
-            data.add(type);
-            data.add(0);
-            lastLine = start.line();
-            lastCharacter = start.character();
+        var lines=state.source.lineMap();
+        for(var span:spans) {
+            int first=lines.positionAt(span.range().startOffset()).line();
+            int last=lines.positionAt(span.range().endOffset()).line();
+            for(int line=first;line<=last;line++) {
+                cancellation.throwIfCancellationRequested();
+                int start=Math.max(span.range().startOffset(),lines.lineStart(line));
+                int end=Math.min(span.range().endOffset(),lines.lineContentEnd(line));
+                if(end<=start) continue;
+                int character=start-lines.lineStart(line),deltaLine=line-lastLine;
+                data.add(deltaLine); data.add(deltaLine==0?character-lastCharacter:character);
+                data.add(end-start); data.add(span.type()); data.add(0);
+                lastLine=line; lastCharacter=character;
+            }
         }
         return data;
     }
 
     CompletableFuture<String> diagram(DiagramParams params) {
-        DocumentState state = documents.get(params.uri());
-        if (state == null) {
-            return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
-                    new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
-                            org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,
-                            "document is not open: " + params.uri(), null)));
-        }
+        return requestReady((view, token) -> diagramNow(view, params, token));
+    }
+
+    private CompletableFuture<String> diagramNow(HostView view, DiagramParams params, CancellationToken token) {
+        DocumentState state = requireState(view, new Position(0, 0), new TextDocumentIdentifier(params.uri()));
         if (params.snapshotId() != null
                 && !params.snapshotId().equals(state.analysis.snapshotId().value())) {
             return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
@@ -524,7 +834,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         DiagramOptions options = DiagramOptions.defaults(new DiagramSelection(selected));
         DiagramProjectionOutcome outcome = DiagramProjectors.create().project(
                 new DiagramInput.FromAnalysis(state.analysis), options,
-                CancellationToken.none());
+                token);
         if (outcome instanceof DiagramProjectionOutcome.Rejected rejected) {
             return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
                     new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
@@ -535,25 +845,43 @@ final class InterlisTextDocumentService implements TextDocumentService {
         return CompletableFuture.completedFuture(new DiagramJsonCodec().encode(document));
     }
 
-    private DocumentState requireState(Position position, TextDocumentIdentifier document) {
+    private static DocumentState requireState(HostView view,Position position, TextDocumentIdentifier document) {
+        if(document==null || document.getUri()==null || document.getUri().isBlank())
+            throw LspFailures.error(ResponseErrorCode.InvalidParams,"document URI is required");
         String uri = document.getUri();
-        DocumentState state = documents.get(uri);
+        DocumentState state = view.documents().get(uri);
         if (state == null) {
-            throw new IllegalStateException("document is not open: " + uri);
+            throw new ResponseErrorException(new ResponseError(ResponseErrorCode.InvalidParams,
+                    "document is not available", null));
         }
+        if (view.unsynchronized().contains(uri)) throw new ResponseErrorException(new ResponseError(
+                ResponseErrorCode.ContentModified, "full document resynchronization is required", null));
+        if (view.source(state.sourceId).filter(source -> source.revision().equals(state.source.revision())).isEmpty()
+                || state.analysis == null) throw new ResponseErrorException(new ResponseError(
+                ResponseErrorCode.ContentModified, "CONTENT_MODIFIED: document revision changed", null));
+        PositionMapper.toOffset(state.source, position);
         return state;
     }
 
     private void analyze(String uri, int lspVersion) {
         SourceId sourceId = new SourceId(uri);
         SourceText source = workspace.source(sourceId).orElseThrow();
-        AnalysisSnapshot analysis = workspace.analyze(new AnalysisRequest(
-                workspace.currentRevision(),
-                List.of(new guru.interlis.compiler.ModelSelector.BySource(sourceId))),
-                CancellationToken.none());
-        DocumentState state = new DocumentState(sourceId, lspVersion, source, analysis);
+        DocumentState state = new DocumentState(sourceId, lspVersion, source, null);
         documents.put(uri, state);
-        publish(state);
+        if(pendingFiles.isEmpty()) scheduler.schedule(); else scheduler.invalidate();
+    }
+
+    private void accepted(AnalysisSnapshot analysis) {
+        for (String uri : List.copyOf(documents.keySet())) {
+            if (unsynchronized.contains(uri)) continue;
+            var previous = documents.get(uri);
+            var source = workspace.source(previous.sourceId);
+            if (source.isEmpty() || !source.get().revision().equals(previous.source.revision())
+                    || !source.get().revision().equals(analysis.sourceRevisions().get(previous.sourceId))) continue;
+            var state = new DocumentState(previous.sourceId, previous.lspVersion, source.orElseThrow(), analysis);
+            documents.put(uri, state);
+            publish(state);
+        }
     }
 
     private void publish(DocumentState state) {
@@ -580,7 +908,9 @@ final class InterlisTextDocumentService implements TextDocumentService {
         diagnostics.sort(Comparator.comparingInt((org.eclipse.lsp4j.Diagnostic d) ->
                         d.getRange().getStart().getLine())
                 .thenComparingInt(d -> d.getRange().getStart().getCharacter()));
-        current.publish(new PublishDiagnosticsParams(state.sourceId.value(), diagnostics));
+        var publication = new PublishDiagnosticsParams(state.sourceId.value(), diagnostics);
+        publication.setVersion(state.lspVersion);
+        current.publish(publication);
     }
 
     private static String message(Diagnostic diagnostic) {
@@ -601,8 +931,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private static String materialize(SourceText base, List<TextDocumentContentChangeEvent> changes) {
+        if(changes==null) throw PositionMapper.invalid();
         String text = base.text();
         for (TextDocumentContentChangeEvent change : changes) {
+            if(change==null || change.getText()==null) throw PositionMapper.invalid();
             if (change.getRange() == null) {
                 text = change.getText();
             } else {
@@ -611,8 +943,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 SourceText intermediate = new SourceText(base.id(), base.revision(), text);
                 int start = offsetAt(intermediate, change.getRange().getStart());
                 int end = offsetAt(intermediate, change.getRange().getEnd());
-                start = Math.min(start, text.length());
-                end = Math.min(Math.max(end, start), text.length());
+                if (start > end || (change.getRangeLength() != null
+                        && change.getRangeLength() != end - start)) throw PositionMapper.invalid();
                 text = text.substring(0, start) + change.getText() + text.substring(end);
             }
         }
@@ -625,19 +957,11 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private static int offsetAt(SourceText source, Position position) {
-        int line = Math.max(0, Math.min(position.getLine(), source.lineMap().lineCount() - 1));
-        int start = source.lineMap().lineStart(line);
-        int end = source.lineMap().lineContentEnd(line);
-        int character = Math.max(0, position.getCharacter());
-        int offset = start + Math.min(character, end - start);
-        return Math.min(offset, source.length());
+        return PositionMapper.toOffset(source, position);
     }
 
     private static Range toLspRange(SourceText source, SourceRange range) {
-        var start = source.lineMap().positionAt(range.startOffset());
-        var end = source.lineMap().positionAt(range.endOffset());
-        return new Range(new Position(start.line(), start.character()),
-                new Position(end.line(), end.character()));
+        return PositionMapper.toLspRange(source, range);
     }
 
     private static String prefixAt(String text, int offset) {
@@ -651,13 +975,16 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private static CompletionItemKind completionKind(CompletionCandidate candidate) {
         return switch (candidate.kind()) {
-            case CLASS, STRUCTURE, ASSOCIATION -> CompletionItemKind.Class;
+            case CLASS, STRUCTURE, ASSOCIATION, VIEW -> CompletionItemKind.Class;
             case DOMAIN, LINE_FORM -> CompletionItemKind.TypeParameter;
             case ATTRIBUTE, ROLE -> CompletionItemKind.Field;
-            case PARAMETER, METAOBJECT -> CompletionItemKind.Variable;
+            case PARAMETER, METAOBJECT, VIEW_BASE -> CompletionItemKind.Variable;
             case METADATA_BASKET, GRAPHIC -> CompletionItemKind.Module;
             case DRAWING_RULE -> CompletionItemKind.Method;
-            case TOPIC, MODEL -> CompletionItemKind.Module;
+            case TOPIC, MODEL, CONTEXT -> CompletionItemKind.Module;
+            case FUNCTION -> CompletionItemKind.Function;
+            case UNIT -> CompletionItemKind.Unit;
+            case ENUM_ELEMENT -> CompletionItemKind.EnumMember;
             case CONSTRAINT -> CompletionItemKind.Keyword;
             case KEYWORD -> CompletionItemKind.Keyword;
         };

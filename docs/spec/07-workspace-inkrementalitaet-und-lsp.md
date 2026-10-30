@@ -365,6 +365,16 @@ Die Engine darf bei kaputter Syntax einen nächstgelegenen belegten Scope benutz
 
 ### 5.2 Rename
 
+P3-Completion liefert den gesamten aktuellen Bezeichner als Ersetzungsbereich,
+auch wenn der Cursor in dessen Mitte steht. Der Adapter erhält Inserttext,
+stabile Rangfolge und Unvollständigkeit im `CompletionList`. Die ergänzten
+`CompletionKind`-Werte `FUNCTION`, `UNIT`, `VIEW`, `VIEW_BASE`, `CONTEXT` und
+`ENUM_ELEMENT` bleiben semantische Kategorien; Syntaxkandidaten bleiben
+`KEYWORD` mit versionsbezogener Detailangabe. Qualifizierte Vervollständigung
+verwendet gebundene Referenzsegmente und `membersOf`; eine Syntaxrecovery
+benutzt dieselben veröffentlichten Sichtbarkeits-/Typfakten und markiert
+unbestimmbare Qualifizierer ausdrücklich als unvollständig.
+
 Workspace-weites Rename ist P3. Vor der Aktivierung müssen der neue Name unter der betreffenden Sprachversion lexikalisch gültig, relevante Scopes vollständig genug analysiert und Namenskollisionen geprüft sein. Änderungen betreffen gebundene Referenzen, Deklarationsnamen und zugehörige Endnamen. Gleich geschriebene Texte in Kommentaren, Zeichenketten oder fremden Scopes werden nicht textuell ersetzt.
 
 Der Plan enthält `DocumentEdit(SourceId, SourceRevision expected, List<TextEdit>)`. Alle Edits einer Quelle beziehen sich auf denselben Snapshot. Vor Rückgabe wird geprüft, dass sich keine Edits überlappen und dass jedes Originalsegment tatsächlich dem gebundenen alten Namen entspricht. Bei zwischenzeitlicher Revisionänderung wird neu geplant oder mit `CONTENT_MODIFIED` abgelehnt.
@@ -374,6 +384,18 @@ Sind benötigte Referenzquellen nicht verfügbar oder schreibgeschützt, muss Re
 Die [offizielle LSP-Rename-Spezifikation](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/language/rename.md) beschreibt die Rückgabe als WorkspaceEdit, das der Client anwendet. Der Server schreibt deshalb bei einem Rename-Request nicht zusätzlich selbst dieselben Dateien.
 
 ## 6. LSP-Adapter
+
+Das P3-Referenzprofil verweigert vollständige Referenz-/Renamezusagen bei
+unvollständiger Abdeckung oder Fehlerdiagnostik. Jeder geänderte Quellstand
+braucht einen expliziten passenden Eintrag in `RenameRequest.expectedRevisions`.
+Kollisionsprüfung berücksichtigt den bestehenden strikten äusseren
+Typnamensraum und veröffentlichte effektive/geerbte Mitglieder. Fehlende
+Revisionen ergeben einen unvollständigen Plan mit `CONTENT_MODIFIED`.
+Geschlossene lokale Projektquellen werden vor der Rückgabe auf unveränderten
+Bytehash, reales Pfadziel und Schreibrecht geprüft. Mit Clientunterstützung
+enthält `WorkspaceEdit.documentChanges` die genaue offene Clientversion;
+bei geschlossenen Quellen bleibt die LSP-Version null. Der Server schreibt
+keine Rename-Dateien. Ohne diese Clientfähigkeit bleibt `changes` verfügbar.
 
 ### 6.1 Anforderungen und Ausbau
 
@@ -416,6 +438,54 @@ Der DocumentStore behandelt die LSP-Version pro geöffnetem Dokumentlebenszyklus
 Die [LSP-Diagnostikspezifikation](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/language/publishDiagnostics.md) verlangt, dass neue Diagnostik die frühere ersetzt. Der Publisher muss deshalb auch eine leere Liste senden. Eine empfangene `didClose`-Meldung übergibt die Inhaltshoheit zurück an die Quelle der URI; sie bedeutet bei einer projektbasierten Sprache nicht automatisch, dass das Dokument aus dem Workspace verschwindet. Siehe [didClose](https://github.com/microsoft/language-server-protocol/blob/gh-pages/_specifications/lsp/3.17/textDocument/didClose.md).
 
 ### 6.3 Scheduling und Fehlerfälle
+
+Das P3-Hostprofil benutzt eine begrenzte Ownerqueue, zwei Analyseplätze und
+höchstens einen neuesten ausstehenden Capture. Explizite Compiles laufen
+abgetrennt und besitzen eigene Abbruchtoken/Laufkontexte. Auch Anfragen,
+einschliesslich Formatierung und Diagrammprojektion, laufen nach kurzem Capture
+einer unveränderlichen Hostsicht auf zwei begrenzten Sprachquery-Workern.
+Antworten prüfen beim Rückweg Generation, Revision und Konfiguration erneut.
+Datei-I/O und ausstehende Compiles sind begrenzt; Überlast erhält einen
+kontrollierten Fehler. Dateimeldungen für offene Dokumente überschreiben
+keinen Clienttext. Ausstehende relevante Datei-I/O wird vor einer Sprachabfrage
+abgeschlossen; zwischenzeitliche Dokumentänderung ergibt `ContentModified`.
+Ein ungültiger Änderungsbatch verändert weder Quelltext noch Core-Revision;
+weitere Deltas werden bis zur vollständigen Ersatznachricht oder Wiederöffnung
+verweigert und über den Betriebskanal erklärt. Clientversionen erscheinen auch
+bei No-op-Text in der vollständigen Diagnostikersetzung.
+
+`workspace/didChangeConfiguration` akzeptiert ein Objekt `interlis` (oder das
+Objekt direkt) mit optionalen Feldern `warningPolicy` (`ALLOW_WARNINGS` oder
+`REJECT_WARNINGS`), `allowedLanguages` (`2.3`/`2.4`), `analysisBudget`,
+`cacheLimits` und `resolutionPolicy`. Budget-/Cachefelder entsprechen den
+gleichnamigen öffentlichen Records. Policy enthält `preferWorkspaceSource`,
+`modelSelections` als Array mit `modelName`, optional `modelVersion` und
+`sourceHint`, sowie `sourcePriorities` als Array mit `sourceId` und ganzzahligem
+`priority`. Ausgelassene Felder erhalten den bisherigen Wert, angegebene Arrays
+ersetzen die bisherige Auswahl. Validierung erfolgt vor der atomaren
+`Workspace.configure`-Mutation; ungültige Typen, unbekannte Felder, doppelte
+Auswahlen und unzulässige Werte lassen die gesamte bisherige Konfiguration
+stehen und erzeugen eine sichere Betriebsmeldung. Es gibt keine impliziten
+HTTP-/Dateizugriffe durch den Resolver.
+
+Die initialen lokalen Workspaceordner werden über einen begrenzten Hostadapter
+eingelesen. Symlink-/Realpfade entscheiden über die Editierbarkeit, während
+logische Client-URIs die Quellidentität erhalten. `.git`, `.gradle`, `build`
+und `node_modules` werden bei der Suche ausgelassen; Grenzen sind 10000 Quellen
+und 32 Millionen UTF-16-Einheiten für eine Entdeckung. Ein fehlgeschlagener
+Ladevorgang wird nicht als erfolgreiche leere Projektaufnahme dargestellt.
+
+Semantic Tokens benutzen Syntaxspannen, Trivia und gebundene Symbolkategorien;
+mehrzeilige Strings/Kommentare werden in einzelne UTF-16-Zeilenspannen geteilt.
+Folding ergänzt mehrzeilige Kommentartrivia zu Deklarationsbereichen.
+Formatierung verwendet die gemeinsame Format-API mit dem Client-`tabSize`
+(1–16 Leerzeichen) und erhaltenen Zeilenenden; Syntaxablehnung und Abbruch
+erzeugen einen Fehler statt einer scheinbar erfolgreichen leeren Editliste.
+Hover liefert Klartext, damit Dokumentation keinen aktiven Markupinhalt erzeugt.
+`initialize` läuft einmal, Vorabrequests erhalten `ServerNotInitialized`;
+nach Shutdown werden neue Requests abgelehnt. Der stdio-Prozess beendet sich
+bei `exit` selbständig, Status 0 nach Shutdown, sonst 1. Interne Fehler nennen
+eine sichere Fehlerkennung und enthalten keine serialisierte Exception.
 
 Eine konfigurierbare kurze Entprellzeit darf auf wiederholte Hintergrunddiagnostik angewandt werden. Die Korrektheit darf nicht von einer bestimmten Millisekundenzahl abhängen. Eine explizite Definition-/Completion-Abfrage berücksichtigt zuvor angenommene Dokumentänderungen und wartet nicht auf eine beliebig lange Hintergrund-Queue.
 

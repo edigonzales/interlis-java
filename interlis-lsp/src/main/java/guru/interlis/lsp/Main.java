@@ -18,10 +18,12 @@ public final class Main {
     public static void main(String[] args) {
         InterlisLanguageServer server = new InterlisLanguageServer(
                 Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
+        server.processExit(System::exit);
         var launcher = LSPLauncher.createServerLauncher(server, System.in, System.out);
         server.connect(launcher.getRemoteProxy());
         try {
             launcher.startListening().get();
+            server.exit();
             System.exit(0);
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();

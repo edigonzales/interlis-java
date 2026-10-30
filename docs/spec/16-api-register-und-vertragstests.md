@@ -711,3 +711,25 @@ sichern diese Grenzen. Keine zweite fachliche Gateentscheidung im Adapter.
 `CliExecutionResult.rejectionSummary()` liefert zusätzlich
 `Optional<RejectionSummary>` für alle ursprünglichen Compiler-Gate-Gründe;
 bisherige Konstruktoren verwenden Optional.empty().
+
+## P3-Ergänzung: gemeinsame Sichtbarkeit und LSP
+
+`guru.interlis.model.ScopeId.forOwner(SymbolId)` und
+`guru.interlis.model.query.SemanticQueries.membersOf(SymbolRef)` gehören zum
+Modellmodul; der vollständige nullfreie, unveränderliche und snapshotgebundene
+Vertrag steht in Kapitel 05 §3.3. `visibleSymbols` ist eine lokale und äussere
+Lookupabfrage mit Import-/Vererbungsfakten. Unbekannte Scopeanker werden nicht
+durch globale Präfixsuche ersetzt. `CompletionKind` im Compiler ergänzt
+`FUNCTION`, `UNIT`, `VIEW`, `VIEW_BASE`, `CONTEXT` und `ENUM_ELEMENT`.
+Kapitel 07 §5–6 regelt Completionrange, Vollständigkeit, genaue Rename-Revisionen,
+LSP-Konfiguration, Dateistempel und abgetrennte Verarbeitung. Die Bridge reicht
+die bestehenden Completionfelder und Enumkennungen weiter; keine Wireversion
+wird geändert. `InterlisLanguageServer(Workspace, CompilerEngine, CompilerServices)`
+ist der explizite JVM-Hosteinstieg mit injizierter reentranter Engine und
+Laufdiensten; der bisherige Konstruktor bleibt mit Standarddiensten verfügbar.
+`shutdown`/`exit` schliessen Scheduler, Datei-I/O und den übergebenen Workspace.
+`P3CompletionScopeContractTest`, `P3DocumentSynchronizationTest`,
+`P3AnalysisSchedulingTest`, `P3ProjectRenameTest`,
+`P3CompletionProtocolTest`, `P3PresentationConfigurationTest`,
+`LspErrorContractTest`, `LspProtocolCancellationTest` und der echte
+`LspProcessTest` prüfen positive und negative öffentliche Pfade.

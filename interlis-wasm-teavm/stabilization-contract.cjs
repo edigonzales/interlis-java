@@ -2164,7 +2164,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-lost-member.ili', text: lostText}], 'succeeded', ['F'], async (sessionId, compiled) => {
       const completion = await call('query', sessionId, {snapshotId: compiled.snapshotId, query: {
         kind: 'completion', sourceId: 'memory:/a3-lost-member.ili', revision: '1',
-        startOffset: 0, endOffset: 0, prefix: 'inherited', limit: 20}});
+        startOffset: lostText.indexOf('own:TEXT'), endOffset: lostText.indexOf('own:TEXT'), prefix: 'inherited', limit: 20}});
       const labels = (completion.candidates || []).map(candidate => candidate.label);
       if (!labels.includes('inherited')) throw new Error('A3 inherited member missing from public completion ' + JSON.stringify(completion));
     });

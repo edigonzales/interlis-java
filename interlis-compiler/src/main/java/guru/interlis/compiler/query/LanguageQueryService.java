@@ -119,23 +119,12 @@ final class LanguageQueryService implements LanguageQueries {
     }
 
     @Override
-    public CompletionResult complete(AnalysisSnapshot snapshot, CompletionQuery query,
-                                     CancellationToken token) {
+    public CompletionResult complete(AnalysisSnapshot snapshot, CompletionQuery query, CancellationToken token) {
         Objects.requireNonNull(snapshot, "snapshot");
+        Objects.requireNonNull(query, "query");
+        Objects.requireNonNull(token, "token");
         validateCursor(snapshot, query.cursor());
-        token.throwIfCancellationRequested();
-        List<CompletionCandidate> candidates = snapshot.semanticGraph().symbols().stream()
-                .filter(s -> s.name().value().startsWith(query.prefix().value()))
-                .filter(s -> !s.name().synthetic())
-                .sorted(Comparator.comparing((Symbol s) -> s.name().value())
-                        .thenComparing(s -> s.id().value()))
-                .limit(query.limit())
-                .map(s -> new CompletionCandidate(s.name().value(), s.name().value(),
-                        kind(s), s.kind().name()))
-                .toList();
-        boolean incomplete = candidates.size() >= query.limit();
-        return new CompletionResult(candidates, query.cursor(), incomplete,
-                snapshot.snapshotId());
+        return CompletionQueries.complete(snapshot, query, token);
     }
 
     @Override
@@ -158,8 +147,10 @@ final class LanguageQueryService implements LanguageQueries {
                     .ifPresent(range -> occurrences.add(new ReferenceOccurrence(range,
                             new ReferenceId("declaration-" + symbol.symbol().value()))));
         }
+        occurrences.sort(Comparator.comparing((ReferenceOccurrence occurrence) -> occurrence.range().source().value())
+                .thenComparingInt(occurrence -> occurrence.range().startOffset()).thenComparingInt(occurrence -> occurrence.range().endOffset()));
         return new ReferenceResult(occurrences,
-                snapshot.coverage().incompleteEntries().isEmpty(), snapshot.snapshotId());
+                referenceCoverageComplete(snapshot), snapshot.snapshotId());
     }
 
     private static String hoverDocumentation(Symbol symbol) {
@@ -176,7 +167,7 @@ final class LanguageQueryService implements LanguageQueries {
         if (!(symbol instanceof QueryResult.Known<SymbolRef> known)) {
             return RenamePreparation.reject("no editable symbol at cursor");
         }
-        if (!snapshot.coverage().incompleteEntries().isEmpty()) {
+        if (!referenceCoverageComplete(snapshot)) {
             return RenamePreparation.reject("analysis is incomplete");
         }
         Symbol resolved = snapshot.semanticGraph().symbol(known.value().symbol()).orElse(null);
@@ -201,15 +192,16 @@ final class LanguageQueryService implements LanguageQueries {
         if (!guru.interlis.compiler.internal.antlr.LanguageProfile.isIdentifier(request.newName(),resolved.header().languageVersion())) {
             return new RenamePlan(List.of(),List.of(request.symbol()),false,Optional.of("name is not an INTERLIS identifier"));
         }
-        if (!snapshot.coverage().incompleteEntries().isEmpty()) {
+        if (!referenceCoverageComplete(snapshot)) {
             return new RenamePlan(List.of(),List.of(request.symbol()),false,Optional.of("analysis is incomplete"));
         }
         boolean collision = snapshot.semanticGraph().symbols().stream()
                 .filter(symbol -> !symbol.id().equals(resolved.id()))
-                .filter(symbol -> symbol.owner().equals(resolved.owner()))
+                .filter(symbol -> symbol.name().value().equals(request.newName()))
+                .filter(symbol -> renameScopesOverlap(snapshot,resolved,symbol))
                 .filter(symbol -> (symbol.kind() == guru.interlis.model.SymbolKind.PARAMETER)
                         == (resolved.kind() == guru.interlis.model.SymbolKind.PARAMETER))
-                .anyMatch(symbol -> symbol.name().value().equals(request.newName()));
+                .findAny().isPresent();
         if (collision) {
             return new RenamePlan(List.of(), List.of(request.symbol()), false,
                     Optional.of("name collision"));
@@ -236,8 +228,7 @@ final class LanguageQueryService implements LanguageQueries {
                 return new RenamePlan(List.of(), List.of(request.symbol()), false,
                         Optional.of("source revision is missing"));
             }
-            if (!request.expectedRevisions().getOrDefault(entry.getKey(), expected)
-                    .equals(expected)) {
+            if (!expected.equals(request.expectedRevisions().get(entry.getKey()))) {
                 return new RenamePlan(List.of(), List.of(request.symbol()), false,
                         Optional.of("CONTENT_MODIFIED"));
             }
@@ -245,8 +236,13 @@ final class LanguageQueryService implements LanguageQueries {
                     .sorted(Comparator.comparingInt((TextEdit e) -> e.range().startOffset())
                             .reversed())
                     .toList();
+            var source=snapshot.syntaxSnapshot(entry.getKey()).map(guru.interlis.syntax.SyntaxSnapshot::source);
+            if(source.isEmpty() || !source.get().revision().equals(expected))
+                return new RenamePlan(List.of(),List.of(request.symbol()),false,Optional.of("source revision is missing"));
             int lastStart = Integer.MAX_VALUE;
             for (TextEdit edit : sorted) {
+                if(edit.range().endOffset()>source.get().length() || !source.get().text().substring(edit.range().startOffset(),edit.range().endOffset()).equals(resolved.name().value()))
+                    return new RenamePlan(List.of(),List.of(request.symbol()),false,Optional.of("original name does not match the bound rename target"));
                 if (edit.range().endOffset() > lastStart) {
                     return new RenamePlan(List.of(), List.of(request.symbol()), false,
                             Optional.of("overlapping rename edits"));
@@ -256,6 +252,38 @@ final class LanguageQueryService implements LanguageQueries {
             documents.add(new DocumentEdit(entry.getKey(), expected, sorted));
         }
         return new RenamePlan(documents, List.of(request.symbol()), true, Optional.empty());
+    }
+
+    private static boolean referenceCoverageComplete(AnalysisSnapshot snapshot) {
+        return snapshot.coverage().incompleteEntries().isEmpty()
+                && snapshot.diagnostics().stream().noneMatch(diagnostic -> diagnostic.severity()==guru.interlis.diagnostics.Severity.ERROR);
+    }
+
+    private static boolean renameScopesOverlap(AnalysisSnapshot snapshot,Symbol target,Symbol other) {
+        if(target.owner().equals(other.owner())) return true;
+        var types=guru.interlis.compiler.internal.DeclarationNamespaces.TYPE_KINDS;
+        if(types.contains(target.kind()) && types.contains(other.kind())
+                && (encloses(snapshot,target.owner(),other.owner()) || encloses(snapshot,other.owner(),target.owner()))) return true;
+        // Effective members and inherited topic declarations come from the same
+        // published graph queried by completion; no second binder is run here.
+        for(var scope:List.of(target.owner(),other.owner())) {
+            if(scope.isEmpty()) continue;
+            var members=snapshot.queries().membersOf(new SymbolRef(snapshot.snapshotId(),scope.orElseThrow())).known().orElse(List.of());
+            boolean containsTarget=members.stream().anyMatch(ref -> ref.symbol().equals(target.id()));
+            boolean containsOther=members.stream().anyMatch(ref -> ref.symbol().equals(other.id()));
+            if(containsTarget && containsOther) return true;
+        }
+        return false;
+    }
+
+    private static boolean encloses(AnalysisSnapshot snapshot,Optional<SymbolId> outer,Optional<SymbolId> inner) {
+        if(outer.isEmpty()) return false;
+        var seen=new HashSet<SymbolId>();
+        while(inner.isPresent() && seen.add(inner.orElseThrow())) {
+            if(inner.equals(outer)) return true;
+            inner=snapshot.semanticGraph().symbol(inner.orElseThrow()).flatMap(Symbol::owner);
+        }
+        return false;
     }
 
     private static void addEdit(Map<SourceId, List<TextEdit>> edits,
@@ -326,24 +354,5 @@ final class LanguageQueryService implements LanguageQueries {
         return symbol.nameRange().map(SourceRange::length).orElse(Integer.MAX_VALUE);
     }
 
-    private static CompletionKind kind(Symbol symbol) {
-        return switch (symbol.kind()) {
-            case MODEL -> CompletionKind.MODEL;
-            case TOPIC -> CompletionKind.TOPIC;
-            case CLASS -> CompletionKind.CLASS;
-            case STRUCTURE -> CompletionKind.STRUCTURE;
-            case ASSOCIATION -> CompletionKind.ASSOCIATION;
-            case DOMAIN -> CompletionKind.DOMAIN;
-            case ATTRIBUTE -> CompletionKind.ATTRIBUTE;
-            case ROLE -> CompletionKind.ROLE;
-            case PARAMETER -> CompletionKind.PARAMETER;
-            case GRAPHIC -> CompletionKind.GRAPHIC;
-            case DRAWING_RULE -> CompletionKind.DRAWING_RULE;
-            case LINE_FORM -> CompletionKind.LINE_FORM;
-            case METADATA_BASKET -> CompletionKind.METADATA_BASKET;
-            case METAOBJECT -> CompletionKind.METAOBJECT;
-            case CONSTRAINT -> CompletionKind.CONSTRAINT;
-            default -> CompletionKind.KEYWORD;
-        };
-    }
+
 }

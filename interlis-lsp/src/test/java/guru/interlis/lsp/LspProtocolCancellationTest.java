@@ -1,6 +1,8 @@
 package guru.interlis.lsp;
 
 import guru.interlis.compiler.CompilerEngines;
+import guru.interlis.compiler.CompilerEngine;
+import guru.interlis.compiler.CompilerServices;
 import guru.interlis.execution.CancellationReason;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
@@ -48,18 +50,18 @@ class LspProtocolCancellationTest {
 
     @Test
     void cancelNotificationProducesRequestCancelledAndSessionSurvives() throws Exception {
-        Workspace real = Workspaces.create(CompilerEngines.create(),
-                WorkspaceConfiguration.defaults());
+        CompilerEngine realEngine = CompilerEngines.create();
+        Workspace real = Workspaces.create(realEngine, WorkspaceConfiguration.defaults());
         CountDownLatch compileEntered = new CountDownLatch(1);
         CountDownLatch cancellationObserved = new CountDownLatch(1);
-        Workspace slow = (Workspace) Proxy.newProxyInstance(
-                Workspace.class.getClassLoader(), new Class<?>[]{Workspace.class},
+        CompilerEngine slow = (CompilerEngine) Proxy.newProxyInstance(
+                CompilerEngine.class.getClassLoader(), new Class<?>[]{CompilerEngine.class},
                 (proxy, method, args) -> {
                     if ("compile".equals(method.getName())) {
                         compileEntered.countDown();
                         for (int i = 0; i < 400; i++) {
                             if (args != null && args.length > 1
-                                    && args[1] instanceof CancellationToken token
+                                    && args[args.length-1] instanceof CancellationToken token
                                     && token.isCancellationRequested()) {
                                 cancellationObserved.countDown();
                                 throw new OperationCancelledException(
@@ -69,12 +71,12 @@ class LspProtocolCancellationTest {
                         }
                     }
                     try {
-                        return method.invoke(real, args);
+                        return method.invoke(realEngine, args);
                     } catch (InvocationTargetException failure) {
                         throw failure.getCause();
                     }
                 });
-        InterlisLanguageServer server = new InterlisLanguageServer(slow);
+        InterlisLanguageServer server = new InterlisLanguageServer(real, slow, CompilerServices.defaults());
         PipedOutputStream clientOut = new PipedOutputStream();
         PipedInputStream serverIn = new PipedInputStream(clientOut);
         PipedOutputStream serverOut = new PipedOutputStream();

@@ -44,6 +44,12 @@ ABSTRACT ACCORDING AGGREGATES AGGREGATION ALL AND ANY ANYCLASS ANYSTRUCTURE ARCS
 """);
     private static java.util.Set<String> words(String text) { return java.util.Set.copyOf(java.util.Arrays.asList(text.strip().split("\\s+"))); }
 
+    /** Immutable syntax-keyword inventory from the same tables used by the lexer. */
+    public static java.util.Set<String> keywords(LanguageVersion language) {
+        java.util.Objects.requireNonNull(language, "language");
+        return language == LanguageVersion.ILI23 ? RESERVED_23 : RESERVED_24;
+    }
+
     /** Version-specific identifier validation shared with rename. Lexer objects
      * remain local; no source or graph is retained. */
     public static boolean isIdentifier(String text,LanguageVersion language) {

@@ -1,5 +1,12 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+P3-2 konkretisiert die vorhandenen INC-018/019/022 und LSP-001–016 durch
+die öffentlichen Gegenproben aus Kapitel 13 §7 und die Host-/Queryverträge
+in Kapitel 07 §5–6. Kapitel 05 §3.3 und das API-Register nennen den gemeinsamen
+Scopeanker und `membersOf`; Completion, Rename und Tokens verwenden denselben
+veröffentlichten Graphen. Dies ergänzt Abnahmebezüge, ohne Anforderungs-IDs,
+Phasenpflichten oder G2-Norm-/Kompatibilitätsprofile umzunummerieren.
+
 L4-1 konkretisiert SYN-001–012, SEM-001–019, INC-001–017 und die bestehenden
 DIAG-/LOG-/API-Verträge durch den Einzelabgleich in
 `testdata/g2/completion-links.json`. Die historischen Norm-/Grammatik-/Builtin-

@@ -2,6 +2,8 @@ package guru.interlis.compiler.query;
 
 /** Completion provenance category. */
 public enum CompletionKind {
+    /** Bound semantic categories remain distinct from syntax keywords. */
+    FUNCTION, UNIT, VIEW, VIEW_BASE, CONTEXT, ENUM_ELEMENT,
     GRAPHIC, DRAWING_RULE,
     /** The {@code MODEL} constant. */
     MODEL,

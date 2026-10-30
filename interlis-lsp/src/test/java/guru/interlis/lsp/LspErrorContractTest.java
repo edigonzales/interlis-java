@@ -1,6 +1,8 @@
 package guru.interlis.lsp;
 
 import guru.interlis.compiler.CompilerEngines;
+import guru.interlis.compiler.CompilerEngine;
+import guru.interlis.compiler.CompilerServices;
 import guru.interlis.workspace.Workspace;
 import guru.interlis.workspace.WorkspaceConfiguration;
 import guru.interlis.workspace.Workspaces;
@@ -41,6 +43,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** LSP-016: protocol, language and internal failures produce different answers. */
 class LspErrorContractTest {
+    @Test void malformedCommandsReturnInvalidParamsWithoutThrowableData() throws Exception {
+        try(var harness=new Harness(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()))) {
+            for(var arguments:List.of(List.of(7),List.of(Map.of("uri",42)),List.of(Map.of("uri","memory:/x","symbolIds",List.of(3))),
+                    List.of(Map.of("uri","memory:/x"),Map.of("uri","memory:/y")))) {
+                assertEquals(-32602,harness.errorCode("workspace/executeCommand",new ExecuteCommandParams("interlis.diagram",new java.util.ArrayList<>(arguments))));
+            }
+        }
+    }
     @Test
     void protocolLanguageAndInternalFailuresAreDistinct() throws Exception {
         try (Harness harness = new Harness(Workspaces.create(
@@ -64,21 +74,21 @@ class LspErrorContractTest {
             assertTrue(String.valueOf(result).contains("rejected"), String.valueOf(result));
         }
 
-        Workspace real = Workspaces.create(CompilerEngines.create(),
-                WorkspaceConfiguration.defaults());
-        Workspace failing = (Workspace) Proxy.newProxyInstance(
-                Workspace.class.getClassLoader(), new Class<?>[]{Workspace.class},
+        CompilerEngine realEngine = CompilerEngines.create();
+        Workspace real = Workspaces.create(realEngine, WorkspaceConfiguration.defaults());
+        CompilerEngine failing = (CompilerEngine) Proxy.newProxyInstance(
+                CompilerEngine.class.getClassLoader(), new Class<?>[]{CompilerEngine.class},
                 (proxy, method, args) -> {
                     if ("compile".equals(method.getName())) {
                         throw new IllegalStateException("injected internal failure");
                     }
                     try {
-                        return method.invoke(real, args);
+                        return method.invoke(realEngine, args);
                     } catch (InvocationTargetException failure) {
                         throw failure.getCause();
                     }
                 });
-        try (Harness harness = new Harness(failing)) {
+        try (Harness harness = new Harness(real, failing)) {
             harness.open("""
                     INTERLIS 2.4;
                     MODEL Error AT "https://example.interlis.ch" VERSION "1.0" =
@@ -94,6 +104,8 @@ class LspErrorContractTest {
             assertTrue(failure.getCause() instanceof ResponseErrorException);
             assertEquals(-32603,
                     ((ResponseErrorException) failure.getCause()).getResponseError().getCode());
+            org.junit.jupiter.api.Assertions.assertNull(((ResponseErrorException) failure.getCause()).getResponseError().getData());
+            assertTrue(failure.getCause().getMessage().contains("lsp-"));
         }
     }
 
@@ -105,11 +117,15 @@ class LspErrorContractTest {
         private final RemoteEndpoint endpoint;
 
         Harness(Workspace workspace) throws Exception {
+            this(workspace, CompilerEngines.create());
+        }
+
+        Harness(Workspace workspace, CompilerEngine engine) throws Exception {
             clientOut = new PipedOutputStream();
             var serverIn = new PipedInputStream(clientOut);
             serverOut = new PipedOutputStream();
             var clientIn = new PipedInputStream(serverOut);
-            var server = new InterlisLanguageServer(workspace);
+            var server = new InterlisLanguageServer(workspace, engine, CompilerServices.defaults());
             serverLauncher = LSPLauncher.createServerLauncher(server, serverIn, serverOut);
             server.connect(serverLauncher.getRemoteProxy());
             serverLauncher.startListening();
@@ -123,7 +139,8 @@ class LspErrorContractTest {
         void open(String model) throws Exception {
             endpoint.notify("textDocument/didOpen", new DidOpenTextDocumentParams(
                     new TextDocumentItem("memory:/error.ct.ili", "interlis", 1, model)));
-            Thread.sleep(100);
+            endpoint.request("textDocument/documentSymbol", new org.eclipse.lsp4j.DocumentSymbolParams(
+                    new org.eclipse.lsp4j.TextDocumentIdentifier("memory:/error.ct.ili"))).get(5, TimeUnit.SECONDS);
         }
 
         Object compile() throws Exception {
@@ -140,6 +157,7 @@ class LspErrorContractTest {
                     () -> endpoint.request(method, params).get(5, TimeUnit.SECONDS));
             assertTrue(failure.getCause() instanceof ResponseErrorException,
                     String.valueOf(failure.getCause()));
+            org.junit.jupiter.api.Assertions.assertNull(((ResponseErrorException)failure.getCause()).getResponseError().getData());
             return ((ResponseErrorException) failure.getCause()).getResponseError().getCode();
         }
 

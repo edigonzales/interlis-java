@@ -38,17 +38,21 @@ Safari je 3548 PASS, Exit 0. Vollständiger frischer kumulativer Lauf bleibt G3.
 
 ## Laufend: P3-2
 
-- Drei tatsächliche RED→GREEN-Gegenproben: atomare Ablehnung ungültiger
-  didChange-Batches und Resynchronisation, genaue Clientversionen auch bei
-  No-op-Text sowie typisierte Fehler ohne Stacktrace für unbekannte Dokumente.
-- Scheduling-Gegenprobe zuerst tatsächlich rot: blockierter Compiler hält
-  Notification fest. Abgetrennte Enginearbeit, Ownerqueue, begrenzte Slots,
-  Supersedierung und bedingte Übernahme implementiert; aktueller LSP-Lauf mit
-  20 Tests grün. Noch nicht als vollständige P3-2-Abnahme qualifiziert.
-- Completion-Gegenproben decken global statt lokal angebotene Namen, falschen
-  Ersetzungsbereich und fehlende Versions-/Unvollständigkeitsinformation auf.
-  Scope-/Protokollkorrektur in Arbeit. Weitere Projekt-/Rename-/Konfigurations-
-  und Fehlerpfade folgen, dann unabhängiger P3-2-Kandidatenreview.
+Implementierter Kandidat, **unabhängiger Review offen**, AC-P3-05–08.
+[Umsetzung, RED→GREEN und tatsächliche Läufe](implementation/P3-2.md).
+Abgetrennte Analyse/Sprachqueries/Compilearbeit, immutable Hostsicht,
+atomare Synchronisation und Konfiguration, geschlossene Projektquellen,
+vollständige revisions-/schreibrechtsgeprüfte Versionsedits, Scopecompletion,
+gebundene Tokens/Folding/Formatierung und echter stdio-Lebenszyklus umgesetzt.
+744 Compiler- und34 LSP-Tests ohne Fehler/Skips. Aktive Evidenzbindungen
+mechanisch nachgeführt; Norm-/Corpus-/Suiteerwartungen unverändert.
+
+Breiter eigener Lauf: check/Portable/Browser/echtesSafari/WebImage/SDK/Paket
+PASS, je3548 portable Fälle. Conformance577 PASS/16XFAIL. Fehlversuche und
+präzisierte Completion-Abfrageposition bleiben im Bericht sichtbar. Nach der
+letzten LSP-Workertrennung eigener JVM-/Evidenz-/SDK-/Distributionlauf PASS.
+Neue unabhängige Gegenprobe und sauberer Kandidatenreview folgen jetzt;
+dieser Stand ist noch kein P3-2-PASS und kein G3-Abschluss.
 
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256

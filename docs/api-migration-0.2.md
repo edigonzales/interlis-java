@@ -1,5 +1,16 @@
 # Migration der Vorab-API 0.1 → 0.2
 
+P3-LSP-Ergänzung: Für Sichtbarkeit `ScopeId.forOwner(owner.id())` mit der
+passenden SnapshotId verwenden. `SemanticQueries.membersOf` ersetzt globale
+Präfixsuche nach Qualifizierern. Exhaustive Completion-Switches ergänzen
+`FUNCTION`, `UNIT`, `VIEW`, `VIEW_BASE`, `CONTEXT`, `ENUM_ELEMENT`.
+Ein Rename-Request enthält alle erwarteten Revisionen seiner möglichen Edits;
+eine fehlende Revision wird jetzt als `CONTENT_MODIFIED` abgelehnt.
+LSP-Clients führen `initialize` vor Sprachanfragen aus und verarbeiten
+`CompletionList` mit Unvollständigkeit und TextEdit. Bei ausgehandelten
+`documentChanges` erhalten Rename-Edits Clientversionen. Die Serverkonstruktoren
+übernehmen den Workspace für die gesamte Lebensdauer bis Shutdown/Exit.
+
 Toolversion: `0.2.0-SNAPSHOT`; API-Version: `0.2`. Diagnose-, Wire- und
 Diagrammformatversionen bleiben unverändert. Diese Version ist keine P3-Freigabe.
 

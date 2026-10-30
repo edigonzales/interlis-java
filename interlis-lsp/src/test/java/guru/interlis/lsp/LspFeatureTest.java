@@ -54,7 +54,7 @@ class LspFeatureTest {
 
     @Test
     void advertisesOnlyImplementedP3Capabilities() throws Exception {
-        InterlisLanguageServer server = server();
+        InterlisLanguageServer server = new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),guru.interlis.workspace.WorkspaceConfiguration.defaults()));
         InitializeResult result = server.initialize(new InitializeParams()).get(2, TimeUnit.SECONDS);
         assertNotNull(result.getCapabilities().getReferencesProvider());
         assertNotNull(result.getCapabilities().getRenameProvider());
@@ -240,6 +240,7 @@ class LspFeatureTest {
         String watchedUri = watched.toUri().toString();
         server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(
                 List.of(new FileEvent(watchedUri, FileChangeType.Changed))));
+        server.getWorkspaceService().executeCommand(new org.eclipse.lsp4j.ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS);
         assertTrue(server.workspaceForTest().source(
                 new guru.interlis.source.SourceId(watchedUri)).isPresent());
         server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(
@@ -267,6 +268,7 @@ class LspFeatureTest {
             assertTrue(server.workspaceForTest().source(id).orElseThrow().text().contains("Unsaved"));
             documents.didClose(new org.eclipse.lsp4j.DidCloseTextDocumentParams(
                     new TextDocumentIdentifier(uri)));
+            server.getWorkspaceService().executeCommand(new org.eclipse.lsp4j.ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS);
             assertEquals(MODEL, server.workspaceForTest().source(id).orElseThrow().text());
         } finally {
             server.shutdown().get(2, TimeUnit.SECONDS);
@@ -275,7 +277,8 @@ class LspFeatureTest {
     }
 
     private static InterlisLanguageServer server() {
-        return new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),
+        var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),
                 guru.interlis.workspace.WorkspaceConfiguration.defaults()));
+        server.initialize(new InitializeParams()).join(); return server;
     }
 }
