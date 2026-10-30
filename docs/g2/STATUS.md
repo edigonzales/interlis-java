@@ -1,29 +1,55 @@
 # G2 – operativer Status
 
-- Aktueller Auftrag: **gesamte Phase3 autonom**, L3-1 danach L3-2 mit
-  unabhängigen OpenCode-/DeepSeek-Direktreviews und kumulativem T1/T2/T3-Gate.
-  **L3-1 PASS**, AC3-01/02, Produktcommit
+- Auftrag **gesamte Phase3 autonom**: vollständig abgeschlossen, ohne manuelle
+  Stopps zwischen L3-1 und L3-2. **L3-2 / PHASE3: PASS**, kumulativ
+  **AC3-01–AC3-06**. Keine offenen Muss-Findings oder Phase-3-Blocker.
+- Unabhängig geprüfter Schlussproduktcommit:
+  `1387ac887239ecc78ed42e688a81a0d00dfcba84`.
+  [Unveränderter kumulativer Review](reviews/L3-2-review.md), SHA-256
+  `7a07eba4dcba66c5dc3b3ad44162af0bdb928732b9ab76ae4786c083dbad45f5`.
+  OpenCode CLI2.0.28, DeepSeek direkt, `deepseek/deepseek-flash`,
+  frischer sauberer Worktree; alle sechs Kriterien einzeln erneut bewertet.
+- Unabhängiger voller Pflichtlauf **Exit0 / 4m19s / 71von71Tasks frisch ausgeführt**.
+  **1025JUnit-Fälle**, davon **858reguläreJVM** (710Compiler,41Repository,
+  37CLI,20Workspace,6Bridge,16Model,16LSP,12Projection),137Evidenz,
+  15Assertions und15Host: jeweils **0Failures/Errors/Skips**. Git-Head des
+  vollständigen OS-Laufmanifests exakt1387ac8,dirty leer. Keine fällige Prüfung ausgelassen.
+- Je **3499PASS**: TeaVM-JS/Node,WasmGC/Node,Chromium156.0.8078.4,
+  Firefox157.0,WebKit27.2 und **echtesSafari27.0(20625.1.29.18.28)**;
+  frischerWebImage-Build,WebImage/Node undalle3Browser ebenfalls3499PASS.
+  Diagrammadapter/Workerneustart,SDK9Prozesskommandos,SDK-Paket,
+  LSP-Distribution/Prozesstests bestanden. Pythonfrei1250Inputs mit
+  privatenPATH-ENOENT- undabsolutenEPERM-Proben; vollständigerLauf OS-gesperrt.
+- T2 unverändert **593/610**: roh577PASS/15FAIL/1XFAIL; Projekt577PASS/16XFAIL
+  mit0FAIL/ERROR/XPASS, **21/21** strengeAssessmentsPASS. Suite-/Archiv-/Original-/
+  Kontrollpins,aktuelles21Objektmanifest undhistorisches19FälleBytearchiv unverändert.
+- Echte unveränderliche Overlays, Ziel-/Prioritäts-/Konfliktbindung und Herkunft;
+  feldweise Inhaltsidentität und sichere Snapshotannahme; durchgehende lokale/
+  file-/HTTP-Beschaffung, exakte Versionen/Pins/Mehridentitätslocks, Offlinecache,
+  atomare/stale-sichereÜbernahme und erneut geprüfte Originalbindungen.
+  Unveränderte gepinnte2.3-Roads- und2.4-CHBase-Closures mit öffentlichen
+  Modell-/Typ-/Ziel-/Member-/Reihenfolge-/Herkunftsassertions undFresh/Reuse.
+  [Implementierung/Nachweise](implementation/L3-2.md).
+- Zwei eigene neue Reviewer-Gegenproben PASS: roheVersion `"1 "` gegenüber
+  falschemTrim-Pin `"1"` einschliesslich öffentlichemModelSymbol/Lock;
+  identischeOverlaywerte mit idempotentemIndex und erhaltenenProvenienzen.
+  Rohbelege dauerhaft unter `build/review/L3-2/evidence/` kopiert.
+- Transportprovenienz getrennt vom Prüfurteil: ursprüngliche OpenCode-Sitzung
+  endete mit CLI-Exit1 nach frühem `provider.transport`-ECONNRESET (HTTP200).
+  Danach folgten479Ereignisse mit vollständigemGateExit0,Gegenproben,Bericht/
+  Hashkontrolle undPASS-Schlussantwort. Kein erfolgreicher Original-CLI-Exit
+  wird behauptet. Die anschliessende rein redaktionelle unabhängige Kontrolle
+  korrigiert RepositoryClientTest auf3/3 und ergänzt dieseProvenienz;
+  sie endete mitCLI-Exit0. Produkt,Kriterien,Prüfungen undUrteil unverändert.
+- **L3-1 PASS**, AC3-01/02, Produktcommit
   `f839311dd0f2e3d3a3925a6edfaea44ddacbc866`.
   [Unveränderter Review](reviews/L3-1-review.md), SHA-256
-  `1ee5dec10b4447e35b0a72425a816f9aaa5b23779ab3dd7efe2b3bc36cd05188`. OpenCode2.0.28/DeepSeek direkt,
-  `deepseek/deepseek-flash`, frischer sauberer Worktree, CLI-Exit0.
-  Voller unabhängiger Lauf Exit0/2m36s/58Tasks,820reguläreJVM
-  +137Evidenz/15Assertions/15Host (987gesamt),0Fehler/Skips;
-  JS/WasmGC je3491PASS,SDK9,Pythonfrei1220,21/21Normprüfungen;
-  elf eigene Reviewer-Gegenproben PASS. Keine offenen Muss-Findings;
-  zwei nicht blockierende Dokumentationspräzisierungen werden in L3-2 erledigt.
-  **L3-2 REVIEW_PENDING**, AC3-03–06, kumulativ AC3-01–06.
-  Echte Hostbeschaffung, Versionen/Pins/Locks/Offline, atomare Übernahme,
-  geprüfte Originalbindungen, feldweise Inputidentität und echte gepinnte
-  Modell-Closures mit öffentlichen Assertions implementiert.
-  Voller eigener Schlusslauf Exit0/4m47s/71von71Tasks:1025JUnit-Fälle
-  (858reguläreJVM),0Fehler/Skips; je3499JS/WasmGC/alleBrowser/echtesSafari/
-  WebImagePASS,SDK9/Paket/LSP,Pythonsperre1250Inputs,21/21Normprüfungen.
-  Neue Gegenproben fanden und behoben auch WasmGC-Leermapfehler, zu globale
-  Originalauswahl und tatsächlich kollidierende Record-Fingerprints.
-  [L3-2-Nachweise](implementation/L3-2.md).
-  [Implementierung/Nachweise](implementation/L3-1.md). Noch kein Phase3-PASS;
-  Phase4 bleibt ausserhalb des Auftrags.
+  `1ee5dec10b4447e35b0a72425a816f9aaa5b23779ab3dd7efe2b3bc36cd05188`.
+  [Implementierung](implementation/L3-1.md). Alle Kriterien beim L3-2-Gate kumulativ neu geprüft.
+- **Nächster fachlicher Schritt: Phase4**, bisher nicht begonnen und durch diesen
+  Auftrag nicht freigegeben. Kein Push,Release oder globaleG2-/P3-/P4-/P5-Freigabe;
+  GlobalD2 bleibt getrennt **PENDING_USER_REVALIDATION**. Der folgende Abschluss-
+  commit speichert ausschliesslich Review/Status und ändert den geprüften Produktstand nicht.
 
 - Auftrag **gesamte Phase 2 autonom**: abgeschlossen, ohne manuelle Stopps
   zwischen den Lieferungen. **L2-3 / PHASE 2: PASS**, kumulativ **AC2-01–AC2-07**.

@@ -3,17 +3,19 @@
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
-Phase3 ist inzwischen vollständig autonom beauftragt: L3-1 (echte fachliche
-SemanticOverlays, AC3-01/02), danach L3-2 mit Repository-/Closure-Verträgen
-und kumulativer T1/T2/T3-Abnahme. Operativer Stand ausschliesslich in
-[STATUS](g2/STATUS.md). Phase4 wird dadurch nicht begonnen.
-
-L3-2 ergänzt jetzt tatsächliche Repositorybeschaffung, exakte Auswahl/Pins/Locks,
-Offline-/Datei-/HTTP-Pfade, atomare Übernahme, überprüfbare Originalbindungen
-und echte gepinnte Modell-Closures mit öffentlichen Assertions. Der erste volle
-Phase-3-Lauf fand einen WasmGC-Classlibfehler; dieser ist korrigiert und gezielt
-verifiziert. Kumulativer Schlusslauf und unabhängige Abnahme folgen gemäss
-[Nachweis](g2/implementation/L3-2.md). Aktueller Gatezustand weiterhin nur in STATUS.
+**G2-Phase3 ist vollständig und unabhängig mit PASS abgeschlossen**, kumulativ
+AC3-01–AC3-06. Schlussproduktcommit
+`1387ac887239ecc78ed42e688a81a0d00dfcba84`;
+[unveränderter Review](g2/reviews/L3-2-review.md) und
+[Implementierung/Nachweise](g2/implementation/L3-2.md).
+Echte Overlays, Modell-/Originalbindung, Inhaltsidentität, Repository-Closure,
+Versionen/Pins/Locks/Offline, atomare Übernahme und gepinnte reale2.3/2.4-Closures
+sind implementiert und öffentlich geprüft. Unabhängiger kompletter frischer
+T1/T2/T3-Lauf:1025JUnit ohneFehler/Skips,3499jeBackend/Browser/echtemSafari/
+WebImage,21Normprüfungen,SDK9/Paket/LSP undPythonfreiheit1250Inputs PASS.
+Keine offenen Phase-3-Muss-Findings. Nächster fachlicher Schritt Phase4;
+diese wurde nicht begonnen. GlobalD2 undglobaleG2-Freigabe bleiben getrennt.
+Operativer Stand ausschliesslich in [STATUS](g2/STATUS.md).
 
 Seit dem früheren Nutzerauftrag vom 30.10.2026 wurde die gesamte G2-Phase 2 autonom
 bearbeitet: L2-1 (WP-22, AC2-01/02), danach L2-2 und L2-3 mit unabhängigen
