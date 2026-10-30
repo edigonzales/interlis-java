@@ -98,20 +98,28 @@ final class RuntimeReports {
                 List.of("format","--check","{TEMP_MODEL}"),List.of("format","--indent","4","--line-ending","lf","{TEMP_MODEL}"),
                 List.of("format","--write","--indent","4","--line-ending","lf","{TEMP_MODEL}"),List.of("check","--no-such-option","{ROOT}/testdata/models/base24.ili"));
         var commands=rows(data,"commands"); var exits=List.of(0,0,0,0,1,1,0,0,2);
-        require(s(data,"schemaVersion").equals("1.0") && commands.size()==args.size() && s(data,"cli").equals("interlis-cli/build/install/interlis-cli/bin/interlis-cli"),"Incomplete SDK profile");
-        String suffix="/testdata/models/base24.ili", argument=strings(commands.get(3).get("arguments")).get(1);
-        require(argument.endsWith(suffix),"Missing SDK source root"); String root=argument.substring(0,argument.length()-suffix.length()); require(Path.of(root).isAbsolute(),"SDK root not absolute");
+        require(s(data,"schemaVersion").equals("1.0") && commands.size()==args.size()
+                && Set.of("interlis-cli/build/install/interlis-cli/bin/interlis-cli",
+                "interlis-cli/build/install/interlis-cli/bin/interlis-cli.bat").contains(portablePath(s(data,"cli"))),"Incomplete SDK profile");
+        String suffix="/testdata/models/base24.ili", argument=portablePath(strings(commands.get(3).get("arguments")).get(1));
+        require(argument.endsWith(suffix),"Missing SDK source root"); String root=argument.substring(0,argument.length()-suffix.length()); require(absolutePath(root),"SDK root not absolute");
         String temporary=null;
         for(int i=0;i<commands.size();i++) {
             var row=commands.get(i); List<String> normalized=new ArrayList<>();
             for(String arg:strings(row.get("arguments"))) {
+                arg=portablePath(arg);
                 if(arg.startsWith(root+"/")) normalized.add("{ROOT}/"+arg.substring(root.length()+1));
-                else if(Path.of(arg).isAbsolute() && Path.of(arg).getFileName().toString().equals("model.ili")) {
+                else if(absolutePath(arg) && arg.endsWith("/model.ili")) {
                     require(temporary==null || temporary.equals(arg),"Different SDK temporary model"); temporary=arg; normalized.add("{TEMP_MODEL}");
                 } else normalized.add(arg);
             }
             require(normalized.equals(args.get(i)) && n(row,"exitCode")==exits.get(i),"Changed SDK command/exit");
             require(s(row,"stdoutSha256").matches("[0-9a-f]{64}") && n(row,"stdoutLines")>=0 && n(row,"stderrLines")>=0,"Incomplete SDK stream evidence");
         }
+    }
+
+    private static String portablePath(String value) { return value.replace('\\', '/'); }
+    private static boolean absolutePath(String value) {
+        return value.startsWith("/") || value.matches("[A-Za-z]:/.*");
     }
 }

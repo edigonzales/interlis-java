@@ -5492,7 +5492,7 @@
         },
         {
           "source": "interlis-lsp/src/main/java/guru/interlis/lsp/InterlisLanguageServer.java",
-          "sha256": "b094ac4dd305dc70fbe28d04e8c1074ef730b59b0f65ebd1caa9359952615acf"
+          "sha256": "cff73ee7cabe75c48a19379f2654667ccadfdaf8b7a931a6392d219cbef61659"
         }
       ],
       "resolution": "Frischer tatsächlicher LSP-stdio-Prozesstest und eigene Adapter; stdout enthält ausschliesslich JSON-RPC."

@@ -40,7 +40,7 @@ final class CatalogueEvidence {
                     if (cells.length != 4 || !cells[0].strip().matches("(?!ADR-)[A-Z]+-[0-9]{3}")) continue;
                     JsonObject row = new JsonObject();
                     for (int j = 0; j < 4; j++) row.addProperty(List.of("id", "requirement", "phase", "acceptance").get(j), cells[j].strip());
-                    row.addProperty("source", ROOT.relativize(path).toString()); row.addProperty("line", i + 1); row.addProperty("sourceLineSha256", hash(line)); actual.add(row);
+                    row.addProperty("source", ROOT.relativize(path).toString().replace('\\', '/')); row.addProperty("line", i + 1); row.addProperty("sourceLineSha256", hash(line)); actual.add(row);
                 }
             }
         }
@@ -164,7 +164,7 @@ final class CatalogueEvidence {
         JsonArray calls = new JsonArray(); List<String> producers = new ArrayList<>();
         for (String module : List.of("interlis-compiler", "interlis-model")) try (var paths = Files.walk(ROOT.resolve(module + "/src/main/java"))) {
             for (Path path : paths.filter(p -> p.toString().endsWith(".java")).sorted().toList()) {
-                String source = ROOT.relativize(path).toString(), text = Files.readString(path);
+                String source = ROOT.relativize(path).toString().replace('\\', '/'), text = Files.readString(path);
                 var origins = Pattern.compile("new\\s+(?:guru\\.interlis\\.model\\.)?(?:Origin\\.)?PredefinedOrigin\\s*\\(").matcher(text);
                 while (origins.find()) producers.add(source + ":" + (text.substring(0, origins.start()).chars().filter(c -> c == '\n').count() + 1));
                 if (!module.equals("interlis-compiler") || source.equals(PROFILE)) continue;

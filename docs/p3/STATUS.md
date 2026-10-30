@@ -43,3 +43,13 @@ Eigene RED-Gegenprobe bestätigt den Unicodeverlust am Kandidaten. UTF-8-
 Hostfix und kontrollierte externe Referenzkodierung bestehen lokal; erneuter
 Plattformlauf und neuer unabhängiger Kandidat folgen. P3-2-Gegenproben zu
 Dokumentsynchronisation sind parallel vorbereitet, keine P3-2-Abnahme.
+
+Zweiter GitHub-Lauf
+[41118436289](https://github.com/edigonzales/interlis-java/actions/runs/41118436289):
+54 echte Legacy-Prozesse einschliesslich Encodinggegenprobe bestehen auf
+Windows x64 und Linux x64. Gesamtstatus noch FAIL: native Windows-Pfade in
+Evidenzprüfungen und ein versehentlich auf uncommittete LSP-Arbeit gesetzter
+Quellhash. Der Quellhash wird an den tatsächlichen P3-1-Commit gebunden;
+Pfadvergleich verwendet portable Locator, akzeptiert die beiden konkreten
+Launcherformen und hält alle Kommando-/Exit-/Hashprüfungen aufrecht. Neue
+Unix-/Windows-/UNC-/Relativpfad-Gegenproben bestehen lokal.
