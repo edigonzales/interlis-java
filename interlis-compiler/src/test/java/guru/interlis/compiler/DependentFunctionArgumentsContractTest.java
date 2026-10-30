@@ -172,6 +172,41 @@ class DependentFunctionArgumentsContractTest {
             assertEquals(declaration.restrictions(),result.restrictions());
         }
     }
+    @Test void undefinedAndUnrestrictedActualOwnersRetainLegalSymbolicReturnDependencies() {
+        for(String v:VERSIONS)for(boolean objectSet:List.of(false,true)) {
+            String signature=objectSet?"OBJECTS OF ANYCLASS":"CLASS";
+            String actual=objectSet?"F.objects(#true)":"UNDEFINED";
+            var out=ok(input(v,"FUNCTION objects(flag:BOOLEAN):OBJECTS OF ANYCLASS;"
+                    +"FUNCTION pick(objects:"+signature+"):ATTRIBUTE OF @objects RESTRICTION(TEXT);"
+                    +"TOPIC T=CLASS Host="+(objectSet?"SET":"MANDATORY")+" CONSTRAINT DEFINED(F.pick("+actual+"));END Host;END T;"));
+            var g=out.schema().semanticGraph();var pick=assertInstanceOf(FunctionSymbol.class,named(g,"pick"));
+            var invocation=g.expressions().stream().filter(FunctionCallExpression.class::isInstance).map(FunctionCallExpression.class::cast)
+                    .filter(c->c.targetFunction().filter(pick.id()::equals).isPresent()).findFirst().orElseThrow();
+            assertEquals(ExpressionTypeState.RESOLVED,invocation.typeState());
+            assertEquals(pick.returnType(),invocation.typeId());
+            var descriptor=assertInstanceOf(AttributePathType.class,g.type(invocation.typeId()).orElseThrow());
+            assertEquals(new AttributePathType.Argument(pick.id(),0),descriptor.owner().orElseThrow());
+            assertEquals(1,invocation.children().size());
+            var argument=g.expression(invocation.children().getFirst()).orElseThrow();
+            if(objectSet) {
+                var objects=assertInstanceOf(FunctionCallExpression.class,argument);
+                assertEquals(named(g,"objects").id(),objects.targetFunction().orElseThrow());
+                var type=assertInstanceOf(ObjectArgumentType.class,g.type(argument.typeId()).orElseThrow());
+                assertTrue(type.objects());assertTrue(type.base().isEmpty());assertTrue(type.restrictions().isEmpty());
+            } else assertTrue(guru.interlis.model.internal.TypeCompatibility.isUndefined(g.type(argument.typeId()).orElseThrow()));
+        }
+    }
+    @Test void anIndeterminateOwnerKeepsTheNormativeLexicalConstantContextWithoutInventingAClass() {
+        for(String v:VERSIONS)for(String actual:List.of("cls","UNDEFINED")) {
+            var out=ok(input(v,"FUNCTION check(objects:CLASS;attr:ATTRIBUTE OF @objects RESTRICTION(TEXT)):BOOLEAN;"
+                    +"TOPIC T=CLASS Host=cls:CLASS;label:TEXT;MANDATORY CONSTRAINT F.check("+actual+",>>label);END Host;END T;"));
+            var g=out.schema().semanticGraph();var invocation=call(g);
+            var constant=assertInstanceOf(SymbolValueExpression.class,g.expression(invocation.children().get(1)).orElseThrow());
+            assertEquals(attribute(g,"Host","label").id(),constant.target());
+            var descriptor=assertInstanceOf(AttributePathType.class,g.type(constant.typeId()).orElseThrow());
+            assertEquals(new AttributePathType.Viewable(named(g,"Host").id()),descriptor.owner().orElseThrow());
+        }
+    }
     @Test void aClassValuedAttributeSuppliesItsDeclaredDependentAttributeArgument() {
         for(String v:VERSIONS) {
             var out=ok(input(v,"FUNCTION check(objects:CLASS;attr:ATTRIBUTE OF @objects RESTRICTION(TEXT)):BOOLEAN;"

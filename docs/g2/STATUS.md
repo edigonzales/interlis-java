@@ -7,10 +7,22 @@
   `81ad019` (Dokumentnachtrag nach dem Phase-1-PASS). Fachlicher Einstieg:
   WP-22, Ausdrücke/Pfade, Funktionen und sämtliche Constraintfamilien.
 - L2-1 implementiert: abhängige ATTRIBUTE-Argument-/Ergebnisbindung,
-  präzise EXISTENCE-Quellfehler, zwölf neue öffentliche JVM-Testmethoden und
-  18 portable Fälle. Eigene JVM-/Conformance-/Evidenz-/SDK-Prüfungen grün,
+  präzise EXISTENCE-Quellfehler, vierzehn neue öffentliche JVM-Testmethoden und
+  22 portable Fälle. Eigene JVM-/Conformance-/Evidenz-/SDK-Prüfungen grün,
   Portable nach fachlich begründeter Korrektur historischer Testquellen grün
-  (JS/WasmGC jeweils3423). [Nachweise und offene Profile](implementation/L2-1.md).
+  (erster Kandidat JS/WasmGC jeweils3423). [Nachweise und offene Profile](implementation/L2-1.md).
+- Erster unabhängiger Review auf `4b7c31e`: **BLOCKED (NORM_DECISION)**,
+  [unveränderter R1-Bericht](reviews/L2-1-review-r1.md), SHA-256
+  `e13320f8bf1c5b631ed91ec35414ca870f4efbd5920e2f7d201c18737d72fbd3`.
+  Frischer Pflichtlauf Exit0/2m18s, 777JVM/136Evidenz/15Assertions/15Host,
+  eigene Reviewer-Probe98PASS und18RED am Ausgangscommit. Technischer F1
+  betrifft eine überbreite Dokumentaussage zur Bindung bei UNDEFINED;
+  präzisierter SEM-006-Vertrag und zwei Regressionstests ergänzt, neuer
+  Kandidat und frischer Review folgen. F1 noch nicht unabhängig geschlossen.
+- Eigener R2-Nachlauf vollständig grün: Exit0/2m14s/58 Tasks,
+  779JVM(670Compiler)/136Evidenz/15Assertions/15Host, alle0Fehler/Skips;
+  T2 unverändert, SDK9, Pythonfrei1202Inputs, JS/WasmGC je3427PASS.
+  Neuer unabhängiger Review des präzisierten Kandidaten steht noch aus.
 - Drei bereits gestellte Nutzerentscheidungen sind noch offen: areAreas2/3,
   OBJECTS-Funktionen in 2.4-Einzelobjektbedingungen und direkter Objektkontext
   im SET-Hauptausdruck. Keine Empfehlung gilt als Freigabe. Unabhängiger

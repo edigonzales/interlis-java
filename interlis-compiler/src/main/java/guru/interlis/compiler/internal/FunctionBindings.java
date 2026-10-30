@@ -60,8 +60,10 @@ final class FunctionBindings {
                 &&argument.function().equals(function.id())?argument.index():-1;
     }
 
-    /** Instantiate an ATTRIBUTE result's OF dependency for this call only. The
-     * declaration stays immutable, and no external function is evaluated. */
+    /** Instantiate a bindable ATTRIBUTE result's OF dependency for this call
+     * only. Undefined or unrestricted object roots retain their formal symbolic
+     * dependency, with the actual still reachable through the call's children.
+     * The declaration stays immutable; no external function is evaluated. */
     TypeId returnType(FunctionSymbol function,List<GraphBuilder.ExpressionResult> arguments,SourceRange range) {
         var descriptor=g.effectiveDescriptor(function.returnType());
         if(!(descriptor instanceof AttributePathType attribute)

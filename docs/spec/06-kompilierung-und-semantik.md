@@ -700,7 +700,11 @@ geprüft (einschliesslich benutzerdefinierter Funktionen). Konstanten werden
 im tatsächlichen OF-Kontext gebunden, auch bei verketteten oder späteren
 Argumentabhängigkeiten; die veröffentlichte Reihenfolge bleibt die
 Quellreihenfolge. Abhängige ATTRIBUTE-Ergebnistypen werden pro erfolgreichem
-Aufruf gebunden; formale Deklarationen bleiben unverändert. Ohne konkreten
+Aufruf mit bindbarem Owner gebunden; formale Deklarationen bleiben unverändert.
+Bei UNDEFINED oder unbeschränkten Objektwurzeln bleibt der legale symbolische
+Argumentbezug zusammen mit Funktionsziel und tatsächlichen Aufrufkindern
+erhalten (Kapitel 05, SEM-006); RESOLVED verspricht keinen Laufzeitwert.
+Ohne konkreten
 Aufrufkontext liefert die öffentliche Zuweisungsabfrage für passende Werttypen
 mit noch abhängiger Eigentümeridentität NotAnalyzed(PENDING); unpassende
 Werttypen bleiben DISALLOWED. areAreas und die 2.4-WithoutGaps-Variante prüfen

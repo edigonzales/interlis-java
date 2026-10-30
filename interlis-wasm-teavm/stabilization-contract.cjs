@@ -50,6 +50,8 @@ async function verifyStabilization(api) {
       });dependentFunctionCases++;
     }
     const cases=[
+      ['FUNCTION pick(objects:CLASS):ATTRIBUTE OF @objects RESTRICTION(TEXT);TOPIC T=CLASS Host=MANDATORY CONSTRAINT DEFINED(F.pick(UNDEFINED));END Host;END T;','succeeded'],
+      ['FUNCTION objects(flag:BOOLEAN):OBJECTS OF ANYCLASS;FUNCTION pick(objects:OBJECTS OF ANYCLASS):ATTRIBUTE OF @objects RESTRICTION(TEXT);TOPIC T=CLASS Host=SET CONSTRAINT DEFINED(F.pick(F.objects(#true)));END Host;END T;','succeeded'],
       ['DOMAIN P=COORD 0.000..100.000,0.000..100.000;STRUCTURE S=surface:SURFACE WITH(STRAIGHTS) VERTEX P WITHOUT OVERLAPS>0.010;END S;TOPIC T=CLASS C=bag:BAG OF S;surface:BOOLEAN;SET CONSTRAINT INTERLIS.areAreas(ALL,>>bag,>>surface);END C;END T;','succeeded'],
       ['FUNCTION pick(objects:CLASS):ATTRIBUTE OF @objects RESTRICTION(TEXT);'+signature+'TOPIC T=CLASS Data=label:TEXT;END Data;CLASS Host=MANDATORY CONSTRAINT F.check(>Data,F.pick(>Data));END Host;END T;','succeeded'],
       [signature+'TOPIC T=CLASS C=cls:CLASS;path:ATTRIBUTE OF cls RESTRICTION(TEXT);MANDATORY CONSTRAINT F.check(cls,path);END C;END T;','succeeded'],

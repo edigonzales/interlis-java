@@ -179,7 +179,11 @@ kopieren Listen; fehlerhafte Bindungen verhindern das Schema. Es werden keine
 Laufzeitwerte erzeugt. `ParameterClassFunctionContractTest` prüft öffentliche
 Inhalte, Namespaces, Imports, Versionen, Übersetzungen und negative Typ-/Scopefälle.
 Bei Aufrufen liefert `ATTRIBUTE OF @argument` den Bindungskontext einer
-unqualifizierten Attributpfadkonstante aus dem tatsächlichen Argument.
+unqualifizierten Attributpfadkonstante aus dem tatsächlichen Argument,
+wenn dieses eine konkrete Wurzel liefert. Bei einem nicht bestimmbaren
+Owner (unbeschränkter Klassenwert oder UNDEFINED) bleibt der ebenfalls
+normativ zulässige lexikalische Konstantenkontext erhalten; es wird keine
+Klasse für das tatsächliche Argument erfunden.
 Verkettete Abhängigkeiten werden vor der abhängigen Konstante gebunden;
 die veröffentlichte Argumentliste bleibt dennoch in Quellreihenfolge.
 Dies gilt auch für eine zulässige Abhängigkeit auf ein späteres Argument.
@@ -193,12 +197,20 @@ Vollständigkeitsnachweis für sämtliche Attributpfadoperationen.
 Ein tatsächlich übergebener ATTRIBUTE-Wert mit `OF` auf genau denselben
 gebundenen klassenwertigen Ausdruck erfüllt den abhängigen Ownervertrag;
 eine gleiche Typrestriktion allein ersetzt diese Wertidentität nicht.
-Bei einem abhängigen ATTRIBUTE-Rückgabetyp besitzt jeder erfolgreiche
-Aufruf einen eigenen gebundenen Typ: konstante Klassenziele bleiben
+Bei einem abhängigen ATTRIBUTE-Rückgabetyp erhält ein erfolgreicher Aufruf
+mit bindbarem Owner einen eigenen gebundenen Typ: konstante Klassenziele bleiben
 `Viewable`, klassenwertige tatsächliche Ausdrücke bleiben als
 `ClassAttribute(ExpressionId)` im selben Snapshot erreichbar. Die formale
 Rückgabetypdeklaration und ihre `Argument`-Abhängigkeit bleiben unverändert.
 Externe Funktionen werden dabei nicht ausgeführt.
+Liefert ein zulässiges tatsächliches Argument keinen bindbaren Owner
+(UNDEFINED oder eine Objektmenge mit unbeschränkter ANYCLASS-Wurzel), bleibt
+der formale `Argument`-Bezug im Ergebnistyp erhalten. `FunctionCallExpression`
+bewahrt das tatsächliche Funktionsziel und die geordneten tatsächlichen
+Argumente im selben Snapshot. Dies ist eine legale wertabhängige Bindung,
+kein Quellfehler, kein fehlender Implementierungszweig und kein erfundener
+konkreter Owner. `ExpressionTypeState.RESOLVED` bezeichnet hier den geprüften
+statischen Vertrag, nicht einen ausgeführten oder bestimmten Laufzeitwert.
 
 In Vorab-API 0.2 repräsentiert `FunctionParameter(String name, TypeId typeId, boolean mandatory)`
 einen Parameter; `FunctionSymbol.returnType()` liefert ebenfalls `TypeId`.
