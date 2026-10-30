@@ -1,13 +1,19 @@
 # G2 – operativer Status
 
 - Aktueller Auftrag: **gesamte Phase3 autonom**, L3-1 danach L3-2 mit
-  unabhängigen OpenCode-/DeepSeek-Direktreviews und vollem kumulativem
-  T1/T2/T3-Phasengate. **L3-1 REVIEW_PENDING**, AC3-01/02.
-  Reale typisierte Overlaydaten, Ziel-/Konfliktbindung, Herkunft, öffentliche
-  Wirkung und inhaltsbasierte Fingerprints implementiert. Eigener Vollauf
-  Exit0/2m28s/58Tasks,820reguläreJVM +137Evidenz/15Assertions/15Host ohneFehler/Skips;
-  JS/WasmGC je3491PASS,SDK9,Pythonfrei1220,21/21Normprüfungen.
-  [Implementierung/Nachweise](implementation/L3-1.md). Kein Phase3-PASS;
+  unabhängigen OpenCode-/DeepSeek-Direktreviews und kumulativem T1/T2/T3-Gate.
+  **L3-1 PASS**, AC3-01/02, Produktcommit
+  `f839311dd0f2e3d3a3925a6edfaea44ddacbc866`.
+  [Unveränderter Review](reviews/L3-1-review.md), SHA-256
+  `1ee5dec10b4447e35b0a72425a816f9aaa5b23779ab3dd7efe2b3bc36cd05188`. OpenCode2.0.28/DeepSeek direkt,
+  `deepseek/deepseek-flash`, frischer sauberer Worktree, CLI-Exit0.
+  Voller unabhängiger Lauf Exit0/2m36s/58Tasks,820reguläreJVM
+  +137Evidenz/15Assertions/15Host (987gesamt),0Fehler/Skips;
+  JS/WasmGC je3491PASS,SDK9,Pythonfrei1220,21/21Normprüfungen;
+  elf eigene Reviewer-Gegenproben PASS. Keine offenen Muss-Findings;
+  zwei nicht blockierende Dokumentationspräzisierungen werden in L3-2 erledigt.
+  **L3-2 IN_PROGRESS**, AC3-03–06, automatisch anschliessend.
+  [Implementierung/Nachweise](implementation/L3-1.md). Noch kein Phase3-PASS;
   Phase4 bleibt ausserhalb des Auftrags.
 
 - Auftrag **gesamte Phase 2 autonom**: abgeschlossen, ohne manuelle Stopps
