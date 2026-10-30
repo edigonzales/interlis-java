@@ -103,6 +103,64 @@ class P3CliLifecycleContractTest {
         assertFalse(result.rejectionSummary().orElseThrow().diagnosticIds().isEmpty());
     }
 
+    @Test void diagramParentReportsItsActualRequestedRootCount() throws Exception {
+        var events = new ArrayList<RunEvent>();
+        var result = run(List.of("diagram", model().toString()), events,
+                new PrintStream(new ByteArrayOutputStream()), CancellationToken.none());
+        assertEquals(CliTermination.SUCCESS, result.termination(), result.output());
+        var parent = assertInstanceOf(RunCompletion.Succeeded.class,
+                assertInstanceOf(RunEvent.Finished.class, events.getLast()).completion());
+        assertEquals(1, parent.rootCount());
+        assertTrue(parent.compiledSchemaProduced());
+    }
+
+    @Test void concurrentInvocationsOnOneApplicationKeepIndependentParentsAndCorrelation() throws Exception {
+        Path source = model();
+        var contexts = new java.util.concurrent.ConcurrentHashMap<RunId, RunContext>();
+        var delegate = RunContextFactory.defaults();
+        var roots = new java.util.concurrent.atomic.AtomicInteger();
+        RunContextFactory factory = new RunContextFactory() {
+            public RunContext createRoot() { return createRoot(Map.of("invocation", Integer.toString(roots.incrementAndGet()))); }
+            public RunContext createRoot(Map<String,String> attributes) {
+                var value = delegate.createRoot(attributes); contexts.put(value.runId(), value); return value;
+            }
+            public RunContext createChild(RunContext parent) {
+                var value = delegate.createChild(parent); contexts.put(value.runId(), value); return value;
+            }
+        };
+        var events = new java.util.concurrent.ConcurrentLinkedQueue<RunEvent>();
+        var parentsEntered = new java.util.concurrent.CountDownLatch(2);
+        var services = new CompilerServices(event -> {
+            events.add(event);
+            if (event instanceof RunEvent.Started && event.header().parentRunId().isEmpty()) {
+                parentsEntered.countDown();
+                try { assertTrue(parentsEntered.await(5, java.util.concurrent.TimeUnit.SECONDS)); }
+                catch (InterruptedException interrupted) { throw new IllegalStateException(interrupted); }
+            }
+        }, ClockSource.system(), factory);
+        var application = new DefaultCompilerCli();
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var task = (java.util.concurrent.Callable<CliExecutionResult>) () -> application.run(
+                    List.of("check", source.toString()), new CliEnvironment(directory,
+                            new ByteArrayInputStream(new byte[0]), new PrintStream(new ByteArrayOutputStream()),
+                            new PrintStream(new ByteArrayOutputStream()), Map.of(), services), CancellationToken.none());
+            var results = executor.invokeAll(List.of(task, task));
+            var first = results.getFirst().get(5, java.util.concurrent.TimeUnit.SECONDS);
+            var second = results.getLast().get(5, java.util.concurrent.TimeUnit.SECONDS);
+            assertEquals(CliTermination.SUCCESS, first.termination()); assertEquals(CliTermination.SUCCESS, second.termination());
+            assertNotEquals(first.runId(), second.runId()); assertEquals(0, parentsEntered.getCount());
+            assertEquals(4, contexts.size());
+            for (var context : contexts.values()) {
+                context.parentRunId().ifPresent(parent -> assertEquals(contexts.get(parent).correlationAttributes(), context.correlationAttributes()));
+                var observed = events.stream().filter(event -> event.header().runId().equals(context.runId())).toList();
+                assertEquals(1, observed.stream().filter(RunEvent.Started.class::isInstance).count());
+                assertEquals(1, observed.stream().filter(RunEvent.Finished.class::isInstance).count());
+                long sequence = 0;
+                for (var event : observed) { assertTrue(event.header().sequence() > sequence); sequence = event.header().sequence(); }
+            }
+        }
+    }
+
     private Path model() throws IOException {
         Path file = directory.resolve("model.ili");
         Files.writeString(file, "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = END F.");

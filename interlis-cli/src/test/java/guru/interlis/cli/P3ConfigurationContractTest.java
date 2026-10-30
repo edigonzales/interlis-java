@@ -51,6 +51,25 @@ class P3ConfigurationContractTest {
         assertTrue(result.out.contains("example.org/models?REDACTED"));
     }
 
+    @Test void explanationNeverEchoesSecretsFromHostlessOpaqueOrMalformedUris() throws Exception {
+        for (String value : List.of("file:///tmp/x?token=marked-secret",
+                "mailto:user:marked-secret@example.org?token=marked-secret",
+                "https://user:marked-secret@example.org/%")) {
+            Files.writeString(directory.resolve("settings.properties"), "repository=" + value + "\n");
+            for (var result : List.of(run("check", "--repository", value, "--explain-config"),
+                    run("check", "--config", "settings.properties", "--explain-config"))) {
+                assertEquals(CliTermination.SUCCESS, result.result.termination());
+                assertFalse(result.out.contains("marked-secret"), result.out);
+                assertFalse(result.err.contains("marked-secret"), result.err);
+            }
+        }
+        String windowsDirectory = "C:\\models\\repository";
+        var windows = run("check", "--repository", windowsDirectory, "--explain-config");
+        assertEquals(CliTermination.SUCCESS, windows.result.termination());
+        assertEquals(windowsDirectory, JsonParser.parseString(windows.out).getAsJsonObject().getAsJsonObject("settings")
+                .getAsJsonObject("--repository").getAsJsonArray("values").get(0).getAsString());
+    }
+
     @Test void duplicatesAndMissingValuesFailBeforeLoadingSourceFiles() {
         for (var args : List.of(List.of("check", "--json", "--json", "missing.ili"),
                 List.of("check", "--cache", "--offline"),

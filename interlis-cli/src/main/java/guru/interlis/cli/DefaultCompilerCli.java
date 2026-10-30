@@ -281,7 +281,12 @@ public final class DefaultCompilerCli implements CliApplication {
                 if (parsed.writeLock().isPresent()) {
                     String target = hostPath(parsed.writeLock().orElseThrow(), environment).toUri().toString();
                     if (loaded.sources().keySet().stream().anyMatch(id -> id.value().equals(target))
-                            || sources.stream().anyMatch(source -> source.indexLocator().location().equals(target)))
+                            || sources.stream().anyMatch(source -> {
+                                var uri = java.net.URI.create(source.indexLocator().location());
+                                return source.indexLocator().location().equals(target)
+                                        || ("file".equalsIgnoreCase(uri.getScheme())
+                                        && OutputPlanner.sameFile(Path.of(uri), hostPath(parsed.writeLock().orElseThrow(), environment)));
+                            }))
                         throw new CliUsageException("lock output collides with a source or repository index");
                 }
                 var fetch = FetchPolicy.defaults();
@@ -321,7 +326,9 @@ public final class DefaultCompilerCli implements CliApplication {
             invocation.compiled(outcome);
             if (outcome instanceof CompilationOutcome.Succeeded && update != null && parsed.writeLock().isPresent()) {
                 Path target = hostPath(parsed.writeLock().orElseThrow(), environment);
-                if (workspace.state().sourceRevisions().containsKey(new SourceId(target.toUri().toString())))
+                if (workspace.state().sourceRevisions().keySet().stream()
+                        .map(id -> java.net.URI.create(id.value())).filter(uri -> "file".equalsIgnoreCase(uri.getScheme()))
+                        .map(Path::of).anyMatch(source -> OutputPlanner.sameFile(source, target)))
                     throw new CliUsageException("lock output collides with a resolved model source");
                 try {
                     byte[] bytes = new ResolutionLockCodec().encode(update.lock()).getBytes(StandardCharsets.UTF_8);
@@ -344,7 +351,7 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private static Path hostPath(String value, CliEnvironment environment) {
-        Path path = Path.of(value);
+        Path path = value.startsWith("file:") ? Path.of(java.net.URI.create(value)) : Path.of(value);
         return (path.isAbsolute() ? path : environment.workingDirectory().resolve(path)).toAbsolutePath().normalize();
     }
     private static String sourceUri(String value, CliEnvironment environment) {
@@ -387,6 +394,7 @@ public final class DefaultCompilerCli implements CliApplication {
         Loaded loaded = load(parsed.files(), environment, token);
         try (Workspace workspace = workspace(loaded, environment)) {
         List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
+        invocation.rootCount = roots.size();
         CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(
                 workspace.currentRevision(), roots),
                 environment.services().runContexts().createChild(invocation.context), token);

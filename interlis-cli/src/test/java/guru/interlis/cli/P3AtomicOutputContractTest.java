@@ -102,6 +102,48 @@ class P3AtomicOutputContractTest {
         try (var paths = Files.list(directory)) { assertEquals(1, paths.count()); }
     }
 
+    @Test void aliasesOfOneExistingSourceAreRejectedBeforeAnyOutput() throws Exception {
+        Path first = directory.resolve("Case.ili"), hardlink = directory.resolve("Hardlink.ili");
+        String original = "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = END F.";
+        Files.writeString(first, original); Files.createLink(hardlink, first);
+        var aliases = new java.util.ArrayList<Path>(); aliases.add(hardlink);
+        Path otherCase = directory.resolve("case.ili");
+        // Case-sensitive hosts exercise the distinct-file control; APFS/NTFS also exercise the alias.
+        if (Files.exists(otherCase)) aliases.add(otherCase);
+        else {
+            Files.writeString(otherCase, original);
+            assertEquals(CliTermination.FORMAT_CHECK_FAILED, new DefaultCompilerCli().run(List.of("format", "--check",
+                    first.toString(), otherCase.toString()), environment(), CancellationToken.none()).termination());
+            assertEquals(original, Files.readString(first));
+            assertEquals(original, Files.readString(otherCase));
+        }
+        for (Path alias : aliases) {
+            var result = new DefaultCompilerCli().run(List.of("format", "--write", first.toString(), alias.toString()),
+                    environment(), CancellationToken.none());
+            assertEquals(CliTermination.USAGE_ERROR, result.termination());
+            assertTrue(result.artifacts().isEmpty());
+            assertEquals(original, Files.readString(first));
+            assertEquals(original, Files.readString(alias));
+        }
+    }
+
+    @Test void lockOutputsCannotAliasARepositoryIndexOrResolvedSource() throws Exception {
+        Path repo = Files.createDirectory(directory.resolve("repo"));
+        Path index = repo.resolve("ilimodels.xml"), model = repo.resolve("one.ili");
+        Files.writeString(index, "<TRANSFER>" + RepositoryCliContractTest.entry("1", "one.ili") + "</TRANSFER>");
+        Files.writeString(model, RepositoryCliContractTest.model("1"));
+        for (Path protectedFile : List.of(index, model)) {
+            Path alias = directory.resolve("alias-" + protectedFile.getFileName());
+            Files.createLink(alias, protectedFile);
+            byte[] original = Files.readAllBytes(protectedFile);
+            var result = new DefaultCompilerCli().run(List.of("check", "--repository", repo.toString(),
+                    "--root", "Dep", "--write-lock", alias.toString()), environment(), CancellationToken.none());
+            assertEquals(CliTermination.USAGE_ERROR, result.termination(), result.output());
+            assertArrayEquals(original, Files.readAllBytes(protectedFile));
+            assertTrue(result.artifacts().isEmpty());
+        }
+    }
+
     private Path target() throws IOException {
         Path path = directory.resolve("existing.ili");
         Files.writeString(path, "original");

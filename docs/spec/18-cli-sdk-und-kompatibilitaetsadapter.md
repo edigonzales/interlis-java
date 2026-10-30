@@ -43,7 +43,7 @@ Diese Signaturen sind normative Rollenverträge. Implementierungen sind final, s
 | `DefaultCompilerCli` | `run(...)` | Eingabe auflösen, Closure vorbereiten, Engine aufrufen, Ergebnisse rendern/exportieren |
 | `DefaultCommandLineParser` | `parse(...)` | Optionen/Argumente gemäss CommandSpec parsen, noch keine IO/Modellanalyse |
 | `CommandSpec` | Optionsdefinitionen, Positionsargumente, Konfliktregeln, Hilfetextordnung | versioniertes Werkzeugprofil |
-| `CliEnvironment` | Arbeitsverzeichnis, stdin/stdout/stderr-Abstraktionen, Uhr, RunObserver, RunContextFactory, Repositorydienste, Profillader | vom Host übergebene Ressourcen; keine globalen Ersatzstreams |
+| `CliEnvironment` | Arbeitsverzeichnis, stdin/stdout/stderr, immutable Environmentwerte, CompilerServices (Uhr/RunObserver/RunContextFactory) | vom Host übergebene Ressourcen; keine globalen Ersatzstreams |
 | `ConfigurationLoader` | `load(ParsedCommand, CliEnvironment, CancellationToken)` | Konfigurationsdateien lesen, Präzedenz und Herkunft offenlegen |
 | `Ili2cInvocationPlanner` (intern), `DefaultCompilerCli` | `prepare` beziehungsweise Kommandoplanung | explizite Root-/Quellen-/Resolver-/Outputplanung |
 | `CliOutputWriter`; Diagnose-/Versionsrenderer | `write(Path,byte[],Optional<byte[]>,CancellationToken)`; `render`/`write` | atomare Dateien; getrennte Text-/JSON-Kanäle und Reihenfolge; gemeinsamer letzter Flush in der CLI |

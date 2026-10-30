@@ -97,12 +97,21 @@ public final class ConfigurationLoader {
     }
 
     private static String safeValue(String value) {
+        if (value.length() >= 3 && Character.isLetter(value.charAt(0)) && value.charAt(1) == ':'
+                && (value.charAt(2) == '\\' || value.charAt(2) == '/')) return value;
         try {
             var uri = java.net.URI.create(value);
-            if (uri.getHost() != null && (uri.getRawUserInfo() != null || uri.getRawQuery() != null))
-                return new java.net.URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(),
+            if (uri.isOpaque()) return uri.getScheme() + ":REDACTED";
+            String authority = uri.getRawAuthority();
+            if (authority != null && authority.contains("@")) authority = authority.substring(authority.lastIndexOf('@') + 1);
+            if (uri.getRawUserInfo() != null || !Objects.equals(authority, uri.getRawAuthority()) || uri.getRawQuery() != null)
+                return new java.net.URI(uri.getScheme(), authority, uri.getPath(),
                         uri.getRawQuery() == null ? null : "REDACTED", uri.getFragment()).toASCIIString();
-        } catch (IllegalArgumentException | java.net.URISyntaxException ignored) { }
+        } catch (IllegalArgumentException | java.net.URISyntaxException invalid) {
+            // Malformed URI values still must not echo authority or query data.
+            if (value.matches("[A-Za-z][A-Za-z0-9+.-]*:.*") || value.contains("?") || value.contains("@"))
+                return "REDACTED_URI";
+        }
         return value;
     }
 }

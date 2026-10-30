@@ -18,11 +18,11 @@
     "docs/spec/10-webassembly-und-portabilitaet.md": "0d247758bd5fa35d8b4acf3be2cce596ae1b60b5d2a896866112609cf4eb97ca",
     "docs/spec/11-visualisierung-und-projektionen.md": "154c9a04880df3e66bf22a9ab79147310ce29184759c81850141d14a98c21b4d",
     "docs/spec/12-transfer-validierung-und-datenbanken.md": "10f4692d846ae931ff0e78bbcfb571093c9253b39b5cf6529b5ddbd22fd49ff1",
-    "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "987740ac7703861cd4d70483c1eb30e425c7eeead020a5401d0e8c486660c0c9",
+    "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "a362f93f9fc9bec8db66c4a2b46356337bd97e37909beba0c4576cc8a781dbac",
     "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "14443b6b622d9f2bd36c5ad91a811cf41d4704c1d297ef4a6f14f75a833a9f88",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "efcbbaefffed904317c1d4779a5fc6e296a1c1615c783a0dbf3b6383525009a3",
     "docs/spec/16-api-register-und-vertragstests.md": "14a7487e6a1c096169b5f0458ba24a170e726a9694a49885540621ecb22d0df2",
-    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "0bc9aae441da8b72068d87fd8d07d185f4dff8b6e1be7e6a9658c9ae9c82faea",
+    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "14bd661101ea3552c194635b696602a3667001559efd712d8151c238fabbde83",
     "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3"
   },
   "grammars": [

@@ -53,3 +53,20 @@ Quellhash. Der Quellhash wird an den tatsächlichen P3-1-Commit gebunden;
 Pfadvergleich verwendet portable Locator, akzeptiert die beiden konkreten
 Launcherformen und hält alle Kommando-/Exit-/Hashprüfungen aufrecht. Neue
 Unix-/Windows-/UNC-/Relativpfad-Gegenproben bestehen lokal.
+
+Dritter GitHub-Lauf
+[41119268817](https://github.com/edigonzales/interlis-java/actions/runs/41119268817)
+am `ba089264795e6fc8c873829b4d4824fb640bdd0f`: Linux x64 und Windows x64
+vollständig PASS, einschliesslich check, 54 Legacy-Prozessen, Encodingprobe,
+SDK-Prozessen/-Paket und LSP-Distribution. Das ist ein tatsächlicher
+Zwischennachweis, kein finales G3.
+
+Unabhängiger [erster P3-1-Review](reviews/P3-1-a096d7e-FAIL.md): **FAIL**.
+OpenCode 2.0.28, direkter deepseek/deepseek-flash, sauberer a096d7e-Checkout,
+CLI-Exit 0, äusseres OS-Python-gesperrtes Manifest passed; unveränderter Bericht
+SHA-256 `57af1a36336f3440d1c7ffd41250aa488a3de6b3d3b495684888a4c2f79acb35`.
+F1 URI-Redaktion und F2 Datei-Aliase sind mit tatsächlichen RED→GREEN-Proben
+behoben; F3/F4 Dokumentnamen und Environmenttabelle synchronisiert; F5
+Diagramm-rootCount samt zusätzlicher Parallelitäts-/Korrelationsprobe grün.
+54 Prozess- und neun SDK-Aufrufe bleiben grün. Neuer Kandidat und frischer
+unabhängiger P3-1-Review folgen; kein Teil-PASS vorweggenommen.
