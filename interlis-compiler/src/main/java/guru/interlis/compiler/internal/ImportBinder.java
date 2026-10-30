@@ -27,7 +27,7 @@ import java.util.Set;
 /** Verifies resolver bindings and walks the import closure. */
 final class ImportBinder {
     Closure bind(List<ModelDecl> roots, ModelIndex index, SourceSet sourceSet,
-                 DiagnosticCollector collector) {
+                 DiagnosticCollector collector, OverlayBindings overlays) {
         Set<ModelDecl> models = new LinkedHashSet<>();
         Set<SourceId> sources = new LinkedHashSet<>();
         List<Closure.ImportEdge> edges = new ArrayList<>();
@@ -43,7 +43,9 @@ final class ImportBinder {
             sources.add(model.sourceId());
             // A translation depends on the original model and its imports, but does not
             // import its namespace. Keep this dependency separate from import edges.
-            model.syntax().translationSource().ifPresent(name -> {
+            var configuredOriginal=overlays.original(model);
+            configuredOriginal.ifPresent(queue::addLast);
+            if(configuredOriginal.isEmpty())model.syntax().translationSource().ifPresent(name -> {
                 List<ModelDecl> candidates = index.byName(name.text()).stream()
                         .filter(candidate -> model.syntax().translationVersion().isEmpty()
                                 || model.syntax().translationVersion().orElseThrow().equals(candidate.version()))

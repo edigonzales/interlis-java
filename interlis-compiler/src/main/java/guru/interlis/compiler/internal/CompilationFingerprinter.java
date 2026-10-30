@@ -22,8 +22,6 @@ public final class CompilationFingerprinter {
         append(canonical, Fingerprints.GRAMMAR_VERSION);
         append(canonical, "options");
         append(canonical, request.options().fingerprint());
-        append(canonical, "reuse");
-        append(canonical, reuse.previousAnalysis().map(a -> a.snapshotId().value()).orElse("none"));
         for (ModelSelector root : request.roots()) {
             append(canonical, root.toString());
         }
@@ -36,7 +34,13 @@ public final class CompilationFingerprinter {
             append(canonical, text.contentFingerprint().algorithm());
             append(canonical, text.contentFingerprint().value());
         }
-        for (ImportBinding binding : request.sources().imports()) {
+        for (ImportBinding binding : request.sources().imports().stream().sorted(Comparator
+                .comparing((ImportBinding b)->b.site().nameRange().source().value())
+                .thenComparingLong(b->b.site().nameRange().revision().value())
+                .thenComparingInt(b->b.site().nameRange().startOffset())
+                .thenComparingInt(b->b.site().nameRange().endOffset())
+                .thenComparing(b->b.site().importingModel()).thenComparing(b->b.site().importedModel())
+                .thenComparing(b->b.resolution().toString())).toList()) {
             append(canonical, binding.site().toString());
             switch (binding.resolution()) {
                 case ImportResolution.Resolved resolved -> append(canonical,
@@ -51,8 +55,8 @@ public final class CompilationFingerprinter {
         }
         append(canonical, "resolver");
         append(canonical, request.sources().fingerprint().value());
-        return new CompilationFingerprint("SHA-256/compilation-v1",
-                Fingerprints.sha256(canonical.toString()));
+        return new CompilationFingerprint("SHA-256/compilation-v2",
+                guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digestUtf16(canonical.toString())));
     }
 
     private static void append(StringBuilder target, String value) {

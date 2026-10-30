@@ -192,6 +192,16 @@ public final class DiagnosticCatalog {
                 Set.of(Phase.SEMANTIC_CHECKING), "diagnostic.semantics.inheritance",
                 DiagnosticDefinition.PositionRule.REQUIRED,
                 arg("element", ArgumentKind.IDENTIFIER), arg("rule", ArgumentKind.TEXT)));
+        list.add(def("ILI-RES-0005", "configured translation original is missing", Severity.ERROR,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.overlay.missing", DiagnosticDefinition.PositionRule.OPTIONAL,
+                arg("overlay", ArgumentKind.TEXT), arg("model", ArgumentKind.IDENTIFIER)));
+        list.add(def("ILI-RES-0006", "configured translation original is ambiguous", Severity.ERROR,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.overlay.ambiguous", DiagnosticDefinition.PositionRule.OPTIONAL,
+                arg("overlay", ArgumentKind.TEXT), arg("model", ArgumentKind.IDENTIFIER), arg("candidates", ArgumentKind.IDENTIFIER_LIST)));
+        list.add(def("ILI-SEM-0011", "invalid semantic overlay configuration", Severity.ERROR,
+                Set.of(Phase.BINDING), "diagnostic.semantics.overlay",
+                DiagnosticDefinition.PositionRule.OPTIONAL,
+                arg("overlay", ArgumentKind.TEXT), arg("target", ArgumentKind.TEXT), arg("reason", ArgumentKind.TEXT)));
         list.add(def("ILI-IMPL-0001", "required language feature is not implemented", Severity.ERROR,
                 Set.of(Phase.PARSING, Phase.DECLARATION_INDEXING, Phase.TYPE_CHECKING,
                         Phase.SEMANTIC_CHECKING), "diagnostic.implementation.unsupported",

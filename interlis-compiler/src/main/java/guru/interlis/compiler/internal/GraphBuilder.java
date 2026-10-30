@@ -177,13 +177,15 @@ final class GraphBuilder {
     private final List<guru.interlis.diagnostics.Diagnostic> syntaxErrors;
     private final long maximumWork;
     private long work;
+    private final OverlayBindings overlays;
     private final Map<guru.interlis.model.LanguageVersion,TypeId> booleanTypes = new java.util.EnumMap<>(guru.interlis.model.LanguageVersion.class);
 
     GraphBuilder(IndexedDeclarations index, SourceSet sourceSet, Closure closure,
                  DiagnosticCollector collector, guru.interlis.model.SnapshotId snapshotId,
                  Map<SourceId, Set<String>> syntaxUnsupportedBySource,
                  guru.interlis.execution.CancellationToken cancellation,
-                 guru.interlis.compiler.AnalysisBudget budget) {
+                 guru.interlis.compiler.AnalysisBudget budget, OverlayBindings overlays) {
+        this.overlays=overlays;this.work=overlays.workUnits();
         this.cancellation = Objects.requireNonNull(cancellation, "cancellation");
         this.maximumWork = Objects.requireNonNull(budget, "budget").maxSemanticWorkUnits();
         this.index = Objects.requireNonNull(index, "index");
@@ -262,6 +264,7 @@ final class GraphBuilder {
         validateAttributeOverrides();
         validateClassExtensions();
         validateConstraintNames();
+        overlays.validateCrs(this);
         validateTranslations();
         bindTransferNamespaces();
         Set<SymbolId> modelIds = closure.models().stream()
@@ -326,7 +329,8 @@ final class GraphBuilder {
         for (var model : models) model.translation().ifPresent(translation -> {
             var candidates = models.stream().filter(candidate -> candidate.name().value().equals(translation.sourceModel()))
                     .filter(candidate -> translation.sourceVersion().isEmpty() || translation.sourceVersion().orElseThrow().equals(candidate.modelVersion())).toList();
-            if (candidates.size() == 1) originals.put(model.id(), candidates.getFirst().id());
+            if(translation.sourceTarget().isPresent()) originals.put(model.id(),translation.sourceTarget().orElseThrow());
+            else if (candidates.size() == 1) originals.put(model.id(), candidates.getFirst().id());
         });
         for (ModelSymbol model : models) {
             checkWork();
@@ -378,7 +382,7 @@ final class GraphBuilder {
                 // Expression/formation checks may add verified contextualized declarations.
                 // Publish the final immutable links only after all newly added pairs were checked.
                 var bound = new guru.interlis.model.ModelTranslation(translation.sourceModel(), translation.sourceVersion(), translation.language(),
-                        Optional.of(source.id()), correspondence.entrySet().stream().map(e -> new guru.interlis.model.TranslationLink(e.getKey(), e.getValue())).toList());
+                        Optional.of(source.id()), correspondence.entrySet().stream().map(e -> new guru.interlis.model.TranslationLink(e.getKey(), e.getValue())).toList(),translation.origin());
                 symbols.put(model.id(), new ModelSymbol(model.header(), model.modelKind(), model.contracted(), model.modelVersion(),
                         model.issuer(), model.imports(), model.members(), Optional.of(bound), model.options(), model.transferNamespace()));
             }
@@ -1976,6 +1980,7 @@ final class GraphBuilder {
         Optional<guru.interlis.model.ModelTranslation> translation = syntax.translationSource()
                 .map(source -> new guru.interlis.model.ModelTranslation(source.text(),
                         syntax.translationVersion(), syntax.language(), Optional.empty(), List.of()));
+        translation=overlays.translation(decl.id(),translation);
         symbols.put(decl.id(), new ModelSymbol(header(decl), syntax.modelKind(),
                 syntax.contracted(), entry.model().version(), syntax.issuer(), imports, members,
                 translation, syntax.options(), modelNamespace(syntax)));
@@ -3535,6 +3540,11 @@ final class GraphBuilder {
             var previous=values.putIfAbsent(attribute.key(),value);
             boolean repeatable=attribute.key().equals("fn.param") && decl.syntax() instanceof FunctionDeclarationSyntax;
             if(previous!=null && !previous.text().equals(attribute.text()) && !repeatable)emitRule(decl,"conflicting source metaattribute: "+attribute.key(),"METAATTRIBUTE_CONFLICT",attribute.range());
+        }
+        var configured=overlays.metadata(decl.id());
+        if(!configured.isEmpty()) {
+            var combined=new ArrayList<MetaAttributeSet.Entry>(configured);combined.addAll(entries);entries=combined;values.clear();
+            for(var entry:entries)values.putIfAbsent(entry.key(),entry.value());
         }
         var documentation=new Documentation(decl.metadata().documentation().stream().map(guru.interlis.syntax.SourceMetadata.Text::text).collect(java.util.stream.Collectors.joining("\n\n")),
                 decl.metadata().documentation().stream().map(guru.interlis.syntax.SourceMetadata.Text::range).toList());

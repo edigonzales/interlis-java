@@ -936,3 +936,54 @@ LineCoord-Attribute benötigt ABSTRACT; eine spätere Inspektionskonkretisierung
 ist keine Ausnahme vom Quellvertrag (Kapitel05). Import-/Translations-Closures
 behalten tatsächliche Korrespondenzen und geordnete Generic-/Metadaten-/Linienformziele.
 Öffentliche Gegenfälle: `Phase2ClosureContractTest`; keine Runtimeausführung.
+
+### L3-1: Fachliche SemanticOverlays
+
+SEM-016, META-012, INC-007/016: SemanticOverlays enthält echte unveränderliche
+TranslationOverlay-, CrsOverlay- und MetaAttributeOverlay-Daten. OverlaySource
+nennt eine nichtleere externe Kennung, ganzzahlige Priorität und optional einen
+revisionsgebundenen Bereich der Konfigurationsquelle. Target enthält einen
+kanonischen QualifiedName und optional exakte Modellversion/SourceId. Es gibt
+keine Namensalias- oder Latest-Substitution. Fehlende/mehrdeutige Ziele,
+ungeeignete Zielarten und widersprüchliche gleichrangige Werte werden als
+ILI-SEM-0011/BINDING diagnostiziert und verhindern das gemeinsame Gate.
+
+Höhere Priorität überschreibt niedrigere; die Quelle bildet den Grundstand.
+Gleichrangige identische Werte sind idempotent. Die öffentliche Metadatenliste
+enthält zuerst wirksame externe Werte nach absteigender Priorität und dann
+die unveränderten Quellvorkommen; ihr First-Occurrence-Index liefert den
+wirksamen Wert. Herkunft bleibt Origin.OverlayOrigin(id,priority,range),
+auch für verdrängte Vorkommen. Eingabelisten und Werte sind kopiert/nullfrei.
+
+TranslationOverlay verknüpft zwei vorhandene Modelle. Das Original und seine
+Imports werden Teil der Prüfclosure, ohne seinen Namensraum zu importieren.
+Eine widersprechende ausdrückliche TRANSLATION OF-Deklaration ist ein Fehler.
+Der vorhandene strukturelle Übersetzungsprüfer erzeugt dieselben geprüften
+Korrespondenzen; ModelTranslation.origin hält die externe Herkunft. CRS setzt
+die deklarationsgebundene CRS-Metainformation nur auf Koordinatentypen;
+die gleichen Zielregeln gelten für den Schlüssel CRS in einem Metaoverlay.
+Es findet keine Koordinatentransformation und keine externe CRS-Auflösung statt.
+
+Fingerprints sind SHA-256 über eine versionierte längenpräfixierte UTF-16-
+Inhaltsdarstellung sämtlicher Werte, Ziele, Qualifikatoren, Herkunft und
+Overlayreihenfolge. Fachliche Bindungen gehören ausschliesslich dem Lauf.
+Overlaywechsel ändern Analyse-/Schema-/Workspacefingerprints; Wiederverwendung
+ist weiter optional und darf weder alte Ergebnisse mutieren noch Aliase/Imports
+in nachfolgende Läufe übertragen. Budget und Abbruch gelten auch für die Bindung.
+Ungültige Konfigurationen bleiben im Analyseergebnis sichtbar; globale
+Overlayfehler sind im Compile-Gate relevant, auch ohne Modell-Quellbereich.
+
+L3-1 trennt CompilationFingerprint (SHA-256/compilation-v2, tatsächliche
+Eingaben, kanonische Importstellenreihenfolge, unabhängig von AnalysisReuse)
+von SnapshotId. Letztere enthält zusätzlich Parsemodus und die konkrete
+Wiederverwendungsprovenienz, weil stabile Symbol-IDs innerhalb verschiedener
+Graphen verschieden zugewiesen sein können. SchemaFingerprint (schema-v2)
+verwendet die fachliche Eingabeidentität statt vorheriger Snapshot-/Symbol-IDs.
+Cache-Eviction oder ein zusätzlicher Warm-Lauf ändern dadurch kein fachliches
+Schemafingerprint; snapshotgebundene Referenzen bleiben strikt getrennt.
+
+Fehlende oder mehrdeutige externe Originalmodelle bleiben ungeklärte
+Resolutionseingaben (ILI-RES-0005/0006; MISSING_INPUT/AMBIGUOUS_INPUT), während
+fehlende normale Deklarationsziele ungültige Konfiguration sind. Alle drei
+globalen Diagnosearten bleiben im gemeinsamen Gate ohne erfundene Modellstelle
+relevant; spätere Lieferung eines Originals erlaubt erneute normale Bindung.

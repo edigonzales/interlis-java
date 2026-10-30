@@ -105,18 +105,7 @@ final class CompilerSessionFacade {
         long expected = BridgeCodec.longValue(params.members().get("expectedWorkspaceRevision"),
                 "expectedWorkspaceRevision");
         WorkspaceConfiguration current = WorkspaceConfiguration.defaults();
-        CompilerOptions options = current.compilerOptions();
-        if (params.members().get("allowedLanguages") instanceof JsonValue.JsonArray array) {
-            Set<guru.interlis.model.LanguageVersion> languages = new LinkedHashSet<>();
-            for (JsonValue value : array.values()) {
-                String literal = ((JsonValue.JsonString) value).value();
-                languages.add(guru.interlis.model.LanguageVersion.fromLiteral(literal)
-                        .orElseThrow(() -> new BridgeException("INVALID_REQUEST",
-                                "unsupported language " + literal)));
-            }
-            options = new CompilerOptions(SemanticProfileId.ILI_23_24_V1, languages,
-                    WarningPolicy.ALLOW_WARNINGS, options.budget(), SemanticOverlays.empty());
-        }
+        CompilerOptions options = OverlayCodec.options(params,current.compilerOptions());
         guru.interlis.workspace.CacheLimits limits = current.cacheLimits();
         if (params.members().get("cacheLimits") instanceof JsonValue.JsonObject cache) {
             limits = new guru.interlis.workspace.CacheLimits(
@@ -215,6 +204,7 @@ final class CompilerSessionFacade {
                     token), snapshotId);
             case "definition" -> definition(queries.definition(snapshot,
                     cursor(snapshot, query), token), snapshotId);
+            case "semanticProperties" -> semanticProperties(snapshot,query,token);
             case "hover" -> hover(queries.hover(snapshot, cursor(snapshot, query), token));
             case "completion" -> completion(snapshot, query, token);
             default -> throw new BridgeException("UNSUPPORTED_OPERATION",
@@ -489,6 +479,39 @@ final class CompilerSessionFacade {
             return result;
         }
         return defaults.stream().map(id -> new SymbolRef(snapshotId, id)).toList();
+    }
+
+    private JsonValue.JsonObject semanticProperties(AnalysisSnapshot snapshot,JsonValue.JsonObject query,CancellationToken token) {
+        var reference=queries.symbolAt(snapshot,cursor(snapshot,query),token).known();
+        if(reference.isEmpty())return JsonValues.object("kind",JsonValues.string("unresolved"));
+        var symbol=snapshot.queries().symbol(reference.orElseThrow()).known().orElseThrow();
+        var values=new ArrayList<JsonValue>();
+        for(var entry:symbol.header().metaAttributes().entries())values.add(JsonValues.object(
+                "key",JsonValues.string(entry.key()),"text",JsonValues.string(entry.value().text()),"origin",origin(entry.value().origin())));
+        var result=new LinkedHashMap<String,JsonValue>();result.put("kind",JsonValues.string("semanticProperties"));
+        result.put("symbolId",JsonValues.string(symbol.id().value()));result.put("metadata",JsonValues.array(values));
+        if(symbol instanceof guru.interlis.model.ModelSymbol model)model.translation().ifPresent(t->{
+            var translated=new LinkedHashMap<String,JsonValue>();translated.put("sourceModel",JsonValues.string(t.sourceModel()));
+            t.sourceTarget().ifPresent(id->translated.put("sourceTarget",JsonValues.string(id.value())));
+            t.origin().ifPresent(o->translated.put("origin",origin(o)));
+            translated.put("correspondences",JsonValues.array(t.correspondences().stream().map(link->(JsonValue)JsonValues.object(
+                    "original",JsonValues.string(link.original().value()),"translated",JsonValues.string(link.translated().value()))).toList()));
+            result.put("translation",new JsonValue.JsonObject(translated));
+        });
+        return new JsonValue.JsonObject(result);
+    }
+    private JsonValue.JsonObject origin(guru.interlis.model.Origin origin) {
+        return switch(origin) {
+            case guru.interlis.model.Origin.OverlayOrigin o->{
+                var fields=new LinkedHashMap<String,JsonValue>();fields.put("kind",JsonValues.string("overlay"));
+                fields.put("overlayId",JsonValues.string(o.overlayId()));fields.put("priority",JsonValues.number(o.priority()));
+                o.range().ifPresent(r->fields.put("range",range(r)));yield new JsonValue.JsonObject(fields);
+            }
+            case guru.interlis.model.Origin.DeclaredOrigin d->JsonValues.object("kind",JsonValues.string("declared"),"range",range(d.range()));
+            case guru.interlis.model.Origin.DerivedOrigin d->JsonValues.object("kind",JsonValues.string("derived"),"declaredAt",JsonValues.string(d.declaredAt().value()),"derivation",JsonValues.string(d.kind().name()));
+            case guru.interlis.model.Origin.PredefinedOrigin d->JsonValues.object("kind",JsonValues.string("predefined"),"key",JsonValues.string(d.key()));
+            case guru.interlis.model.Origin.SyntheticOrigin d->JsonValues.object("kind",JsonValues.string("synthetic"),"reason",JsonValues.string(d.reason().name()));
+        };
     }
 
     private JsonValue.JsonObject range(SourceRange range) {

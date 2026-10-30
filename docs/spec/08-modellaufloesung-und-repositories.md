@@ -204,3 +204,19 @@ Fehlende Originale bleiben als `PendingSourceRequest` sichtbar. Ein später
 hinzugefügtes Original oder Änderungen seiner Imports werden neu vorbereitet
 (RES-003/006). `WorkspaceTest` prüft Quellen in getrennten Dateien, Fehler und
 anschliessende Korrektur sowie das spätere Hinzufügen des Originals.
+
+L3-1 ergänzt ResolutionRequest.overlays mit SemanticOverlays; der bisherige
+vierparametrige Konstruktor verwendet empty(). Workspace-Captures reichen
+dieselbe Compilerkonfiguration an die Vorbereitung weiter. Extern konfigurierte
+Translationen erzeugen wie Quelltranslationen Originalabhängigkeiten samt
+transitiven Imports, ohne Originalnamensräume zu importieren. Auswahl und
+negative Abhängigkeiten berücksichtigen exakte Version/SourceHint; der
+Compiler überprüft die tatsächliche fachliche Zielbindung selbst.
+
+L3-1: SourceInventory.fingerprint ist eine längenpräfixierte UTF-16-Inhaltsidentität
+(inventory-v2) aus SourceIds, Quellrevisionen/-inhalten und ResolverCatalog; der
+allgemeine WorkspaceRevision-Zähler gehört nicht hinein. Captures prüfen ihn
+weiterhin getrennt. ResolverCatalog.fingerprint verwendet ebenfalls sortierte
+längenpräfixierte Inhalte statt kollisionsanfälliger key=value-Verkettung.
+Overlay-Rückkehr A→B→A bei unveränderten Quellen stellt dieselbe fachliche
+Identität wieder her, ohne ein verspätetes Capture akzeptieren zu dürfen.

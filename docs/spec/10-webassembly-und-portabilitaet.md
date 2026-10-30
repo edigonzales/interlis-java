@@ -240,7 +240,7 @@ Diese Summary wird ausschliesslich vom CompilationGate erzeugt und ist auf die a
 
 Fehlende Modellanforderungen und deren Locator/Provenienz stammen aus `WorkspaceCapture.resolution().pendingFetches()` beziehungsweise dessen PreparedClosure-Bericht nach Kapitel 07/08. Dieser Bericht muss zu demselben eingefrorenen Eingabestand wie die Analyseantwort gehören. Die Bridge betreibt keine zweite Header-/Resolverimplementierung, um `missingModels` zu erzeugen.
 
-`query.params.query.kind` ist eine feste Union: `symbolAt`, `definition`, `hover`, `completion`, `references`, `prepareRename`, `rename`. Jede Variante besitzt ihr eigenes JSON-Schema. Der Server kündigt nur implementierte Varianten an. Ein Positionquery enthält SourceId, SourceRevision und UTF-16-Offset; ein Symbolquery enthält SnapshotId und SymbolId. Nicht unterstützte P3-Queries werden als `UNSUPPORTED_OPERATION` abgelehnt und niemals mit einer irreführend leeren Trefferliste beantwortet.
+`query.params.query.kind` ist eine feste Union: `symbolAt`, `definition`, `semanticProperties`, `hover`, `completion`, `references`, `prepareRename`, `rename`. Jede Variante besitzt ihr eigenes JSON-Schema. Der Server kündigt nur implementierte Varianten an. Ein Positionquery enthält SourceId, SourceRevision und UTF-16-Offset; ein Symbolquery enthält SnapshotId und SymbolId. Nicht unterstützte P3-Queries werden als `UNSUPPORTED_OPERATION` abgelehnt und niemals mit einer irreführend leeren Trefferliste beantwortet.
 
 ### 5.3 Beispiel einer bedingten Quelländerung
 
@@ -413,3 +413,16 @@ Erst danach werden sinnvolle Antwortzeit- und Speicherbudgets in Kapitel 13 verb
 
 **P3:** Verfeinerte Abbruchmechanik, kompaktere Projektionen und gemessene Performanceverbesserungen. Jede Optimierung muss weiter den inkrementell/frisch- und JVM/Browser-Vergleich bestehen. Ein neuer binärer Transport ist nur bei einem gemessenen JSON-Engpass gerechtfertigt und erhält eine eigene versionierte Spezifikation.
 
+
+L3-1 ergänzt `configuration.overlays` bei openSession und `overlays` bei
+setConfiguration. Jede Zeile enthält kind, id, priority, target; translation
+zusätzlich original, crs den CRS-String und meta-attribute ein attributes-Objekt
+mit Stringlisten. Targets sind kanonische Namen oder {name,modelVersion?,sourceHint?}.
+Optionale range verwendet die bestehenden Source-/Revision-/UTF-16-Felder.
+setConfiguration ersetzt weiterhin die gesamte Konfiguration; ausgelassene
+Overlays entsprechen empty(). Unbekannte Varianten oder falsche Formen sind
+INVALID_REQUEST, fachlich ungültige Bindungen sind kanonische Compilerdiagnosen.
+Die angekündigte Positionsquery semanticProperties liefert gebundene Metadaten
+mit Herkunft und gegebenenfalls die bestehende ModelTranslation mit Originalziel/
+Korrespondenzen. Sie serialisiert ausschliesslich den gemeinsamen Graph und
+führt keine weitere Bindungssemantik ein. Alte Snapshots bleiben explizit abfragbar.

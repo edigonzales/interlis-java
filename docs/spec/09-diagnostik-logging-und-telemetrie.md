@@ -406,3 +406,17 @@ Revision 20 wird analysiert, während Revision 21 eingeht. Der Host kann für 20
 Der bisherige Compiler verwendet unter anderem globale Logging-Anbindung und den mutablen Compilerlauf. Der bestehende Java-LSP kapselt dies mit Compile-Lock und Logbehandlung in [`Ili2cUtil`](https://github.com/edigonzales/interlis-lsp/blob/main/src/main/java/ch/so/agi/lsp/interlis/compiler/Ili2cUtil.java). Diese Kopplung begründet den neuen direkten Diagnosevertrag; die konkreten Texte bleiben Referenzmaterial für die Kompatibilität.
 
 Die [`diagnostic-pipeline.md` von ilic-fork](https://github.com/edigonzales/ilic-fork/blob/main/docs/architecture/diagnostic-pipeline.md) ist eine wichtige Entwurfsreferenz für Codes, Ursachen und Unterdrückung von Folgefehlern. Ihre C++-Implementierung wird nicht als Java-API übernommen. Normative Aussagen dieses Dokuments gelten für das neue Projekt; externe Repositories bleiben anhand des Quellenregisters gepinnte Referenzen.
+
+L3-1 registriert ILI-SEM-0011 (ERROR, BINDING, optionaler Modellbereich) für
+ungültige SemanticOverlays. Argumente overlay/target/reason sind TEXT.
+Konfigurationsdokumente sind keine erfundenen Modellstellen; diese globale
+Konfigurationsdiagnose ist auch ohne Quellbereich im einzigen Compile-Gate
+relevant. Die strukturierte Diagnose und SourceErrors bleiben von Abbruch,
+Implementierungslücke und internem Fehler getrennt.
+
+Extern konfigurierte, noch nicht gelieferte Originalmodelle sind dagegen
+ILI-RES-0005/MISSING_INPUT; mehrdeutige Originale ILI-RES-0006/AMBIGUOUS_INPUT.
+Beide sind globale ERROR/SOURCE_RESOLUTION-Diagnosen mit optionalem Bereich,
+overlay(TEXT), model(IDENTIFIER) und bei Mehrdeutigkeit candidates(IDENTIFIER_LIST).
+Die fehlende Quelle ist keine ungültige Metadatenkonfiguration und keine
+Implementierungslücke; das gemeinsame Gate erhält diese Unterscheidung.

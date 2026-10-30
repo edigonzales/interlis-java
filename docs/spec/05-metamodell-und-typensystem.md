@@ -1652,3 +1652,13 @@ werden. Gleiche vordefinierte abstrakte Grössen beider Sprachversionen haben
 dieselbe Dimension; ihre Symbolidentitäten bleiben verschieden. Diese
 Dimensionsaussage erteilt keine Umrechnungserlaubnis: Die bestehende öffentliche
 Unit-Relation bleibt ohne deklarierten Umrechnungspfad DISALLOWED.
+
+L3-1 ergänzt Origin.OverlayOrigin(String overlayId,int priority,
+Optional<SourceRange> range) und ModelTranslation.origin:Optional<Origin>.
+Die bisherige fünfparametrige ModelTranslation-Konstruktion bleibt erhalten.
+Die Konfigurationsherkunft kann ausserhalb des Modell-SourceSet liegen und
+ist keine erfundene Modelltextstelle. Symbol-/Typidentitäten und deklarierte
+Namen bleiben erhalten; öffentliche Metadaten enthalten wirksame Overlaywerte
+vor allen unveränderten Quellvorkommen (Kapitel06). Geprüfte externe
+Translationen erhalten dieselben Korrespondenzen und Originalziele wie
+Quelltranslationen; das Schema bleibt unveränderlich und gategebunden.

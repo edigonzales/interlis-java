@@ -12021,7 +12021,7 @@
     "path": "g2-source-inventory.json",
     "scope": "All syntax occurrences, numbered requirements, actual standard-function names, 130 predefined declarations/members/constraints, 21 special values/type variants and explicit lexical profiles. Paragraph/method-contract/assertion audit still open.",
     "acceptance": "MISSING_EVIDENCE",
-    "sha256": "c19ed6900d111a078056f6b9cfb3a26424c09b0de9d49970d01a78e1804da521"
+    "sha256": "653873b8d33381f5343d72bbfccdf025f8847db2aeb996ac3786caaf6c7d1f36"
   },
   "atomicRules": [
     {
@@ -14081,9 +14081,9 @@
   },
   "testCandidateIndex": {
     "path": "g2-test-candidate-index.json",
-    "sha256": "0bdb042cd7b0c40b37195a15724ab4eb4bdefd4aa467538437768e1c6c9cd64e",
+    "sha256": "48d8d8bdd4728b28dea94bbfd45a4cdced68d5db9917c166b6b267f4165037d4",
     "acceptance": "CANDIDATE_ONLY",
-    "testMethods": 688,
+    "testMethods": 700,
     "conditions": 621,
     "requirements": 80,
     "withCandidate": 669,

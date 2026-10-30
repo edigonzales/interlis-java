@@ -267,7 +267,7 @@ final class DefaultWorkspace implements Workspace {
                 capturedConfiguration.resolverCatalog(), parsed);
         ResolutionOutcome outcome = new DefaultModelResolutionService().prepare(
                 new ResolutionRequest(request.roots(), capturedConfiguration.resolutionPolicy(),
-                        budget, inventory.fingerprint().value()), () -> inventory, token);
+                        budget, inventory.fingerprint().value(),capturedConfiguration.compilerOptions().overlays()), () -> inventory, token);
         PreparedClosure closure;
         switch (outcome) {
             case ResolutionOutcome.Prepared prepared -> closure = prepared.closure();

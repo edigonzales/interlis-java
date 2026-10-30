@@ -7,7 +7,13 @@ import java.util.Optional;
 
 /** Typed provenance, including synthetic and predefined origins. */
 public sealed interface Origin permits Origin.DeclaredOrigin, Origin.DerivedOrigin,
-        Origin.PredefinedOrigin, Origin.SyntheticOrigin {
+        Origin.PredefinedOrigin, Origin.SyntheticOrigin, Origin.OverlayOrigin {
+
+    /** External immutable configuration provenance; the range may belong to a
+     * configuration source outside the model SourceSet. */
+    record OverlayOrigin(String overlayId,int priority,Optional<SourceRange> range) implements Origin {
+        public OverlayOrigin {Objects.requireNonNull(overlayId,"overlayId");if(overlayId.isBlank())throw new IllegalArgumentException("blank overlay id");Objects.requireNonNull(range,"range");}
+    }
 
     record DeclaredOrigin(SourceRange range) implements Origin {
         /** Creates a validated instance. */

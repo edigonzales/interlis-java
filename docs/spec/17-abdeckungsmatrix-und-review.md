@@ -848,3 +848,11 @@ Reihenfolge, getrennte gleichnamige Generic-Bindungen, Quellenabstraktion vor
 Inspektionskonkretisierung und gemeinsame geerbte Namensauflösung.
 `Phase2ClosureContractTest` ergänzt die bestehenden Translation-/Generic-/Metadaten-/
 Linienform-/Grafikverträge; das Phasenurteil verlangt frische volle T1/T2/T3-Nachweise.
+
+L3-1 (AC3-01/02, META-012, SEM-016, INC-007/016, TEST-006/007/014):
+reale unveränderliche SemanticOverlays mit Zielbindung, Präzedenz, Konflikt-/
+Mehrdeutigkeitsfehlern, Herkunft und öffentlicher Schemawirkung. Inhaltsbasierte
+Fingerprints, isolierte Closure-/Importzustände, Fresh/Reuse und verspätete
+Analyseannahme. Kapitel05/06/08/09/10/16 bleiben die Verträge;
+SemanticOverlayContractTest und OverlayWorkspaceContractTest sowie die gemeinsame
+portable Strecke prüfen Wirkung statt Fingerprint-Platzhaltern.

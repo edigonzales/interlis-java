@@ -173,6 +173,14 @@ Arbeit wird während einer Rückfrage fortgesetzt. Phase 3 beginnt dadurch nicht
 
 ## 8. Phase 3 – Echte Overlays und Modellauflösung
 
+Nutzerauftrag vom 30.10.2026: gesamte Phase3 autonom bis zum kumulativen
+Phasen-PASS, ohne Stopps zwischen L3-1 und L3-2. Jede Lieferung erhält einen
+unabhängigen OpenCode-Review über DeepSeek direkt am unveränderlichen
+Kandidaten. Technische Findings werden selbständig korrigiert und am neuen
+Kandidaten erneut geprüft; nach Teil-PASS wird automatisch fortgesetzt.
+Nur tatsächlich neue fachliche Entscheidungen oder ohne Nutzerhilfe unlösbare
+Blocker erfordern Rückfrage. Phase4 wird dadurch nicht beauftragt.
+
 | Lieferung | ID | Verbindliche Abnahmebedingung |
 |---|---|---|
 | `L3-1` Overlaysemantik | **AC3-01** | `SemanticOverlays` verarbeitet **echte unveränderliche** Translation-/CRS-/Metaattribut-Daten statt nur Fingerprint-Platzhalter; Zielbindung, Mehrdeutigkeit, Konflikt, Herkunft und öffentliche Schemawirkung sind überprüft. |

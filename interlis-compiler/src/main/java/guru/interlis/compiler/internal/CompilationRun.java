@@ -50,6 +50,8 @@ final class CompilationRun {
         verifySourceSet(sourceSet, lifecycle);
         parseSources(sourceSet, mode, lifecycle);
         token.throwIfCancellationRequested();
+        IndexedDeclarations declarations = new DeclarationIndexer().index(syntax.values().stream().toList(), reuse);
+        var overlays = new OverlayBindings(declarations,request.options().overlays(),collector,token,request.options().budget());
         ModelIndex modelIndex = new ModelIndex(syntax.values().stream().toList());
         RootSelection roots;
         Closure closure;
@@ -59,7 +61,7 @@ final class CompilationRun {
             RootSelector rootSelector = new RootSelector();
             roots = rootSelector.select(request.roots(), modelIndex, collector);
             ImportBinder importBinder = new ImportBinder();
-            closure = importBinder.bind(roots.roots(), modelIndex, sourceSet, collector);
+            closure = importBinder.bind(roots.roots(), modelIndex, sourceSet, collector,overlays);
             if (roots.roots().isEmpty()) {
                 closure = new Closure(List.of(), List.of(), java.util.Set.of(), List.of(),
                         closure.diagnostics(), new java.util.LinkedHashSet<>(closure.reasons()));
@@ -70,10 +72,8 @@ final class CompilationRun {
 
         CompilationFingerprinter fingerprinter = new CompilationFingerprinter();
         CompilationFingerprint fingerprint = fingerprinter.fingerprint(request, reuse);
-        SnapshotId snapshotId = new SnapshotId("snap-" + fingerprint.value());
-        DeclarationIndexer indexer = new DeclarationIndexer();
-        IndexedDeclarations declarations = indexer.index(
-                syntax.values().stream().toList(), reuse);
+        SnapshotId snapshotId = new SnapshotId("snap-" + Fingerprints.sha256(fingerprint.value()+"|snapshot-v2|"+mode+"|"
+                +reuse.previousAnalysis().map(a->a.snapshotId().value()).orElse("none")));
         token.throwIfCancellationRequested();
 
         Map<SourceId, java.util.Set<String>> syntaxUnsupported = new LinkedHashMap<>();
@@ -95,7 +95,7 @@ final class CompilationRun {
             syntaxUnsupported.put(id, unmatched);
         });
         GraphBuilder builder = new GraphBuilder(declarations, sourceSet, closure, collector,
-                snapshotId, syntaxUnsupported, token, request.options().budget());
+                snapshotId, syntaxUnsupported, token, request.options().budget(),overlays);
         var bindingPhase = lifecycle.beginPhase(Phase.BINDING,
                 new guru.interlis.execution.RunEvent.PhaseMetadata(declarations.all().size()));
         GraphBuilder.GraphResult graphResult;

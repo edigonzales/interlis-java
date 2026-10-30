@@ -40,24 +40,9 @@ public final class SessionRegistry {
         }
         WorkspaceConfiguration configuration = WorkspaceConfiguration.defaults();
         Optional<JsonValue.JsonObject> config = BridgeCodec.optionalObject(params, "configuration");
-        if (config.isPresent()) {
-            JsonValue.JsonObject c = config.get();
-            if (c.members().containsKey("allowedLanguages")) {
-                var languages = new java.util.LinkedHashSet<guru.interlis.model.LanguageVersion>();
-                for (JsonValue value : BridgeCodec.array(c, "allowedLanguages").values()) {
-                    String literal = ((JsonValue.JsonString) value).value();
-                    languages.add(guru.interlis.model.LanguageVersion.fromLiteral(literal)
-                            .orElseThrow(() -> new BridgeException("INVALID_REQUEST",
-                                    "unsupported language " + literal)));
-                }
-                CompilerOptions options = new CompilerOptions(SemanticProfileId.ILI_23_24_V1,
-                        languages, guru.interlis.compiler.WarningPolicy.ALLOW_WARNINGS,
-                        CompilerOptions.defaults().budget(), SemanticOverlays.empty());
-                configuration = new WorkspaceConfiguration(options,
-                        configuration.resolutionPolicy(), configuration.resolverCatalog(),
-                        configuration.cacheLimits());
-            }
-        }
+        if(config.isPresent())configuration=new WorkspaceConfiguration(
+                OverlayCodec.options(config.orElseThrow(),configuration.compilerOptions()),
+                configuration.resolutionPolicy(),configuration.resolverCatalog(),configuration.cacheLimits());
         CompilerEngine engine = CompilerEngines.create();
         Workspace workspace = Workspaces.create(engine, configuration);
         if (params.members().get("sources") instanceof JsonValue.JsonArray sources) {

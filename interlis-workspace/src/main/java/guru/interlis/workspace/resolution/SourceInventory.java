@@ -54,24 +54,20 @@ public final class SourceInventory {
         }
         this.syntax = Map.copyOf(parsed);
         this.headers = List.copyOf(headers);
-        this.fingerprint = new ResolutionFingerprint(computeFingerprint(workspaceRevision,
-                sources, catalog));
+        this.fingerprint = new ResolutionFingerprint(computeFingerprint(sources, catalog));
     }
 
-    private static String computeFingerprint(WorkspaceRevision revision,
-                                             Map<SourceId, SourceText> sources,
-                                             ResolverCatalog catalog) {
-        StringBuilder canonical = new StringBuilder("inventory|").append(revision.value()).append('|');
-        sources.entrySet().stream().sorted(Map.Entry.comparingByKey(
-                        java.util.Comparator.comparing(SourceId::value)))
-                .forEach(e -> canonical.append(e.getKey().value()).append('@')
-                        .append(e.getValue().revision().value()).append(':')
-                        .append(e.getValue().contentFingerprint().value()).append(';'));
-        canonical.append(catalog.fingerprint());
-        byte[] digest = guru.interlis.source.Sha256.digest(
-                canonical.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        return "sha256:" + guru.interlis.source.Hex.encode(digest);
+    private static String computeFingerprint(Map<SourceId,SourceText> sources,ResolverCatalog catalog) {
+        StringBuilder canonical=new StringBuilder("inventory-v2");
+        field(canonical,Integer.toString(sources.size()));
+        sources.entrySet().stream().sorted(Map.Entry.comparingByKey(java.util.Comparator.comparing(SourceId::value))).forEach(e->{
+            field(canonical,e.getKey().value());field(canonical,Long.toString(e.getValue().revision().value()));
+            field(canonical,e.getValue().contentFingerprint().value());
+        });
+        field(canonical,catalog.fingerprint());
+        return "sha256:"+guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digestUtf16(canonical.toString()));
     }
+    private static void field(StringBuilder b,String value){b.append(value.length()).append(':').append(value);}
 
     /**
      * Returns the {@code workspaceRevision} value.

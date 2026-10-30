@@ -31,6 +31,42 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L3-1: actual overlay data, revision isolation and transitive originals.
+  let semanticOverlayCases=0;
+  for(const version of ['2.3','2.4']) {
+    const sourceId='memory:/overlay.ili',text=`INTERLIS ${version};MODEL F AT "https://example.org" VERSION "1"=DOMAIN P=COORD 0..10,0..10;END F.`;
+    await verifySources([{sourceId,text}],'succeeded',['F'],async(sessionId,plain)=>{
+      const props=snapshotId=>call('query',sessionId,{snapshotId,query:{kind:'semanticProperties',sourceId,revision:'1',startOffset:text.indexOf('P=COORD'),endOffset:text.indexOf('P=COORD')}});
+      const compile=revision=>call('compile',sessionId,{expectedWorkspaceRevision:revision,roots:[{kind:'byName',modelName:'F'}]});
+      const config=async(overlays,expectedWorkspaceRevision)=>call('setConfiguration',sessionId,{expectedWorkspaceRevision,overlays});
+      const entry=value=>({kind:'meta-attribute',id:'project',priority:10,target:{name:'F.P',modelVersion:'1'},attributes:{label:[value]}});
+      if((await props(plain.snapshotId)).metadata.length!==0)throw new Error('Unconfigured metadata leak');
+      let changed=await config([entry('first'),{kind:'crs',id:'project',priority:10,target:'F.P',crs:'EPSG:2056'}],'1');
+      const first=await compile(changed.workspaceRevision);if(first.outcome!=='succeeded')throw new Error('Actual overlay rejected '+JSON.stringify(first));
+      const properties=await props(first.snapshotId);
+      if(properties.metadata.length!==2||!properties.metadata.some(v=>v.key==='label'&&v.text==='first'&&v.origin.kind==='overlay'&&v.origin.overlayId==='project')||!properties.metadata.some(v=>v.key==='CRS'&&v.text==='EPSG:2056'))throw new Error('Overlay not exposed '+JSON.stringify(properties));
+      changed=await config([entry('second')],changed.workspaceRevision);const second=await compile(changed.workspaceRevision);
+      if(second.outcome!=='succeeded'||first.snapshotId===second.snapshotId||(await props(second.snapshotId)).metadata[0].text!=='second')throw new Error('Overlay edit did not invalidate');
+      if((await props(first.snapshotId)).metadata.find(v=>v.key==='label').text!=='first')throw new Error('Published snapshot mutated');
+      changed=await config([entry('x'),entry('y')],changed.workspaceRevision);const conflict=await compile(changed.workspaceRevision);
+      if(conflict.outcome!=='rejected'||!conflict.diagnostics.some(d=>d.code==='ILI-SEM-0011'))throw new Error('Overlay conflict accepted');
+      changed=await config([],changed.workspaceRevision);const clear=await compile(changed.workspaceRevision);
+      if(clear.outcome!=='succeeded'||(await props(clear.snapshotId)).metadata.length!==0)throw new Error('Cleared overlay leaked');
+    });semanticOverlayCases++;
+    const model=(name,body)=>`INTERLIS ${version};MODEL ${name} AT "https://example.org" VERSION "1"=${body}END ${name}.`;
+    const sources=[{sourceId:'memory:/f.ili',text:model('F','IMPORTS Leaf;DOMAIN Point=COORD 0..10,0..10;')},
+      {sourceId:'memory:/original.ili',text:model('Original','IMPORTS Leaf;DOMAIN P=COORD 0..10,0..10;')},
+      {sourceId:'memory:/leaf.ili',text:model('Leaf','DOMAIN N=0..10;')}];
+    await verifySources(sources,'succeeded',['F'],async(sessionId,plain)=>{
+      const changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:'3',overlays:[{kind:'translation',id:'translations',priority:1,target:'F',original:'Original'}]});
+      const result=await call('compile',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision,roots:[{kind:'byName',modelName:'F'}]});
+      if(result.outcome!=='succeeded')throw new Error('External translation original closure failed '+JSON.stringify(result));
+      const properties=await call('query',sessionId,{snapshotId:result.snapshotId,query:{kind:'semanticProperties',sourceId:'memory:/f.ili',revision:'1',startOffset:sources[0].text.indexOf('MODEL F')+6,endOffset:sources[0].text.indexOf('MODEL F')+6}});
+      if(properties.translation?.sourceModel!=='Original'||properties.translation.origin?.overlayId!=='translations'||properties.translation.correspondences.length<3)throw new Error('External translation graph lost '+JSON.stringify(properties));
+      const old=await call('query',sessionId,{snapshotId:plain.snapshotId,query:{kind:'semanticProperties',sourceId:'memory:/f.ili',revision:'1',startOffset:sources[0].text.indexOf('MODEL F')+6,endOffset:sources[0].text.indexOf('MODEL F')+6}});
+      if(old.translation)throw new Error('Translation leaked into old snapshot');
+    });semanticOverlayCases++;
+  }
   // L2-3: source abstraction and cross-feature import/translation identities.
   let phase2ClosureCases=0;
   for(const version of ['2.3','2.4']) {
@@ -1983,7 +2019,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return semanticOverlayCases + phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

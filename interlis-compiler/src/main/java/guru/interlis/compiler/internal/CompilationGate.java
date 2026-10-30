@@ -46,7 +46,7 @@ final class CompilationGate {
         Set<DiagnosticId> relevantIds = new LinkedHashSet<>(roots.diagnostics());
         relevantIds.addAll(closure.diagnostics());
         for (Diagnostic diagnostic : analysis.diagnostics()) {
-            boolean inClosure = diagnostic.primaryRange()
+            boolean inClosure = Set.of("ILI-SEM-0011","ILI-RES-0005","ILI-RES-0006").contains(diagnostic.code().value()) || diagnostic.primaryRange()
                     .map(r -> diagnostic.phase() == Phase.LEXING || diagnostic.phase() == Phase.PARSING
                             ? closure.sources().contains(r.source()) : closure.contains(r))
                     .orElse(relevantIds.contains(diagnostic.id()));
@@ -63,8 +63,8 @@ final class CompilationGate {
                 continue;
             }
             switch (diagnostic.code().value()) {
-                case "ILI-RES-0001" -> reasons.add(RejectionReason.MISSING_INPUT);
-                case "ILI-RES-0002" -> reasons.add(RejectionReason.AMBIGUOUS_INPUT);
+                case "ILI-RES-0001", "ILI-RES-0005" -> reasons.add(RejectionReason.MISSING_INPUT);
+                case "ILI-RES-0002", "ILI-RES-0006" -> reasons.add(RejectionReason.AMBIGUOUS_INPUT);
                 case "ILI-RES-0003" -> reasons.add(RejectionReason.ENVIRONMENT_FAILURE);
                 case "ILI-RES-0004" -> reasons.add(RejectionReason.MISSING_INPUT);
                 case "ILI-IMPL-0001" -> reasons.add(RejectionReason.INCOMPLETE_SUPPORT);
@@ -134,9 +134,8 @@ final class CompilationGate {
         }
         SemanticGraph subset = analysis.semanticGraph().subsetForModels(
                 new LinkedHashSet<>(output.graphResult().models()), output.graphResult().roots());
-        SchemaFingerprint fingerprint = new SchemaFingerprint("SHA-256/schema-v1",
-                Fingerprints.sha256("schema|" + analysis.fingerprint().value() + "|"
-                        + output.graphResult().models()));
+        SchemaFingerprint fingerprint = new SchemaFingerprint("SHA-256/schema-v2",
+                Fingerprints.sha256("schema-v2|" + analysis.fingerprint().value()));
         List<SymbolRef> rootRefs = output.graphResult().roots().stream()
                 .map(id -> new SymbolRef(analysis.snapshotId(), id)).toList();
         List<SymbolRef> modelRefs = output.graphResult().models().stream()

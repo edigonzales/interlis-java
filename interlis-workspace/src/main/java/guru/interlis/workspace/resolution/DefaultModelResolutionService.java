@@ -66,14 +66,15 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                 // but TRANSLATION OF does not make their namespaces visible as imports.
                 var model = inventory.syntax().get(header.source()).root().models().stream()
                         .filter(m -> m.range().startOffset() == header.declarationOffset()).findFirst().orElseThrow();
-                if (model.translationSource().isPresent()) {
-                    String original = model.translationSource().orElseThrow().text();
+                for(var originalSelector:translationDependencies(header,model,request)) {
+                    String original = originalSelector.modelName();
                     List<ModelHeader> candidates = inventory.headers().stream()
                             .filter(h -> h.modelName().equals(original))
-                            .filter(h -> model.translationVersion().isEmpty()
-                                    || model.translationVersion().orElseThrow().equals(h.modelVersion())).toList();
+                            .filter(h -> originalSelector.modelVersion().isEmpty()
+                                    || originalSelector.modelVersion().orElseThrow().equals(h.modelVersion()))
+                            .filter(h->originalSelector.sourceHint().isEmpty()||originalSelector.sourceHint().orElseThrow().equals(h.source())).toList();
                     var dependency = new ResolutionDependency(
-                            new ModelSelector.ByName(original, model.translationVersion(), Optional.empty()), List.of(),
+                            originalSelector, List.of(),
                             candidates.stream().map(DefaultModelResolutionService::location).toList(),
                             candidates.size() == 1 ? ResolutionDependency.Kind.POSITIVE
                                     : candidates.isEmpty() ? ResolutionDependency.Kind.NEGATIVE : ResolutionDependency.Kind.AMBIGUOUS,
@@ -85,7 +86,7 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                         if (selected.add(target)) queue.addLast(target);
                     } else {
                         negative.add(dependency);
-                        pending.add(new PendingSourceRequest(original, model.translationVersion(), List.of(),
+                        pending.add(new PendingSourceRequest(original, originalSelector.modelVersion(), List.of(),
                                 candidates.isEmpty() ? "translation original not found" : "translation original is ambiguous", List.of()));
                         trace.add(header.modelName() + " has unresolved translation original " + original);
                     }
@@ -174,6 +175,18 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                     Optional.empty(), List.of());
             return new ResolutionOutcome.ResolutionFailed(failureId, diagnostic);
         }
+    }
+
+    private List<ModelSelector.ByName> translationDependencies(ModelHeader header,guru.interlis.syntax.ModelSyntax model,ResolutionRequest request) {
+        var selected=new ArrayList<guru.interlis.compiler.SemanticOverlays.SemanticOverlay.TranslationOverlay>();
+        for(var overlay:request.overlays().overlays())if(overlay instanceof guru.interlis.compiler.SemanticOverlays.SemanticOverlay.TranslationOverlay t
+                && t.target().name().segments().size()==1 && t.target().name().last().equals(header.modelName())
+                && t.target().modelVersion().filter(v->!v.equals(header.modelVersion())).isEmpty()
+                && t.target().sourceHint().filter(v->!v.equals(header.source())).isEmpty())selected.add(t);
+        int priority=selected.stream().mapToInt(t->t.source().priority()).max().orElse(Integer.MIN_VALUE);
+        if(!selected.isEmpty())return selected.stream().filter(t->t.source().priority()==priority && t.original().name().segments().size()==1)
+                .map(t->new ModelSelector.ByName(t.original().name().last(),t.original().modelVersion(),t.original().sourceHint())).distinct().toList();
+        return model.translationSource().map(n->List.of(new ModelSelector.ByName(n.text(),model.translationVersion(),Optional.empty()))).orElse(List.of());
     }
 
     /**

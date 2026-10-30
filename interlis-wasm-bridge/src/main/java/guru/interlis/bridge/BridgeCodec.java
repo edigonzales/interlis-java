@@ -125,7 +125,7 @@ public final class BridgeCodec {
                         "updateSource", "updateSources", "removeSource", "setConfiguration",
                         "analyze", "compile", "query", "diagram", "releaseSnapshot",
                         "closeSession")),
-                "queries", JsonValues.strings(List.of("symbolAt", "definition", "hover",
+                "queries", JsonValues.strings(List.of("symbolAt", "definition", "semanticProperties", "hover",
                         "completion")),
                 "features", JsonValues.strings(List.of("MODEL", "TOPIC", "CLASS", "STRUCTURE",
                         "DOMAIN", "ATTRIBUTE", "INHERITANCE", "ASSOCIATION_ROLE",

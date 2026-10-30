@@ -3,7 +3,12 @@
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
-Seit dem Nutzerauftrag vom 30.10.2026 wird die gesamte G2-Phase 2 autonom
+Phase3 ist inzwischen vollständig autonom beauftragt: L3-1 (echte fachliche
+SemanticOverlays, AC3-01/02), danach L3-2 mit Repository-/Closure-Verträgen
+und kumulativer T1/T2/T3-Abnahme. Operativer Stand ausschliesslich in
+[STATUS](g2/STATUS.md). Phase4 wird dadurch nicht begonnen.
+
+Seit dem früheren Nutzerauftrag vom 30.10.2026 wurde die gesamte G2-Phase 2 autonom
 bearbeitet: L2-1 (WP-22, AC2-01/02), danach L2-2 und L2-3 mit unabhängigen
 OpenCode-/DeepSeek-Direktreviews und kumulativem T1/T2/T3-Gate. Der aktuelle
 Abschnitt ergänzt die abhängige Funktionsargument-/Ergebnisbindung und

@@ -3,8 +3,9 @@ package guru.interlis.model;
 import java.util.*;
 
 /**
- * Immutable source metadata, distinct from transfer data. All occurrences retain
- * source order and provenance; the map indexes the first occurrence of each key.
+ * Immutable effective metadata, distinct from transfer data. Overlay occurrences
+ * precede the unchanged source occurrences in explicit priority order; source
+ * order and every provenance are retained. The map indexes the first occurrence.
  *
  * @param values null-free first-occurrence index
  * @param entries null-free occurrences in source order, including repetitions

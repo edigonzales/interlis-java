@@ -1,5 +1,15 @@
 # G2 – operativer Status
 
+- Aktueller Auftrag: **gesamte Phase3 autonom**, L3-1 danach L3-2 mit
+  unabhängigen OpenCode-/DeepSeek-Direktreviews und vollem kumulativem
+  T1/T2/T3-Phasengate. **L3-1 REVIEW_PENDING**, AC3-01/02.
+  Reale typisierte Overlaydaten, Ziel-/Konfliktbindung, Herkunft, öffentliche
+  Wirkung und inhaltsbasierte Fingerprints implementiert. Eigener Vollauf
+  Exit0/2m28s/58Tasks,820reguläreJVM +137Evidenz/15Assertions/15Host ohneFehler/Skips;
+  JS/WasmGC je3491PASS,SDK9,Pythonfrei1220,21/21Normprüfungen.
+  [Implementierung/Nachweise](implementation/L3-1.md). Kein Phase3-PASS;
+  Phase4 bleibt ausserhalb des Auftrags.
+
 - Auftrag **gesamte Phase 2 autonom**: abgeschlossen, ohne manuelle Stopps
   zwischen den Lieferungen. **L2-3 / PHASE 2: PASS**, kumulativ **AC2-01–AC2-07**.
 - Unabhängig geprüfter Schlussproduktcommit:
@@ -31,8 +41,7 @@
   ein erfolgreicher CLI-Exit wird nicht behauptet. Rohlog:
   `build/review/L2-3/opencode.jsonl`; der unveränderte Reviewbericht und dessen
   Schlussurteil sind vollständig vorhanden.
-- **Phase3 wurde nicht begonnen.** Nächster fachlicher Schritt ist Phase3
-  (echte Overlays/Modellauflösung), sobald beauftragt. Dieses Phase-2-PASS ist
+- Phase3 ist inzwischen ausdrücklich beauftragt; aktueller Stand oben. Dieses Phase-2-PASS ist
   keine globale G2-/P3-/P4-/P5-Freigabe; GlobalD2 bleibt getrennt
   PENDING_USER_REVALIDATION. [Implementierung/Nachweise](implementation/L2-3.md).
 - **L2-1: PASS**, AC2-01/AC2-02. Unabhängig geprüfter Produktcommit

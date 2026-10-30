@@ -634,3 +634,14 @@ gesichert: übersetzte Rollen-ALL-OF-Korrespondenzen, ursprüngliche importierte
 Metadaten-/Linienform-/Generic-Ziele und Reihenfolgen, gleichnamige getrennte
 Generic-Domains, Fresh/Reuse nach Fehler und Erholung, geerbte Viewbasen mit
 aktuellen Teilnehmerzielen sowie LineCoord-Quellabstraktion. Keine neue öffentliche API.
+
+L3-1: compiler besitzt SemanticOverlays.OverlaySource und Target sowie die
+inhaltlichen SemanticOverlay.TranslationOverlay(source,target,original),
+CrsOverlay(source,target,crs) und MetaAttributeOverlay(source,target,attributes).
+attributes ist Map<String,List<String>>, tief kopiert, Schlüssel lexikalisch,
+Werte in Eingabereihenfolge. Target(QualifiedName,Optional<String> modelVersion,
+Optional<SourceId> sourceHint) bindet eindeutig im tatsächlichen Inventar.
+model besitzt Origin.OverlayOrigin und ModelTranslation.origin; die
+Kompatibilitätskonstruktion mit fünf Parametern bleibt. Kapitel05/06 regeln
+Herkunft/Präzedenz/Fehler/Fingerprints. SemanticOverlayContractTest prüft
+öffentliche Wirkung, Fehler, Closure, Isolation und Fresh/Reuse.
