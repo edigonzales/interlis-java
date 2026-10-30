@@ -873,3 +873,15 @@ Portabilitätsverträge durch die APIs und Abnahmen aus Kapitel 08 §11, 07, 10,
 16 und 18. Die operative Abnahme erfolgt kumulativ für AC3-01–AC3-06; die neuen
 Closure-/Pin-/Lock-/Originalbindungsassertions sind keine pauschale Freigabe der
 weiterhin `CANDIDATE_ONLY` markierten Normmatrix oder der G2-Phase4.
+
+## P3-1 – additive CLI-Verträge
+
+CLI-001–007, COMPAT-001–003 und LOG-005 verweisen für Kommandoschema,
+Konfigurationspräzedenz, tatsächliches ili2c-Prüfprofil und Eltern-/Kindläufe auf
+Kapitel 18 sowie das API-Register in Kapitel 16. FMT-001–004 bewahren Werte
+innerhalb mehrzeiliger Literale/Metadaten bei expliziter Zeilenendenwahl mit
+einem Hinweis; gewöhnliche Kommentarzeilenenden werden normalisiert.
+`OutputPlanner`, `CliOutputWriter` und die abgeschlossenen Dateiartefakte regeln
+Hostausgaben, keine zusätzliche Compilersemantik. Abnahme: CLI-/Formatter-
+Vertragstests, echte Referenz-/Ersatzprozesse und Plattformprüfung gemäss
+Kapitel 03/13/14. Der operative Nachweisstand steht in `docs/p3/STATUS.md`.

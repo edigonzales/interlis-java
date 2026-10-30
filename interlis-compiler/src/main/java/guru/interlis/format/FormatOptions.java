@@ -14,9 +14,9 @@ public record FormatOptions(int indentWidth, LineEnding lineEnding, boolean fina
     public enum LineEnding {
         /** Preserve the original line ending per line. */
         PRESERVE,
-        /** Use LF. */
+        /** Use LF outside value-bearing multiline literals and metadata. */
         LF,
-        /** Use CRLF. */
+        /** Use CRLF outside value-bearing multiline literals and metadata. */
         CRLF
     }
 

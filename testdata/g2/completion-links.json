@@ -5580,7 +5580,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "674de83e2b6302fd6b29a380b5ba02c99067d80927805af7659e722dfef7ae47"
+          "sha256": "14a7487e6a1c096169b5f0458ba24a170e726a9694a49885540621ecb22d0df2"
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
@@ -5637,7 +5637,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "674de83e2b6302fd6b29a380b5ba02c99067d80927805af7659e722dfef7ae47"
+          "sha256": "14a7487e6a1c096169b5f0458ba24a170e726a9694a49885540621ecb22d0df2"
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
@@ -5645,7 +5645,7 @@
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "b4d90d8587e2a85323aaf4019a11b1144546eb1cf14467bc75ec30ed894f2e77"
+          "sha256": "3874179535328a00eb0d06a46345e97258052b12f991678b5de474e5c066baa3"
         }
       ],
       "resolution": "Synchron gepflegte Fachverträge/Register/Verbraucher und echte PublicSdk-/Bridge-Konstruktion; kein synthetisches Dokument-Golden."
@@ -11717,10 +11717,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "preservesTokensAndIsIdempotentAcrossVersionsAndLineEndings",
-      "methodStart": 3933,
-      "methodEnd": 5262,
-      "methodSha256": "0f85213ec85aeba200425f704639d5c90a1feeaae5957e851ee3bd5140ebad80",
-      "sourceSha256": "4f6e686c9e1da30b2e850e0ee99f03fd5c41c1515a17b5f3ce39adb368ddd467",
+      "methodStart": 4600,
+      "methodEnd": 6216,
+      "methodSha256": "7662dd4334222ac778498e1588257c23750e7a541303e50b54d54231342dc52e",
+      "sourceSha256": "9eb1e07e52ed4cdba582a68ae052be289e4e387500d55b33948938331f8116dd",
       "observations": [
         "LF/CRLF token preservation",
         "CRLF/LF",
@@ -14786,10 +14786,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "formattingIsIdempotentAndCanUseLf",
-      "methodStart": 2285,
-      "methodEnd": 2732,
+      "methodStart": 2952,
+      "methodEnd": 3399,
       "methodSha256": "4318b52d58a675a377967e986bb061aa2d1a767c16c0af5e82aa377fbdab2721",
-      "sourceSha256": "4f6e686c9e1da30b2e850e0ee99f03fd5c41c1515a17b5f3ce39adb368ddd467",
+      "sourceSha256": "9eb1e07e52ed4cdba582a68ae052be289e4e387500d55b33948938331f8116dd",
       "observations": [
         "idempotent, LF",
         "API formatting"
@@ -14799,10 +14799,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "formatsIndentationAndPreservesCommentsAndUnicode",
-      "methodStart": 1531,
-      "methodEnd": 2279,
+      "methodStart": 2198,
+      "methodEnd": 2946,
       "methodSha256": "3bd4d033afd9d4453f6f7545c8f4cf048a79148aef740a7ebcc77c7e735ae36c",
-      "sourceSha256": "4f6e686c9e1da30b2e850e0ee99f03fd5c41c1515a17b5f3ce39adb368ddd467",
+      "sourceSha256": "9eb1e07e52ed4cdba582a68ae052be289e4e387500d55b33948938331f8116dd",
       "observations": [
         "comments/Unicode preserved"
       ]
@@ -14811,10 +14811,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "multilineAndInterleavedCommentsKeepTheirTextAndPosition",
-      "methodStart": 3088,
-      "methodEnd": 3927,
+      "methodStart": 3755,
+      "methodEnd": 4594,
       "methodSha256": "e3b8a86605e6df9ae98d1fb96c4b7601d437f1697cfba0a257da5f051b37f240",
-      "sourceSha256": "4f6e686c9e1da30b2e850e0ee99f03fd5c41c1515a17b5f3ce39adb368ddd467",
+      "sourceSha256": "9eb1e07e52ed4cdba582a68ae052be289e4e387500d55b33948938331f8116dd",
       "observations": [
         "multiline comments"
       ]

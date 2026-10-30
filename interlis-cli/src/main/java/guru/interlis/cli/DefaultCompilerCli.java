@@ -6,6 +6,12 @@ import guru.interlis.compiler.ModelSelector;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.execution.RunContext;
+import guru.interlis.execution.RunLifecycle;
+import guru.interlis.execution.RunEvent;
+import guru.interlis.execution.RunCompletion;
+import guru.interlis.execution.CancellationReason;
+import guru.interlis.execution.FailureId;
 import guru.interlis.format.FormatOptions;
 import guru.interlis.format.FormatOutcome;
 import guru.interlis.format.ModelFormatter;
@@ -47,58 +53,150 @@ import java.util.Optional;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 /** Default CLI implementation using the same CompilerEngine as the SDK. */
 public final class DefaultCompilerCli implements CliApplication {
+    private final Optional<LegacyCliProfile> legacyProfile;
+    private final CliOutputWriter fileWriter;
+
+    /** Creates the new standard command profile. */
+    public DefaultCompilerCli() { legacyProfile = Optional.empty(); fileWriter = new CliOutputWriter(); }
+
+    DefaultCompilerCli(CliOutputWriter fileWriter) {
+        legacyProfile = Optional.empty(); this.fileWriter = Objects.requireNonNull(fileWriter);
+    }
+
+    /** Creates an immutable checking-profile adapter; no run state is retained. */
+    public DefaultCompilerCli(LegacyCliProfile profile) {
+        legacyProfile = Optional.of(Objects.requireNonNull(profile, "profile"));
+        fileWriter = new CliOutputWriter();
+    }
     @Override
     public CliExecutionResult run(List<String> arguments, CliEnvironment environment,
                                   CancellationToken token) {
-        Objects.requireNonNull(environment, "environment");
-        CliExecutionResult outcome = execute(arguments, environment, token);
-        environment.out().flush();
-        environment.err().flush();
-        if (environment.out().checkError() || environment.err().checkError()) {
-            return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "output write failed");
-        }
-        return outcome;
-    }
-
-    private CliExecutionResult execute(List<String> arguments, CliEnvironment environment,
-                                       CancellationToken token) {
         Objects.requireNonNull(arguments, "arguments");
         Objects.requireNonNull(environment, "environment");
         Objects.requireNonNull(token, "token");
-        if (arguments.isEmpty()) {
-            return usage(environment, "missing command");
+        var services = environment.services();
+        var invocation = new Invocation(services.runContexts().createRoot());
+        var observed = new guru.interlis.compiler.CompilerServices(event -> {
+            services.observer().onEvent(event);
+            if (invocation.trace && !(event instanceof RunEvent.Finished
+                    && event.header().runId().equals(invocation.context.runId())))
+                environment.err().println("Trace: " + event.getClass().getSimpleName()
+                    + (event instanceof RunEvent.PhaseStarted phase ? " " + phase.phase() : ""));
+        }, services.clock(), services.runContexts());
+        var effective = new CliEnvironment(environment.workingDirectory(), environment.in(), environment.out(),
+                environment.err(), environment.environment(), observed);
+        var lifecycle = RunLifecycle.create(invocation.context, observed.observer(), services.clock());
+        lifecycle.start(new RunEvent.RunMetadata("cli", List.of("2.3", "2.4"), 0,
+                legacyProfile.map(LegacyCliProfile::id).orElse("cli-standard/v1")));
+        CliExecutionResult outcome = execute(arguments, effective, token, invocation);
+        if (invocation.legacyChecking && !invocation.quiet) {
+            environment.err().println(outcome.termination() == CliTermination.SUCCESS
+                    ? "Info: ...compiler run done" : "...compiler run failed");
         }
-        String command = arguments.getFirst();
         try {
+            environment.out().flush();
+            environment.err().flush();
+            if (environment.out().checkError() || environment.err().checkError()) {
+                outcome = result(CliTermination.OPERATIONAL_FAILURE, outcome.diagnostics(), "output write failed");
+            }
+        } catch (RuntimeException failure) {
+            outcome = result(CliTermination.OPERATIONAL_FAILURE, outcome.diagnostics(), "output flush failed");
+        }
+        lifecycle.finish(invocation.completion(outcome));
+        return new CliExecutionResult(outcome.exitCode(), outcome.termination(), outcome.diagnostics(),
+                outcome.output(), Optional.of(invocation.context.runId()), invocation.artifacts,
+                Optional.ofNullable(invocation.rejection));
+    }
+
+    private CliExecutionResult execute(List<String> arguments, CliEnvironment environment,
+                                       CancellationToken token, Invocation invocation) {
+        Objects.requireNonNull(arguments, "arguments");
+        Objects.requireNonNull(environment, "environment");
+        Objects.requireNonNull(token, "token");
+        try {
+            if (legacyProfile.isPresent()) {
+                var plan = new Ili2cInvocationPlanner().prepare(arguments, legacyProfile.orElseThrow(), environment, token);
+                arguments = plan.arguments();
+                invocation.rootOverride = plan.roots();
+                invocation.quiet = plan.quiet();
+                invocation.withoutWarnings = plan.withoutWarnings();
+                invocation.trace = plan.trace();
+                invocation.legacyChecking = plan.checking();
+                if (plan.checking() && !plan.quiet())
+                    environment.err().println("Info: interlis-java-" + VersionManifest.current().toolVersion());
+            }
+            if (arguments.isEmpty()) return usage(environment, "missing command");
+            String command = arguments.getFirst();
             return switch (command) {
+                case "help" -> help(arguments, environment);
                 case "version" -> version(arguments, environment);
-                case "capabilities" -> capabilities(environment);
-                case "check", "compile" -> compile(arguments, environment, token);
-                case "analyze" -> analyze(arguments, environment, token);
-                case "diagram" -> diagram(arguments, environment, token);
-                case "format" -> format(arguments, environment, token);
+                case "capabilities" -> arguments.size() == 1 ? capabilities(environment)
+                        : usage(environment, "capabilities accepts no arguments");
+                case "check", "compile" -> compile(arguments, environment, token, invocation);
+                case "analyze" -> analyze(arguments, environment, token, invocation);
+                case "diagram" -> diagram(arguments, environment, token, invocation);
+                case "format" -> format(arguments, environment, token, invocation);
                 default -> usage(environment, "unknown command: " + command);
             };
         } catch (OperationCancelledException cancelled) {
+            invocation.cancellation = cancelled.reason();
+            environment.err().println("cancelled: " + cancelled.reason());
             return result(CliTermination.CANCELLED, List.of(),
                     "cancelled: " + cancelled.reason());
         } catch (SourceLoadException failure) {
-            return result(CliTermination.USAGE_ERROR, List.of(),
-                    "source load failed: " + failure.reason());
+            String message = "source load failed: " + failure.reason();
+            environment.err().println((legacyProfile.isPresent() ? "Error: " : "") + message);
+            return result(CliTermination.OPERATIONAL_FAILURE, List.of(), message);
         } catch (CliUsageException usage) {
             return usage(environment, usage.getMessage());
         } catch (RuntimeException failure) {
-            return result(CliTermination.INTERNAL_FAILURE, List.of(),
-                    "internal failure: " + failure.getClass().getSimpleName());
+            invocation.failureId = new FailureId("cli-" + java.util.UUID.randomUUID());
+            String message = "internal failure: " + invocation.failureId.value();
+            environment.err().println(message);
+            return result(CliTermination.INTERNAL_FAILURE, List.of(), message);
         }
+    }
+
+    private CliExecutionResult help(List<String> arguments, CliEnvironment environment) {
+        parseCommand(arguments);
+        if (legacyProfile.isPresent()) {
+            var profile = legacyProfile.orElseThrow();
+            var text = new StringBuilder(new ToolVersionRenderer().render(VersionManifest.current(), profile));
+            text.append("USAGE\n  ili2c [options] file1.ili file2.ili ...\nOPTIONS\n");
+            for (var option : profile.commandSpec().options())
+                text.append("  ").append(option.name()).append(option.valueCount() > 0 ? " VALUE" : "").append('\n');
+            text.append("Unsupported legacy options are rejected explicitly:\n");
+            profile.unsupportedOptions().forEach((name, reason) -> text.append("  ").append(name).append(": ").append(reason).append('\n'));
+            environment.err().print(text);
+            return result(CliTermination.SUCCESS, List.of(), text.toString());
+        }
+        var help = new StringBuilder("interlis-java ")
+                .append(VersionManifest.current().toolVersion()).append("\n");
+        for (String command : List.of("help", "version", "capabilities", "check", "compile", "analyze", "diagram", "format")) {
+            var specification = CommandSpec.standard(command);
+            help.append(command);
+            for (var option : specification.options()) {
+                help.append(" [").append(option.name());
+                for (int count = 0; count < option.valueCount(); count++) help.append(" VALUE");
+                help.append(option.repeatable() ? "]..." : "]");
+            }
+            if (specification.acceptsFiles()) help.append(" [--] [files...]");
+            help.append('\n');
+        }
+        environment.out().print(help);
+        return result(CliTermination.SUCCESS, List.of(), help.toString());
     }
 
     private CliExecutionResult version(List<String> arguments, CliEnvironment environment) {
         VersionManifest manifest = VersionManifest.current();
+        if (legacyProfile.isPresent()) {
+            String text = new ToolVersionRenderer().render(manifest, legacyProfile.orElseThrow());
+            environment.err().print(text);
+            return result(CliTermination.SUCCESS, List.of(), text);
+        }
         if (arguments.size() > 1) {
             if (arguments.size() == 2 && arguments.get(1).equals("--json")) {
                 String json = "{\"tool\":\"interlis-java\",\"version\":\""
@@ -138,23 +236,40 @@ public final class DefaultCompilerCli implements CliApplication {
                 + "\"languages\":[\"2.3\",\"2.4\"],"
                 + "\"features\":[\"MODEL\",\"TOPIC\",\"CLASS\",\"STRUCTURE\",\"DOMAIN\",\"FORMAT\","
                 + "\"ATTRIBUTE\",\"INHERITANCE\",\"ASSOCIATION_ROLE\",\"MANDATORY_CONSTRAINT\","
-                + "\"IMPORTS\",\"COORD\",\"MULTICOORD\"],"
+                + "\"IMPORTS\",\"COORD\",\"MULTICOORD\",\"FUNCTION\",\"TRANSLATION\","
+                + "\"DEFERRED_GENERICS\",\"VIEW_SCHEMA\",\"GRAPHIC\",\"CONTEXT\","
+                + "\"METADATA_BASKET\",\"RUNTIME_PARAMETER\",\"LINE_FORM\","
+                + "\"FUNCTION_ARGUMENT_TYPE\",\"BUILTIN_SIGNATURE\"],"
                 + "\"qualification\":\"P3_OPEN\","
-                + "\"partialFeatures\":[\"FUNCTION\",\"TRANSLATION\",\"DEFERRED_GENERICS\"],"
-                + "\"notImplemented\":[\"VIEW_SCHEMA\",\"GRAPHIC\",\"CONTEXT\","
-                + "\"METADATA_BASKET\",\"RUNTIME_PARAMETER\",\"LINE_FORM\",\"FUNCTION_ARGUMENT_TYPE\",\"BUILTIN_SIGNATURE\"],"
+                + "\"partialFeatures\":[],\"notImplemented\":[],"
                 + "\"protocol\":\"" + manifest.protocolIdentifier() + "\"}";
         environment.out().println(output);
         return result(CliTermination.SUCCESS, List.of(), output);
     }
 
     private CliExecutionResult compile(List<String> args, CliEnvironment environment,
-                                       CancellationToken token) {
-        ParsedArguments parsed = parseFiles(args, false);
-        if (parsed.files().isEmpty() && parsed.roots().isEmpty()) return usage(environment, "no source files or root models");
+                                       CancellationToken token, Invocation invocation) {
+        ParsedCommand supplied = parseCommand(args);
+        var loader = new ConfigurationLoader();
+        var configuration = loader.load(supplied, environment, token);
+        var warningPolicy = switch (configuration.command().value("--warnings").orElseThrow()) {
+            case "allow" -> guru.interlis.compiler.WarningPolicy.ALLOW_WARNINGS;
+            case "reject" -> guru.interlis.compiler.WarningPolicy.REJECT_WARNINGS;
+            default -> throw new CliUsageException("--warnings must be allow or reject");
+        };
+        ParsedArguments parsed = parseFiles(configuration.command());
+        new OutputPlanner().plan(configuration.command(), environment, legacyProfile);
+        if (supplied.has("--explain-config")) {
+            String explanation = loader.explain(configuration);
+            environment.out().println(explanation);
+            return result(CliTermination.SUCCESS, List.of(), explanation);
+        }
+        if (parsed.files().isEmpty() && parsed.roots().isEmpty() && invocation.rootOverride.isEmpty())
+            return usage(environment, "no source files or root models");
         Loaded loaded = load(parsed.files(), environment, token);
-        try (Workspace workspace = workspace(loaded)) {
-            List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
+        try (Workspace workspace = workspace(loaded, environment, warningPolicy)) {
+            List<ModelSelector> roots = invocation.rootOverride.isEmpty()
+                    ? roots(parsed.roots(), loaded.sources()) : invocation.rootOverride;
             PreparedRepositoryUpdate update = null;
             if (!parsed.repositories().isEmpty()) {
                 var sources = new ArrayList<RepositorySource>();
@@ -193,32 +308,37 @@ public final class DefaultCompilerCli implements CliApplication {
                         var problem = rejected.problems().getFirst();
                         String reason = problem.reason() + problem.loadReason().map(value -> "/" + value).orElse("");
                         String output = "resolution rejected: " + reason;
-                        print(parsed.json(), environment, List.of(), output, loaded.sources());
-                        if (!parsed.json()) environment.err().println(output);
+                        print(parsed.json(), environment, List.of(), output, loaded.sources(), invocation);
+                        if (!parsed.json() && legacyProfile.isEmpty()) environment.err().println(output);
                         return result(problem.reason() == RepositoryProblem.Reason.LOAD_FAILURE || problem.reason() == RepositoryProblem.Reason.INDEX_FAILURE
                                 ? CliTermination.OPERATIONAL_FAILURE : CliTermination.INPUT_UNRESOLVED, List.of(), output);
                     }
                 }
             }
-            CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots), token);
+            invocation.rootCount = roots.size();
+            CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots),
+                    environment.services().runContexts().createChild(invocation.context), token);
+            invocation.compiled(outcome);
             if (outcome instanceof CompilationOutcome.Succeeded && update != null && parsed.writeLock().isPresent()) {
-                Path target = hostPath(parsed.writeLock().orElseThrow(), environment); Path temporary = null;
+                Path target = hostPath(parsed.writeLock().orElseThrow(), environment);
                 if (workspace.state().sourceRevisions().containsKey(new SourceId(target.toUri().toString())))
                     throw new CliUsageException("lock output collides with a resolved model source");
                 try {
-                    temporary = Files.createTempFile(target.getParent(), ".interlis-lock-", ".tmp");
-                    Files.writeString(temporary, new ResolutionLockCodec().encode(update.lock()), StandardCharsets.UTF_8);
-                    try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
-                    catch (java.nio.file.AtomicMoveNotSupportedException fallback) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
-                } catch (java.io.IOException unavailable) { return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be written"); }
-                finally { if (temporary != null) try { Files.deleteIfExists(temporary); } catch (java.io.IOException ignored) { } }
+                    byte[] bytes = new ResolutionLockCodec().encode(update.lock()).getBytes(StandardCharsets.UTF_8);
+                    fileWriter.write(target, bytes, Optional.empty(), token);
+                    invocation.artifacts.add(new CliExecutionResult.Artifact(CliExecutionResult.ArtifactKind.RESOLUTION_LOCK,
+                            target.toUri(), bytes.length));
+                } catch (java.io.IOException unavailable) {
+                    environment.err().println("lock could not be written");
+                    return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be written");
+                }
             }
             CliTermination termination = new CliOutcomeMapper().classify(outcome);
             List<Diagnostic> diagnostics = diagnostics(outcome);
             var texts = new LinkedHashMap<SourceId, SourceText>();
             workspace.state().sourceRevisions().keySet().forEach(id -> workspace.source(id).ifPresent(text -> texts.put(id, text)));
             String output = summary(outcome);
-            print(parsed.json(), environment, diagnostics, output, texts);
+            print(parsed.json(), environment, diagnostics, output, texts, invocation);
             return result(termination, diagnostics, output);
         }
     }
@@ -237,21 +357,26 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private CliExecutionResult analyze(List<String> args, CliEnvironment environment,
-                                       CancellationToken token) {
+                                       CancellationToken token, Invocation invocation) {
         ParsedArguments parsed = parseFiles(args, false);
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
         }
         Loaded loaded = load(parsed.files(), environment, token);
-        Workspace workspace = workspace(loaded);
-        var analysis = workspace.analyze(new AnalysisRequest(workspace.currentRevision(),
-                roots(parsed.roots(), loaded.sources())), token);
-        print(parsed.json(), environment, analysis.diagnostics(), "analyzed", loaded.sources());
-        return result(CliTermination.SUCCESS, analysis.diagnostics(), "analyzed");
+        try (Workspace workspace = workspace(loaded, environment)) {
+            invocation.rootCount = roots(parsed.roots(), loaded.sources()).size();
+            var analysis = workspace.analyze(new AnalysisRequest(workspace.currentRevision(),
+                    roots(parsed.roots(), loaded.sources())),
+                    environment.services().runContexts().createChild(invocation.context), token);
+            invocation.analysisComplete = !analysis.coverage().entries().isEmpty()
+                    && analysis.coverage().incompleteEntries().isEmpty();
+            print(parsed.json(), environment, analysis.diagnostics(), "analyzed", loaded.sources(), invocation);
+            return result(CliTermination.SUCCESS, analysis.diagnostics(), "analyzed");
+        }
     }
 
     private CliExecutionResult diagram(List<String> args, CliEnvironment environment,
-                                       CancellationToken token) {
+                                       CancellationToken token, Invocation invocation) {
         ParsedArguments parsed = parseFiles(args, true);
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
@@ -260,15 +385,17 @@ public final class DefaultCompilerCli implements CliApplication {
             return usage(environment, "--json is not supported by diagram; use --format json");
         }
         Loaded loaded = load(parsed.files(), environment, token);
-        Workspace workspace = workspace(loaded);
+        try (Workspace workspace = workspace(loaded, environment)) {
         List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
         CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(
-                workspace.currentRevision(), roots), token);
+                workspace.currentRevision(), roots),
+                environment.services().runContexts().createChild(invocation.context), token);
+        invocation.compiled(outcome);
         if (!(outcome instanceof CompilationOutcome.Succeeded succeeded)) {
             List<Diagnostic> diagnostics = diagnostics(outcome);
             print(true, environment, diagnostics, "diagram requires a checked schema",
-                    loaded.sources());
-            return result(CliTermination.SOURCE_REJECTED, diagnostics,
+                    loaded.sources(), invocation);
+            return result(new CliOutcomeMapper().classify(outcome), diagnostics,
                     "diagram requires a checked schema");
         }
         CompiledSchema schema = succeeded.schema();
@@ -290,11 +417,13 @@ public final class DefaultCompilerCli implements CliApplication {
         };
         environment.out().println(text);
         return result(CliTermination.SUCCESS, List.of(), text);
+        }
     }
 
     private CliExecutionResult format(List<String> args, CliEnvironment environment,
-                                      CancellationToken token) {
+                                      CancellationToken token, Invocation invocation) {
         FormatArguments parsed = parseFormat(args);
+        new OutputPlanner().plan(parseCommand(args), environment, legacyProfile);
         if (parsed.error() != null) {
             return usage(environment, parsed.error());
         }
@@ -312,8 +441,10 @@ public final class DefaultCompilerCli implements CliApplication {
                     token);
             SourceText source = new SourceText(loaded.sourceId(), new SourceRevision(1),
                     loaded.text());
-            sources.put(source.id(), source);
-            inputs.add(new FormatInput(source, Path.of(file), environment.workingDirectory()));
+            if (sources.putIfAbsent(source.id(), source) != null) {
+                return usage(environment, "duplicate formatting source");
+            }
+            inputs.add(new FormatInput(source, Path.of(java.net.URI.create(loaded.sourceId().value())), environment.workingDirectory()));
         }
         ModelFormatter formatter = ModelFormatters.create();
         List<FormatOutput> outputs = new ArrayList<>();
@@ -328,10 +459,14 @@ public final class DefaultCompilerCli implements CliApplication {
                         "format rejected");
             }
             if (outcome instanceof FormatOutcome.Cancelled cancelled) {
+                invocation.cancellation = cancelled.reason();
                 return result(CliTermination.CANCELLED, List.of(),
                         "cancelled: " + cancelled.reason());
             }
             FormatOutcome.Formatted formatted = (FormatOutcome.Formatted) outcome;
+            for (var notice : formatted.notices()) {
+                environment.err().println(notice.code() + ": " + notice.message());
+            }
             outputs.add(new FormatOutput(input, formatted.text()));
         }
         if (parsed.check()) {
@@ -348,11 +483,17 @@ public final class DefaultCompilerCli implements CliApplication {
         if (parsed.write()) {
             try {
                 for (FormatOutput output : outputs) {
-                    writeAtomically(output.input().resolved(environment), output.text());
+                    byte[] bytes = output.text().getBytes(StandardCharsets.UTF_8);
+                    Path target = output.input().resolved(environment);
+                    fileWriter.write(target, bytes,
+                            Optional.of(output.input().source().text().getBytes(StandardCharsets.UTF_8)), token);
+                    invocation.artifacts.add(new CliExecutionResult.Artifact(CliExecutionResult.ArtifactKind.FORMATTED_SOURCE,
+                            target.toAbsolutePath().normalize().toUri(), bytes.length));
                 }
             } catch (java.io.IOException failure) {
-                return result(CliTermination.OPERATIONAL_FAILURE, List.of(),
-                        "format write failed: " + failure.getMessage());
+                String message = "format write failed: " + failure.getMessage();
+                environment.err().println(message);
+                return result(CliTermination.OPERATIONAL_FAILURE, List.of(), message);
             }
             return result(CliTermination.SUCCESS, List.of(), "");
         }
@@ -362,76 +503,28 @@ public final class DefaultCompilerCli implements CliApplication {
         return result(CliTermination.SUCCESS, List.of(), text);
     }
 
-    private static void writeAtomically(Path target, String text) throws java.io.IOException {
-        Path parent = target.toAbsolutePath().normalize().getParent();
-        if (parent == null) {
-            throw new java.io.IOException("target has no parent");
-        }
-        Path temp = Files.createTempFile(parent, ".interlis-format-", ".ili");
-        try {
-            Files.writeString(temp, text, StandardCharsets.UTF_8);
-            Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE,
-                    StandardCopyOption.REPLACE_EXISTING);
-        } finally {
-            Files.deleteIfExists(temp);
-        }
+    private static FormatArguments parseFormat(List<String> args) {
+        ParsedCommand command = parseCommand(args);
+        int indent;
+        try { indent = Integer.parseInt(command.value("--indent").orElse("2")); }
+        catch (NumberFormatException invalid) { throw new CliUsageException("invalid --indent value"); }
+        if (indent < 0 || indent > 16) throw new CliUsageException("--indent must be between 0 and 16");
+        var ending = command.value("--line-ending").map(value -> switch (value) {
+            case "lf" -> FormatOptions.LineEnding.LF;
+            case "crlf" -> FormatOptions.LineEnding.CRLF;
+            default -> throw new CliUsageException("--line-ending must be lf or crlf");
+        }).orElse(FormatOptions.LineEnding.PRESERVE);
+        return new FormatArguments(command.files(), command.has("--check"), command.has("--write"),
+                new FormatOptions(indent, ending, true), null);
     }
 
-    private static FormatArguments parseFormat(List<String> args) {
-        boolean check = false;
-        boolean write = false;
-        int indent = 2;
-        FormatOptions.LineEnding lineEnding = FormatOptions.LineEnding.PRESERVE;
-        List<String> files = new ArrayList<>();
-        for (int i = 1; i < args.size(); i++) {
-            String arg = args.get(i);
-            switch (arg) {
-                case "--check" -> check = true;
-                case "--write" -> write = true;
-                case "--indent" -> {
-                    if (i + 1 >= args.size()) {
-                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
-                                "--indent needs a value");
-                    }
-                    try {
-                        indent = Integer.parseInt(args.get(++i));
-                    } catch (NumberFormatException failure) {
-                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
-                                "invalid --indent value");
-                    }
-                    if (indent < 0 || indent > 16) {
-                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
-                                "--indent must be between 0 and 16");
-                    }
-                }
-                case "--line-ending" -> {
-                    if (i + 1 >= args.size()) {
-                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
-                                "--line-ending needs a value");
-                    }
-                    String value = args.get(++i);
-                    lineEnding = switch (value) {
-                        case "lf" -> FormatOptions.LineEnding.LF;
-                        case "crlf" -> FormatOptions.LineEnding.CRLF;
-                        default -> null;
-                    };
-                    if (lineEnding == null) {
-                        return new FormatArguments(List.of(), check, write, indent,
-                                FormatOptions.LineEnding.PRESERVE,
-                                "--line-ending must be lf or crlf");
-                    }
-                }
-                default -> {
-                    if (arg.startsWith("-")) {
-                        return new FormatArguments(List.of(), check, write, indent, lineEnding,
-                                "unsupported option: " + arg);
-                    }
-                    files.add(arg);
-                }
-            }
-        }
-        FormatOptions options = new FormatOptions(indent, lineEnding, true);
-        return new FormatArguments(List.copyOf(files), check, write, options, null);
+    private static ParsedCommand parseCommand(List<String> args) {
+        return switch (new DefaultCommandLineParser().parse(args, CommandSpec.standard(args.getFirst()))) {
+            case ParsedCommand parsed -> parsed;
+            case CliParseOutcome.HelpRequested requested -> requested.command();
+            case CliParseOutcome.VersionRequested requested -> requested.command();
+            case CliParseOutcome.InvalidCommandLine invalid -> throw new CliUsageException(invalid.message());
+        };
     }
 
     private record FormatArguments(List<String> files, boolean check, boolean write,
@@ -451,9 +544,20 @@ public final class DefaultCompilerCli implements CliApplication {
     private record FormatOutput(FormatInput input, String text) {
     }
 
-    private static Workspace workspace(Loaded loaded) {
-        Workspace workspace = Workspaces.create(CompilerEngines.create(),
-                WorkspaceConfiguration.defaults());
+    private static Workspace workspace(Loaded loaded, CliEnvironment environment) {
+        return workspace(loaded, environment, guru.interlis.compiler.WarningPolicy.ALLOW_WARNINGS);
+    }
+
+    private static Workspace workspace(Loaded loaded, CliEnvironment environment,
+                                       guru.interlis.compiler.WarningPolicy warningPolicy) {
+        var defaults = WorkspaceConfiguration.defaults();
+        var options = defaults.compilerOptions();
+        var configuration = new WorkspaceConfiguration(new guru.interlis.compiler.CompilerOptions(
+                options.semanticProfile(), options.allowedLanguages(), warningPolicy,
+                options.budget(), options.overlays()), defaults.resolutionPolicy(),
+                defaults.resolverCatalog(), defaults.cacheLimits());
+        Workspace workspace = Workspaces.create(CompilerEngines.create(environment.services()),
+                configuration);
         for (SourceText source : loaded.sources().values()) {
             workspace.update(new SourceUpdate(source.id(), new SourceExpectation.Absent(),
                     new SourceChange.Replace(source.text())));
@@ -462,74 +566,36 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private static ParsedArguments parseFiles(List<String> args, boolean allowFormat) {
-        List<String> files = new ArrayList<>();
-        List<String> roots = new ArrayList<>();
-        boolean json = false;
-        String format = "mermaid";
-        var repositories = new ArrayList<String>();
+        return parseFiles(parseCommand(args));
+    }
+
+    private static ParsedArguments parseFiles(ParsedCommand command) {
+        if (command.value("--format").filter(value -> !java.util.Set.of("mermaid", "plantuml", "json").contains(value)).isPresent())
+            throw new CliUsageException("--format must be mermaid, plantuml or json");
         var modelPins = new LinkedHashMap<String, ModelPin>();
-        var sourcePins = new LinkedHashMap<SourceId, ContentDigest>();
-        boolean offline = false;
-        Optional<String> readLock = Optional.empty(), writeLock = Optional.empty(), cache = Optional.empty();
-        for (int i = 1; i < args.size(); i++) {
-            String arg = args.get(i);
-            switch (arg) {
-                case "--json" -> json = true;
-                case "--repository", "--read-lock", "--write-lock", "--cache" -> {
-                    if (i + 1 >= args.size()) throw new CliUsageException(arg + " needs a value");
-                    String value = args.get(++i);
-                    switch (arg) {
-                        case "--repository" -> repositories.add(value);
-                        case "--read-lock" -> readLock = Optional.of(value);
-                        case "--write-lock" -> writeLock = Optional.of(value);
-                        case "--cache" -> cache = Optional.of(value);
-                        default -> throw new AssertionError(arg);
-                    }
-                }
-                case "--offline" -> offline = true;
-                case "--model-pin" -> {
-                    if (i + 4 >= args.size()) throw new CliUsageException("--model-pin needs name version source sha256");
-                    try {
-                        var pin = new ModelPin(args.get(++i), args.get(++i), new SourceId(args.get(++i)), new ContentDigest("sha256", args.get(++i)));
-                        if (modelPins.putIfAbsent(pin.modelName(), pin) != null) throw new CliUsageException("duplicate model pin");
-                    } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid model pin"); }
-                }
-                case "--source-pin" -> {
-                    if (i + 2 >= args.size()) throw new CliUsageException("--source-pin needs source sha256");
-                    try {
-                        var source = new SourceId(args.get(++i)); var digest = new ContentDigest("sha256", args.get(++i));
-                        if (sourcePins.putIfAbsent(source, digest) != null) throw new CliUsageException("duplicate source pin");
-                    } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid source pin"); }
-                }
-                case "--root" -> {
-                    if (i + 1 >= args.size()) {
-                        throw new CliUsageException("--root needs a value");
-                    }
-                    roots.add(args.get(++i));
-                }
-                case "--format" -> {
-                    if (!allowFormat) {
-                        throw new CliUsageException("--format is only supported by diagram");
-                    }
-                    if (i + 1 >= args.size()) {
-                        throw new CliUsageException("--format needs a value");
-                    }
-                    format = args.get(++i);
-                }
-                default -> {
-                    if (arg.startsWith("-")) {
-                        throw new CliUsageException("unsupported option: " + arg);
-                    }
-                    files.add(arg);
-                }
-            }
+        for (var values : command.occurrences("--model-pin")) {
+            try {
+                var pin = new ModelPin(values.get(0), values.get(1), new SourceId(values.get(2)),
+                        new ContentDigest("sha256", values.get(3)));
+                if (modelPins.putIfAbsent(pin.modelName(), pin) != null) throw new CliUsageException("duplicate model pin");
+            } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid model pin"); }
         }
-        boolean hostOptions = !repositories.isEmpty() || offline || readLock.isPresent() || writeLock.isPresent()
-                || cache.isPresent() || !modelPins.isEmpty() || !sourcePins.isEmpty();
-        if (hostOptions && !List.of("check", "compile").contains(args.getFirst())) throw new CliUsageException("repository options require check or compile");
-        if (hostOptions && repositories.isEmpty()) throw new CliUsageException("repository options require --repository");
-        return new ParsedArguments(files, roots, json, format, List.copyOf(repositories), offline, Map.copyOf(modelPins),
-                Map.copyOf(sourcePins), readLock, writeLock, cache);
+        var sourcePins = new LinkedHashMap<SourceId, ContentDigest>();
+        for (var values : command.occurrences("--source-pin")) {
+            try {
+                var source = new SourceId(values.get(0));
+                if (sourcePins.putIfAbsent(source, new ContentDigest("sha256", values.get(1))) != null)
+                    throw new CliUsageException("duplicate source pin");
+            } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid source pin"); }
+        }
+        boolean hostOptions = command.has("--repository") || command.has("--offline")
+                || command.has("--read-lock") || command.has("--write-lock") || command.has("--cache")
+                || !modelPins.isEmpty() || !sourcePins.isEmpty();
+        if (hostOptions && !command.has("--repository")) throw new CliUsageException("repository options require --repository");
+        return new ParsedArguments(command.files(), command.values("--root"), command.has("--json"),
+                command.value("--format").orElse("mermaid"), command.values("--repository"),
+                command.has("--offline"), Map.copyOf(modelPins), Map.copyOf(sourcePins),
+                command.value("--read-lock"), command.value("--write-lock"), command.value("--cache"));
     }
 
     private static List<ModelSelector> roots(List<String> roots,
@@ -573,11 +639,20 @@ public final class DefaultCompilerCli implements CliApplication {
         };
     }
 
-    private static void print(boolean json, CliEnvironment environment,
+    private void print(boolean json, CliEnvironment environment,
                               List<Diagnostic> diagnostics, String summary,
-                              Map<SourceId, SourceText> sources) {
+                              Map<SourceId, SourceText> sources, Invocation invocation) {
+        if (legacyProfile.isPresent()) {
+            var renderer = new LegacyDiagnosticRenderer();
+            for (var diagnostic : diagnostics) {
+                if (invocation.withoutWarnings && diagnostic.severity() == guru.interlis.diagnostics.Severity.WARNING) continue;
+                environment.err().println(renderer.render(diagnostic, sources));
+            }
+            if (diagnostics.isEmpty() && !summary.equals("ok")) environment.err().println("Error: " + summary);
+            return;
+        }
         if (json) {
-            environment.out().println("{\"status\":\"" + summary.replace("\"", "'")
+            environment.out().println("{\"status\":\"" + JsonDiagnosticWriter.escape(summary)
                     + "\",\"diagnostics\":" + new JsonDiagnosticWriter().write(diagnostics) + "}");
         } else {
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
@@ -587,7 +662,11 @@ public final class DefaultCompilerCli implements CliApplication {
         }
     }
 
-    private static CliExecutionResult usage(CliEnvironment environment, String message) {
+    private CliExecutionResult usage(CliEnvironment environment, String message) {
+        if (legacyProfile.isPresent()) {
+            environment.err().println("ili2c: " + message);
+            return result(CliTermination.USAGE_ERROR, List.of(), message);
+        }
         environment.err().println("usage: interlis-java "
                 + "<version|capabilities|check|compile|analyze|diagram|format> [options] [files]");
         environment.err().println("check/compile: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
@@ -596,9 +675,11 @@ public final class DefaultCompilerCli implements CliApplication {
         return result(CliTermination.USAGE_ERROR, List.of(), message);
     }
 
-    private static CliExecutionResult result(CliTermination termination,
+    private CliExecutionResult result(CliTermination termination,
                                              List<Diagnostic> diagnostics, String output) {
-        return new CliExecutionResult(new ExitCodePolicy().exitCode(termination), termination,
+        int exit = legacyProfile.map(profile -> new LegacyExitCodePolicy().exitCode(termination, profile))
+                .orElseGet(() -> new ExitCodePolicy().exitCode(termination));
+        return new CliExecutionResult(exit, termination,
                 diagnostics, output);
     }
 
@@ -609,5 +690,51 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private record Loaded(Map<SourceId, SourceText> sources) {
+    }
+
+    /** Mutable only for one invocation; never retained on the reusable CLI instance. */
+    private static final class Invocation {
+        final RunContext context;
+        boolean schemaProduced;
+        boolean analysisComplete;
+        final List<CliExecutionResult.Artifact> artifacts = new ArrayList<>();
+        boolean quiet, withoutWarnings, trace, legacyChecking;
+        List<ModelSelector> rootOverride = List.of();
+        int rootCount;
+        CancellationReason cancellation = CancellationReason.USER_REQUESTED;
+        FailureId failureId;
+        guru.interlis.compiler.RejectionSummary rejection;
+
+        Invocation(RunContext context) { this.context = context; }
+
+        void compiled(CompilationOutcome outcome) {
+            switch (outcome) {
+                case CompilationOutcome.Succeeded ignored -> { schemaProduced = true; analysisComplete = true; }
+                case CompilationOutcome.Cancelled value -> cancellation = value.reason();
+                case CompilationOutcome.Failed value -> failureId = value.failureId();
+                case CompilationOutcome.Rejected value -> rejection = value.rejection();
+            }
+        }
+
+        RunCompletion completion(CliExecutionResult result) {
+            int errors = (int) result.diagnostics().stream()
+                    .filter(d -> d.severity() == guru.interlis.diagnostics.Severity.ERROR).count();
+            return switch (result.termination()) {
+                case SUCCESS -> new RunCompletion.Succeeded(errors, rootCount, analysisComplete, schemaProduced);
+                case CANCELLED -> new RunCompletion.Cancelled(cancellation, Optional.empty(), errors);
+                case INTERNAL_FAILURE -> new RunCompletion.Failed(
+                        failureId != null ? failureId : new FailureId("cli-" + context.runId().value()), errors);
+                default -> {
+                    boolean gateRejection = rejection != null
+                            && result.termination() != CliTermination.OPERATIONAL_FAILURE;
+                    yield new RunCompletion.Rejected(gateRejection
+                            ? rejection.reasons().stream().map(Enum::name).collect(java.util.stream.Collectors.toSet())
+                            : java.util.Set.of(result.termination().name()),
+                            gateRejection ? rejection.diagnosticIds().stream().map(id -> id.value()).toList()
+                                    : result.diagnostics().stream().map(d -> d.id().value()).toList(),
+                            gateRejection ? rejection.unsupportedFeatureIds() : List.of(), errors, false);
+                }
+            };
+        }
     }
 }

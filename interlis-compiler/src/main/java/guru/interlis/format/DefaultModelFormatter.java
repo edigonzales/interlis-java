@@ -61,13 +61,24 @@ final class DefaultModelFormatter implements ModelFormatter {
             // A multiline token/comment owns its entire source span. Preserve intersecting
             // lines verbatim rather than emitting the span and its continuation lines twice.
             Set<Integer> protectedLines = new java.util.HashSet<>();
+            Set<Integer> valueLineEndings = new java.util.HashSet<>();
+            List<guru.interlis.format.FormattingNotice> notices = new ArrayList<>();
             for (var token : snapshot.tokens()) {
                 protectLines(lines, token.range(), protectedLines);
+                if (!commentStarts.contains(token.range().startOffset())) {
+                    protectValueEndings(lines, token.range(), valueLineEndings, options, notices);
+                }
             }
             for (var trivia : snapshot.trivia()) {
                 if (trivia.kind() == TriviaKind.COMMENT
                         || trivia.kind() == TriviaKind.DOCUMENTATION_COMMENT) {
                     protectLines(lines, trivia.range(), protectedLines);
+                }
+            }
+            for (var metadata : snapshot.metadata().values()) {
+                for (var attribute : metadata.attributes()) {
+                    protectLines(lines, attribute.range(), protectedLines);
+                    protectValueEndings(lines, attribute.range(), valueLineEndings, options, notices);
                 }
             }
             var indentation = indentationEvents(snapshot, cancellation);
@@ -126,7 +137,7 @@ final class DefaultModelFormatter implements ModelFormatter {
             for (int i = 0; i < formattedLines.size(); i++) {
                 result.append(formattedLines.get(i));
                 boolean last = i == formattedLines.size() - 1;
-                String ending = protectedLines.contains(i) ? lines.get(i).ending()
+                String ending = valueLineEndings.contains(i) ? lines.get(i).ending()
                         : lineEnding != null ? lineEnding
                         : last ? "" : (lines.get(i).ending().isEmpty() ? "\n" : lines.get(i).ending());
                 result.append(ending);
@@ -140,7 +151,7 @@ final class DefaultModelFormatter implements ModelFormatter {
             if (options.finalNewline()) {
                 text += finalEnding;
             }
-            return new FormatOutcome.Formatted(text, List.of());
+            return new FormatOutcome.Formatted(text, notices);
         } catch (OperationCancelledException cancelled) {
             return new FormatOutcome.Cancelled(cancelled.reason());
         }
@@ -162,6 +173,25 @@ final class DefaultModelFormatter implements ModelFormatter {
     }
 
     private record Part(int offset, String text, boolean comment) { }
+
+    private static void protectValueEndings(List<Line> lines, guru.interlis.source.SourceRange range,
+                                            Set<Integer> protectedEndings, FormatOptions options,
+                                            List<guru.interlis.format.FormattingNotice> notices) {
+        int first = lineOf(lines, range.startOffset());
+        int last = lineOf(lines, Math.max(range.startOffset(), range.endOffset() - 1));
+        String requested = switch (options.lineEnding()) {
+            case LF -> "\n";
+            case CRLF -> "\r\n";
+            case PRESERVE -> null;
+        };
+        boolean different = false;
+        for (int line = first; line < last; line++) {
+            protectedEndings.add(line);
+            if (requested != null && !requested.equals(lines.get(line).ending())) different = true;
+        }
+        if (different) notices.add(new guru.interlis.format.FormattingNotice("VALUE_LINE_ENDING_PRESERVED",
+                "Original line endings inside a value were preserved to retain its meaning.", Optional.of(range)));
+    }
 
     private static void protectLines(List<Line> lines, guru.interlis.source.SourceRange range,
                                      Set<Integer> protectedLines) {

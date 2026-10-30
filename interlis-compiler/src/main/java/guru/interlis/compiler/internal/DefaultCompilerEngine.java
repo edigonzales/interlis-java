@@ -155,7 +155,7 @@ public final class DefaultCompilerEngine implements CompilerEngine {
                 .filter(d -> d.severity() == Severity.ERROR).count();
         if (result.gate().schema().isPresent()) {
             return new RunCompletion.Succeeded(errors,
-                    result.output().graphResult().roots().size(), true);
+                    result.output().graphResult().roots().size(), true, false);
         }
         RejectionSummary summary = result.gate().rejection().orElseThrow();
         return new RunCompletion.Rejected(summary.reasons().stream().map(Enum::name)

@@ -447,3 +447,21 @@ Geprüfte ModelTranslation.correspondences können nun zusätzlich kontextualisi
 Segment-/Inspektionsstrukturen samt Mitgliedern und Constraints enthalten.
 Verbraucher verwenden die veröffentlichten Links; sie rekonstruieren Beziehungen
 nicht aus synthetischen Namen oder IDs. Öffentliche Signaturen bleiben erhalten.
+
+## P3-1 – additive Hostverträge (0.2, unveröffentlicht)
+
+`CliEnvironment` ergänzt injizierbare `CompilerServices`; der bisherige
+Konstruktor bleibt. `CliExecutionResult` ergänzt `Optional<RunId>` und
+`List<Artifact>` für fertiggestellte Dateiausgaben; alte Konstruktoren liefern
+leere Zusatzwerte. Aufrufabbruch und letzter Ausgabe-/Flushfehler sind im
+CLI-Elternlauf sichtbar, Compilerarbeit läuft in einem Kindkontext.
+`rejectionSummary()` erhält alle typisierten Compiler-Ablehnungsgründe,
+auch wenn ein späterer Hostfehler den endgültigen CLI-Status bestimmt.
+`RunCompletion.Succeeded` ergänzt `compiledSchemaProduced`; die bisherige
+Dreiparameterform bezeichnet einen erfolgreichen Compiler-Gate-Lauf.
+Analyse-/Versions-/Formatieraufrufe behaupten kein ausgegebenes CompiledSchema.
+Neue Host-APIs: `CommandSpec`, `CommandLineParser`, `CliParseOutcome`,
+`ParsedCommand`, `ConfigurationLoader`, `OutputPlan`/`OutputPlanner`,
+`CliOutputWriter` und das explizite `LegacyCliProfile`. Fachvertrag: Kapitel 18,
+kanonische Besitzer und Tests: Kapitel 16. LF/CRLF bewahrt werttragende
+Literal-/Metadatenzeilenenden und liefert dafür einen FormattingNotice.

@@ -19,6 +19,33 @@ application {
     mainClass = 'guru.interlis.cli.Main'
 }
 
+def ili2cScripts = tasks.register('ili2cStartScripts', org.gradle.jvm.application.tasks.CreateStartScripts) {
+    applicationName = 'ili2c'
+    mainClass = 'guru.interlis.cli.Ili2cMain'
+    outputDir = layout.buildDirectory.dir('scripts-ili2c').get().asFile
+    classpath = files(tasks.named('jar')) + configurations.runtimeClasspath
+}
+
+def ili2cJar = tasks.register('ili2cJar', Jar) {
+    group = 'distribution'
+    description = 'Packages the explicitly qualified java -jar ili2c.jar checking entry.'
+    dependsOn tasks.named('classes'), configurations.runtimeClasspath
+    archiveFileName = 'ili2c.jar'
+    manifest { attributes 'Main-Class': 'guru.interlis.cli.Ili2cMain' }
+    from sourceSets.main.output
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
+
+distributions.main.contents {
+    from(ili2cScripts) {
+        into 'bin'
+        filePermissions { unix('rwxr-xr-x') }
+    }
+    from(ili2cJar) { into 'compat' }
+}
+
 tasks.named('test') {
     systemProperty 'repo.root', rootProject.projectDir.absolutePath
     inputs.dir(rootProject.file('testdata/conformance/b1-b3-acceptance'))

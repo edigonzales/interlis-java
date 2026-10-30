@@ -672,3 +672,42 @@ sind defensiv kopiert und nullfrei. Die Originalbindung ist ein überprüfbarer
 Eingabewert, kein Schema-Zertifikat. Compiler-/Schemaerfolg entsteht weiterhin
 nur am CompilationGate. Der Compiler verwendet `compilation-v3` einschliesslich
 Originalbindungen; Snapshot-/Schemaidentitäten behalten ihre getrennten Rollen.
+
+### P3-1: CLI-Schema, Konfiguration und Laufabschluss
+
+Besitzer: `interlis-cli` / `guru.interlis.cli`, Fachvertrag Kapitel 18.
+`CommandSpec(command,List<Option>,acceptsFiles)` und
+`Option(name,valueCount,repeatable)` beschreiben die geordnete Kommandoform;
+`CommandLineParser.parse(List<String>,CommandSpec)` liefert `CliParseOutcome`
+mit `ParsedCommand`, `HelpRequested`, `VersionRequested`, `InvalidCommandLine`.
+`ParsedCommand(command,Map<String,List<List<String>>>,List<String> files)` ist
+tief immutable. `ConfigurationLoader.load(ParsedCommand,CliEnvironment,
+CancellationToken)` liefert `ResolvedConfiguration(command,origins)`;
+`explain` rendert nur den redigierten Konfigurationsnachweis. Keine Parser- oder
+Konfigurationsklasse führt Sprachsemantik aus.
+
+`CliEnvironment` ergänzt `CompilerServices services`, `CliExecutionResult`
+`Optional<RunId> runId`; die bisherigen Konstruktoren bleiben erhalten. Model /
+`guru.interlis.execution.RunCompletion.Succeeded` ergänzt
+`compiledSchemaProduced` nach Kapitel 09 mit bisherigem
+Dreiparameterkonstruktor für erfolgreiche Compiler-Gate-Läufe. Nullfreiheit,
+defensive Kopien, Reihenfolge, Abbruch und Besitz stehen in Kapitel 18/09.
+`P3CliBoundaryContractTest`, `P3CliLifecycleContractTest`,
+`P3ConfigurationContractTest`, `P3AtomicOutputContractTest` und
+`P3OutcomePriorityContractTest` prüfen die beobachtbaren Grenzen. Formatter-
+Präzisierung und Werterhalt: `P3FormatterPolicyContractTest`.
+
+Zusätzlich im CLI-Package: `LegacyCliProfile.ili2c569`, `LegacyExitCodePolicy`,
+`LegacyDiagnosticRenderer`, `ToolVersionRenderer` sowie der Prozessentry
+`Ili2cMain`; der Host-/Optionsvertrag steht in Kapitel 18 und im versionierten
+P3-Aufrufprofil. `OutputPlanner.plan` liefert `OutputPlan(fileTargets,writesStdout)`;
+`CliOutputWriter.write` führt eine synchrone atomare Dateiersetzung aus.
+`CliExecutionResult` ergänzt `List<Artifact> artifacts` mit
+`Artifact(ArtifactKind,URI,long byteCount)`; bisherige Vier-/Fünfparameter-
+Konstruktoren liefern eine leere Liste. Fertiggestellte Dateien bleiben auch
+bei späteren Fehlern sichtbar. `P3LegacyCliContractTest`,
+`P3AtomicOutputContractTest` und der echte `legacyCliCheck` samt Negativcanaries
+sichern diese Grenzen. Keine zweite fachliche Gateentscheidung im Adapter.
+`CliExecutionResult.rejectionSummary()` liefert zusätzlich
+`Optional<RejectionSummary>` für alle ursprünglichen Compiler-Gate-Gründe;
+bisherige Konstruktoren verwenden Optional.empty().

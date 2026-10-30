@@ -430,3 +430,15 @@ Fallback. Hostbeschaffungsfehler bleiben separat als `RepositoryProblem` mit
 konkreter Lade-/Pin-/Lock-/Änderungsursache sichtbar. Tracewerte entfernen
 Zugangsdaten und Queryfragmente, während logische SourceIds als Identitäten
 unverändert bleiben.
+
+### P3-1: erfolgreiche Hostoperation ohne Erfolgsschema
+
+`RunCompletion.Succeeded` besitzt additiv das boolesche Feld
+`compiledSchemaProduced`. Die vierparametrige Konstruktion benennt ausdrücklich,
+ob tatsächlich ein geprüftes Schema produziert wurde; true verlangt
+`analysisComplete=true`. Der bisherige Dreiparameterkonstruktor bleibt für
+bereits vorhandene erfolgreiche Compiler-Gate-Läufe erhalten. Hilfe, Version
+und Formatierung verwenden false und erfinden keinen Compilerkindlauf oder
+Schemaerfolg. CLI-Eltern-/Kindbezug und endgültiger Flushabschluss werden im
+Hostvertrag aus Kapitel 18 geprüft. Dies ist Betriebsmetadatenkorrektheit und
+keine zweite fachliche Gateentscheidung.

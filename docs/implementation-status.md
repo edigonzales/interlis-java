@@ -3,6 +3,17 @@
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
+
+**P3 ist seit 30. Oktober 2026 autonom beauftragt und in Arbeit.**
+Aktuell P3-1 (WP-30): CLI-Kompatibilitätsprofil und Formatierung; danach
+LSP, Browser-/Diagrammintegration, Corpus-/Belastungsmessungen und SDK-/
+Plattformgesamtgate. [P3-Plan](p3/EXECUTION_PLAN.md),
+[operativer P3-Status](p3/STATUS.md). Unabhängige Reviews mit OpenCode über die
+direkte DeepSeek API bleiben pro Lieferung und kumulativ verpflichtend.
+G3 ist offen; Windows-/Linux-x64-Prozessnachweise werden nach Nutzerfreigabe
+über die neue GitHub-Action ausgeführt; ihr tatsächlicher Lauf ist noch offen. Der folgende G2-Abschluss
+bleibt als getrennte erfüllte Voraussetzung erhalten.
+
 **Phase 4 und G2 sind vollständig und unabhängig mit PASS abgeschlossen**,
 AC4-01–AC4-07 sowie kumulativ AC0A–AC3. Schlussproduktcommit
 `1371841572828a387c1369ae84f6fa6cb4ddffc0`;

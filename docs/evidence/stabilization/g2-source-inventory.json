@@ -14,15 +14,15 @@
     "docs/spec/06-kompilierung-und-semantik.md": "dbe2525bb6dc044468df9bc9edb411d5c5b8398971c40ab9c97a448452b7f413",
     "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "1c18bafa9d5995eb540853f89ab0265e8dc5300493b596cfbcf87c7bca4c22d9",
     "docs/spec/08-modellaufloesung-und-repositories.md": "8b3975515deb96eb17aa2c9836fdc0f77b31d0932defde9bf7528e1ce46759d8",
-    "docs/spec/09-diagnostik-logging-und-telemetrie.md": "6d8724e7c190b328e8d31fbf17624565bebd3ca6787693d5e99d1969d2ec1785",
+    "docs/spec/09-diagnostik-logging-und-telemetrie.md": "906123480c83dddb8935975d362eeb3a624073b93efe6cd0e299e279ed022b5c",
     "docs/spec/10-webassembly-und-portabilitaet.md": "0d247758bd5fa35d8b4acf3be2cce596ae1b60b5d2a896866112609cf4eb97ca",
     "docs/spec/11-visualisierung-und-projektionen.md": "154c9a04880df3e66bf22a9ab79147310ce29184759c81850141d14a98c21b4d",
     "docs/spec/12-transfer-validierung-und-datenbanken.md": "10f4692d846ae931ff0e78bbcfb571093c9253b39b5cf6529b5ddbd22fd49ff1",
     "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "987740ac7703861cd4d70483c1eb30e425c7eeead020a5401d0e8c486660c0c9",
     "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "14443b6b622d9f2bd36c5ad91a811cf41d4704c1d297ef4a6f14f75a833a9f88",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "efcbbaefffed904317c1d4779a5fc6e296a1c1615c783a0dbf3b6383525009a3",
-    "docs/spec/16-api-register-und-vertragstests.md": "674de83e2b6302fd6b29a380b5ba02c99067d80927805af7659e722dfef7ae47",
-    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "876a28829fc5d87270e23fa8ff985336f1711be8e05d99efbf542fb7bd376454",
+    "docs/spec/16-api-register-und-vertragstests.md": "14a7487e6a1c096169b5f0458ba24a170e726a9694a49885540621ecb22d0df2",
+    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "94a148c97d900c4aebd1ad78495903101bedb9bba159b6b757c34c8ca25a7a51",
     "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3"
   },
   "grammars": [
@@ -17307,7 +17307,7 @@
       "phase": "P1",
       "acceptance": "Fachlich identische normalisierte Resultate.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 159,
+      "line": 163,
       "sourceLineSha256": "65334511b8e6294fb4a1cb6613fc3c4791b006c2e287b34f92bf05343743e4c8"
     },
     {
@@ -17316,7 +17316,7 @@
       "phase": "P1",
       "acceptance": "In-Process-Tests fangen Resultate und Streams ohne JVM-Ende auf.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 160,
+      "line": 164,
       "sourceLineSha256": "0f7e3e22dc572cc2497091f2d089ea30c97485821c1f06d34f8fbeca919deda6"
     },
     {
@@ -17325,7 +17325,7 @@
       "phase": "P3",
       "acceptance": "Referenzmatrix; kein stilles Ignorieren.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 161,
+      "line": 165,
       "sourceLineSha256": "301a88f7564bcd0026aee522a9f185ad5bf2ead8226851a6b1e7aa53d3d49a43"
     },
     {
@@ -17334,7 +17334,7 @@
       "phase": "P3",
       "acceptance": "Prozessvergleich auf zugesagten Plattformen.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 162,
+      "line": 166,
       "sourceLineSha256": "dd374aac75dd7498ace05736c7eae1971ca93ee5590f553868b250c67c65f34f"
     },
     {
@@ -17343,7 +17343,7 @@
       "phase": "P1/P3",
       "acceptance": "Konfliktfälle und Herkunftsreport.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 163,
+      "line": 167,
       "sourceLineSha256": "ce2704d9872e7ddc734c30ec39bee19740becf99902f57feacb29d9d969aee8c"
     },
     {
@@ -17352,7 +17352,7 @@
       "phase": "P1",
       "acceptance": "Formatierte Quellausgaben und Diagnostik bleiben trennbar; NDJSON ohne Fremdtext.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 164,
+      "line": 168,
       "sourceLineSha256": "9bedb95f8d48054dceeab08299fb36e2f92b9efaeb5b16978f47b55863a76a5e"
     },
     {
@@ -17361,7 +17361,7 @@
       "phase": "P1/P3",
       "acceptance": "IO-Fehler/Abbruch mit vorhandener Zieldatei.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 165,
+      "line": 169,
       "sourceLineSha256": "f7a0ec7238e05040ae6a85b63c524a2e51ee949cded351a42f658fc2ef3ad90f"
     },
     {
@@ -17370,7 +17370,7 @@
       "phase": "P1",
       "acceptance": "Kompilierender Beispiel-/Vertragstest ohne Dateisystem.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 166,
+      "line": 170,
       "sourceLineSha256": "9a59674c54575fcdc82e1dd198a91ff8e64c016f6b3bf40520c169b695a7c1ff"
     },
     {
@@ -17379,7 +17379,7 @@
       "phase": "P1/P3",
       "acceptance": "Beispielkompilierung in CI.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 167,
+      "line": 171,
       "sourceLineSha256": "ad14350ec0b336b8b87913d62ef88c42423622e8944a034b15f665f9b18466fe"
     },
     {
@@ -17388,7 +17388,7 @@
       "phase": "P3",
       "acceptance": "Versionsmanifest/Migrationsfall.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 168,
+      "line": 172,
       "sourceLineSha256": "eb5d5539026efa03ea7e23c7d797ab04a70df664ba7930e773ddbfcddc9ebce1"
     },
     {
@@ -17397,7 +17397,7 @@
       "phase": "entfällt (P3-Scope-Entscheidung)",
       "acceptance": "Keine Generator-API; Entscheidung und Ersatz sind dokumentiert.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 169,
+      "line": 173,
       "sourceLineSha256": "5672cd75698efa8e962394afaa824ea3b43bdcd53d55d87307e9394bf5b2608f"
     },
     {
@@ -17406,7 +17406,7 @@
       "phase": "P3",
       "acceptance": "API-Vertrag, Wiederholungslauf und Unveränderlichkeit der fachlichen Tokenfolge.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 170,
+      "line": 174,
       "sourceLineSha256": "800495efc3f1e8ba2b4383490d3587034fe34d0684df59a570c724d231421b7d"
     },
     {
@@ -17415,7 +17415,7 @@
       "phase": "P3",
       "acceptance": "Positive/negative Formatfixtures, Re-Parse und semantischer Vergleich.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 171,
+      "line": 175,
       "sourceLineSha256": "d7de7be2d805e31a850b0513436e69a639c33585fab901f15c8e89a1cc9cb595"
     },
     {
@@ -17424,7 +17424,7 @@
       "phase": "P3",
       "acceptance": "Prozessfixtures für Ausgabe, In-Place-Schreiben und Check-Modus.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 172,
+      "line": 176,
       "sourceLineSha256": "c1dbc9bbad1bdf539785660f60e7f27a7281b63c598f8b4d568d434fbeb64f76"
     },
     {
@@ -17433,7 +17433,7 @@
       "phase": "P3",
       "acceptance": "IO-Fehler-/Abbruchtest mit vorhandener Zieldatei.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 173,
+      "line": 177,
       "sourceLineSha256": "96bf8a7d3317000f9d5a5e1f566c8a038d3e4ded3b2c7f21ab76c9d30659a23e"
     },
     {
@@ -17442,7 +17442,7 @@
       "phase": "zurückgestellt (nicht P3)",
       "acceptance": "Eigener Auftrag mit echten Verbrauchertests erforderlich.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 174,
+      "line": 178,
       "sourceLineSha256": "3b1e420612bc4c176de64cef2587d12a7d0a8a3ab82a36dab1ab703928517597"
     },
     {
@@ -17451,7 +17451,7 @@
       "phase": "zurückgestellt (nicht P3)",
       "acceptance": "Gilt erst bei Wiederaufnahme des Adapterauftrags.",
       "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 175,
+      "line": 179,
       "sourceLineSha256": "092e7b22a090fda27972202d863cedc1e56ad95673e5743841ade290f9018b33"
     }
   ],

@@ -36,6 +36,16 @@ class FormatterContractTest {
                 .tokens().stream().map(token -> token.text()).toList();
     }
 
+    private static List<String> tokensWithNormalizedCommentEndings(String text) {
+        var syntax = SyntaxServices.create().parse(source(text),
+                ParseOptions.defaults(ParseMode.STRICT), CancellationToken.none());
+        var comments = syntax.trivia().stream()
+                .filter(t -> t.kind() != guru.interlis.syntax.TriviaKind.WHITESPACE_GAP)
+                .map(guru.interlis.syntax.TriviaSpan::range).collect(java.util.stream.Collectors.toSet());
+        return syntax.tokens().stream().map(token -> comments.contains(token.range())
+                ? token.text().replace("\r\n", "\n").replace("\r", "\n") : token.text()).toList();
+    }
+
     @Test
     void formatsIndentationAndPreservesCommentsAndUnicode() {
         String input = """
@@ -111,7 +121,12 @@ class FormatterContractTest {
                     var options = new FormatOptions(2, setting, true);
                     String formatted = format(input, options);
                     assertEquals(formatted, format(formatted, options));
-                    assertEquals(tokenTexts(input), tokenTexts(formatted));
+                    if (setting == FormatOptions.LineEnding.PRESERVE) {
+                        assertEquals(tokenTexts(input), tokenTexts(formatted));
+                    } else {
+                        assertEquals(tokensWithNormalizedCommentEndings(input),
+                                tokensWithNormalizedCommentEndings(formatted));
+                    }
                     assertTrue(formatted.contains("    CLASS D ="));
                     if (setting == FormatOptions.LineEnding.PRESERVE) {
                         assertTrue(formatted.endsWith("END M." + ending));

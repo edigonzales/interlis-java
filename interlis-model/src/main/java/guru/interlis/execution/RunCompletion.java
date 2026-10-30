@@ -13,18 +13,22 @@ public sealed interface RunCompletion permits RunCompletion.Succeeded,
 
     int errorCount();
 
-    record Succeeded(int diagnosticCount, int rootCount, boolean analysisComplete)
+    record Succeeded(int diagnosticCount, int rootCount, boolean analysisComplete,
+                     boolean compiledSchemaProduced)
             implements RunCompletion {
         /** Creates a validated instance. */
         public Succeeded {
             if (diagnosticCount < 0 || rootCount < 0) {
                 throw new IllegalArgumentException("counts must be non-negative");
             }
+            if (compiledSchemaProduced && !analysisComplete) {
+                throw new IllegalArgumentException("a schema requires a complete analysis");
+            }
         }
 
-        @Override
-        public boolean compiledSchemaProduced() {
-            return true;
+        /** Compatibility constructor for successful compiler-gate runs. */
+        public Succeeded(int diagnosticCount, int rootCount, boolean analysisComplete) {
+            this(diagnosticCount, rootCount, analysisComplete, true);
         }
 
         @Override

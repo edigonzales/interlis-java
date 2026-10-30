@@ -5,6 +5,7 @@ def hostProfiles = [
     geoCorpus: ['GeoCorpus', []],
     jvmBenchmark: ['JvmBenchmark', []],
     sdkProcessCheck: ['SdkProcesses', []],
+    legacyCliCheck: ['LegacyCliProcesses', []],
     referenceCheck: ['ReferenceProcesses', ['profile']],
     originalViewReferenceCheck: ['ReferenceProcesses', ['originals']],
     viewReferenceCheck: ['ReferenceProcesses', ['views', hostNodeExecutable.get()]],
@@ -13,7 +14,10 @@ def hostProfiles = [
 project(':interlis-cli') {
     plugins.withId('java') {
         sourceSets {
-            verification
+            verification {
+                compileClasspath += sourceSets.main.output
+                runtimeClasspath += sourceSets.main.output
+            }
             verificationTest {
                 compileClasspath += sourceSets.verification.output
                 runtimeClasspath += sourceSets.verification.output
@@ -45,7 +49,7 @@ project(':interlis-cli') {
                 args rootProject.projectDir.absolutePath
                 args profile[1]
                 javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
-                if (name in ['sdkProcessCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn 'installDist'
+                if (name in ['sdkProcessCheck', 'legacyCliCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn 'installDist'
                 if (name == 'jvmBenchmark') dependsOn 'geoCorpus'
                 if (name == 'jvmBenchmark') mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':interlis-wasm-webimage:webImageProbe'
                 if (name in ['viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':checkNodeRuntime'

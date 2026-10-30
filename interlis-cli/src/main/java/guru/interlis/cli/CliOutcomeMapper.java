@@ -23,6 +23,9 @@ public final class CliOutcomeMapper {
 
     private CliTermination classify(CompilationOutcome.Rejected rejected) {
         var reasons = rejected.rejection().reasons();
+        if (reasons.contains(RejectionReason.ENVIRONMENT_FAILURE)) {
+            return CliTermination.OPERATIONAL_FAILURE;
+        }
         if (reasons.contains(RejectionReason.INCOMPLETE_SUPPORT)) {
             return CliTermination.INCOMPLETE_ANALYSIS;
         }
@@ -30,12 +33,9 @@ public final class CliOutcomeMapper {
                 || reasons.contains(RejectionReason.AMBIGUOUS_INPUT)) {
             return CliTermination.INPUT_UNRESOLVED;
         }
-        if (reasons.contains(RejectionReason.WARNINGS_REJECTED)) {
-            return CliTermination.WARNINGS_REJECTED;
+        if (reasons.contains(RejectionReason.SOURCE_ERRORS)) {
+            return CliTermination.SOURCE_REJECTED;
         }
-        if (reasons.contains(RejectionReason.ENVIRONMENT_FAILURE)) {
-            return CliTermination.OPERATIONAL_FAILURE;
-        }
-        return CliTermination.SOURCE_REJECTED;
+        return CliTermination.WARNINGS_REJECTED;
     }
 }

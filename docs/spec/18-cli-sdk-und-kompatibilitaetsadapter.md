@@ -8,7 +8,11 @@ CLI und SDK sind dünne Zugänge zu derselben Engine. Die CLI besitzt keine zwei
 
 ## 2. CLI-Klassen und Signaturen
 
-Paket `guru.interlis.cli`, mit werkzeugspezifischen Adaptern unter `guru.interlis.cli.ili2c`.
+Paket `guru.interlis.cli`. Das erste ili2c-Prüfprofil verwendet ebenfalls dieses
+Package; ein zusätzliches Unterpackage ist für den aktuellen Umfang nicht nötig.
+
+Die folgenden Signaturauszüge zeigen Rollen ohne Bodies; die konkreten
+immutable Ergebnistypen und additiven Konstruktoren stehen im P3-1-Abschnitt.
 
 ```java
 public interface CliApplication {
@@ -21,13 +25,13 @@ public interface CommandLineParser {
     CliParseOutcome parse(List<String> arguments, CommandSpec specification);
 }
 
-public interface ExitCodePolicy {
-    int exitCode(CliTermination termination, LegacyCliProfile profile);
+public final class ExitCodePolicy {
+    public int exitCode(CliTermination termination);
 }
 
-public interface OutputPlanner {
-    OutputPlan plan(ParsedCommand command, CliEnvironment environment,
-                    LegacyCliProfile profile);
+public final class OutputPlanner {
+    public OutputPlan plan(ParsedCommand command, CliEnvironment environment,
+                           Optional<LegacyCliProfile> profile);
 }
 ```
 
@@ -40,9 +44,9 @@ Diese Signaturen sind normative Rollenverträge. Implementierungen sind final, s
 | `DefaultCommandLineParser` | `parse(...)` | Optionen/Argumente gemäss CommandSpec parsen, noch keine IO/Modellanalyse |
 | `CommandSpec` | Optionsdefinitionen, Positionsargumente, Konfliktregeln, Hilfetextordnung | versioniertes Werkzeugprofil |
 | `CliEnvironment` | Arbeitsverzeichnis, stdin/stdout/stderr-Abstraktionen, Uhr, RunObserver, RunContextFactory, Repositorydienste, Profillader | vom Host übergebene Ressourcen; keine globalen Ersatzstreams |
-| `ConfigurationLoader` | `load(ParsedCommand, CliEnvironment, LegacyCliProfile)` | Konfigurationsdateien lesen, Präzedenz und Herkunft offenlegen |
-| `InvocationPlanner` | `prepare(ResolvedConfiguration, token)` | explizite Root-/Quellen-/Resolver-/Outputplanung |
-| `CliOutputWriter` | `writeDiagnostics(...)`, `writeArtifacts(...)`, `writeSummary(...)` | getrennte Ausgabekanäle, definierte Reihenfolge und Fehler |
+| `ConfigurationLoader` | `load(ParsedCommand, CliEnvironment, CancellationToken)` | Konfigurationsdateien lesen, Präzedenz und Herkunft offenlegen |
+| `Ili2cInvocationPlanner` (intern), `DefaultCompilerCli` | `prepare` beziehungsweise Kommandoplanung | explizite Root-/Quellen-/Resolver-/Outputplanung |
+| `CliOutputWriter`; Diagnose-/Versionsrenderer | `write(Path,byte[],Optional<byte[]>,CancellationToken)`; `render`/`write` | atomare Dateien; getrennte Text-/JSON-Kanäle und Reihenfolge; gemeinsamer letzter Flush in der CLI |
 | `CliOutcomeMapper` | `classify(CompilationOutcome)` | Ergebnisvariante und RejectionSummary zu CliTermination abbilden; Compilererfolg ist noch kein Ausgabeerfolg |
 | `LegacyExitCodePolicy` | `exitCode(...)` | aus Referenzprofil abgeleitete Zuordnung, keine geratenen Legacywerte |
 | `ToolVersionRenderer` | `render(VersionManifest, LegacyCliProfile)` | Werkzeugversion, optionaler erweiterter Build-/Capabilitynachweis |
@@ -214,3 +218,95 @@ Ablauf über getrennte CLI-Anwendungsinstanzen aus, entfernt die Originaldateien
 prüft Cachekorruption, Ambiguität, Pins, ungültige Optionen und Ausgabekollisionen.
 Die programmatischen SDK-Verträge einschliesslich Closure-/Modellassertions
 stehen in den Repository- und Workspace-Vertragstests aus Kapitel 08 §11.
+
+## P3-1: explizite Kommando- und Hostgrenzen
+
+CLI-003/005/007 und LOG-002/003/005: `CommandSpec` besitzt den Kommandonamen,
+eine geordnete immutable Optionsliste und die Positionsargumentregel.
+`Option(name,valueCount,repeatable)` beschreibt Flags beziehungsweise feste
+Wertgruppen. `DefaultCommandLineParser.parse(arguments,specification)` ist rein,
+prüft unbekannte/doppelte Optionen, fehlende Werte und `--` und liefert
+`ParsedCommand`, `HelpRequested`, `VersionRequested` oder `InvalidCommandLine`.
+`ParsedCommand` hält die Optionsvorkommen tief kopiert und in Eingabereihenfolge;
+Dateiargumente werden nicht erneut shell-gequotet oder geladen. `help` wird aus
+diesem selben Schema erzeugt.
+
+Für das neue Standardprofil von `check`/`compile` lädt `ConfigurationLoader`
+ausschliesslich `--config FILE`: UTF-8-Java-Properties, höchstens 1 MiB, bekannte
+Schlüssel `root`, `repository`, `cache`, `read-lock`, `write-lock`, `offline`,
+`warnings`. Doppelte/ unbekannte Schlüssel und leere ungültige Werte sind
+Nutzungsfehler. Pro Dateischlüssel gibt es einen Wert; wiederholte CLI-Optionen
+bleiben entsprechend ihrem Schema möglich. CLI ersetzt den ganzen Dateiwert
+vor Profildefault. Relative Pfade beziehen sich auf das injizierte
+Arbeitsverzeichnis. Es gibt keine impliziten Home-Dateien oder Environmentwerte.
+`warnings=allow|reject` beziehungsweise `--warnings allow|reject` werden an die
+bestehende Compiler-WarningPolicy übergeben. `offline=true|false` ist exakt.
+Java-Properties-Escapes gelten auch für Windows-Pfade. `--explain-config` liefert
+statt einer Kompilierung deterministisches JSON mit wirksamen Werten und Herkunft
+CLI/CONFIGURATION_FILE/PROFILE_DEFAULT; URI-Zugangsdaten und Queries werden
+redigiert. Das ist eine neue Standardoption, keine Behauptung einer alten
+ili2c-Konfigurationsoption.
+
+`CliEnvironment` erhält additiv `CompilerServices services`; der bisherige
+Fünfparameterkonstruktor erzeugt isolierte Defaults. Der CLI-Elternlauf wird mit
+diesen Diensten gestartet; Compilerarbeit erhält einen frischen Kindkontext.
+`CliExecutionResult` erhält `Optional<RunId> runId`; der bisherige
+Vierparameterkonstruktor bleibt für noch nicht zugeordnete Resultate erhalten.
+Der Elternabschluss folgt erst nach Ausgabe und Flush. Ein Ausgabefehler kann
+daher einen erfolgreichen Compilerkindlauf mit OPERATIONAL_FAILURE abschliessen.
+Kein aktueller Lauf wird auf dem wiederverwendbaren CLI-Objekt gespeichert.
+
+FMT-001–004: Explizite LF-/CRLF-Wahl normalisiert auch gewöhnliche mehrzeilige
+Kommentare. Zeilenenden **innerhalb werttragender Literale oder mehrzeiliger
+Metaattributwerte** bleiben dagegen erhalten: ihre Änderung würde den
+freigegebenen Metadatenvertrag und die fachliche Bedeutung ändern. In diesem
+Fall meldet `Formatted.notices` den Hinweis `VALUE_LINE_ENDING_PRESERVED` mit
+Originalbereich; die CLI schreibt den Hinweis getrennt nach stderr. PRESERVE
+bewahrt alle ursprünglichen Zeilenenden. Diese Präzisierung ändert keinen
+String-/Metadatenwert und erlaubt keine stille semantische Formattransformation.
+Die entsprechenden Kommentar-Tokenvergleiche normalisieren ausschliesslich
+Kommentarzeilenenden bei expliziter Wahl; Literalwerte werden separat exakt
+geprüft. Die Formate bleiben idempotent und wieder parsebar.
+
+Der gemeinsame atomare Hostschreiber prüft Abbruch nach Staging und unmittelbar
+vor Ersetzung. Formatierungen vergleichen ausserdem die gelesenen Originalbytes;
+ein beobachteter externer Edit bleibt erhalten. Das ist ein optimistisches
+Lesefenster, kein Dateisystem-CAS. Es gibt keinen nichtatomaren Move-Fallback.
+Bei Fehlern werden temporäre Dateien entfernt; bestehende POSIX-Rechte bleiben
+bei erfolgreicher Ersetzung erhalten. Symbolische Ausgabeziele werden abgelehnt.
+Mehrfach genannte identische Formatquellen sind Nutzungsfehler. Atomarität gilt
+je Datei, nicht als Dateisystemtransaktion über mehrere Dateien.
+
+`OutputPlanner.plan(ParsedCommand,CliEnvironment,Optional<LegacyCliProfile>)`
+liefert einen immutable `OutputPlan(fileTargets,writesStdout)` und prüft
+Ausgabemodus, doppelte Formatquellen und offensichtliche Quell-/Lockkollisionen
+vor dem Schreiben. Pfade sind absolute normalisierte Hostpfade in Eingabereihenfolge.
+Nach Repositoryauflösung werden Kollisionen erneut gegen die tatsächliche
+Closure geprüft. `CliOutputWriter.write(Path,byte[],Optional<byte[]>,CancellationToken)`
+führt synchron die oben beschriebene atomare Ersetzung aus; alle Eingaben sind
+nullfrei, Arrays bleiben beim Aufrufer und dürfen während des Aufrufs nicht
+verändert werden. IO-Fehler sind `IOException`, Abbruch ist typisiert.
+`CliExecutionResult.artifacts` ist die geordnete immutable Liste tatsächlich
+fertiggestellter Dateien mit Art FORMATTED_SOURCE/RESOLUTION_LOCK, absoluter URI
+und Bytezahl. Bei späterem Batch- oder Flushfehler bleiben zuvor fertiggestellte
+Dateien aufgeführt; eine atomare Mehrdateitransaktion wird nicht behauptet.
+`rejectionSummary` bewahrt gegebenenfalls die vollständige typisierte
+Compiler-Gate-Ablehnung zusätzlich zum priorisierten CLI-Status, auch wenn ein
+späterer Hostausgabefehler den endgültigen Status bestimmt.
+
+COMPAT-001–003: Das explizite `LegacyCliProfile.ili2c569()` hat die Kennung
+`ili2c-check/5.6.9-v1`; Version und SHA-256 des externen Referenzartefakts stehen
+im [aktuellen Aufrufprofil](../p3/CLI_PROFILE.md). `Ili2cMain`, der Launcher
+`bin/ili2c`/`ili2c.bat` und `compat/ili2c.jar` verwenden diese Variante derselben
+CLI-/Compilerpipeline. `LegacyExitCodePolicy` bildet Erfolg auf 0 und jeden
+Fehler auf 1 ab. `ToolVersionRenderer` trennt eigene Identität und
+Referenzprofil. `LegacyDiagnosticRenderer` rendert kanonische Diagnostik auf
+stderr mit Error/Warning/Info; er rekonstruiert keine Sprachregeln.
+Quiet/Warnungsfilter betreffen ausschliesslich Text, Trace beobachtet echte
+Laufereignisse. Lokale Modellverzeichnisse werden begrenzt inventarisiert;
+Header/Imports/Auswahl bleiben beim gemeinsamen Resolver. HTTP-Verzeichnisse
+delegieren an den Repositoryadapter. Generatoren und Repositoryadministration
+bleiben ausdrücklich ausserhalb P3 und werden vor Host-IO abgelehnt.
+Die Referenzprozesse und die ausgelieferten Ersatzprozesse werden getrennt
+ausgeführt; dokumentierte Ergebnis-/Textunterschiede sind kein Anspruch auf
+bytegleiche Ausgabe oder uneingeschränkte ili2c-Kompatibilität.

@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "status": "CANDIDATE_ONLY",
   "purpose": "Keyword candidates only; no assertion, execution or acceptance claim",
-  "testMethods": 729,
+  "testMethods": 731,
   "conditions": [
     {
       "id": "NORM:2.3:2.1:C01",
@@ -15528,8 +15528,8 @@
           "suite": "guru.interlis.compiler.FormatterContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
           "method": "formattingIsIdempotentAndCanUseLf",
-          "methodStart": 2285,
-          "methodEnd": 2732,
+          "methodStart": 2952,
+          "methodEnd": 3399,
           "methodSha256": "4318b52d58a675a377967e986bb061aa2d1a767c16c0af5e82aa377fbdab2721",
           "score": 5,
           "status": "CANDIDATE_ONLY"
@@ -15899,9 +15899,9 @@
           "suite": "guru.interlis.compiler.FormatterContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
           "method": "preservesTokensAndIsIdempotentAcrossVersionsAndLineEndings",
-          "methodStart": 3933,
-          "methodEnd": 5262,
-          "methodSha256": "0f85213ec85aeba200425f704639d5c90a1feeaae5957e851ee3bd5140ebad80",
+          "methodStart": 4600,
+          "methodEnd": 6216,
+          "methodSha256": "7662dd4334222ac778498e1588257c23750e7a541303e50b54d54231342dc52e",
           "score": 12,
           "status": "CANDIDATE_ONLY"
         },
@@ -15909,8 +15909,8 @@
           "suite": "guru.interlis.compiler.FormatterContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
           "method": "formatsIndentationAndPreservesCommentsAndUnicode",
-          "methodStart": 1531,
-          "methodEnd": 2279,
+          "methodStart": 2198,
+          "methodEnd": 2946,
           "methodSha256": "3bd4d033afd9d4453f6f7545c8f4cf048a79148aef740a7ebcc77c7e735ae36c",
           "score": 10,
           "status": "CANDIDATE_ONLY"
