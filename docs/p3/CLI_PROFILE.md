@@ -2,8 +2,8 @@
 
 P3 qualifiziert Compiler-Prüfaufrufe. Generatoren, GUI, Repositoryadministration
 und die historische Java-API sind nicht Bestandteil dieses Profils.
-Die unabhängige P3-1-Abnahme steht noch aus; dies dokumentiert den implementierten
-und lokal geprüften Umfang, keinen abgeschlossenen G3-Nachweis.
+Die [unabhängige P3-1-Abnahme](reviews/P3-1-review.md) ist PASS am Produktcommit
+`9108b0387d9f1b82f506d8dc64e301e8522137dd`. G3 bleibt offen.
 
 Referenz: ili2c `5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722`,
 JAR-SHA-256 `37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e`.
@@ -91,8 +91,9 @@ Rohbericht: `build/reports/p3/legacy/cli-comparison.json`, Log:
 Exits, beide Streams, Laufzeiten, Runtime und Artefakt-/Quellhashes.
 Negativcanaries verhindern ein PASS bei falschen Exits, verschmutzten Streams,
 fehlenden Referenzprozessen oder erfolgreicher Unsupported-Option.
-Linux x64 und Windows x64 werden zusätzlich im neuen GitHub-Workflow ausgeführt;
-deren Ergebnis ist bis zum tatsächlichen Lauf offen.
+Linux x64 und Windows x64 bestehen am selben P3-1-Produktcommit im
+[GitHub-Lauf 41120065983](https://github.com/edigonzales/interlis-java/actions/runs/41120065983).
+Die finale Plattformprüfung des gesamten P3-Produkts bleibt fällig.
 
 Der erste echte GitHub-Lauf am Kandidaten `a096d7e` besteht auf Linux x64;
 Windows legt eine falsche UTF-8-Annahme beim Lesen nativer Java-Streams offen.
@@ -101,4 +102,5 @@ windows-1252-Ausgabe verliert `Grüezi 😀` tatsächlich (`encoding-red.json`).
 Der Fix setzt unsere Hostausgabe explizit auf UTF-8 und prüft sie unter derselben
 JVM-Gegenkonfiguration als echten Prozess. `encoding-green.log` besteht lokal
 mit 54 Profil-/JAR-Aufrufen, dieser zusätzlichen Encodingprobe und neun
-SDK-Aufrufen. Die erneute Windows-Ausführung ist bis zum Folgelauf offen.
+SDK-Aufrufen. Die erneute Windows-Ausführung besteht inzwischen am oben verlinkten
+P3-1-Produktcommit. Der erste Fehlversuch bleibt als Provenienz erhalten.

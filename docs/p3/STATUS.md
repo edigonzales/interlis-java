@@ -1,72 +1,58 @@
 # P3 – operativer Status
 
-- **IN ARBEIT**, Auftrag gesamte P3-Folge autonom; kein G3-PASS behauptet.
-- Aktuelle Lieferung: **P3-1 – CLI-Profil und Formatierung**, WP-30, AC-P3-01–04.
-- Basis: `0e20e6b23fbcbdc3315f58d6e3c467fea8ee3d94`, Arbeitsverzeichnis bei Beginn sauber.
-- [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md).
-- Unabhängiger [P3-Voraudit](reviews/P3-voraudit.md) abgeschlossen: **AUDIT**,
-  15 konkrete P3-Musslücken, kein G3-PASS. OpenCode 2.0.28, direkter DeepSeek-
-  Provider deepseek/deepseek-flash, exakter sauberer Basischeckout, gesamter
-  Prozess OS-Python-gesperrt; CLI-Exit 0, äusseres Manifest passed. SHA-256
-  `ef7ac8ac673710d28c0139915af5f3fcc4043a3fe427e9228c71e46ee5c311d2`. Rohpfad build/review/P3-audit/.
-- CLI-/Formatter-Umsetzung und tatsächliche RED→GREEN-Nachweise:
-  [P3-1-Bericht](implementation/P3-1.md), [versioniertes Aufrufprofil](CLI_PROFILE.md).
-  Parser, Konfiguration/Herkunft, Eltern-/Kindlauf, Gate-Priorität, atomare
-  Dateien und sichtbare Teilartefakte sind ergänzt. Noch keine unabhängige
-  P3-1-Abnahme.
-- Erster tatsächlicher ili2c-Aufrufkatalog unter
-  build/reports/p3/preparation/legacy-reference-initial.json; Hilfe/Version
-  schreiben nach stderr. Leere headful Invocation läuft in die GUI und wurde
-  nach 20 Sekunden abgebrochen; Timeout ist kein fachlicher Referenzexit.
-- Plattformweg für P3-5 vom Nutzer freigegeben: neue GitHub-Action mit
-  Windows-x64- und Linux-x64-Runnern implementiert und mit actionlint 1.7.7
-  geprüft; tatsächlicher Lauf nach Kandidatenpush noch offen.
-  macOS arm64 und Docker Linux aarch64 vorhanden; Linux x64 ist separat
-  auszuführen. Keine Plattformgleichheit aus Cross-Compilation ableiten.
-- Breite erste Regression: JVM/Evidenz, Portable, Conformance und SDK bestanden;
-  Chromium/WebKit TeaVM sowie Web Image in Chromium/Firefox/WebKit bestanden.
-  TeaVM-Firefox meldet einen echten 60-Sekunden-Timeout; Safari wurde deshalb
-  nicht gestartet. Gesamtlauf Exit 1; kein Browser-PASS. Getrennte Gegenprüfung
-  folgt. Neue abschliessende CLI-/Metadatenänderungen erhalten einen eigenen
-  JVM-/Prozesslauf.
-- Nächster Schritt: aktuelle CLI-Prüfung, Firefox-/Safari-Gegenprobe,
-  Kandidatencommit/-push und unabhängiger P3-1-Review; anschliessend P3-2.
+- **IN ARBEIT**, gesamter Meilenstein autonom beauftragt; **G3 offen**.
+- Aktuell **P3-2 – LSP**, WP-31, AC-P3-05–08. P3-3 bis P3-5 bleiben offen.
+- [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
+  [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
 
-Aktualisierung: Produktkandidat `a096d7ea938de4ac143dc09d86583c021734fe75`
-committet/gepusht; unabhängiger OpenCode-/DeepSeek-Review am sauberen separaten
-Checkout läuft. Browser-Gegenprüfung ohne Produkt-/Timeoutänderung vollständig
-bestanden: Chromium/Firefox/WebKit und echtes Safari je 3548, Exit 0 (1m24s).
-Der erste Timeout bleibt im Bericht erhalten. GitHub-Lauf
-[41117544923](https://github.com/edigonzales/interlis-java/actions/runs/41117544923):
-Linux x64 PASS; Windows x64 scheitert beim Lesen nativer Streambytes als UTF-8.
-Eigene RED-Gegenprobe bestätigt den Unicodeverlust am Kandidaten. UTF-8-
-Hostfix und kontrollierte externe Referenzkodierung bestehen lokal; erneuter
-Plattformlauf und neuer unabhängiger Kandidat folgen. P3-2-Gegenproben zu
-Dokumentsynchronisation sind parallel vorbereitet, keine P3-2-Abnahme.
+## Abgenommen: P3-1 – CLI und Formatierung
 
-Zweiter GitHub-Lauf
-[41118436289](https://github.com/edigonzales/interlis-java/actions/runs/41118436289):
-54 echte Legacy-Prozesse einschliesslich Encodinggegenprobe bestehen auf
-Windows x64 und Linux x64. Gesamtstatus noch FAIL: native Windows-Pfade in
-Evidenzprüfungen und ein versehentlich auf uncommittete LSP-Arbeit gesetzter
-Quellhash. Der Quellhash wird an den tatsächlichen P3-1-Commit gebunden;
-Pfadvergleich verwendet portable Locator, akzeptiert die beiden konkreten
-Launcherformen und hält alle Kommando-/Exit-/Hashprüfungen aufrecht. Neue
-Unix-/Windows-/UNC-/Relativpfad-Gegenproben bestehen lokal.
+**PASS**, AC-P3-01–04 und P3-AUD-01–04, Produktcommit
+`9108b0387d9f1b82f506d8dc64e301e8522137dd`.
+[Implementierung und tatsächliche Läufe](implementation/P3-1.md),
+[ili2c-Prüfprofil](CLI_PROFILE.md),
+[unveränderter unabhängiger PASS-Review](reviews/P3-1-review.md).
 
-Dritter GitHub-Lauf
-[41119268817](https://github.com/edigonzales/interlis-java/actions/runs/41119268817)
-am `ba089264795e6fc8c873829b4d4824fb640bdd0f`: Linux x64 und Windows x64
-vollständig PASS, einschliesslich check, 54 Legacy-Prozessen, Encodingprobe,
-SDK-Prozessen/-Paket und LSP-Distribution. Das ist ein tatsächlicher
-Zwischennachweis, kein finales G3.
+OpenCode 2.0.28, direkter Provider deepseek/deepseek-flash, frischer Kontext am
+exakten sauberen separaten Checkout; gesamter Prozess OS-Python-gesperrt,
+Transportexit 0 und äusseres Manifest passed. Bericht-SHA-256
+`9133ef5e8499f67f966e593be9b968f59510e2d0ee0a18a61fff8fcf608a5db7`.
+Reviewer: 1103 aktuelle XML-Testfälle ohne Fehler/Skips (Aggregat; einzelne Tasks
+UP-TO-DATE), 54 echte Profil-/JAR-Prozesse plus Encodingprobe, neun SDK-Aufrufe,
+38 eigene neue Gegenproben, keine offenen P3-1-MUSS-Findings.
+Der [erste FAIL-Review](reviews/P3-1-a096d7e-FAIL.md) bleibt unverändert erhalten;
+F1–F5 wurden mit tatsächlichen RED→GREEN-Proben geschlossen.
 
-Unabhängiger [erster P3-1-Review](reviews/P3-1-a096d7e-FAIL.md): **FAIL**.
-OpenCode 2.0.28, direkter deepseek/deepseek-flash, sauberer a096d7e-Checkout,
-CLI-Exit 0, äusseres OS-Python-gesperrtes Manifest passed; unveränderter Bericht
-SHA-256 `57af1a36336f3440d1c7ffd41250aa488a3de6b3d3b495684888a4c2f79acb35`.
-F1 URI-Redaktion und F2 Datei-Aliase sind mit tatsächlichen RED→GREEN-Proben
-behoben; F3/F4 Dokumentnamen und Environmenttabelle synchronisiert; F5
-Diagramm-rootCount samt zusätzlicher Parallelitäts-/Korrelationsprobe grün.
-54 Prozess- und neun SDK-Aufrufe bleiben grün. Neuer Kandidat und frischer
-unabhängiger P3-1-Review folgen; kein Teil-PASS vorweggenommen.
+**Echte Plattformmatrix am selben Produkt-SHA:**
+[GitHub-Lauf 41120065983](https://github.com/edigonzales/interlis-java/actions/runs/41120065983),
+Windows x64 Job `124284221132` und Linux x64 Job `124284221624` jeweils PASS:
+check, Legacy-/SDK-Prozesse, SDK-Paket und LSP-Distribution. Neue GitHub-Action
+nach ausdrücklicher Nutzerfreigabe implementiert, alle Actions per SHA gepinnt.
+Dies ersetzt nicht die spätere Matrix am endgültigen P3-Produkt.
+
+Zusätzliche lokale Regression am P3-1-Code: Portable und Conformance
+577 PASS / 16 freigegebene XFAIL; Web Image Chromium/Firefox/WebKit je 3548.
+Ein erster TeaVM-Firefox-Timeout bleibt als Fehlversuch dokumentiert. Getrennte
+Gegenprüfung ohne Produkt-/Timeoutänderung: Chromium/Firefox/WebKit und echtes
+Safari je 3548 PASS, Exit 0. Vollständiger frischer kumulativer Lauf bleibt G3.
+
+## Laufend: P3-2
+
+- Drei tatsächliche RED→GREEN-Gegenproben: atomare Ablehnung ungültiger
+  didChange-Batches und Resynchronisation, genaue Clientversionen auch bei
+  No-op-Text sowie typisierte Fehler ohne Stacktrace für unbekannte Dokumente.
+- Scheduling-Gegenprobe zuerst tatsächlich rot: blockierter Compiler hält
+  Notification fest. Abgetrennte Enginearbeit, Ownerqueue, begrenzte Slots,
+  Supersedierung und bedingte Übernahme implementiert; aktueller LSP-Lauf mit
+  20 Tests grün. Noch nicht als vollständige P3-2-Abnahme qualifiziert.
+- Completion-Gegenproben decken global statt lokal angebotene Namen, falschen
+  Ersetzungsbereich und fehlende Versions-/Unvollständigkeitsinformation auf.
+  Scope-/Protokollkorrektur in Arbeit. Weitere Projekt-/Rename-/Konfigurations-
+  und Fehlerpfade folgen, dann unabhängiger P3-2-Kandidatenreview.
+
+Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
+kein G3-PASS; Bericht-SHA-256
+`ef7ac8ac673710d28c0139915af5f3fcc4043a3fe427e9228c71e46ee5c311d2`.
+P3-3 Browser/Diagramm, P3-4 Corpus/Belastung und P3-5 SDK/Gesamtgate beginnen
+anschliessend automatisch. Der Benutzer wird nicht nach Teilphasen zum
+Weiterfahren aufgefordert.

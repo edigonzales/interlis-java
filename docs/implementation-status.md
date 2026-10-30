@@ -5,13 +5,15 @@ geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
 
 **P3 ist seit 30. Oktober 2026 autonom beauftragt und in Arbeit.**
-Aktuell P3-1 (WP-30): CLI-Kompatibilitätsprofil und Formatierung; danach
-LSP, Browser-/Diagrammintegration, Corpus-/Belastungsmessungen und SDK-/
+P3-1 (WP-30) ist unabhängig PASS am Produktcommit
+`9108b0387d9f1b82f506d8dc64e301e8522137dd`; aktueller Abschnitt P3-2: LSP.
+Danach Browser-/Diagrammintegration, Corpus-/Belastungsmessungen und SDK-/
 Plattformgesamtgate. [P3-Plan](p3/EXECUTION_PLAN.md),
 [operativer P3-Status](p3/STATUS.md). Unabhängige Reviews mit OpenCode über die
 direkte DeepSeek API bleiben pro Lieferung und kumulativ verpflichtend.
 G3 ist offen; Windows-/Linux-x64-Prozessnachweise werden nach Nutzerfreigabe
-über die neue GitHub-Action ausgeführt; ihr tatsächlicher Lauf ist noch offen. Der folgende G2-Abschluss
+über die neue GitHub-Action ausgeführt und bestehen bereits am P3-1-SHA.
+Die finale Plattformmatrix am P3-Gesamtprodukt bleibt fällig. Der folgende G2-Abschluss
 bleibt als getrennte erfüllte Voraussetzung erhalten.
 
 **Phase 4 und G2 sind vollständig und unabhängig mit PASS abgeschlossen**,
