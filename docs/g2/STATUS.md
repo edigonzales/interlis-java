@@ -54,14 +54,17 @@ Fortgeltende ausdrückliche Nutzerentscheidungen für beide Sprachen:
   Ganzzahligkeit, nichtnegative Grenzen und CIRCULAR bleiben geprüft;
   bekannte Faktoren werden exakt verglichen, FUNCTION nie ausgeführt.
 - Die frühere Metadatenfreigabe und die sechs freigegebenen 2.3-OID-/CONTRACTED-
-  Fälle bleiben erhalten. Die19. CIRCULAR-Referenzausnahme folgt der bestätigten
-  Regel; eine zusätzliche explizite Fixture-Einzelfreigabe wird nicht behauptet.
+  Fälle bleiben erhalten. Die 19. CIRCULAR-Referenzausnahme folgt der bestätigten
+  Regel und ist seit **30.10.2026 auch für den konkreten Fall ausdrücklich
+  freigegeben**; [Entscheidungsnachtrag](implementation/L1-2.md#ausdrückliche-einzelfreigabe-vom-30102026).
 
 **Keine offenen Phase-1-Blocker oder ausgelassenen fälligen Prüfungen.**
 Phase2 wurde nicht begonnen. Nächster fachlicher Abschnitt gemäss Plan ist L2-1.
 Die globale D2-Revalidierung bleibt PENDING_USER_REVALIDATION; dieser PASS ist
 keine globale G2-/P3-/P4-/P5-Freigabe. Frühere FAIL-Berichte und Rohbelege bleiben erhalten.
-Der Abschlusscommit speichert ausschliesslich den unveränderten Reviewbericht
-und Dokumentstatus; er verändert keine Produkt-/Test-/Buildquelle.
+Der Abschlusscommit und der spätere Entscheidungsnachtrag betreffen ausschliesslich
+Bericht und Dokumentstatus; Produkt-/Test-/Buildquellen sowie die geprüften
+Erwartungen bleiben unverändert. Die Reviewberichte behalten ihren tatsächlichen
+Entscheidungsstand zum Prüfzeitpunkt.
 
 Verbindlich: [Plan](EXECUTION_PLAN.md),[Reviewanweisung](OPENCODE_REVIEW_PROMPT.md).
