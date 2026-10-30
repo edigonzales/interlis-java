@@ -54,7 +54,7 @@
       "section": "2.2.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "ASCII-Grundalphabet und Zwischenraeume sind ueber Lexer/Formatter belegt; die genaue Zwischenraum-Menge ist implementierungsdefiniert und nicht als eigene Assertion sichtbar.",
+      "scope": "Implementierungsdefinierter Whitespace-Vorrat explizit geprüft; Unicode in Strings/Kommentaren separat.",
       "links": [
         "LexicalProfileContractTest.nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
         "TextLiteralContractTest.stringEscapesAndLineBoundariesAreLexicalContracts",
@@ -116,7 +116,7 @@
       "section": "2.2.6",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "Gültige relative Werte bleiben kompatibel; fehlerhafte Herausgeber erzeugen MODEL_ISSUER mit Quellbereich.",
       "links": [
         "SourceMetadataContractTest.documentationAndExplanationsArePublicAndAppearInHover",
         "SourceMetadataContractTest.explanationEndsAtNextDoubleSlashAndTrailingTokenRemainsSource",
@@ -214,7 +214,7 @@
       "section": "2.5.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "TYPE-MODEL-Grenze und SYMBOLOGY-Kontrakt belegt; REFSYSTEM-Advisory ist normativ nicht erzwingbar und nur ueber MetadataBinding beruehrt.",
+      "scope": "Gültige relative Werte bleiben kompatibel; fehlerhafte Herausgeber erzeugen MODEL_ISSUER mit Quellbereich.",
       "links": [
         "ModelKindContractTest.typeModelsRejectObjectAndRuntimeDeclarationsButKeepTypeFamilies",
         "LanguageFoundationContractTest.approvedTypeModelsAcceptStructuresAndAbstractClassesButRejectTopics",
@@ -230,7 +230,7 @@
       "section": "2.5.1",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "Gültige relative Werte bleiben kompatibel; fehlerhafte Herausgeber erzeugen MODEL_ISSUER mit Quellbereich.",
       "links": [
         "ModelHeaderContractTest.contractedIsStructurallyMeaningfulOnlyIn23",
         "PredefinedNameBindingContractTest.qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis",
@@ -272,7 +272,7 @@
       "section": "2.5.3",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Kernregeln belegt. Probe RuleProbe: eine Assoziation zu einer Klasse direkt im Modell (ausserhalb eines Themas) wird akzeptiert, obwohl 2.3 dies ausdruecklich verbietet (F2).",
+      "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
@@ -287,7 +287,7 @@
       "section": "2.5.3",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
@@ -303,7 +303,7 @@
       "section": "2.5.3",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
@@ -319,7 +319,7 @@
       "section": "2.5.4",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "Explizite geerbte Erweiterungen bleiben gültig; tatsächlich gebundene Ziele sind öffentlich geprüft.",
       "links": [
         "DuplicateNameContractTest.classAndDomainWithSameNameAreRejected",
         "ConstraintNameContractTest.localConstraintNamesAreUniqueAcrossAllViewableFamilies",
@@ -496,7 +496,7 @@
       "section": "2.7.2",
       "baseAuditStatus": "GAP",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Keine JUnit-Assertion fuer AGGREGATION/COMPOSITION. Probe RuleProbe zeigt ausserdem eine reale Normverletzung: eine Aggregation (-<>) in einer dreirolligen Assoziation wird akzeptiert, obwohl 2.7.2 nur zweirollige Aggregationen erlaubt (F1).",
+      "scope": "Beziehungsstärken und verbotene Abschwächung sind direkt geprüft; Objektlöschung wird nicht im Compiler ausgeführt.",
       "links": [
         "AssociationStrengthContractTest.aggregationRequiresExactlyTwoEffectiveRoles",
         "AssociationStrengthContractTest.orderedRolesKeepTheirEffectiveOrderAndCannotBecomeUnordered",
@@ -522,7 +522,7 @@
       "section": "2.7.4",
       "baseAuditStatus": "GAP",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "ORDERED wird als RoleSymbol.ordered gespeichert, aber keine Testmethode assertiert eine ORDERED-Rolle oder ihre Transferreihenfolge. roleComplete enthaelt zwar a4_0 (ORDERED), wird aber nicht als JUnit-Fall ausgewertet.",
+      "scope": "Öffentliche Rollenordnung und Unveränderlichkeit der geordneten Basis sind geprüft; Transferausführung ist P4.",
       "links": [
         "AssociationStrengthContractTest.aggregationRequiresExactlyTwoEffectiveRoles",
         "AssociationStrengthContractTest.orderedRolesKeepTheirEffectiveOrderAndCannotBecomeUnordered"
@@ -548,7 +548,7 @@
       "section": "2.8",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Einleitende Wertebereichs-/Datentyp-Definition; keine eigene pruefbare Regel.",
+      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
       "links": [
         "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
         "DomainRestrictionContractTest.mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap",
@@ -563,7 +563,7 @@
       "section": "2.8",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Typfamilien und Konstanten sind breit belegt; die einleitenden Wertebereichsaussagen sind keine eigene Assertion.",
+      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
       "links": [
         "TypeFamilyContractTest.oidBlackboxAndAlignmentTypesAreModeled",
         "ImportedDomainTypeContractTest.singleElementEnumsAndComposedUnitsKeepTheirDeclaredKind",
@@ -581,7 +581,7 @@
       "section": "2.8",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Typfamilien und Konstanten sind breit belegt; die einleitenden Wertebereichsaussagen sind keine eigene Assertion.",
+      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
       "links": [
         "TypeFamilyContractTest.oidBlackboxAndAlignmentTypesAreModeled",
         "ImportedDomainTypeContractTest.singleElementEnumsAndComposedUnitsKeepTheirDeclaredKind",
@@ -612,7 +612,7 @@
       "section": "2.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Enum-Grundregeln sind belegt; die Beispiel-/FINAL-Unterabschnitte sind teils erklaerend.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -628,7 +628,7 @@
       "section": "2.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Enum-Grundregeln sind belegt; die Beispiel-/FINAL-Unterabschnitte sind teils erklaerend.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -644,7 +644,7 @@
       "section": "2.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Enum-Grundregeln sind belegt; die Beispiel-/FINAL-Unterabschnitte sind teils erklaerend.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -660,7 +660,7 @@
       "section": "2.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Enum-Grundregeln sind belegt; die Beispiel-/FINAL-Unterabschnitte sind teils erklaerend.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -676,7 +676,7 @@
       "section": "2.8.2",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "FINAL-Beispiel; die Regel selbst steht in C04 und ist durch ExistenceValueFamilies belegt.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
@@ -1061,7 +1061,7 @@
       "section": "2.8.13.1",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Flaechengeometrie (Randlinien, Enklaven, Zusammenhang) ist Laufzeit-/Validierungssemantik; keine Compilerregel.",
+      "scope": "Gemischter Geometrieabsatz enthält statische Toleranzdeklaration; Topologieprüfung echter Flächen bleibt P4.",
       "links": [
         "GeometryRulesContractTest.surfaceToleranceIsExplicitIn23AndSymbolicIn24"
       ],
@@ -1129,7 +1129,7 @@
       "section": "2.9.1",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die vollstaendige Liste des Anhangs ist nicht einzeln assertiert; die verwendeten Basiseinheiten sind gebunden.",
+      "scope": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft.",
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
@@ -1143,7 +1143,7 @@
       "section": "2.9.1",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft.",
       "links": [
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
         "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
@@ -1311,11 +1311,12 @@
       "section": "2.12",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Erlaeuterung des areAreas-Beispiels; Laufzeitsemantik.",
+      "scope": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4.",
       "links": [
+        "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile"
       ],
-      "resolution": "Gemischter Absatz: Compiler-Syntaxfamilien sind verknüpft; globale Datensatzprüfung und areAreas-Ausführung bleiben P4."
+      "resolution": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4."
     },
     {
       "id": "NORM:2.3:2.12:C04",
@@ -1374,7 +1375,7 @@
       "section": "2.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Bindungs-/Typregeln sind breit belegt; eine eigene Assertion fuer die Operator-Praegedenz (Vergleich vor AND vor OR) fehlt.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -1391,7 +1392,7 @@
       "section": "2.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Bindungs-/Typregeln sind breit belegt; eine eigene Assertion fuer die Operator-Praegedenz (Vergleich vor AND vor OR) fehlt.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -1408,7 +1409,7 @@
       "section": "2.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Bindungs-/Typregeln sind breit belegt; eine eigene Assertion fuer die Operator-Praegedenz (Vergleich vor AND vor OR) fehlt.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -1425,7 +1426,7 @@
       "section": "2.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Bindungs-/Typregeln sind breit belegt; eine eigene Assertion fuer die Operator-Praegedenz (Vergleich vor AND vor OR) fehlt.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -1442,7 +1443,7 @@
       "section": "2.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Bindungs-/Typregeln sind breit belegt; eine eigene Assertion fuer die Operator-Praegedenz (Vergleich vor AND vor OR) fehlt.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -1459,7 +1460,7 @@
       "section": "2.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Bindungs-/Typregeln sind breit belegt; eine eigene Assertion fuer die Operator-Praegedenz (Vergleich vor AND vor OR) fehlt.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -1834,12 +1835,9 @@
       "quoteSha256": "5d034ce1040ea213b5a25ef301b99c582232aae1ee99a1a5f0fbc3bcd1c3fbe9",
       "section": "3.2.1",
       "baseAuditStatus": "NOT_COMPILER",
-      "disposition": "ASSERTIONS_LINKED",
+      "disposition": "OUTSIDE_G2_COMPILER",
       "scope": "Transfer-Ableitbarkeit aus dem Datenmodell ist P4-Laufzeitsemantik.",
-      "links": [
-        "RemainingLanguageContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles"
-      ],
-      "resolution": "Implementierungsdefinierter Whitespace-Vorrat explizit geprüft; Unicode in Strings/Kommentaren separat."
+      "links": []
     },
     {
       "id": "NORM:2.3:3.2.2:C01",
@@ -1856,7 +1854,7 @@
       "section": "APPENDIX:B",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Zeichentabelle ist breit, aber nicht als vollstaendige Tabelle assertiert; nur die fuer Identifier/Laenge relevanten Ausschnitte.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -1870,7 +1868,7 @@
       "section": "APPENDIX:B",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Zeichentabelle ist breit, aber nicht als vollstaendige Tabelle assertiert; nur die fuer Identifier/Laenge relevanten Ausschnitte.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -1884,7 +1882,7 @@
       "section": "APPENDIX:B",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Zeichentabelle ist breit, aber nicht als vollstaendige Tabelle assertiert; nur die fuer Identifier/Laenge relevanten Ausschnitte.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -1898,7 +1896,7 @@
       "section": "APPENDIX:B",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Zeichentabelle ist breit, aber nicht als vollstaendige Tabelle assertiert; nur die fuer Identifier/Laenge relevanten Ausschnitte.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -2002,7 +2000,7 @@
       "section": "3.2.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Grundalphabet/Zwischenraeume nur indirekt; 2.4 erlaubt zusaetzlich Unicode in Strings/Kommentaren, was TextLiteral/SourceMetadata belegen.",
+      "scope": "Implementierungsdefinierter Whitespace-Vorrat explizit geprüft; Unicode in Strings/Kommentaren separat.",
       "links": [
         "LexicalProfileContractTest.nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
         "FormatterContractTest.preservesTokensAndIsIdempotentAcrossVersionsAndLineEndings",
@@ -2087,7 +2085,7 @@
       "section": "3.2.6",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "Gültige relative Werte bleiben kompatibel; fehlerhafte Herausgeber erzeugen MODEL_ISSUER mit Quellbereich.",
       "links": [
         "SourceMetadataContractTest.documentationAndExplanationsArePublicAndAppearInHover",
         "SourceMetadataContractTest.explanationEndsAtNextDoubleSlashAndTrailingTokenRemainsSource",
@@ -2223,7 +2221,7 @@
       "section": "3.5.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Modellarten und Optionen sind belegt; die REFSYSTEM/SYMBOLOGY-Advisory ist normativ nicht erzwingbar.",
+      "scope": "Gültige relative Werte bleiben kompatibel; fehlerhafte Herausgeber erzeugen MODEL_ISSUER mit Quellbereich.",
       "links": [
         "ModelKindContractTest.typeModelsRejectObjectAndRuntimeDeclarationsButKeepTypeFamilies",
         "ModelHeaderContractTest.explicitOptionsRetainDecodedValuesOriginalRangesAndPublicOrigins",
@@ -2239,7 +2237,7 @@
       "section": "3.5.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Modellarten und Optionen sind belegt; die REFSYSTEM/SYMBOLOGY-Advisory ist normativ nicht erzwingbar.",
+      "scope": "Gültige relative Werte bleiben kompatibel; fehlerhafte Herausgeber erzeugen MODEL_ISSUER mit Quellbereich.",
       "links": [
         "ModelKindContractTest.typeModelsRejectObjectAndRuntimeDeclarationsButKeepTypeFamilies",
         "ModelHeaderContractTest.explicitOptionsRetainDecodedValuesOriginalRangesAndPublicOrigins",
@@ -2255,7 +2253,7 @@
       "section": "3.5.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Modellarten und Optionen sind belegt; die REFSYSTEM/SYMBOLOGY-Advisory ist normativ nicht erzwingbar.",
+      "scope": "Gültige relative Werte bleiben kompatibel; fehlerhafte Herausgeber erzeugen MODEL_ISSUER mit Quellbereich.",
       "links": [
         "ModelKindContractTest.typeModelsRejectObjectAndRuntimeDeclarationsButKeepTypeFamilies",
         "ModelHeaderContractTest.explicitOptionsRetainDecodedValuesOriginalRangesAndPublicOrigins",
@@ -2327,7 +2325,7 @@
       "section": "3.5.3",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
@@ -2342,7 +2340,7 @@
       "section": "3.5.3",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Kernregeln belegt; die 2.3-Aussage zu modellweiten Klassen/Assoziationen hat keine 1:1-Entsprechung in 2.4, wird aber fuer 2.3 verletzt (F2).",
+      "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "StructureValueContractTest.collectionOverridesCanAddOrderAndNarrowRootsButCannotRemoveOrderOrWidenRoots",
@@ -2357,7 +2355,7 @@
       "section": "3.5.3",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
@@ -2372,7 +2370,7 @@
       "section": "3.5.3",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
@@ -2387,7 +2385,7 @@
       "section": "3.5.4",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "Explizite geerbte Erweiterungen bleiben gültig; tatsächlich gebundene Ziele sind öffentlich geprüft.",
       "links": [
         "DuplicateNameContractTest.classAndDomainWithSameNameAreRejected",
         "ConstraintNameContractTest.localConstraintNamesAreUniqueAcrossAllViewableFamilies",
@@ -2611,7 +2609,7 @@
       "section": "3.7.2",
       "baseAuditStatus": "GAP",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Keine JUnit-Assertion. Probe RuleProbe: dreirollige Aggregation wird akzeptiert (F1).",
+      "scope": "Beziehungsstärken und verbotene Abschwächung sind direkt geprüft; Objektlöschung wird nicht im Compiler ausgeführt.",
       "links": [
         "AssociationStrengthContractTest.aggregationRequiresExactlyTwoEffectiveRoles",
         "AssociationStrengthContractTest.orderedRolesKeepTheirEffectiveOrderAndCannotBecomeUnordered",
@@ -2625,7 +2623,7 @@
       "section": "3.7.2",
       "baseAuditStatus": "GAP",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Keine JUnit-Assertion fuer die Aggregations-/Kompositionsstaerke; dreirollige Aggregation wird akzeptiert (F1).",
+      "scope": "Beziehungsstärken und verbotene Abschwächung sind direkt geprüft; Objektlöschung wird nicht im Compiler ausgeführt.",
       "links": [
         "AssociationStrengthContractTest.aggregationRequiresExactlyTwoEffectiveRoles",
         "AssociationStrengthContractTest.orderedRolesKeepTheirEffectiveOrderAndCannotBecomeUnordered",
@@ -2651,7 +2649,7 @@
       "section": "3.7.4",
       "baseAuditStatus": "GAP",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "ORDERED-Rollen nicht assertiert.",
+      "scope": "Öffentliche Rollenordnung und Unveränderlichkeit der geordneten Basis sind geprüft; Transferausführung ist P4.",
       "links": [
         "AssociationStrengthContractTest.aggregationRequiresExactlyTwoEffectiveRoles",
         "AssociationStrengthContractTest.orderedRolesKeepTheirEffectiveOrderAndCannotBecomeUnordered"
@@ -2688,7 +2686,7 @@
       "section": "3.8",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Einleitende Wertebereichsdefinition; keine eigene Regel.",
+      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
       "links": [
         "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
         "DomainRestrictionContractTest.mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap",
@@ -2703,7 +2701,7 @@
       "section": "3.8",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Einleitende Eindeutigkeits-/Identitaetsaussage; keine eigene pruefbare Regel.",
+      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
       "links": [
         "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
         "DomainRestrictionContractTest.mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap",
@@ -2718,7 +2716,7 @@
       "section": "3.8",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Typfamilien/Konstanten belegt; einleitende Aussagen ohne eigene Assertion.",
+      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
       "links": [
         "TypeFamilyContractTest.oidBlackboxAndAlignmentTypesAreModeled",
         "ImportedDomainTypeContractTest.singleElementEnumsAndComposedUnitsKeepTheirDeclaredKind",
@@ -2736,7 +2734,7 @@
       "section": "3.8",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Typfamilien/Konstanten belegt; einleitende Aussagen ohne eigene Assertion.",
+      "scope": "2.4-Domainconstraints sind Compilerpflicht, keine spätere Ausführung.",
       "links": [
         "TypeFamilyContractTest.oidBlackboxAndAlignmentTypesAreModeled",
         "ImportedDomainTypeContractTest.singleElementEnumsAndComposedUnitsKeepTheirDeclaredKind",
@@ -2780,7 +2778,7 @@
       "section": "3.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Regeln fuer CIRCULAR-Enum-Erweiterung (ENUM_CIRCULAR/ENUM_ORDER) werden im Produktionscode emittiert, aber in keiner JUnit-Methode oeffentlich assertiert.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -2796,7 +2794,7 @@
       "section": "3.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Regeln fuer CIRCULAR-Enum-Erweiterung (ENUM_CIRCULAR/ENUM_ORDER) werden im Produktionscode emittiert, aber in keiner JUnit-Methode oeffentlich assertiert.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -2812,7 +2810,7 @@
       "section": "3.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Regeln fuer CIRCULAR-Enum-Erweiterung (ENUM_CIRCULAR/ENUM_ORDER) werden im Produktionscode emittiert, aber in keiner JUnit-Methode oeffentlich assertiert.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -2828,7 +2826,7 @@
       "section": "3.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Regeln fuer CIRCULAR-Enum-Erweiterung (ENUM_CIRCULAR/ENUM_ORDER) werden im Produktionscode emittiert, aber in keiner JUnit-Methode oeffentlich assertiert.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -2844,7 +2842,7 @@
       "section": "3.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Regeln fuer CIRCULAR-Enum-Erweiterung (ENUM_CIRCULAR/ENUM_ORDER) werden im Produktionscode emittiert, aber in keiner JUnit-Methode oeffentlich assertiert.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -2860,7 +2858,7 @@
       "section": "3.8.2",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die Regeln fuer CIRCULAR-Enum-Erweiterung (ENUM_CIRCULAR/ENUM_ORDER) werden im Produktionscode emittiert, aber in keiner JUnit-Methode oeffentlich assertiert.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
@@ -2876,7 +2874,7 @@
       "section": "3.8.2",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "FINAL-Beispiel; Regel in C05/C06 und durch ExistenceValueFamilies belegt.",
+      "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
         "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
@@ -3455,21 +3453,21 @@
       "quoteSha256": "5619fc25dff56ea31683ec9181a8058ea4f3a9c69c15dfd3bc9446e484c61851",
       "section": "3.8.13.1",
       "baseAuditStatus": "NOT_COMPILER",
-      "disposition": "OUTSIDE_G2_COMPILER",
-      "scope": "Flaechengeometrie ist Laufzeit-/Validierungssemantik.",
-      "links": []
+      "disposition": "ASSERTIONS_LINKED",
+      "scope": "Gemischter Geometrieabsatz enthält statische Toleranzdeklaration; Topologieprüfung echter Flächen bleibt P4.",
+      "links": [
+        "GeometryRulesContractTest.surfaceToleranceIsExplicitIn23AndSymbolicIn24"
+      ],
+      "resolution": "Gemischter Geometrieabsatz enthält statische Toleranzdeklaration; Topologieprüfung echter Flächen bleibt P4."
     },
     {
       "id": "NORM:2.4:3.8.13.1:C06",
       "quoteSha256": "5cc9fabb5f45a1d84abec446b6c0b598f21fa56bd9534f503d40a8f3cc967559",
       "section": "3.8.13.1",
       "baseAuditStatus": "NOT_COMPILER",
-      "disposition": "ASSERTIONS_LINKED",
+      "disposition": "OUTSIDE_G2_COMPILER",
       "scope": "Flaechengeometrie ist Laufzeit-/Validierungssemantik.",
-      "links": [
-        "GeometryRulesContractTest.surfaceToleranceIsExplicitIn23AndSymbolicIn24"
-      ],
-      "resolution": "Gemischter Geometrieabsatz enthält statische Toleranzdeklaration; Topologieprüfung echter Flächen bleibt P4."
+      "links": []
     },
     {
       "id": "NORM:2.4:3.8.13.1:C07",
@@ -3557,7 +3555,7 @@
       "section": "3.9.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die vollstaendige Anhangsliste ist nicht einzeln assertiert.",
+      "scope": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft.",
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
@@ -3571,7 +3569,7 @@
       "section": "3.9.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die vollstaendige Anhangsliste ist nicht einzeln assertiert.",
+      "scope": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft.",
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
@@ -3585,7 +3583,7 @@
       "section": "3.9.1",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Die vollstaendige Anhangsliste ist nicht einzeln assertiert.",
+      "scope": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft.",
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
@@ -3817,11 +3815,12 @@
       "section": "3.12",
       "baseAuditStatus": "NOT_COMPILER",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Erlaeuterung des areAreas-Beispiels; Laufzeitsemantik.",
+      "scope": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4.",
       "links": [
+        "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile"
       ],
-      "resolution": "Gemischter Absatz: Compiler-Syntaxfamilien sind verknüpft; globale Datensatzprüfung und areAreas-Ausführung bleiben P4."
+      "resolution": "Gemischter Absatz: tatsächliche areAreas-Signaturen und gebundene Aufrufe sind Compilerpflicht; Daten-Flächentopologie und globale Datenprüfung bleiben P4."
     },
     {
       "id": "NORM:2.4:3.12:C05",
@@ -3893,7 +3892,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -3910,7 +3909,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -3927,7 +3926,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -3944,7 +3943,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -3961,7 +3960,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -3978,7 +3977,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -3995,7 +3994,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -4012,7 +4011,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -4029,7 +4028,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -4046,7 +4045,7 @@
       "section": "3.13",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Operator-Praegedenz nicht separat assertiert.",
+      "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
         "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
@@ -4572,7 +4571,7 @@
       "section": "APPENDIX:D",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4 Anhang D ist die normative Zeichentabelle; nur relevante Ausschnitte assertiert.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -4586,7 +4585,7 @@
       "section": "APPENDIX:D",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4 Anhang D ist die normative Zeichentabelle; nur relevante Ausschnitte assertiert.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -4600,7 +4599,7 @@
       "section": "APPENDIX:D",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4 Anhang D ist die normative Zeichentabelle; nur relevante Ausschnitte assertiert.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -4614,7 +4613,7 @@
       "section": "APPENDIX:D",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4 Anhang D ist die normative Zeichentabelle; nur relevante Ausschnitte assertiert.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -4628,7 +4627,7 @@
       "section": "APPENDIX:D",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4 Anhang D ist die normative Zeichentabelle; nur relevante Ausschnitte assertiert.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -4642,7 +4641,7 @@
       "section": "APPENDIX:D",
       "baseAuditStatus": "PARTIAL",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "2.4 Anhang D ist die normative Zeichentabelle; nur relevante Ausschnitte assertiert.",
+      "scope": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet.",
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
@@ -9706,7 +9705,7 @@
         "NORM:2.4:3.8.12.2:C07",
         "NORM:2.4:3.8.12.3:C01",
         "NORM:2.4:3.8.12.3:C02",
-        "NORM:2.4:3.8.13.1:C06",
+        "NORM:2.4:3.8.13.1:C05",
         "NORM:2.4:3.8.13.2:C01",
         "NORM:2.4:3.8.13.3:C01",
         "NORM:2.4:3.8.13.3:C02",
@@ -9970,6 +9969,7 @@
         "ConstraintPathBindingContractTest.existenceRetainsEveryAlternativeAndUsesItsOwnObjectScope",
         "StructuredTranslationContractTest.plausibilityRetainsExactThresholdOperatorAndOriginalPercentageRange",
         "SetConditionContextContractTest.whereRetainsIndividualValuesAndPublicReferencesWhileTheBodyUsesTheSet",
+        "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile"
       ],
       "conditionIds": [
@@ -13352,6 +13352,7 @@
         "all 2.3 builtin signatures",
         "all 2.4 builtins",
         "all 2.4 builtin signatures",
+        "Actual typed areAreas/areAreas2/areAreas3/areAreasWithoutGaps calls and canonical function targets",
         "All available exact argument/return signatures and actual bound call targets",
         "All builtin public declarations and bound calls",
         "All public builtin argument families"

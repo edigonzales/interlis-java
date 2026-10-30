@@ -13,6 +13,12 @@
   Die strikte Namensregel gilt auch für das unveränderte Metadata-Corpusoriginal;
   neues explizites Messprofil elf Positivfälle/zwei exakte Negativfälle mit
   separat umbenannten Positivkontrollen. Keine Original-/Index-/Suitepinänderung.
+  Erstkandidat `5d54c9dcf4fa6f8d5226c233d6d117287281e636`: unabhängiger
+  Vollauf80Tasks/1063JUnit/3548jeBackend vollständig grün, Review dennoch
+  **FAIL AC4-01** wegen falscher Transfer-/Whitespace- und areAreas-Zuordnungen.
+  [Unveränderter Erstbericht](reviews/L4-1-review-before-link-fix.md).
+  Enge Nachweiskorrektur umgesetzt, Compiler/Tests/Build/Pins unverändert;
+  g2EvidenceTest erneut PASS. Neuer Kandidat und voller erneuter Review folgen.
   Frühere Freigaben gelten fort; unabhängige L4-Endabnahme noch offen. Kein Phase4-/G2-PASS vor vollständiger unabhängiger Abnahme.
 
 - Auftrag **gesamte Phase3 autonom**: vollständig abgeschlossen, ohne manuelle
