@@ -22,7 +22,8 @@ public final class ReferenceProcesses {
         pin(jar,JAR);return jar;
     }
     static Result reference(Path root,Path jar,List<String> args) throws Exception {
-        var command=new ArrayList<>(List.of(java().toString(),"-jar",jar.toString()));command.addAll(args);return run(root,command,Duration.ofSeconds(45));
+        var command=new ArrayList<>(List.of(java().toString(),"-Dstdout.encoding=UTF-8","-Dstderr.encoding=UTF-8",
+                "-jar",jar.toString()));command.addAll(args);return run(root,command,Duration.ofSeconds(45));
     }
     static boolean processError(Result result) {
         return !Set.of(0,1).contains(result.exitCode()) || Pattern.compile("java\\.[\\w.]+(?:Exception|Error)|(?m)^\\s+at ch\\.interlis\\.|Cannot invoke .* because .* is null").matcher(result.stderr()).find();

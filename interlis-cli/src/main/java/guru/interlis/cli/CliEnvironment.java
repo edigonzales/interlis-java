@@ -28,12 +28,17 @@ public record CliEnvironment(Path workingDirectory, InputStream in, PrintStream 
     }
 
     /**
-     * Returns the {@code system} value.
+     * Wraps the current host streams with explicit UTF-8 output, independent of
+     * the Windows console code page or JVM stdout/stderr encoding properties.
+     * Neither the caller nor the CLI may close these host-owned streams.
      *
-     * @return the value
+     * @return an environment with isolated default compiler services
      */
     public static CliEnvironment system() {
-        return new CliEnvironment(Path.of("").toAbsolutePath(), System.in, System.out,
-                System.err, System.getenv());
+        // PrintStream.write(byte[]) passes these UTF-8 bytes through the existing
+        // host streams; no global stream replacement or locale mutation is needed.
+        return new CliEnvironment(Path.of("").toAbsolutePath(), System.in,
+                new PrintStream(System.out, true, java.nio.charset.StandardCharsets.UTF_8),
+                new PrintStream(System.err, true, java.nio.charset.StandardCharsets.UTF_8), System.getenv());
     }
 }

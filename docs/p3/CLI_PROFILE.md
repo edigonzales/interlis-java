@@ -51,6 +51,10 @@ Host-IO ausdrücklich mit Exit 1 abgelehnt:
 ## Ergebnis- und Textprofil
 
 Prüfaufrufe halten stdout leer. Banner, Diagnose und Trace stehen auf stderr.
+Unsere Hoststreams sind ausdrücklich UTF-8; die getrennten Java-25-
+Referenzprozesse erhalten `-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8`.
+Das kontrolliert die Textkodierung, ohne Sprachregeln oder Quellenbytes zu
+ändern. Native Windows-Konsolencodepages werden nicht als gleich vorausgesetzt.
 Erfolg ergibt Exit 0, jede Ablehnung, Hoststörung, Nutzungsfehler und Abbruch
 Exit 1. Signal-/Timeoutbeendigung ist kein fachlicher Erfolg.
 Kanonische Diagnosen stammen aus der gemeinsamen Engine; Error/Warning/Info
@@ -89,3 +93,12 @@ Negativcanaries verhindern ein PASS bei falschen Exits, verschmutzten Streams,
 fehlenden Referenzprozessen oder erfolgreicher Unsupported-Option.
 Linux x64 und Windows x64 werden zusätzlich im neuen GitHub-Workflow ausgeführt;
 deren Ergebnis ist bis zum tatsächlichen Lauf offen.
+
+Der erste echte GitHub-Lauf am Kandidaten `a096d7e` besteht auf Linux x64;
+Windows legt eine falsche UTF-8-Annahme beim Lesen nativer Java-Streams offen.
+Eine neue eigene Gegenprobe am unveränderten Kandidaten mit erzwungener
+windows-1252-Ausgabe verliert `Grüezi 😀` tatsächlich (`encoding-red.json`).
+Der Fix setzt unsere Hostausgabe explizit auf UTF-8 und prüft sie unter derselben
+JVM-Gegenkonfiguration als echten Prozess. `encoding-green.log` besteht lokal
+mit 54 Profil-/JAR-Aufrufen, dieser zusätzlichen Encodingprobe und neun
+SDK-Aufrufen. Die erneute Windows-Ausführung ist bis zum Folgelauf offen.

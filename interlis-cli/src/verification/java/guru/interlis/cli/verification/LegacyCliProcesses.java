@@ -97,6 +97,13 @@ public final class LegacyCliProcesses {
             require(jarVersion.exitCode() == 0 && jarVersion.stdout().isEmpty()
                     && jarVersion.stderr().contains(profile.id()), "java -jar checking entry failed");
             results.add(Map.of("fixture", "java-jar-version", "current", jarVersion));
+            Path encodingSource = folder.resolve("Encoding.ili");
+            Files.writeString(encodingSource, "INTERLIS 2.4; MODEL Encoding AT \"x\" VERSION \"1\" = END Encoding. !! Grüezi 😀\n");
+            var encodingProbe = run(root, List.of(java().toString(), "-Dstdout.encoding=windows-1252",
+                    "-Dstderr.encoding=windows-1252", "-cp", replacementJar.toString(),
+                    "guru.interlis.cli.Main", "format", encodingSource.toString()), Duration.ofSeconds(45));
+            require(encodingProbe.exitCode() == 0 && encodingProbe.stderr().isEmpty()
+                    && encodingProbe.stdout().contains("Grüezi 😀"), "CLI output depends on native stream encoding");
             pin(referenceJar, profile.referenceSha256());
             var after = new TreeMap<>(artifacts(root)); after.put(root.relativize(replacementJar).toString(), hash(replacementJar));
             require(artifacts.equals(after), "Artifacts changed during CLI comparison");
@@ -106,6 +113,8 @@ public final class LegacyCliProcesses {
             report.put("os", System.getProperty("os.name")); report.put("architecture", System.getProperty("os.arch"));
             report.put("runtime", Runtime.version().toString()); report.put("artifacts", artifacts);
             report.put("optionInventory", inventory); report.put("cases", results);
+            report.put("encodingProbe", encodingProbe);
+            report.put("streamEncoding", "UTF-8: explicit replacement host streams and explicit stdout/stderr JVM properties for the external reference");
             report.put("textComparison", "Outcome/channel profile; replacement identity, timestamps and canonical diagnostic wording are explicit differences.");
             report.put("deviations", List.of("No legacy GUI for an empty invocation", "Unknown options and missing values fail strictly, even where the reference continues or crashes",
                     "A missing source is an operational failure; the reference prints a missing-file message but exits successfully",

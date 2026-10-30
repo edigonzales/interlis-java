@@ -5466,7 +5466,7 @@
         },
         {
           "source": "interlis-cli/src/verification/java/guru/interlis/cli/verification/ReferenceProcesses.java",
-          "sha256": "24a0dd1ef0333020ae4e6a99c192aa8720afe22f7653311112e5f50a2727c3e1"
+          "sha256": "52248b18b1b9560f59d2a0c4993fd5c51bc2de27640f30235611aa699d74019a"
         },
         {
           "source": "interlis-cli/src/verification/java/guru/interlis/cli/verification/SdkProcesses.java",
@@ -5492,7 +5492,7 @@
         },
         {
           "source": "interlis-lsp/src/main/java/guru/interlis/lsp/InterlisLanguageServer.java",
-          "sha256": "cff73ee7cabe75c48a19379f2654667ccadfdaf8b7a931a6392d219cbef61659"
+          "sha256": "b094ac4dd305dc70fbe28d04e8c1074ef730b59b0f65ebd1caa9359952615acf"
         }
       ],
       "resolution": "Frischer tatsächlicher LSP-stdio-Prozesstest und eigene Adapter; stdout enthält ausschliesslich JSON-RPC."

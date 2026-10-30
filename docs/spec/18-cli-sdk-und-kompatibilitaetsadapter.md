@@ -255,6 +255,11 @@ Vierparameterkonstruktor bleibt für noch nicht zugeordnete Resultate erhalten.
 Der Elternabschluss folgt erst nach Ausgabe und Flush. Ein Ausgabefehler kann
 daher einen erfolgreichen Compilerkindlauf mit OPERATIONAL_FAILURE abschliessen.
 Kein aktueller Lauf wird auf dem wiederverwendbaren CLI-Objekt gespeichert.
+`CliEnvironment.system()` kodiert stdout/stderr ausdrücklich als UTF-8, auch
+bei abweichender nativer Windows-Konsole. Die bestehende globale Streaminstanz
+wird weder ersetzt noch geschlossen. Injizierte Streams bleiben beim Aufrufer.
+Externe Referenzprozesse verwenden dokumentiert UTF-8-JVM-Streamoptionen;
+der Vergleich behauptet keine Gleichheit nativer Konsolencodepages.
 
 FMT-001–004: Explizite LF-/CRLF-Wahl normalisiert auch gewöhnliche mehrzeilige
 Kommentare. Zeilenenden **innerhalb werttragender Literale oder mehrzeiliger

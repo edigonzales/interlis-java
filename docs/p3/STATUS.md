@@ -31,3 +31,15 @@
   JVM-/Prozesslauf.
 - Nächster Schritt: aktuelle CLI-Prüfung, Firefox-/Safari-Gegenprobe,
   Kandidatencommit/-push und unabhängiger P3-1-Review; anschliessend P3-2.
+
+Aktualisierung: Produktkandidat `a096d7ea938de4ac143dc09d86583c021734fe75`
+committet/gepusht; unabhängiger OpenCode-/DeepSeek-Review am sauberen separaten
+Checkout läuft. Browser-Gegenprüfung ohne Produkt-/Timeoutänderung vollständig
+bestanden: Chromium/Firefox/WebKit und echtes Safari je 3548, Exit 0 (1m24s).
+Der erste Timeout bleibt im Bericht erhalten. GitHub-Lauf
+[41117544923](https://github.com/edigonzales/interlis-java/actions/runs/41117544923):
+Linux x64 PASS; Windows x64 scheitert beim Lesen nativer Streambytes als UTF-8.
+Eigene RED-Gegenprobe bestätigt den Unicodeverlust am Kandidaten. UTF-8-
+Hostfix und kontrollierte externe Referenzkodierung bestehen lokal; erneuter
+Plattformlauf und neuer unabhängiger Kandidat folgen. P3-2-Gegenproben zu
+Dokumentsynchronisation sind parallel vorbereitet, keine P3-2-Abnahme.
