@@ -3,6 +3,8 @@
 - **Phase 4 und G2: PASS, vollständig abgeschlossen.** L4-2 ist unabhängig
   abgenommen, kumulativ **AC4-01–AC4-07** sowie AC0A/AC0B/AC1/AC2/AC3.
   Der Auftrag wurde ohne Teilphasenstopp bis zur Gesamtfreigabe ausgeführt.
+- [Tabellarische Übersicht: Compiler, ili2c, Norm und Entscheidungen](COMPILER_NORM_DECISIONS.md)
+  bündelt die gewählten Kompatibilitätsprofile und Normabweichungen mit Belegen.
 - **Geprüfter Schlussproduktcommit:**
   `1371841572828a387c1369ae84f6fa6cb4ddffc0`.
   [Unveränderter G2-Gesamtreview](reviews/L4-2-review.md), SHA-256
