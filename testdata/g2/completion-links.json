@@ -2434,10 +2434,17 @@
       "section": "3.6.1",
       "baseAuditStatus": "COVERED",
       "disposition": "ASSERTIONS_LINKED",
-      "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
+      "scope": "Compilergrammatik AttrTypeDef/AttrType: tatsächliche MANDATORY-Fortsetzung, Type/DomainRef, BAG/LIST samt Kardinalität, ReferenceAttr und RestrictedStructureRef mit öffentlichen Typ-/Ziel-/Pfadassertions. Keine reine Klassen-/Topic-Propertyliste.",
       "links": [
-        "ModifierContractTest.propertyListsOnlyAcceptModifiersPermittedForTheDeclarationContext"
-      ]
+        "MandatoryOverrideTypeContractTest.referenceContinuationUsesInheritedTypeBeforeConstraintBinding",
+        "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
+        "NamedCollectionElementContractTest.namedScalarsKeepDomainReferencesAndResolvedElementTypesInBothCollectionKinds",
+        "CollectionTypeContractTest.listOfTextBuildsExactCollectionDescriptor",
+        "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
+        "NoOidReferenceContractTest.referenceRestrictionsRemainBoundNavigableAndUsableInPaths",
+        "StructureValueContractTest.unrelatedMissingAndWrongKindRestrictionsAreSourceErrors"
+      ],
+      "resolution": "Compilergrammatik AttrTypeDef/AttrType: tatsächliche MANDATORY-Fortsetzung, Type/DomainRef, BAG/LIST samt Kardinalität, ReferenceAttr und RestrictedStructureRef mit öffentlichen Typ-/Ziel-/Pfadassertions. Keine reine Klassen-/Topic-Propertyliste."
     },
     {
       "id": "NORM:2.4:3.6.1:C04",
@@ -9552,15 +9559,18 @@
         "AttributeModifierContractTest.abstractAttributeModifierRemainsVisible",
         "NumericSubdivisionContractTest.subdivisionsRequireAnActualNumericIntegerPredecessorAndNonnegativeRange",
         "NumericSubdivisionContractTest.continuousSubdivisionsRequireCircularityAndTheCorrectConversionPeriod",
-        "ModifierContractTest.propertyListsOnlyAcceptModifiersPermittedForTheDeclarationContext",
-        "NoOidReferenceContractTest.externalAndAnyClassAreIndependentOfStableIdentity",
+        "MandatoryOverrideTypeContractTest.referenceContinuationUsesInheritedTypeBeforeConstraintBinding",
+        "DomainRestrictionContractTest.mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
+        "NamedCollectionElementContractTest.namedScalarsKeepDomainReferencesAndResolvedElementTypesInBothCollectionKinds",
+        "CollectionTypeContractTest.listOfTextBuildsExactCollectionDescriptor",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
+        "NoOidReferenceContractTest.referenceRestrictionsRemainBoundNavigableAndUsableInPaths",
+        "StructureValueContractTest.unrelatedMissingAndWrongKindRestrictionsAreSourceErrors",
+        "NoOidReferenceContractTest.externalAndAnyClassAreIndependentOfStableIdentity",
         "ImportedDomainTypeContractTest.mandatoryAliasHasTheSamePublicTypeBeforeAndAfterFileReordering",
         "DomainRestrictionContractTest.numericExtensionUsesTheSameBoundsAndPrecisionRuleAsPublicQueriesAndAttributeOverrides",
-        "NoOidReferenceContractTest.referenceRestrictionsRemainBoundNavigableAndUsableInPaths",
         "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
-        "StructureValueContractTest.requiredWildcardsAndUnavailableConcreteStructuresNeedExplicitAbstractAttributes",
-        "CollectionTypeContractTest.listOfTextBuildsExactCollectionDescriptor"
+        "StructureValueContractTest.requiredWildcardsAndUnavailableConcreteStructuresNeedExplicitAbstractAttributes"
       ],
       "conditionIds": [
         "NORM:2.4:3.6.1:C01",
@@ -12157,7 +12167,8 @@
         "structures",
         "RESTRICTION structures",
         "structure attrs",
-        "STRUCTURE value"
+        "STRUCTURE value",
+        "Scalar and collection RestrictedStructureRef/ANYSTRUCTURE, ordered restriction target identities and LIST kind"
       ]
     },
     "ViewFormationSemanticsContractTest.abstractClassWithConcreteClassInConcreteTopicCompiles": {
@@ -12310,7 +12321,8 @@
       "sourceSha256": "a883d97ba18f8158ca088c43bf5e5702ccea47bc07a41ca82d3f80b140a7abb4",
       "observations": [
         "reference restrictions and paths",
-        "reference attrs"
+        "reference attrs",
+        "REFERENCE TO ANYCLASS RESTRICTION has actual target roots, navigable bound path and source query"
       ]
     },
     "CollectionTypeContractTest.listOfTextBuildsExactCollectionDescriptor": {
@@ -12323,7 +12335,8 @@
       "sourceSha256": "6be0fc5fe8dff58a5c188458ef74a583d3e7a0c5354eb203ea1d77e113d34495",
       "observations": [
         "LIST/BAG descriptor",
-        "LIST/BAG"
+        "LIST/BAG",
+        "Direct LIST OF TEXT type with exact cardinality and public element length"
       ]
     },
     "NamedCollectionElementContractTest.structuresRestrictionsAndExistingFunctionConsumersKeepTheirBindings": {
@@ -13736,7 +13749,8 @@
       "methodSha256": "936ba983c6e98b76e898f6081009150eb137b36241a07054c5751b3b3f38d419",
       "sourceSha256": "74341c5137d2b25c162b5bc27410c87061f627004d63cf28283b17225c1758ee",
       "observations": [
-        "Actual domain type, mandatory value flag and inherited attribute state"
+        "Actual domain type, mandatory value flag and inherited attribute state",
+        "DomainRef targets, concrete text type and actual AttributeSymbol.mandatory flags"
       ]
     },
     "DomainRestrictionContractTest.mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap": {
@@ -13833,6 +13847,42 @@
       "sourceSha256": "dc29ab740b9993614d299ad9456111c8d83434dca83926b5735a3b6ded0f3cec",
       "observations": [
         "Malformed syntax, non-ASCII and1024-character boundary reject through public gate"
+      ]
+    },
+    "MandatoryOverrideTypeContractTest.referenceContinuationUsesInheritedTypeBeforeConstraintBinding": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/MandatoryOverrideTypeContractTest.java",
+      "suite": "guru.interlis.compiler.MandatoryOverrideTypeContractTest",
+      "method": "referenceContinuationUsesInheritedTypeBeforeConstraintBinding",
+      "methodStart": 2519,
+      "methodEnd": 4215,
+      "methodSha256": "d8afaed474be07a0adde2f71bbb0f2111f077345e64c70875f6760d81b65677d",
+      "sourceSha256": "e8017b4c1d8e37571c46997bb442ee624bc560437566b467f36b165fd93c265a",
+      "observations": [
+        "MANDATORY without an explicit type retains the actual inherited ReferenceType and bound attribute paths"
+      ]
+    },
+    "NamedCollectionElementContractTest.namedScalarsKeepDomainReferencesAndResolvedElementTypesInBothCollectionKinds": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NamedCollectionElementContractTest.java",
+      "suite": "guru.interlis.compiler.NamedCollectionElementContractTest",
+      "method": "namedScalarsKeepDomainReferencesAndResolvedElementTypesInBothCollectionKinds",
+      "methodStart": 2492,
+      "methodEnd": 5414,
+      "methodSha256": "c18b5dacbac0c8c4bef3493173671686ede1fd4dcaa243eeba9d8b4fd80af56a",
+      "sourceSha256": "b4276717e1601c4a3d6b2a17a8ed7f113158da0db38701f664194b5a43184785",
+      "observations": [
+        "BAG and LIST, exact cardinality, canonical DomainReferenceType elements and resolved scalar types"
+      ]
+    },
+    "StructureValueContractTest.unrelatedMissingAndWrongKindRestrictionsAreSourceErrors": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructureValueContractTest.java",
+      "suite": "guru.interlis.compiler.StructureValueContractTest",
+      "method": "unrelatedMissingAndWrongKindRestrictionsAreSourceErrors",
+      "methodStart": 3504,
+      "methodEnd": 4142,
+      "methodSha256": "242e189672665d36973c2fa0f5a175b37ba9a6ea9406d423c6a3e173636543fd",
+      "sourceSha256": "96cf2c2fd36e6510bf287f6a548a2b32ce8de21b4496bd2adfa9bdd6ca20a6a9",
+      "observations": [
+        "Wrong-kind, missing and unrelated restrictions give ordinary SOURCE_ERRORS"
       ]
     },
     "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly": {

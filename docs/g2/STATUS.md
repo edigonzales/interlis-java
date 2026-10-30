@@ -19,6 +19,12 @@
   [Unveränderter Erstbericht](reviews/L4-1-review-before-link-fix.md).
   Enge Nachweiskorrektur umgesetzt, Compiler/Tests/Build/Pins unverändert;
   g2EvidenceTest erneut PASS. Neuer Kandidat und voller erneuter Review folgen.
+  Kandidat `b804c47f6a51110039556931b3cb4cee2a256be0`: alle80Tasks erneut
+  erfolgreich im vollständig Python-gesperrten OpenCode-Prozess; fachlich
+  **FAIL AC4-01/F5** wegen eines weiteren falschen Attributtyp-Grammatiklinks.
+  [Unveränderter Bericht](reviews/L4-1-review-before-attribute-link-fix.md).
+  Der Attributnachweis wird auf tatsächlich ausgeführte öffentliche Typ-/Ziel-/
+  Pflichtwert-/Collection-/Referenzassertions präzisiert; keine Compileränderung.
   Frühere Freigaben gelten fort; unabhängige L4-Endabnahme noch offen. Kein Phase4-/G2-PASS vor vollständiger unabhängiger Abnahme.
 
 - Auftrag **gesamte Phase3 autonom**: vollständig abgeschlossen, ohne manuelle
