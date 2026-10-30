@@ -30,12 +30,19 @@
 - Historische [R1](reviews/L2-1-review-r1.md) und [R2](reviews/L2-1-review-r2.md)
   bleiben unverändert. F1 wurde inR2 geschlossen; dessen damalige N1–N3-
   Blocker wurden durch die tatsächlichen Antworten und R3 erledigt.
-- Aktuelle Lieferung **L2-2 IN_PROGRESS**, AC2-03/AC2-04, WP-23:
-  Views/Inspektionen, ALL OF, effektive Mitglieder, Typen, Ziele und Reihenfolge.
-  Vererbtes AREA-ALL-OF, 2.4-Rollenübernahme und anschliessende
-  Teilnehmernavigation korrigiert; neun neue JVM-Verträge und zwölf portable
-  Quellen-/Queryfälle. Eigener Lauf und unabhängiger Review werden abgeschlossen.
-  [Implementierung/Nachweise](implementation/L2-2.md).
+- **L2-2: PASS**, AC2-03/04 am Produktcommit
+  `30ef129ad648ec5d8522ed36226fec31f420d84a`. [Unveränderter Review](reviews/L2-2-review.md),
+  SHA-256 `0d1b1feb02e3a7d0663e053792bd525e137e79afa837b8335a67589e7abb4e95`.
+  OpenCode CLI2.0.28, DeepSeek direkt, frischer sauberer Worktree.
+  Vollständiger Pflichtlauf Exit0/2m34s/58 ausgeführte Tasks;797 reguläre JVM
+  (688Compiler),137Evidenz-,15Assertion-,15Hosttests, alle0Fehler/Skips.
+  JS/WasmGC je3471PASS,SDK9,Pythonfrei1210Inputs,21/21Normprüfungen.
+  Eigene neue Reviewer-Gegenprobe:76Checks/0Fehler. Nicht blockierende
+  Beobachtungen zur geerbten Assoziationsbasis und konservativer Rollenpflicht
+  bleiben im Bericht sichtbar. [Implementierung](implementation/L2-2.md).
+- Aktuelle Lieferung **L2-3 IN_PROGRESS**, kumulatives Phase-2-Gate:
+  Translation/Import-Closures, GENERIC/DEFERRED, Metadaten, Linienformen und
+  Grafik-/Signaturen; danach frische vollständige T1/T2/T3-Abnahme.
 - **Noch kein Phase-2-PASS.** L2-3 muss kumulativ AC2-01–06 sowie frische volle
   T1/T2/T3-Gates am Schluss-SHA prüfen, einschliesslich Browsermatrix, echtem
   Safari, WebImage und CLI/SDK/LSP. L2-1 belegt ausdrücklich keinen Browserlauf.
