@@ -1,0 +1,2464 @@
+{
+  "schemaVersion": 1,
+  "suiteCommit": "88576ffc4cd491dd72d2375eb897ea9f3f55d2c3",
+  "suiteSha256": "6a80b7e8faf4bdfda8561478cbf1f5538fc959e743e3ccfc158ae23b7c9337fe",
+  "cases": [
+    {
+      "testId": "ili23.Class23Test.classComplete",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "accepted",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.5.1–2.5.2",
+        "reason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/classComplete.ili",
+          "sha256": "c4ddd57a207b196b7787dac207c5ae89bfb3255cde297bb75acf061442f76ae2"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Class23Test.classComplete.ili",
+          "sha256": "04bd90ec794b8f5925edcd08ce3ff5d1dda062c1d3865bbdb366fbf2c11b0fc8"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "T"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
+            }
+          ]
+        }
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
+    },
+    {
+      "testId": "ili23.Classes23Test.class_AcceptingOidDefinition",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "accepted",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.5.1–2.5.2",
+        "reason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/class/class_AcceptingOidDefinition.ili",
+          "sha256": "27df6dbfe16d510d77f16eaf841c03bcd9c26d95a1adb4a6ca7a8829aa218cd8"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Classes23Test.class_AcceptingOidDefinition.ili",
+          "sha256": "b177a4fe0a5eb89ae6a680413f2ca185c1021a3fbe4c0c690933b4547d45a3d6"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "T"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
+            }
+          ]
+        }
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
+    },
+    {
+      "testId": "ili23.Topic23Test.topicComplete",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "accepted",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.5.1–2.5.2",
+        "reason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/topicComplete.ili",
+          "sha256": "8c33d2e799b0b8c362023b300e7755f64e347a9f437bbf8b3acf49de1aee989d"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Topic23Test.topicComplete.ili",
+          "sha256": "81e7e740569eb8d2cc730b04a90b49cfb5393e7c80d5d5fcdd7ca8c3a5af9ef2"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "T"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
+            }
+          ]
+        }
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
+    },
+    {
+      "testId": "ili23.Topics23Test.topics_ExplicitBasketOidDefinition",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "accepted",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.5.1–2.5.2",
+        "reason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/topics/topics_ExplicitBasketOidDefinition.ili",
+          "sha256": "af0be4380fcf943d094932b5ea642f79bc1711f4be63712e1f8131c84bf061f8"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Topics23Test.topics_ExplicitBasketOidDefinition.ili",
+          "sha256": "1405821decd3baa1c7ee43516bec23754223daa2894a435186c16fb86cd35ac2"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "T"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
+            }
+          ]
+        }
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
+    },
+    {
+      "testId": "ili23.Topics23Test.topics_ExplicitTopicOidDefinition",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "accepted",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.5.1–2.5.2",
+        "reason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/topics/topics_ExplicitTopicOidDefinition.ili",
+          "sha256": "db8dd3d16d0a338339e81355a912837f551d12b583f90cf660e4c10b60b119e4"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Topics23Test.topics_ExplicitTopicOidDefinition.ili",
+          "sha256": "c37fec5930087a237af2fbdbe4fc7a220488a5b51b34749bbdd9b290efe6ad1f"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "T"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
+            }
+          ]
+        }
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
+    },
+    {
+      "testId": "ili23.ViewableGetAttributesAndRoles2Test.baseClass",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "accepted",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.5.1–2.5.2",
+        "reason": "OID AS und BASKET OID AS benötigen in 2.3 ein CONTRACTED-Modell; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/metamodel/ViewableGetAttributesAndRoles2.ili",
+          "sha256": "9d060f7f55d75073a1b883346f5d7e4085a3676e5913156a1454b823f6b7d80b"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.ViewableGetAttributesAndRoles2Test.baseClass.ili",
+          "sha256": "253b526c47fdc5ce36d9b5f4309944f79cd1bceccb88e3b79193aaf555a40f17"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "source": "testdata/conformance/normative/oid23-wrong-domain.ili",
+            "revision": "1",
+            "startOffset": 106,
+            "endOffset": 164
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "T"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "OID AS must bind an OID domain/OID_DOMAIN"
+            }
+          ]
+        }
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/oid23-wrong-domain.ili",
+          "sha256": "e14f6c54d14522b4551e297a56b5a6f887dba9c0bd9a3de123721edf9df74a05"
+        }
+      ],
+      "compatibilityDecision": {
+        "id": "LEGACY_OID_23_WITHOUT_CONTRACTED",
+        "userDecision": "APPROVED_USER",
+        "date": "2026-10-29",
+        "reason": "User requested compatibility with widespread non-CONTRACTED INTERLIS 2.3 OID models despite the older normative prerequisite.",
+        "userStatement": "Ich gehe davon aus, dass das ein Fall sein wird, wo unser Compiler bewusst von der Norm abweichen muss. Es gibt viele solche Modelle, die eigentlich falsch wären. Zudem hat sich dieses Detail der Norm überhaupt nicht durchgesetzt."
+      }
+    },
+    {
+      "testId": "ili23.Association23Test.association_AssociationAsTarget",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.7.1",
+        "reason": "Eine Assoziation als Rollenziel benötigt eine eigene OID."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/association/association_AssociationAsTarget.ili",
+          "sha256": "f3b295063f7ff1d1a51e4186ff0246f39f5d3781520531cb6fcd42537b859e05"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Association23Test.association_AssociationAsTarget.ili",
+          "sha256": "e0f0046e2372fe67f4db5d11b4ac93a3a273901951feb7680d306ec89365dd73"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "a2b"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "association target a2b requires its own OID/REFERENCE_ASSOCIATION_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/association/association_AssociationAsTarget.ili",
+            "revision": "1",
+            "startOffset": 247,
+            "endOffset": 257
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili24.Attribute24Test.attributeRef_RefAttrInClass",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.4",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf",
+        "sections": "3.5.3; 3.6.4",
+        "reason": "Ein Referenzziel mit implizitem NO OID ist in 2.4 unzulässig."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili24/attribute/attributeRef_RefAttrInClass.ili",
+          "sha256": "ab39f314d51ec1d1e78cc9d4ae14f14f18568fca4c80ea8cc624b755eac1cf2f"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili24.Attribute24Test.attributeRef_RefAttrInClass.ili",
+          "sha256": "f7b7468a9880d5624059bef4d28235ef592bb9c2a03bc3eddd46479ffa69fc6e"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "attr"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target ClassA has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/attribute/attributeRef_RefAttrInClass.ili",
+            "revision": "1",
+            "startOffset": 148,
+            "endOffset": 175
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.Assoc23Test.assocComplete",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.7.1",
+        "reason": "Mehrere Links derselben Teilnehmer benötigen neben CARDINALITY eine eigene OID."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/assocComplete.ili",
+          "sha256": "fe8bdadc1f36dc40c26f0e22d41a8521517ce5e3c78ea75696fd1ba627a7b30b"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Assoc23Test.assocComplete.ili",
+          "sha256": "edc55a739f6d03a41fda30ad2dd674dd1a52980e666958035727d13a6ee7ee75"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "assocA3"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/assocComplete.ili",
+            "revision": "1",
+            "startOffset": 346,
+            "endOffset": 450
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "assocB3"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "multiple links for the same participants require OID/ASSOCIATION_CARDINALITY_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/assocComplete.ili",
+            "revision": "1",
+            "startOffset": 1082,
+            "endOffset": 1186
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.Role23Test.roleComplete",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.7.1",
+        "reason": "HIDING ist bei einer nicht versteckenden Geschwisterrolle für dieselbe Zielklasse unzulässig."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/roleComplete.ili",
+          "sha256": "f8c10fc75b9ce78c84cec676ae929bf538a3835e3002c7a1d00bf523e298c6de"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Role23Test.roleComplete.ili",
+          "sha256": "ed4073f3708ae7694ea05a1079e9decf467f771eb8e59bd3e2d0a53e9f9d0e78"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "assocA2q"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/roleComplete.ili",
+            "revision": "1",
+            "startOffset": 610,
+            "endOffset": 703
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "assocB2q"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "HIDING conflicts with a non-hiding sibling role/ROLE_HIDING_CONFLICT"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/roleComplete.ili",
+            "revision": "1",
+            "startOffset": 2140,
+            "endOffset": 2233
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ParentPathElement",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.6; 2.8.1",
+        "reason": "Ein abgeleiteter Wert muss in den Zielbereich passen; TEXT*20 ist nicht TEXT*10 zuweisbar."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/expressions/expressions_ParentPathElement.ili",
+          "sha256": "04978c67f534cb4c2aace42cc404644702e56183a3904ea6ac00961e173a2948"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Expressions23Test.expressions_ParentPathElement.ili",
+          "sha256": "3a1214d0d63232219996da9879ddcadd6271475d10bc7134c7d9bdc39b0f4ba3"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0005",
+          "severity": "ERROR",
+          "phase": "TYPE_CHECKING",
+          "messageKey": "diagnostic.semantics.type",
+          "arguments": [
+            {
+              "name": "actual",
+              "kind": "TYPE_NAME",
+              "value": "TEXT*20"
+            },
+            {
+              "name": "expected",
+              "kind": "TYPE_NAME",
+              "value": "TEXT*10"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/expressions/expressions_ParentPathElement.ili",
+            "revision": "1",
+            "startOffset": 297,
+            "endOffset": 309
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.View23Test.view_AcceptBasicViewProjectionDef",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.6; 2.8.1",
+        "reason": "Ein unbeschränktes TEXT-Funktionsergebnis ist nicht TEXT*80 zuweisbar."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/view/view_AcceptBasicViewProjectionDef.ili",
+          "sha256": "41f9e9bdad2e58742e2432a1a91629694cac8df8b799620ab3e32369f214dea0"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.View23Test.view_AcceptBasicViewProjectionDef.ili",
+          "sha256": "5d298a66e0654c4ae73f00570394786881245e27be5df787024814d3219b63b1"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0005",
+          "severity": "ERROR",
+          "phase": "TYPE_CHECKING",
+          "messageKey": "diagnostic.semantics.type",
+          "arguments": [
+            {
+              "name": "actual",
+              "kind": "TYPE_NAME",
+              "value": "TEXT"
+            },
+            {
+              "name": "expected",
+              "kind": "TYPE_NAME",
+              "value": "TEXT*80"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/view/view_AcceptBasicViewProjectionDef.ili",
+            "revision": "1",
+            "startOffset": 471,
+            "endOffset": 498
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF",
+      "owner": "WP-20–25 / K1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.6; 2.8.10",
+        "reason": "Ein numerischer Wert ist keinem booleschen Attribut zuweisbar."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/iliconversion/iliconversion_CheckViewDefWithALLOF.ili",
+          "sha256": "98b8470cd0ff1e039b237b657d3a10e68ca37412fe6e30296f1cff4fb056d89a"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.InterlisConversion23Test.iliconversion_CheckViewDefWithALLOF.ili",
+          "sha256": "9100c28bb43079890a81010263c6cbdf38ec269ac8ad10fd5efb62698aa1945e"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0005",
+          "severity": "ERROR",
+          "phase": "TYPE_CHECKING",
+          "messageKey": "diagnostic.semantics.type",
+          "arguments": [
+            {
+              "name": "actual",
+              "kind": "TYPE_NAME",
+              "value": "NUMERIC"
+            },
+            {
+              "name": "expected",
+              "kind": "TYPE_NAME",
+              "value": "BOOLEAN"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/iliconversion/iliconversion_CheckViewDefWithALLOF.ili",
+            "revision": "1",
+            "startOffset": 446,
+            "endOffset": 462
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.Models23Test.models_DomainAndRuntimeParam_SameName",
+      "owner": "WP-24 / K2",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.11; 2.5.1",
+        "reason": "Laufzeitparameter sind in 2.3 nur innerhalb von CONTRACTED-Modellen zulässig; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili",
+          "sha256": "db73f13f4b2ef6d08b365cb8625e663bc70298e8832f47245ee924d89ebb29b2"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Models23Test.models_DomainAndRuntimeParam_SameName.ili",
+          "sha256": "1d57023cfcc225afc8d21213f40230658dfbddec1f5110798845b98195cfbb3c"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "param"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/models/models_DomainAndRuntimeParam_SameName.ili",
+            "revision": "1",
+            "startOffset": 96,
+            "endOffset": 112
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.RuntimeParameter23Test.runtimeParameterComplete",
+      "owner": "WP-24 / K2",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.11; 2.5.1",
+        "reason": "Laufzeitparameter sind in 2.3 nur innerhalb von CONTRACTED-Modellen zulässig; in 2.4 entfällt diese Pflicht."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/runtimeParameterComplete.ili",
+          "sha256": "ea8c6d3fcb6282459b718ca8d397785528823d975f2568a08f2ed26a606115c5"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.RuntimeParameter23Test.runtimeParameterComplete.ili",
+          "sha256": "f682f0d40aa26561adf85665a6f0a8a917c8105c475baba989cf9adcb5df3c26"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "paramA1"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/runtimeParameterComplete.ili",
+            "revision": "1",
+            "startOffset": 103,
+            "endOffset": 121
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "paramA3"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/runtimeParameterComplete.ili",
+            "revision": "1",
+            "startOffset": 124,
+            "endOffset": 152
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "paramB1"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/runtimeParameterComplete.ili",
+            "revision": "1",
+            "startOffset": 285,
+            "endOffset": 303
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "paramB3"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "runtime parameters require CONTRACTED in INTERLIS 2.3/PARAMETER_CONTRACTED"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/runtimeParameterComplete.ili",
+            "revision": "1",
+            "startOffset": 306,
+            "endOffset": 334
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.Expressions23Test.expressions_ThisAreaThatArea",
+      "owner": "WP-23 / K4",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.15, S. 69: ViewAttributes / ALL OF",
+        "reason": "ALL OF ist für AREA-Inspektionen ausdrücklich unzulässig. Nach vollständiger Bindung der Geometrieinspektion verbleibt ausschliesslich VIEW_ALL_OF. Die positive Kontrolle entfernt nur diese Anweisung; THISAREA und THATAREA bleiben erhalten."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/expressions/expressions_ThisAreaThatArea.ili",
+          "sha256": "ff54dc7aabb1a92e00ae4288b6519cfaca4e58c5a0f8e10c590d178575561f52"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Expressions23Test.expressions_ThisAreaThatArea.ili",
+          "sha256": "f66f84e5592f1f7aadc0d8131fd05558ac63c9e1ac08fa69f4cd5df9a2a20df0"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "BoFlaecheBoundaryView"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "ALL OF is not allowed in UNION or AREA INSPECTION/VIEW_ALL_OF"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/expressions/expressions_ThisAreaThatArea.ili",
+            "revision": "1",
+            "startOffset": 527,
+            "endOffset": 823
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili24.Refhb24Test.roadsExgm2ien",
+      "owner": "WP-20/23/24/25 / K5",
+      "languageVersion": "2.4",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/STAN_d_DEF_2024-04-24_eCH-0031_V2.1.0_INTERLIS_2-Referenzhandbuch.pdf",
+        "sections": "3.5.2–3.5.3; 3.10.2.2; 3.16",
+        "reason": "Ohne Klassen-/Topic-OID gilt in 2.4 NO OID; Beziehungen und Referenzattribute auf solche Klassen sind unzulässig. Alle 51 verbleibenden Diagnosen betreffen solche Ziele. Die Kontrollfassung ändert ausschliesslich OID-Deklarationen; Grafiken, Signaturparameter, Metaobjektwerte, Inspektionen und Pfade bleiben erhalten. METAOBJECT-Parameter sind keine Transferreferenzen und werden dadurch nicht verboten. E3 erhält die beiden RESTRICTION-Ziele von FontSymbol.Geometry; dadurch werden die Referenzen auf Color und PolylineAttrs auch in diesem Verwendungskontext geprüft. Die bisherigen 49 Diagnosen bleiben unverändert; zwei zusätzliche konkrete NO-OID-Diagnosen sind nachgeprüft."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili24/refhb/RoadsExdm2ben.ili",
+          "sha256": "1385416340fffd1fd4fdbe43e00f1591d87c5573cbc42755bdb7c581d226de23"
+        },
+        {
+          "path": "test/data/ili24/refhb/AbstractSymbology.ili",
+          "sha256": "026d80963c8541bf1069d6ac41c9e3ed9fdc10cb8d839e285dbd3c0f2e49713b"
+        },
+        {
+          "path": "test/data/ili24/refhb/RoadsExdm2ien.ili",
+          "sha256": "12086918610a7deaebbaa2fc646148ad095f31d28a700c99a8dcd950c5da223c"
+        },
+        {
+          "path": "test/data/ili24/refhb/StandardSymbology.ili",
+          "sha256": "2cdd2ef1eafb4096cbdc4fb02fee00405908e069c2e9b7991b18110395e9b9e3"
+        },
+        {
+          "path": "test/data/ili24/refhb/RoadsExgm2ien.ili",
+          "sha256": "0f5776a3ad25b6c3d991deae2e8689740b71bb0dc43e0d1ead15994cd4bf611a"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/roadsExgm2ien/RoadsExdm2ben.ili",
+          "sha256": "2d558d4e03b4890b60ef725e8fbda5fc7aa3f9aca7fadd59a723099af2ebd4dd"
+        },
+        {
+          "path": "testdata/conformance/normative/roadsExgm2ien/AbstractSymbology.ili",
+          "sha256": "ff6aea204787b283f6dee84aae522855a0469493787632c338339898a448836c"
+        },
+        {
+          "path": "testdata/conformance/normative/roadsExgm2ien/RoadsExdm2ien.ili",
+          "sha256": "12086918610a7deaebbaa2fc646148ad095f31d28a700c99a8dcd950c5da223c"
+        },
+        {
+          "path": "testdata/conformance/normative/roadsExgm2ien/StandardSymbology.ili",
+          "sha256": "4c536abe6d7fc22660a4d648d16579ad8278f8073e269a0a33fa313af661972a"
+        },
+        {
+          "path": "testdata/conformance/normative/roadsExgm2ien/RoadsExgm2ien.ili",
+          "sha256": "0f5776a3ad25b6c3d991deae2e8689740b71bb0dc43e0d1ead15994cd4bf611a"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Border"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 10847,
+            "endOffset": 10877
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "ClipFont"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8022,
+            "endOffset": 8046
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "ClipStyle"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target LineStyle has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9546,
+            "endOffset": 9576
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "ClipSymbol"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8529,
+            "endOffset": 8561
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Color"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 2848,
+            "endOffset": 2881
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Color"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 5501,
+            "endOffset": 5523
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Color"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6230,
+            "endOffset": 6252
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Color"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 7889,
+            "endOffset": 7911
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Color"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8683,
+            "endOffset": 8705
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Color"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9396,
+            "endOffset": 9418
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "ColorRef"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6615,
+            "endOffset": 6648
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "EndSymbol"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 10009,
+            "endOffset": 10040
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "FillColor"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 10686,
+            "endOffset": 10712
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "FillColor"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 3092,
+            "endOffset": 3125
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Font"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 4511,
+            "endOffset": 4530
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Font"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Font has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 7709,
+            "endOffset": 7728
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "FontSymbRef"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6560,
+            "endOffset": 6608
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "FontSymbol"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 3395,
+            "endOffset": 3885
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "FontSymbol"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 3395,
+            "endOffset": 3885
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "HatchSymb"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 11022,
+            "endOffset": 11055
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineAttrs"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 2908,
+            "endOffset": 2949
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineAttrs"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 5661,
+            "endOffset": 5695
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineAttrs"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineAttrs has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6396,
+            "endOffset": 6430
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineStyle"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target LineStyle_Solid has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 5530,
+            "endOffset": 5566
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineStyle"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target LineStyle_Solid has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 5702,
+            "endOffset": 5738
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineStyle_Dashed"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target LineStyle_Dashed has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6259,
+            "endOffset": 6303
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineStyle_Dashed"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target LineStyle_Dashed has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6437,
+            "endOffset": 6481
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineStyle_Pattern"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Color has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6925,
+            "endOffset": 7126
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "LineStyle_Pattern"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 6925,
+            "endOffset": 7126
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "PolylineSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9216,
+            "endOffset": 9252
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "PolylineSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9425,
+            "endOffset": 9461
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "PolylineSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9882,
+            "endOffset": 9918
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "PolylineSign2"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9614,
+            "endOffset": 9651
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "PolylineSign3"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target PolylineSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 10139,
+            "endOffset": 10176
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "StartSymbol"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9742,
+            "endOffset": 9775
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Street"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Street has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/RoadsExdm2ben.ili",
+            "revision": "1",
+            "startOffset": 1169,
+            "endOffset": 1193
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Street"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target Street has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/RoadsExdm2ben.ili",
+            "revision": "1",
+            "startOffset": 911,
+            "endOffset": 932
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "StreetAxis"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target StreetAxis has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/RoadsExdm2ben.ili",
+            "revision": "1",
+            "startOffset": 939,
+            "endOffset": 964
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "StreetNamePosition"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target StreetNamePosition has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/RoadsExdm2ben.ili",
+            "revision": "1",
+            "startOffset": 1200,
+            "endOffset": 1241
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Style"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target LineStyle has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 9186,
+            "endOffset": 9209
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "SurfaceSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SurfaceSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 10733,
+            "endOffset": 10767
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "SurfaceSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SurfaceSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 10904,
+            "endOffset": 10938
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "SurfaceSign2"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SurfaceSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 11081,
+            "endOffset": 11116
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Symbol"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 4537,
+            "endOffset": 4565
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Symbol"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target FontSymbol has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8382,
+            "endOffset": 8407
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "SymbolSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8414,
+            "endOffset": 8446
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "SymbolSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8712,
+            "endOffset": 8744
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "SymbolSign2"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target SymbolSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8568,
+            "endOffset": 8601
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "TextSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 7735,
+            "endOffset": 7763
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "TextSign"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 7918,
+            "endOffset": 7946
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "TextSign2"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "reference target TextSign has NO OID in INTERLIS 2.4/REFERENCE_TARGET_NO_OID"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili24/refhb/StandardSymbology.ili",
+            "revision": "1",
+            "startOffset": 8053,
+            "endOffset": 8082
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.LineType23Test.overlapTooSmallFail",
+      "owner": "WP-22/25 / G2 C / user-authorized reference exception",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "reject"
+      },
+      "ownExpectation": "accepted",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sha256": "8ab1c6b5815aa31f424389d7ffd7af95fe0480d95e24ed926366e8db75afbc52",
+        "sections": "2.8.12.2, S. 50",
+        "reason": "Die 2.3-Norm verlangt gleiche Einheiten, eine positive und unveränderliche Toleranz, nennt hier aber keine Präzisionsuntergrenze. Die explizite Stellenzahlregel in 2.4 wird nicht auf 2.3 übertragen.",
+        "reviewStatus": "Independent normative review remains OPEN; XFAIL explicitly requested by the user on 2026-10-25."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/lineType/OverlapTooSmallFail.ili",
+          "sha256": "bea6bc62dbf8c58fbf801ceadfb15e320a7fc92c410f5c5562329f26f75241e0"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.positive.ili",
+          "sha256": "482b45123bcfe57f65ca97d6cbfac4db46e2bbde5a2c056e5f07c5d42b70eaaa"
+        }
+      ],
+      "negativeControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.zero.ili",
+          "sha256": "9416737451f673826bdcf40abede73552802cb569fcdb2c3896ad59a8eb770a8"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Geometry"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "overlap tolerance must be greater than zero/OVERLAP_POSITIVE"
+            }
+          ],
+          "range": {
+            "source": "testdata/conformance/normative/ili23.LineType23Test.overlapTooSmallFail.zero.ili",
+            "revision": "1",
+            "startOffset": 248,
+            "endOffset": 339
+          }
+        }
+      ]
+    },
+    {
+      "testId": "ili23.Attribute23Test.attributeComplete",
+      "owner": "WP-20–25 / L1-2",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.6.1 / 2.8.5",
+        "reason": "CONTINUOUS SUBDIVISION requires a CIRCULAR numeric type; the original omits CIRCULAR on attrA6 and attrB6."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/attributeComplete.ili",
+          "sha256": "f42135b02ec698de9bc62059c01d6585bf57e2822605913f46ce30d4145c5443"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Attribute23Test.attributeComplete.ili",
+          "sha256": "a88d5c0874f7ac8656d3d5593a5c296a27bd0c55a2111c6e35e5b8b583c4af39"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "attrA6"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "continuous subdivision must be CIRCULAR/SUBDIVISION_CIRCULAR"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/attributeComplete.ili",
+            "revision": "1",
+            "startOffset": 368,
+            "endOffset": 405
+          }
+        },
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "attrB6"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "continuous subdivision must be CIRCULAR/SUBDIVISION_CIRCULAR"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/attributeComplete.ili",
+            "revision": "1",
+            "startOffset": 1246,
+            "endOffset": 1283
+          }
+        }
+      ],
+      "authorizationBasis": {
+        "date": "2026-10-29",
+        "kind": "RETAINED_APPROVED_CIRCULAR_RULE",
+        "userStatement": "Bestehende Fälle zulassen, nachweisbare Faktorfehler ablehnen (empfohlen)",
+        "questionCondition": "Numerischer Vorgänger, Ganzzahligkeit, nichtnegative Grenzen und CIRCULAR werden trotzdem geprüft; bekannte numerische Faktoren werden exakt verglichen.",
+        "meaning": "Records the concrete reference divergence implied by the retained CIRCULAR rule; does not claim a separate explicit user approval of this individual fixture."
+      }
+    }
+  ]
+}

@@ -349,6 +349,11 @@ Argumentbezug und ihre tatsächlichen Aufrufkinder (Kapitel 05).
 `AttributePathType.ClassAttribute.path()` kann hierfür neben dem deklarierten
 OF-Pfad einen klassenwertigen tatsächlichen Ausdruck desselben Snapshots
 referenzieren. Kapitel 05 besitzt den fachlichen Vertrag; keine neue Signatur.
+`SetConditionContextContractTest` prüft den bestätigten SET-Hauptkontext ohne
+individuelle Attribut-/Rollen-/THIS-Werte, den objektbezogenen WHERE-Filter,
+externe Constraints, Revisionen/FreshReuse und die ausdrücklich bestätigten
+areAreas2/3- sowie OBJECTS-Funktionsprofile. Die gemeinsame Pfadbindung liefert
+`ILI-SEM-0008` und typisierte Fehler; keine zusätzliche öffentliche API.
 
 
 ### K3: Generische Koordinatenkontexte

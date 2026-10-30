@@ -31,6 +31,38 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L2-1: approved profiles and a SET condition without individual object values.
+  let setConditionContextCases=0;
+  for(const version of ['2.3','2.4']) {
+    const wrap=body=>`INTERLIS ${version};CONTRACTED MODEL F AT "https://example.org" VERSION "1"=${body}END F.`;
+    const signature='FUNCTION check(objects:OBJECTS OF ANYCLASS):BOOLEAN;';
+    for(const expression of ['n>0','NOT (flag)','INTERLIS.len(label)>0','DEFINED(THIS)','F.check(THIS)','DEFINED(items[FIRST]->code)']) {
+      await verify(wrap(signature+'STRUCTURE S=code:TEXT;END S;TOPIC T=CLASS C=n:0..10;flag:BOOLEAN;label:TEXT;items:LIST OF S;SET CONSTRAINT '+expression+';END C;END T;'),'rejected');
+      setConditionContextCases++;
+    }
+    const filtered=wrap('TOPIC T=CLASS C=n:0..10;SET CONSTRAINT WHERE n>0:INTERLIS.objectCount(ALL)>=0;END C;END T;');
+    await verifySources([{sourceId:'memory:/stabilization.ili',text:filtered}],'succeeded',['F'],async(sessionId,compiled)=>{
+      const query=(offset,kind)=>call('query',sessionId,{snapshotId:compiled.snapshotId,query:{kind,sourceId:'memory:/stabilization.ili',revision:'1',startOffset:offset,endOffset:offset}});
+      const declaration=await query(filtered.indexOf('n:0'),'symbolAt');
+      const reference=await query(filtered.indexOf('WHERE n')+6,'definition');
+      if(declaration.kind!=='known'||reference.kind!=='definition'||declaration.symbolId!==reference.symbolId)
+        throw new Error('SET WHERE lost its individual attribute target '+JSON.stringify({declaration,reference}));
+    });setConditionContextCases++;
+    const cases=[
+      ['TOPIC T=CLASS C=SET CONSTRAINT #true;END C;END T;',version==='2.3'?'succeeded':'rejected'],
+      ['TOPIC T=CLASS C=SET CONSTRAINT INTERLIS.len("fixed")>0;END C;END T;',version==='2.3'?'succeeded':'rejected'],
+      ['TOPIC T=CLASS C=SET CONSTRAINT WHERE INTERLIS.objectCount(ALL)>=0:#true;END C;END T;',version==='2.3'?'succeeded':'rejected'],
+      [signature+'TOPIC T=CLASS C=MANDATORY CONSTRAINT F.check(THIS);MANDATORY CONSTRAINT F.check(ALL);CONSTRAINT >=90% F.check(THIS);CONSTRAINT >=90% F.check(ALL);SET CONSTRAINT F.check(ALL);END C;END T;','succeeded'],
+      ['PARAMETER enabled:BOOLEAN;FUNCTION check(cls:CLASS;attr:ATTRIBUTE OF @cls):BOOLEAN;TOPIC T=CLASS C=label:TEXT;SET CONSTRAINT PARAMETER enabled AND F.check(>C,>>label) AND INTERLIS.objectCount(ALL)>=0;END C;END T;','succeeded'],
+      ['TOPIC T=CLASS C=n:0..10;END C;CONSTRAINTS OF C=SET CONSTRAINT n>0;END;END T;','rejected'],
+      ['TOPIC T=CLASS C=n:0..10;END C;CONSTRAINTS OF C=SET CONSTRAINT WHERE n>0:INTERLIS.objectCount(ALL)>=0;END;END T;','succeeded']
+    ];
+    for(const [body,expected]of cases){await verify(wrap(body),expected);setConditionContextCases++;}
+    if(version==='2.4')for(const name of ['areAreas2','areAreas3'])for(const actual of ['ALL','THIS']) {
+      await verify(wrap('DOMAIN P=COORD 0.000..10.000,0.000..10.000;TOPIC T=CLASS C=surface:SURFACE WITH(STRAIGHTS) VERTEX P WITHOUT OVERLAPS>0.010;'
+        +(actual==='ALL'?'SET':'MANDATORY')+' CONSTRAINT INTERLIS.'+name+'('+actual+',UNDEFINED,"surface");END C;END T;'),'succeeded');setConditionContextCases++;
+    }
+  }
   // L2-1: dependent constants use actual roots and preserve their query targets.
   let dependentFunctionCases=0;
   for(const version of ['2.3','2.4']) {
@@ -1893,7 +1925,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

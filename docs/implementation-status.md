@@ -9,7 +9,10 @@ OpenCode-/DeepSeek-Direktreviews und kumulativem T1/T2/T3-Gate. Der aktuelle
 Abschnitt ergänzt die abhängige Funktionsargument-/Ergebnisbindung und
 präzisiert EXISTENCE-Fehler. Implementierung, offene Profilentscheidungen und
 tatsächliche Nachweise: [L2-1](g2/implementation/L2-1.md). Operativer Fortschritt
-und unabhängiges Urteil ausschliesslich in STATUS.
+und unabhängiges Urteil ausschliesslich in STATUS. Die drei späteren
+Profilantworten sind eingegangen; SET-Hauptausdrücke werden nun ohne
+individuelle Objektwerte geprüft, WHERE und die beiden bestätigten
+Kompatibilitätsprofile bleiben erhalten. Nachweise und Abnahme im Lieferbericht.
 L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
 äusseren Blockkommentar. Implementierung und tatsächliche Prüfläufe stehen im
 [Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.

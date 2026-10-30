@@ -1,6 +1,7 @@
 package guru.interlis.cli.evidence;
 
 import com.google.gson.*;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -32,6 +33,22 @@ class CatalogueEvidenceTest {
     @Test void a3JvmAndPortablePairBindingsRemainPresent() throws Exception { CatalogueEvidence.pairs(data("a3-semantic-pairs")); }
     @Test void all19DecisionCasesKeepExpectationsQuotesAndExplicitUserStatus() throws Exception {
         var packet = data("normative-decision-packet-2026-10-28"); CatalogueEvidence.decisions(packet, data("norm-inventory")); assertEquals(19, rows(packet,"cases").size());
+    }
+    @Test void setProfileAdditionsCannotChangeHistoricalCasesOrInventApproval() throws Exception {
+        var packet=data("normative-decision-packet-2026-10-28");
+        var expected=json("docs/evidence/conformance/normative-expectations.json");
+        var historical=json("docs/evidence/conformance/normative-expectations-before-set-context.json");
+        CatalogueEvidence.decisionSources(packet,expected,historical);
+        for(String change:List.of("old-case","missing","new-id","authorization")) {
+            var altered=expected.deepCopy();var cases=altered.getAsJsonArray("cases");
+            switch(change) {
+                case "old-case" -> cases.get(0).getAsJsonObject().addProperty("ownExpectation","changed");
+                case "missing" -> cases.remove(cases.size()-1);
+                case "new-id" -> cases.get(cases.size()-1).getAsJsonObject().addProperty("testId","unapproved");
+                case "authorization" -> cases.get(cases.size()-1).getAsJsonObject().getAsJsonObject("authorizationBasis").addProperty("kind","PENDING");
+            }
+            assertThrows(Exception.class,()->CatalogueEvidence.decisionSources(packet,altered,historical));
+        }
     }
     @ParameterizedTest @ValueSource(strings={"id", "acceptance", "ownerStep", "missing"})
     void foreignOrAcceptedGrammarOccurrenceFails(String key) throws Exception {

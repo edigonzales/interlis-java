@@ -3,12 +3,12 @@
 - Aktueller Auftrag vom **30.10.2026: gesamte Phase 2 autonom**, einschliesslich
   unabhängiger OpenCode-Reviews über DeepSeek direkt. Kein manueller Stopp
   zwischen L2-1/L2-2/L2-3; kein Beginn von Phase 3.
-- Aktuelle Lieferung **L2-1**, AC2-01/AC2-02, **BLOCKED (NORM_DECISION)**. Basis
+- Aktuelle Lieferung **L2-1**, AC2-01/AC2-02, **IN_PROGRESS nach Nutzerentscheid**. Basis
   `81ad019` (Dokumentnachtrag nach dem Phase-1-PASS). Fachlicher Einstieg:
   WP-22, Ausdrücke/Pfade, Funktionen und sämtliche Constraintfamilien.
 - L2-1 implementiert: abhängige ATTRIBUTE-Argument-/Ergebnisbindung,
-  präzise EXISTENCE-Quellfehler, vierzehn neue öffentliche JVM-Testmethoden und
-  22 portable Fälle. Eigene JVM-/Conformance-/Evidenz-/SDK-Prüfungen grün,
+  präzise EXISTENCE-Quellfehler, bestätigte SET-Kontexte,23 neue öffentliche
+  Compiler-JVM-Testmethoden und54 portable Fälle. Eigene JVM-/Conformance-/Evidenz-/SDK-Prüfungen grün,
   Portable nach fachlich begründeter Korrektur historischer Testquellen grün
   (erster Kandidat JS/WasmGC jeweils3423). [Nachweise und offene Profile](implementation/L2-1.md).
 - Erster unabhängiger Review auf `4b7c31e`: **BLOCKED (NORM_DECISION)**,
@@ -23,7 +23,7 @@
   779JVM(670Compiler)/136Evidenz/15Assertions/15Host, alle0Fehler/Skips;
   T2 unverändert, SDK9, Pythonfrei1202Inputs, JS/WasmGC je3427PASS.
   Der vollständig frische unabhängige R2-Review bestätigt diese Nachweise.
-- Aktueller geprüfter Produktcommit: `535d46714b59769058bbd46a737c35ac38e3dd0f`.
+- Zuletzt unabhängig geprüfter Produktcommit: `535d46714b59769058bbd46a737c35ac38e3dd0f`.
   **R2: BLOCKED ausschliesslich wegen N1–N3**; kein offenes technisches
   Muss-Finding. F1 geschlossen, O1/O2 adressiert. [Unveränderter R2-Bericht](reviews/L2-1-review-r2.md),
   SHA-256 `509c1c03f23c3c9e96a17e04160bc50f91f0d9eaf79f760dc0fbc2584d467e1a`.
@@ -33,12 +33,23 @@
   Eigene neue Reviewer-Probe **72 Checks PASS**, am Ausgangscommit sechs
   tatsächlich rote Abschnitte. T2 unverändert579PASS/14XFAIL und19/19
   Assessments; SDK9; Pythonfrei1202Eingaben; JS/WasmGC je3427PASS.
-- Drei bereits gestellte Nutzerentscheidungen sind noch offen: areAreas2/3,
-  OBJECTS-Funktionen in 2.4-Einzelobjektbedingungen und direkter Objektkontext
-  im SET-Hauptausdruck. Keine Empfehlung gilt als Freigabe. Die vollständigen
-  unabhängigen Reviews sind durchgeführt; kein nächster Lieferabschnitt vor PASS.
-  Nach Antworten: die gewählten Profile samt Tests umsetzen, neuen Kandidaten
-  vollständig frisch prüfen lassen, erst nach PASS automatisch L2-2 fortsetzen.
+- **N1–N3 sind ausdrücklich beantwortet:** beide areAreas2/3-Mengensignaturen
+  behalten; OBJECTS-Funktionen in 2.4-MANDATORY/Plausibility weiterhin wie
+  ili2c zulassen; direkte individuelle Attribut-/Rollen-/THIS-Werte im
+  SET-Hauptausdruck ablehnen, WHERE objektbezogen erhalten.
+  [Originalantworten und Umsetzung](implementation/L2-1.md#nutzerentscheidungen-und-set-kontext--nächster-kandidat).
+  Der gemeinsame Pfadbinder liefert dafür SEM-0008 mit typisierten Fehlern;
+  abhängige Typ-/Übersetzungsfehlerkaskaden sind unterdrückt. Neun neue
+  SET-JVM-Methoden und32 SET-Portabelfälle ergänzt. 2.4 verlangt einen Aufruf
+  mit OBJECTS-Formalparameter im Hauptausdruck,2.3 erlaubt konstante SETs.
+  Zwei zusätzliche strenge Assessments folgen dem bestätigten Profil;
+  alle ursprünglichen19 Objekte und deren historische Byte-Fassung sind exakt erhalten.
+  Eigener voller Lauf Exit0/2m20s/58 Tasks:788JVM(679Compiler),137Evidenz,
+  15Assertions,15Host, alle0Fehler/Skips;SDK9;Pythonfrei1207;JS/WasmGC je3459PASS.
+  T2 roh577PASS/15FAIL/1XFAIL, Projekt577PASS/16XFAIL,21/21Assessments PASS.
+  Letzter Grenzfallnachlauf Exit0/2m17s (26 ausgeführt/32aktuell) ebenso grün.
+  Neuer Kandidat und frischer unabhängiger Review folgen. Kein nächster
+  Lieferabschnitt vor PASS; danach automatisch L2-2/L2-3 fortsetzen.
   L2-2/L2-3 und das kumulative Browser-/Safari-/Web-Image-Phasengate bleiben offen.
 - Noch kein Phase-2-PASS. Der nachfolgend dokumentierte Phase-1-PASS bleibt
   die letzte unabhängige kumulative Abnahme.

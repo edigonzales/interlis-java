@@ -270,7 +270,7 @@ public final class NormativeConformance {
         require(!selected.isEmpty() && (!full || (suiteCases.size() == 610 && selected.size() == 593 && excluded == 17)),
                 "unexpected selected suite case set");
         var manifest = read(root.resolve("docs/evidence/conformance/normative-expectations.json"));
-        require(array(manifest, "cases").size() == 19, "expected exactly 19 explicit project assessments");
+        require(array(manifest, "cases").size() == 21, "expected exactly 21 explicit project assessments");
         Path cli = Path.of(text(array(config, "compilers").get(0).getAsJsonObject(), "source"));
         int exit = Integer.parseInt(Files.readString(output.resolve("runner-exit.txt")));
         var raw = read(output.resolve("summary.json"));

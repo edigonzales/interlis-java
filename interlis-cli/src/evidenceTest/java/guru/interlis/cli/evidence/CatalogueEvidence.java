@@ -239,8 +239,12 @@ final class CatalogueEvidence {
     }
     static void decisions(JsonObject packet, JsonObject inventory) throws IOException {
         var expected = json("docs/evidence/conformance/normative-expectations.json");
-        pin(s(packet, "source"), s(packet, "sourceSha256"));
-        require(s(packet, "status").equals("PENDING_USER_REVALIDATION") && ids(rows(packet, "cases"), "testId").equals(ids(rows(expected, "cases"), "testId")), "Decision packet coverage/status differs");
+        // The frozen 19-case packet keeps its original byte pin. Current cases
+        // must retain every original object exactly; only the two consequences
+        // of the explicitly approved SET profile are additional assessments.
+        String historical="docs/evidence/conformance/normative-expectations-before-set-context.json";
+        pin(historical,s(packet,"sourceSha256"));
+        decisionSources(packet,expected,json(historical));
         Map<String, JsonObject> paragraphs = new HashMap<>();
         rows(inventory, "documents").forEach(d -> rows(d, "entries").forEach(r -> paragraphs.put(s(r, "id"), r)));
         for (var c : rows(packet, "cases")) {
@@ -258,6 +262,30 @@ final class CatalogueEvidence {
                             && ref.get("page").equals(p.get("page")) && ref.get("quote").equals(p.get("quote")) && hash(s(p, "quote")).equals(s(p, "quoteSha256")), "Changed decision norm quote/hash");
                 }
             }
+        }
+    }
+
+    static void decisionSources(JsonObject packet,JsonObject expected,JsonObject historical) {
+        require(s(packet,"source").equals("docs/evidence/conformance/normative-expectations.json")
+                &&s(packet,"status").equals("PENDING_USER_REVALIDATION")
+                &&rows(historical,"cases").size()==19&&rows(expected,"cases").size()==21
+                &&ids(rows(packet,"cases"),"testId").equals(ids(rows(historical,"cases"),"testId")),"Decision packet coverage/status differs");
+        for(String key:List.of("schemaVersion","suiteCommit","suiteSha256"))require(expected.get(key).equals(historical.get(key)),"Suite identity changed");
+        for(var original:rows(historical,"cases")) {
+            var matches=rows(expected,"cases").stream().filter(c->c.get("testId").equals(original.get("testId"))).toList();
+            require(matches.size()==1&&matches.getFirst().equals(original),"Historical assessment changed");
+        }
+        var oldIds=ids(rows(historical,"cases"),"testId");
+        var additions=rows(expected,"cases").stream().filter(c->!oldIds.contains(s(c,"testId"))).toList();
+        require(additions.size()==2&&ids(additions,"testId").equals(Set.of("ili23.Constraint23Test.setCstrt",
+                "ili23.InterlisConversion23Test.iliconversion_ConversionOfSETCONSTRAINT")),"Unapproved additional assessment");
+        for(var added:additions) {
+            var authorization=added.getAsJsonObject("authorizationBasis");
+            require(authorization!=null&&s(authorization,"kind").equals("APPROVED_SET_OBJECT_CONTEXT_PROFILE")
+                    &&s(authorization,"userStatement").equals("Normkontext prüfen; Objektwerte nur im WHERE (empfohlen)")
+                    &&s(added,"languageVersion").equals("2.3")&&s(added,"ownExpectation").equals("rejected")
+                    &&s(added.getAsJsonObject("referenceExpectation"),"outcome").equals("accept")
+                    &&s(added.getAsJsonObject("norm"),"sections").equals("2.12"),"SET profile authorization differs");
         }
     }
 }

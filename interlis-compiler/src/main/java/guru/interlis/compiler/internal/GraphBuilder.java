@@ -591,7 +591,8 @@ final class GraphBuilder {
         if(source instanceof TopicSymbol a && target instanceof TopicSymbol b
                 && !new HashSet<>(a.dependencies().stream().map(id->correspondence.getOrDefault(id,id)).toList()).equals(new HashSet<>(b.dependencies())))
             emitRule(translationDecl,"translation topic dependencies differ","TRANSLATION_REFERENCE");
-        if(source instanceof ConstraintSymbol a && target instanceof ConstraintSymbol b) {
+        if(source instanceof ConstraintSymbol a && target instanceof ConstraintSymbol b
+                && !constraintHasErrors(a.definition()) && !constraintHasErrors(b.definition())) {
             boolean same = sameMapped(a.target(),b.target(),correspondence)
                     && sameConstraint(a.definition(),b.definition(),correspondence);
             var targets=constraintReferenceTargets(a.definition()).stream().map(id->correspondence.getOrDefault(id,id)).toList();
@@ -1050,6 +1051,11 @@ final class GraphBuilder {
         var originalTargets=constraintReferenceTargets(source).stream().map(id->map.getOrDefault(id,id)).toList();
         if(!originalTargets.equals(constraintReferenceTargets(target)))return false;
         return true;
+    }
+
+    private boolean constraintHasErrors(ConstraintDefinition definition) {
+        return constraintExpressions(definition).stream().map(expressions::get)
+                .anyMatch(e->e!=null&&e.typeState()==guru.interlis.model.ExpressionTypeState.ERROR);
     }
 
     private List<ExpressionId> constraintExpressions(ConstraintDefinition definition) {
@@ -3205,6 +3211,12 @@ final class GraphBuilder {
             emitTypeMismatch(decl.sourceId(), syntax.range(), typeName(expression.typeId()),
                     "BOOLEAN");
         }
+        if (!expression.error() && isBoolean(expression.typeId()) && syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.SET
+                && decl.language()==guru.interlis.model.LanguageVersion.ILI24 && !hasObjectSetFunction(expression.id())) {
+            var cause=emitTypeMismatch(decl.sourceId(),expressions.get(expression.id()).range(),
+                    "SET condition without OBJECTS function","SET condition with OBJECTS function");
+            expression=failedFunctionArgument(expressions.get(expression.id()).range(),List.of(cause));
+        }
         ConstraintDefinition definition = switch (syntax.constraintKind()) {
             case MANDATORY -> new MandatoryConstraint(syntax.name(), expression.id());
             case PLAUSIBILITY -> new PlausibilityConstraint(syntax.name(),
@@ -3217,6 +3229,21 @@ final class GraphBuilder {
             default -> new MandatoryConstraint(syntax.name(), expression.id());
         };
         return new ConstraintSymbol(header(decl), definition, externalTarget);
+    }
+
+    /** 2.4 requires an actual call with an OBJECTS formal somewhere in the set
+     * condition; an ALL value or such a call only in WHERE does not suffice. */
+    private boolean hasObjectSetFunction(ExpressionId root) {
+        var pending=new java.util.ArrayDeque<ExpressionId>();var seen=new java.util.HashSet<ExpressionId>();pending.add(root);
+        while(!pending.isEmpty()) {
+            checkWork();var id=pending.removeFirst();if(!seen.add(id))continue;var expression=expressions.get(id);
+            if(expression instanceof guru.interlis.model.FunctionCallExpression call
+                    && call.targetFunction().map(symbols::get).filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast)
+                    .stream().flatMap(f->f.parameters().stream()).map(p->effectiveDescriptor(p.typeId()))
+                    .anyMatch(t->t instanceof guru.interlis.model.ObjectArgumentType objects&&objects.objects()))return true;
+            pending.addAll(expression.children());
+        }
+        return false;
     }
 
     private boolean widerUpper(guru.interlis.model.CardinalityUpper left,
@@ -4504,7 +4531,29 @@ final class GraphBuilder {
 
     private ExpressionResult pathExpression(ExpressionId id, PathExpressionSyntax syntax,
                                             SymbolId owner) {
+        if (isSetCondition(owner, syntax.range())) {
+            checkWork();
+            var name=syntax.segments().getFirst().name();
+            var diagnostic=collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0008"),Severity.ERROR,
+                            Phase.TYPE_CHECKING,"diagnostic.semantics.path")
+                    .at(name.range()).argument(new DiagnosticArgument.IdentifierArgument("segment",name.text()))
+                    .argument(new DiagnosticArgument.TextArgument("reason","SET condition has no individual object context; object values belong in WHERE")));
+            return failedValueExpression(id,syntax.range(),List.of(diagnostic));
+        }
         return pathExpression(id, syntax, owner, expressionContext(owner), false);
+    }
+
+    /** The source-bound main expression distinguishes SET's set context from
+     * its individual WHERE context, including nested calls and external blocks.
+     * Explicit class/attribute constants and separately bound function string
+     * paths do not enter this ordinary object-value path entry point. */
+    private boolean isSetCondition(SymbolId owner,SourceRange range) {
+        var declaration=index.byId(owner).orElseThrow().syntax();
+        var constraint=declaration instanceof ExternalConstraintSyntax external?external.constraint()
+                :declaration instanceof ConstraintDeclarationSyntax local?local:null;
+        if(constraint==null||constraint.constraintKind()!=guru.interlis.syntax.ConstraintKind.SET)return false;
+        return constraint.expression().map(ExpressionSyntax::range).filter(body->body.source().equals(range.source())
+                &&body.revision().equals(range.revision())&&body.startOffset()<=range.startOffset()&&body.endOffset()>=range.endOffset()).isPresent();
     }
 
     private ExpressionResult pathExpression(ExpressionId id, PathExpressionSyntax syntax,
@@ -4962,7 +5011,7 @@ final class GraphBuilder {
         boolean error = left.error() || right.error();
         switch (syntax.operator()) {
             case AND, OR, IMPLIES -> {
-                if (!isBoolean(left.typeId()) || !isBoolean(right.typeId())) {
+                if (!error && (!isBoolean(left.typeId()) || !isBoolean(right.typeId()))) {
                     emitTypeMismatch(ownerSource(owner), syntax.range(),
                             typeName(left.typeId()) + "," + typeName(right.typeId()), "BOOLEAN");
                     error = true;
@@ -4976,14 +5025,14 @@ final class GraphBuilder {
                 left=contextualValue(left,right.typeId(),owner);
                 right=contextualValue(right,left.typeId(),owner);
                 error |= left.error() || right.error();
-                if(!comparisonAllowed(left,right,comparison)) {
+                if(!error && !comparisonAllowed(left,right,comparison)) {
                     emitTypeMismatch(ownerSource(owner),syntax.range(),typeName(left.typeId())+","+typeName(right.typeId()),"COMPARABLE "+comparison);
                     error=true;
                 }
             }
             case PLUS, MINUS, MUL, DIV, POW -> {
                 result = left.typeId();
-                if (!isNumeric(left.typeId()) || !isNumeric(right.typeId())) {
+                if (!error && (!isNumeric(left.typeId()) || !isNumeric(right.typeId()))) {
                     emitTypeMismatch(ownerSource(owner), syntax.range(),
                             typeName(left.typeId()) + "," + typeName(right.typeId()), "NUMERIC");
                     error = true;
@@ -5004,7 +5053,7 @@ final class GraphBuilder {
         ExpressionResult operand = buildExpression(syntax.operand(), owner);
         TypeId type = builtinBoolean(index.byId(owner).orElseThrow().language());
         boolean error = operand.error();
-        if (syntax.operator() == guru.interlis.model.UnaryOperator.NOT && !isBoolean(operand.typeId())) {
+        if (!error && syntax.operator() == guru.interlis.model.UnaryOperator.NOT && !isBoolean(operand.typeId())) {
             emitTypeMismatch(ownerSource(owner), syntax.range(), typeName(operand.typeId()),
                     "BOOLEAN");
             error = true;

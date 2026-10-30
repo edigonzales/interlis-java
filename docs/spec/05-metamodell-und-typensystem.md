@@ -1463,6 +1463,36 @@ begrenzt ihn in 2.4 ausdrücklich auf einen Behälter. Es gibt keine erfundene
 LOCAL-SET-Variante. Spätere Validierung berichtet ihre verfügbare Prüfmenge,
 ohne die fachliche Bedeutung von GLOBAL zu verkleinern.
 
+Für SET-Bedingungen in 2.3 und 2.4 gilt nach dem Nutzerentscheid vom 30.10.2026:
+Der Hauptausdruck besitzt kein einzelnes Kontextobjekt. Gewöhnliche Attribut-,
+Rollen- und THIS-Werte sind darin auch als verschachtelte Funktionsargumente
+unzulässig; der WHERE-Filter bleibt objektbezogen. Der gemeinsame Pfadbinder
+liefert für solche Zugriffe `ILI-SEM-0008` mit Namensbereich, Revision, Segment
+und Grund sowie einen ErrorExpression/ErrorType. Übergeordnete Ausdrücke
+erhalten ERROR ohne zusätzliche Typfehler aus bereits fehlerhaften Operanden.
+ALL, explizite Klassen-/Attributpfadkonstanten, Laufzeitparameter und zulässige
+Funktionsaufrufe bleiben verfügbar. Geparste konstante TEXT-Pfade der
+Flächenfunktionen binden weiterhin separat im tatsächlichen Mengenwurzeltyp;
+sie stellen keinen direkten individuellen Objektwert dar. Externe
+CONSTRAINTS-OF-Blöcke verwenden dieselbe Regel.
+In 2.4 muss der Hauptausdruck zusätzlich mindestens einen tatsächlichen
+Funktionsaufruf mit OBJECTS-Formalparameter enthalten (§3.12/PDF78,
+NORM:2.4:3.12:p78:004). Ein entsprechender Aufruf allein in WHERE genügt nicht.
+Ein ansonsten fehlerfreier Hauptausdruck ohne solchen Aufruf erhält
+ILI-SEM-0005 und einen typisierten Fehler statt eines gültigen Schemas.
+In 2.3 bleibt beispielsweise eine rein konstante SET-Bedingung zulässig.
+Bereits fehlerhafte Ausdrücke erzeugen keine zusätzliche Meldung aus dieser
+abhängigen Prüfung; Übersetzungsvergleiche melden keine Folgeunterschiede
+aufgrund solcher Fehlerausdrücke.
+
+Ebenfalls ausdrücklich bestätigt sind die bestehenden 2.4-Profile:
+areAreas2 und areAreas3 besitzen beide OBJECTS OF ANYCLASS als erstes Argument;
+die allgemeine Singleton-Zuweisung bleibt erhalten, während THIS im
+SET-Hauptausdruck aufgrund der Kontextregel unzulässig ist. Beide Namen
+bleiben in 2.3 unzulässig. Funktionen mit OBJECTS-Parametern bleiben in
+MANDATORY-/Plausibilitätsbedingungen auch in 2.4 wie in ili2c zulässig
+(bewusste Abweichung von §3.12/PDF77). Die TEXT-Pfadprüfung bleibt erhalten.
+
 Vordefinierte OID-Domänen besitzen innerhalb eines Sprachprofils eine kanonische
 Identität, `PredefinedOrigin` und keine künstliche Benutzermodell-Eigentümerschaft.
 L1-1 ergänzt den tatsächlichen vordefinierten Owner `INTERLIS` je Sprachversion:

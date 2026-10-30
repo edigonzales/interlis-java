@@ -2459,6 +2459,148 @@
         "questionCondition": "Numerischer Vorgänger, Ganzzahligkeit, nichtnegative Grenzen und CIRCULAR werden trotzdem geprüft; bekannte numerische Faktoren werden exakt verglichen.",
         "meaning": "Records the concrete reference divergence implied by the retained CIRCULAR rule; does not claim a separate explicit user approval of this individual fixture."
       }
+    },
+    {
+      "testId": "ili23.Constraint23Test.setCstrt",
+      "owner": "WP-22 / L2-1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.12",
+        "reason": "A SET condition has no individual object context; attribute values belong in its individual WHERE filter. This follows the explicitly approved SET context profile."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/translation/setCstrt.ili",
+          "sha256": "5a288863cb325819f53f1f1b51dbb647707d5a5d75872f7452a9d175ccf266de"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.Constraint23Test.setCstrt.ili",
+          "sha256": "407f1d04e7a5b2d77c4dbfd46ec633defafcb468631662b4231aefb4e3d343b4"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0008",
+          "severity": "ERROR",
+          "phase": "TYPE_CHECKING",
+          "messageKey": "diagnostic.semantics.path",
+          "arguments": [
+            {
+              "name": "segment",
+              "kind": "IDENTIFIER",
+              "value": "attrA1"
+            },
+            {
+              "name": "reason",
+              "kind": "TEXT",
+              "value": "SET condition has no individual object context; object values belong in WHERE"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/setCstrt.ili",
+            "revision": "1",
+            "startOffset": 186,
+            "endOffset": 192
+          }
+        },
+        {
+          "code": "ILI-SEM-0008",
+          "severity": "ERROR",
+          "phase": "TYPE_CHECKING",
+          "messageKey": "diagnostic.semantics.path",
+          "arguments": [
+            {
+              "name": "segment",
+              "kind": "IDENTIFIER",
+              "value": "attrB1"
+            },
+            {
+              "name": "reason",
+              "kind": "TEXT",
+              "value": "SET condition has no individual object context; object values belong in WHERE"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/translation/setCstrt.ili",
+            "revision": "1",
+            "startOffset": 442,
+            "endOffset": 448
+          }
+        }
+      ],
+      "authorizationBasis": {
+        "date": "2026-10-30",
+        "kind": "APPROVED_SET_OBJECT_CONTEXT_PROFILE",
+        "userStatement": "Normkontext prüfen; Objektwerte nur im WHERE (empfohlen)",
+        "questionCondition": "Gewöhnliche Werte wie SET CONSTRAINT n>0, len(label)>0 oder DEFINED(THIS) sind nicht vorgesehen. Empfehlung: diese direkten Objekt-/Attributwerte im Hauptausdruck ablehnen; der WHERE-Filter bleibt objektbezogen.",
+        "meaning": "Records concrete reference divergences implied by the explicitly approved SET context rule; does not claim separate per-fixture approval."
+      }
+    },
+    {
+      "testId": "ili23.InterlisConversion23Test.iliconversion_ConversionOfSETCONSTRAINT",
+      "owner": "WP-22 / L2-1",
+      "languageVersion": "2.3",
+      "referenceExpectation": {
+        "outcome": "accept"
+      },
+      "ownExpectation": "rejected",
+      "norm": {
+        "url": "https://www.interlis.ch/download/interlis2/ili2-refman_2006-04-13_d.pdf",
+        "sections": "2.12",
+        "reason": "A SET condition has no individual object context; attribute values belong in its individual WHERE filter. This follows the explicitly approved SET context profile."
+      },
+      "sources": [
+        {
+          "path": "test/data/ili23/iliconversion/iliconversion_ConversionOfSETCONSTRAINT.ili",
+          "sha256": "42d33199dbd5af2e2055a808cd0afca797a1c206e761e102b5de1193fc10ada7"
+        }
+      ],
+      "positiveControls": [
+        {
+          "path": "testdata/conformance/normative/ili23.InterlisConversion23Test.iliconversion_ConversionOfSETCONSTRAINT.ili",
+          "sha256": "492aff808507c6f03b479df1bf5525db1b1da04cef955c7d26924720a656e67e"
+        }
+      ],
+      "allowedDiagnostics": [
+        {
+          "code": "ILI-SEM-0008",
+          "severity": "ERROR",
+          "phase": "TYPE_CHECKING",
+          "messageKey": "diagnostic.semantics.path",
+          "arguments": [
+            {
+              "name": "segment",
+              "kind": "IDENTIFIER",
+              "value": "attr2"
+            },
+            {
+              "name": "reason",
+              "kind": "TEXT",
+              "value": "SET condition has no individual object context; object values belong in WHERE"
+            }
+          ],
+          "range": {
+            "source": "test/data/ili23/iliconversion/iliconversion_ConversionOfSETCONSTRAINT.ili",
+            "revision": "1",
+            "startOffset": 240,
+            "endOffset": 245
+          }
+        }
+      ],
+      "authorizationBasis": {
+        "date": "2026-10-30",
+        "kind": "APPROVED_SET_OBJECT_CONTEXT_PROFILE",
+        "userStatement": "Normkontext prüfen; Objektwerte nur im WHERE (empfohlen)",
+        "questionCondition": "Gewöhnliche Werte wie SET CONSTRAINT n>0, len(label)>0 oder DEFINED(THIS) sind nicht vorgesehen. Empfehlung: diese direkten Objekt-/Attributwerte im Hauptausdruck ablehnen; der WHERE-Filter bleibt objektbezogen.",
+        "meaning": "Records concrete reference divergences implied by the explicitly approved SET context rule; does not claim separate per-fixture approval."
+      }
     }
   ]
 }

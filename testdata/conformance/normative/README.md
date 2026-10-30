@@ -1,6 +1,6 @@
 # Positive Gegenproben für bewusst abweichende Referenzerwartungen
 
-Diese 17 Dateien sind gezielt korrigierte Fassungen der in
+Diese Dateien sind gezielt korrigierte Fassungen der in
 `docs/evidence/conformance/normative-expectations.json` genannten ili2c-Testfälle
 (Upstream `claeis/ili2c`, Commit `4ea207f388ef7d91b03d968cc1636f4de84e36ea`).
 Die Originaldateien, Suite-Erwartungen und Quellenpins werden nicht geändert.
@@ -22,6 +22,14 @@ negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
 - `iliconversion_CheckViewDefWithALLOF`: boolesches `attr3` statt numerischem `attr4` zuweisen.
 
 - `expressions_ThisAreaThatArea`: nur das verbotene `ALL OF` der AREA-Inspektion entfernen; THISAREA und THATAREA bleiben erhalten.
+- `attributeComplete`: CIRCULAR bei den zwei kontinuierlichen Unterteilungen ergänzen.
+- `Constraint23Test.setCstrt`: die individuellen booleschen Werte in die WHERE-Filter verschieben; die beiden übersetzten Hauptausdrücke prüfen objectCount(ALL).
+- `iliconversion_ConversionOfSETCONSTRAINT`: DEFINED(attr2) in den WHERE-Filter übernehmen; der Hauptausdruck prüft objectCount(ALL).
+
+Die letzten beiden Fassungen folgen dem ausdrücklich bestätigten SET-Kontextprofil.
+Die ursprünglichen19 Manifestobjekte sind unverändert; ihr historischer Byte-Pin
+liegt zusätzlich in `normative-expectations-before-set-context.json`. Der
+unveränderte globale19-Fälle-Entscheidungspaketstand bleibt getrennt sichtbar.
 
 Jede Korrektur erhält die übrige Modellstruktur. Damit darf eine Ausnahme keine
 weitere Implementierungslücke im betreffenden Original verdecken. Die Dateien

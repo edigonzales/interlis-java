@@ -37,6 +37,23 @@ sauberen Erfolg. Die Bestätigung der fortgeltenden CIRCULAR-Regel, die konkrete
 Normabweichung des Fixtures und die unabhängige Prüfung bleiben im Bericht
 erkennbar; keine neue Quelle oder globale XFAIL-Ausnahme wird still aufgenommen.
 
+L2-1 ergänzt nach der ausdrücklichen SET-Kontextentscheidung zwei weitere
+streng geprüfte Referenzfälle: `ili23.Constraint23Test.setCstrt` und
+`ili23.InterlisConversion23Test.iliconversion_ConversionOfSETCONSTRAINT`.
+Die unveränderten Originale greifen im Hauptausdruck auf individuelle
+Attributwerte zu; die Kontrollfassungen verwenden diese Werte im WHERE-Filter.
+Alle **21** Assessments verlangen Original-/Kontrollhashes, exakten Outcome/Exit,
+Diagnosecode, Severity, Phase, Argumente, UTF-16-Bereiche und Multiplizität.
+Die ursprünglichen19 Manifestobjekte bleiben exakt erhalten; der vollständige
+frühere Manifestinhalt ist mit seinem ursprünglichen SHA zusätzlich archiviert.
+Das eingefrorene globale19-Fälle-Entscheidungspaket bleibt unverändert. Die
+Evidenzprüfung validiert es gegen den historischen Byte-Pin und prüft zugleich
+die vollständige Gleichheit aller19 aktuellen Objekte sowie ausschliesslich
+die zwei ausdrücklich auf das bestätigte SET-Profil gestützten Ergänzungen.
+Manipulierte Originalbewertungen, fehlende Ergänzungen, fremde Fall-IDs oder
+erfundene Profilfreigaben lassen die Prüfung scheitern. Rohreferenz und
+Projektbewertung bleiben getrennt; es gibt keine globale XFAIL-Freistellung.
+
 ## 1. Ziel und verbindliche Aussagegrenzen
 
 Dieses Dokument legt fest, wie ein Coding-Agent Fortschritt und Korrektheit nachweist. Ein erfolgreicher Build, eine grüne kleine Testsuite oder ein lesbares Diagramm genügt nicht als Beleg für einen vollständigen INTERLIS-Compiler. Jede Aussage zur Sprach-, CLI-, Laufzeit- oder Datenbankkompatibilität braucht einen benannten Umfang, gepinnte Referenzen und tatsächlich ausgeführte Tests.

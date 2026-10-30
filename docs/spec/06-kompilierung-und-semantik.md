@@ -727,6 +727,12 @@ und zusätzlich areAreas3 mit OBJECTS. Das Projekt folgt für areAreas2 dem
 Funktionskapitel und erhält areAreas3 als dortigen Mengenalias.
 areAreasWithoutGaps/areAreasWithoutGaps2 sind erst in 2.4 verfügbar.
 Diese Entscheidung ändert keine eingefrorene Referenzerwartung.
+Der Nutzer hat dieses bestehende Mengensignaturprofil am 30.10.2026
+ausdrücklich bestätigt. Ebenfalls bestätigt: OBJECTS-Parameterfunktionen
+bleiben in 2.4-Einzelobjektbedingungen zulässig wie in ili2c. Der neu bestätigte
+SET-Kontext unterscheidet dagegen den individuellen WHERE-Filter vom
+Hauptausdruck ohne individuelles Objekt; Kapitel 05 beschreibt Fehlerausdrücke,
+Diagnostik, Konstanten und separat gebundene TEXT-Pfade.
 
 E4-Definiertheit: Allgemeine UNDEFINED-Zuweisung und Funktionsargumente verwenden
 dieselbe Typregel. Eine Textkonstante kanonischer Länge null gilt gemäss
