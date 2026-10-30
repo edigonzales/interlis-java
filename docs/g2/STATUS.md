@@ -1,76 +1,67 @@
 # G2 – operativer Status
 
-- Auftrag: **gesamte Phase 1** autonom bis zum unabhängigen Phasen-PASS,
-  ohne manuelle Stopps zwischen L1-1, L1-2 und L1-3. Die Kandidatencommits,
-  unabhängigen Reviews und PASS-Gates bleiben verbindlich. Phase 2 beginnt nicht.
-- Aktuelle Lieferung: **L1-3**, AC1-05–08 und kumulatives Phasengate, **AWAITING_REVIEW**.
-- Basis: L1-2-Code `39f48ca239c44b27a81e5562a58c717c90253534`;
-  anschliessender Dokumentcommit speichert nur den unveränderten Bericht/Status.
-- Letzter unabhängiger PASS: **L1-2**, AC1-03/AC1-04,
-  [unveränderter Bericht](reviews/L1-2-review.md), SHA-256
-  `9850d14c22c1abbb5b46206fc6fc74521343a49780d81a41a2b93629a7989eae`.
-  OpenCode v2.0.28, **DeepSeek direkt**, `deepseek/deepseek-flash`
-  (UI: DeepSeek V4.1 Flash 1017), sauberer separater Worktree am exakten SHA.
-- Historischer L1-1-Reviewer: frischer vollständiger Lauf **Exit 0 / 2m 37s / 58 Tasks**;
-  **739** reguläre JVM-, **136** Evidenz-, **15** Assertion- und **15** Hosttests,
-  alle ohne Fehler/Skips. Node-JS/WasmGC jeweils **3299** Fälle; SDK **9**
-  Prozesskommandos. Neue eigene Gegenprobe **409 Checks**, Exit 0.
-- L1-1: gewöhnliche vordefinierte Geometrien, kanonische Modellowner,
-  Import-/Präfixqueries, eindeutige Kontextorigins und Anhang-A-Mitgliederfolge.
-  Beide früheren Findings sind unabhängig als behoben bestätigt; die
-  unveränderten FAIL-Berichte bleiben unter [Reviewhistorie](reviews/) erhalten.
-- Historisches L1-1-T2: **593/610** ausgewählt; roh **580 PASS / 12 FAIL / 1 XFAIL**;
-  Projekt **580 PASS / 13 XFAIL / 0 FAIL/ERROR/XPASS**, alle **18** Assessments PASS.
-  Suite-/Archiv-/Original-/Normzitatpins und die sechs freigegebenen
-  OID-/CONTRACTED-Erwartungen unverändert. **0** getrackte `.py`;
-  OS-Interpreterproben ENOENT/EPERM, `pythonFreeCheck` erfolgreich.
-- L1-2 implementiert und gezielt geprüft: Unterteilungsregeln, exakte Faktoren,
-  CONTINUOUS-ohne-SUBDIVISION, Domainqueries und freigegebene Profile.
-  **20** gezielte numerische Tests erfolgreich. Letzter OS-gesperrter Vollauf
-  `checkPortable g2EvidenceTest conformanceCheck sdkProcessCheck pythonFreeCheck --continue
-  --rerun-tasks`: **Exit 0 / 2m 16s / 58 Tasks**, **753** reguläre JVM-Tests
-  (davon **644** Compiler), **136** Evidenz-/ **15** Assertion-/ **15** Hosttests,
-  alle ohne Fehler/Skips. Aktuell Node-JS/WasmGC jeweils **3365** Fälle
-  erfolgreich, darunter Ressourcenabbruch. Unabhängig bestätigt: Exit 0 /
-  2m 31s / 58 Tasks, gleiche Testzahlen, SDK9; eigene Gegenproben bestanden
-  (62 öffentliche Checks, 16 CLI-, 6 Exponenten-, 6 TYPE-MODEL- und 6 Dimensionsfälle).
-- Früher L1-2-T2-Zwischenlauf: **FAIL**, Projekt **579 PASS / 13 XFAIL / 1 FAIL**.
-  Neuer Konflikt: `ili23.Attribute23Test.attributeComplete` enthält kontinuierliche
-  Unterteilungen ohne CIRCULAR. Originalhash `f42135b02ec698de9bc62059c01d6585bf57e2822605913f46ce30d4145c5443`,
-  eigener Exit 1, ili2c Exit 0; Kontrolle mit ausschliesslich ergänztem CIRCULAR
-  bei beiden Exit 0. Die bereits bestätigte fortgeltende CIRCULAR-Prüfung
-  bleibt massgeblich. Genau dieser Gegenfall ergänzt die bisherigen 18
-  unveränderten Bewertungen als strenge 19. Ausnahme mit Original-/Kontrollhash
-  und exakt zwei Diagnosen. Gezielter neuer Assessmentlauf **PASS**;
-  vollständiger aktueller Lauf **PASS**: **579 PASS / 14 XFAIL / 0 FAIL**,
-  roh **579 PASS / 13 FAIL / 1 XFAIL**, alle **19** Assessments PASS.
-  Die unabhängige Prüfung bestätigt die Herleitung und sämtliche Pins.
-  Eine separate explizite Freigabe des einzelnen Fixture-Namens wird nicht behauptet.
-- Ausdrückliche Nutzerentscheidungen, beide Sprachen:
-  - TYPE MODEL: Strukturen und abstrakte Klassen wie ili2c zulassen.
-  - Skalierte Grenzen: bestehende gleiche/absteigende/gemischte Exponentenfälle
-    weiter zulassen; Werteordnung, Genauigkeit und Mantissenprüfungen erhalten.
-  - Allgemeine Konstanten/Einheitenfaktoren: breiteres bestehendes
-    Exponentialprofil erhalten, unabhängig von Typgrenzen.
-  - Kontinuierliche Unterteilungen: Fälle ohne bestimmbaren Faktor erhalten;
-    nachweisbare Faktorfehler ablehnen. Numerischer Vorgänger, Ganzzahligkeit,
-    nichtnegative Grenzen und CIRCULAR werden geprüft; bekannte numerische
-    Faktoren exakt verglichen; FUNCTION-Erklärungen nicht ausgeführt.
-- Nachweise: [L1-1-Implementierungsbericht](implementation/L1-1.md),
-  [L1-2-Implementierungsbericht mit konkretem Konflikt](implementation/L1-2.md).
-- L1-3 implementiert und selbst vollständig geprüft: Besitzerpfade/Herkunft,
-  FINAL/EXTENDED, importierte finale Basen, gemeinsame Assoziationsattributregeln
-  und Topiczyklen; zwölf neue öffentliche JVM-Methoden und40 portable Fälle.
-  Eigener voller OS-gesperrter Lauf **Exit0/4m12s/71 Tasks**: **765** JVM-
-  (davon656 Compiler),136 Evidenz-/15 Assertion-/15 Hosttests,0 Fehler/Skips;
-  Node-JS/WasmGC, Chromium/Firefox/WebKit, echtes Safari und Web Image jeweils
-  **3405** Fälle PASS, SDK9, LSP-Tests/Distribution, SDK-Paket, Diagrammadapter.
-  T2 erneut579 PASS/14 XFAIL,19 Assessments; alle19 Manifestobjekte unverändert.
-- Nächster Schritt: Kandidatencommit und frischer unabhängiger kumulativer
-  L1-3-Review über DeepSeek direkt. Sämtliche AC1-01–08 und volle T1/T2/T3-
-  Gates sind auf dem neuen SHA erneut zu prüfen; eigener Lauf ist keine
-  unabhängige Phasenfreigabe. [Implementierungsbericht](implementation/L1-3.md).
-- Vollständige Browser-/Safari-/Web-Image-Regression und kumulative
-  **AC1-01–08** sind im selben L1-3-Review fällig. **Phase 1 hat noch keinen PASS.**
+- Auftrag **gesamte Phase 1 autonom**: abgeschlossen, ohne manuelle Stopps zwischen
+  den Lieferungen. **L1-3 / PHASE 1: PASS**, kumulativ **AC1-01 bis AC1-08**.
+- Unabhängig geprüfter Produktcommit: `62c0870a58db677a796143aa8f89578f2e3d7f43`.
+  [Unveränderter kumulativer Review](reviews/L1-3-review.md), SHA-256
+  `6c048687054a930482e5334a4a00ff855315f915081579f6950f7813d642dbba`.
+- Prüfer: OpenCode **v2.0.28**, **DeepSeek direkt**,
+  `deepseek/deepseek-flash` (UI DeepSeek V4.1 Flash 1017), kein OpenRouter.
+  Neuer sauberer Worktree, gesamtes Phase-1-Gate frisch auf demselben SHA.
+- Reviewer-Vollauf: **Exit 0 / 4m 20s / 71 Tasks ausgeführt**. **765** reguläre
+  JVM-Tests, davon **656** Compiler; **136** Evidenz-, **15** Assertion- und
+  **15** Hosttests; **0 Failures/Errors/Skips**. Eigener Vollauf: Exit0/4m12s,
+  gleiche Testzahlen und vollständige Matrix.
+- TeaVM-JS und WasmGC/Node jeweils **3405** Fälle PASS. Chromium156.0.8078.4,
+  Firefox157.0, WebKit27.2 sowie **echtes Safari27.0 (20625.1.29.18.28)**
+  jeweils3405 PASS. Web Image frisch gebaut, Nodeprobe und alle drei Browser
+  jeweils3405 PASS. Diagrammadapter, SDK 9 Prozesskommandos, SDK-Paket,
+  LSP-Distribution und LSP-Prozesstests bestanden.
+- T2 **593/610**: roh **579 PASS / 13 FAIL / 1 XFAIL**; Projekt **579 PASS /
+  14 XFAIL / 0 FAIL/ERROR/XPASS**, **19/19** strenge Assessments PASS.
+  Alle19 Manifestobjekte, Original-/Kontrollquellen, Suite-/Archiv-/Baseline-
+  und Normzitatpins seit L1-2 unverändert. Rohbilanz bleibt getrennt sichtbar.
+- **Pythonfrei**:0 getrackte .py,1197 geprüfte Eingaben, PATH-Proben ENOENT,
+  absolute Interpreter EPERM. Gesamter Pflichtlauf im OS-gesperrten Umfeld.
+- Neue eigene Reviewer-Gegenprobe: **436 öffentliche Checks PASS** am Kandidaten,
+  derselbe Test reproduziert am Ausgangsstand14 tatsächliche Vorherfehler.
+  Keine offenen Muss-Findings. Bericht unverändert abgelegt; seine vier
+  nicht blockierenden Beobachtungen bleiben sichtbar.
 
-Verbindlich: [Plan](EXECUTION_PLAN.md), [Reviewanweisung](OPENCODE_REVIEW_PROMPT.md).
+| Lieferung | Unabhängig abgenommener Produkt-SHA | Bericht |
+|---|---|---|
+| L1-1 | `6cbf8de422cd8c0c8c9ec1ea900d729053ea660f` | [PASS](reviews/L1-1-review.md) |
+| L1-2 | `39f48ca239c44b27a81e5562a58c717c90253534` | [PASS](reviews/L1-2-review.md) |
+| L1-3 / Phase 1 | `62c0870a58db677a796143aa8f89578f2e3d7f43` | [Kumulativer PASS](reviews/L1-3-review.md) |
+
+L1-1 vervollständigt vordefinierte Geometrien, kanonische INTERLIS-Owner,
+Import-/Präfixqueries, eindeutige Kontextherkunft und Anhang-A-Reihenfolge.
+L1-2 ergänzt numerische Unterteilungen mit exakten Faktoren, kontrollierten
+Ressourcenabbrüchen und öffentlichen Typqueries. L1-3 korrigiert vollständige
+Besitzerpfade/Herkunft, FINAL-/EXTENDED-Prüfungen, importierte finale Basen,
+gemeinsame Assoziationsattributregeln und Topiczyklen. Zwölf neue öffentliche
+JVM-Testmethoden und 40 portable Fälle in L1-3. Fachliche Berichte:
+[L1-1](implementation/L1-1.md),[L1-2](implementation/L1-2.md),[L1-3](implementation/L1-3.md).
+
+Fortgeltende ausdrückliche Nutzerentscheidungen für beide Sprachen:
+
+- TYPE MODEL erlaubt Strukturen und abstrakte Klassen wie ili2c; TOPIC bleibt verboten.
+- Gleiche/absteigende/gemischte Exponenten an Typgrenzen bleiben zulässig;
+  Werteordnung, Genauigkeit und Mantissenprüfungen bleiben erhalten.
+- Allgemeine Konstanten/Einheitenfaktoren behalten das breitere Exponentialprofil.
+- Kontinuierliche Unterteilungen ohne bestimmbaren Faktor bleiben zulässig;
+  nur nachweisbare Faktorwidersprüche werden abgelehnt. Numerischer Vorgänger,
+  Ganzzahligkeit, nichtnegative Grenzen und CIRCULAR bleiben geprüft;
+  bekannte Faktoren werden exakt verglichen, FUNCTION nie ausgeführt.
+- Die frühere Metadatenfreigabe und die sechs freigegebenen 2.3-OID-/CONTRACTED-
+  Fälle bleiben erhalten. Die19. CIRCULAR-Referenzausnahme folgt der bestätigten
+  Regel; eine zusätzliche explizite Fixture-Einzelfreigabe wird nicht behauptet.
+
+**Keine offenen Phase-1-Blocker oder ausgelassenen fälligen Prüfungen.**
+Phase2 wurde nicht begonnen. Nächster fachlicher Abschnitt gemäss Plan ist L2-1.
+Die globale D2-Revalidierung bleibt PENDING_USER_REVALIDATION; dieser PASS ist
+keine globale G2-/P3-/P4-/P5-Freigabe. Frühere FAIL-Berichte und Rohbelege bleiben erhalten.
+Der Abschlusscommit speichert ausschliesslich den unveränderten Reviewbericht
+und Dokumentstatus; er verändert keine Produkt-/Test-/Buildquelle.
+
+Verbindlich: [Plan](EXECUTION_PLAN.md),[Reviewanweisung](OPENCODE_REVIEW_PROMPT.md).

@@ -5,7 +5,8 @@ geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 L0A (AC0A-01–04; SRC-002/005, SYN-002/005/006/015, SEM-003) behebt den offenen
 äusseren Blockkommentar. Implementierung und tatsächliche Prüfläufe stehen im
 [Lieferbericht](g2/implementation/L0A.md); die unabhängige Abnahme bleibt separat.
-Die folgenden Abschnitte dokumentieren den historischen Stand vor dieser Lieferung.
+Die folgenden Lieferabschnitte dokumentieren Implementierung und Nachweise;
+der aktuelle operative Stand bleibt in STATUS.
 
 L0B-1 (AC0B-01–03; BUILD-001/002/004/007/008, TEST-002/003/009/011/012)
 ersetzt den Python-Conformancepfad durch den direkten externen Java-Runner und
@@ -46,7 +47,7 @@ besteht nach den beiden dokumentierten Korrekturen für gemischte Snapshotsprach
 und die Linienformreihenfolge: 739 JVM-/136 Evidenz-/15 Assertion-/15 Hosttests,
 3299 Fälle je portabler Laufzeit, T2-Projektprofil 580 PASS/13 XFAIL sowie 409
 eigene Reviewerchecks. Der [unveränderte Bericht](g2/reviews/L1-1-review.md)
-belegt diesen Teilabschnitt; das vollständige Phase-1-Gate folgt erst in L1-3.
+belegt diesen Teilabschnitt; die kumulative Phase-1-Abnahme erfolgte in L1-3.
 Die drei inzwischen freigegebenen L1-2-Kompatibilitätsprofile und der operative
 Fortschritt stehen in STATUS; die Unterteilungsimplementierung ist in L1-2 abgenommen.
 
@@ -54,14 +55,14 @@ L1-2 (AC1-03/04; SYN-004/010/013/015, SRC-002/005, META-006/008/009/011/014/016,
 SEM-003/005/010/011/014/017/019, TEST-002/003/009/011/012) implementiert numerische
 Unterteilungen über effektive Vorgänger und exakte Einheitenfaktoren sowie den
 CONTINUOUS-/SUBDIVISION-Syntaxvertrag. Drei Kompatibilitätsprofile sind explizit
-freigegeben. Aktuelle eigene Prüfungen: 753 JVM-/136 Evidenz-/15 Assertion-/15
+freigegeben. L1-2-Prüfungen: 753 JVM-/136 Evidenz-/15 Assertion-/15
 Hosttests ohne Fehler/Skips, 3365 Fälle je portabler Laufzeit. Eine neue korrekte
 Ablehnung im unveränderten T2-Positivfall ohne CIRCULAR wird als konkrete
 19. strenge Referenzausnahme auf Grundlage der bereits bestätigten
 CIRCULAR-Prüfung erfasst; die bisherigen 18 Einträge bleiben unverändert. L1-2 hat am Code-SHA
 `39f48ca239c44b27a81e5562a58c717c90253534` den unabhängigen PASS erhalten;
 [unveränderter Review](g2/reviews/L1-2-review.md), gleiche frische Testzahlen
-und eigene Reviewer-Gegenproben. Phase 1 bleibt bis L1-3 offen. Vollständige
+und eigene Reviewer-Gegenproben. Die Phase-1-Abnahme erfolgte mit L1-3. Vollständige
 Änderungen, Normstellen, Original-/Kontrollhashes, tatsächlich ausgeführte
 Kommandos und Grenzen stehen im [L1-2-Bericht](g2/implementation/L1-2.md).
 
@@ -70,11 +71,16 @@ SEM-002/003/005/007/008/009/010/011/017/019/020) korrigiert effektive
 Besitzerpfade, FINAL-/EXTENDED-Prüfungen, gemeinsame Assoziationsattributregeln
 und Topiczyklen. Eigener voller OS-gesperrter Lauf: Exit0,4m12s,71 Tasks,
 765 JVM-/136 Evidenz-/15 Assertion-/15 Hosttests ohne Fehler/Skips; alle
-portablen/Browser-/Safari-/Web-Image-Läufe je3405 PASS, T2-Projekt579/14,
-SDK9 sowie SDK-Paket/LSP-Distribution. Die zwölf neuen öffentlichen
-Regressionstests und40 gemeinsamen portablen Fälle sind ausgeführt.
-[Bericht](g2/implementation/L1-3.md). Die unabhängige kumulative
-AC1-01–08-Abnahme steht noch aus; Phase1 hat noch keinen PASS.
+portablen/Browser-/Safari-/Web-Image-Läufe je 3405 PASS, T2-Projekt579/14,
+SDK 9 sowie SDK-Paket/LSP-Distribution. Die zwölf neuen öffentlichen
+Regressionstests und 40 gemeinsamen portablen Fälle sind ausgeführt.
+[Bericht](g2/implementation/L1-3.md). **Phase1 ist unabhängig mit PASS abgenommen**,
+kumulativ AC1-01–08 auf `62c0870a58db677a796143aa8f89578f2e3d7f43`.
+[Unveränderter Review](g2/reviews/L1-3-review.md): kompletter frischer
+OS-gesperrter Lauf Exit0/4m20s/71 Tasks mit denselben Testzahlen und 436
+eigenen Checks,14 rote Vorherbefunde am Basiscommit, keine Muss-Findings.
+Keine fällige Phase-1-Prüfung ausgelassen. Phase2 wurde nicht begonnen;
+globale D2-Revalidierung und G2-Gesamtfreigabe bleiben getrennt.
 
 ## Historisch: G2 A–I – Phase-A-Reviewpakete vorhanden; vollständiger A3-Vergleich und Abnahmen offen
 
