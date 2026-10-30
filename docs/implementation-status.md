@@ -3,14 +3,19 @@
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
-**G2-Phase 4 ist autonom in Arbeit; L4-1 ist unabhängig PASS** am Produktcommit
-`e3a57c072bf93ff2351d6aa6fc551f4e562c4437`; [Review](g2/reviews/L4-1-review.md).
-Alle Muss-Findings sind geschlossen. Der volle unabhängige Lauf mit 80 Tasks,
-1063 JUnit ohne Fehler/Skips und 3548 Fällen je Backend/Browser/echtem Safari/
-Web Image bestand im vollständig Python-gesperrten OpenCode-Prozess.
-**Aktuell L4-2, ohne Teilphasenstopp:** Die kumulative G2-Abnahme am endgültigen
-Produkt-SHA steht noch aus. Operativer Stand ausschliesslich in
-[STATUS](g2/STATUS.md); [L4-2-Nachweiszuordnung](g2/implementation/L4-2.md).
+**Phase 4 und G2 sind vollständig und unabhängig mit PASS abgeschlossen**,
+AC4-01–AC4-07 sowie kumulativ AC0A–AC3. Schlussproduktcommit
+`1371841572828a387c1369ae84f6fa6cb4ddffc0`;
+[unveränderter Gesamtreview](g2/reviews/L4-2-review.md),
+[Abnahme und Nachweise](g2/implementation/L4-2.md).
+1063 JUnit ohne Fehler/Skips, 3548 Fälle je Backend/Browser/echtem Safari/
+Web Image, 21/21 Normassessments, SDK9/ZIP/LSP, reale T4-Closures und alle
+Referenz-/Corpus-/Messpfade bestanden. Gesamter OpenCode-Prozess samt Build und
+Gegenproben OS-Python-gesperrt; CLI-Exit 0, Manifest passed, exakter sauberer SHA.
+Alle nötigen Nutzerprofile umgesetzt; keine offenen Muss-Findings oder Blocker.
+O2/O3 sind nicht blockierende Evidenzhinweise. Operativer Stand und Rohbelegpfade
+ausschliesslich in [STATUS](g2/STATUS.md). Der nächste Meilenstein P3 ist separat
+zu beauftragen; G2 gibt P3/P4/P5 nicht frei. Der Abschlusscommit ändert nur Dokumente.
 
 **G2-Phase3 ist vollständig und unabhängig mit PASS abgeschlossen**, kumulativ
 AC3-01–AC3-06. Schlussproduktcommit

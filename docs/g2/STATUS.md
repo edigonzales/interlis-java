@@ -1,28 +1,61 @@
 # G2 – operativer Status
 
-- **Phase 4 autonom: IN_PROGRESS, aktuell L4-2.** AC4-04–07 und kumulativ
-  AC4-01–07. Noch keine Phase-4-/G2-Gesamtfreigabe.
-- **L4-1 PASS**, unabhängig geprüfter Produktcommit
-  `e3a57c072bf93ff2351d6aa6fc551f4e562c4437`.
+- **Phase 4 und G2: PASS, vollständig abgeschlossen.** L4-2 ist unabhängig
+  abgenommen, kumulativ **AC4-01–AC4-07** sowie AC0A/AC0B/AC1/AC2/AC3.
+  Der Auftrag wurde ohne Teilphasenstopp bis zur Gesamtfreigabe ausgeführt.
+- **Geprüfter Schlussproduktcommit:**
+  `1371841572828a387c1369ae84f6fa6cb4ddffc0`.
+  [Unveränderter G2-Gesamtreview](reviews/L4-2-review.md), SHA-256
+  `770856335881b35da5deebfb070a5f25146deefe57cc6da21438a893de87179e`.
+  [Abnahmeumfang und Nachweise](implementation/L4-2.md).
+- OpenCode **2.0.28**, DeepSeek direkt **deepseek/deepseek-flash**, neue unabhängige
+  Sitzung im sauberen Schluss-SHA-Worktree. Gesamter OpenCode-Prozess und alle
+  Build-/Probeunterprozesse OS-Python-gesperrt; privater PATH mit ENOENT-Proben,
+  absolute Interpreter mit EPERM. Äusseres Manifest nach CLI-Ende **passed**,
+  **CLI-Exit 0**, Head exakt Schlussproduktcommit, dirty leer.
+- Frischer voller Pflichtlauf: **Gradle-Exit 0, 11m43s, 80 von 80 Tasks ausgeführt**.
+  **1063 JUnit-Fälle**, davon 886 regulär (735 Compiler, 41 Repository, 37 CLI,
+  22 Workspace, 7 Bridge, 16 Model, 16 LSP, 12 Projection), 144 Evidenz,
+  15 Assertions und 18 Host; **0 Failures/Errors/Skips**, alle 199 XMLs frisch.
+- Je **3548 PASS**: TeaVM-JS/Node, WasmGC/Node, Chromium 156.0.8078.4,
+  Firefox 157.0, WebKit 27.2 und echtes Safari **27.0 (20625.1.29.18.28)**.
+  Frischer Web-Image-Build: Node und Chromium/Firefox/WebKit ebenfalls je 3548.
+  SDK9-Prozesskommandos, SDK-ZIP, LSP-Distribution/Prozessverträge, Diagrammadapter
+  und Worker-Neustart erfolgreich. Pythonfrei **1290 Inputs**, 0 getrackte .py.
+- T2 unverändert **593/610** (17 INTERLIS-1 ausgeschlossen): roh **577 PASS /
+  15 FAIL / 1 XFAIL**, Projekt **577 PASS / 16 XFAIL / 0 FAIL/ERROR/XPASS**;
+  **21/21** strenge Original-/Kontroll-/Diagnoseassessments PASS. Suite-, Archiv-,
+  Original-/Kontrollpins und historisches 19-Fälle-Bytearchiv unverändert.
+- Vollständigkeitsnachweise: 369 Normcluster (285 Compiler / 84 ausserhalb),
+  80 Anforderungen, 321 Produktionen/1225 Occurrences, 21 Builtins,
+  130 Predefined, 21 Sondertypen, 264 reale Methodenbindungen. A3 vergleicht
+  echte JVM/ili2c/JS/WasmGC-Member-/Ziel-/Reihenfolgewerte und erkennt 8 Mutanten;
+  nicht gemeinsam vergleichbare Eigenschaften bleiben ausdrücklich abgegrenzt.
+- T4: echte gepinnte 2.3-Roads- und 2.4-CHBase-Closures mit transitiven Imports,
+  öffentlichen Semantikassertions, Fresh/Reuse, Offline/Pins/Locks und atomarer
+  Annahme. Offizielle Originalbytes im Schlussreview unabhängig erneut geprüft.
+- Neue unabhängige Gegenproben: **23 JVM- und 26 Portable-Checks** verbinden
+  Translation, Imports, Vererbung, gleichnamige Rollenziele, View und Fresh/Reuse;
+  negative Translation, strikte äussere Namen und 2.3-OID-Kompatibilität geprüft.
+  Neuer Kommentar-Gegenfall in beiden Versionen sowie vollständiger Link-/XML-Audit.
+- Sämtliche nötigen Nutzerentscheidungen sind tatsächlich gegeben und umgesetzt:
+  insbesondere äussere Typnamen strikt und gültige relative URI-Referenzen erhalten.
+  Corpus: 13 unveränderte Originale, elf Compileerfolge und zwei exakt erwartete
+  Namensraumablehnungen mit minimal umbenannten Positivkontrollen, 13 Formate.
+  Referenz-/Messgrenzen bleiben sichtbar: 6 View-Referenzprozessfehler;
+  historische P3-Benchmark-Stackausnahmen 1/1/12, keine G2-Browserpflichtskips.
+- **Keine offenen Muss-Findings, Blocker oder ausgelassenen fälligen Prüfungen.**
+  F1–F5 und O1 geschlossen; frühere FAIL-Berichte unverändert erhalten.
+  Nicht blockierende Hinweise O2/O3: Frischebindung der regulären Completion-XMLs
+  künftig zusätzlich härten; historischen Zähler 615 deutlicher beschriften.
+  Die Frische aller aktuellen XMLs ist unabhängig belegt, aktiv gelten 729 Methoden.
+- **L4-1 PASS** am Produktcommit `e3a57c072bf93ff2351d6aa6fc551f4e562c4437`.
   [Unveränderter Review](reviews/L4-1-review.md), SHA-256
   `1c2aea5b446e956f34d9aa64d23c0cbc8f00d73002f96447c6b1bd8e14fefae5`.
-  OpenCode 2.0.28, DeepSeek direkt `deepseek/deepseek-flash`, sauberer eigener
-  Worktree, gesamter Prozess OS-Python-gesperrt, CLI-Exit 0, äusseres Manifest passed.
-- Voller unabhängiger Lauf: Exit 0, 6m19s, 80 Tasks; 1063 JUnit ohne Fehler/Skips,
-  3548 je Portable/Browser/echtem Safari/Web Image, 21/21 Normassessments,
-  SDK9/ZIP/LSP, Referenz-/Corpus-/Messpfade, Pythonfreiheit mit 1288 Inputs.
-- F1–F5 sind geschlossen; frühere FAIL-Berichte bleiben unverändert erhalten.
-  O1 wird in L4-2 redaktionell präzisiert: 2.3-Domain-/Typ-/Konstantenscopes
-  ohne falsches 2.4-Domainconstraintlabel. Keine Compiler-/API-/Test-/Build-/Pinänderung.
-- Sämtliche nötigen Nutzerentscheidungen sind gegeben und umgesetzt. 369 Normcluster
-  (285 Compiler / 84 ausserhalb), 80 Anforderungen, 321 Produktionen mit 1225
-  Occurrences, 21 Builtins, 130 Predefined, 21 Sondertypen, 264 Methodenbindungen.
-  Corpus: 13 unveränderte Originale, elf Compileerfolge und zwei exakte
-  Namensraumablehnungen mit minimal umbenannten Positivkontrollen; 13 Formate.
-- Nächster Schritt: [L4-2-Gesamtreview](implementation/L4-2.md) am separaten
-  Schluss-SHA, vollständige frische T1–T4-/Conformance-/Safari-/WebImage-/SDK-/CLI-/
-  LSP-/Pythonfrei-Abnahme im vollständig gesperrten OpenCode-Prozess. Ohne diesen
-  PASS keine G2-Freigabe; danach ausschliesslich Dokumentationsabschluss.
+- Der folgende Abschlusscommit speichert ausschliesslich Review und Status;
+  er ändert den unabhängig geprüften Produktstand nicht. Nächster fachlicher
+  Meilenstein ist P3 gemäss Spezifikation, separat zu beauftragen. Dieses PASS
+  ist G2; P3/P4/P5 sind nicht freigegeben. Kein Push, Merge oder Release erfolgt.
 
 - Auftrag **gesamte Phase3 autonom**: vollständig abgeschlossen, ohne manuelle
   Stopps zwischen L3-1 und L3-2. **L3-2 / PHASE3: PASS**, kumulativ
