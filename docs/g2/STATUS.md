@@ -3,7 +3,7 @@
 - Aktueller Auftrag vom **30.10.2026: gesamte Phase 2 autonom**, einschliesslich
   unabhängiger OpenCode-Reviews über DeepSeek direkt. Kein manueller Stopp
   zwischen L2-1/L2-2/L2-3; kein Beginn von Phase 3.
-- Aktuelle Lieferung **L2-1**, AC2-01/AC2-02, **IN_PROGRESS**. Basis
+- Aktuelle Lieferung **L2-1**, AC2-01/AC2-02, **BLOCKED (NORM_DECISION)**. Basis
   `81ad019` (Dokumentnachtrag nach dem Phase-1-PASS). Fachlicher Einstieg:
   WP-22, Ausdrücke/Pfade, Funktionen und sämtliche Constraintfamilien.
 - L2-1 implementiert: abhängige ATTRIBUTE-Argument-/Ergebnisbindung,
@@ -17,16 +17,29 @@
   Frischer Pflichtlauf Exit0/2m18s, 777JVM/136Evidenz/15Assertions/15Host,
   eigene Reviewer-Probe98PASS und18RED am Ausgangscommit. Technischer F1
   betrifft eine überbreite Dokumentaussage zur Bindung bei UNDEFINED;
-  präzisierter SEM-006-Vertrag und zwei Regressionstests ergänzt, neuer
-  Kandidat und frischer Review folgen. F1 noch nicht unabhängig geschlossen.
+  präzisierter SEM-006-Vertrag und zwei Regressionstests ergänzt. Der unten
+  genannte R2-Review schliesst F1; R1 bleibt als unveränderte Historie erhalten.
 - Eigener R2-Nachlauf vollständig grün: Exit0/2m14s/58 Tasks,
   779JVM(670Compiler)/136Evidenz/15Assertions/15Host, alle0Fehler/Skips;
   T2 unverändert, SDK9, Pythonfrei1202Inputs, JS/WasmGC je3427PASS.
-  Neuer unabhängiger Review des präzisierten Kandidaten steht noch aus.
+  Der vollständig frische unabhängige R2-Review bestätigt diese Nachweise.
+- Aktueller geprüfter Produktcommit: `535d46714b59769058bbd46a737c35ac38e3dd0f`.
+  **R2: BLOCKED ausschliesslich wegen N1–N3**; kein offenes technisches
+  Muss-Finding. F1 geschlossen, O1/O2 adressiert. [Unveränderter R2-Bericht](reviews/L2-1-review-r2.md),
+  SHA-256 `509c1c03f23c3c9e96a17e04160bc50f91f0d9eaf79f760dc0fbc2584d467e1a`.
+  OpenCode2.0.28, DeepSeek direkt, `deepseek/deepseek-flash`, frischer sauberer
+  Worktree. Pflichtlauf Exit0/2m15s/58 ausgeführte Tasks; **779 JVM-Tests**
+  (670 Compiler),136 Evidenz-,15 Assertion-,15 Hosttests, alle0Fehler/Skips.
+  Eigene neue Reviewer-Probe **72 Checks PASS**, am Ausgangscommit sechs
+  tatsächlich rote Abschnitte. T2 unverändert579PASS/14XFAIL und19/19
+  Assessments; SDK9; Pythonfrei1202Eingaben; JS/WasmGC je3427PASS.
 - Drei bereits gestellte Nutzerentscheidungen sind noch offen: areAreas2/3,
   OBJECTS-Funktionen in 2.4-Einzelobjektbedingungen und direkter Objektkontext
-  im SET-Hauptausdruck. Keine Empfehlung gilt als Freigabe. Unabhängiger
-  Kandidatenreview wird durchgeführt; kein nächster Lieferabschnitt vor PASS.
+  im SET-Hauptausdruck. Keine Empfehlung gilt als Freigabe. Die vollständigen
+  unabhängigen Reviews sind durchgeführt; kein nächster Lieferabschnitt vor PASS.
+  Nach Antworten: die gewählten Profile samt Tests umsetzen, neuen Kandidaten
+  vollständig frisch prüfen lassen, erst nach PASS automatisch L2-2 fortsetzen.
+  L2-2/L2-3 und das kumulative Browser-/Safari-/Web-Image-Phasengate bleiben offen.
 - Noch kein Phase-2-PASS. Der nachfolgend dokumentierte Phase-1-PASS bleibt
   die letzte unabhängige kumulative Abnahme.
 
