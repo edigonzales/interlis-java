@@ -84,14 +84,26 @@ public final class RepositoryIndexReader {
                         "model file URI scheme is not allowed", null);
             }
         }
-        URI resolved = base.uri().resolve(candidate).normalize();
         String baseText = base.uri().normalize().toString();
-        if (!baseText.endsWith("/")) {
-            baseText = baseText + "/";
-        }
-        if (!resolved.toString().startsWith(baseText)) {
+        if (!baseText.endsWith("/")) baseText += "/";
+        URI root = URI.create(baseText);
+        URI resolved = root.resolve(candidate).normalize();
+        String path = resolved.getPath();
+        boolean dotSegment = path == null || java.util.Arrays.stream(path.split("/", -1))
+                .anyMatch(segment -> segment.equals(".") || segment.equals(".."));
+        if (resolved.getScheme() == null || !java.util.Set.of("http", "https", "file").contains(resolved.getScheme().toLowerCase(java.util.Locale.ROOT))
+                || !root.getScheme().equalsIgnoreCase(resolved.getScheme())
+                || !Objects.equals(root.getRawAuthority(), resolved.getRawAuthority())
+                || dotSegment || !path.startsWith(root.getPath())) {
             throw new RepositoryIndexException(RepositoryIndexException.Reason.UNSAFE_LOCATION,
                     "model file URI escapes repository base", null);
+        }
+        if ("file".equalsIgnoreCase(resolved.getScheme())) {
+            try { return java.nio.file.Path.of(resolved).toAbsolutePath().normalize().toUri(); }
+            catch (IllegalArgumentException invalid) {
+                throw new RepositoryIndexException(RepositoryIndexException.Reason.UNSAFE_LOCATION,
+                        "invalid file model URI", invalid);
+            }
         }
         return resolved;
     }
@@ -117,7 +129,8 @@ public final class RepositoryIndexReader {
         for (Node child = parent.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child instanceof Element element && localName.equals(localName(element))) {
                 String value = element.getTextContent();
-                return value == null || value.isBlank() ? null : value.trim();
+                return value == null || value.isBlank() ? null
+                        : ("Version".equals(localName) || "precursorVersion".equals(localName)) ? value : value.trim();
             }
         }
         return null;

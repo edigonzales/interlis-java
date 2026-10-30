@@ -21,7 +21,7 @@ import guru.interlis.projection.DiagramProjectors;
 import guru.interlis.projection.DiagramSelection;
 import guru.interlis.projection.MermaidRenderer;
 import guru.interlis.projection.PlantUmlRenderer;
-import guru.interlis.repository.FetchPolicy;
+import guru.interlis.repository.*;
 import guru.interlis.repository.FileSourceLoader;
 import guru.interlis.repository.LoadedSource;
 import guru.interlis.repository.SourceLoadException;
@@ -151,19 +151,89 @@ public final class DefaultCompilerCli implements CliApplication {
     private CliExecutionResult compile(List<String> args, CliEnvironment environment,
                                        CancellationToken token) {
         ParsedArguments parsed = parseFiles(args, false);
-        if (parsed.files().isEmpty()) {
-            return usage(environment, "no source files");
-        }
+        if (parsed.files().isEmpty() && parsed.roots().isEmpty()) return usage(environment, "no source files or root models");
         Loaded loaded = load(parsed.files(), environment, token);
-        Workspace workspace = workspace(loaded);
-        List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
-        CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(
-                workspace.currentRevision(), roots), token);
-        CliTermination termination = new CliOutcomeMapper().classify(outcome);
-        List<Diagnostic> diagnostics = diagnostics(outcome);
-        String output = summary(outcome);
-        print(parsed.json(), environment, diagnostics, output, loaded.sources());
-        return result(termination, diagnostics, output);
+        try (Workspace workspace = workspace(loaded)) {
+            List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
+            PreparedRepositoryUpdate update = null;
+            if (!parsed.repositories().isEmpty()) {
+                var sources = new ArrayList<RepositorySource>();
+                for (String value : parsed.repositories()) {
+                    String base = sourceUri(value, environment);
+                    if (!base.endsWith("/")) base += "/";
+                    sources.add(new RepositorySource(new RepositoryBase(java.net.URI.create(base)), new SourceLocator(base + "ilimodels.xml")));
+                }
+                if (parsed.writeLock().isPresent()) {
+                    String target = hostPath(parsed.writeLock().orElseThrow(), environment).toUri().toString();
+                    if (loaded.sources().keySet().stream().anyMatch(id -> id.value().equals(target))
+                            || sources.stream().anyMatch(source -> source.indexLocator().location().equals(target)))
+                        throw new CliUsageException("lock output collides with a source or repository index");
+                }
+                var fetch = FetchPolicy.defaults();
+                var config = new RepositoryConfig(sources, new FetchPolicy(parsed.offline(), fetch.maxBytes(), fetch.timeout()));
+                Optional<ResolutionLock> lock = Optional.empty();
+                if (parsed.readLock().isPresent()) {
+                    try (var input = Files.newInputStream(hostPath(parsed.readLock().orElseThrow(), environment))) {
+                        byte[] bytes = input.readNBytes(8_388_609);
+                        if (bytes.length > 8_388_608) throw new CliUsageException("lock exceeds byte limit");
+                        lock = Optional.of(new ResolutionLockCodec().decode(new String(bytes, StandardCharsets.UTF_8)));
+                    } catch (java.io.IOException unavailable) { return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be read"); }
+                    catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid resolution lock"); }
+                }
+                var contentStore = parsed.cache().<ContentStore>map(path -> new DirectoryContentStore(hostPath(path, environment)))
+                        .orElseGet(InMemoryContentStore::new);
+                var outcome = new RepositoryClosureService(new RoutingSourceLoader(environment.workingDirectory()), contentStore)
+                        .resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
+                                new RepositoryResolveOptions(config, parsed.modelPins(), parsed.sourcePins(), lock), token);
+                switch (outcome) {
+                    case RepositoryResolutionOutcome.Prepared prepared -> { update = prepared.update(); update.apply(workspace); }
+                    case RepositoryResolutionOutcome.Cancelled cancelled -> throw new OperationCancelledException(cancelled.reason());
+                    case RepositoryResolutionOutcome.Stale ignored -> { return result(CliTermination.INCOMPLETE_ANALYSIS, List.of(), "workspace changed during resolution"); }
+                    case RepositoryResolutionOutcome.Rejected rejected -> {
+                        var problem = rejected.problems().getFirst();
+                        String reason = problem.reason() + problem.loadReason().map(value -> "/" + value).orElse("");
+                        String output = "resolution rejected: " + reason;
+                        print(parsed.json(), environment, List.of(), output, loaded.sources());
+                        if (!parsed.json()) environment.err().println(output);
+                        return result(problem.reason() == RepositoryProblem.Reason.LOAD_FAILURE || problem.reason() == RepositoryProblem.Reason.INDEX_FAILURE
+                                ? CliTermination.OPERATIONAL_FAILURE : CliTermination.INPUT_UNRESOLVED, List.of(), output);
+                    }
+                }
+            }
+            CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots), token);
+            if (outcome instanceof CompilationOutcome.Succeeded && update != null && parsed.writeLock().isPresent()) {
+                Path target = hostPath(parsed.writeLock().orElseThrow(), environment); Path temporary = null;
+                if (workspace.state().sourceRevisions().containsKey(new SourceId(target.toUri().toString())))
+                    throw new CliUsageException("lock output collides with a resolved model source");
+                try {
+                    temporary = Files.createTempFile(target.getParent(), ".interlis-lock-", ".tmp");
+                    Files.writeString(temporary, new ResolutionLockCodec().encode(update.lock()), StandardCharsets.UTF_8);
+                    try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
+                    catch (java.nio.file.AtomicMoveNotSupportedException fallback) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
+                } catch (java.io.IOException unavailable) { return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be written"); }
+                finally { if (temporary != null) try { Files.deleteIfExists(temporary); } catch (java.io.IOException ignored) { } }
+            }
+            CliTermination termination = new CliOutcomeMapper().classify(outcome);
+            List<Diagnostic> diagnostics = diagnostics(outcome);
+            var texts = new LinkedHashMap<SourceId, SourceText>();
+            workspace.state().sourceRevisions().keySet().forEach(id -> workspace.source(id).ifPresent(text -> texts.put(id, text)));
+            String output = summary(outcome);
+            print(parsed.json(), environment, diagnostics, output, texts);
+            return result(termination, diagnostics, output);
+        }
+    }
+
+    private static Path hostPath(String value, CliEnvironment environment) {
+        Path path = Path.of(value);
+        return (path.isAbsolute() ? path : environment.workingDirectory().resolve(path)).toAbsolutePath().normalize();
+    }
+    private static String sourceUri(String value, CliEnvironment environment) {
+        try {
+            var uri = java.net.URI.create(value);
+            if (uri.isAbsolute()) return "file".equalsIgnoreCase(uri.getScheme())
+                    ? Path.of(uri).toAbsolutePath().normalize().toUri().toString() : uri.toString();
+        } catch (IllegalArgumentException ignored) { /* a local path may contain spaces */ }
+        return hostPath(value, environment).toUri().toString();
     }
 
     private CliExecutionResult analyze(List<String> args, CliEnvironment environment,
@@ -396,10 +466,41 @@ public final class DefaultCompilerCli implements CliApplication {
         List<String> roots = new ArrayList<>();
         boolean json = false;
         String format = "mermaid";
+        var repositories = new ArrayList<String>();
+        var modelPins = new LinkedHashMap<String, ModelPin>();
+        var sourcePins = new LinkedHashMap<SourceId, ContentDigest>();
+        boolean offline = false;
+        Optional<String> readLock = Optional.empty(), writeLock = Optional.empty(), cache = Optional.empty();
         for (int i = 1; i < args.size(); i++) {
             String arg = args.get(i);
             switch (arg) {
                 case "--json" -> json = true;
+                case "--repository", "--read-lock", "--write-lock", "--cache" -> {
+                    if (i + 1 >= args.size()) throw new CliUsageException(arg + " needs a value");
+                    String value = args.get(++i);
+                    switch (arg) {
+                        case "--repository" -> repositories.add(value);
+                        case "--read-lock" -> readLock = Optional.of(value);
+                        case "--write-lock" -> writeLock = Optional.of(value);
+                        case "--cache" -> cache = Optional.of(value);
+                        default -> throw new AssertionError(arg);
+                    }
+                }
+                case "--offline" -> offline = true;
+                case "--model-pin" -> {
+                    if (i + 4 >= args.size()) throw new CliUsageException("--model-pin needs name version source sha256");
+                    try {
+                        var pin = new ModelPin(args.get(++i), args.get(++i), new SourceId(args.get(++i)), new ContentDigest("sha256", args.get(++i)));
+                        if (modelPins.putIfAbsent(pin.modelName(), pin) != null) throw new CliUsageException("duplicate model pin");
+                    } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid model pin"); }
+                }
+                case "--source-pin" -> {
+                    if (i + 2 >= args.size()) throw new CliUsageException("--source-pin needs source sha256");
+                    try {
+                        var source = new SourceId(args.get(++i)); var digest = new ContentDigest("sha256", args.get(++i));
+                        if (sourcePins.putIfAbsent(source, digest) != null) throw new CliUsageException("duplicate source pin");
+                    } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid source pin"); }
+                }
                 case "--root" -> {
                     if (i + 1 >= args.size()) {
                         throw new CliUsageException("--root needs a value");
@@ -423,7 +524,12 @@ public final class DefaultCompilerCli implements CliApplication {
                 }
             }
         }
-        return new ParsedArguments(files, roots, json, format);
+        boolean hostOptions = !repositories.isEmpty() || offline || readLock.isPresent() || writeLock.isPresent()
+                || cache.isPresent() || !modelPins.isEmpty() || !sourcePins.isEmpty();
+        if (hostOptions && !List.of("check", "compile").contains(args.getFirst())) throw new CliUsageException("repository options require check or compile");
+        if (hostOptions && repositories.isEmpty()) throw new CliUsageException("repository options require --repository");
+        return new ParsedArguments(files, roots, json, format, List.copyOf(repositories), offline, Map.copyOf(modelPins),
+                Map.copyOf(sourcePins), readLock, writeLock, cache);
     }
 
     private static List<ModelSelector> roots(List<String> roots,
@@ -484,6 +590,8 @@ public final class DefaultCompilerCli implements CliApplication {
     private static CliExecutionResult usage(CliEnvironment environment, String message) {
         environment.err().println("usage: interlis-java "
                 + "<version|capabilities|check|compile|analyze|diagram|format> [options] [files]");
+        environment.err().println("check/compile: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
+        environment.err().println("               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]");
         environment.err().println(message);
         return result(CliTermination.USAGE_ERROR, List.of(), message);
     }
@@ -494,8 +602,10 @@ public final class DefaultCompilerCli implements CliApplication {
                 diagnostics, output);
     }
 
-    private record ParsedArguments(List<String> files, List<String> roots, boolean json,
-                                   String format) {
+    private record ParsedArguments(List<String> files, List<String> roots, boolean json, String format,
+                                   List<String> repositories, boolean offline, Map<String, ModelPin> modelPins,
+                                   Map<SourceId, ContentDigest> sourcePins, Optional<String> readLock,
+                                   Optional<String> writeLock, Optional<String> cache) {
     }
 
     private record Loaded(Map<SourceId, SourceText> sources) {

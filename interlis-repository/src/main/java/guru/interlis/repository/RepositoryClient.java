@@ -66,6 +66,7 @@ public final class RepositoryClient {
                 RepositoryIndex index = indexReader.read(new IndexPayload(loaded.text()),
                         source.base());
                 for (RepositoryModelMetadata metadata : index.models()) {
+                    token.throwIfCancellationRequested();
                     if (!metadata.name().equals(query.modelName())) {
                         continue;
                     }
@@ -125,16 +126,34 @@ public final class RepositoryClient {
 
     private static String revision(RepositoryConfig config, List<ModelCandidate> candidates,
                                    List<RepositoryFailure> failures) {
-        StringBuilder canonical = new StringBuilder("repository-catalog|");
-        config.sources().forEach(source -> canonical.append(source.base().uri()).append('|')
-                .append(source.indexLocator().location()).append('|'));
-        candidates.forEach(candidate -> canonical.append(candidate.metadata().name()).append('@')
-                .append(candidate.metadata().version()).append('@')
-                .append(candidate.metadata().location()).append('@')
-                .append(candidate.priority()).append(';'));
-        failures.forEach(failure -> canonical.append("failure:")
-                .append(failure.indexLocation()).append('@').append(failure.reason()).append(';'));
-        return "sha256:" + guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digest(
-                canonical.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        StringBuilder canonical = new StringBuilder("repository-catalog-v2");
+        field(canonical, Boolean.toString(config.fetchPolicy().offline()));
+        field(canonical, Integer.toString(config.fetchPolicy().maxBytes()));
+        field(canonical, config.fetchPolicy().timeout().toString());
+        field(canonical, Integer.toString(config.sources().size()));
+        config.sources().forEach(source -> {
+            field(canonical, source.base().uri().toString());
+            field(canonical, source.indexLocator().location());
+        });
+        field(canonical, Integer.toString(candidates.size()));
+        candidates.forEach(candidate -> {
+            var metadata = candidate.metadata();
+            field(canonical, metadata.name()); field(canonical, metadata.version());
+            field(canonical, metadata.schemaLanguage()); field(canonical, metadata.location().toString());
+            optional(canonical, metadata.precursorVersion()); optional(canonical, metadata.md5());
+            field(canonical, candidate.repository().uri().toString());
+            field(canonical, candidate.indexLocation().toString());
+            field(canonical, Integer.toString(candidate.priority()));
+        });
+        field(canonical, Integer.toString(failures.size()));
+        failures.forEach(failure -> {
+            field(canonical, failure.indexLocation().toString()); field(canonical, failure.reason().name());
+            field(canonical, failure.safeMessage());
+        });
+        return "sha256:" + guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digestUtf16(canonical.toString()));
+    }
+    private static void field(StringBuilder b, String value) { b.append(value.length()).append(':').append(value); }
+    private static void optional(StringBuilder b, java.util.Optional<String> value) {
+        field(b, value.isPresent() ? "present" : "absent"); value.ifPresent(v -> field(b, v));
     }
 }

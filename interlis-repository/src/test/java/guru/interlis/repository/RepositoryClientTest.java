@@ -65,6 +65,21 @@ class RepositoryClientTest {
         assertEquals(RepositoryFailure.Reason.LOAD, discovery.failures().getFirst().reason());
     }
 
+    @Test
+    void catalogRevisionIncludesLanguageDigestsPrecursorsAndFetchPolicy() {
+        String uri="https://a.example/repo/ilimodels.xml";
+        var source=new RepositorySource(new RepositoryBase(URI.create("https://a.example/repo/")),new SourceLocator(uri));
+        var config=new RepositoryConfig(java.util.List.of(source),FetchPolicy.defaults());
+        String previous=new RepositoryClient(new MapLoader(Map.of(uri,INDEX)),new RepositoryIndexReader()).catalog(config,CancellationToken.none()).revision();
+        for(String changed:java.util.List.of(INDEX.replace("ili2_4","ili2_3"),INDEX.replace("</Version>","</Version><md5>abc</md5>"),
+                INDEX.replace("</Version>","</Version><precursorVersion>old</precursorVersion>"))) {
+            assertTrue(!previous.equals(new RepositoryClient(new MapLoader(Map.of(uri,changed)),new RepositoryIndexReader()).catalog(config,CancellationToken.none()).revision()));
+        }
+        var offline=new RepositoryConfig(config.sources(),new FetchPolicy(true,1000,java.time.Duration.ofSeconds(1)));
+        // The injected no-IO loader supplies the same fixture; policy remains a distinct catalog input.
+        assertTrue(!previous.equals(new RepositoryClient(new MapLoader(Map.of(uri,INDEX)),new RepositoryIndexReader()).catalog(offline,CancellationToken.none()).revision()));
+    }
+
     private static final class MapLoader implements SourceLoader {
         private final Map<String, String> indexes;
 

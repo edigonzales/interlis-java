@@ -220,3 +220,124 @@ weiterhin getrennt. ResolverCatalog.fingerprint verwendet ebenfalls sortierte
 längenpräfixierte Inhalte statt kollisionsanfälliger key=value-Verkettung.
 Overlay-Rückkehr A→B→A bei unveränderten Quellen stellt dieselbe fachliche
 Identität wieder her, ohne ein verspätetes Capture akzeptieren zu dürfen.
+
+## 11. L3-2: durchgehende, bedingte Hostbeschaffung
+
+`ResolutionPolicy(boolean preferWorkspaceSource, Map<String,ModelSelector.ByName>
+modelSelections, Map<SourceId,Integer> sourcePriorities)` ist unveränderlich und
+nullfrei. Der bisherige Einparameterkonstruktor bleibt erhalten. `qualify` ergänzt
+fehlende Einschränkungen; `select` schneidet angeforderte und konfigurierte exakte
+Version/Quelle und wählt erst danach die niedrigste Prioritätszahl. Nicht gerankte
+Workspacequellen haben bei `preferWorkspaceSource=true` Rang -1, sonst 0.
+Unterschiedliche Definitionen derselben Gewinnergruppe bleiben mehrdeutig.
+`BySource` bezeichnet weiterhin sämtliche Modelle der Datei. Für eindeutige
+benannte Roots übergibt der Workspace die tatsächlich gewählte Version/SourceId
+an den Compiler. Weder Modellversionsstrings noch Sprachausgaben werden als
+„Latest“ interpretiert; beide unterstützten Sprachfassungen bleiben indexierbar.
+
+Der reine Resolver erzeugt auch für fehlende/mehrdeutige benannte Roots negative
+Abhängigkeiten und PendingSourceRequests. Seine Header-/Kandidatenscans und
+Closureiteration prüfen Abbruch und `maxSemanticWorkUnits`; Überschreitung ergibt
+`ResolutionCancelled(RESOURCE_LIMIT)`. Negative Abhängigkeiten gehören auch zur
+vollständigen `dependencies`-Sicht der unvollständigen Closure. Der resultierende
+`resolved-input-v2`-Fingerprint enthält längenpräfixiert Inventar, Policy, Roots
+und Overlays. Die reine Inhaltserkennung des Inventars bleibt davon getrennt.
+
+**Originalbindungen:** `guru.interlis.compiler.TranslationBinding(translated,
+original)` enthält zwei `ModelLocation`-Werte. `SourceSet.translations()` und die
+fünfparametrige `SourceSet.of`-Fabrik transportieren diese unveränderlichen Werte;
+bisherige Fabriken verwenden eine leere Liste. Der Resolver erzeugt sie sowohl
+für `TRANSLATION OF` als auch für externe Translation-Overlays. Der Compiler
+prüft Quelle, Revision, Name, Version und tatsächlichen Deklarationsoffset sowie
+den erklärten/konfigurierten Zusammenhang erneut. Veraltete, widersprüchliche
+oder erfundene Bindungen ergeben `ILI-RES-0007` und `MISSING_INPUT`, ohne stillen
+Namensfallback. Eine geprüfte Originalbindung importiert keinen Namensraum;
+dieselbe Identität erreicht `ModelTranslation.sourceTarget` und die gemeinsame
+Korrespondenzprüfung. Unaufgelöste/mehrdeutige Originale behalten ihre bisherigen
+Diagnosen. `CompilationRequest.fingerprint()` nutzt dieselbe kanonische
+Compileridentität wie die Engine (`compilation-v3`, einschliesslich tatsächlicher
+Originalbindungen, unabhängig von Parsemodus/Wiederverwendung).
+
+`RepositoryClosureService(SourceLoader,ContentStore).resolve(Workspace,
+AnalysisRequest,RepositoryResolveOptions,CancellationToken)` liegt ausschliesslich
+im JVM-Hostmodul. Es nimmt einen Capture, verarbeitet Quellen in einem privaten
+Workspace mit dem gemeinsamen Parser/Resolver und lädt Indizes erst nach, wenn
+Quellen fehlen. Bereits vollständige eingefrorene Closures benötigen auch offline
+keinen Providerzugriff. Neue Texte werden erst mit dem zurückgegebenen Batch im
+Zielworkspace wirksam. Provisorische Revisionen verlassen den Zwischenstand nicht.
+
+Alle folgenden Typen liegen unter `guru.interlis.repository`; Maps/Listen sind
+defensiv kopiert, nullfrei und unveränderlich:
+
+| Typ | Inhalt / Ergebnis |
+|---|---|
+| `ModelPin` | Modellname, exakte rohe Version, kanonische SourceId, SHA-256 der Originalbytes; `selector()` liefert den passenden ByName-Selektor |
+| `ResolutionLock` | Map Modellname→unveränderliche Liste sämtlicher ausgewählter Versions-/Quellenpins und Map Index-SourceId→ContentDigest; zusätzliche benötigte Remoteabhängigkeiten sind beim Replay verboten |
+| `RepositoryResolveOptions` | explizite RepositoryConfig, Modellpins, Quellen-/Indexpins und optionaler Lock |
+| `RepositoryResolutionOutcome.Prepared` | `PreparedRepositoryUpdate`; Beschaffung vollständig, kein Schema-/Sprachgültigkeitsnachweis |
+| `.Rejected` | nichtleere Liste typisierter `RepositoryProblem`-Werte; NOT_FOUND, AMBIGUOUS, VERSION_MISMATCH, INVALID_SOURCE, INDEX_FAILURE, LOAD_FAILURE, PIN_MISMATCH, LOCK_MISMATCH oder CHANGED_SOURCE; Ladeursache separat |
+| `.Cancelled` | tatsächlicher CancellationReason, kein Teilbatch |
+| `.Stale` | erwartete/aktuelle WorkspaceRevision, kein Teilbatch |
+| `PreparedRepositoryUpdate` | erwartete Revision, SourceUpdates, vollständige Konfiguration, Lock und sichere Trace; an den ursprünglichen Workspace gebunden |
+
+`PreparedRepositoryUpdate.apply(workspace)` führt keine IO aus. Quellen und
+Konfiguration werden gemeinsam durch `Workspace.applyBatch` übernommen. Ein
+fremder Workspace, ein veralteter Revisionsstand oder eine zwischenzeitlich
+geänderte vollständige Konfiguration (auch Cachelimits) wird ohne Teilmutation
+abgewiesen. Vorhandene Editorquellen werden nicht durch Downloads überschrieben.
+Explizite Pins werden auch für ausgewählte vorhandene Texte geprüft.
+
+Versionswerte im Index bleiben als rohe Strings einschliesslich signifikanter
+Leerzeichen erhalten. Nachgeladene Auswahl wird nicht als neuer globaler Pin
+materialisiert; konkrete Originalbindungen bleiben pro Übersetzung getrennt.
+Locks können mehrere Versionen/Quellen eines Namens festhalten. Eine vollständig
+beschaffte kombinierte Closure unterliegt weiterhin der Sprachregel
+MODEL_NAME_UNIQUE; die Beschaffung erklärt deren Verletzung nicht zum Resolverfehler.
+
+Der Host verifiziert tatsächliche UTF-8-Bytes, SHA-256, optional veröffentlichtes
+MD5 sowie Name/Version/Sprachfassung im geparsten Header. Indexfehler und
+Ladefehler sind getrennte Ursachen; die strikte Beschaffung fällt bei einem
+fehlgeschlagenen konfigurierten Index nicht unbemerkt auf eine niedrigere Quelle
+zurück. `RepositoryClient.discover` behält seinen separaten partiellen Suchvertrag.
+Online werden verwendete Indizes und nachgeladene Modellquellen am Ende nochmals
+verglichen; Änderungen im Lesezeitfenster ergeben CHANGED_SOURCE bzw. einen
+verletzten Pin/Lock. Dies ist keine verteilte Dateisystemtransaktion. Spätere
+Workspaceänderungen werden zusätzlich beim Apply erkannt. IO und Parserarbeit
+liegen ausserhalb des Monitors des Zielworkspaces.
+
+Offline lädt der Host ausschliesslich digestverifizierte Cacheinhalte für
+fehlende Quellen/Indizes mit bekanntem Pin/Lock. Ohne solchen Treffer ist die
+Ladeursache OFFLINE. Der Loader wird dabei nicht aufgerufen. Workspaceinputs und
+Cachehits erhalten weiterhin getrennte Text-/Byteidentitäten. Lokale Roots sind
+separate Eingaben, ausser sie wurden ausdrücklich gepinnt. Ein Lock friert keine
+ungepinnten Editoränderungen ein.
+
+`RoutingSourceLoader` verarbeitet lokale Pfade, `file:` und HTTP(S). Datei-URIs
+werden im Host lexikalisch auf absolute normalisierte Pfade kanonisiert; keine
+Symlinkauflösung, Querybereinigung oder plattformfremde Pfadumschreibung.
+`FileSourceLoader` begrenzt auch den tatsächlichen Streaming-Read, nicht nur eine
+vorherige Dateigrösse. Indexauflösung vergleicht URI-Komponenten und dekodierte
+Pfade und weist auch kodierte `..`-Ausbrüche ab. `RepositoryCatalog.revision`
+(`repository-catalog-v2`) enthält längenpräfixiert alle Modellmetadaten,
+Prioritäten, Indexherkünfte, Fehler und die FetchPolicy.
+
+`DirectoryContentStore(Path[,maxEntryBytes])` ist ein optionaler atomarer,
+digestadressierter Cache. Fehler, übergrosse oder korrupte Einträge sind Misses;
+Treffer werden erneut gegen den Digest geprüft. Die Defaultgrenze ist 16 MiB pro
+Eintrag. `InMemoryContentStore` bleibt verfügbar. `ResolutionLockCodec.encode` /
+`decode` verwendet deterministisches UTF-8-XML `interlis-resolution-lock`, Version
+1; sortierte Indizes/Modelle, keine DTD/externen Entities, keine unbekannten Felder,
+doppelten vollständigen Modellidentitäten oder stillen Formatupgrades.
+Verschiedene Versionen/Quellen desselben Namens bleiben getrennte Listeneinträge,
+kanonisch nach rohem Versionsstring und SourceId sortiert; dies ist keine Latest-Auswahl. Decode begrenzt die Eingabelänge
+auf 8 Mi UTF-16-Einheiten; Dateiadapter begrenzen zusätzlich gelesene Bytes.
+
+Ausführbare Verträge: `ResolutionBoundaryContractTest`,
+`TranslationSelectionContractTest`, `RepositoryClosureContractTest`,
+`ResolutionLockContractTest`, `RepositoryCliContractTest` und
+`ResolutionPolicyProtocolTest`; portable Szenarien verwenden dieselbe Policy.
+`PinnedRealClosureTest` prüft die exakten offiziellen 2.3-Roads- und
+2.4-CHBase-Closures mit tatsächlichen öffentlichen Import-/Basistyp-/Member-/Enum-
+und Herkunftsassertions sowie Fresh/Reuse. Originalmodelle und Originalindizes
+liegen mit SHA-256 in `interlis-repository/src/test/resources/closures/`;
+der grosse unveränderte geo.admin.ch-Index ist verlustfrei gzip-komprimiert.

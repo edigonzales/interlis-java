@@ -21,4 +21,12 @@ public record CompilationRequest(List<ModelSelector> roots, SourceSet sources,
         Objects.requireNonNull(sources, "sources");
         Objects.requireNonNull(options, "options");
     }
+    /**
+     * Returns the canonical identity of actual roots, texts, import bindings,
+     * resolver provenance and options, independent of reuse or parse mode.
+     * The claimed resolver digest alone is never used as a cache certificate.
+     */
+    public CompilationFingerprint fingerprint() {
+        return new guru.interlis.compiler.internal.CompilationFingerprinter().fingerprint(this, AnalysisReuse.none());
+    }
 }

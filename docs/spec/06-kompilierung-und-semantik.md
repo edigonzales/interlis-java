@@ -949,7 +949,8 @@ ungeeignete Zielarten und widersprüchliche gleichrangige Werte werden als
 ILI-SEM-0011/BINDING diagnostiziert und verhindern das gemeinsame Gate.
 
 Höhere Priorität überschreibt niedrigere; die Quelle bildet den Grundstand.
-Gleichrangige identische Werte sind idempotent. Die öffentliche Metadatenliste
+Gleichrangige identische Werte sind im wirksamen Wert/Index idempotent; ihre
+getrennten Vorkommen und Herkunftsangaben bleiben in der öffentlichen Liste erhalten. Die öffentliche Metadatenliste
 enthält zuerst wirksame externe Werte nach absteigender Priorität und dann
 die unveränderten Quellvorkommen; ihr First-Occurrence-Index liefert den
 wirksamen Wert. Herkunft bleibt Origin.OverlayOrigin(id,priority,range),
@@ -987,3 +988,11 @@ Resolutionseingaben (ILI-RES-0005/0006; MISSING_INPUT/AMBIGUOUS_INPUT), während
 fehlende normale Deklarationsziele ungültige Konfiguration sind. Alle drei
 globalen Diagnosearten bleiben im gemeinsamen Gate ohne erfundene Modellstelle
 relevant; spätere Lieferung eines Originals erlaubt erneute normale Bindung.
+
+L3-2: `CompilationRequest.fingerprint()` verwendet dieselbe feldweise kanonische
+Compileridentität wie die Engine (compilation-v3). Roots, Importstellen/-resultate/
+-probleme, TranslationBindings und sämtliche ResolutionDiagnostics werden mit
+Längen, Listenanzahlen und Optionalmarkern serialisiert. Record-/Listen-
+`toString()` ist kein Identitätsformat; verschachtelte SourceIds und Versionswerte
+dürfen keine Feldgrenzen verschieben. Die Identität bleibt unabhängig von Reuse
+und Parsemodus; Schema-/Snapshotrollen bleiben getrennt.

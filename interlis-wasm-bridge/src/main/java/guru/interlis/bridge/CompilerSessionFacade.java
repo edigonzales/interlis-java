@@ -116,7 +116,7 @@ final class CompilerSessionFacade {
                             limits.maxRetainedSourceUtf16Units()));
         }
         WorkspaceConfiguration configuration = new WorkspaceConfiguration(options,
-                current.resolutionPolicy(), current.resolverCatalog(), limits);
+                ResolutionPolicyCodec.read(params), current.resolverCatalog(), limits);
         var receipt = workspace.configure(configuration,
                 new guru.interlis.workspace.WorkspaceRevision(expected));
         return JsonValues.object(

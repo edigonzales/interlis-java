@@ -12,7 +12,16 @@
   JS/WasmGC je3491PASS,SDK9,Pythonfrei1220,21/21Normprüfungen;
   elf eigene Reviewer-Gegenproben PASS. Keine offenen Muss-Findings;
   zwei nicht blockierende Dokumentationspräzisierungen werden in L3-2 erledigt.
-  **L3-2 IN_PROGRESS**, AC3-03–06, automatisch anschliessend.
+  **L3-2 REVIEW_PENDING**, AC3-03–06, kumulativ AC3-01–06.
+  Echte Hostbeschaffung, Versionen/Pins/Locks/Offline, atomare Übernahme,
+  geprüfte Originalbindungen, feldweise Inputidentität und echte gepinnte
+  Modell-Closures mit öffentlichen Assertions implementiert.
+  Voller eigener Schlusslauf Exit0/4m47s/71von71Tasks:1025JUnit-Fälle
+  (858reguläreJVM),0Fehler/Skips; je3499JS/WasmGC/alleBrowser/echtesSafari/
+  WebImagePASS,SDK9/Paket/LSP,Pythonsperre1250Inputs,21/21Normprüfungen.
+  Neue Gegenproben fanden und behoben auch WasmGC-Leermapfehler, zu globale
+  Originalauswahl und tatsächlich kollidierende Record-Fingerprints.
+  [L3-2-Nachweise](implementation/L3-2.md).
   [Implementierung/Nachweise](implementation/L3-1.md). Noch kein Phase3-PASS;
   Phase4 bleibt ausserhalb des Auftrags.
 

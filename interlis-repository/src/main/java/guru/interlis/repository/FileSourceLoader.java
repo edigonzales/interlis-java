@@ -41,8 +41,9 @@ public final class FileSourceLoader implements SourceLoader {
         token.throwIfCancellationRequested();
         Path path;
         try {
-            path = Path.of(locator.location());
-        } catch (InvalidPathException failure) {
+            path = locator.location().startsWith("file:")
+                    ? Path.of(java.net.URI.create(locator.location())) : Path.of(locator.location());
+        } catch (IllegalArgumentException failure) {
             throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,
                     "source location is not a valid path", failure);
         }
@@ -60,7 +61,20 @@ public final class FileSourceLoader implements SourceLoader {
                 throw new SourceLoadException(SourceLoadException.Reason.TOO_LARGE,
                         "source exceeds configured byte limit", null);
             }
-            byte[] bytes = Files.readAllBytes(path);
+            byte[] bytes;
+            try (var input = Files.newInputStream(path); var output = new java.io.ByteArrayOutputStream()) {
+                byte[] block = new byte[8192];
+                int count;
+                while ((count = input.read(block)) >= 0) {
+                    token.throwIfCancellationRequested();
+                    if ((long) output.size() + count > policy.maxBytes()) {
+                        throw new SourceLoadException(SourceLoadException.Reason.TOO_LARGE,
+                                "source exceeds configured byte limit", null);
+                    }
+                    output.write(block, 0, count);
+                }
+                bytes = output.toByteArray();
+            }
             token.throwIfCancellationRequested();
             var digest = guru.interlis.source.Sha256.digest(bytes);
             String text;

@@ -8,6 +8,13 @@ SemanticOverlays, AC3-01/02), danach L3-2 mit Repository-/Closure-Verträgen
 und kumulativer T1/T2/T3-Abnahme. Operativer Stand ausschliesslich in
 [STATUS](g2/STATUS.md). Phase4 wird dadurch nicht begonnen.
 
+L3-2 ergänzt jetzt tatsächliche Repositorybeschaffung, exakte Auswahl/Pins/Locks,
+Offline-/Datei-/HTTP-Pfade, atomare Übernahme, überprüfbare Originalbindungen
+und echte gepinnte Modell-Closures mit öffentlichen Assertions. Der erste volle
+Phase-3-Lauf fand einen WasmGC-Classlibfehler; dieser ist korrigiert und gezielt
+verifiziert. Kumulativer Schlusslauf und unabhängige Abnahme folgen gemäss
+[Nachweis](g2/implementation/L3-2.md). Aktueller Gatezustand weiterhin nur in STATUS.
+
 Seit dem früheren Nutzerauftrag vom 30.10.2026 wurde die gesamte G2-Phase 2 autonom
 bearbeitet: L2-1 (WP-22, AC2-01/02), danach L2-2 und L2-3 mit unabhängigen
 OpenCode-/DeepSeek-Direktreviews und kumulativem T1/T2/T3-Gate. Der aktuelle

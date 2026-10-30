@@ -198,6 +198,9 @@ public final class DiagnosticCatalog {
         list.add(def("ILI-RES-0006", "configured translation original is ambiguous", Severity.ERROR,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.overlay.ambiguous", DiagnosticDefinition.PositionRule.OPTIONAL,
                 arg("overlay", ArgumentKind.TEXT), arg("model", ArgumentKind.IDENTIFIER), arg("candidates", ArgumentKind.IDENTIFIER_LIST)));
+        list.add(def("ILI-RES-0007", "translation resolver selection has an invalid identity", Severity.ERROR,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.translation.identity", DiagnosticDefinition.PositionRule.OPTIONAL,
+                arg("reason", ArgumentKind.TEXT)));
         list.add(def("ILI-SEM-0011", "invalid semantic overlay configuration", Severity.ERROR,
                 Set.of(Phase.BINDING), "diagnostic.semantics.overlay",
                 DiagnosticDefinition.PositionRule.OPTIONAL,

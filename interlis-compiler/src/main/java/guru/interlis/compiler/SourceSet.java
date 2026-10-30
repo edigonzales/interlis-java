@@ -15,18 +15,27 @@ public final class SourceSet {
     private final List<ImportBinding> imports;
     private final List<Diagnostic> resolutionDiagnostics;
     private final ResolutionFingerprint fingerprint;
+    private final List<TranslationBinding> translations;
 
     private SourceSet(Map<SourceId, SourceText> sources, List<ImportBinding> imports,
-                      List<Diagnostic> resolutionDiagnostics, ResolutionFingerprint fingerprint) {
+                      List<Diagnostic> resolutionDiagnostics, ResolutionFingerprint fingerprint, List<TranslationBinding> translations) {
         this.sources = Map.copyOf(sources);
         this.imports = List.copyOf(imports);
         this.resolutionDiagnostics = List.copyOf(resolutionDiagnostics);
         this.fingerprint = fingerprint;
+        this.translations = List.copyOf(translations);
     }
 
     public static SourceSet of(Map<SourceId, SourceText> sources, List<ImportBinding> imports,
                                List<Diagnostic> resolutionDiagnostics,
                                ResolutionFingerprint fingerprint) {
+        return of(sources, imports, resolutionDiagnostics, fingerprint, List.of());
+    }
+
+    /** Copies all inputs, including exact original selections rechecked by the compiler. */
+    public static SourceSet of(Map<SourceId, SourceText> sources, List<ImportBinding> imports,
+                               List<Diagnostic> resolutionDiagnostics, ResolutionFingerprint fingerprint,
+                               List<TranslationBinding> translations) {
         Objects.requireNonNull(sources, "sources");
         Map<SourceId, SourceText> copy = new LinkedHashMap<>();
         for (Map.Entry<SourceId, SourceText> entry : sources.entrySet()) {
@@ -39,8 +48,11 @@ public final class SourceSet {
         }
         return new SourceSet(copy, Objects.requireNonNull(imports, "imports"),
                 Objects.requireNonNull(resolutionDiagnostics, "resolutionDiagnostics"),
-                Objects.requireNonNull(fingerprint, "fingerprint"));
+                Objects.requireNonNull(fingerprint, "fingerprint"), Objects.requireNonNull(translations, "translations"));
     }
+
+    /** Returns the immutable resolver selections for source/configured translation originals. */
+    public List<TranslationBinding> translations() { return translations; }
 
     /**
      * Creates a source set without imports or resolver diagnostics.

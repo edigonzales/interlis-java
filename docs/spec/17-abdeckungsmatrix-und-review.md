@@ -856,3 +856,9 @@ Fingerprints, isolierte Closure-/Importzustände, Fresh/Reuse und verspätete
 Analyseannahme. Kapitel05/06/08/09/10/16 bleiben die Verträge;
 SemanticOverlayContractTest und OverlayWorkspaceContractTest sowie die gemeinsame
 portable Strecke prüfen Wirkung statt Fingerprint-Platzhaltern.
+
+L3-2 konkretisiert RES-001–RES-012 sowie die bestehenden Workspace-/CLI- und
+Portabilitätsverträge durch die APIs und Abnahmen aus Kapitel 08 §11, 07, 10,
+16 und 18. Die operative Abnahme erfolgt kumulativ für AC3-01–AC3-06; die neuen
+Closure-/Pin-/Lock-/Originalbindungsassertions sind keine pauschale Freigabe der
+weiterhin `CANDIDATE_ONLY` markierten Normmatrix oder der G2-Phase4.

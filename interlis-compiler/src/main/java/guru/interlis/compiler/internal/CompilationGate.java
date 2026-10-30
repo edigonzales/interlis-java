@@ -46,7 +46,7 @@ final class CompilationGate {
         Set<DiagnosticId> relevantIds = new LinkedHashSet<>(roots.diagnostics());
         relevantIds.addAll(closure.diagnostics());
         for (Diagnostic diagnostic : analysis.diagnostics()) {
-            boolean inClosure = Set.of("ILI-SEM-0011","ILI-RES-0005","ILI-RES-0006").contains(diagnostic.code().value()) || diagnostic.primaryRange()
+            boolean inClosure = Set.of("ILI-SEM-0011","ILI-RES-0005","ILI-RES-0006","ILI-RES-0007").contains(diagnostic.code().value()) || diagnostic.primaryRange()
                     .map(r -> diagnostic.phase() == Phase.LEXING || diagnostic.phase() == Phase.PARSING
                             ? closure.sources().contains(r.source()) : closure.contains(r))
                     .orElse(relevantIds.contains(diagnostic.id()));
@@ -66,7 +66,7 @@ final class CompilationGate {
                 case "ILI-RES-0001", "ILI-RES-0005" -> reasons.add(RejectionReason.MISSING_INPUT);
                 case "ILI-RES-0002", "ILI-RES-0006" -> reasons.add(RejectionReason.AMBIGUOUS_INPUT);
                 case "ILI-RES-0003" -> reasons.add(RejectionReason.ENVIRONMENT_FAILURE);
-                case "ILI-RES-0004" -> reasons.add(RejectionReason.MISSING_INPUT);
+                case "ILI-RES-0004", "ILI-RES-0007" -> reasons.add(RejectionReason.MISSING_INPUT);
                 case "ILI-IMPL-0001" -> reasons.add(RejectionReason.INCOMPLETE_SUPPORT);
                 default -> reasons.add(RejectionReason.SOURCE_ERRORS);
             }

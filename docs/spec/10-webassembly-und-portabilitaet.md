@@ -426,3 +426,33 @@ Die angekündigte Positionsquery semanticProperties liefert gebundene Metadaten
 mit Herkunft und gegebenenfalls die bestehende ModelTranslation mit Originalziel/
 Korrespondenzen. Sie serialisiert ausschliesslich den gemeinsamen Graph und
 führt keine weitere Bindungssemantik ein. Alte Snapshots bleiben explizit abfragbar.
+
+### L3-2: explizite Auswahlpolicy in der Wire-Konfiguration
+
+`openSession.configuration` und der vollständige Ersatz durch `setConfiguration`
+akzeptieren zusätzlich `resolutionPolicy`. Dies ist reine DTO-Konvertierung;
+Headerauswahl und Originalbindung erfolgen ausschliesslich im gemeinsamen
+Workspace/Compiler. Beispiel des zusätzlichen Konfigurationswertes:
+
+```json
+{
+  "resolutionPolicy": {
+    "preferWorkspaceSource": true,
+    "modelSelections": [
+      {"modelName": "Dep", "modelVersion": "1", "sourceHint": "memory:/dep.ili"}
+    ],
+    "sourcePriorities": [
+      {"sourceId": "memory:/dep.ili", "priority": 0}
+    ]
+  }
+}
+```
+
+Modellversion/SourceHint sind optional, Ränge sind nichtnegative exakte Java-int-
+Werte. Doppelte Modell-/Quellenschlüssel und falsche Formen sind INVALID_REQUEST
+und verbrauchen keine Session. Fehlende Policy bedeutet Defaults, auch beim
+vollständigen Konfigurationsersatz. Alte Snapshots behalten ihre ausgewählten
+Definitionen; neue Konfigurationen erzeugen neue Captures. Gemeinsame portable
+Regressionsszenarien prüfen beide Sprachen, genaue Definition-/Originalziele,
+Priorität, fehlende transitive Abhängigkeiten, Entfernung und alte Snapshots.
+Keine Datei-/HTTP-/Lockcache-Implementierung wird in die portable Engine gezogen.

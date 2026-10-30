@@ -73,6 +73,9 @@ final class DefaultWorkspace implements Workspace {
     }
 
     @Override
+    public synchronized WorkspaceConfiguration configuration() { requireOpen(); return configuration; }
+
+    @Override
     public synchronized Optional<SourceText> source(SourceId id) {
         requireOpen();
         return Optional.ofNullable(sources.get(Objects.requireNonNull(id, "id")));
@@ -92,9 +95,26 @@ final class DefaultWorkspace implements Workspace {
     @Override
     public synchronized BatchUpdateReceipt applyBatch(List<SourceUpdate> updates,
                                                        WorkspaceRevision expectedRevision) {
+        return applyBatch(updates, expectedRevision, configuration);
+    }
+
+    @Override
+    public synchronized BatchUpdateReceipt applyBatch(List<SourceUpdate> updates,
+            WorkspaceRevision expectedRevision, WorkspaceConfiguration newConfiguration) {
+        return applyBatch(updates, expectedRevision, newConfiguration, configuration.fullFingerprint());
+    }
+
+    @Override
+    public synchronized BatchUpdateReceipt applyBatch(List<SourceUpdate> updates,
+            WorkspaceRevision expectedRevision, WorkspaceConfiguration newConfiguration, String expectedConfigurationFingerprint) {
         requireOpen();
         enter();
         try {
+            Objects.requireNonNull(newConfiguration, "configuration");
+            Objects.requireNonNull(expectedConfigurationFingerprint, "expectedConfigurationFingerprint");
+            if (!configuration.fullFingerprint().equals(expectedConfigurationFingerprint)) {
+                throw conflict(UpdateRejectionCode.VERSION_CONFLICT, "workspace configuration changed", Optional.empty(), Optional.empty());
+            }
             Objects.requireNonNull(updates, "updates");
             Objects.requireNonNull(expectedRevision, "expectedRevision");
             if (!revision.equals(expectedRevision)) {
@@ -115,7 +135,8 @@ final class DefaultWorkspace implements Workspace {
             List<InvalidationReason> reasons = new ArrayList<>();
             WorkspaceRevision previous = revision;
             WorkspaceRevision next = nextWorkspaceRevision();
-            boolean changed = false;
+            boolean changed = !configuration.semanticFingerprint().equals(newConfiguration.semanticFingerprint());
+            if (changed) reasons.add(InvalidationReason.CONFIGURATION_CHANGED);
             for (SourceUpdate update : updates) {
                 UpdateReceipt receipt = applyTo(staged, stagedRevisions, update,
                         previous, next);
@@ -134,6 +155,8 @@ final class DefaultWorkspace implements Workspace {
                 revision = next;
                 invalidateLastAnalysis();
             }
+            configuration = newConfiguration;
+            enforceCacheLimits();
             return new BatchUpdateReceipt(previous, revision, receipts,
                     List.copyOf(new LinkedHashSet<>(reasons)));
         } finally {
@@ -278,14 +301,26 @@ final class DefaultWorkspace implements Workspace {
             case ResolutionOutcome.ResolutionFailed failed ->
                     throw new IllegalStateException("model resolution failed: " + failed.failureId());
         }
-        CompilationRequest compilationRequest = new CompilationRequest(request.roots(),
+        List<guru.interlis.compiler.ModelSelector> concreteRoots = request.roots().stream().map(root -> {
+            if (root instanceof guru.interlis.compiler.ModelSelector.ByName name) {
+                var candidates = capturedConfiguration.resolutionPolicy().select(name, inventory.headers());
+                if (candidates.size() == 1) {
+                    var chosen = candidates.getFirst();
+                    return (guru.interlis.compiler.ModelSelector) new guru.interlis.compiler.ModelSelector.ByName(
+                            chosen.modelName(), Optional.of(chosen.modelVersion()), Optional.of(chosen.source()));
+                }
+                return (guru.interlis.compiler.ModelSelector) capturedConfiguration.resolutionPolicy().qualify(name);
+            }
+            return root;
+        }).toList();
+        CompilationRequest compilationRequest = new CompilationRequest(concreteRoots,
                 closure.sourceSet(), capturedConfiguration.compilerOptions());
         // The resolver and engine consume the exact same parse. Retention is committed
         // only by acceptAnalysis, so a late capture cannot poison reuse state.
         AnalysisReuse reuse = new AnalysisReuse(Optional.ofNullable(previous), parsed);
         String fingerprint = inputFingerprint(inventory, request, compilationRequest);
         return new WorkspaceCapture(capturedRevision, compilationRequest, reuse, closure,
-                new InputFingerprint("SHA-256/workspace-capture-v1", fingerprint), origin);
+                new InputFingerprint("SHA-256/workspace-capture-v2", fingerprint), origin);
     }
 
     @Override
@@ -316,6 +351,9 @@ final class DefaultWorkspace implements Workspace {
     }
 
     private void verifySnapshot(WorkspaceCapture capture, AnalysisSnapshot analysis) {
+        if (!capture.request().fingerprint().equals(analysis.fingerprint())) {
+            throw new IllegalArgumentException("analysis input does not match capture");
+        }
         Map<SourceId, SourceRevision> expected = new LinkedHashMap<>();
         capture.request().sources().sources().forEach((id, text) -> expected.put(id, text.revision()));
         if (!analysis.sourceRevisions().equals(expected)) {
@@ -569,15 +607,10 @@ final class DefaultWorkspace implements Workspace {
 
     private String inputFingerprint(SourceInventory inventory, AnalysisRequest request,
                                     CompilationRequest compilationRequest) {
-        StringBuilder canonical = new StringBuilder();
-        canonical.append(inventory.fingerprint().value()).append('|')
-                .append(compilationRequest.options().fingerprint()).append('|');
-        for (var root : request.roots()) {
-            canonical.append(root).append(';');
-        }
-        byte[] digest = guru.interlis.source.Sha256.digest(
-                canonical.toString().getBytes(StandardCharsets.UTF_8));
-        return guru.interlis.source.Hex.encode(digest);
+        StringBuilder canonical = new StringBuilder("workspace-capture-v2");
+        for (String value : List.of(inventory.fingerprint().value(), compilationRequest.options().fingerprint(),
+                compilationRequest.sources().fingerprint().value())) canonical.append(value.length()).append(':').append(value);
+        return guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digestUtf16(canonical.toString()));
     }
 
     /**

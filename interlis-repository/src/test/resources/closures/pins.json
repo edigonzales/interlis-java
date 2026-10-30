@@ -1,0 +1,33 @@
+{
+  "retrieved": "2026-10-30",
+  "files": [
+    {
+      "file": "refhb23/RoadsExdm2ben-20050616.ili",
+      "url": "https://models.interlis.ch/refhb23/RoadsExdm2ben-20050616.ili",
+      "sha256": "c12ec56358fb50b1d0579c812bfbc67da07dd4c9d16ab250145a5cd77b484c97"
+    },
+    {
+      "file": "refhb23/RoadsExdm2ien-20170405.ili",
+      "url": "https://models.interlis.ch/refhb23/RoadsExdm2ien-20170405.ili",
+      "sha256": "6a18f8a3eff8ef71a064a85353c49ca08dc5a67768cf0d4728da27f802c32cdc"
+    },
+    {
+      "file": "CHBase_Part2_LOCALISATION_V2.ili",
+      "url": "https://models.geo.admin.ch/CH/CHBase_Part2_LOCALISATION_V2.ili",
+      "sha256": "1b592fce43751c4df221a0f85df3d0c8b669612b8bbc167d9c78bb8f7d7e0857"
+    },
+    {
+      "file": "ilimodels.xml",
+      "url": "https://models.interlis.ch/ilimodels.xml",
+      "sha256": "2defccf0152978dd2a5b46bc4fa95ca818bb3a66813f5fb99d89c1fb54507853"
+    },
+    {
+      "file": "geo-admin-index.xml.gz",
+      "url": "https://models.geo.admin.ch/ilimodels.xml",
+      "sha256": "c2ce3bfce1cc574b42791304caf5d52b64ef18a28c26c52bb8e6e3b75c740af5",
+      "encoding": "gzip",
+      "sha256AppliesTo": "uncompressed original UTF-8 bytes",
+      "artifactSha256": "d6aa1753a72cd96e0a0c5f718011b20c20798572076b013735fc92b9a6fa459e"
+    }
+  ]
+}

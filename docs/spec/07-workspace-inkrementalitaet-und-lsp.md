@@ -473,3 +473,21 @@ Der bestehende Java-LSP zeigt mit [LiveAnalysisService](https://github.com/edigo
 
 Die segmentgenauen Referenzen in GeoWerkstatts [Reference.cs](https://github.com/geowerkstatt/GeoW.Interlis.Tools/blob/main/src/Geowerkstatt.Interlis.Compiler/AST/Reference.cs) sind eine fachliche Orientierung für Navigation und Rename. Die konkrete Java-Implementierung folgt den unveränderlichen Snapshot- und Identitätsverträgen dieses Projekts.
 
+
+### L3-2: atomare Repositoryübernahme und Auswahlidentität
+
+`Workspace.configuration()` liefert die aktuelle unveränderliche Konfiguration.
+Die zusätzlichen `applyBatch(updates,expectedRevision,configuration)` und
+`applyBatch(updates,expectedRevision,configuration,expectedConfigurationFingerprint)`
+installieren Quellen und Konfiguration atomar. Im zweiten Fall muss auch die
+vollständige bisherige Konfiguration übereinstimmen; so gehen Cacheänderungen
+während eines Downloads nicht verloren. Alle Prüfungen erfolgen vor jeder
+Mutation, neue Quellrevisionen vergibt ausschliesslich der Workspace. Die
+bestehende Zweiparametervariante bleibt erhalten.
+
+Der Capture-Fingerprint (`workspace-capture-v2`) enthält die tatsächliche
+Resolveridentität einschliesslich Auswahlpolicy. `acceptAnalysis` prüft zusätzlich
+`capture.request().fingerprint()` gegen die echte CompilationFingerprint der
+Analyse. Gleiche Texte/Revisionen/Optionen mit anderer Root-/Import-/Originalbindung
+sind damit kein zulässiger Ersatz. Cacheänderungen bleiben semantisch neutral;
+veraltete Captures werden weiterhin über WorkspaceRevision abgewiesen.

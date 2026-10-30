@@ -8,7 +8,7 @@ import java.util.*;
  * order and every provenance are retained. The map indexes the first occurrence.
  *
  * @param values null-free first-occurrence index
- * @param entries null-free occurrences in source order, including repetitions
+ * @param entries null-free occurrences in effective precedence order, then source order, including repetitions
  */
 public record MetaAttributeSet(Map<String, Value> values, List<Entry> entries) {
     /** Copies both inputs and rejects an index inconsistent with the occurrences. */
@@ -42,7 +42,7 @@ public record MetaAttributeSet(Map<String, Value> values, List<Entry> entries) {
         public Value {Objects.requireNonNull(text,"text");Objects.requireNonNull(origin,"origin");}
     }
 
-    /** All occurrences of a non-null key, in source order; never null, empty when absent. */
+    /** All occurrences of a non-null key, in effective precedence then source order; never null, empty when absent. */
     public List<Value> values(String key) {
         Objects.requireNonNull(key,"key");return entries.stream().filter(e->e.key().equals(key)).map(Entry::value).toList();
     }

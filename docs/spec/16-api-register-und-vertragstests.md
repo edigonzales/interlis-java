@@ -645,3 +645,23 @@ model besitzt Origin.OverlayOrigin und ModelTranslation.origin; die
 Kompatibilitätskonstruktion mit fünf Parametern bleibt. Kapitel05/06 regeln
 Herkunft/Präzedenz/Fehler/Fingerprints. SemanticOverlayContractTest prüft
 öffentliche Wirkung, Fehler, Closure, Isolation und Fresh/Reuse.
+
+### L3-2 – Auswahl und Host-Closure
+
+Die folgenden additiven Verträge sind in [08](08-modellaufloesung-und-repositories.md)
+und [07](07-workspace-inkrementalitaet-und-lsp.md) vollständig beschrieben:
+
+| Besitzer | Kanonische API | Vertragstest |
+|---|---|---|
+| compiler / `guru.interlis.compiler` | `TranslationBinding(ModelLocation translated,ModelLocation original)`; `SourceSet.translations()` und zusätzliche fünfparametrige `SourceSet.of`; `CompilationRequest.fingerprint()` | `TranslationSelectionContractTest` |
+| workspace / `guru.interlis.workspace.resolution` | `ResolutionPolicy` mit exakten `modelSelections`, `sourcePriorities`, `qualify`, `select`, `fingerprint`; alter Einparameterkonstruktor erhalten | `ResolutionBoundaryContractTest` |
+| workspace / `guru.interlis.workspace` | `configuration()`; zusätzliche atomare `applyBatch`-Varianten mit Konfiguration und optional erwartetem vollständigem Konfigurationsfingerprint | `ResolutionBoundaryContractTest`, `RepositoryClosureContractTest` |
+| repository / `guru.interlis.repository` | `RepositoryClosureService.resolve`, `RepositoryResolveOptions`, `RepositoryResolutionOutcome` mit Prepared/Rejected/Cancelled/Stale, `RepositoryProblem`, `PreparedRepositoryUpdate.apply` | `RepositoryClosureContractTest`, `PinnedRealClosureTest` |
+| repository / `guru.interlis.repository` | `ModelPin`, `ResolutionLock`, `ResolutionLockCodec`, `DirectoryContentStore`, `RoutingSourceLoader` | `ResolutionLockContractTest`, `RepositoryCliContractTest` |
+| wasm-bridge / `guru.interlis.bridge` | additive `resolutionPolicy`-Konfiguration; interne reine DTO-Konvertierung, keine zweite Bindungslogik | `ResolutionPolicyProtocolTest`, gemeinsame portable Szenarien |
+
+Alle bisherigen Fabriken und Konstruktoren bleiben erhalten. Neue Collections
+sind defensiv kopiert und nullfrei. Die Originalbindung ist ein überprüfbarer
+Eingabewert, kein Schema-Zertifikat. Compiler-/Schemaerfolg entsteht weiterhin
+nur am CompilationGate. Der Compiler verwendet `compilation-v3` einschliesslich
+Originalbindungen; Snapshot-/Schemaidentitäten behalten ihre getrennten Rollen.

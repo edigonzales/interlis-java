@@ -1,0 +1,4 @@
+# Original-byte pins must survive every Git checkout unchanged.
+*.ili -text
+*.xml -text
+*.gz -text

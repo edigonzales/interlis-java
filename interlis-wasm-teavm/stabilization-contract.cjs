@@ -31,6 +31,65 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L3-2: the portable workspace uses the same exact selection and priority policy.
+  let resolutionPolicyCases=0;
+  for(const version of ['2.3','2.4']) {
+    const model=(name,v,body)=>`INTERLIS ${version};MODEL ${name} AT "https://example.org" VERSION "${v}"=${body}END ${name}.`;
+    const rootId='memory:/resolve-root.ili',oneId='memory:/dep-one.ili',twoId='memory:/dep-two.ili';
+    const root=model('F','1','IMPORTS Dep;DOMAIN P EXTENDS Dep.P=TEXT*7;');
+    const sources=[{sourceId:rootId,text:root},{sourceId:oneId,text:model('Dep','1','IMPORTS Leaf;DOMAIN P=TEXT*7;')},
+      {sourceId:twoId,text:model('Dep','2','IMPORTS Missing;DOMAIN P=TEXT*99;')},
+      {sourceId:'memory:/leaf.ili',text:model('Leaf','1','DOMAIN N=0..10;')}];
+    await verifySources(sources,'rejected',['F'],async(sessionId)=>{
+      const compile=(revision,name='F')=>call('compile',sessionId,{expectedWorkspaceRevision:revision,roots:[{kind:'byName',modelName:name}]});
+      const query=snapshotId=>call('query',sessionId,{snapshotId,query:{kind:'definition',sourceId:rootId,revision:'1',startOffset:root.indexOf('Dep.P')+4,endOffset:root.indexOf('Dep.P')+4}});
+      let changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:'4',resolutionPolicy:{
+        modelSelections:[{modelName:'Dep',modelVersion:'1',sourceHint:oneId}],sourcePriorities:[{sourceId:oneId,priority:2},{sourceId:twoId,priority:0}]}});
+      const first=await compile(changed.workspaceRevision);
+      if(first.outcome!=='succeeded')throw new Error('Exact version/source did not override priority '+JSON.stringify(first));
+      const definition=await query(first.snapshotId);
+      if(definition.kind!=='definition'||definition.nameRange.source!==oneId)throw new Error('Wrong bound dependency '+JSON.stringify(definition));
+      const selectedRoot=await compile(changed.workspaceRevision,'Dep');
+      if(selectedRoot.outcome!=='succeeded')throw new Error('Root policy was ignored '+JSON.stringify(selectedRoot));
+      changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision,resolutionPolicy:{modelSelections:[{modelName:'Dep',modelVersion:'2',sourceHint:twoId}]}});
+      const missing=await compile(changed.workspaceRevision);
+      if(missing.outcome!=='rejected'||!missing.diagnostics.some(d=>d.code==='ILI-RES-0001'))throw new Error('Selected transitive missing dependency disappeared '+JSON.stringify(missing));
+      if((await query(first.snapshotId)).nameRange.source!==oneId)throw new Error('Old dependency snapshot mutated');
+      changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision,resolutionPolicy:{sourcePriorities:[{sourceId:oneId,priority:0},{sourceId:twoId,priority:1}]}});
+      const ranked=await compile(changed.workspaceRevision);
+      if(ranked.outcome!=='succeeded'||(await query(ranked.snapshotId)).nameRange.source!==oneId)throw new Error('Priority selection failed');
+      changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision});
+      const clear=await compile(changed.workspaceRevision);
+      if(clear.outcome!=='rejected'||!clear.diagnostics.some(d=>d.code==='ILI-RES-0002'))throw new Error('Cleared policy retained a selection');
+    });resolutionPolicyCases++;
+    await verifySources([{sourceId:oneId,text:model('Dep','1','DOMAIN P=TEXT;')},{sourceId:twoId,text:model('Dep','1','DOMAIN P=TEXT;')}],'rejected',['Dep'],async(sessionId)=>{
+      let changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:'2',resolutionPolicy:{modelSelections:[{modelName:'Dep',sourceHint:oneId}]}});
+      let result=await call('compile',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision,roots:[{kind:'byName',modelName:'Dep'}]});
+      if(result.outcome!=='succeeded')throw new Error('Same-version root source hint failed '+JSON.stringify(result));
+      changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision,resolutionPolicy:{modelSelections:[{modelName:'Dep',modelVersion:'absent',sourceHint:oneId}]}});
+      result=await call('compile',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision,roots:[{kind:'byName',modelName:'Dep'}]});
+      if(result.outcome!=='rejected')throw new Error('Missing pinned version silently fell back');
+    });resolutionPolicyCases++;
+  }
+  // Exact original selection must reach the shared translation checker, not stop at discovery.
+  for(const version of ['2.3','2.4'])for(const external of [false,true]) {
+    const wrap=(name,relation,body)=>`INTERLIS ${version};MODEL ${name} AT "https://example.org" VERSION "1" ${relation}=${body}END ${name}.`;
+    const chosenId='memory:/chosen-original.ili',otherId='memory:/other-original.ili',rootId='memory:/resolved-translation.ili';
+    const original=wrap('Original','','DOMAIN D=TEXT;');
+    const root=wrap('F',external?'':'TRANSLATION OF Original["1"]','DOMAIN D=TEXT;');
+    await verifySources([{sourceId:chosenId,text:original},{sourceId:otherId,text:wrap('Original','','DOMAIN D=TEXT*7;')},{sourceId:rootId,text:root}],external?'succeeded':'rejected',['F'],async sessionId=>{
+      const changed=await call('setConfiguration',sessionId,{expectedWorkspaceRevision:'3',resolutionPolicy:{modelSelections:[{modelName:'Original',modelVersion:'1',sourceHint:chosenId}]},
+        overlays:external?[{kind:'translation',id:'selected',priority:1,target:'F',original:'Original'}]:[]});
+      const result=await call('compile',sessionId,{expectedWorkspaceRevision:changed.workspaceRevision,roots:[{kind:'byName',modelName:'F'}]});
+      if(result.outcome!=='succeeded')throw new Error('Selected original lost after resolution '+JSON.stringify(result));
+      const query=(kind,sourceId,text,name)=>call('query',sessionId,{snapshotId:result.snapshotId,query:{kind,sourceId,revision:'1',startOffset:text.indexOf('MODEL '+name)+6,endOffset:text.indexOf('MODEL '+name)+6}});
+      const chosen=await query('symbolAt',chosenId,original,'Original');
+      const properties=await query('semanticProperties',rootId,root,'F');
+      if(chosen.kind!=='known'||properties.translation?.sourceTarget!==chosen.symbolId||properties.translation.correspondences.length<2)
+        throw new Error('Wrong public original identity '+JSON.stringify({chosen,properties}));
+      if(external&&properties.translation.origin?.overlayId!=='selected')throw new Error('Original overlay provenance lost');
+    });resolutionPolicyCases++;
+  }
   // L3-1: actual overlay data, revision isolation and transitive originals.
   let semanticOverlayCases=0;
   for(const version of ['2.3','2.4']) {
@@ -2019,7 +2078,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return semanticOverlayCases + phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return resolutionPolicyCases + semanticOverlayCases + phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

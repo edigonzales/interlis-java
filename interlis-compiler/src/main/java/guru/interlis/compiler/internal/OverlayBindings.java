@@ -22,13 +22,20 @@ final class OverlayBindings {
     private final Map<ModelDecl,SymbolId> modelIds=new HashMap<>();
     private final Map<SymbolId,Map<Integer,SymbolId>> translationChoices=new HashMap<>();
     private final Map<SymbolId,Translation> translations=new LinkedHashMap<>();
+    private final Map<SymbolId,SymbolId> selectedOriginals=new LinkedHashMap<>();
     private final Map<SymbolId,Map<String,List<Values>>> metadata=new LinkedHashMap<>();
     private final Map<SymbolId,ModelDecl> models=new LinkedHashMap<>();
 
-    OverlayBindings(IndexedDeclarations index,SemanticOverlays input,DiagnosticCollector diagnostics,
+    OverlayBindings(IndexedDeclarations index,SemanticOverlays input,List<TranslationBinding> selections,DiagnosticCollector diagnostics,
             CancellationToken token,AnalysisBudget budget) {
         this.index=index;this.diagnostics=diagnostics;this.token=token;limit=budget.maxSemanticWorkUnits();
         index.models().forEach(e->{models.put(e.id(),e.model());modelIds.put(e.model(),e.id());});
+        for (var binding : selections) {
+            var dependent = selectedModel(binding.translated()); var original = selectedModel(binding.original());
+            if (dependent.isEmpty() || original.isEmpty()) { selectionError("translation selection has a stale or invalid identity"); continue; }
+            var previous = selectedOriginals.putIfAbsent(dependent.orElseThrow(), original.orElseThrow());
+            if (previous != null && !previous.equals(original.orElseThrow())) selectionError("conflicting translation selections");
+        }
         for(var overlay:input.overlays()) {
             charge();var target=resolve(overlay.target(),overlay.source());if(target==null)continue;
             switch(overlay) {
@@ -37,6 +44,40 @@ final class OverlayBindings {
                 case MetaAttributeOverlay m->m.attributes().forEach((key,values)->metadata(target,key,values,m.source()));
             }
         }
+        selectedOriginals.forEach((dependent, original) -> {
+            var external = translations.get(dependent);
+            var syntax = models.get(dependent).syntax(); var target = models.get(original);
+            if (external != null) {
+                if (!external.original().equals(original)) selectionError("translation selection contradicts the configured original");
+            } else if (syntax.translationSource().isEmpty()
+                    || !syntax.translationSource().orElseThrow().text().equals(target.name())
+                    || syntax.translationVersion().filter(v -> !v.equals(target.version())).isPresent())
+                selectionError("translation selection contradicts the source declaration");
+        });
+    }
+    private Optional<SymbolId> selectedModel(ModelLocation location) {
+        for (var entry : models.entrySet()) {
+            charge(); var model = entry.getValue();
+            if (model.sourceId().equals(location.source()) && model.source().revision().equals(location.revision())
+                    && model.name().equals(location.modelName()) && model.declarationOffset() == location.declarationOffset()
+                    && location.modelVersion().filter(v -> !v.equals(model.version())).isEmpty()) return Optional.of(entry.getKey());
+        }
+        return Optional.empty();
+    }
+    private void selectionError(String reason) {
+        diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-RES-0007"),Severity.ERROR,Phase.SOURCE_RESOLUTION,
+                "diagnostic.resolution.translation.identity").argument(new DiagnosticArgument.TextArgument("reason",reason)));
+    }
+    private DeclInfo selectedOriginal(DeclInfo target, TranslationOverlay overlay) {
+        var selected = selectedOriginals.get(target.id());
+        if (selected != null) {
+            var original = models.get(selected); var selector = overlay.original();
+            if (selector.name().segments().size() == 1 && selector.name().last().equals(original.name())
+                    && selector.modelVersion().filter(v -> !v.equals(original.version())).isEmpty()
+                    && selector.sourceHint().filter(id -> !id.equals(original.sourceId())).isEmpty())
+                return index.byId(selected).orElseThrow();
+        }
+        return resolve(overlay.original(),overlay.source(),true);
     }
     long workUnits(){return work;}
     private void charge(){token.throwIfCancellationRequested();if(++work>limit)throw new AnalysisBudgetExceededException("maxSemanticWorkUnits",limit);}
@@ -64,7 +105,7 @@ final class OverlayBindings {
         return candidates.getFirst();
     }
     private void translation(DeclInfo target,TranslationOverlay overlay) {
-        var original=resolve(overlay.original(),overlay.source(),true);if(original==null)return;
+        var original=selectedOriginal(target,overlay);if(original==null)return;
         if(target.kind()!=SymbolKind.MODEL||original.kind()!=SymbolKind.MODEL){error(overlay.source(),target.qualifiedName(),"translation targets must be models");return;}
         var syntax=models.get(target.id()).syntax();var originalModel=models.get(original.id());
         if(target.language()!=original.language()){error(overlay.source(),target.qualifiedName(),"translation language versions differ");return;}
@@ -97,10 +138,19 @@ final class OverlayBindings {
         return List.copyOf(result);
     }
     Optional<ModelDecl> original(ModelDecl model) {
-        return Optional.ofNullable(translations.get(modelIds.get(model))).map(t->models.get(t.original()));
+        var id = modelIds.get(model);
+        return Optional.ofNullable(translations.get(id)).map(t->models.get(t.original()))
+                .or(() -> Optional.ofNullable(selectedOriginals.get(id)).map(models::get));
     }
     Optional<ModelTranslation> translation(SymbolId target,Optional<ModelTranslation> declared) {
-        var bound=translations.get(target);if(bound==null)return declared;
+        var bound=translations.get(target);
+        if(bound==null) {
+            var selected=selectedOriginals.get(target);
+            if(selected==null || declared.isEmpty())return declared;
+            var original=declared.orElseThrow();
+            return Optional.of(new ModelTranslation(original.sourceModel(),original.sourceVersion(),original.language(),
+                    Optional.of(selected),original.correspondences(),original.origin()));
+        }
         var original=models.get(bound.original());return Optional.of(new ModelTranslation(original.name(),Optional.of(original.version()),
                 declared.flatMap(ModelTranslation::language),Optional.of(bound.original()),List.of(),Optional.of(bound.source().origin())));
     }

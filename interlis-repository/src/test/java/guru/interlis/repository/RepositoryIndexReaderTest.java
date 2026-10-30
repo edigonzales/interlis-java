@@ -73,6 +73,24 @@ class RepositoryIndexReaderTest {
     }
 
     @Test
+    void rejectsDecodedTraversalAndCanonicalizesFileUriAliases() {
+        for (String path : java.util.List.of("%2e%2e/outside.ili", "%2e%2e%2foutside.ili", "models/%2e%2e/%2e%2e/outside.ili", "https://other.example/a.ili")) {
+            var invalid = assertThrows(RepositoryIndexException.class, () -> new RepositoryIndexReader().read(
+                    new IndexPayload(INDEX.replace("models/Alpha.ili", path)), BASE));
+            assertEquals(RepositoryIndexException.Reason.UNSAFE_LOCATION, invalid.reason());
+        }
+        var local = new RepositoryIndexReader().read(new IndexPayload(INDEX), new RepositoryBase(URI.create("file:/tmp/repository/")));
+        assertEquals(java.nio.file.Path.of("/tmp/repository/models/Alpha.ili").toUri(), local.models().getFirst().location());
+    }
+
+    @Test
+    void opaqueVersionStringsPreserveSignificantWhitespace() {
+        var changed=INDEX.replace("<Version>2024-01-01</Version>","<Version>  release 1  </Version>");
+        var metadata=new RepositoryIndexReader().read(new IndexPayload(changed),BASE).models().getFirst();
+        assertEquals("  release 1  ",metadata.version());
+    }
+
+    @Test
     void rejectsMissingMetadataAndMalformedXml() {
         String missing = INDEX.replace("<Version>2024-01-01</Version>", "");
         RepositoryIndexException missingFailure = assertThrows(RepositoryIndexException.class,

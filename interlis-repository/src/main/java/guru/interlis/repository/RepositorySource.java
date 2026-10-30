@@ -13,5 +13,7 @@ public record RepositorySource(RepositoryBase base, SourceLocator indexLocator) 
     public RepositorySource {
         Objects.requireNonNull(base, "base");
         Objects.requireNonNull(indexLocator, "indexLocator");
+        base = new RepositoryBase(java.net.URI.create(SourceUris.canonicalFile(base.uri().toString())));
+        indexLocator = new SourceLocator(SourceUris.canonicalFile(indexLocator.location()));
     }
 }

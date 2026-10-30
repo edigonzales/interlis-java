@@ -420,3 +420,13 @@ Beide sind globale ERROR/SOURCE_RESOLUTION-Diagnosen mit optionalem Bereich,
 overlay(TEXT), model(IDENTIFIER) und bei Mehrdeutigkeit candidates(IDENTIFIER_LIST).
 Die fehlende Quelle ist keine ungültige Metadatenkonfiguration und keine
 Implementierungslücke; das gemeinsame Gate erhält diese Unterscheidung.
+
+L3-2 ergänzt `ILI-RES-0007` (ERROR/SOURCE_RESOLUTION,
+`diagnostic.resolution.translation.identity`, optionale Position, `reason:TEXT`).
+Die Diagnose bezeichnet eine veraltete, widersprüchliche oder erfundene
+`TranslationBinding`. Sie ist ein globaler Eingabefehler und ergibt im einzigen
+CompilationGate `MISSING_INPUT`; kein erfundener Quellbereich und kein stiller
+Fallback. Hostbeschaffungsfehler bleiben separat als `RepositoryProblem` mit
+konkreter Lade-/Pin-/Lock-/Änderungsursache sichtbar. Tracewerte entfernen
+Zugangsdaten und Queryfragmente, während logische SourceIds als Identitäten
+unverändert bleiben.

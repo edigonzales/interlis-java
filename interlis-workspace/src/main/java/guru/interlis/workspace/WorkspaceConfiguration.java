@@ -42,7 +42,7 @@ public record WorkspaceConfiguration(CompilerOptions compilerOptions,
      * @return the value
      */
     public String semanticFingerprint() {
-        return compilerOptions.fingerprint() + "|" + resolutionPolicy + "|"
+        return compilerOptions.fingerprint() + "|" + resolutionPolicy.fingerprint() + "|"
                 + resolverCatalog.fingerprint();
     }
 

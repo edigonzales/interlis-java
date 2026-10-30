@@ -51,7 +51,7 @@ final class CompilationRun {
         parseSources(sourceSet, mode, lifecycle);
         token.throwIfCancellationRequested();
         IndexedDeclarations declarations = new DeclarationIndexer().index(syntax.values().stream().toList(), reuse);
-        var overlays = new OverlayBindings(declarations,request.options().overlays(),collector,token,request.options().budget());
+        var overlays = new OverlayBindings(declarations,request.options().overlays(),sourceSet.translations(),collector,token,request.options().budget());
         ModelIndex modelIndex = new ModelIndex(syntax.values().stream().toList());
         RootSelection roots;
         Closure closure;

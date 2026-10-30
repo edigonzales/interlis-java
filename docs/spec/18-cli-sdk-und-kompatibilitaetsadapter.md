@@ -177,3 +177,40 @@ bleibt ohne diesen Adapter nutzbar.
 ## 9. Erweiterbarkeit für weitere Einbettungen
 
 Ein späteres Java-Native-Image, Node-Addon, C-ABI oder Python-Binding kann dieselben expliziten Requests und Resultatprojektionen nutzen. Das ist keine P1-Lieferpflicht. Binäre Foreign-Function-Handles brauchen eine eigene Lebensdauer-/Fehler-/Threading-Spezifikation und dürfen die vorhandenen Snapshotverträge nicht umgehen. Der vorhandene JSON-/WASM-Vertrag ist eine mögliche fachliche Grundlage, aber keine automatische ABI-Kompatibilität zu C++-Verbrauchern.
+
+## L3-2: explizite Repositoryoptionen des neuen Standardprofils
+
+`check` und `compile` akzeptieren zusätzlich:
+
+- `--repository DIR_OR_URI` mehrfach, in Prioritätsreihenfolge; Index jeweils
+  `ilimodels.xml`. Lokale Verzeichnisse werden gegen das CliEnvironment aufgelöst.
+- `--root MODEL` auch ohne explizite Quelldatei: der Host beschafft den benannten Root.
+- `--model-pin NAME VERSION SOURCE SHA256` und `--source-pin SOURCE SHA256`;
+  doppelte Schlüssel oder ungültige Digests sind Nutzungsfehler.
+- `--read-lock FILE`, `--write-lock FILE`: striktes XML-v1 aus `ResolutionLockCodec`.
+  Ein neuer Lock wird erst nach erfolgreicher Kompilierung atomar geschrieben.
+  Quelle-/Index-/Modellkollisionen werden ohne Überschreiben abgewiesen.
+- `--cache DIR`: expliziter persistenter digestverifizierter ContentStore.
+  Ohne Option bleibt der Cache pro Aufruf im Speicher.
+- `--offline`: fehlende Repositorymaterialien nur aus verifiziertem Cache mit
+  Pin/Lock; vollständige Workspace-Closures brauchen keinen Provider.
+
+Repositoryoptionen setzen `--repository` voraus; andere Befehle lehnen sie ab.
+Die bestehenden Optionen und bisherige Quelldateiaufrufe bleiben erhalten. Dies
+sind neue Standardoptionen, keine Behauptung bereits qualifizierter ili2c-
+Legacyalias-Kompatibilität. Die CLI delegiert Beschaffung vollständig an
+`RepositoryClosureService` und ruft anschliessend dieselbe Workspace-Engine auf.
+
+Fehlende/mehrdeutige/falsch gepinnte Auswahl ergibt INPUT_UNRESOLVED;
+Index-/Ladefehler ergeben OPERATIONAL_FAILURE mit separat sichtbarer Ursache,
+Abbruch CANCELLED und veraltete Eingaben INCOMPLETE_ANALYSIS. Sprachfehler und
+Compilerergebnisse werden weiterhin allein über CompilationOutcome abgebildet.
+`--json` enthält bei Hostablehnung den konkreten typisierten Grund im Status;
+Diagnosen werden nicht durch erfundene Quellpositionen ersetzt. Fehler beim
+Locklesen/-schreiben erzeugen keinen erfolgreichen Gesamtstatus.
+
+`RepositoryCliContractTest` führt den vollständigen Online-/Lock-/Cache-/Offline-
+Ablauf über getrennte CLI-Anwendungsinstanzen aus, entfernt die Originaldateien,
+prüft Cachekorruption, Ambiguität, Pins, ungültige Optionen und Ausgabekollisionen.
+Die programmatischen SDK-Verträge einschliesslich Closure-/Modellassertions
+stehen in den Repository- und Workspace-Vertragstests aus Kapitel 08 §11.

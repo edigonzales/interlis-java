@@ -28,6 +28,9 @@ public interface Workspace extends AutoCloseable {
      */
     WorkspaceState state();
 
+    /** Returns the immutable current configuration, without IO. */
+    WorkspaceConfiguration configuration();
+
     /** Returns the current text of one source, if present.
      *
      * @param id source identity
@@ -54,6 +57,18 @@ public interface Workspace extends AutoCloseable {
      */
     BatchUpdateReceipt applyBatch(List<SourceUpdate> updates,
                                   WorkspaceRevision expectedRevision);
+
+    /**
+     * Atomically applies sources and the complete resolver/compiler configuration.
+     * A stale revision or any invalid update leaves both sources and configuration
+     * unchanged. IO and parsing must finish before this short conditional commit.
+     */
+    BatchUpdateReceipt applyBatch(List<SourceUpdate> updates, WorkspaceRevision expectedRevision,
+                                  WorkspaceConfiguration configuration);
+
+    /** Also rejects any intervening configuration change, including cache-only settings. */
+    BatchUpdateReceipt applyBatch(List<SourceUpdate> updates, WorkspaceRevision expectedRevision,
+                                  WorkspaceConfiguration configuration, String expectedConfigurationFingerprint);
 
     /** Removes a source under an explicit revision check.
      *

@@ -51,28 +51,52 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
         }
         try {
             cancellation.throwIfCancellationRequested();
-            List<ModelHeader> roots = selectRoots(request.roots(), inventory);
+            Work work = new Work(request.budget().maxSemanticWorkUnits(), cancellation);
+            List<ModelHeader> roots = selectRoots(request, inventory, work);
             List<String> trace = new ArrayList<>();
             List<ResolutionDependency> dependencies = new ArrayList<>();
             List<ResolutionDependency> negative = new ArrayList<>();
             List<PendingSourceRequest> pending = new ArrayList<>();
             List<ImportBinding> bindings = new ArrayList<>();
+            List<guru.interlis.compiler.TranslationBinding> translations = new ArrayList<>();
+            for (ModelSelector root : request.roots()) {
+                work.scan(inventory.headers().size());
+                if (root instanceof ModelSelector.ByName name) {
+                    var query = request.policy().qualify(name);
+                    var found = request.policy().select(name, inventory.headers());
+                    if (found.size() != 1) {
+                        var dependency = new ResolutionDependency(query, List.of(),
+                                found.stream().map(DefaultModelResolutionService::location).toList(),
+                                found.isEmpty() ? ResolutionDependency.Kind.NEGATIVE : ResolutionDependency.Kind.AMBIGUOUS,
+                                inventory.fingerprint());
+                        negative.add(dependency);
+                        pending.add(new PendingSourceRequest(query.modelName(), query.modelVersion(),
+                                query.sourceHint().map(v -> List.of(v.value())).orElse(List.of()),
+                                found.isEmpty() ? "root not found" : "root is ambiguous", List.of()));
+                    }
+                } else if (root instanceof ModelSelector.BySource source
+                        && !inventory.sources().containsKey(source.source())) {
+                    pending.add(new PendingSourceRequest("", Optional.empty(), List.of(source.source().value()),
+                            "root source not found", List.of()));
+                }
+            }
             Set<ModelHeader> selected = new LinkedHashSet<>(roots);
             Deque<ModelHeader> queue = new ArrayDeque<>(roots);
             while (!queue.isEmpty()) {
                 cancellation.throwIfCancellationRequested();
+                work.scan(1);
                 ModelHeader header = queue.removeFirst();
                 // Reuse the captured syntax. Original models contribute dependencies,
                 // but TRANSLATION OF does not make their namespaces visible as imports.
                 var model = inventory.syntax().get(header.source()).root().models().stream()
                         .filter(m -> m.range().startOffset() == header.declarationOffset()).findFirst().orElseThrow();
-                for(var originalSelector:translationDependencies(header,model,request)) {
+                work.scan(request.overlays().overlays().size());
+                var originalDependencies = translationDependencies(header, model, request);
+                for(var originalSelector:originalDependencies) {
                     String original = originalSelector.modelName();
-                    List<ModelHeader> candidates = inventory.headers().stream()
-                            .filter(h -> h.modelName().equals(original))
-                            .filter(h -> originalSelector.modelVersion().isEmpty()
-                                    || originalSelector.modelVersion().orElseThrow().equals(h.modelVersion()))
-                            .filter(h->originalSelector.sourceHint().isEmpty()||originalSelector.sourceHint().orElseThrow().equals(h.source())).toList();
+                    work.scan(inventory.headers().size());
+                    originalSelector = request.policy().qualify(originalSelector);
+                    List<ModelHeader> candidates = request.policy().select(originalSelector, inventory.headers());
                     var dependency = new ResolutionDependency(
                             originalSelector, List.of(),
                             candidates.stream().map(DefaultModelResolutionService::location).toList(),
@@ -82,7 +106,8 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                     if (candidates.size() == 1) {
                         dependencies.add(dependency);
                         ModelHeader target = candidates.getFirst();
-                        trace.add(header.modelName() + " translates " + original + " from " + target.source().value());
+                        if (originalDependencies.size() == 1) translations.add(new guru.interlis.compiler.TranslationBinding(location(header), location(target)));
+                        trace.add(header.modelName() + " translates " + original + " from " + safeSource(target.source()));
                         if (selected.add(target)) queue.addLast(target);
                     } else {
                         negative.add(dependency);
@@ -98,11 +123,10 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                     }
                     ImportSite site = new ImportSite(importSyntax.range(), header.modelName(),
                             importSyntax.modelName());
-                    List<ModelHeader> candidates = inventory.headers().stream()
-                            .filter(h -> h.modelName().equals(importSyntax.modelName()))
-                            .sorted(Comparator.comparing((ModelHeader h) -> h.source().value())
-                                    .thenComparingInt(ModelHeader::declarationOffset))
-                            .toList();
+                    work.scan(inventory.headers().size());
+                    var query = request.policy().qualify(new ModelSelector.ByName(importSyntax.modelName(),
+                            Optional.empty(), Optional.empty()));
+                    List<ModelHeader> candidates = request.policy().select(query, inventory.headers());
                     if (candidates.size() == 1) {
                         ModelHeader target = candidates.getFirst();
                         bindings.add(new ImportBinding(site, new ImportResolution.Resolved(
@@ -114,7 +138,7 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                                 List.of(site), List.of(location(target)),
                                 ResolutionDependency.Kind.POSITIVE, inventory.fingerprint()));
                         trace.add(header.modelName() + " imports " + target.modelName()
-                                + " from " + target.source().value());
+                                + " from " + safeSource(target.source()));
                         if (selected.add(target)) {
                             queue.addLast(target);
                         }
@@ -123,12 +147,11 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                                 ResolutionReason.NOT_FOUND, importSyntax.modelName());
                         bindings.add(new ImportBinding(site, new ImportResolution.Missing(problem)));
                         negative.add(new ResolutionDependency(
-                                new ModelSelector.ByName(importSyntax.modelName(),
-                                        Optional.empty(), Optional.empty()),
+                                query,
                                 List.of(site), List.of(), ResolutionDependency.Kind.NEGATIVE,
                                 inventory.fingerprint()));
                         pending.add(new PendingSourceRequest(importSyntax.modelName(),
-                                Optional.empty(), List.of(), "model not found", List.of(site)));
+                                query.modelVersion(), query.sourceHint().map(v -> List.of(v.value())).orElse(List.of()), "model not found", List.of(site)));
                         trace.add(header.modelName() + " misses " + importSyntax.modelName());
                     } else {
                         ResolutionProblem problem = problem("ILI-RES-0002", site.nameRange(),
@@ -137,23 +160,23 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
                                 candidates.stream().map(DefaultModelResolutionService::location)
                                         .toList(), problem)));
                         negative.add(new ResolutionDependency(
-                                new ModelSelector.ByName(importSyntax.modelName(),
-                                        Optional.empty(), Optional.empty()),
+                                query,
                                 List.of(site),
                                 candidates.stream().map(DefaultModelResolutionService::location)
                                         .toList(),
                                 ResolutionDependency.Kind.AMBIGUOUS, inventory.fingerprint()));
                         pending.add(new PendingSourceRequest(importSyntax.modelName(),
-                                Optional.empty(), List.of(), "model name is ambiguous",
+                                query.modelVersion(), List.of(), "model name is ambiguous",
                                 List.of(site)));
                         trace.add(header.modelName() + " has ambiguous import "
                                 + importSyntax.modelName());
                     }
                 }
             }
+            dependencies.addAll(negative);
             Map<SourceId, SourceText> sources = new LinkedHashMap<>(inventory.sources());
             SourceSet sourceSet = SourceSet.of(sources, bindings, List.of(),
-                    inventory.fingerprint());
+                    resolutionFingerprint(request, inventory), translations);
             if (pending.isEmpty() && !roots.isEmpty()) {
                 return new ResolutionOutcome.Prepared(new ResolvedClosure(sourceSet,
                         new ResolutionTrace(trace), dependencies));
@@ -198,22 +221,59 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
         return ++failures;
     }
 
-    private List<ModelHeader> selectRoots(List<ModelSelector> selectors, SourceInventory inventory) {
+    private List<ModelHeader> selectRoots(ResolutionRequest request, SourceInventory inventory, Work work) {
         List<ModelHeader> roots = new ArrayList<>();
-        for (ModelSelector selector : selectors) {
+        for (ModelSelector selector : request.roots()) {
+            work.scan(inventory.headers().size());
             switch (selector) {
-                case ModelSelector.BySource bySource -> roots.addAll(inventory.headers().stream()
-                        .filter(h -> h.source().equals(bySource.source())).toList());
-                case ModelSelector.ByName byName -> roots.addAll(inventory.headers().stream()
-                        .filter(h -> h.modelName().equals(byName.modelName()))
-                        .filter(h -> byName.modelVersion().isEmpty()
-                                || byName.modelVersion().get().equals(h.modelVersion()))
-                        .filter(h -> byName.sourceHint().isEmpty()
-                                || byName.sourceHint().get().equals(h.source()))
-                        .toList());
+                case ModelSelector.BySource source -> roots.addAll(inventory.headers().stream()
+                        .filter(h -> h.source().equals(source.source())).toList());
+                case ModelSelector.ByName name -> roots.addAll(request.policy().select(name, inventory.headers()));
             }
         }
         return roots.stream().distinct().toList();
+    }
+
+    private static guru.interlis.compiler.ResolutionFingerprint resolutionFingerprint(ResolutionRequest request, SourceInventory inventory) {
+        var b = new StringBuilder("resolved-input-v2");
+        field(b, inventory.fingerprint().value()); field(b, request.policy().fingerprint());
+        field(b, Integer.toString(request.roots().size()));
+        for (var root : request.roots()) switch (root) {
+            case ModelSelector.BySource source -> { field(b, "source"); field(b, source.source().value()); }
+            case ModelSelector.ByName name -> {
+                field(b, "name"); field(b, name.modelName());
+                field(b, Boolean.toString(name.modelVersion().isPresent())); name.modelVersion().ifPresent(v -> field(b, v));
+                field(b, Boolean.toString(name.sourceHint().isPresent())); name.sourceHint().ifPresent(v -> field(b, v.value()));
+            }
+        }
+        field(b, request.overlays().fingerprint());
+        return new guru.interlis.compiler.ResolutionFingerprint("sha256:" + guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digestUtf16(b.toString())));
+    }
+    private static void field(StringBuilder b, String text) { b.append(text.length()).append(':').append(text); }
+
+    private static String safeSource(SourceId source) {
+        // Source identities remain exact; explanatory traces omit credentials/query fragments.
+        String value = source.value();
+        int suffix = value.indexOf('?');
+        if (suffix >= 0) value = value.substring(0, suffix);
+        suffix = value.indexOf('#');
+        if (suffix >= 0) value = value.substring(0, suffix);
+        int authority = value.indexOf("://");
+        int at = authority < 0 ? -1 : value.indexOf('@', authority + 3);
+        int slash = authority < 0 ? -1 : value.indexOf('/', authority + 3);
+        if (at >= 0 && (slash < 0 || at < slash)) value = value.substring(0, authority + 3) + value.substring(at + 1);
+        return value;
+    }
+
+    private static final class Work {
+        private long remaining;
+        private final CancellationToken token;
+        Work(long remaining, CancellationToken token) { this.remaining = remaining; this.token = token; }
+        void scan(long count) {
+            token.throwIfCancellationRequested();
+            if (count > remaining) throw new OperationCancelledException(guru.interlis.execution.CancellationReason.RESOURCE_LIMIT);
+            remaining -= count;
+        }
     }
 
     private static ModelLocation location(ModelHeader header) {

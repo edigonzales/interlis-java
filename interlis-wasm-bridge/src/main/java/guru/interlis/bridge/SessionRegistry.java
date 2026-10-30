@@ -42,7 +42,7 @@ public final class SessionRegistry {
         Optional<JsonValue.JsonObject> config = BridgeCodec.optionalObject(params, "configuration");
         if(config.isPresent())configuration=new WorkspaceConfiguration(
                 OverlayCodec.options(config.orElseThrow(),configuration.compilerOptions()),
-                configuration.resolutionPolicy(),configuration.resolverCatalog(),configuration.cacheLimits());
+                ResolutionPolicyCodec.read(config.orElseThrow()),configuration.resolverCatalog(),configuration.cacheLimits());
         CompilerEngine engine = CompilerEngines.create();
         Workspace workspace = Workspaces.create(engine, configuration);
         if (params.members().get("sources") instanceof JsonValue.JsonArray sources) {
