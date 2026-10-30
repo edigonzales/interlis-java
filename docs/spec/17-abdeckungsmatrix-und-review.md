@@ -1,5 +1,15 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+L4-1 konkretisiert SYN-001–012, SEM-001–019, INC-001–017 und die bestehenden
+DIAG-/LOG-/API-Verträge durch den Einzelabgleich in
+`testdata/g2/completion-links.json`. Die historischen Norm-/Grammatik-/Builtin-
+IDs bleiben erhalten. AC4-01–03 verlangen tatsächliche öffentliche Assertions,
+einen realen A3-Semantikvergleich und ausdrückliche Profilentscheidungen;
+Quelllinks und erfolgreiche Integritätsprüfungen ersetzen kein unabhängiges
+Review. Für äussere Typnamen und Herausgeber gelten die am30.10.2026 gewählten
+Profile in Kapitel06/15. L4-2 prüft AC4-04–07 kumulativ einschliesslich T4.
+Der operative Stand steht ausschliesslich in [STATUS](../g2/STATUS.md).
+
 L1-3 ordnet AC1-05–07 den bestehenden META-001/003/004/008/011/014/016 und
 SEM-002/003/005/007/008/009/010/011/017/019/020 zu: Vererbung, finale und
 abstrakte Eigenschaften, gebundene Rollen-/Attributziele, vollständige
@@ -19,7 +29,8 @@ die Vertragsquellen. Neue Regressionen und vorhandene Typfamilienprüfungen
 werden in der L1-2-Abnahme zusammen bewertet; dieser Index ersetzt weder
 deren Ausführung noch das unabhängige Urteil.
 
-Der laufende G2-Abschluss folgt dem [Ausführungsvertrag A–I](../evidence/stabilization/g2-completion-plan.md).
+Der laufende G2-Abschluss folgt dem [Ausführungsplan](../g2/EXECUTION_PLAN.md);
+der frühere [Vertrag A–I](../evidence/stabilization/g2-completion-plan.md) bleibt historische Evidenz.
 Die versionierte G2-Regelmatrix trennt den vorhandenen Implementierungs-/Teststand
 von der unabhängigen Abnahme. Ein älteres VERIFIED ist ohne neues Review kein
 abgeschlossener Schritt dieses Auftrags. Anforderungen behalten ihre IDs und

@@ -1,0 +1,64 @@
+{
+  "status": "USER_DECIDED",
+  "profiles": [
+    {
+      "id": "OUTER_TYPE_SHADOWING",
+      "versions": [
+        "2.3",
+        "2.4"
+      ],
+      "example": "DOMAIN X=TEXT;TOPIC T=CLASS X=END X;END T;",
+      "current": "accepted",
+      "reference": "accepted (fresh2.3 process Exit0; namespaced proof also pending for2.4)",
+      "recommendation": "Bestehendes Profil wieili2c erhalten: lokal überdeckte äussere Typnamen zulassen; gleiche Namenskategorie im selben Deklarationsraum bleibt eindeutig. Qualifizierte Bindungen müssen getrennt bleiben.",
+      "selected": "STRICT_OUTER_TYPE_NAMES"
+    },
+    {
+      "id": "MODEL_ISSUER_URI",
+      "versions": [
+        "2.3",
+        "2.4"
+      ],
+      "example": "AT \"x\"",
+      "current": "accepted",
+      "reference": "rejected: issuer does not match URI syntax",
+      "primarySource": "https://www.rfc-editor.org/rfc/rfc2396.html",
+      "primaryObservation": "RFC2396 beschreibt absolute und relative URI-Formen. Die INTERLIS-URI-Familie begrenzt auf1023Zeichen.",
+      "recommendation": "URI-Referenzen gemäss allgemeiner Syntax einschliesslich relativer Werte wiex erhalten; syntaktisch defekte Referenzen, unkodierte Nicht-ASCII-Zeichen und Werte über1023Zeichen gezielt ablehnen. Keine Hostauflösung.",
+      "selected": "URI_REFERENCES_INCLUDING_RELATIVE"
+    }
+  ],
+  "normClauses": [
+    {
+      "id": "NORM:2.3:2.5.4:p30:008",
+      "sha256": "c2bc5454453bb8a6f0edab22c312b387451e550d40d1ad1af14a21a36bde9eae",
+      "quote": "2.5.4 Namensräume  \nAls Namensraum bezeichnet man eine Menge von (eindeutigen) Namen. Jedes Modellierungselement \n(Dat enmodell, Thema, Klassenelement) sowie die Metadaten -Behälter stellen jeweils einen eigenen N a-\nmensraum für ihre Namenskategorien (Typnamen, Bestan dteilnamen, Metaobjektnamen)  bereit.  \nModellierungselemente gibt es auf drei Hierarchiestufen:  "
+    },
+    {
+      "id": "NORM:2.3:2.8.1:p38:004",
+      "sha256": "dadfe17eb51aac192c5cd757cdfdcd825238e681f519aae78fb1a017ea7bce96",
+      "quote": "2.8.1 Zeichenketten \nEine Zeichenkette ist eine Folge v on Z eichen mit einer  maximalen Länge. D er  Z eichenv orrat muss klar \ndefiniert sein (vgl. Anhang  B Zeichentabelle ). \nIm Datentyp M TE XT sind die Zeichen ' carriage return ' (Wagenrücklauf) (#x D), 'line feed ' (Zeilenvorschub) \n(#xA) und 'Tabulatorz eichen' (#x9), im Gegensatz zum Wertebereich des Datentyps TEXT , enthalten.  \nBeim Da tentyp Zeichenkette (TEXT ) ist primär die Länge der Zeichenkette von Interesse. Je nach der \nForm der Definition wird sie explizit oder implizit angegeben. Bei der expliziten Form (TEXT  * ...)  w ir d die \nmaximale Länge in Anzahl Zeiche n festgelegt (grösser Null). Werden nur die Schlüsselwörter TEXT  oder \nMTEXT angegeben, ist die Anzahl Z eichen unb eschränkt. Im Rahmen einer Erweiterung kann die Länge \nverkürzt werden (eine Verlängerung würde zu einem Wert ebereich führen, der mit dem Basis -\nWertebereich nicht mehr verträglich ist).  \nDie INTE RLIS-Zeichenkettenlänge bezeichnet die Zahl der Zeichen, wie sie von Benutzern wahrgeno m-\nmen wird, nicht aber die Zahl der Speicherstellen, die ein System maximal zur Repräsentation  einer Zei-\nchenkette benötigt.  Z eichenketten der  Länge null gelten als undef inier t. \nBemerkung: Im Zusammenhang mit INTERLIS  ist die Länge einer Zeichenkette als Anzahl jener Zeichen \ndefiniert, welche gemäss Unicode -Standard die kanonische K ombinationsklasse Nr. 0 besitzen, nachdem \ndie Zeichenkette in die kanonisch dekomponierte Form von Unicode gebracht wu rde ( siehe  \nwww.unicode.org/unicode/reports/tr15/\n). So besitzt etwa eine Zeiche nkette, die aus der Ke tte <LATIN \nCAPITA L LE TTE R C WITH CIRCUMFLE X><COMBINING CE DILLA> besteht, ebenso die Länge 1 wie \ndie äquivalente Zeichenkette <LATIN CAPITAL LETTER C>< COMBINING CIRCUMFLEX \nACCENT><COMBINING CEDILLA>. Gemäss der obigen Definition besit zen Ligaturen für \"fl\" oder \"ffi\" \ndie Länge 1. Es wird aber davon abgeraten, solche Darstellungsformen überhaupt für Zeichenkettenattr i-\nbute zu verwenden.  \nDer Namen-Zeichenkettentyp (Schlüssel wort NAME ) definiert einen Wertebereich, der genau de mjenigen \nder INTERLIS -Namen entspricht (vgl. Kapitel 2.2.2 Namen ). Er wird in der vordefinie rten Klasse \nMETAOBJECT (siehe v or d ef in i e r t e s  B a s i s m o de l l  I N T E R L I S) und damit vor allem in den Klasse n für R e-\nferenzsysteme sowie Signaturen eingesetzt (vgl. Kapitel 2.10.3 Referenzsysteme  und Kapitel 2.16 Da r-\nstellungsbeschreibungen ), weil dort Datenattribut e mit Beschreibungselementen v on Modellen überei n-\nstimmen müssen.  \nAls weiterer Zeichenkettentyp wird der URI  (Uniform Resource Identifier) geführt, z.B. http -, ftp- oder mai l-\nto-Adressen (s. Abschnitt  1.2 im Internet -Standard IETF RFC 2396 in www.w3.org/\n). Die Länge eines URI  \nist in INTERLIS auf 1023 Zeichen beschränkt. Er entspricht damit folgender Def inition: \nDOMAIN \n  URI (FINAL) = TEXT*1023;  !! ACHTUNG: gemäss IETF RFC 2396 \n  NAME (FINAL) = TEXT*255;  !! ACHTUNG: gemäss Kapitel 2.2.2 Namen \n "
+    },
+    {
+      "id": "NORM:2.4:3.5.4:p38:004",
+      "sha256": "c02dfc454cdc296027055710291888222fabfa20de2321bb78fe30cdc07eb369",
+      "quote": "3.5.4 Namensräume \nAls Namensraum bezeichnet man eine Menge von (eindeutigen) Namen. Jedes Modellierungs-\nelement (Datenmodell, Thema, Klassenelement) sowie die Metadaten-Behälter stellen jeweils \neinen eigenen Namensraum für ihre Namenskategorien (Typnamen, Bestandteilnamen, Metao-\nbjektnamen) bereit. \nModellierungselemente gibt es auf drei Hierarchiestufen: \n Modell (MODEL ist einziges Modellierungselement auf oberster Stufe) \n Thema (TOPIC ist einziges Modellierungselement auf dieser Stufe) \n Klassenelemente sind Klasse (CLASS), Struktur (STRUCTURE), Assoziation (ASSOCIA-\nTION), Sicht (VIEW), Grafikdefinition (GRAPHIC) \nMetadaten-Behälter-Namen eröffnen den Zugang zu den Metaobjekten (vgl. Kapitel 3.10 Um-\ngang mit Metaobjekten_Umgang_mit_Metaobjekten). \nEs gibt drei Namenskategorien, die folgende Namen enthalten: \n Typnamen sind die Kurzzeichen (Namen) von Einheiten und die Namen von Funktionen, Li-\nnienformtypen, Wertebereichen, Strukturen, Themen, Klassen, Assoziationen, Sichten, Gra-\nfikdefinitionen, Behältern. \n Bestandteilnamen heissen die Namen von Laufzeitparametern, Attributen, Zeichnungsre-\ngeln, Parametern, Rollen und Basissichten. \n Metaobjektnamen heissen die Namen von Metaobjekten. Sie existieren nur innerhalb von \nMetadatenbehältern. \nErweitert ein Modellierungselement ein anderes, werden seinen Namensräumen alle Namen \ndes Basis-Modellierungselementes zugefügt. Um Missverständnisse auszuschliessen überneh-\nmen Modellierungselemente zudem die Namen des übergeordneten Modellierungselementes \nentsprechend der Namenskategorie. Ein lokal im Modellierungselement definierter Name darf \nnicht mit einem übernommenen Namen kollidieren, es sei denn es handle sich ausdrücklich um \neine Erweiterung (EXTENDED). \nWill man Beschreibungselemente des Datenmodells referenzieren, muss ihr Name normaler-\nweise qualifiziert, d.h. mit vorangestelltem Modell- und Thema-Namen angegeben werden. Un-\nqualifiziert können die Namen der Namensräume des jeweiligen Modellierungselementes ver-\nwendet werden. \n"
+    },
+    {
+      "id": "NORM:2.4:3.8.1:p48:005",
+      "sha256": "0c5e86dc294beb2d206eee04d8dad953500d78cfadad1f14c7ab744ac39dfd77",
+      "quote": "3.8.1 Zeichenketten \nEine Zeichenkette ist eine Folge von Zeichen mit einer maximalen Länge. Der Zeichenvorrat \nmuss klar definiert sein (vgl. Anhang D Zeichentabelle). \nIm Datentyp MTEXT sind die Zeichen «Carriage Return» (Wagenrücklauf) (#xD), «Line Feed» \n(Zeilenvorschub) (#xA) und «Tabulatorzeichen» (#x9), im Gegensatz zum Wertebereich des \nDatentyps TEXT, enthalten. \nBeim Datentyp Zeichenkette (TEXT) ist primär die Länge der Zeichenkette von Interesse. Je \nnach der Form der Definition wird sie explizit oder implizit angegeben. Bei der expliziten Form \n(TEXT * ...) wird die maximale Länge in Anzahl Zeichen festgelegt (grösser Null). Werden nur \ndie Schlüsselwörter TEXT oder MTEXT angegeben, ist die Anzahl Zeichen unbeschränkt. Im \nRahmen einer Erweiterung kann die Länge verkürzt werden (eine Verlängerung würde zu einem \nWertebereich führen, der mit dem Basis-Wertebereich nicht mehr verträglich ist). \nDie INTERLIS-Zeichenkettenlänge bezeichnet die Zahl der Zeichen, wie sie von Benutzern \nwahrgenommen wird, nicht aber die Zahl der Speicherstellen, die ein System maximal zur Re-\npräsentation einer Zeichenkette benötigt. Zeichenketten der Länge null gelten als undefiniert. \nBemerkung: Im Zusammenhang mit INTERLIS ist die Länge einer Zeichenkette als Anzahl jener \nZeichen definiert, welche gemäss Unicode-Standard die kanonische Kombinationsklasse Nr. 0 \nbesitzen, nachdem die Zeichenkette in die kanonisch dekomponierte Form von Unicode ge-\nbracht wurde (siehe www.unicode.org/unicode/reports/tr15/). So besitzt etwa eine Zeichenkette, die \naus der Kette <LATIN CAPITAL LETTER C WITH CIRCUMFLEX><COMBINING CEDILLA> be-\nsteht, ebenso die Länge 1 wie die äquivalente Zeichenkette <LATIN CAPITAL LETTER C>< \nCOMBINING CIRCUMFLEX ACCENT><COMBINING CEDILLA>. Gemäss der obigen Defini-\ntion besitzen Ligaturen für «fl» oder «ffi» die Länge 1. Es wird aber davon abgeraten, solche \nDarstellungsformen überhaupt für Zeichenkettenattribute zu verwenden. \nDer Namen-Zeichenkettentyp (Schlüsselwort NAME) definiert einen Wertebereich, der genau \ndemjenigen der INTERLIS-Namen entspricht (vgl. Kapitel 3.2.2 Namen). Er wird in der vordefi-\nnierten Klasse METAOBJECT (siehe vordefiniertes Basismodell INTERLIS) und damit vor allem \nin den Klassen für Referenzsysteme sowie Signaturen eingesetzt (vgl. Kapitel 3.10.3 Referenz-\nsysteme und Kapitel 3.16 Darstellungsbeschreibungen), weil dort Datenattribute mit Beschrei-\nbungselementen von Modellen übereinstimmen müssen. \nAls weiterer Zeichenkettentyp wird der URI (Uniform Resource Identifier) geführt, z.B. http-, ftp- \noder mailto-Adressen (s. Abschnitt 1.2 im Internet-Standard IETF RFC 2396 in www.w3.org/). \nDie Länge eines URI ist in INTERLIS auf 1023 Zeichen beschränkt. Er entspricht damit folgen-\nder Definition: \nDOMAIN \n  URI (FINAL) = TEXT*1023;  !! ACHTUNG: gemäss IETF RFC 2396 \n  NAME (FINAL) = TEXT*255;  !! ACHTUNG: gemäss Kapitel 3.2.2 Namen \n "
+    },
+    {
+      "id": "NORM:2.3:2.5.4:p31:001",
+      "sha256": "58243b7daa3ecdb4325abb85b1d510206941b1783dfa0e95aa19fe04d405ebe8",
+      "quote": "INTE RLIS 2 - R ef er enzhandbuch Ausgabe v om 2006-04-13 (deutsch) \nwww.interlis.ch\n, info@interlis.ch\n 31 \n· Modell (MODEL ist einziges Modellie rungselement auf oberster Stufe)  \n· Thema (TOPIC ist einziges Modellierungselement auf dieser Stufe)  \n· Klassenelemente sind Klasse (CLASS ), Struktur (STRUCTURE ), Assoziation (ASSOCIATION ),  \nSicht (VIEW), Grafikdefinition (GRAPHIC ) \nMetadaten-Behälter -Namen eröffnen den Zugang zu den Metaobjekten (vgl. Kapitel 2.10 Umgang mit \nMetaobjekten ). \nEs gibt drei Namenskategorien, die f olgende Namen enthalten:  \n· Typnam en sind die K urzzeichen (Namen) von Einheiten und die Namen von F unktionen, Li nie n-\nformtypen, Wert ebereichen, Strukturen, Them en, Klassen, Assoziationen, Sichten, Grafikdefiniti o-\nnen, Behältern.  \n· Bestandteilnamen heissen die Nam en von Laufzeitparametern, Attributen, Zeichnungsregeln, P a-\nramet ern, Rollen und Basissichten. \n· Metaobjektnamen heissen die Namen von Metaobjekten. Sie existieren nur innerhalb von Metad a-\ntenbehältern. \nErweitert ein Modellierungselement ein anderes, werden se inen Namensräumen alle Namen des B asis-\nModellierungselementes zugefügt. Um Missverständnisse auszuschliessen übernehmen Modellierung s-\nelemente zudem die Namen des übergeordneten Modellierungselementes entsprechend der Namensk a-\ntegorie. Ein lokal im Modellier ungselement definierter Name darf nicht mit einem übernommenen Namen \nkollidieren, es sei denn es handle sich ausdrücklich um eine Erweiterung (EXTENDED ). \nWill man Beschreibungselemente des Datenmodells referenzieren, muss ihr Name normaler weise qualifi-\nziert, d.h. mit v orangestelltem Modell - und Thema -Namen angegeben werden. Unqualifiziert können die \nNamen der Namensräume des jeweiligen Modellierungselementes verwendet werden.  \n"
+    }
+  ],
+  "userDecisions": {
+    "date": "2026-10-30",
+    "outerTypeNames": "Auch äussere Typnamen strikt sperren",
+    "issuer": "URI-Referenzen inklusive relativ erhalten (empfohlen)",
+    "independentFinalAcceptance": "PENDING_L4_REVIEWS"
+  }
+}

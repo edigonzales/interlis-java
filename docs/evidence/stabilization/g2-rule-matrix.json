@@ -12021,7 +12021,7 @@
     "path": "g2-source-inventory.json",
     "scope": "All syntax occurrences, numbered requirements, actual standard-function names, 130 predefined declarations/members/constraints, 21 special values/type variants and explicit lexical profiles. Paragraph/method-contract/assertion audit still open.",
     "acceptance": "MISSING_EVIDENCE",
-    "sha256": "325ef984bcceba4b5580adef05082a77679b2a7024ad5d595a1f072e4ce30160"
+    "sha256": "389f0971113838b802ee75b6e83b3755965a1731466a24a112634d056f67ff4d"
   },
   "atomicRules": [
     {
@@ -14081,9 +14081,9 @@
   },
   "testCandidateIndex": {
     "path": "g2-test-candidate-index.json",
-    "sha256": "463b75863a9df9d6f7fd45b868c8cd1e3fa995cd9280da3d2dc2e4381650e4c2",
+    "sha256": "98f366439a77e891e0563a926b9da914fa1d46c5d6037cddb04a21f16a68b445",
     "acceptance": "CANDIDATE_ONLY",
-    "testMethods": 704,
+    "testMethods": 729,
     "conditions": 621,
     "requirements": 80,
     "withCandidate": 669,
@@ -14147,7 +14147,7 @@
   },
   "a3SemanticPairs": {
     "path": "g2-a3-semantic-pairs.json",
-    "sha256": "dad718d16687d6061db70a464c259d6b590df2f6fa8f9fff05d9199cd6527e6f",
+    "sha256": "39be08746d0b9e6e2317d13a7229c090e97a9a73a2b65733b7006207a1a1885c",
     "acceptance": "COUNTERCHECK_PAIRS_MATCHED",
     "pairs": 3
   }

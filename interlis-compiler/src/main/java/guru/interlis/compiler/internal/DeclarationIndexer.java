@@ -49,8 +49,9 @@ final class DeclarationIndexer {
     private int declarationOrder;
     private java.util.NavigableMap<Integer,guru.interlis.syntax.SourceMetadata> currentMetadata=new java.util.TreeMap<>();
     private List<guru.interlis.syntax.SyntaxToken> currentTokens = List.of();
-    private final Map<String, SymbolId> previous = new HashMap<>();
-    private final Set<SymbolId> usedPrevious = new HashSet<>();
+    private record Anchor(SourceId source, SymbolKind kind, String name) { }
+    private final Map<Anchor, SymbolId> previous = new HashMap<>();
+    private String allocationPrefix;
     private final Set<SymbolId> reservedPrevious = new HashSet<>();
     private final Set<SymbolId> assigned = new HashSet<>();
     private final Map<SymbolId, DeclInfo> byId = new LinkedHashMap<>();
@@ -64,6 +65,9 @@ final class DeclarationIndexer {
         List<SyntaxSnapshot> sorted = new ArrayList<>(snapshots);
         sorted.sort(Comparator.comparing(s -> s.source().id().value()));
         for (SyntaxSnapshot snapshot : sorted) {
+            String identity=snapshot.source().id().value();
+            allocationPrefix="sym-"+guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digestUtf16(
+                    identity.length()+":"+identity+":"+snapshot.source().revision().value()+":"+snapshot.source().contentFingerprint().value()))+"-";
             currentTokens = snapshot.tokens();
             currentMetadata.clear();snapshot.metadata().forEach((range,value)->currentMetadata.put(range.startOffset(),value));
             for (ModelSyntax model : snapshot.root().models()) {
@@ -78,7 +82,7 @@ final class DeclarationIndexer {
                 walkModel(model, declaration, snapshot.source().id());
             }
         }
-        return new IndexedDeclarations(modelEntries, byId, children, byQualifiedName, modelOf);
+        return reuseUnambiguous();
     }
 
     private void walkEnumeration(DeclInfo declaration, EnumerationTypeSyntax enumeration) {
@@ -101,34 +105,61 @@ final class DeclarationIndexer {
 
     private void preparePrevious(AnalysisReuse reuse) {
         reuse.previousAnalysis().ifPresent(analysis -> {
-            var graph = analysis.semanticGraph();
-            Map<String, Integer> ordinals = new HashMap<>();
-            List<Symbol> symbols = new ArrayList<>(graph.symbols());
-            symbols.sort(Comparator.comparing(Symbol::declarationOrder)
-                    .thenComparing(s -> s.id().value()));
-            for (Symbol symbol : symbols) {
-                if (!(symbol.origin() instanceof Origin.DeclaredOrigin declared)) {
-                    continue;
+            var graph=analysis.semanticGraph();
+            var anchors=new HashMap<SymbolId,Anchor>();var counts=new HashMap<Anchor,Integer>();
+            for(var symbol:graph.symbols())if(symbol.origin() instanceof Origin.DeclaredOrigin declared) {
+                String name=graph.qualifiedNames().entrySet().stream().filter(e->e.getValue().contains(symbol.id()))
+                        .map(e->e.getKey().toString()).findFirst().orElse(symbol.name().value());
+                if(symbol.kind()==SymbolKind.CONSTRAINT && symbol.owner().isPresent())
+                    name=graph.qualifiedNames().entrySet().stream().filter(e->e.getValue().contains(symbol.owner().orElseThrow()))
+                            .map(e->e.getKey()+"#"+symbol.name().value()).findFirst().orElse(name);
+                var anchor=new Anchor(declared.range().source(),symbol.kind(),name);
+                anchors.put(symbol.id(),anchor);counts.merge(anchor,1,Integer::sum);reservedPrevious.add(symbol.id());
+            }
+            for(var symbol:graph.symbols())if(anchors.containsKey(symbol.id())) {
+                var current=symbol;boolean unique=true;
+                while(true) {
+                    if(!anchors.containsKey(current.id()) || counts.get(anchors.get(current.id()))!=1){unique=false;break;}
+                    if(current.owner().isEmpty())break;
+                    current=graph.symbol(current.owner().orElseThrow()).orElseThrow();
                 }
-                String qname = graph.qualifiedNames().entrySet().stream()
-                        .filter(e -> e.getValue().contains(symbol.id()))
-                        .map(e -> e.getKey().toString())
-                        .findFirst().orElse(symbol.name().value());
-                if (symbol.kind() == SymbolKind.CONSTRAINT && symbol.owner().isPresent()) {
-                    // Constraint anchors use their own namespace, including unnamed constraints
-                    // which intentionally have no public qualified name.
-                    qname = graph.qualifiedNames().entrySet().stream()
-                            .filter(e -> e.getValue().contains(symbol.owner().orElseThrow()))
-                            .map(e -> e.getKey() + "#" + symbol.name().value())
-                            .findFirst().orElse(qname);
-                }
-                String base = declared.range().source().value() + "|" + symbol.kind() + "|" + qname;
-                int ordinal = ordinals.merge(base, 1, Integer::sum) - 1;
-                previous.putIfAbsent(base + "|" + ordinal, symbol.id());
-                reservedPrevious.add(symbol.id());
+                if(unique)previous.put(anchors.get(symbol.id()),symbol.id());
             }
         });
     }
+
+    /** Delay reuse until all current declarations and their owners are known.
+     * Duplicate ordinals are never evidence of continuity. New allocations include
+     * exact source identity/revision/content, so deletion/recreation cannot recycle
+     * an old id merely because a per-run counter happened to return to that value. */
+    private IndexedDeclarations reuseUnambiguous() {
+        var counts=new HashMap<Anchor,Integer>();
+        for(var declaration:byId.values())counts.merge(anchor(declaration),1,Integer::sum);
+        var identities=new HashMap<SymbolId,SymbolId>();
+        for(var declaration:byId.values()) {
+            var current=declaration;boolean unique=true;
+            while(true) {
+                if(counts.get(anchor(current))!=1){unique=false;break;}
+                if(current.owner().isEmpty())break;
+                current=byId.get(current.owner().orElseThrow());
+            }
+            identities.put(declaration.id(),unique?previous.getOrDefault(anchor(declaration),declaration.id()):declaration.id());
+        }
+        var declarations=new LinkedHashMap<SymbolId,DeclInfo>();
+        for(var d:byId.values())declarations.put(d.id(),new DeclInfo(identities.get(d.id()),d.kind(),d.name(),
+                d.owner().map(identities::get),d.order(),d.origin(),d.nameRange(),d.language(),d.modifiers(),d.syntax(),
+                d.sourceId(),d.qualifiedName(),d.featureId(),d.metadata()));
+        var newChildren=new LinkedHashMap<SymbolId,List<DeclInfo>>();
+        children.forEach((owner,list)->newChildren.put(identities.get(owner),list.stream().map(d->declarations.get(d.id())).toList()));
+        var newNames=new LinkedHashMap<String,List<DeclInfo>>();
+        byQualifiedName.forEach((name,list)->newNames.put(name,list.stream().map(d->declarations.get(d.id())).toList()));
+        var newModels=new LinkedHashMap<SymbolId,SymbolId>();
+        modelOf.forEach((id,model)->newModels.put(identities.get(id),identities.get(model)));
+        var newById=new LinkedHashMap<SymbolId,DeclInfo>();declarations.values().forEach(d->newById.put(d.id(),d));
+        return new IndexedDeclarations(modelEntries.stream().map(m->new IndexedDeclarations.ModelEntry(m.model(),declarations.get(m.id()))).toList(),
+                newById,newChildren,newNames,newModels);
+    }
+    private Anchor anchor(DeclInfo declaration) { return new Anchor(declaration.sourceId(),declaration.kind(),declaration.qualifiedName()); }
 
     private void walkModel(ModelSyntax model, DeclInfo modelDecl, SourceId sourceId) {
         for (SyntaxNode member : model.members()) {
@@ -346,13 +377,9 @@ final class DeclarationIndexer {
                             LanguageVersion language, Set<Modifier> modifiers, SyntaxNode syntax,
                             SourceId sourceId, String qualifiedName,
                             Optional<String> featureId, int localOrdinal) {
-        String key = sourceId.value() + "|" + kind + "|" + qualifiedName + "|" + localOrdinal;
-        SymbolId id = previous.get(key);
-        if (id == null || !usedPrevious.add(id) || assigned.contains(id)) {
-            do {
-                id = new SymbolId("sym-" + (++counter));
-            } while (reservedPrevious.contains(id) || assigned.contains(id));
-        }
+        SymbolId id;
+        do { id=new SymbolId(allocationPrefix+(++counter)); }
+        while(reservedPrevious.contains(id)||assigned.contains(id));
         assigned.add(id);
         // Source order must not depend on whether an identity was reused or allocated.
         return new DeclInfo(id, kind, name, owner, ++declarationOrder, new Origin.DeclaredOrigin(range),

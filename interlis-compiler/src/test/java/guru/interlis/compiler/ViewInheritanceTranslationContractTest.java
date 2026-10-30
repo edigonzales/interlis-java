@@ -116,11 +116,15 @@ class ViewInheritanceTranslationContractTest {
                 var graph = reused.semanticGraph(); var w = view(graph, "W");
                 var attribute = (AttributeSymbol)graph.symbol(w.members().getFirst()).orElseThrow();
                 assertEquals(length, ((TextType)graph.type(attribute.declaredType()).orElseThrow()).maxLength().orElseThrow());
-                assertEquals(graph.effectiveMembers(w.id()), fresh.semanticGraph().effectiveMembers(view(fresh.semanticGraph(), "W").id()));
+                assertEquals(OriginalViewReuseTest.semantic(graph.effectiveMembers(w.id()),graph), OriginalViewReuseTest.semantic(fresh.semanticGraph().effectiveMembers(view(fresh.semanticGraph(), "W").id()),fresh.semanticGraph()));
                 var original = (AttributeSymbol)graph.symbol(attribute.overrides().orElseThrow()).orElseThrow();
                 assertInstanceOf(Origin.DerivedOrigin.class, original.header().origin());
                 var compiled = assertInstanceOf(CompilationOutcome.Succeeded.class, engine.compile(request, CancellationToken.none()));
-                assertTrue(compiled.schema().semanticGraph().expression(original.derivations().getFirst()).isPresent());
+                var checked=compiled.schema().semanticGraph();
+                var checkedW=view(checked,"W");var checkedAttribute=(AttributeSymbol)checked.symbol(checkedW.members().getFirst()).orElseThrow();
+                var checkedOriginal=(AttributeSymbol)checked.symbol(checkedAttribute.overrides().orElseThrow()).orElseThrow();
+                assertTrue(checked.expression(checkedOriginal.derivations().getFirst()).isPresent());
+                assertEquals(OriginalViewReuseTest.semantic(original,graph),OriginalViewReuseTest.semantic(checkedOriginal,checked));
                 previous = reused;
             }
         }

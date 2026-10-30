@@ -29,6 +29,11 @@ function serve(root) {
   const repoRoot = path.resolve(__dirname, '..');
   const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot,
     'docs/evidence/p3/geo-corpus.json'), 'utf8'));
+  const profilePath = path.join(repoRoot, 'testdata/g2/corpus-expectations.json');
+  const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
+  if (profile.id !== 'STRICT_OUTER_TYPE_NAMES' || profile.cases.length !== 2
+      || profile.cases.some(c => !manifest.models.some(m => m.file === c.file && m.model === c.model && m.sha256 === c.sha256)))
+    throw new Error('Changed or foreign corpus expectation');
   const cache = path.resolve(repoRoot, process.env.GEO_CORPUS_CACHE || process.env.CONFORMANCE_CACHE || path.join(os.homedir(), '.cache/interlis-java/geo-corpus'));
   const home = process.env.HOME;
   const cached = {
@@ -59,14 +64,16 @@ function serve(root) {
         const bytes = fs.readFileSync(path.join(cache, entry.file.replaceAll('/', '__')));
         if (bytes.length !== entry.bytes || crypto.createHash('sha256').update(bytes).digest('hex') !== entry.sha256) throw new Error('Changed corpus bytes: ' + entry.file);
         const text = bytes.toString('utf8');
-        const run = () => page.evaluate(({text, model}) =>
-          window.interlisBrowserTest.benchmark(text, model), {text, model: entry.model});
+        const expectation = profile.cases.find(c => c.file === entry.file);
+        const run = () => page.evaluate(({text, model, expectation}) =>
+          window.interlisBrowserTest.benchmark(text, model, expectation), {text, model: entry.model, expectation});
         await run();
         const samples = [];
         for (let i = 0; i < 3; i++) samples.push(await run());
         models.push({model: entry.model, language: entry.language, bytes: entry.bytes,
           sha256: entry.sha256, compileMs: samples,
-          compileMedianMs: samples.slice().sort((a, b) => a - b)[1]});
+          compileMedianMs: samples.slice().sort((a, b) => a - b)[1], expectedOutcome: expectation?.outcome || 'succeeded',
+          ...(expectation ? {expectedDiagnostics: expectation.diagnostics} : {})});
         await page.close();
       }
       results.push({browser: name, status: 'passed', models});
@@ -82,7 +89,9 @@ function serve(root) {
   const result = {schemaVersion: '1.0', runtime: 'browser', iterationsPerModel: 3,
     warmupPerModel: 1, corpus: 'docs/evidence/p3/geo-corpus.json',
     corpusIndexSha256: manifest.index.sha256, results,
-    notes: 'Playwright browser pages; warmup excluded.'};
+    expectations: 'testdata/g2/corpus-expectations.json',
+    expectationsSha256: crypto.createHash('sha256').update(fs.readFileSync(profilePath)).digest('hex'),
+    notes: 'Playwright browser pages; warmup excluded. The approved outer-name source rejection is measured explicitly. Existing per-browser stack exclusions remain visible.'};
   fs.mkdirSync(path.join(repoRoot, 'build/reports/performance'), {recursive: true});
   fs.writeFileSync(path.join(repoRoot, 'build/reports/performance/performance-browser.json'),
     JSON.stringify(result, null, 2) + '\n');

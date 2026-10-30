@@ -3,6 +3,20 @@
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
+**Gesamte G2-Phase4 ist autonom beauftragt und in Arbeit**, aktuell L4-1
+(AC4-01–03), danach ohne Teilphasenstopp L4-2 (AC4-04–07). Noch kein
+Phase4-/G2-PASS. Die Norm-, Grammatik-, Builtin- und80 Anforderungs-IDs
+werden mit tatsächlichen öffentlichen Assertions abgeglichen; Kandidatenlinks
+werden nicht als Abnahme gezählt. Reale A3-Projektionen vergleichen vier
+Quellen über JVM/ili2c/JS/WasmGC und erkennen acht gezielte Mutationen.
+Neue Red/Green-Befunde: mehrrollige Aggregation, ORDERED-Abschwächung,
+mehrdeutige/deletierte Identitätskontinuität, Enum-Reuse,2.4-Kilogrammbezeichnung
+und zuvor nicht durchgesetzte Syntaxbudgets. Zwölf historische Fälle sind
+ausdrücklich im bestehenden Profil bestätigt; modellweite2.3-Rollenziele
+bleiben nach zusätzlicher ausdrücklicher Entscheidung wieili2c zulässig.
+Aktuelle Details/Nachweise und nächster Schritt ausschliesslich in
+[STATUS](g2/STATUS.md); unabhängige L4-Lieferungsreviews stehen noch aus.
+
 **G2-Phase3 ist vollständig und unabhängig mit PASS abgeschlossen**, kumulativ
 AC3-01–AC3-06. Schlussproduktcommit
 `1387ac887239ecc78ed42e688a81a0d00dfcba84`;
@@ -13,8 +27,8 @@ Versionen/Pins/Locks/Offline, atomare Übernahme und gepinnte reale2.3/2.4-Closu
 sind implementiert und öffentlich geprüft. Unabhängiger kompletter frischer
 T1/T2/T3-Lauf:1025JUnit ohneFehler/Skips,3499jeBackend/Browser/echtemSafari/
 WebImage,21Normprüfungen,SDK9/Paket/LSP undPythonfreiheit1250Inputs PASS.
-Keine offenen Phase-3-Muss-Findings. Nächster fachlicher Schritt Phase4;
-diese wurde nicht begonnen. GlobalD2 undglobaleG2-Freigabe bleiben getrennt.
+Keine offenen Phase-3-Muss-Findings. Historischer Abschlussstand vor dem
+inzwischen erteilten Phase4-Auftrag; globaleG2-Freigabe bleibt getrennt.
 Operativer Stand ausschliesslich in [STATUS](g2/STATUS.md).
 
 Seit dem früheren Nutzerauftrag vom 30.10.2026 wurde die gesamte G2-Phase 2 autonom

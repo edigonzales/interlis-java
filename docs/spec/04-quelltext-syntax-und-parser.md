@@ -1,5 +1,19 @@
 # 04 – Quelltext, Syntax und Parser
 
+L4-1 bindet die bereits konfigurierbaren Grenzen `maxParseRuleDepth`,
+`maxSyntaxNodes` und `maxRecoveryEvents` an die tatsächliche Parserausführung:
+aktive ANTLR-Regeltiefe, erzeugte eigene Syntaxknoten beziehungsweise gemeldete
+Parser-Recovery-Ereignisse. Der Guard gehört ausschliesslich zum internen
+ANTLR-Adapter. Eine Grenzüberschreitung bleibt Ressourcenabbruch und beweist
+keine Sprachungültigkeit. Ganze Syntaxsnapshots tragen die Budgetdiagnose und
+`budgetExceeded`; die Compilerpipeline liefert `Cancelled/RESOURCE_LIMIT`.
+Fragmente verwenden die Defaultgrenzen und liefern eine sichtbare
+`ILI-INF-0002`-Diagnose ohne erfolgreich konsumiertes Fragment. Expliziter
+Nutzerabbruch wird weitergereicht, unerwartete Parserdefekte werden nicht als
+gewöhnliche Syntaxfehler verschluckt. Abnahmen: `LifecycleBoundaryContractTest`
+mit tiefer gültiger Quelle, wiederholten fehlerhaften Quellen, allen drei
+Grenzen, Fragment und erfolgreichem Folgelauf.
+
 ## 1. Zweck und Verbindlichkeit
 
 Dieses Dokument spezifiziert den quelltextnahen Teil des neuen Compilers. Es ist ein Implementierungsauftrag. Die Anforderungen gelten für die JVM und für die in [10 – WebAssembly](10-webassembly-und-portabilitaet.md) beschriebenen Zielplattformen identisch. Die Begriffe MUSS, SOLL und KANN haben die in [00](00-auftrag-und-agentenregeln.md) festgelegte Bedeutung. P1 bezeichnet die durchgängige erste fachliche Strecke; P2 die vollständige Sprachabdeckung. Ein in P1 noch nicht unterstütztes Konstrukt ist ausdrücklich sichtbar zu machen und verhindert einen behaupteten erfolgreichen Produktionscompile, wenn es zur angeforderten Modellmenge gehört.

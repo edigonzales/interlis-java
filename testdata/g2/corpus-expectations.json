@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "id": "STRICT_OUTER_TYPE_NAMES",
+  "decision": "docs/g2/implementation/L4-1-profile-questions.json",
+  "userStatement": "Auch äussere Typnamen strikt sperren",
+  "cases": [
+    {
+      "file": "AGI/SO_AGI_Metadata_20230304.ili",
+      "model": "SO_AGI_Metadata_20230304",
+      "sha256": "1dd1c4fbfcabfb9966478e51b062178bf22a36206210126c1ae263ea3807200d",
+      "outcome": "rejected",
+      "exitCode": 1,
+      "diagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "startOffset": 2442,
+            "endOffset": 2544
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "FileFormat"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "local type names must not shadow an enclosing type name/SCOPE_OUTER_TYPE_NAME"
+            }
+          ]
+        }
+      ],
+      "control": {
+        "source": "testdata/g2/a3/metadata-outer-name-control23.ili",
+        "sha256": "2cbdb2fe90e1c167226a6c07d40754f4cfe1ba0944bd25103bf9d317f4a7c795",
+        "renames": [
+          {
+            "from": "CLASS FileFormat EXTENDS",
+            "to": "CLASS PublishedFileFormat EXTENDS"
+          },
+          {
+            "from": "    END FileFormat;",
+            "to": "    END PublishedFileFormat;"
+          }
+        ],
+        "className": "SO_AGI_Metadata_20230304.FileFormats.PublishedFileFormat",
+        "baseStructure": "SO_AGI_Metadata_20230304.FileFormat",
+        "members": [
+          "name",
+          "abbreviation",
+          "mimeType",
+          "extension"
+        ]
+      }
+    },
+    {
+      "file": "AWJF/SO_AWJF_Gesuchsteller_20210202.ili",
+      "model": "SO_AWJF_Gesuchsteller_20210202",
+      "sha256": "8f363a179dc03397776f98874143533a76a37602a0ca6724b5ecd78e478efbfe",
+      "outcome": "rejected",
+      "exitCode": 1,
+      "diagnostics": [
+        {
+          "code": "ILI-SEM-0010",
+          "severity": "ERROR",
+          "phase": "SEMANTIC_CHECKING",
+          "messageKey": "diagnostic.semantics.inheritance",
+          "range": {
+            "startOffset": 734,
+            "endOffset": 1238
+          },
+          "arguments": [
+            {
+              "name": "element",
+              "kind": "IDENTIFIER",
+              "value": "Gesuchsteller"
+            },
+            {
+              "name": "rule",
+              "kind": "TEXT",
+              "value": "local type names must not shadow an enclosing type name/SCOPE_OUTER_TYPE_NAME"
+            }
+          ]
+        }
+      ],
+      "control": {
+        "source": "testdata/g2/a3/applicant-outer-name-control23.ili",
+        "sha256": "ffd5c0edf590dfc172c146644277f1cb4376db83342bc56abe8efc5aecabc06a",
+        "renames": [
+          {
+            "from": "CLASS Gesuchsteller =",
+            "to": "CLASS Applicant ="
+          },
+          {
+            "from": "    END Gesuchsteller;",
+            "to": "    END Applicant;"
+          }
+        ],
+        "className": "SO_AWJF_Gesuchsteller_20210202.Gesuchsteller.Applicant",
+        "members": [
+          "Gesuchsteller",
+          "Forstrevier",
+          "Forstkreis",
+          "Abstufung_50_100",
+          "Gesuchsnummer"
+        ]
+      }
+    }
+  ]
+}

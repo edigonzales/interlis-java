@@ -80,6 +80,10 @@ project(':interlis-cli') {
             group = 'verification'
             description = 'Read-only G2 source, norm and fresh assertion contracts, including negative canaries.'
             dependsOn ':prepareG2Norms', ':interlis-compiler:g2AssertionTest'
+            // Completion links include real public contracts in every G2 consumer.
+            dependsOn ':interlis-compiler:test', ':interlis-model:test', ':interlis-workspace:test',
+                    ':interlis-repository:test', ':interlis-projection:test', ':interlis-wasm-bridge:test',
+                    ':interlis-cli:test', ':interlis-lsp:test'
             testClassesDirs = sourceSets.evidenceTest.output.classesDirs
             classpath = sourceSets.evidenceTest.runtimeClasspath
             useJUnitPlatform()

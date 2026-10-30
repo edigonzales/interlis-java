@@ -125,8 +125,18 @@ class ObjectFunctionContractTest {
             var outcome = CompilerEngines.create().compile(CompilerTestSupport.request(List.of("F"),
                     Map.of(source.id(), source), List.of(), CompilerOptions.defaults()),
                     CancellationToken.none());
-            if (type.equals("Hidden.A")) assertInstanceOf(CompilationOutcome.Rejected.class, outcome);
-            else assertInstanceOf(CompilationOutcome.Succeeded.class, outcome);
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, outcome);
+            if (type.equals("A")) assertTrue(rejected.analysis().diagnostics().stream()
+                    .anyMatch(d -> d.arguments().toString().contains("SCOPE_OUTER_TYPE_NAME")));
+            // The strict outer-name decision rejects the original even if its use is local.
+            // A distinct outer name leaves ordinary local object signatures legal.
+            if (type.equals("A")) {
+                var control = CompilerTestSupport.source("memory:/scopes-control.ili",
+                        source.text().toString().replace("CLASS A = END A;\n  TOPIC", "CLASS Outer = END Outer;\n  TOPIC"));
+                assertInstanceOf(CompilationOutcome.Succeeded.class, CompilerEngines.create().compile(
+                        CompilerTestSupport.request(List.of("F"), Map.of(control.id(), control), List.of(), CompilerOptions.defaults()),
+                        CancellationToken.none()));
+            }
         }
     }
 

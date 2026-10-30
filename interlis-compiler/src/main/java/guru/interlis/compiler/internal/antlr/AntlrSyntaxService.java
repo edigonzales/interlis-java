@@ -94,6 +94,7 @@ public final class AntlrSyntaxService implements SyntaxService {
         lexer.addErrorListener(lexerListener);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         tokens.fill();
+        if(tokens.size()>budget.maxTokens())throw new AnalysisBudgetExceededException("maxTokens",budget.maxTokens());
 
         LanguageVersion profileVersion = effectiveDetection.version().orElse(LanguageVersion.ILI23);
         checkTokenProfile(tokens,profileVersion,offsets,collector);
@@ -102,13 +103,15 @@ public final class AntlrSyntaxService implements SyntaxService {
         parser.removeErrorListeners();
         var parserListener = new CollectingParserErrorListener(offsets, collector);
         parser.addErrorListener(parserListener);
+        var parseBudget=new ParseBudget(budget,cancellation);
+        parser.addParseListener(parseBudget);parser.addErrorListener(parseBudget);
 
         InterlisParser.Interlis2defContext tree = null;
-        String failure = null;
+        AnalysisBudgetExceededException parseLimit = null;
         try {
             tree = parser.interlis2def();
-        } catch (RuntimeException e) {
-            failure = e.getClass().getSimpleName() + ": " + safeMessage(e);
+        } catch (AnalysisBudgetExceededException limit) {
+            parseLimit = limit;
         }
         cancellation.throwIfCancellationRequested();
 
@@ -124,18 +127,13 @@ public final class AntlrSyntaxService implements SyntaxService {
                                 safeTokenText(next))));
             }
         }
-        if (failure != null) {
-            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0002"),
-                            Severity.ERROR, Phase.PARSING, "diagnostic.syntax.unexpected")
-                    .at(offsets.eofRange())
-                    .argument(new DiagnosticArgument.TokenArgument("actual", "<parser-error>"))
-                    .argument(new DiagnosticArgument.IdentifierListArgument("expected",
-                            List.of("<recoverable-parse>"))));
-        }
-
         LanguageVersion language = effectiveDetection.version().orElse(LanguageVersion.ILI23);
         SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, tokens, language, options.budget());
         DocumentSyntax document;
+        if(parseLimit!=null) {
+            document=new DocumentSyntax(new SyntaxNodeId("syntax-0"),source.range(source.length(),source.length()),List.of());
+            return snapshotWithBudget(source,options,effectiveDetection,tokens,offsets,collector,document,builder,parseLimit);
+        }
         try {
             document = builder.build(tree);
         } catch (AnalysisBudgetExceededException budgetError) {
@@ -318,15 +316,18 @@ public final class AntlrSyntaxService implements SyntaxService {
         InterlisParser parser = new InterlisParser(fragmentTokens);
         parser.removeErrorListeners();
         parser.addErrorListener(new CollectingParserErrorListener(offsets, collector));
+        var fragmentBudget=new ParseBudget(AnalysisBudget.defaults(),cancellation);
+        parser.addParseListener(fragmentBudget);parser.addErrorListener(fragmentBudget);
         org.antlr.v4.runtime.ParserRuleContext context;
+        AnalysisBudgetExceededException fragmentLimit=null;
         try {
             context = switch (kind) {
                 case EXPRESSION -> parser.expression();
                 case OBJECT_PATH -> parser.objectOrAttributePath();
                 case ATTRIBUTE_DECLARATION -> parser.attributeDef();
             };
-        } catch (RuntimeException error) {
-            context = null;
+        } catch (AnalysisBudgetExceededException limit) {
+            context=null;fragmentLimit=limit;
         }
         cancellation.throwIfCancellationRequested();
         boolean consumed = fragmentTokens.LA(1) == Token.EOF;
@@ -343,7 +344,15 @@ public final class AntlrSyntaxService implements SyntaxService {
         SyntaxTreeBuilder builder = new SyntaxTreeBuilder(source, offsets, fragmentTokens,
                 languageVersion, AnalysisBudget.defaults());
         guru.interlis.syntax.SyntaxNode root;
-        if (context == null) {
+        if(fragmentLimit!=null) {
+            collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-INF-0002"),Severity.ERROR,Phase.INFRASTRUCTURE,"diagnostic.limit")
+                    .argument(new DiagnosticArgument.TextArgument("resource",fragmentLimit.resource()))
+                    .argument(new DiagnosticArgument.IntegerArgument("limit",java.math.BigInteger.valueOf(fragmentLimit.limit()))));
+            root=kind==FragmentKind.ATTRIBUTE_DECLARATION
+                    ? new guru.interlis.syntax.UnsupportedDeclarationSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",fragmentLimit.resource())
+                    : new guru.interlis.syntax.UnsupportedExpressionSyntax(new SyntaxNodeId("fragment-root"),fragment,"RESOURCE_LIMIT",fragmentLimit.resource());
+            consumed=false;
+        } else if (context == null) {
             SourceRange range = fragment;
             collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SYN-0002"),
                             Severity.ERROR, Phase.PARSING, "diagnostic.syntax.unexpected")
@@ -402,13 +411,7 @@ public final class AntlrSyntaxService implements SyntaxService {
 
     }
 
-    private static String safeMessage(Throwable error) {
-        String message = error.getMessage();
-        if (message == null) {
-            return "";
-        }
-        return message.length() > 200 ? message.substring(0, 197) + "..." : message;
-    }
+
 
     private static String safeTokenText(Token token) {
         String text = token.getText();

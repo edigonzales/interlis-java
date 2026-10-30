@@ -300,8 +300,8 @@ class NumericUnitConversionContractTest {
                         reused.diagnostics().stream().map(d -> List.of(d.code(), d.arguments(), d.primaryRange())).toList());
                 assertEquals(factor.equals("1000"), reused.diagnostics().isEmpty());
                 assertEquals(unit(fresh.semanticGraph(), "km").conversionFactors(), unit(reused.semanticGraph(), "km").conversionFactors());
-                assertEquals(effective(fresh.semanticGraph(), domain(fresh.semanticGraph(), "Narrow").typeId()).range(),
-                        effective(reused.semanticGraph(), domain(reused.semanticGraph(), "Narrow").typeId()).range());
+                assertEquals(OriginalViewReuseTest.semantic(effective(fresh.semanticGraph(), domain(fresh.semanticGraph(), "Narrow").typeId()).range(),fresh.semanticGraph()),
+                        OriginalViewReuseTest.semantic(effective(reused.semanticGraph(), domain(reused.semanticGraph(), "Narrow").typeId()).range(),reused.semanticGraph()));
                 previous = reused;
             }
             assertEquals("1000", unit(initial.schema().semanticGraph(), "km").conversionFactors().getFirst().decimal().orElseThrow().lexeme());

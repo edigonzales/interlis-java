@@ -139,7 +139,7 @@ class SemanticOverlayContractTest {
         var in=CompilerTestSupport.request(List.of("F"),Map.of(changed.id(),changed),List.of(),base.options());
         var fresh=ok(in);var reused=assertInstanceOf(CompilationOutcome.Succeeded.class,engine.compile(in,new AnalysisReuse(Optional.of(old),old.syntaxSnapshots()),TOKEN));
         var a=named(fresh.schema().semanticGraph(),"F.P");var b=named(reused.schema().semanticGraph(),"F.P");
-        assertNotEquals(a.id(),b.id());assertEquals(fresh.analysis().fingerprint(),reused.analysis().fingerprint());
+        assertEquals(OriginalViewReuseTest.semantic(a,fresh.schema().semanticGraph()),OriginalViewReuseTest.semantic(b,reused.schema().semanticGraph()));assertEquals(fresh.analysis().fingerprint(),reused.analysis().fingerprint());
         assertEquals(fresh.schema().fingerprint(),reused.schema().fingerprint());assertNotEquals(fresh.schema().snapshotId(),reused.schema().snapshotId());
         assertThrows(guru.interlis.model.SnapshotMismatchException.class,()->fresh.schema().queries().symbol(new SymbolRef(reused.schema().snapshotId(),b.id())));
     }

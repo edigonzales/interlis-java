@@ -1,5 +1,26 @@
 # Entscheidungen, offene Nachweise und Quellen
 
+L4-1-Nutzerentscheidung vom30.10.2026: Die zwölf noch offenen historischen
+Referenzfälle behalten ausdrücklich das bestehende Profil. Elf normwidrige
+Originale werden gezielt abgelehnt; das positive2.3-Toleranzoriginal0.0001 bei
+drei Koordinatennachkommastellen bleibt akzeptiert, Null bleibt unzulässig.
+Die [fallbezogene Entscheidung](../g2/implementation/L4-1-decisions.md) mit
+unveränderten Original-/Kontrollpins und vollständigen Normabsätzen ist die
+neue Entscheidungsquelle. Frühere Kompatibilitätsfreigaben bleiben erhalten.
+Das historische PENDING_USER_REVALIDATION-Paket behält seinen damaligen Stand;
+es bezeichnet keine noch fehlende Nutzerantwort. Die unabhängige Gesamtfreigabe
+erfolgt erst im L4-2-Review am abschliessenden Produktcommit.
+
+Weitere tatsächliche L4-1-Entscheidungen desselben Tages: Modellweite Klassen
+bleiben in2.3 kompatibel als Rollenziele zulässig; die konkrete zusätzliche
+Suitequelle erhält keine XFAIL-Ausnahme. Äussere Typnamen sind dagegen in
+beiden Sprachen strikt vor lokaler Überdeckung geschützt. Herausgeber nach AT
+bleiben URI-Referenzen einschliesslich relativer Werte, mit ASCII-Syntax und
+1023-Zeichen-Grenze. Die fachlichen Regeln stehen in Kapitel06; Nutzerwortlaut,
+Normabsätze und Gegenüberstellung stehen im
+[Rollenzielpaket](../g2/implementation/L4-1-model-class-decision.md) und
+[Namensraum-/URI-Paket](../g2/implementation/L4-1-profile-questions.md).
+
 L1-1 / Nutzerentscheidung 29.10.2026: TYPE MODEL akzeptiert in 2.3 und 2.4
 Strukturen und abstrakte Klassen wie ili2c; Topics bleiben verboten. Grundlage:
 engere Aufzählung in 2.3 §2.5.1 / 2.4 §3.5.1 und frisch ausgeführte Positiv-/

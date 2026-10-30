@@ -2056,7 +2056,8 @@ final class SyntaxTreeBuilder {
     }
 
     private SyntaxNodeId nextId() {
-        return new SyntaxNodeId("syntax-" + (++nodeCounter));
+        if(++nodeCounter>budget.maxSyntaxNodes())throw new guru.interlis.compiler.internal.AnalysisBudgetExceededException("maxSyntaxNodes",budget.maxSyntaxNodes());
+        return new SyntaxNodeId("syntax-" + nodeCounter);
     }
 
     private SourceRange range(ParserRuleContext context) {

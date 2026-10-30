@@ -16,7 +16,7 @@
       },
       "portable": {
         "source": "interlis-wasm-teavm/stabilization-contract.cjs",
-        "sourceSha256": "5ed76b76fb36664c4b823eea087bb8fb195c8ad930c1b80603db5166727a1e50",
+        "sourceSha256": "102a12b78fc45e3ae92c32ba6130f679f1bffbaf5a2ee03c46237941ad5f822b",
         "markers": [
           "memory:/a3-lost-member.ili",
           "A3 inherited member missing"
@@ -38,7 +38,7 @@
       },
       "portable": {
         "source": "interlis-wasm-teavm/stabilization-contract.cjs",
-        "sourceSha256": "5ed76b76fb36664c4b823eea087bb8fb195c8ad930c1b80603db5166727a1e50",
+        "sourceSha256": "102a12b78fc45e3ae92c32ba6130f679f1bffbaf5a2ee03c46237941ad5f822b",
         "markers": [
           "memory:/a3-target.ili",
           "A3 same-named enum elements"
@@ -60,7 +60,7 @@
       },
       "portable": {
         "source": "interlis-wasm-teavm/stabilization-contract.cjs",
-        "sourceSha256": "5ed76b76fb36664c4b823eea087bb8fb195c8ad930c1b80603db5166727a1e50",
+        "sourceSha256": "102a12b78fc45e3ae92c32ba6130f679f1bffbaf5a2ee03c46237941ad5f822b",
         "markers": [
           "memory:/a3-order.ili",
           "DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;"

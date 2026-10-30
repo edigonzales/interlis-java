@@ -1,6 +1,7 @@
 def hostNodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 def hostProfiles = [
     pythonFreeCheck: ['PythonFreeCheck', []],
+    semanticComparison: ['SemanticComparison', [hostNodeExecutable.get()]],
     geoCorpus: ['GeoCorpus', []],
     jvmBenchmark: ['JvmBenchmark', []],
     sdkProcessCheck: ['SdkProcesses', []],
@@ -24,6 +25,7 @@ project(':interlis-cli') {
             verificationTestImplementation.extendsFrom verificationImplementation
             verificationTestRuntimeOnly.extendsFrom verificationRuntimeOnly
         }
+        dependencies { verificationImplementation project(':interlis-wasm-bridge') }
         tasks.register('verificationTest', Test) {
             testClassesDirs = sourceSets.verificationTest.output.classesDirs
             classpath = sourceSets.verificationTest.runtimeClasspath
@@ -47,6 +49,10 @@ project(':interlis-cli') {
                 if (name == 'jvmBenchmark') dependsOn 'geoCorpus'
                 if (name == 'jvmBenchmark') mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':interlis-wasm-webimage:webImageProbe'
                 if (name in ['viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':checkNodeRuntime'
+                if (name == 'semanticComparison') {
+                    dependsOn ':checkNodeRuntime', ':interlis-wasm-teavm:generateJavaScript', ':interlis-wasm-teavm:generateWasmGC'
+                    mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck'
+                }
                 if (name in ['originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'referenceCheck'
                 if (name in ['viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'originalViewReferenceCheck'
                 if (name == 'unitReferenceCheck') mustRunAfter 'viewReferenceCheck'

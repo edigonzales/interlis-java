@@ -263,6 +263,7 @@ final class GraphBuilder {
         validateAssociationRules();
         validateAttributeOverrides();
         validateClassExtensions();
+        validateTypeNamespaces();
         validateConstraintNames();
         overlays.validateCrs(this);
         validateTranslations();
@@ -295,6 +296,41 @@ final class GraphBuilder {
         AnalysisCoverage coverage = buildCoverage();
         return new GraphResult(graph, coverage, rootIds, new ArrayList<>(modelIds),
                 unsupportedBySource);
+    }
+
+    private void validateTypeNamespaces() {
+        var typeKinds=Set.of(SymbolKind.TOPIC,SymbolKind.CLASS,SymbolKind.STRUCTURE,SymbolKind.ASSOCIATION,
+                SymbolKind.VIEW,SymbolKind.GRAPHIC,SymbolKind.DOMAIN,SymbolKind.UNIT,SymbolKind.FUNCTION,
+                SymbolKind.LINE_FORM,SymbolKind.METADATA_BASKET);
+        var names=new LinkedHashMap<SymbolId,Set<String>>();
+        var declarations=index.all().stream().sorted(Comparator.comparingInt(DeclInfo::order)).toList();
+        for(var declaration:declarations) {
+            checkWork();
+            if(declaration.owner().isPresent()&&declaration.nameRange().isPresent()&&typeKinds.contains(declaration.kind())
+                    &&!names.computeIfAbsent(declaration.owner().orElseThrow(),ignored->new LinkedHashSet<>()).add(declaration.name()))
+                emitRule(declaration,"type names must be unique in their declaring scope","SCOPE_TYPE_NAME_UNIQUE");
+        }
+        for(var declaration:declarations) {
+            checkWork();
+            if(declaration.owner().isEmpty()||declaration.nameRange().isEmpty()||!typeKinds.contains(declaration.kind()))continue;
+            var owner=declaration.owner().orElseThrow();
+            var outer=index.byId(owner).flatMap(DeclInfo::owner);
+            while(outer.isPresent()) {
+                checkWork();
+                if(names.getOrDefault(outer.orElseThrow(),Set.of()).contains(declaration.name())) {
+                    emitRule(declaration,"local type names must not shadow an enclosing type name","SCOPE_OUTER_TYPE_NAME");break;
+                }
+                outer=index.byId(outer.orElseThrow()).flatMap(DeclInfo::owner);
+            }
+            if(declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED))continue;
+            var seen=new HashSet<SymbolId>();
+            for(var inherited=baseOf.get(owner);inherited!=null&&seen.add(inherited);inherited=baseOf.get(inherited)) {
+                checkWork();
+                if(names.getOrDefault(inherited,Set.of()).contains(declaration.name())) {
+                    emitRule(declaration,"inherited type names require an explicit EXTENDED declaration","SCOPE_INHERITED_TYPE_NAME");break;
+                }
+            }
+        }
     }
 
     /** Named constraints share the declaring viewable's local namespace, including
@@ -1570,6 +1606,9 @@ final class GraphBuilder {
             if (aggregations > 1) {
                 emitRule(decl, "only one aggregation role is allowed", "MULTIPLE_AGGREGATION");
             }
+            if (effectiveRoles.size()!=2 && effectiveRoles.stream().anyMatch(role->role.aggregation()==RoleAggregation.AGGREGATION)) {
+                emitRule(decl, "aggregation requires exactly two effective roles", "AGGREGATION_ARITY");
+            }
             boolean associationAbstract = syntax.modifiers()
                     .contains(guru.interlis.model.Modifier.ABSTRACT);
             for (guru.interlis.syntax.RoleDeclarationSyntax roleSyntax : syntax.roles()) {
@@ -1894,6 +1933,14 @@ final class GraphBuilder {
     private void buildModel(IndexedDeclarations.ModelEntry entry) {
         DeclInfo decl = entry.declaration();
         guru.interlis.syntax.ModelSyntax modelSyntax = entry.model().syntax();
+        try {
+            String issuer = modelSyntax.issuer();
+            if (issuer.length() > 1023 || issuer.chars().anyMatch(c -> c > 127))
+                throw new java.net.URISyntaxException(issuer, "issuer outside URI character/length profile");
+            new java.net.URI(issuer);
+        } catch (java.net.URISyntaxException invalid) {
+            emitRule(decl, "model issuer must be an ASCII URI reference of at most 1023 characters", "MODEL_ISSUER");
+        }
         if (modelSyntax.endName().isPresent()
                 && !modelSyntax.endName().orElseThrow().equals(modelSyntax.name())) {
             emitRule(decl, "MODEL end name does not match declaration", "MODEL_END_NAME");
@@ -2452,7 +2499,7 @@ final class GraphBuilder {
         Optional<SymbolId> base = parent.isEmpty() ? Optional.empty() : builtinUnit(context, "INTERLIS." + parent);
         boolean abstractUnit = parent.isEmpty() || parent.equals("ANYUNIT");
         String designation = switch (shortName) {
-            case "m" -> "METER"; case "kg" -> "KILOGRAMM"; case "s" -> "SECOND";
+            case "m" -> "METER"; case "kg" -> language==guru.interlis.model.LanguageVersion.ILI23?"KILOGRAMM":"KILOGRAM"; case "s" -> "SECOND";
             case "A" -> "AMPERE"; case "K" -> "DEGREE_KELVIN"; case "mol" -> "MOLE";
             case "rad" -> "RADIAN"; case "sr" -> "STERADIAN"; case "cd" -> "CANDELA";
             default -> shortName;
@@ -2912,6 +2959,9 @@ final class GraphBuilder {
             if (inherited.external() != decl.modifiers().contains(guru.interlis.model.Modifier.EXTERNAL)) {
                 emitRule(decl, "EXTERNAL must remain unchanged in an extended role", "ROLE_EXTERNAL_EXTENSION");
             }
+            if (inherited.ordered() && !decl.modifiers().contains(guru.interlis.model.Modifier.ORDERED)) {
+                emitRule(decl, "an ordered role cannot become unordered in an extension", "ROLE_ORDER_EXTENSION");
+            }
             if (targets.stream().flatMap(t -> t.allowedRoots().stream()).anyMatch(t -> !roleAccepts(inherited, t))) {
                 emitRule(decl, "extended role widens its target set", "ROLE_TARGET_EXTENSION");
             }
@@ -2971,7 +3021,8 @@ final class GraphBuilder {
     }
 
     private SymbolId bindRoleTarget(DeclInfo decl, guru.interlis.syntax.NameSyntax name) {
-        return bindObjectTarget(decl, name, ReferenceUsage.ROLE_TARGET);
+        var target=bindObjectTarget(decl, name, ReferenceUsage.ROLE_TARGET);
+        return target;
     }
 
     List<SymbolId> topicDependencies(SymbolId topic) {

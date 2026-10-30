@@ -1,5 +1,20 @@
 # G2 – operativer Status
 
+- Auftrag **gesamte Phase4 autonom**: **IN_PROGRESS**, aktuelle Lieferung **L4-1**
+  (AC4-01–AC4-03), danach ohne Teilphasenstopp L4-2 (AC4-04–AC4-07).
+  Ausgangscommit `4a84068624cffde4549186c53cf23b9aaad7b179`.
+  Einzelabgleich der Norm-/Grammatik-/Builtin-/Anforderungsnachweise und A3;
+  unabhängige Reviews über OpenCode mit direkter DeepSeek API.
+  GlobalD2: alle zwölf verbliebenen historischen Fälle am30.10.2026 ausdrücklich
+  bestätigt; [unverfälschter Entscheidungsnachweis](implementation/L4-1-decisions.md).
+  Zusätzliche Antworten sind erfasst: modellweite2.3-Rollenziele bleiben
+  kompatibel; äussere Typnamen werden strikt gesperrt; gültige relative
+  Herausgeber-URI-Referenzen bleiben zulässig. [Umsetzung](implementation/L4-1.md).
+  Die strikte Namensregel gilt auch für das unveränderte Metadata-Corpusoriginal;
+  neues explizites Messprofil elf Positivfälle/zwei exakte Negativfälle mit
+  separat umbenannten Positivkontrollen. Keine Original-/Index-/Suitepinänderung.
+  Frühere Freigaben gelten fort; unabhängige L4-Endabnahme noch offen. Kein Phase4-/G2-PASS vor vollständiger unabhängiger Abnahme.
+
 - Auftrag **gesamte Phase3 autonom**: vollständig abgeschlossen, ohne manuelle
   Stopps zwischen L3-1 und L3-2. **L3-2 / PHASE3: PASS**, kumulativ
   **AC3-01–AC3-06**. Keine offenen Muss-Findings oder Phase-3-Blocker.
@@ -46,8 +61,8 @@
   [Unveränderter Review](reviews/L3-1-review.md), SHA-256
   `1ee5dec10b4447e35b0a72425a816f9aaa5b23779ab3dd7efe2b3bc36cd05188`.
   [Implementierung](implementation/L3-1.md). Alle Kriterien beim L3-2-Gate kumulativ neu geprüft.
-- **Nächster fachlicher Schritt: Phase4**, bisher nicht begonnen und durch diesen
-  Auftrag nicht freigegeben. Kein Push,Release oder globaleG2-/P3-/P4-/P5-Freigabe;
+- **Historischer Phase3-Abschluss:** Phase4 war damals noch nicht begonnen;
+  der aktuelle Phase4-Auftrag und Stand stehen oben. Kein Push,Release oder globaleG2-/P3-/P4-/P5-Freigabe;
   GlobalD2 bleibt getrennt **PENDING_USER_REVALIDATION**. Der folgende Abschluss-
   commit speichert ausschliesslich Review/Status und ändert den geprüften Produktstand nicht.
 

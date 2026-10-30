@@ -81,9 +81,17 @@ class OriginalViewReuseTest {
         return symbol.owner().map(owner -> key(graph, owner) + "/").orElse("") + symbol.kind() + ":" + symbol.name().value();
     }
 
-    /** Preserve every record component and list order; only snapshot-local symbol IDs are normalized. */
+    /** Preserve every record component and list order; normalize only snapshot-local identities. */
     static Object semantic(Object value, SemanticGraph graph) {
         if (value instanceof SymbolId id) return key(graph, id);
+        if (value instanceof ExpressionId id) {
+            String normalized=id.value();
+            // Derived expression ids contain bound symbol identities. Preserve every
+            // suffix and resolve each actual symbol rather than ignoring the id.
+            for(var symbol:graph.symbols().stream().sorted(java.util.Comparator.comparingInt((Symbol symbol)->symbol.id().value().length()).reversed()).toList())
+                normalized=normalized.replaceAll(java.util.regex.Pattern.quote(symbol.id().value())+"(?=[:$]|$)",java.util.regex.Matcher.quoteReplacement(key(graph,symbol.id())));
+            return List.of("expression-identity",normalized);
+        }
         if (value instanceof ScopeId scope && graph.symbol(new SymbolId(scope.value())).isPresent()) return key(graph, new SymbolId(scope.value()));
         if (value instanceof Optional<?> optional) return optional.map(v -> semantic(v, graph));
         if (value instanceof Set<?> set) return set.stream().map(v -> semantic(v, graph)).collect(java.util.stream.Collectors.toSet());

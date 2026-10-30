@@ -490,6 +490,25 @@ final class CompilerSessionFacade {
                 "key",JsonValues.string(entry.key()),"text",JsonValues.string(entry.value().text()),"origin",origin(entry.value().origin())));
         var result=new LinkedHashMap<String,JsonValue>();result.put("kind",JsonValues.string("semanticProperties"));
         result.put("symbolId",JsonValues.string(symbol.id().value()));result.put("metadata",JsonValues.array(values));
+        var graph=snapshot.semanticGraph();
+        result.put("qualifiedName",JsonValues.string(qualifiedName(graph,symbol.id())));
+        result.put("symbolKind",JsonValues.string(symbol.kind().name()));
+        // This is a projection of the common graph, including inherited order.
+        // A non-viewable has no effective members; no binding is repeated here.
+        var members=new ArrayList<JsonValue>();
+        for(var member:graph.effectiveMembers(symbol.id())) {
+            var declaration=graph.symbol(member.declaredSymbol()).orElseThrow();
+            var targets=semanticTargets(graph,declaration);
+            members.add(JsonValues.object("symbolId",JsonValues.string(declaration.id().value()),
+                    "qualifiedName",JsonValues.string(qualifiedName(graph,declaration.id())),
+                    "name",JsonValues.string(declaration.name().value()),
+                    "symbolKind",JsonValues.string(declaration.kind().name()),
+                    "position",JsonValues.number(member.position()),
+                    "origin",JsonValues.string(member.origin().name()),
+                    "inheritancePath",JsonValues.strings(member.inheritancePath().stream().map(id->qualifiedName(graph,id)).toList()),
+                    "targets",JsonValues.strings(targets.stream().map(id->qualifiedName(graph,id)).toList())));
+        }
+        result.put("effectiveMembers",JsonValues.array(members));
         if(symbol instanceof guru.interlis.model.ModelSymbol model)model.translation().ifPresent(t->{
             var translated=new LinkedHashMap<String,JsonValue>();translated.put("sourceModel",JsonValues.string(t.sourceModel()));
             t.sourceTarget().ifPresent(id->translated.put("sourceTarget",JsonValues.string(id.value())));
@@ -499,6 +518,29 @@ final class CompilerSessionFacade {
             result.put("translation",new JsonValue.JsonObject(translated));
         });
         return new JsonValue.JsonObject(result);
+    }
+    private String qualifiedName(guru.interlis.model.SemanticGraph graph,guru.interlis.model.SymbolId id) {
+        var parts=new ArrayList<String>();
+        var current=graph.symbol(id).orElseThrow();
+        while(true) {
+            parts.add(current.name().value());
+            if(current.owner().isEmpty())break;
+            current=graph.symbol(current.owner().orElseThrow()).orElseThrow();
+        }
+        java.util.Collections.reverse(parts);return String.join(".",parts);
+    }
+    private List<guru.interlis.model.SymbolId> semanticTargets(guru.interlis.model.SemanticGraph graph,guru.interlis.model.Symbol symbol) {
+        if(symbol instanceof guru.interlis.model.RoleSymbol role)return role.targetRoots();
+        var type=graph.declaredType(symbol.id()).flatMap(graph::type).orElse(null);
+        // Alias chains are already bound by the compiler; follow only those identities.
+        var visited=new java.util.HashSet<guru.interlis.model.TypeId>();
+        while(type instanceof guru.interlis.model.DomainReferenceType domain && visited.add(type.id())) {
+            var declaration=(guru.interlis.model.DomainSymbol)graph.symbol(domain.targetDomain()).orElseThrow();
+            type=graph.type(declaration.typeId()).orElse(null);
+        }
+        if(type instanceof guru.interlis.model.ReferenceType reference)return reference.targetRoots();
+        if(type instanceof guru.interlis.model.ObjectArgumentType object)return object.base().stream().toList();
+        return List.of();
     }
     private JsonValue.JsonObject origin(guru.interlis.model.Origin origin) {
         return switch(origin) {

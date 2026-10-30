@@ -1,5 +1,27 @@
 # 13 – Tests, Kompatibilitätsnachweise und Qualitätsgates
 
+L4-1 ergänzt mit `./gradlew semanticComparison` den tatsächlichen A3-Vergleich:
+vier identische2.3-/2.4-Quellen über JVM, gepinntes ili2c-Metamodell, TeaVM-JS und
+WasmGC. Verglichen werden Compile-Outcome, geordnete effektive Member und
+vollständig qualifizierte Rollenzielwurzeln dreier ausgewählter Viewables.
+Der Vergleicher muss entfernte Member, ein falsches gleichnamiges Ziel,
+vertauschte Reihenfolge und falschen Erfolg an ungültiger Quelle erkennen.
+Der Bericht benennt nicht vergleichbare Eigenschaften ausdrücklich; dieser
+kleine Vergleich ist keine vollständige Sprach- oder Transferabnahme.
+Die neuen öffentlichen Memberprojektionen werden zusätzlich im gemeinsamen
+portablen Vertrag auf allen fälligen Browser-/Web-Image-Zielen geprüft.
+
+Die ausdrücklich gewählte strikte äussere Typnamensregel gilt auch im
+historischen13-Modelle-Corpus. Metadata/FileFormat und Gesuchsteller/Gesuchsteller
+bleiben bytegleich und werden mit exakten strukturierten Quellfehlern gemessen;
+die übrigen elf Compilefälle und alle13Formatierungen bleiben erfolgreich.
+`testdata/g2/corpus-expectations.json` bindet die zwei Negativausgänge und
+separat umbenannte Positivkontrollen an Originalhashes. Die Kontrollschemas
+müssen tatsächliche Basisbindungen und geordnete Member bei Fresh/Reuse zeigen.
+Ein beliebiger Fehler oder ein fälschlich erfolgreicher Compile genügt nicht.
+Bestehende P3-Messausnahmen werden sichtbar erhalten; sie ersetzen keine
+verpflichtenden G2-Verträge in Browsern einschliesslich Safari und Web Image.
+
 L1-3 prüft AC1-05–08 mit tatsächlichen dreistufigen Klassen-/Struktur-/
 Assoziationsgraphen, vollständigen Besitzerpfaden und Herkunftsarten,
 finalen importierten Basistypen in beiden Quellenordnungen, finalen und

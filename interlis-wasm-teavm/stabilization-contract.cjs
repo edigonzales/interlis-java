@@ -31,6 +31,102 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // L4-1: duplicate-safe declaration continuity and the newly closed role rules.
+  let phase4Cases=0;
+  for(const version of ['2.3','2.4']) {
+    const wrap=body=>`INTERLIS ${version};MODEL F AT "https://example.org" VERSION "1"=${body}END F.`;
+    for(const [body,expected] of [
+      ['DOMAIN X=TEXT;TOPIC T=CLASS X=END X;END T;','rejected'],
+      ['TOPIC T=CLASS T=END T;END T;','rejected'],
+      ['TOPIC Base=STRUCTURE S=END S;END Base;TOPIC Child EXTENDS Base=STRUCTURE S=END S;END Child;','rejected'],
+      ['DOMAIN X=TEXT;TOPIC Base=STRUCTURE S=value:F.X;END S;END Base;TOPIC Child EXTENDS Base=STRUCTURE S(EXTENDED)=other:BOOLEAN;END S;END Child;','succeeded']]) {
+      await verify(wrap(body),expected);phase4Cases++;
+    }
+    for(const [issuer,expected] of [['x','succeeded'],['../models?x=1#v','succeeded'],['a'.repeat(1023),'succeeded'],['a b','rejected'],['%xy','rejected'],['https://[broken','rejected'],['https://example.invalid/ä','rejected'],['a'.repeat(1024),'rejected']]) {
+      await verify(`INTERLIS ${version};MODEL F AT "${issuer}" VERSION "1"=END F.`,expected);phase4Cases++;
+    }
+    const declarations='DOMAIN E=(red,green,blue);STRUCTURE C=a:TEXT;END C;';
+    const sourceId='memory:/identity-chain.ili';
+    const {sessionId}=await call('openSession');
+    try {
+      let revision='0',oldIds,ambiguousIds,deletedIds;
+      for(let step=1;step<=6;step++) {
+        let body=declarations;
+        if(step===2)body='!! comment\nDOMAIN Before=TEXT;'+body;
+        if(step===3)body+='STRUCTURE C=b:BOOLEAN;END C;';
+        if(step===5)body='DOMAIN E=(red,green,blue);';
+        const text=wrap(body);
+        const update=await call('updateSource',sessionId,{sourceId,expectation:step===1?{kind:'absent'}:{kind:'at',revision},change:{kind:'replace',text}});
+        revision=update.sourceRevision;
+        const compiled=await call('compile',sessionId,{expectedWorkspaceRevision:update.workspaceRevision,roots:[{kind:'byName',modelName:'F'}]});
+        if(compiled.outcome!==(step===3?'rejected':'succeeded'))throw new Error('L4 identity gate '+JSON.stringify(compiled));
+        const ids=[];
+        for(const token of ['MODEL F','E=','red','green','blue',...(step===5?[]:['C=','a:TEXT'])]) {
+          const offset=text.indexOf(token)+(token==='MODEL F'?6:0);
+          const found=await call('query',sessionId,{snapshotId:compiled.snapshotId,query:{kind:'symbolAt',sourceId,revision,startOffset:offset,endOffset:offset}});
+          if(found.kind!=='known')throw new Error('Missing identity declaration '+token+' '+JSON.stringify(found));ids.push(found.symbolId);
+        }
+        if(step===2&&JSON.stringify(oldIds)!==JSON.stringify(ids))throw new Error('Unique enum/member identity was lost');
+        if(step===3) {if(ids[5]===oldIds[5]||ids[6]===oldIds[6])throw new Error('Duplicate owner invented continuity');ambiguousIds=ids;}
+        if(step===4) {if(ids[5]===ambiguousIds[5]||ids[6]===ambiguousIds[6])throw new Error('Ambiguous previous owner reused');deletedIds=ids;}
+        if(step===6&&(ids[5]===deletedIds[5]||ids[6]===deletedIds[6]))throw new Error('Deleted/recreated declaration recycled identity');
+        if(step===1)oldIds=ids;
+      }
+    } finally {await call('closeSession',sessionId);}phase4Cases++;
+    const prefix='TOPIC T=OID AS INTERLIS.UUIDOID;CLASS A=END A;CLASS B=END B;CLASS C=END C;';
+    for(const [body,expected] of [
+      ['ASSOCIATION Link=a-<>{1}A;b--{*}B;END Link;','succeeded'],
+      ['ASSOCIATION Link=a-<>{1}A;b--{*}B;c--{*}C;END Link;','rejected'],
+      ['ASSOCIATION Base=a--{1}A;b(ORDERED)--{*}B;END Base;ASSOCIATION Sub EXTENDS Base=a(EXTENDED)--{1}A;b(EXTENDED)--{*}B;END Sub;','rejected'],
+      ['ASSOCIATION Base=a--{1}A;b(ORDERED)--{*}B;END Base;ASSOCIATION Sub EXTENDS Base=a(EXTENDED)--{1}A;b(EXTENDED,ORDERED)--{*}B;END Sub;','succeeded']]) {
+      await verify(wrap(prefix+body+'END T;'),expected);phase4Cases++;
+    }
+    for(const [body,expected] of [
+      ['DOMAIN E=(a,b) CIRCULAR;Next EXTENDS E=(c);','rejected'],
+      ['DOMAIN E=(a,b);Next EXTENDS E=(c) CIRCULAR;','rejected'],
+      ['DOMAIN E=(a,b:FINAL);Next EXTENDS E=(c);','rejected'],
+      ['DOMAIN E=(a,b) ORDERED;Next EXTENDS E=(c);','succeeded']]) {
+      await verify(wrap(body),expected);phase4Cases++;
+    }
+    await verify(wrap('TOPIC T=CLASS C=MANDATORY CONSTRAINT '+'('.repeat(150)+'#true'+')'.repeat(150)+';END C;END T;'),'cancelled');phase4Cases++;
+    if(version==='2.3') {
+      await verify(wrap('CLASS Outside=END Outside;TOPIC T=CLASS Local=END Local;ASSOCIATION Link=a--{1}Outside;b--{*}Local;END Link;END T;'),'succeeded');phase4Cases++;
+    }
+  }
+  // L4-1: actual inherited member order and full role target identities in every backend.
+  let a3CompleteCases=0;
+  for(const version of ['2.3','2.4']) {
+    const text=`INTERLIS ${version};
+MODEL F AT "https://example.org" VERSION "1" =
+  STRUCTURE Base = first: TEXT*20; second: BOOLEAN; END Base;
+  STRUCTURE Child EXTENDS Base = third: 0..10; END Child;
+  TOPIC T = OID AS INTERLIS.UUIDOID;
+    CLASS A = label: TEXT; END A;
+    CLASS B = label: TEXT; END B;
+    ASSOCIATION Link = a -- {1} A; b -- {0..*} B; END Link;
+  END T;
+  TOPIC U = OID AS INTERLIS.UUIDOID;
+    CLASS A = label: TEXT; END A;
+    CLASS B = label: TEXT; END B;
+    ASSOCIATION Link = a -- {1} A; b -- {0..*} B; END Link;
+  END U;
+END F.
+`;
+    await verifySources([{sourceId:'memory:/a3-complete.ili',text}],'succeeded',['F'],async(sessionId,compiled)=>{
+      for(const name of ['F.Child','F.T.Link','F.U.Link']) {
+        const simple=name.slice(name.lastIndexOf('.')+1);let start=name==='F.Child'?0:text.indexOf(name.includes('.U.')?'TOPIC U':'TOPIC T');
+        start=text.indexOf(simple+' ',start);
+        const p=await call('query',sessionId,{snapshotId:compiled.snapshotId,query:{kind:'semanticProperties',sourceId:'memory:/a3-complete.ili',revision:'1',startOffset:start,endOffset:start}});
+        const expected=name==='F.Child'?['first','second','third']:['a','b'];
+        if(p.qualifiedName!==name||JSON.stringify(p.effectiveMembers.map(m=>m.name))!==JSON.stringify(expected))throw new Error('A3 ordered effective members '+JSON.stringify(p));
+        for(let i=0;i<p.effectiveMembers.length;i++) {
+          const member=p.effectiveMembers[i];if(member.position!==i)throw new Error('A3 noncanonical position');
+          if(name!=='F.Child'&&JSON.stringify(member.targets)!==JSON.stringify([name.slice(0,-4)+(i===0?'A':'B')]))throw new Error('A3 wrong same-named full target '+JSON.stringify(member));
+        }
+      }
+    });a3CompleteCases++;
+    await verify(text.replace('third: 0..10','third: 10..0'),'rejected');a3CompleteCases++;
+  }
   // L3-2: the portable workspace uses the same exact selection and priority policy.
   let resolutionPolicyCases=0;
   for(const version of ['2.3','2.4']) {
@@ -2078,7 +2174,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return resolutionPolicyCases + semanticOverlayCases + phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return phase4Cases + a3CompleteCases + resolutionPolicyCases + semanticOverlayCases + phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

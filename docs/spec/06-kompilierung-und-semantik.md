@@ -1,5 +1,26 @@
 # 06 – Kompilierung und Semantik
 
+L4-1-Nutzerentscheidungen vom30.10.2026 für beide Sprachen: Typnamen im selben
+Deklarationsraum bleiben eindeutig; auch übernommene äussere Typnamen dürfen
+nicht durch lokale Typen überdeckt werden. Dies folgt2.3 §2.5.4 /2.4 §3.5.4,
+auch wennili2c einzelne Überdeckungen akzeptiert. Gültige ausdrücklich mit
+EXTENDED erklärte geerbte Typen bleiben erhalten; die unabhängigen
+Namenskategorien von Typen und Laufzeitparametern werden nicht vermischt.
+Herausgeber nach AT werden als syntaktische URI-Referenzen einschliesslich
+relativer Werte geprüft, mit höchstens1023ASCII-Zeichen und ohne Hostauflösung.
+Defekte Syntax und unkodierte Nicht-ASCII-Zeichen sind Quellfehler.
+[Wortlaut, Normabsätze und vorgelegte Alternativen](../g2/implementation/L4-1-profile-questions.md).
+
+L4-1-Kompatibilitätsentscheidung vom30.10.2026: Modellweite Klassen bleiben
+inINTERLIS2.3 wie bisher und wieili2c als Rollenziele zulässig. Dies ist eine
+bewusste Ausnahme vom ausdrücklichen Verbot in2.3 §2.5.3 S.30;2.4 §3.5.3
+enthält dieses Verbot nicht. Der Fall
+`ili23.Association23Test.association_ClassesLevelTopicAndModel` bleibt ein
+unveränderter Positivfall. Die tatsächliche Zielidentität, Kardinalität,
+Beziehungsstärke, Vererbung und sonstigen OID-Regeln bleiben überprüft;
+es werden keine Objektinstanzen ausserhalb konkreter Themen erfunden.
+[Entscheidungsnachweis](../g2/implementation/L4-1-model-class-decision.md).
+
 ## 1. Auftrag und Erfolgskriterium
 
 Der Compiler ist ein synchron aufrufbarer, portabler Bibliothekskern. Er analysiert explizit bereitgestellte Quelltexte und Modellbindungen. Er kann einen unveränderlichen partiellen Analysestand liefern oder für eine genau definierte Modellmenge ein geprüftes `CompiledSchema` ausstellen. Das Ganze ist die gemeinsame Grundlage für CLI, Workspace, LSP, WebAssembly und spätere Consumerpläne.

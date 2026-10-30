@@ -246,6 +246,13 @@ Die in Kapitel 12 definierten `TransferPlanner`, `ValidationPlanner` und `Schema
 
 Eine gemeinsame Java-WASM-Bridge kann nach tatsächlicher Wiederverwendung in `interlis-wasm-bridge` liegen. Dieses Modul hängt von workspace/compiler/projection/model ab. TeaVM- und Graal-Interoptypen bleiben in den Zieladaptern. Die Bridge gehört nicht in projection, weil das eine falsche Abhängigkeit zu workspace erzeugen würde.
 
+Die implementierte Positionsquery `semanticProperties` gehört dieser Bridge;
+ihr Wire-Vertrag steht in Kapitel10. `qualifiedName`, `symbolKind` und die
+geordneten `effectiveMembers` sind reine Projektionen der snapshotgebundenen
+`SemanticQueries`-/`SemanticGraph`-Werte. Die Member-/Zielbindung bleibt beim
+Compiler; kein Adapter erhält eine zweite Sprachsemantik. `SemanticMemberProtocolTest`
+prüft Reihenfolge, Herkunftspfad, alte Snapshots und fremde Revisionen.
+
 ## 8. Gemeinsame Vertragstests
 
 Diese Namen bezeichnen zu implementierende Tests. Sie sind keine bereits ausgeführten Java-Tests dieses Spezifikationspakets.

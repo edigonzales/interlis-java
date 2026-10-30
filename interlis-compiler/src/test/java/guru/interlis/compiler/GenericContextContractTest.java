@@ -139,7 +139,7 @@ class GenericContextContractTest {
             assertEquals(changedFresh.diagnostics(), changedReuse.diagnostics());
             var changedBinding = topic(changedReuse.semanticGraph(), "T").genericBindings().getFirst();
             assertEquals(List.of(named(changedReuse.semanticGraph(), "B").id()), changedBinding.alternatives());
-            assertEquals(topic(changedFresh.semanticGraph(), "T").genericBindings(), topic(changedReuse.semanticGraph(), "T").genericBindings());
+            assertEquals(OriginalViewReuseTest.semantic(topic(changedFresh.semanticGraph(), "T").genericBindings(),changedFresh.semanticGraph()), OriginalViewReuseTest.semantic(topic(changedReuse.semanticGraph(), "T").genericBindings(),changedReuse.semanticGraph()));
         }
     }
 

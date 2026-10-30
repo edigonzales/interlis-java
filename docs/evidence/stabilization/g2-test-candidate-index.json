@@ -2,7 +2,7 @@
   "schemaVersion": "1.0",
   "status": "CANDIDATE_ONLY",
   "purpose": "Keyword candidates only; no assertion, execution or acceptance claim",
-  "testMethods": 704,
+  "testMethods": 729,
   "conditions": [
     {
       "id": "NORM:2.3:2.1:C01",
@@ -2000,8 +2000,8 @@
           "suite": "guru.interlis.compiler.GenericContextContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GenericContextContractTest.java",
           "method": "transitiveContextsConvergeOrReportConflictingImportedAlternatives",
-          "methodStart": 12108,
-          "methodEnd": 13118,
+          "methodStart": 12230,
+          "methodEnd": 13240,
           "methodSha256": "29969071003a7d651e28621318a8e995c7d44d0051ae4b806481bfdc4e867844",
           "score": 41,
           "status": "CANDIDATE_ONLY"
@@ -8640,8 +8640,8 @@
           "suite": "guru.interlis.compiler.GenericContextContractTest",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GenericContextContractTest.java",
           "method": "transitiveContextsConvergeOrReportConflictingImportedAlternatives",
-          "methodStart": 12108,
-          "methodEnd": 13118,
+          "methodStart": 12230,
+          "methodEnd": 13240,
           "methodSha256": "29969071003a7d651e28621318a8e995c7d44d0051ae4b806481bfdc4e867844",
           "score": 41,
           "status": "CANDIDATE_ONLY"

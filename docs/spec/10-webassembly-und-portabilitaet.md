@@ -427,6 +427,23 @@ mit Herkunft und gegebenenfalls die bestehende ModelTranslation mit Originalziel
 Korrespondenzen. Sie serialisiert ausschliesslich den gemeinsamen Graph und
 führt keine weitere Bindungssemantik ein. Alte Snapshots bleiben explizit abfragbar.
 
+L4-1 ergänzt diese Positionsquery additiv um `qualifiedName`, `symbolKind` und
+`effectiveMembers`. Letzteres projiziert die gemeinsame effektive Memberliste in
+deren Reihenfolge; jeder Eintrag enthält `symbolId`, `qualifiedName`, `name`,
+`symbolKind`, die nullbasierte `position`, den Member-`origin`, den geordneten
+`inheritancePath` (qualifizierte Namen) sowie `targets` (qualifizierte Namen).
+`targets` enthält bei Rollen die gebundenen zulässigen Zielwurzeln, bei
+Referenzattributen die Zielwurzeln des gebundenen Referenztyps und bei
+Objektargumenttypen die optionale Basis. Gebundene Wertebereichs-Aliase werden
+dafür über den gemeinsamen Graph aufgelöst; andere Member haben eine leere
+Zielliste. Nicht-viewable Symbole haben eine leere effektive Memberliste.
+Alle Identitäten gehören zum angefragten Snapshot. Qualifizierte Namen sind
+Anzeige-/Vergleichswerte, keine Ersatzidentitäten. Dies ist keine Zusage,
+dass effektive Member- und Transferreihenfolgen für jede Symbolart gleich sind.
+Positive und negative Abnahmen: geerbte Memberreihenfolge, gleichnamige Ziele
+in verschiedenen Themen, unveränderte alte Snapshots und Abfragefehler nach
+dem bestehenden Positionsqueryvertrag; kein erneutes Binden im Adapter.
+
 ### L3-2: explizite Auswahlpolicy in der Wire-Konfiguration
 
 `openSession.configuration` und der vollständige Ersatz durch `setConfiguration`

@@ -1,0 +1,24 @@
+{
+  "status": "USER_APPROVED_COMPATIBILITY",
+  "testId": "ili23.Association23Test.association_ClassesLevelTopicAndModel",
+  "sourceSha256": "41eadc08d51b09a7f23860267f8b8bf8e7a7b3a2805a68e5fa3f9380f717fa29",
+  "sourceText": "INTERLIS 2.3;\n\nMODEL Basis (de)  AT \"mailto:ce@eisenhutinformatik.ch\" VERSION \"2007011001\"  =\n\n\tCLASS KatalogElem (ABSTRACT) =\n\tEND KatalogElem;\n\n    TOPIC Kataloge =\n\n    CLASS Test =\n    END Test;\n    \n      ASSOCIATION Hierarchie =\n\tParent -<> {0..*} KatalogElem;\n\tChild -- {0..*} Test;\n      END Hierarchie;\n\n    END Kataloge;\n\nEND Basis.",
+  "normId": "NORM:2.3:2.5.3:p30:001",
+  "normQuote": "INTE RLIS 2 - R ef er enzhandbuch Ausgabe v om 2006-04-13 (deutsch) \nwww.interlis.ch\n, info@interlis.ch\n 30 \nIn runden Klam mern (Regel Properties ) können die Vererbungseigenschaften definiert werden. Es sind \nalle Möglichkeiten zulässig. Enthält eine Klasse oder Struktur abstrakte Attribute, ist sie als ABSTRACT  \nzu deklarieren. Abstrakte Attribute müssen dann in konkreten Erweiterungen der Klasse noch konkret i-\nsiert werden. Es ist aber auch zulässig, Klassen als abstrakt zu erklären, deren Attribute vollständig def i-\nniert sind. Objektinstanzen können nur für konkrete  Klassen existieren , die innerhalb eines Themas def i-\nniert wurden. Klassen, die ausserhalb von Themen (also direkt im Modell) definiert sind, dürfen keine \nReferenz attribute enthalt en. Es ist auch nicht zulässig, Assoziationen zu so lchen Klassen zu definiere n. \nWird eine einzelne Klasse und nicht ein ganzes Thema geerbt, dürfen keine Beziehungen (vgl. Kapitel \n2.7 Eigentliche Beziehungen ) zu ihr definiert sein.  \nErweitert ein Thema ein anderes, werden alle Klassen de s geerbten Themas übernommen. Sie werden \nalso zu Klassen das aktuellen Themas und haben dens elben Namen wie im geerbten Thema. Eine so l-\nche Klasse kann auch unter Beibehaltung ihres Namens erweitert werden (EXTENDED ). Erweitert z.B. \nein Thema T2 das Thema T1, das die Klasse C enthält, gibt es mit C (EXTENDED ) innerhalb von T2 nur \neine Klasse, nämlich C. Neue Klassen, die sich namensmässig von den geerbten unterscheiden müssen, \ndürfen auch geerbte erweitern. Mit C2 EXTENDS  C , gibt es dann in T 2 zwei Klassen (C  und C 2) . Da \nINTE RLIS i m  I n t e r e s s e  v o n  E i nf a c hh e i t  u nd  K l a r h e i t  nu r  E i nf a c hv er er bu n g  u n t er s t ü t z t ,  i s t  E X T EN D ED \nallerdings  nur zulässig, wenn weder im Basis -Thema noch im aktuel len Thema die Basis -Klasse mit \nEX T END S erw eiter t w ur de. EX T END ED und EX TEND S schliessen sich in der gleichen Klassendefinition \naus. \nSyntaxregeln: \nClassDef = 'CLASS' Class-Name \n             Properties <ABSTRACT,EXTENDED,FINAL> \n               [ 'EXTENDS ' ClassOrStructureRef  ] '=' \n             [ ( 'OID ' 'AS' OID-DomainRef | 'NO' 'OID' ) ';' ] \n             ClassOrStructureDef  \n           'END' Class-Name ';'. ",
+  "normQuoteSha256": "8a1c267e068c5ae617138c4aec9e5791ad92f72b3f1c9fcc2916066d47948e89",
+  "observed": {
+    "baseline": "accepted",
+    "candidate": "rejected",
+    "rule": "ROLE_TARGET_MODEL_CLASS",
+    "reference": "accepted",
+    "freshConformance": "576 PASS /16 XFAIL /1 FAIL; alle21 bestehenden AssessmentsPASS"
+  },
+  "recommendation": "Bestandskompatibilität wieili2c: modellweite Klassen als Rollenziel weiterhin zulassen.2.4 entfernt das ausdrückliche2.3-Verbot; API-Zielbindung und vorhandene Kardinalitäts-/OID-/Stärkeregeln bleiben erhalten.",
+  "alternative": "Normverbot2.3 durchsetzen und diesen neuen Fall mit exakter Diagnose und positiver Kontrolle als22.Assessment ausdrücklich freigeben.",
+  "userDecision": {
+    "date": "2026-10-30",
+    "answer": "Bisherige Kompatibilität wie ili2c erhalten (empfohlen)",
+    "scope": "Modellweite Klassen bleiben in2.3 als Rollenziele zulässig. Keine22.Referenzausnahme, keine Änderung der bestehenden21Assessments/Pins.",
+    "independentFinalAcceptance": "PENDING_L4_REVIEWS"
+  }
+}

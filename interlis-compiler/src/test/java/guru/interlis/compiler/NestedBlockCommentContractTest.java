@@ -23,7 +23,7 @@ import static guru.interlis.compiler.CompilerTestSupport.request;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NestedBlockCommentContractTest {
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} [{index}] {arguments}")
     @ValueSource(strings = {"2.3", "2.4"})
     void openOuterCommentAfterClosedInnerCommentNeverProducesCompiledSchema(String version) throws Exception {
         String original = Files.readString(Path.of(System.getProperty("testdata.dir"),
@@ -37,7 +37,7 @@ class NestedBlockCommentContractTest {
         assertTrue(rejected.rejection().reasons().contains(RejectionReason.SOURCE_ERRORS));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} [{index}] {arguments}")
     @ValueSource(strings = {"2.3", "2.4"})
     void balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations(String version) {
         for (String newline : List.of("\n", "\r\n")) {
@@ -77,7 +77,7 @@ class NestedBlockCommentContractTest {
         }
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} [{index}] {arguments}")
     @ValueSource(strings = {"2.3", "2.4"})
     void unfinishedCommentsHaveOriginalSyntaxErrorsInBothParseModes(String version) {
         for (String newline : List.of("\n", "\r\n")) {

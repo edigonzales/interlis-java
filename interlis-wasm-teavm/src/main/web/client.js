@@ -186,7 +186,7 @@
     return response;
   }
 
-  async function benchmark(text, modelName) {
+  async function benchmark(text, modelName, expectation) {
     const sessionId = await openSession();
     const sourceId = 'memory:/benchmark.ili';
     const updated = await call(envelope('updateSource', sessionId, {
@@ -209,8 +209,23 @@
       roots: [{kind: 'byName', modelName}]
     }));
     const elapsed = performance.now() - started;
-    if (compiled.status !== 'ok' || compiled.result.outcome !== 'succeeded') {
+    if (compiled.status !== 'ok' || compiled.result.outcome !== (expectation?.outcome || 'succeeded')) {
       throw new Error('benchmark compile failed: ' + JSON.stringify(compiled));
+    }
+    if (expectation) {
+      const result = compiled.result;
+      if (JSON.stringify(result.rejection?.reasons) !== '["SOURCE_ERRORS"]'
+          || result.rejection.unsupportedFeatureIds.length) throw new Error('benchmark did not reject source');
+      const diagnostics = structuredClone(result.diagnostics);
+      for (const diagnostic of diagnostics) {
+        if (diagnostic.range?.source !== sourceId || diagnostic.range.revision !== state.benchmarkRevision)
+          throw new Error('benchmark diagnostic has wrong source/revision');
+        delete diagnostic.id; delete diagnostic.range.source; delete diagnostic.range.revision;
+      }
+      const canonical = value => Array.isArray(value) ? value.map(canonical)
+        : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
+      if (JSON.stringify(canonical(diagnostics)) !== JSON.stringify(canonical(expectation.diagnostics)))
+        throw new Error('benchmark has wrong diagnostic fields or multiplicity: ' + JSON.stringify(diagnostics));
     }
     return elapsed;
   }

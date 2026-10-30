@@ -1,0 +1,15 @@
+INTERLIS 2.4;
+MODEL F AT "https://example.org" VERSION "1" =
+  STRUCTURE Base = first: TEXT*20; second: BOOLEAN; END Base;
+  STRUCTURE Child EXTENDS Base = third: 0..10; END Child;
+  TOPIC T = OID AS INTERLIS.UUIDOID;
+    CLASS A = label: TEXT; END A;
+    CLASS B = label: TEXT; END B;
+    ASSOCIATION Link = a -- {1} A; b -- {0..*} B; END Link;
+  END T;
+  TOPIC U = OID AS INTERLIS.UUIDOID;
+    CLASS A = label: TEXT; END A;
+    CLASS B = label: TEXT; END B;
+    ASSOCIATION Link = a -- {1} A; b -- {0..*} B; END Link;
+  END U;
+END F.
