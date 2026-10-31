@@ -46,6 +46,18 @@ export async function verifyBrowserClient(){
     assert(diagramAdapter.resolveNavigation(view,member.id,view.snapshotId,new Map([['memory:/wire',{text:changed,revision:client.state(current).sourceRevisions['memory:/wire']}]] )).kind==='stale','old member offset navigated into edited source');
     const controller=new AbortController();controller.abort();
     try{await client.analyze(current,req(),{signal:controller.signal});throw new Error('aborted request ran');}catch(error){assert(error.code==='CANCELLED','pre-dispatch cancellation mismatch');}
+
+    const partialText='INTERLIS 2.4;MODEL Partial AT "x" VERSION "1"=IMPORTS Missing;TOPIC T=CLASS C=x:Missing.D;END C;CLASS Good=n:TEXT;END Good;END T;END Partial.';
+    const partialSession=await client.openSession({sources:[{sourceId:'memory:/partial',text:partialText}]});
+    const partialAnalysis=await client.analyze(partialSession,{expectedWorkspaceRevision:client.state(partialSession).workspaceRevision,roots:[{kind:'byName',modelName:'Partial'}]});
+    const partial=await client.diagram(partialSession,{snapshotId:partialAnalysis.snapshotId});
+    assert(partial.completeness==='PARTIAL'&&partial.nodes.some(n=>n.status==='UNRESOLVED'&&n.symbol===null),'partial diagram hides its missing import');
+    const partialView=diagramAdapter.adapt(partial,new Map([['memory:/partial',{text:partialText,revision:client.state(partialSession).sourceRevisions['memory:/partial']}]]));
+    assert((await diagramAdapter.render(partialView)).svg.includes('UNRESOLVED'),'partial stub is invisible in actual SVG');
+    const limited=await client.diagram(partialSession,{snapshotId:partialAnalysis.snapshotId,options:{schemaVersion:'1.0',budget:{maxNodes:1}}});
+    assert(limited.completeness==='LIMITED'&&limited.nodes.length===1,'wire budget ignored');
+    try{await client.diagram(partialSession,{snapshotId:partialAnalysis.snapshotId,selection:[]});throw new Error('empty selection silently defaulted');}catch(error){assert(error.code==='INVALID_REQUEST','empty selection error mismatch');}
+    await client.closeSession(partialSession);await client.closeSession(partialSession);assert(client.currentSessions().length===1,'repeated close changed another session');
   }finally{await client.dispose();}
   // A real worker script failure has its own failure kind and may recover all
   // confirmed sessions. No JavaScript stack text is a compiler diagnostic.

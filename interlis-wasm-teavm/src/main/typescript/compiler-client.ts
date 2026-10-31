@@ -31,6 +31,8 @@ export class CompilerClient {
   private sessions = new Map<string, Mirror>();
   private counter = 0;
   private disposed = false;
+  private readonly closed=new WeakSet<D.SessionHandle>();
+  private readonly closing=new WeakMap<D.SessionHandle,Promise<void>>();
   private restoredSessions:readonly {readonly previous:D.SessionHandle;readonly current:D.SessionHandle}[]=[];
   constructor(private readonly options: ClientOptions = {}) {
     this.host = new CompilerWorkerHost({...options, restore: () => this.restore(),restored:() => {
@@ -119,12 +121,13 @@ export class CompilerClient {
   }
   async diagram(handle: D.SessionHandle, request: D.DiagramRequestDto, run?: RunOptions): Promise<D.DiagramDocumentDto> {
     const m=this.require(handle),captured=copy(request);
-    const params: {snapshotId?:string;schemaId?:string;selection?:{snapshot:string;symbol:string}[]}={};
+    const params: {snapshotId?:string;schemaId?:string;selection?:{snapshot:string;symbol:string}[];options?:D.DiagramOptionsDto}={};
     if(captured.snapshotId)params.snapshotId=this.snapshot(m,captured.snapshotId);
     if(captured.schemaId) {
       const schema=m.schemas.get(captured.schemaId);if(!schema)throw new CompilerHostError('SNAPSHOT_EXPIRED','schema handle expired');
       params.schemaId=schema.raw;
     }
+    if(captured.options)params.options=captured.options;
     if(captured.selection)params.selection=captured.selection.map(ref => ({snapshot:this.snapshot(m,ref.snapshot),symbol:ref.symbol}));
     return this.send<D.DiagramDocumentDto>('diagram',m,params,run).then(result => {
       this.require(handle);return this.result(m,result);
@@ -139,10 +142,18 @@ export class CompilerClient {
     await this.send('releaseSnapshot',m,{snapshotId:raw});this.require(handle);
     m.snapshots.delete(snapshotId);for(const [id,schema] of m.schemas)if(schema.snapshot===snapshotId)m.schemas.delete(id);
   }
-  async closeSession(handle: D.SessionHandle): Promise<void> {
-    const m=this.require(handle);await this.send('closeSession',m,{});this.require(handle);
-    this.sessions.delete(handle.id);m.sources.clear();m.schemas.clear();m.snapshots.clear();
+  async closeSession(handle:D.SessionHandle):Promise<void> {
+    if(this.disposed)throw new CompilerHostError('DISPOSED','compiler client is disposed');
+    if(this.closed.has(handle))return;
+    const previous=this.closing.get(handle);if(previous)return previous;
+    const m=this.require(handle);
+    const close=(async()=>{
+      await this.send('closeSession',m,{});this.require(handle);
+      this.sessions.delete(handle.id);m.sources.clear();m.schemas.clear();m.snapshots.clear();this.closed.add(handle);
+    })().finally(()=>this.closing.delete(handle));
+    this.closing.set(handle,close);return close;
   }
+
   cancel(requestId: string): Promise<CancelDisposition> { return this.host.cancel(requestId); }
   restart(): Promise<void> { return this.host.restart(); }
   async dispose(): Promise<void> { this.disposed=true;await this.host.dispose();this.sessions.clear(); }

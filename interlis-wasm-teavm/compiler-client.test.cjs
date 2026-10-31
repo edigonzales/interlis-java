@@ -146,3 +146,27 @@ test('a corrupt acknowledgement restarts from the complete confirmed mirror with
     assert.equal((await client.compile(current,roots(client,current,'Root'))).outcome,'succeeded');
   }finally{await client.dispose();}
 });
+
+test('closing the same owned handle is idempotent, concurrent calls coalesce, and foreign handles remain invalid',async()=>{
+  const {client,ports}=create(),other=create();
+  try{
+    const handle=await client.openSession({sources:[{sourceId:'memory:/f',text:F}]});
+    await Promise.all([client.closeSession(handle),client.closeSession(handle)]);await client.closeSession(handle);
+    assert.equal(ports[0].requests.filter(r=>r.operation==='closeSession').length,1);
+    assert.equal(client.currentSessions().length,0);
+    assert.throws(()=>client.state(handle),{code:'SESSION_EXPIRED'});
+    await assert.rejects(other.client.closeSession(handle),{code:'SESSION_EXPIRED'});
+  }finally{await client.dispose();await other.client.dispose();}
+});
+
+test('versioned diagram options reach the real compiler and partial snapshots remain visibly partial',async()=>{
+  const {client}=create();const sourceId='memory:/partial',text='INTERLIS 2.4;MODEL F AT "x" VERSION "1"=IMPORTS Missing;TOPIC T=CLASS C=x:Missing.D;END C;CLASS Good=n:TEXT;END Good;END T;END F.';
+  try{
+    const handle=await client.openSession({sources:[{sourceId,text}]});const analysis=await client.analyze(handle,roots(client,handle));
+    const doc=await client.diagram(handle,{snapshotId:analysis.snapshotId});assert.equal(doc.completeness,'PARTIAL');assert.ok(doc.nodes.some(n=>n.status==='UNRESOLVED'&&n.symbol===null));
+    await assert.rejects(client.diagram(handle,{snapshotId:analysis.snapshotId,selection:[]}),{code:'INVALID_REQUEST'});
+    const limited=await client.diagram(handle,{snapshotId:analysis.snapshotId,options:{schemaVersion:'1.0',budget:{maxNodes:1}}});assert.equal(limited.completeness,'LIMITED');assert.equal(limited.nodes.length,1);
+    await assert.rejects(client.diagram(handle,{snapshotId:analysis.snapshotId,options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD'}}),{code:'UNSUPPORTED_OPERATION'});
+    await client.releaseSnapshot(handle,analysis.snapshotId);await client.closeSession(handle);await client.closeSession(handle);
+  }finally{await client.dispose();}
+});

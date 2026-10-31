@@ -62,5 +62,9 @@
       "change": "One strict declaration correction: T['children'][number] -> NonNullable<T['children']>[number]. Runtime elkjs source unchanged."
     }
   ],
-  "provenance": "Source vendoring because @ilic/diagram@0.1.2 and its requested compiler-wasm@0.10.0 are not published. No replacement compiler runtime. Historical docs/evidence/p3/diagram-schema-pin.json remains unchanged."
+  "provenance": "Source vendoring because @ilic/diagram@0.1.2 and its requested compiler-wasm@0.10.0 are not published. No replacement compiler runtime. Historical docs/evidence/p3/diagram-schema-pin.json remains unchanged.",
+  "diagramOptionsSchema": {
+    "file": "interlis-wasm-bridge/src/main/resources/guru/interlis/bridge/diagram-options-1.0.schema.json",
+    "sha256": "abd41d3932ef1eabb6653dabba300dc058bbcc1884f5be32a2368244a02cd228"
+  }
 }

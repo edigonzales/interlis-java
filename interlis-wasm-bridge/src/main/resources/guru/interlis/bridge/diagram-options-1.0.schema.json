@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://interlis.ch/schema/diagram-options-1.0.schema.json",
+  "title": "DiagramOptions 1.0",
+  "type": "object",
+  "required": [
+    "schemaVersion"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "SELECTED",
+        "WITH_DEPENDENCIES",
+        "NEIGHBOURHOOD"
+      ]
+    },
+    "visibleKinds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "CLASS",
+          "STRUCTURE",
+          "ASSOCIATION",
+          "VIEW",
+          "DOMAIN",
+          "EXTERNAL_REFERENCE",
+          "GRAPHIC",
+          "DRAWING_RULE",
+          "LINE_FORM",
+          "METADATA_BASKET",
+          "METAOBJECT"
+        ]
+      }
+    },
+    "inheritedMembers": {
+      "type": "string",
+      "enum": [
+        "HIDE",
+        "SHOW_WITH_ORIGIN"
+      ]
+    },
+    "showTypes": {
+      "type": "boolean"
+    },
+    "showRoleCardinalities": {
+      "type": "boolean"
+    },
+    "showConstraints": {
+      "type": "boolean"
+    },
+    "showImports": {
+      "type": "boolean"
+    },
+    "labelPolicy": {
+      "type": "string",
+      "enum": [
+        "CANONICAL",
+        "TRANSLATED"
+      ]
+    },
+    "associationPresentation": {
+      "type": "string",
+      "enum": [
+        "ENTITY",
+        "COMPACT_BINARY"
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "maxNodes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "maxEdges": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "maxMembersPerNode": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

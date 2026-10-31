@@ -6,6 +6,7 @@ const read=p=>fs.readFileSync(path.join(root,p));
 const pin=JSON.parse(read('../docs/p3/diagram-adapter-pin.json'));
 for(const [file,identity]of Object.entries(pin.vendoredFiles))if(hash(read('../'+file))!==identity.sha256)throw new Error('vendored diagram contract changed: '+file);
 if(hash(read('../'+pin.diagramSchema.file))!==pin.diagramSchema.sha256)throw new Error('diagram schema pin mismatch');
+if(hash(read('../'+pin.diagramOptionsSchema.file))!==pin.diagramOptionsSchema.sha256)throw new Error('diagram options schema pin mismatch');
 function run(args){cp.execFileSync(process.execPath,[path.join(root,'node_modules/typescript/bin/tsc'),...args],{cwd:root,stdio:'inherit'});}
 fs.rmSync(output,{recursive:true,force:true});fs.mkdirSync(output,{recursive:true});
 run(['-p','tsconfig.json']);
@@ -26,6 +27,8 @@ const index=path.join(vendor,'index.d.ts');fs.writeFileSync(index,fs.readFileSyn
 const avoid=path.join(output,'vendor/libavoid');fs.mkdirSync(avoid,{recursive:true});
 for(const name of ['index.js','index.js.map','libavoid.wasm'])fs.copyFileSync(path.join(root,'node_modules/libavoid-js/dist',name),path.join(avoid,name));
 fs.copyFileSync(path.join(root,'node_modules/libavoid-js/LICENSE'),path.join(avoid,'LICENSE'));
+const schemas=path.join(output,'schemas');fs.mkdirSync(schemas,{recursive:true});
+for(const item of [pin.diagramSchema,pin.diagramOptionsSchema])fs.copyFileSync(path.resolve(root,'../'+item.file),path.join(schemas,path.basename(item.file)));
 const licenses=path.join(output,'licenses');fs.mkdirSync(licenses,{recursive:true});
 fs.copyFileSync(path.join(root,'src/main/typescript/vendor/ilic-diagram/LICENSE'),path.join(licenses,'ilic-diagram-MIT.txt'));
 fs.copyFileSync(path.join(root,'node_modules/elkjs/LICENSE.md'),path.join(licenses,'elkjs-LICENSE.md'));
@@ -46,7 +49,7 @@ const files=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(en
 let commit='unavailable',dirty='unavailable';try{commit=cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();dirty=cp.execFileSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8'}).trim();}catch{}
 const manifest={status:'passed',scope:'TypeScript strict checking, declarations and bundles; not a browser acceptance',node:process.version,commit,dirty,
   versions:Object.fromEntries(['typescript','esbuild','ajv','elkjs','sprotty-protocol','libavoid-js'].map(name=>[name,JSON.parse(fs.readFileSync(path.join(root,'node_modules',name,'package.json'),'utf8')).version])),
-  inputs:Object.fromEntries([...files(path.join(root,'src/main/typescript')),...files(path.join(root,'src/main/web')),...['build-browser-tools.cjs','package.json','package-lock.json','tsconfig.json'].map(p=>path.join(root,p)),path.resolve(root,'../interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json')].map(p=>[path.relative(root,p),hash(fs.readFileSync(p))])),
+  inputs:Object.fromEntries([...files(path.join(root,'src/main/typescript')),...files(path.join(root,'src/main/web')),...['build-browser-tools.cjs','package.json','package-lock.json','tsconfig.json'].map(p=>path.join(root,p)),path.resolve(root,'../interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json'),path.resolve(root,'../'+pin.diagramOptionsSchema.file),path.resolve(root,'../docs/p3/diagram-adapter-pin.json')].map(p=>[path.relative(root,p),hash(fs.readFileSync(p))])),
   outputs:Object.fromEntries(files(output).map(p=>[path.relative(output,p),hash(fs.readFileSync(p))]))};
 fs.writeFileSync(path.join(root,'build/browser-tools-result.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log('BROWSER_TOOLS_PASS '+JSON.stringify({node:manifest.node,versions:manifest.versions,outputs:Object.keys(manifest.outputs).length}));

@@ -92,16 +92,18 @@ final class DefaultDiagramProjector implements DiagramProjector {
         return switch (input) {
             case DiagramInput.FromAnalysis analysis -> new Context(analysis.snapshot().snapshotId(),
                     analysis.snapshot().semanticGraph(), analysis.snapshot().queries(),
-                    analysis.snapshot().sourceRevisions(), InputKind.ANALYSIS);
+                    analysis.snapshot().sourceRevisions(), InputKind.ANALYSIS,
+                    !analysis.snapshot().coverage().entries().isEmpty() && analysis.snapshot().coverage().incompleteEntries().isEmpty(), analysis.snapshot().diagnostics());
             case DiagramInput.FromSchema schema -> new Context(schema.schema().snapshotId(),
                     schema.schema().semanticGraph(), schema.schema().queries(),
-                    schema.schema().sourceRevisions(), InputKind.CHECKED_SCHEMA);
+                    schema.schema().sourceRevisions(), InputKind.CHECKED_SCHEMA, true, List.of());
         };
     }
 
     private record Context(guru.interlis.model.SnapshotId snapshotId,
                            guru.interlis.model.SemanticGraph graph, SemanticQueries queries,
-                           Map<SourceId, SourceRevision> sourceRevisions, InputKind inputKind) {
+                           Map<SourceId, SourceRevision> sourceRevisions, InputKind inputKind, boolean complete,
+                           List<guru.interlis.diagnostics.Diagnostic> diagnostics) {
     }
 
     private static final class ProjectionState {
@@ -205,7 +207,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
             }
             List<DiagramCompartment> compartments = compartments(symbol);
             nodes.put(nodeId, new DiagramNode(nodeId, kind, containerId, symbol.name().value(),
-                    qualifiedName(symbol), DiagramNodeStatus.RESOLVED,
+                    qualifiedName(symbol), nodeStatus(symbol),
                     Optional.of(new SymbolRef(context.snapshotId(), symbol.id())),
                     compartments, anchor(symbol),symbol.header().modifiers()));
         }
@@ -455,13 +457,15 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     processed.add(container.id());
                     var declaration=container.symbol().flatMap(ref -> context.graph().symbol(ref.symbol())).orElse(null);
                     if(declaration instanceof ModelSymbol model) {
-                        if(options.showImports()) for(var imported:model.imports()) imported.targetModel().ifPresent(target -> {
+                        if(options.showImports()) for(var imported:model.imports()) {
+                            if(imported.targetModel().isEmpty()){addMissingImport(container,model,imported);continue;}
+                            var target=imported.targetModel().orElseThrow();
                             String other=modelFrame(target);
                             if(other!=null)addEdge(new DiagramEdge("edge-import-"+model.id().value()+"-"+target.value(),DiagramEdge.EdgeKind.MODEL_IMPORT,
                                     new DiagramEndpoint(container.id(),Optional.empty()),new DiagramEndpoint(other,Optional.empty()),
                                     Optional.of(new SymbolRef(context.snapshotId(),model.id())),emptyEnd(),emptyEnd(),imported.importedModel(),
                                     Optional.of(new SourceAnchor(context.snapshotId(),imported.range(),Optional.empty()))));
-                        });
+                        }
                         model.translation().flatMap(guru.interlis.model.ModelTranslation::sourceTarget).ifPresent(target -> {
                             String other=modelFrame(target);
                             if(other!=null)addEdge(new DiagramEdge("edge-translation-"+model.id().value()+"-"+target.value(),DiagramEdge.EdgeKind.TRANSLATION,
@@ -483,6 +487,38 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 }
             }
         }
+
+        private DiagramNodeStatus nodeStatus(Symbol symbol) {
+            var type=context.graph().declaredType(symbol.id()).flatMap(context.graph()::type).orElse(null);
+            if(type instanceof guru.interlis.model.ErrorType || type instanceof guru.interlis.model.PendingType)
+                return DiagramNodeStatus.PARTIAL;
+            if(symbol.origin() instanceof guru.interlis.model.Origin.DeclaredOrigin origin)
+                for(var diagnostic:context.diagnostics()) {
+                    token.throwIfCancellationRequested();
+                    var range=diagnostic.primaryRange().orElse(null);var declaration=origin.range();
+                    if(diagnostic.severity()==Severity.ERROR && range!=null && range.source().equals(declaration.source())
+                            && range.revision().equals(declaration.revision()) && range.startOffset()<declaration.endOffset()
+                            && range.endOffset()>declaration.startOffset()) return DiagramNodeStatus.PARTIAL;
+                }
+            return DiagramNodeStatus.RESOLVED;
+        }
+        private void addMissingImport(DiagramContainer source,ModelSymbol model,guru.interlis.model.ModelImport imported) {
+            notices.add(new ProjectionNotice(ProjectionNoticeCode.UNRESOLVED_TARGET,Severity.WARNING,
+                    "projection.unresolvedImport",List.of(imported.importedModel()),
+                    Optional.of(new SymbolRef(context.snapshotId(),model.id())),Optional.of(imported.range())));
+            if(nodes.size()>=options.budget().maxNodes()){limited();return;}
+            String container="container-external",id="stub-import-"+model.id().value()+"-"+imported.importedModel();
+            containers.putIfAbsent(container,new DiagramContainer(container,DiagramContainer.ContainerKind.MODEL,
+                    Optional.empty(),"External","External",Optional.empty(),Optional.empty()));
+            nodes.putIfAbsent(id,new DiagramNode(id,DiagramNodeKind.EXTERNAL_REFERENCE,container,
+                    imported.importedModel(),imported.importedModel(),DiagramNodeStatus.UNRESOLVED,
+                    Optional.empty(),List.of(),Optional.empty(),Set.of()));
+            addEdge(new DiagramEdge("edge-"+id,DiagramEdge.EdgeKind.MODEL_IMPORT,
+                    new DiagramEndpoint(source.id(),Optional.empty()),new DiagramEndpoint(id,Optional.empty()),
+                    Optional.of(new SymbolRef(context.snapshotId(),model.id())),emptyEnd(),emptyEnd(),imported.importedModel(),
+                    Optional.of(new SourceAnchor(context.snapshotId(),imported.range(),Optional.empty()))));
+        }
+
         private String modelFrame(SymbolId target) {
             var declaration=context.graph().symbol(target).orElse(null);
             if(!(declaration instanceof ModelSymbol))return null;
@@ -562,7 +598,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     "External", Optional.empty(), Optional.empty()));
             nodes.put(nodeId, new DiagramNode(nodeId, DiagramNodeKind.EXTERNAL_REFERENCE,
                     containerId, symbol.name().value(), qualifiedName(symbol),
-                    DiagramNodeStatus.RESOLVED,
+                    nodeStatus(symbol),
                     Optional.of(new SymbolRef(context.snapshotId(), symbol.id())),
                     List.of(), anchor(symbol),symbol.header().modifiers()));
             return nodeId;
@@ -611,7 +647,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
             if (limited) {
                 return ProjectionCompleteness.LIMITED;
             }
-            return notices.isEmpty() ? ProjectionCompleteness.COMPLETE
+            return context.complete() && notices.isEmpty() && nodes.values().stream().allMatch(n -> n.status()==DiagramNodeStatus.RESOLVED) ? ProjectionCompleteness.COMPLETE
                     : ProjectionCompleteness.PARTIAL;
         }
 

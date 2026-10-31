@@ -242,6 +242,29 @@ Fehlende Modellanforderungen und deren Locator/Provenienz stammen aus `Workspace
 
 `query.params.query.kind` ist eine feste Union: `symbolAt`, `definition`, `semanticProperties`, `hover`, `completion`, `references`, `prepareRename`, `rename`. Jede Variante besitzt ihr eigenes JSON-Schema. Der Server kündigt nur implementierte Varianten an. Ein Positionquery enthält SourceId, SourceRevision und UTF-16-Offset; ein Symbolquery enthält SnapshotId und SymbolId. Nicht unterstützte P3-Queries werden als `UNSUPPORTED_OPERATION` abgelehnt und niemals mit einer irreführend leeren Trefferliste beantwortet.
 
+Für `diagram` ist genau eines von `snapshotId` und `schemaId` erforderlich.
+Eine fehlende `selection` verwendet die belegten Wurzelmodelle dieses Eingangs;
+eine ausdrücklich leere, nullwertige oder falsch typisierte Auswahl ist ungültig.
+Das optionale Feld `options` folgt dem Schema
+`interlis-wasm-bridge/src/main/resources/guru/interlis/bridge/diagram-options-1.0.schema.json`.
+Ist es vorhanden, verlangt es `schemaVersion: "1.0"`. Es übernimmt `scope`,
+`visibleKinds`, `inheritedMembers`, `showTypes`, `showRoleCardinalities`,
+`showConstraints`, `showImports`, `labelPolicy`, `associationPresentation`
+und `budget` aus dem gemeinsamen `DiagramOptions`-Vertrag in Kapitel11;
+ausgelassene Felder verwenden ausschliesslich dessen Defaults.
+Unbekannte Felder, falsche Typen und ungültige Grenzen sind `INVALID_REQUEST`.
+Unbekannte Optionsversionen und ausdrücklich nicht angebotene Darstellungsoptionen
+liefern `UNSUPPORTED_OPERATION`; sie werden nicht still ignoriert.
+`capabilities.diagramOptions` nennt die angebotene Version und Darstellungsprofile.
+Ein angenommener Budgetwert kann `LIMITED` erzeugen, niemals eine verdeckt
+verkleinerte vollständige Ausgabe. Die TypeScript-Form heisst `DiagramOptionsDto`.
+
+`CompilerClient.closeSession` ist für dasselbe eigene Handle idempotent,
+auch bei gleichzeitig angeforderten Abschlüssen. Die Implementierung benötigt
+keine stark gehaltene unbeschränkte Liste abgeschlossener Sitzungs-IDs.
+Andere Operationen akzeptieren ein geschlossenes Handle nicht; fremde Handles
+bleiben ungültig. Nach `dispose` gilt weiterhin der geschlossene Clientvertrag.
+
 ### 5.3 Beispiel einer bedingten Quelländerung
 
 ```json

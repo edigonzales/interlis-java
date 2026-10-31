@@ -114,7 +114,16 @@ export type QueryResultDto = {readonly snapshotId:string} & (
    readonly metadata:readonly {readonly key:string; readonly text:string; readonly origin:OriginDto}[]; readonly effectiveMembers:readonly EffectiveMemberDto[];
    readonly translation?:{readonly sourceModel:string; readonly sourceTarget?:string; readonly origin?:OriginDto; readonly correspondences:readonly {readonly original:string; readonly translated:string}[]}}
 );
-export type DiagramRequestDto = ({readonly snapshotId:string; readonly schemaId?:never} | {readonly schemaId:string; readonly snapshotId?:never}) & {readonly selection?:readonly SymbolRefDto[]};
+export interface DiagramOptionsDto {
+  readonly schemaVersion:'1.0';
+  readonly scope?:'SELECTED'|'WITH_DEPENDENCIES'|'NEIGHBOURHOOD';
+  readonly visibleKinds?:readonly ('CLASS'|'STRUCTURE'|'ASSOCIATION'|'VIEW'|'DOMAIN'|'EXTERNAL_REFERENCE'|'GRAPHIC'|'DRAWING_RULE'|'LINE_FORM'|'METADATA_BASKET'|'METAOBJECT')[];
+  readonly inheritedMembers?:'HIDE'|'SHOW_WITH_ORIGIN';
+  readonly showTypes?:boolean;readonly showRoleCardinalities?:boolean;readonly showConstraints?:boolean;readonly showImports?:boolean;
+  readonly labelPolicy?:'CANONICAL'|'TRANSLATED';readonly associationPresentation?:'ENTITY'|'COMPACT_BINARY';
+  readonly budget?:{readonly maxNodes?:number;readonly maxEdges?:number;readonly maxMembersPerNode?:number};
+}
+export type DiagramRequestDto = ({readonly snapshotId:string; readonly schemaId?:never} | {readonly schemaId:string; readonly snapshotId?:never}) & {readonly selection?:readonly SymbolRefDto[];readonly options?:DiagramOptionsDto};
 export interface DiagramMemberDto {
   readonly id: string; readonly kind: string; readonly label: string; readonly typeLabel: string | null; readonly cardinality: string | null;
   readonly declaredSymbol: string; readonly effectiveOwner: string; readonly inherited: boolean; readonly overridden: boolean; readonly anchor: SourceAnchorDto | null;

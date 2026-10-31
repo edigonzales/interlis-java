@@ -65,6 +65,10 @@ public final class BridgeDispatcher {
             if (sessionId.isEmpty()) {
                 throw new BridgeException("INVALID_REQUEST", "sessionId required");
             }
+            if ("closeSession".equals(request.operation())) {
+                sessions.close(sessionId.get());
+                return codec.success(request, sessionId, JsonValues.object("closed", JsonValues.bool(true)));
+            }
             CompilerSessionFacade session = sessions.require(sessionId.get());
             return switch (request.operation()) {
                 case "updateSource" -> codec.success(request, sessionId,
@@ -87,11 +91,6 @@ public final class BridgeDispatcher {
                     session.releaseSnapshot(BridgeCodec.string(request.params(), "snapshotId"));
                     yield codec.success(request, sessionId,
                             JsonValues.object("released", JsonValues.bool(true)));
-                }
-                case "closeSession" -> {
-                    sessions.close(sessionId.get());
-                    yield codec.success(request, sessionId,
-                            JsonValues.object("closed", JsonValues.bool(true)));
                 }
                 default -> throw new BridgeException("UNSUPPORTED_OPERATION",
                         "unknown operation " + request.operation());

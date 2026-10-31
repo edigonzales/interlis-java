@@ -57,3 +57,10 @@ weitere Abhängigkeitslizenzen werden mit ausgeliefert. Es wird kein Netzrendere
 aufgerufen. Diese Buildbeschreibung allein belegt noch keinen P3-3-PASS;
 aktuelle Läufe und Abnahme stehen im [Implementierungsbericht](implementation/P3-3.md)
 und [Status](STATUS.md).
+
+Der Diagrammrequest akzeptiert options nach DiagramOptionsDto/Schema1.0; nur
+fehlende Optionen verwenden gemeinsame Defaults. Leere Auswahl, unbekannte
+Felder und ungültige Optionen liefern explizite Fehler. Partielle Eingänge
+behalten betroffene Knoten, fehlende Importstubs und ihre tatsächliche
+Vollständigkeit. Idempotentes closeSession verwendet im Client schwache
+Handleidentität und hält keine unbegrenzte Liste abgeschlossener Sitzungen.

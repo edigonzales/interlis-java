@@ -47,7 +47,7 @@ function navigate(id){
 function refreshPicker(){picker.replaceChildren(...[...drafts.keys()].map(id=>{const option=document.createElement('option');option.value=id;option.textContent=id;option.selected=id===activeSource;return option;}));}
 function publishDiagram(result,rendered){
   const scroll={left:canvas.scrollLeft,top:canvas.scrollTop};
-  canvas.innerHTML=rendered.svg;canvas.dataset.stale='false';canvas.setAttribute('aria-label','Current INTERLIS diagram');
+  canvas.innerHTML=rendered.svg;canvas.dataset.stale='false';canvas.setAttribute('aria-label',result.completeness==='COMPLETE'?'Current INTERLIS diagram':'Partial INTERLIS diagram');
   canvas.scrollLeft=scroll.left;canvas.scrollTop=scroll.top;visibleLayout=rendered.layout;visibleRendered=rendered;
   canvas.querySelectorAll('[data-symbol-id],[data-edge-id]').forEach(element=>element.addEventListener('click',event=>{event.stopPropagation();navigate(element.getAttribute('data-symbol-id')??element.getAttribute('data-edge-id'));}));
   members.replaceChildren();
@@ -57,10 +57,10 @@ function publishDiagram(result,rendered){
 }
 async function diagram(){
   // Compile synchronizes every draft and releases even rejected prior results.
-  const compiled=await compile();if(compiled.stale||compiled.result.outcome!=='succeeded')return compiled;
+  const compiled=await compile();if(compiled.stale||!compiled.result.snapshotId)return compiled;
   return serial(async()=>{
     const handle=session,mark=generation,current=snapshot,text=captured();
-    const document=await client.diagram(handle,{schemaId:schema});const candidate=diagramAdapter.adapt(document,sourceMap());
+    const document=await client.diagram(handle,schema?{schemaId:schema}:{snapshotId:snapshot});const candidate=diagramAdapter.adapt(document,sourceMap());
     const rendered=await diagramAdapter.render(candidate,diagramAdapter.defaultDiagramSettings,visibleRendered);
     if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
     view=candidate;publishDiagram(document,rendered);output.textContent=JSON.stringify({document,presentationNotices:candidate.notices},null,2);return {status:'ok',result:document};
@@ -94,6 +94,7 @@ async function runClientContract(){
   const analyzed=await analyze();assert(analyzed.result.snapshotId,'analysis snapshot missing');
   drafts.set(activeSource,initial.replace('height : 0..999;','height : ;'));
   const rejected=await compile();assert(rejected.result.outcome==='rejected','invalid source accepted');
+  const partial=await diagram();assert(partial.result.inputKind==='ANALYSIS'&&partial.result.completeness==='PARTIAL','partial analysis is not readable as a partial diagram');
   drafts.set(activeSource,initial);
   const succeeded=await compile();assert(succeeded.result.outcome==='succeeded','valid source rejected: '+JSON.stringify(succeeded));
   const drawn=await diagram();assert(!drawn.stale&&drawn.result.nodes.length>0,'diagram missing');
@@ -119,6 +120,7 @@ async function runClientContract(){
     try{local.state(oldHandle);throw new Error('old handle accepted');}catch(error){assert(error.code==='SESSION_EXPIRED','wrong old handle error');checks++;}
     result=await local.compile(a,req(a,'Root'));assert(result.outcome==='succeeded','restored compile failed');await local.releaseSnapshot(a,result.snapshotId);checks++;
     assert((await local.compile(b,req(b,'Base'))).outcome==='rejected','configuration not replayed');checks++;
+    await local.closeSession(a);await local.closeSession(a);checks++;
 
   }finally{await local.dispose();}
   const restarted=await restartWorker();assert(restarted.result.outcome==='succeeded','UI restart failed');

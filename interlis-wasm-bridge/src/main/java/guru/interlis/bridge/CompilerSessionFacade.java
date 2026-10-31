@@ -212,6 +212,8 @@ final class CompilerSessionFacade {
     }
 
     JsonValue.JsonObject diagram(JsonValue.JsonObject params) {
+        if(!java.util.Set.of("snapshotId","schemaId","selection","options").containsAll(params.members().keySet()))throw new BridgeException("INVALID_REQUEST","unknown diagram field");
+        if(params.members().containsKey("snapshotId")==params.members().containsKey("schemaId"))throw new BridgeException("INVALID_REQUEST","exactly one diagram input required");
         DiagramInput input;
         String snapshotId = BridgeCodec.optionalString(params, "snapshotId").orElse(null);
         String schemaId = BridgeCodec.optionalString(params, "schemaId").orElse(null);
@@ -232,11 +234,11 @@ final class CompilerSessionFacade {
         } else {
             throw new BridgeException("INVALID_REQUEST", "snapshotId or schemaId required");
         }
-        DiagramOptions options = DiagramOptions.defaults(new DiagramSelection(selection));
+        DiagramOptions options = DiagramOptionsCodec.read(params,new DiagramSelection(selection));
         var outcome = DiagramProjectors.create().project(input, options,
                 CancellationToken.none());
         if (outcome instanceof DiagramProjectionOutcome.Rejected rejected) {
-            throw new BridgeException("INVALID_REQUEST", "diagram rejected",
+            throw new BridgeException(rejected.reasons().stream().anyMatch(reason -> reason.code()==guru.interlis.projection.ProjectionNoticeCode.UNSUPPORTED_PRESENTATION)?"UNSUPPORTED_OPERATION":"INVALID_REQUEST", "diagram rejected",
                     JsonValues.object("reasons", JsonValues.strings(
                             rejected.reasons().stream().map(Object::toString).toList())));
         }
@@ -493,8 +495,9 @@ final class CompilerSessionFacade {
     private List<SymbolRef> selection(JsonValue.JsonObject params,
                                       guru.interlis.model.SnapshotId snapshotId,
                                       List<guru.interlis.model.SymbolId> defaults) {
-        if (params.members().get("selection") instanceof JsonValue.JsonArray array
-                && !array.values().isEmpty()) {
+        if (params.members().containsKey("selection")) {
+            var array=BridgeCodec.array(params,"selection");
+            if(array.values().isEmpty())throw new BridgeException("INVALID_REQUEST","diagram selection must not be empty");
             List<SymbolRef> result = new ArrayList<>();
             for (JsonValue value : array.values()) {
                 JsonValue.JsonObject ref = BridgeCodec.object(value);

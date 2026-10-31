@@ -37,14 +37,14 @@ function serve(root) {
   ];
   const results = [];
   for (const [name, type] of matrix) {
-    let browser;
+    let browser,page;
     const browserErrors=[];
     try {
       browser = await type.launch({headless: true});
       const context=await browser.newContext();
       const externalRequests=[];
       await context.route('**/*',route=>{const requestUrl=new URL(route.request().url());if(requestUrl.origin===new URL(url).origin)return route.continue();externalRequests.push(requestUrl.origin);return route.abort();});
-      const page = await context.newPage();
+      page = await context.newPage();
       page.on("pageerror",error=>browserErrors.push(String(error)));
       await page.goto(url, {waitUntil: 'load'});
       await page.waitForFunction(() => Boolean(window.interlisBrowserTest), {timeout: 30000});
@@ -61,7 +61,8 @@ function serve(root) {
         status: 'passed', result});
       console.log(`${name.toUpperCase()} PASS ${JSON.stringify(result)}`);
     } catch (error) {
-      results.push({browser: name, status: 'failed', error: String(error),browserErrors});
+      let progress;try{progress=await Promise.race([page?.evaluate(()=>window.interlisContractProgress),new Promise(resolve=>setTimeout(()=>resolve('progress query timed out'),3000))]);}catch{}
+      results.push({browser: name, status: 'failed', error: String(error),browserErrors,progress});
       console.log(`${name.toUpperCase()} FAIL ${error}`);
     } finally {
       if (browser) await browser.close();
