@@ -6,6 +6,20 @@
 - [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
   [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
 
+## Laufend: P3-3 – Reviewkorrekturen
+
+[Unveränderter erster Review](reviews/P3-3-7440fb9-FAIL.md): **FAIL**, Kandidat
+`7440fb93a9cf566d0da1866063361daf63ee9fcf`, Bericht-SHA-256
+`c681ba4527c536f8b3d41fe5515b78416defb02f4cc150c84f01a3cf1baa46ed`.
+Vier Mussbefunde: partielle Diagrammzustände, explizit leere Auswahl,
+Wire-Diagrammoptionen und idempotentes Schliessen. Neue Reviewerproben50/50
+und76/76 positiv; separate negative Proben reproduzieren F1–F4.
+Kumulative JVM-/Portable-/Browser-/Safari-/WebImage-/SDK-Prüfungen grün.
+Direkte DeepSeek API, sauberer separater Checkout und OS-Python-Sperre;
+Transportexit1/Manifest failed, kein positiver Abnahmenachweis. Rohbelege unter
+`build/review/P3-3-r1/raw/`. Korrektur im separaten Checkout in Arbeit.
+Unabhängige P3-4-Corpusvorbereitung läuft weiter; keine Corpusabnahme.
+
 ## Abgenommen: P3-1 – CLI und Formatierung
 
 **PASS**, AC-P3-01–04 und P3-AUD-01–04, Produktcommit
