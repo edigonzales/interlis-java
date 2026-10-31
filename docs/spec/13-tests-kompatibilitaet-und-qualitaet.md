@@ -457,3 +457,10 @@ prüft positive sowie absichtlich fehlende, alte, partielle, fremde und
 sämtlichen aktuellen funktionalen, Portable-, Browser-/Safari-/Web-Image-,
 Conformance- und Performancegates. Ein PASS-Bericht bei fehlgeschlagenem oder
 abgebrochenem Prozess ist kein bestandener Nachweis.
+
+Die P3-Negativkontrollen umfassen auch selbstkonsistent gekürzte
+Reproduzierbarkeitslisten (Datei und Zähler zusammen entfernt), partielle
+Browsermanifeste oberhalb einer blossen Mindestzahl sowie deklarierte
+Skip-/Fehlerangaben trotz vollständiger positiver Fallzahlen. Die Abnahme
+verlangt den Abgleich gegen die tatsächlichen vollständigen Liefer- und
+Browserdateimengen einschliesslich Hashes und Bytezahlen.

@@ -5409,7 +5409,7 @@
         },
         {
           "source": "build.gradle",
-          "sha256": "820cd6592cc17cfdf0a939ba4d2ce357c531e8409c47f394b0295dde346d1eb5"
+          "sha256": "2eda1ad8e3b35652467e019fe97e0f5c7ceb774eba48b959a4069230b316aad7"
         }
       ],
       "resolution": "Modulabhängigkeiten und frischer JVM-/Wasm-/Browserbuild belegen portable Loggingunabhängigkeit."

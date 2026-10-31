@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process'),crypto=require('node:crypto');
 const root=process.cwd(),output=path.join(root,'build/reports/p3/P3-5/reproducibility'),hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 const git=(...args)=>cp.execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
-const walk=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(directory,e.name)):[path.join(directory,e.name)]);
+const {distributionFiles}=require('./distribution-files.cjs');
 async function run(cwd,command,args,log){
  return new Promise((resolve,reject)=>{const fd=fs.openSync(log,'w'),child=cp.spawn(command,args,{cwd,env:process.env,stdio:['ignore',fd,fd]});child.on('error',reject);child.on('exit',(code,signal)=>{fs.closeSync(fd);code===0?resolve():reject(Error('repro build failed: '+command+' exit='+code+' signal='+signal+'; '+log));});});
 }
@@ -17,13 +17,7 @@ async function run(cwd,command,args,log){
     await run(path.join(cwd,'interlis-wasm-teavm'),'npm',['ci'],path.join(record,'npm-ci.log'));
     await run(cwd,path.join(cwd,'gradlew'),['--no-daemon','sdkPackage',':interlis-wasm-teavm:buildWasmGC',':interlis-wasm-teavm:generateJavaScript',':interlis-wasm-teavm:prepareBrowserHarness','-PnodeExecutable='+process.execPath],path.join(record,'build.log'));
     if(cp.execFileSync('git',['status','--porcelain'],{cwd,encoding:'utf8'}).trim())throw Error('Clean build changed tracked inputs; checkout retained at '+cwd);
-    const version=fs.readFileSync(path.join(cwd,'gradle.properties'),'utf8').match(/^projectVersion=(.+)$/m)[1].trim();
-    const files=[...walk(path.join(cwd,'interlis-cli/build/install/interlis-cli')),
-      path.join(cwd,'build/releases/interlis-java-sdk-'+version+'.zip'),
-      path.join(cwd,'interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm'),
-      path.join(cwd,'interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js'),
-      path.join(cwd,'interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js'),
-      ...walk(path.join(cwd,'interlis-wasm-teavm/build/browser-tools')),...walk(path.join(cwd,'interlis-wasm-teavm/build/web'))].sort();
+    const files=distributionFiles(cwd).map(file=>path.join(cwd,file));
     const manifest={};for(const file of files){const key=path.relative(cwd,file).split(path.sep).join('/');const bytes=fs.readFileSync(file);manifest[key]={sha256:hash(bytes),bytes:bytes.length};const copy=path.join(record,'artifacts',key);fs.mkdirSync(path.dirname(copy),{recursive:true});fs.writeFileSync(copy,bytes);}
     fs.writeFileSync(path.join(record,'artifacts.json'),JSON.stringify(manifest,null,2)+'\n');manifests.push(manifest);
    }finally{
