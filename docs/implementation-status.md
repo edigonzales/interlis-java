@@ -20,8 +20,13 @@ Closures/366 Originalquellen mit262 positiven/85 streng bewerteten negativen
 Ergebnissen. TYPE-MODEL-REFSYSTEM-Freigabe dokumentiert. Frischer vollständiger
 JVM-/Node-/Browser-/Safari-Corpus und2000 echte Änderungen bestehen die festen
 Budgets; keine Skips oder fachlichen Abweichungen. Aktuell P3-5:
-SDK-/Plattformgesamtgate und kumulativer G3-Review bleiben fällig. [P3-Plan](p3/EXECUTION_PLAN.md),
-[operativer P3-Status](p3/STATUS.md). Unabhängige Reviews mit OpenCode über die
+SDK-/Plattformgesamtgate und kumulativer G3-Review bleiben fällig.
+[P3-Plan](p3/EXECUTION_PLAN.md), [operativer P3-Status](p3/STATUS.md).
+Erster G3-Review amf341d7b: vollständiger positiver Gesamtlauf grün, aber
+**FAIL** wegen drei Nachweisprüferlücken bei Skips und partiellen Lieferlisten/
+Browsermanifesten. Die isolierte Korrektur besteht87 gezielte Kontrollen;
+neue vollständige unabhängige Abnahme bleibt fällig.
+Unabhängige Reviews mit OpenCode über die
 direkte DeepSeek API bleiben pro Lieferung und kumulativ verpflichtend.
 G3 ist offen; Windows-/Linux-x64-Prozessnachweise werden nach Nutzerfreigabe
 über die neue GitHub-Action ausgeführt und bestehen bereits am P3-1-SHA.

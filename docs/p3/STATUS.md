@@ -6,6 +6,32 @@
 - [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
   [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
 
+## P3-5 – erster kumulativer Review: FAIL, Korrektur läuft
+
+Produkt `f341d7bd3baf8e137985723b6216c30d6580384b` besteht den eigenen
+vollständigen `releaseCheckP3` in35m54s und den frischen unabhängigen Lauf
+in30m47s. Die eigenen Negativproben des Reviewers finden trotzdem drei
+MUSS-Lücken: deklarierte Browser-/Safari-Skips,83 statt84 reproduzierte Dateien
+bei korrigiertem Selbstzähler und ein partielles Browsermanifest werden
+akzeptiert. **G3 bleibt FAIL/offen**, kein positives Gesamttestat.
+
+[Unveränderter R1-Bericht](reviews/P3-5-f341d7b-FAIL.md), SHA-256
+`7fb05c73e70b011fd3dc35a4813a84d0f698b7673f7e11fd2417f89c8d70a697`;
+direkte DeepSeek API, sauberer separater Checkout, Transportexit0 und äusseres
+OS-Sperrmanifest passed. Der Bericht protokolliert auch einen versehentlichen,
+von der geerbten Umgebung bereits vor dem Start blockierten `python3`-
+Hilfsaufruf. Kein Interpreter lief; der Folge-Review muss auch solche
+Aufrufversuche vermeiden. Rohbelege `build/review/P3-5-r1/` und
+`build/review-final/P3-5-r1/`.
+
+Korrektur in isolierter Vorbereitung: vollständige Liefer-/Browserdateimengen
+aus dem tatsächlichen Dateisystem, exakte Ressourcenhashes/-grössen und
+Ablehnung widersprüchlicher Skip-/Fehler-/Abbruchangaben.87 gezielte
+Kontrollen sowie tatsächlicher RED→GREEN-Kontrast aller drei Befunde bestehen;
+84 reale Lieferdateien/38 Browserressourcen passen zur positiven Vorprüfung.
+Neue Produktmatrix und vollständiger unabhängiger G3-Review bleiben fällig;
+die Arbeit wird ohne Teilphasenstopp fortgesetzt.
+
 ## Abgenommen: P3-4 – vollständiger Corpus und Belastung
 
 **PASS**, AC-P3-12–16 und kumulative P3-1–3-Gates, Produktcommit
