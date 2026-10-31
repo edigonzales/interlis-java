@@ -50,6 +50,13 @@ public final class AntlrSyntaxService implements SyntaxService {
     @Override
     public SyntaxSnapshot parse(SourceText source, ParseOptions options,
                                 CancellationToken cancellation) {
+        try { return parseDocument(source,options,cancellation); }
+        catch(AnalysisBudgetExceededException limit) {
+            throw new guru.interlis.execution.OperationCancelledException(guru.interlis.execution.CancellationReason.RESOURCE_LIMIT);
+        }
+    }
+
+    private SyntaxSnapshot parseDocument(SourceText source,ParseOptions options,CancellationToken cancellation) {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(options, "options");
         Objects.requireNonNull(cancellation, "cancellation");

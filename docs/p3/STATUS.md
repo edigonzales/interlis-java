@@ -2,6 +2,8 @@
 
 - **IN ARBEIT**, gesamter Meilenstein autonom beauftragt; **G3 offen**.
 - Aktuell **P3-2 – LSP**, WP-31, AC-P3-05–08. P3-3 bis P3-5 bleiben offen.
+- P3-3: unabhängige [Browser-/Diagrammarbeiten](implementation/P3-3.md) begonnen,
+  während P3-2-Review/Plattformmatrix laufen; keine vorweggenommene Abnahme.
 - [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
   [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
 
@@ -99,6 +101,25 @@ Clientänderungen während der Identitätsprüfung. Aktueller eigener check-/
 Evidenz-/SDK-/Distributionslauf grün, **50 LSP-Fälle** ohne Fehler/Skips.
 Review 4 läuft noch am vorherigen Kandidaten; dessen mögliche Abnahme ersetzt
 weder die Windows-Korrektur noch deren neue unabhängige Abnahme/Plattformmatrix.
+
+Produkt 643fe12 besteht inzwischen tatsächlich die
+[Windows-/Linuxmatrix 41151708722](https://github.com/edigonzales/interlis-java/actions/runs/41151708722).
+Review4 ist **FAIL**, F1–F6 geschlossen, neuer Tokenbudgetpfad F7:
+[unveränderter Bericht](reviews/P3-2-3018d4b-FAIL.md), SHA-256
+`bae331d35bc985f84dde89e347e501d085c7d011a3cdbde583ab54bfbd84e691`,
+Transportexit0/Manifest passed. Review5 berichtet weitere reproduzierbare
+Alias-/Resynclücken: [unveränderter Bericht](reviews/P3-2-643fe12-FAIL.md),
+SHA-256 `e0029d21f4118ee0be429635b3c686b6ca3adfcdb5938c170d57eaeee99fe1c0`.
+Sein Transport endete mit Exit1/Manifest failed trotz geschriebenem Bericht und
+sauberem Kandidatencheckout; daraus wird keine gültige Abnahme abgeleitet.
+Die konkreten Reproduktionen werden als Fehlerhinweise bearbeitet.
+
+Aktuelle Korrektur: Alias- und Dateischlüsselzuordnung auch nach Primärlöschung
+über die Aliasadresse; Resynchronisation nach kanonischer Quelle statt URI;
+frühe Syntax-/Capture-Budgets als RESOURCE_LIMIT, ohne falsche Missing-Input-
+oder interne Fehler. Neue RED→GREEN-Kontrollen einschliesslich beider URI-
+Richtungen und abgelehntem Open/Change. Neuer vollständiger Kandidatenreview
+und Plattformmatrix folgen; **P3-2/G3 bleiben offen**.
 
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256

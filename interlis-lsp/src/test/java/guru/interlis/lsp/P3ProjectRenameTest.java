@@ -313,6 +313,61 @@ class P3ProjectRenameTest {
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
+    @Test void primaryDeletionReportedThroughTheSurvivingAliasPreservesTheCoreIdentity() throws Exception {
+        for(var kind:List.of(FileChangeType.Deleted,FileChangeType.Changed)) {
+            Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili"),alias=folder.resolve("HardBase.ili");
+            Files.createLink(alias,base);var server=open(folder,true,null,null);
+            try {
+                ready(server,root);Files.delete(base);
+                server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(alias.toUri().toString(),kind))));
+                ready(server,root);
+                assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+                assertTrue(server.workspaceForTest().source(new SourceId(base.toUri().toString())).isPresent());
+                var edits=rename(server,root).getDocumentChanges();assertEquals(2,edits.size());
+                assertTrue(edits.stream().anyMatch(edit -> edit.getLeft().getTextDocument().getUri().equals(alias.toUri().toString())));
+            } finally {server.shutdown().get(5,TimeUnit.SECONDS);}
+        }
+    }
+
+    @Test void aValidReopenThroughAnotherAliasRecoversRejectedOpenAndChangeGenerations() throws Exception {
+        for(boolean reverse:List.of(false,true)) for(boolean change:List.of(false,true)) {
+            Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili"),alias=folder.resolve("HardRoot.ili");Files.createLink(alias,root);
+            String rejected=(reverse?root:alias).toUri().toString(),accepted=(reverse?alias:root).toUri().toString();
+            var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));server.initialize(new InitializeParams()).get(5,TimeUnit.SECONDS);
+            try {
+                server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(base.toUri().toString(),"interlis",1,BASE)));
+                if(change) server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(rejected,"interlis",1,ROOT)));
+                String excessive=ROOT+"\n!!"+"x".repeat(2_100_000);
+                if(change) server.getTextDocumentService().didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(rejected,2),List.of(new TextDocumentContentChangeEvent(excessive))));
+                else server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(rejected,"interlis",2,excessive)));
+                var failure=assertThrows(ExecutionException.class,() -> server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(rejected))).get(5,TimeUnit.SECONDS));
+                assertEquals(ResponseErrorCode.ContentModified.getValue(),assertInstanceOf(ResponseErrorException.class,failure.getCause()).getResponseError().getCode());
+                server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(accepted,"interlis",3,ROOT)));
+                ready(server,Path.of(java.net.URI.create(accepted)));
+                assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+                assertEquals("succeeded",((Map<?,?>)server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS)).get("outcome"));
+                assertEquals(2,server.getTextDocumentService().rename(new RenameParams(new TextDocumentIdentifier(accepted),cursor(),"Renamed")).get(5,TimeUnit.SECONDS).getChanges().size());
+            } finally {server.shutdown().get(5,TimeUnit.SECONDS);}
+        }
+    }
+
+    @Test void aSmallTokenBudgetProducesResourceCancellationAndTheSameSessionRecovers() throws Exception {
+        var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));
+        var initialize=new InitializeParams();initialize.setInitializationOptions(com.google.gson.JsonParser.parseString("{\"analysisBudget\":{\"maxTokens\":1}}"));
+        server.initialize(initialize).get(5,TimeUnit.SECONDS);
+        String uri="memory:/small-token-budget";
+        try {
+            assertDoesNotThrow(() -> server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri,"interlis",1,BASE))));
+            var failure=assertThrows(ExecutionException.class,() -> server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS));
+            var response=assertInstanceOf(ResponseErrorException.class,failure.getCause());
+            assertEquals(ResponseErrorCode.RequestCancelled.getValue(),response.getResponseError().getCode());
+            assertTrue(response.getMessage().contains("RESOURCE_LIMIT"));assertNull(response.getResponseError().getData());
+            server.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(com.google.gson.JsonParser.parseString("{\"analysisBudget\":{\"maxTokens\":500000}}")));
+            assertFalse(server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(uri))).get(5,TimeUnit.SECONDS).isEmpty());
+            assertEquals("succeeded",((Map<?,?>)server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS)).get("outcome"));
+        } finally {server.shutdown().get(5,TimeUnit.SECONDS);}
+    }
+
     private Path project() throws Exception {
         Path folder=Files.createTempDirectory(temporary,"Projekt ä ");
         Files.writeString(folder.resolve("Base.ili"),BASE); Files.writeString(folder.resolve("Root.ili"),ROOT); return folder;

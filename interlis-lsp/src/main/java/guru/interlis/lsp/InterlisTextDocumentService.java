@@ -223,6 +223,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             documents.forEach((uri,state) -> result.put(state.sourceId,uri)); rejectedOpens.forEach((uri,state) -> result.put(state.sourceId,uri)); return Map.copyOf(result);
         });
     }
+    Map<String,ProjectSourceLoader.FileContent> fileContents() { return scheduler.onOwner(() -> Map.copyOf(closedFiles)); }
     List<String> fileAliases(String uri) {
         return scheduler.onOwner(() -> {
             String canonical=canonicalUriNow(uri);
@@ -397,15 +398,29 @@ final class InterlisTextDocumentService implements TextDocumentService {
         documentGeneration++;
         String uri=params.getTextDocument().getUri();
         SourceId id=new SourceId(canonicalUriNow(uri));
-        if(documents.entrySet().stream().anyMatch(entry -> !entry.getKey().equals(uri) && entry.getValue().sourceId.equals(id))) {
+        if(documents.entrySet().stream().anyMatch(entry -> !entry.getKey().equals(uri) && entry.getValue().sourceId.equals(id) && !unsynchronized.contains(entry.getKey()))) {
             operation("Document is already open under another URI"); return;
         }
         try { replaceSource(id,params.getTextDocument().getText()); }
         catch(guru.interlis.workspace.UpdateRejectedException rejected) {
             rejectDocument(uri,id,params.getTextDocument().getVersion(),rejected.code().name()); return;
         }
-        rejectedOpens.remove(uri); unsynchronized.remove(uri);
+        resynchronized(id,uri);
         analyze(uri,params.getTextDocument().getVersion());
+    }
+
+    private void resynchronized(SourceId id,String acceptedUri) {
+        var oldUris=new java.util.LinkedHashSet<String>();
+        rejectedOpens.forEach((uri,state) -> { if(state.sourceId.equals(id)) oldUris.add(uri); });
+        documents.forEach((uri,state) -> { if(state.sourceId.equals(id) && unsynchronized.contains(uri)) oldUris.add(uri); });
+        for(String uri:oldUris) {
+            rejectedOpens.remove(uri);unsynchronized.remove(uri);
+            if(!uri.equals(acceptedUri)) {
+                documents.remove(uri);
+                var current=sink.get();if(current!=null) current.publish(new PublishDiagnosticsParams(uri,List.of()));
+            }
+        }
+        unsynchronized.remove(acceptedUri);
     }
 
     private void replaceSource(SourceId id,String text) {
@@ -451,7 +466,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         catch(ResponseErrorException invalid) { rejectDocument(uri,id,version,"INVALID_EDIT"); return; }
         try { replaceSource(id,text); }
         catch(guru.interlis.workspace.UpdateRejectedException invalid) { rejectDocument(uri,id,version,invalid.code().name()); return; }
-        rejectedOpens.remove(uri); unsynchronized.remove(uri); analyze(uri,version);
+        resynchronized(id,uri); analyze(uri,version);
     }
 
     @Override

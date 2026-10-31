@@ -481,6 +481,12 @@ mit einer Betriebsmeldung abgelehnt und ersetzt keinen offenen Clienttext.
 Verschwindet die Primärdatei, bleibt ein vorhandener Hardlink unter derselben
 Core-Identität verwendbar; geschlossene Navigation und Edits benutzen dann
 die nachgewiesene vorhandene Dateiadresse.
+Das gilt auch, wenn ein Watcher den überlebenden Alias statt der gelöschten
+Primäradresse meldet. Gespeicherte Dateischlüssel bleiben für diese Zuordnung
+verwendbar; auf Providern ohne Dateischlüssel gilt die belegte Aliasregistrierung.
+Ein gültiger Vollersatz oder ein Wiederöffnen hebt Ablehnungs-/Resynczustände
+für dieselbe kanonische Quellidentität auf, auch bei gewechselter Client-URI.
+Ein weiterhin gültiger anderer offener Client behält dagegen seine Autorität.
 
 Das P3-Hostprofil benutzt eine begrenzte Ownerqueue, zwei Analyseplätze und
 höchstens einen neuesten ausstehenden Capture. Explizite Compiles laufen

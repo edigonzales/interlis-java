@@ -106,6 +106,7 @@ final class InterlisWorkspaceService implements WorkspaceService {
         if(uri==null || !uri.startsWith("file:") || documents.isOpen(uri)) return;
         long request=nextFileRequest.incrementAndGet(); fileRequests.put(uri,request);
         var known=documents.fileSources();
+        var contents=documents.fileContents();
         var aliases=documents.fileAliases(uri);
         documents.beginExternal(uri,request);
         requestIo(token -> {
@@ -119,6 +120,15 @@ final class InterlisWorkspaceService implements WorkspaceService {
                 loaded=files.read(aliases.getFirst(),roots,token);
             token.throwIfCancellationRequested();
             var openAlias=loaded.flatMap(file -> known.entrySet().stream().filter(entry -> files.sameFile(file,entry.getValue(),token)).map(Map.Entry::getKey).findFirst());
+            if(openAlias.isEmpty() && loaded.isPresent()) {
+                var identity=loaded.orElseThrow().fileKey();
+                openAlias=identity.flatMap(key -> contents.entrySet().stream().filter(entry -> entry.getValue().fileKey().map(key::equals).orElse(false))
+                        .map(entry -> new SourceId(entry.getKey())).findFirst());
+                // On a keyless provider a registered surviving address still
+                // carries its established Core identity after primary removal.
+                if(openAlias.isEmpty() && known.containsKey(new SourceId(uri)) && aliases.contains(requestedUri)
+                        && files.read(known.get(new SourceId(uri)),roots,token).isEmpty()) openAlias=java.util.Optional.of(new SourceId(uri));
+            }
             if(openAlias.isPresent() && loaded.isPresent()) {
                 String primary=known.get(openAlias.orElseThrow());
                 if(primary!=null && files.sameFile(loaded.orElseThrow(),primary,token)) loaded=files.read(primary,roots,token);

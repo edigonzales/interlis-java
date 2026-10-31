@@ -164,6 +164,13 @@ Fehlerhafte Nutzereingabe liefert einen Snapshot. Abbruch wirft im Syntaxdienst 
 
 Ein wegen Budgetüberschreitung konsistent erzeugter Syntaxsnapshot bleibt ausdrücklich unvollständig. Im vollständigen Compilerlauf wird dieser Zustand nach Kapitel 06 zu `Cancelled(RESOURCE_LIMIT)` beziehungsweise bei `analyze` zur entsprechenden `OperationCancelledException`. Er ist kein abschliessendes Sprachgültigkeitsurteil.
 
+Frühe Grenzen vor einem konsistenten Snapshotbau, insbesondere Quelllänge und
+Tokenanzahl, verlassen den öffentlichen Syntaxdienst als
+`OperationCancelledException(RESOURCE_LIMIT)`, niemals als interner Budgetfehler.
+Ein Workspace-Capture übernimmt weder solche Abbrüche noch einen Snapshot mit
+`budgetExceeded` in Resolver- oder Wiederverwendungsdaten; er meldet ebenfalls
+`RESOURCE_LIMIT`, bevor eine fehlende Modellbindung daraus abgeleitet wird.
+
 Leere Funktionsparameter- und Aufrufargumentlisten sind ein explizites
 Sprachprofilmerkmal: 2.3 verlangt mindestens einen Eintrag, 2.4 erlaubt die leere
 Liste (2.3 §2.13/2.14, 2.4 §3.13/3.14). STRICT, EDITOR und Ausdrucksfragmente

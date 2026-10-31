@@ -284,6 +284,7 @@ final class DefaultWorkspace implements Workspace {
                 synchronized (this) { parses++; }
                 syntax = guru.interlis.syntax.SyntaxServices.create().parse(text, options, token);
             }
+            if(syntax.coverage().budgetExceeded()) throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
             parsed.put(text.id(), syntax);
         }
         SourceInventory inventory = new SourceInventory(capturedRevision, capturedSources,

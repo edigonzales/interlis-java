@@ -5584,7 +5584,7 @@
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-          "sha256": "3255249f1326267c1ebf27e0ac4479dcd7a6d628477b66cdea342f12c6a12650"
+          "sha256": "511932882a0f7b6e3b36deedad87a0bef5fabcbf83473e44b7da24cc0fc4c4fa"
         },
         {
           "source": "docs/spec/05-metamodell-und-typensystem.md",
@@ -5596,7 +5596,7 @@
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-          "sha256": "5fbf228767794775fd68a52f9ab2363aa566e91f53849dbea6abfa1998e53993"
+          "sha256": "f7c6d37de98b4ee85aee68353a7b7544db9ebba2b162c783efcc26b6eba39571"
         }
       ],
       "resolution": "Fach-/Register-/Javadocreview ist eine Inspektionsabnahme; öffentliche Invarianten zusätzlich direkt getestet."
