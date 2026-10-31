@@ -14,7 +14,7 @@ class CatalogueEvidenceTest {
     }
     @Test void allGrammarOccurrencesRemainOwnedAndUnaccepted() throws Exception {
         var grammar = data("grammar-inventory"); CatalogueEvidence.grammar(grammar, data("source-inventory"));
-        assertEquals(1225, rows(grammar,"occurrences").size()); assertEquals(321, rows(data("source-inventory"),"grammars").size());
+        assertEquals(1228, rows(grammar,"occurrences").size()); assertEquals(321, rows(data("source-inventory"),"grammars").size());
     }
     @Test void allSpecRequirementsAndExplicitLinesStayBound() throws Exception {
         var specs = data("spec-contract-inventory"); CatalogueEvidence.specifications(specs, data("source-inventory"));

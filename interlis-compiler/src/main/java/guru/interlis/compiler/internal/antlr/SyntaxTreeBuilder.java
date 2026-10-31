@@ -1939,6 +1939,7 @@ final class SyntaxTreeBuilder {
         if (tree instanceof TerminalNode terminal) {
             int type = terminal.getSymbol().getType();
             if (type == InterlisParser.Name || type == InterlisParser.INTERLIS
+                    || type == InterlisParser.URI || type == InterlisParser.NAME || type == InterlisParser.BOOLEAN
                     || type == InterlisParser.UUIDOID || type == InterlisParser.ANYOID
                     || type == InterlisParser.HALIGNMENT || type == InterlisParser.VALIGNMENT
                     || type == InterlisParser.REFSYSTEM || type == InterlisParser.SIGN || type == InterlisParser.METAOBJECT) {

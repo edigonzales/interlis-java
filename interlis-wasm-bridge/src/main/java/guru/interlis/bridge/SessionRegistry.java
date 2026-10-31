@@ -72,7 +72,7 @@ public final class SessionRegistry {
         result.put("limits", limits.encode());
         var sourceRevisions=new LinkedHashMap<String,JsonValue>();workspace.state().sourceRevisions().forEach((source,revision) -> sourceRevisions.put(source.value(),JsonValues.string(Long.toString(revision.value()))));
         result.put("sourceRevisions",new JsonValue.JsonObject(sourceRevisions));
-        result.put("configurationFingerprint",JsonValues.string(configuration.semanticFingerprint()));
+        result.put("configurationFingerprint",JsonValues.string(configuration.fullFingerprint()));
         return new JsonValue.JsonObject(result);
     }
 

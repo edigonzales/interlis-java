@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0",
+  "profile": "macos-arm64-m1-16g-p3-v1",
+  "scope": "P3 corpus and editor measurements on the documented reference machine; these limits are not language rules or production SLAs.",
+  "referenceMachine": {"os": "darwin", "arch": "arm64", "cpu": "Apple M1", "logicalCpus": 8, "memoryBytes": 17179869184},
+  "corpus": {"roots": 347, "files": 366, "warmSamplesPerRoot": 3, "allowedSkips": 0, "allowedSemanticMismatches": 0, "allowedUnexpectedOutcomes": 0},
+  "runtime": {
+    "jvm": {"maxFirstCompileMs": 5000, "maxWarmCompileMs": 2000, "maxOpenMs": 2000, "maxColdProcessMs": 15000, "maxPeakHeapBytes": 2147483648},
+    "wasm": {"maxFirstCompileMs": 10000, "maxWarmCompileMs": 5000, "maxOpenMs": 3000, "maxColdLoadMs": 15000, "maxRssBytes": 2147483648},
+    "browser": {"maxFirstCompileMs": 15000, "maxWarmCompileMs": 10000, "maxOpenMs": 5000, "maxColdLoadMs": 30000}
+  },
+  "editor": {"edits": 1000, "minRealCorpusClosureUtf16": 200000, "jvmP95Ms": 1000, "portableP95Ms": 3000, "maxEditMs": 10000, "maxRetainedSnapshots": 4, "allowedStaleHandleAcceptances": 0},
+  "artifacts": {"wasmRawBytes": 6291456, "wasmGzipBytes": 2097152, "browserPayloadRawBytes": 20971520, "browserPayloadGzipBytes": 6291456},
+  "observation": {"compilerRuns": 1000, "queueCapacity": 32, "requireExactDiscardAccounting": true, "requireInstanceIsolation": true},
+  "calibration": "Initial complete JVM, Node-WasmGC and Chromium captures preceded this budget definition. JVM: max first 810ms / warm 261ms / open 145ms. WasmGC Node: 1983/1242/87ms, cold loader 294ms. Chromium: 1153/1105/20ms, cold loader 68ms. Source originals and exact input pins remain unchanged. Later measurements cannot silently raise these limits. OS file caches were uncontrolled; browser cold means a fresh browser context/Worker against local HTTP, not a WAN download."
+}

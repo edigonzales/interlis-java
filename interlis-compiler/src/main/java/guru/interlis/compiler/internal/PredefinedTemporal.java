@@ -17,12 +17,14 @@ final class PredefinedTemporal {
             case "XMLDate", "XMLTime", "XMLDateTime", "GregorianYear" -> SymbolKind.DOMAIN;
             case "TimeOfDay", "UTC", "GregorianDate", "GregorianDateTime" -> SymbolKind.STRUCTURE;
             case "h", "min", "d", "M", "Y" -> SymbolKind.UNIT;
+            case "TIMESYSTEMS.CALENDAR", "TIMESYSTEMS.TIMEOFDAYSYS" -> SymbolKind.CLASS;
             default -> null;
         };
         if (kind == null || !kinds.contains(kind)) return Optional.empty();
         SymbolId id = id(context, name);
         if (g.symbols.containsKey(id)) return Optional.of(id);
-        if (kind == SymbolKind.UNIT) unit(context, name);
+        if (kind == SymbolKind.CLASS) timeSystem(context, "UTC");
+        else if (kind == SymbolKind.UNIT) unit(context, name);
         else if (kind == SymbolKind.STRUCTURE) structure(context, name);
         else domain(context, name);
         return Optional.of(id);
@@ -65,7 +67,7 @@ final class PredefinedTemporal {
         var base = g.metadata.predefined(context, "INTERLIS.SCALSYSTEM", Set.of(SymbolKind.CLASS)).orElseThrow();
         var classes = new ArrayList<SymbolId>();
         for (String className : List.of("CALENDAR", "TIMEOFDAYSYS")) {
-            var h = header(context, "TIMESYSTEMS." + className, SymbolKind.CLASS, Optional.of(topic.id()), classes.size(), Set.of(Modifier.ABSTRACT));
+            var h = header(context, "TIMESYSTEMS." + className, SymbolKind.CLASS, Optional.of(topic.id()), classes.size(), Set.of());
             g.baseOf.put(h.id(), base);
             var unitType = g.nextTypeId();
             g.types.put(unitType, new NumericType(unitType, h.origin(), new NumericRange(Optional.empty(), Optional.empty(),

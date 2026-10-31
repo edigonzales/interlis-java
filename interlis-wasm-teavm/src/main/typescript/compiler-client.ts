@@ -127,7 +127,7 @@ export class CompilerClient {
       const schema=m.schemas.get(captured.schemaId);if(!schema)throw new CompilerHostError('SNAPSHOT_EXPIRED','schema handle expired');
       params.schemaId=schema.raw;
     }
-    if(captured.options)params.options=captured.options;
+    if(captured.options)params.options={...captured.options,...(captured.options.translationModel?{translationModel:{...captured.options.translationModel,snapshot:this.snapshot(m,captured.options.translationModel.snapshot)}}:{})};
     if(captured.selection)params.selection=captured.selection.map(ref => ({snapshot:this.snapshot(m,ref.snapshot),symbol:ref.symbol}));
     return this.send<D.DiagramDocumentDto>('diagram',m,params,run).then(result => {
       this.require(handle);return this.result(m,result);

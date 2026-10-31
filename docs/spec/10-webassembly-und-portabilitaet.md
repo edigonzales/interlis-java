@@ -233,8 +233,11 @@ Alle sitzungsgebundenen Antworten enthalten die sessionId. Queryantworten enthal
 |---|---|
 | `reasons` | Nichtleeres, kanonisch sortiertes Array ohne Duplikate aus `SOURCE_ERRORS`, `WARNINGS_REJECTED`, `MISSING_INPUT`, `AMBIGUOUS_INPUT`, `ENVIRONMENT_FAILURE`, `INCOMPLETE_SUPPORT`. |
 | `diagnosticIds` | Geordnete IDs der relevanten kanonischen Diagnosen des gelieferten Snapshots. |
-| `requestedRoots` | Ursprüngliche ModelSelectorDto-Liste dieser Kompilierung. |
+| `requestedRoots` | Ursprüngliche ModelSelectorDto-Liste des öffentlichen Compile-Aufrufs, ohne Ergänzung oder Umformung. |
+| `resolvedRoots` | ModelSelectorDto-Liste aus `RejectionSummary.requestedRoots`: die vom Workspace für den Engine-Aufruf konkretisierten Selektoren, einschliesslich aufgelöster Version/Quellenhinweise. |
 | `unsupportedFeatureIds` | Stabile Feature-IDs der blockierenden noch nicht implementierten Spracheigenschaften; andernfalls leeres Array. |
+
+Beide Wurzellisten sind strukturierte DTOs (`byName` mit optionalen `modelVersion`/`sourceHint` beziehungsweise `bySource` mit `source`), keine Java-Strings. `resolvedRoots` erhält die unveränderte Wurzelliste der Gate-Summary; `requestedRoots` erhält zusätzlich die Eingangsmetadaten des öffentlichen Aufrufs. Der Adapter trifft dafür keine fachliche Gateentscheidung.
 
 Diese Summary wird ausschliesslich vom CompilationGate erzeugt und ist auf die angeforderte Wurzelhülle bezogen. Die Bridge und der Client dürfen Gründe weder aus globalen Diagnosen noch aus lokalisierten Meldungstexten neu berechnen. Insbesondere bleiben ein Modellfehler, wegen Policy abgelehnte Warnungen, fehlende Quellen, Umgebungsfehler und unvollständige Compilerunterstützung unterscheidbar. Eine protokolltechnisch erfolgreiche `compile`-Operation kann deshalb `status: ok` und zugleich `outcome: rejected` tragen.
 
@@ -250,14 +253,14 @@ Das optionale Feld `options` folgt dem Schema
 Ist es vorhanden, verlangt es `schemaVersion: "1.0"`. Es übernimmt `scope`,
 `visibleKinds`, `inheritedMembers`, `showTypes`, `showRoleCardinalities`,
 `showConstraints`, `showImports`, `labelPolicy`, `associationPresentation`
-und `budget` aus dem gemeinsamen `DiagramOptions`-Vertrag in Kapitel11;
+`translationModel`, `neighbourhoodDepth` und `budget` aus dem gemeinsamen `DiagramOptions`-Vertrag in Kapitel11;
 ausgelassene Felder verwenden ausschliesslich dessen Defaults.
 Unbekannte Felder, falsche Typen und ungültige Grenzen sind `INVALID_REQUEST`.
 Unbekannte Optionsversionen und ausdrücklich nicht angebotene Darstellungsoptionen
 liefern `UNSUPPORTED_OPERATION`; sie werden nicht still ignoriert.
 `capabilities.diagramOptions` nennt die angebotene Version und Darstellungsprofile.
 Ein angenommener Budgetwert kann `LIMITED` erzeugen, niemals eine verdeckt
-verkleinerte vollständige Ausgabe. Die TypeScript-Form heisst `DiagramOptionsDto`.
+verkleinerte vollständige Ausgabe. Die TypeScript-Form heisst `DiagramOptionsDto`. `translationModel` ist ein SymbolRefDto mit `snapshot`/`symbol`; der Client übersetzt auch diesen öffentlichen Snapshot-Handle in den aktuellen Worker-Handle. Fremde oder alte Handles werden vor der Übernahme abgelehnt. `neighbourhoodDepth` ist eine JSON-Ganzzahl von0 bis32. Beide Modi verlangen die expliziten Parameter aus Kapitel11.
 
 `CompilerClient.closeSession` ist für dasselbe eigene Handle idempotent,
 auch bei gleichzeitig angeforderten Abschlüssen. Die Implementierung benötigt

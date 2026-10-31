@@ -27,6 +27,25 @@ class ViewFoundationContractTest {
     }
     private static ViewSymbol view(SemanticGraph g,String name) {return assertInstanceOf(ViewSymbol.class,named(g,name));}
     private static List<String> names(SemanticGraph g,List<SymbolId> ids) {return ids.stream().map(id->g.symbol(id).orElseThrow().name().value()).toList();}
+    @Test void allOfBindsEveryAncestorBeforeCopyingImportedAttributes() {
+        for (String v : List.of("2.3", "2.4")) for (boolean reverse : List.of(false, true)) {
+            var base = source(reverse ? "memory:/a-base" : "memory:/z-base", "INTERLIS " + v
+                    + ";MODEL Base AT \"x\" VERSION \"1\"=CLASS Root(ABSTRACT)=stamp:TEXT;END Root;END Base.");
+            var shared = source("memory:/m-shared", "INTERLIS " + v
+                    + ";MODEL Shared AT \"x\" VERSION \"1\"=IMPORTS Base;"
+                    + "CLASS Mid(ABSTRACT) EXTENDS Base.Root=flag:BOOLEAN;END Mid;"
+                    + "TOPIC T=CLASS C EXTENDS Mid=number:0..10;END C;END T;END Shared.");
+            var use = source(reverse ? "memory:/z-use" : "memory:/a-use", "INTERLIS " + v
+                    + ";MODEL F AT \"x\" VERSION \"1\"=IMPORTS Shared;TOPIC T=DEPENDS ON Shared.T;"
+                    + "VIEW V PROJECTION OF src~Shared.T.C;=ALL OF src;"
+                    + "MANDATORY CONSTRAINT DEFINED(stamp);END V;END T;END F.");
+            var in = request(List.of("F"), Map.of(base.id(),base,shared.id(),shared,use.id(),use),
+                    List.of(binding(parse(shared),"Base",base,parse(base)),binding(parse(use),"Shared",shared,parse(shared))),CompilerOptions.defaults());
+            var g = ok(in).schema().semanticGraph();
+            assertEquals(List.of("stamp","flag","number"), names(g,view(g,"V").members()));
+            for (var id : view(g,"V").members()) assertTrue(((AttributeSymbol)g.symbol(id).orElseThrow()).derivations().size()==1);
+        }
+    }
     @Test void inheritedAreaInspectionsCannotBypassTheAllOfProhibition() {
         for(String v:List.of("2.3","2.4"))for(boolean intermediate:List.of(false,true)) {
             String middle=intermediate?"VIEW W EXTENDS V=END W;":"";

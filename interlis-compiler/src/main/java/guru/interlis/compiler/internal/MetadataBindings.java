@@ -192,7 +192,7 @@ final class MetadataBindings {
         return Optional.empty();
     }
 
-    private void validateRange(DeclInfo decl, NumericRange range) {
+    void validateRange(DeclInfo decl, NumericRange range) {
         if (range.referenceSystem().isEmpty()) return;
         var ref = range.referenceSystem().get(); Optional<SymbolId> requiredUnit = Optional.empty();
         if (ref.domain()) {
@@ -201,7 +201,7 @@ final class MetadataBindings {
             if (target instanceof NumericType n && ref.axis().isEmpty()) requiredUnit = n.range().unit();
             else if (target instanceof CoordinateType c && ref.axis().isPresent() && ref.axis().getAsInt() <= c.dimensions())
                 requiredUnit = c.axes().get(ref.axis().getAsInt() - 1).unit();
-            else if (target instanceof CoordinateType c && ref.axis().isEmpty() && c.rotation().isPresent()) {
+            else if (target instanceof CoordinateType c && ref.axis().isEmpty() && (c.rotation().isPresent() || domain.generic())) {
                 // A direction uses the coordinate system's zero direction and sense, not one of its length axes.
                 if (range.unit().isPresent() && !g.unitExtends(range.unit().get(), g.builtinUnit(decl.id(), "INTERLIS.ANGLE").orElseThrow()))
                     g.emitRule(decl, "a coordinate direction reference requires an angular unit", "REFSYSTEM_DIRECTION_UNIT");

@@ -402,3 +402,33 @@ Jeder Arbeitspaketabschluss liefert:
 `VerificationReport` ist maschinenlesbar und enthält `runId`, Repositoryrevision, Toolchains, Gates, Fallzahlen und Artefaktbezüge. Menschliche Zusammenfassungen werden daraus abgeleitet. Ein grünes CI-Badge allein ist keine vollständige Kompatibilitätsbeschreibung.
 
 Ein Arbeitspaket ist fertig, wenn seine zugesagten Verträge implementiert und geprüft sind, die Abdeckungsmatrix konsistent ist und keine offenen Fehler als bestandene Tests ausgegeben werden. Eine spätere Phase darf vorbereitet sein, muss aber als geplant sichtbar bleiben. Die zentrale [Abdeckungsmatrix und Review](17-abdeckungsmatrix-und-review.md) hält diese Unterschiede fest.
+
+### P3: vollständiger offizieller Corpus und getrennte Sollbudgets
+
+Das aktive Profil `geo-so-complete-2.3-2.4-v1` unter
+`docs/evidence/p3/full-corpus/` friert alle347 indizierten unterstützten
+Modellwurzeln des historischen offiziellen Indexes und366 transitive
+Originalquellen ein. Manifest, Originalarchiv und regelweise bewertete exakte
+Gate-Diagnosen werden getrennt von Laufzeitdaten versioniert. Die bestehende
+13er-Historie und die unveränderte Conformance-Suite werden nicht ersetzt.
+`docs/p3/CORPUS_ASSESSMENT.md` erklärt die fachlichen Unterschiede zu ili2c;
+eine Beobachtung allein erlaubt keine neue Negativerwartung.
+
+Für die dokumentierte Referenzmaschine Apple M1,8 logische CPUs,16GiB,
+macOS arm64 gelten die separaten festen Sollbudgets in
+`docs/evidence/p3/full-corpus/budgets.json`. Das Profil verlangt sämtliche
+347 Closures auf JVM und TeaVM-WasmGC in Node,Chromium,Firefox,WebKit sowie
+echtem Safari, je drei Warmwiederholungen und0 ausgelassene Modelle oder
+fachliche Abweichungen. Kaltstart und Batchzeit werden getrennt erfasst.
+Je1000 echte Änderungen der grössten Originalclosure werden auf JVM und
+Wasm/Node mit begrenzter Cache-/Snapshothaltung geprüft. JVM-Heap und
+Node-Prozess-RSS erfassen Gesamtbelegung; fehlende zuverlässige
+browserübergreifende Heapdaten werden ausdrücklich benannt. Reale
+Browserabbruch-/Wiederherstellungsprüfungen bleiben zusätzlich erforderlich.
+
+`performanceCheck` prüft vollständige passende Quell-/Eingangsbindungen,
+exakte Ergebnisse, reale Runtimeversionen, Zeit-/Speicher-/Artefaktbudgets,
+Retention, Abbruch und begrenzten Ereignisdruck maschinell. Fehlende, alte,
+partielle oder übersprungene Nachweise sind Fehler. Negative Checkerproben
+gehören zum Gate. Budgets werden nach einem Fehllauf nicht still angehoben.
+Diese Messgrenzen sind keine fachlichen Sprachgrenzen oder Produktions-SLAs.

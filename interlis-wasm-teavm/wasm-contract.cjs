@@ -93,8 +93,10 @@ END Wasm.
   })));
   if (closed.status !== 'ok') throw new Error('closeSession failed');
   const stabilizationCases = await require('./stabilization-contract.cjs')(api);
+  const corpusRegressionCases = await require('./token-classification-contract.cjs')(api);
   const summary = {
     stabilizationCases,
+    corpusRegressionCases,
     status: 'passed',
     tool: capabilities.result.toolVersion,
     nodes: diagram.result.nodes.length,

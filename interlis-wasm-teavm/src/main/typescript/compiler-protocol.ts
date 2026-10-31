@@ -83,7 +83,7 @@ export interface AnalysisResultDto {
 export type CompilationResultDto =
   {readonly outcome: 'succeeded'; readonly snapshotId: string; readonly schemaId: string; readonly diagnostics: readonly DiagnosticDto[]} |
   {readonly outcome: 'rejected'; readonly snapshotId: string; readonly diagnostics: readonly DiagnosticDto[]; readonly rejection: {
-    readonly reasons: readonly string[]; readonly diagnosticIds: readonly string[]; readonly requestedRoots: readonly string[]; readonly unsupportedFeatureIds: readonly string[]}} |
+    readonly reasons: readonly string[]; readonly diagnosticIds: readonly string[]; readonly requestedRoots: readonly RootSelectorDto[]; readonly resolvedRoots: readonly RootSelectorDto[]; readonly unsupportedFeatureIds: readonly string[]}} |
   {readonly outcome: 'cancelled'; readonly cancellation: {readonly reason: string}} |
   {readonly outcome: 'failed'; readonly failureId: string; readonly diagnostic: DiagnosticDto};
 export interface PositionQueryDto {
@@ -120,6 +120,7 @@ export interface DiagramOptionsDto {
   readonly visibleKinds?:readonly ('CLASS'|'STRUCTURE'|'ASSOCIATION'|'VIEW'|'DOMAIN'|'EXTERNAL_REFERENCE'|'GRAPHIC'|'DRAWING_RULE'|'LINE_FORM'|'METADATA_BASKET'|'METAOBJECT')[];
   readonly inheritedMembers?:'HIDE'|'SHOW_WITH_ORIGIN';
   readonly showTypes?:boolean;readonly showRoleCardinalities?:boolean;readonly showConstraints?:boolean;readonly showImports?:boolean;
+  readonly translationModel?:SymbolRefDto;readonly neighbourhoodDepth?:number;
   readonly labelPolicy?:'CANONICAL'|'TRANSLATED';readonly associationPresentation?:'ENTITY'|'COMPACT_BINARY';
   readonly budget?:{readonly maxNodes?:number;readonly maxEdges?:number;readonly maxMembersPerNode?:number};
 }

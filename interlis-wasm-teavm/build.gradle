@@ -63,7 +63,11 @@ tasks.register('prepareBrowserHarness', Copy) {
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
     dependsOn 'buildWasmGC', 'buildBrowserTools'
     from 'src/main/web'
+    from(rootProject.file('tools/performance/full-corpus-contract.js'))
     from(layout.buildDirectory.dir('browser-tools'))
+    from('token-classification-contract.cjs') {
+        rename { 'token-classification-contract.js' }
+    }
     from('stabilization-contract.cjs') {
         rename { 'stabilization-contract.js' }
     }
@@ -137,4 +141,12 @@ tasks.register('browserClientTest', Exec) {
     dependsOn 'buildBrowserTools', 'generateJavaScript'
     workingDir = projectDir
     commandLine nodeExecutable.get(), '--test', 'worker-host.test.cjs', 'compiler-client.test.cjs'
+}
+
+tasks.register('uiProjectionTest', Exec) {
+    group = 'verification'
+    description = 'Checks real browser UI language/focus/depth and rejects a delayed actual layout.'
+    dependsOn 'prepareBrowserHarness'
+    workingDir = projectDir
+    commandLine nodeExecutable.get(), '--test', 'ui-projection.test.cjs'
 }

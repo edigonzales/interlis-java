@@ -535,6 +535,14 @@ behalten die ursprüngliche Syntaxursache als ErrorType; sie erzeugen keine
 Implementierungssperre. E1ProfileSafetyContractTest und ModelKindContractTest
 prüfen diese Regeln; dies ist keine pauschale E1-/G2-Abnahme.
 
+P3-4 ergänzt nach Nutzerentscheid vom31.10.2026 das bestehende TYPE-MODEL-
+Kompatibilitätsprofil in2.3/2.4 um REFSYSTEM BASKET (wie ili2c und CHBase).
+Topics, konkrete Klassen, Laufzeitparameter und SIGN BASKET bleiben dort
+unzulässig. Die Ausnahme betrifft nur die Korbart; Zielthema, Metadatenklasse,
+Objektfamilie und ursprüngliche Quellbezüge werden weiterhin gemeinsam gebunden
+und geprüft. Normabweichung und Referenznachweise stehen in
+[COMPILER_NORM_DECISIONS](../g2/COMPILER_NORM_DECISIONS.md).
+
 E2 konkretisiert META-003/006/009/014 und SEM-005/010/014 gemäss Kapitel 05/06:
 DomainSymbol.mandatory(), gebundene CLASS-Domänen, unverfälschte fehlerhafte
 NumericTypeSyntax und QueryResult<UnitRelation> mit NOT_A_UNIT. Verbraucher

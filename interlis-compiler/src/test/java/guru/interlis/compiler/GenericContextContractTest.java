@@ -179,4 +179,22 @@ class GenericContextContractTest {
         bad(source.replace("200..300,0..100", "0..100,200..300"), "GENERIC_RANGE");
         ok(source.replace("NUMERIC,0..100", "0..100,NUMERIC").replace("200..300,0..100", "0..100,200..300"));
     }
+    @Test void numericReferencesToGenericCoordinatesKeepLegalDeferredBindingAndCheckConcreteAlternatives() {
+        String definitions="DOMAIN G(GENERIC)=COORD NUMERIC,NUMERIC; A=COORD 0.00..100.00[INTERLIS.m],0.00..100.00[INTERLIS.m],ROTATION 2->1; B=COORD 200.00..300.00[INTERLIS.m],200.00..300.00[INTERLIS.m],ROTATION 1->2; Azimuth=0.000..359.999 CIRCULAR[INTERLIS.rad]<G>;";
+        var library=ok(model(definitions));
+        var direction=(NumericType)library.schema().semanticGraph().type(((DomainSymbol)named(library.schema().semanticGraph(),"Azimuth")).typeId()).orElseThrow();
+        assertEquals(named(library.schema().semanticGraph(),"G").id(),direction.range().referenceSystem().orElseThrow().target());
+        String use="TOPIC T=CLASS C=angle:Azimuth;END C;END T;";
+        var concrete=ok(model(definitions+"CONTEXT default=G=A;"+use));
+        assertEquals(TopicSymbol.BindingState.CONCRETE,topic(concrete.schema().semanticGraph(),"T").genericBindings().getFirst().state());
+        var deferred=ok(model(definitions+"CONTEXT default=G=A OR B;"+use.replace("TOPIC T=","TOPIC T=DEFERRED GENERICS G;")));
+        assertEquals(TopicSymbol.BindingState.DEFERRED,topic(deferred.schema().semanticGraph(),"T").genericBindings().getFirst().state());
+        bad(model(definitions+use),"GENERIC_CONTEXT_MISSING");
+        bad(model(definitions+"CONTEXT default=G=A OR B;"+use),"GENERIC_DEFERRED_REQUIRED");
+        bad(model(definitions.replace(",ROTATION 2->1","")+"CONTEXT default=G=A;"+use),"REFSYSTEM_DOMAIN");
+        bad(model(definitions.replace("[INTERLIS.rad]<G>","[INTERLIS.m]<G>")),"REFSYSTEM_DIRECTION_UNIT");
+        String scalar=definitions.replace("Azimuth=0.000..359.999 CIRCULAR[INTERLIS.rad]<G>","Azimuth=0.000..99.999[INTERLIS.m]<G[1]>");
+        ok(model(scalar+"CONTEXT default=G=A;"+use));
+        bad(model(scalar.replace("0.00..100.00[INTERLIS.m]","0.00..100.00[INTERLIS.s]")+"CONTEXT default=G=A;"+use),"REFSYSTEM_UNIT");
+    }
 }

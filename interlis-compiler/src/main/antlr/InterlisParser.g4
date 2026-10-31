@@ -179,7 +179,7 @@ type : baseType
      | STRING DOTDOT STRING;
 
 domainRef : (Name DOT (Name DOT)*)? Name
-          | INTERLIS DOT (Name | HALIGNMENT | VALIGNMENT | UUIDOID | ANYOID);
+          | INTERLIS DOT (Name | URI | NAME | BOOLEAN | HALIGNMENT | VALIGNMENT | UUIDOID | ANYOID);
 
 baseType : textType
            | enumTreeValueType

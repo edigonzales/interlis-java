@@ -69,6 +69,26 @@ class PredefinedNameBindingContractTest {
         ok(input("2.4","STRUCTURE S=date:DATE;time:TIMEOFDAY;timestamp:DATETIME;END S;"));
     }
 
+    @Test void nestedPredefinedTimeSystemClassesArePublicInheritanceTargets() {
+        for (String version : List.of("2.3", "2.4")) {
+            var result = ok(input(version, "TOPIC T = "
+                    + "CLASS Zone EXTENDS INTERLIS.TIMESYSTEMS.TIMEOFDAYSYS = END Zone; "
+                    + "CLASS Calendar EXTENDS INTERLIS.TIMESYSTEMS.CALENDAR = END Calendar; END T;"));
+            var graph = result.schema().semanticGraph();
+            for (String name : List.of("TIMEOFDAYSYS", "CALENDAR")) {
+                var refs = result.analysis().queries().findQualifiedName(QualifiedName.of("INTERLIS", "TIMESYSTEMS", name));
+                assertEquals(1, refs.size());
+                var symbol = assertInstanceOf(ClassSymbol.class,
+                        result.analysis().queries().symbol(refs.getFirst()).known().orElseThrow());
+                assertFalse(symbol.header().has(Modifier.ABSTRACT));
+                assertInstanceOf(TopicSymbol.class, graph.symbol(symbol.owner().orElseThrow()).orElseThrow());
+                assertEquals(1, symbol.members().size());
+                assertInstanceOf(ParameterSymbol.class, graph.symbol(symbol.members().getFirst()).orElseThrow());
+            }
+            bad(input(version, "TOPIC T = CLASS Zone EXTENDS INTERLIS.TIMESYSTEMS.Missing = END Zone; END T;"));
+        }
+    }
+
     @Test void localDomainsStructuresUnitsAndFunctionsKeepTheirDeclaredIdentity() {
         for(String version:List.of("2.3","2.4"))for(var c:List.of(
                 List.of("DOMAIN UUIDOID=BOOLEAN;STRUCTURE S=value:UUIDOID;END S;","UUIDOID"),

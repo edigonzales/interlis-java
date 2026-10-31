@@ -775,6 +775,13 @@ Relation. Der Compiler besitzt keine pauschale FORMAT-Ausnahme für Overrides.
 E2 numerische Vollständigkeit (2.3 §2.8/2.8.5/2.8.8; 2.4 §3.8/3.8.5/3.8.8):
 Prüfungen unterscheiden formale Funktionssignaturen von Domänen und Attributen.
 Die Prüfung erfolgt nach früher Typauflösung und Übernahme geerbter Eigenschaften.
+Numerische Referenzsystemangaben auf generische Koordinaten dürfen ohne
+ROTATION im generischen Bereich offen bleiben (INTERLIS 2.4 §3.8.8, S.57–58).
+Ihre Verwendung zählt auch indirekt über numerische Typen und Koordinatenachsen
+als generische Verwendung. Wirksame konkrete CONTEXT-Alternativen werden mit
+demselben Referenzsystemvertrag auf Achse, ROTATION und Einheit geprüft; die
+veröffentlichte Referenz behält dabei ihre generische Zielidentität.
+
 Die Erlaubnis generischer Koordinaten in 2.4 ersetzt weder deren Dimensionen-
 noch CONTEXT-/DEFERRED-Prüfung. Fehlerhafte Zielbindungen bleiben von legalen
 abstrakten Typen unterscheidbar; kein gültiges Schema entsteht aus Quellfehlern.

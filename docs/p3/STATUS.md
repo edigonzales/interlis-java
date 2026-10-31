@@ -1,12 +1,30 @@
 # P3 – operativer Status
 
 - **IN ARBEIT**, gesamter Meilenstein autonom beauftragt; **G3 offen**.
-- Aktuell **P3-3 – Browser und Diagramm**, WP-31, AC-P3-09–11.
-  [Browser-/Diagrammarbeiten](implementation/P3-3.md) laufen; P3-4/P3-5/G3 offen.
+- Aktuell **P3-4 – vollständiger Corpus und Belastung**, WP-32, AC-P3-12–16.
+  [Corpusbewertung](CORPUS_ASSESSMENT.md), [Umsetzung](implementation/P3-4.md); P3-5/G3 offen.
 - [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
   [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
 
-## Laufend: P3-3 – Reviewkorrekturen
+## Abgenommen: P3-3 – Browser und Diagramm
+
+**PASS**, AC-P3-09–11, Produktcommit
+`253d9ca837d05cc86959caf04fb2f4bab34c74c0`.
+[Unveränderter unabhängiger R4-Review](reviews/P3-3-review.md), Bericht-SHA-256
+`7b57aeaf6ffefde51e3f23be5a1236148c9dc8c605b218e679f0a7882ef188da`.
+OpenCode2.0.28, direkte DeepSeek API, neuer Kontext am exakten sauberen
+separaten Checkout; gesamter Prozess OS-Python-gesperrt. Transportexit0,
+äusseres Manifest passed. Keine offenen MUSS-Findings; F1–F7 geschlossen.
+Reviewer:1171 aktuelle XML-Fälle ohne Fehler/Skips, JS/WasmGC je3548,
+Chromium/Firefox/WebKit/echtes Safari sowie WebImageNode und drei WebImagebrowser
+je3548, echte UI3,29 Transport-/7 Clientprüfungen, SDK9/Paket, Conformance
+577PASS/16XFAIL/0FAIL. Rohe Referenzbewertung bleibt separat FAIL.
+Neue eigene Proben127/127 und76/76, echte UI3 undSafari; am Vorgänger
+reproduzieren sie12 beziehungsweise9 Fehler. Rohbelege
+`build/review/P3-3-r4/`, kopierte eigene Quellen/Logs unter
+`build/reports/p3/P3-3/r4-own/`. P3-4/P3-5/G3 bleiben offen.
+
+### Unveränderte Reviewhistorie
 
 [Unveränderter erster Review](reviews/P3-3-7440fb9-FAIL.md): **FAIL**, Kandidat
 `7440fb93a9cf566d0da1866063361daf63ee9fcf`, Bericht-SHA-256
@@ -17,8 +35,26 @@ und76/76 positiv; separate negative Proben reproduzieren F1–F4.
 Kumulative JVM-/Portable-/Browser-/Safari-/WebImage-/SDK-Prüfungen grün.
 Direkte DeepSeek API, sauberer separater Checkout und OS-Python-Sperre;
 Transportexit1/Manifest failed, kein positiver Abnahmenachweis. Rohbelege unter
-`build/review/P3-3-r1/raw/`. Korrektur im separaten Checkout in Arbeit.
-Unabhängige P3-4-Corpusvorbereitung läuft weiter; keine Corpusabnahme.
+`build/review/P3-3-r1/raw/`. Korrekturen F1–F4 sind implementiert und gezielt grün.
+Unabhängige [P3-4-Corpusvorbereitung](implementation/P3-4.md) läuft weiter; keine Corpusabnahme.
+
+[Unveränderter zweiter Review](reviews/P3-3-eab87de-INCOMPLETE.md) am
+`eab87de4e79833c1943fc45d2a6b3cf74e94d5b8` bestätigt F1–F4 mit243 neuen
+eigenen Prüfungen, erklärt fachlich PASS. Bericht-SHA-256
+`3b18058d3ed03b53487051c4c8ef31a601a0c3aef606509f7765d633ac1c743a`.
+Transportexit1/äusseres Manifest failed: **keine gültige Abnahme**. Zudem reicht
+die explizite Ablehnung übersetzter Labels nicht zur Erfüllung von VIZ-017;
+Sprach-/Übersetzungsauswahl und begrenzte Nachbarschaft sind implementiert und
+auf JVM, portabel und in echten Browsern einschliesslich verspätetem Layout geprüft.
+Der Corpus deckte zusätzlich Java-Strings statt ModelSelectorDto in
+`rejection.requestedRoots` auf. Die ursprünglichen und konkretisierten Wurzeln sind jetzt verlustfreie DTOs.
+[Unveränderter dritter Review](reviews/P3-3-1ec148b-FAIL.md) am sauberen Kandidaten
+`1ec148babdd0179a86e05d5051f55626ced63031`: **FAIL**, neue Befunde F5–F7
+(gemeinsames Mitgliederbudget, vollständiger Typfilter, konsistenter Konfigurationsfingerprint).
+Direkte DeepSeek API, separater Checkout, OS-Python-Sperre;
+Transportexit0/äusseres Manifest passed. Bericht-SHA-256
+`9882f89301386370bc0affe438dc40f289fe564a188ddf2203ceb26d94b195c4`.
+F5–F7 sind durch den oben verlinkten unabhängigen R4-PASS geschlossen.
 
 ## Abgenommen: P3-1 – CLI und Formatierung
 

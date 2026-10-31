@@ -42,7 +42,8 @@ END JsTarget.
   }
   handle(envelope('closeSession', sessionId));
   const stabilizationCases = await require('./stabilization-contract.cjs')(api);
-  const result = {stabilizationCases, status: 'passed', tool: capabilities.result.toolVersion,
+  const corpusRegressionCases = await require('./token-classification-contract.cjs')(api);
+  const result = {stabilizationCases, corpusRegressionCases, status: 'passed', tool: capabilities.result.toolVersion,
     outcome: compiled.result ? compiled.result.outcome : compiled.status,
     runtime: 'teavm-js', node: process.version};
   fs.writeFileSync(path.resolve(__dirname, 'build/js-contract-result.json'),

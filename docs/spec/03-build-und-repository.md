@@ -253,3 +253,16 @@ Eingaben mit Negativcanarys. Historische Texte bleiben lesbar. Das abschliessend
 absoluter Aufrufe, nicht nur mit einem bereinigten PATH. Kein älterer Gradle-
 Daemon darf für diesen Nachweis verwendet werden. Plattform-/Prozessreports
 bleiben frisch und an dieselben geprüften Eingaben gebunden.
+
+### P3: vollständiger Performancevertrag
+
+`fullCorpus` prüft den eingefrorenen offiziellen Index und sämtliche
+Originaldateien mit expliziten Encodings und Byte-/Texthashes.
+`fullCorpusJvm`, `fullCorpusWasm`, `fullCorpusBrowsers` und `fullCorpusSafari`
+erzeugen aktuelle vollständige öffentliche Protokollcaptures.
+`fullCorpusEditorWasm`, `editorPressure`, `observationPressure` und
+`fullCorpusArtifacts` messen lange reale Sitzungen, Abbruch, begrenzte
+Beobachtung und ausgelieferte Roh-/Kompressionsgrössen. `performanceCheck`
+führt das vollständige feste Profil aus Kapitel13 aus; das frühere13er-Profil
+bleibt über seine bisherigen Einzeltasks als historische Evidenz verfügbar.
+Ein fehlender Safari-/Runtime-/Hardware-/Ergebnisnachweis scheitert, ohne Skip.

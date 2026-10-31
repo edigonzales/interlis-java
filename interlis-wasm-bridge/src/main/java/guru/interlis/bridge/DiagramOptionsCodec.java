@@ -10,7 +10,7 @@ final class DiagramOptionsCodec {
         var defaults=DiagramOptions.defaults(selection);
         if(!params.members().containsKey("options"))return defaults;
         var value=BridgeCodec.object(params.members().get("options"));
-        keys(value,"schemaVersion","scope","visibleKinds","inheritedMembers","showTypes","showRoleCardinalities","showConstraints","showImports","labelPolicy","associationPresentation","budget");
+        keys(value,"schemaVersion","scope","visibleKinds","inheritedMembers","showTypes","showRoleCardinalities","showConstraints","showImports","labelPolicy","associationPresentation","budget","translationModel","neighbourhoodDepth");
         if(!BridgeCodec.string(value,"schemaVersion").equals("1.0"))throw new BridgeException("UNSUPPORTED_OPERATION","unsupported diagram options version");
         var kinds=defaults.visibleKinds();
         if(value.members().containsKey("visibleKinds")) {
@@ -27,12 +27,21 @@ final class DiagramOptionsCodec {
             var b=BridgeCodec.object(value.members().get("budget"));keys(b,"maxNodes","maxEdges","maxMembersPerNode");
             budget=new ProjectionBudget(integer(b,"maxNodes",budget.maxNodes()),integer(b,"maxEdges",budget.maxEdges()),integer(b,"maxMembersPerNode",budget.maxMembersPerNode()));
         }
+        Optional<guru.interlis.model.SymbolRef> translation=Optional.empty();
+        if(value.members().containsKey("translationModel")) {
+            var ref=BridgeCodec.object(value.members().get("translationModel"));keys(ref,"snapshot","symbol");
+            translation=Optional.of(new guru.interlis.model.SymbolRef(new guru.interlis.model.SnapshotId(BridgeCodec.string(ref,"snapshot")),
+                    new guru.interlis.model.SymbolId(BridgeCodec.string(ref,"symbol"))));
+        }
+        if(translation.isPresent()&&!translation.orElseThrow().snapshot().equals(selection.symbols().getFirst().snapshot()))
+            throw new BridgeException("SNAPSHOT_MISMATCH","translation selection belongs to another snapshot");
+        var depth=value.members().containsKey("neighbourhoodDepth")?OptionalInt.of(integer(value,"neighbourhoodDepth",0)):OptionalInt.empty();
         return new DiagramOptions(selection,enumeration(value,"scope",DiagramScope.class,defaults.scope()),kinds,
                 enumeration(value,"inheritedMembers",InheritedMembers.class,defaults.inheritedMembers()),
                 bool(value,"showTypes",defaults.showTypes()),bool(value,"showRoleCardinalities",defaults.showRoleCardinalities()),
                 bool(value,"showConstraints",defaults.showConstraints()),bool(value,"showImports",defaults.showImports()),
                 enumeration(value,"labelPolicy",LabelPolicy.class,defaults.labelPolicy()),
-                enumeration(value,"associationPresentation",AssociationPresentation.class,defaults.associationPresentation()),budget);
+                enumeration(value,"associationPresentation",AssociationPresentation.class,defaults.associationPresentation()),budget,translation,depth);
     }
     private static void keys(JsonValue.JsonObject value,String... allowed) {
         if(!Set.of(allowed).containsAll(value.members().keySet()))throw new BridgeException("INVALID_REQUEST","unknown diagram option");

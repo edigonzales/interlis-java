@@ -57,6 +57,26 @@ class ModelKindContractTest {
         }
     }
 
+    @Test void typeModelsAllowReferenceSystemBasketsButKeepSignBasketsRejected() {
+        for(String version:List.of("2.3","2.4"))for(boolean referenceSystem:List.of(true,false)) {
+            String kind=referenceSystem?"REFSYSTEM":"SIGN",modelKind=referenceSystem?"REFSYSTEM":"SYMBOLOGY";
+            var target=CompilerTestSupport.source("memory:/type-model-basket-target.ili","INTERLIS "+version+"; CONTRACTED "+modelKind+" MODEL R AT \"https://example.org\" VERSION \"1\"=TOPIC T=CLASS S EXTENDS INTERLIS."+kind+"=END S;END T;END R.");
+            var source=CompilerTestSupport.source("memory:/type-model-baskets.ili","INTERLIS "+version+";CONTRACTED TYPE MODEL F AT \"https://example.org\" VERSION \"1\"=IMPORTS R;"+kind+" BASKET B~R.T OBJECTS OF S:obj;END F.");
+            var binding=CompilerTestSupport.binding(CompilerTestSupport.parse(source),"R",target,CompilerTestSupport.parse(target));
+            var outcome=CompilerEngines.create().compile(CompilerTestSupport.request(List.of("F"),Map.of(source.id(),source,target.id(),target),List.of(binding),CompilerOptions.defaults()),CancellationToken.none());
+            if(referenceSystem) {
+                var result=assertInstanceOf(CompilationOutcome.Succeeded.class,outcome,()->outcome instanceof CompilationOutcome.Rejected rejected?rejected.analysis().diagnostics().toString():outcome.toString());
+                var basket=result.schema().semanticGraph().symbols().stream().filter(MetadataBasketSymbol.class::isInstance).map(MetadataBasketSymbol.class::cast).filter(candidate->candidate.name().value().equals("B")).findFirst().orElseThrow();
+                assertEquals(MetadataBasketSymbol.Kind.REFSYSTEM,basket.basketKind());assertEquals(1,basket.objects().size());assertTrue(basket.topic().isPresent());
+                int offset=source.text().indexOf("BASKET B")+7;
+                assertEquals(basket.id(),LanguageQueries.create().symbolAt(result.analysis(),source.range(offset,offset),CancellationToken.none()).known().orElseThrow().symbol());
+            } else {
+                var result=assertInstanceOf(CompilationOutcome.Rejected.class,outcome);
+                assertTrue(result.analysis().diagnostics().toString().contains("TYPE_MODEL_CONTENT"));
+            }
+        }
+    }
+
     @Test void typeModelPermittedFamiliesExposePublicSymbolsAndQueries() {
         for(var version:List.of("2.3","2.4")) {
             var source=CompilerTestSupport.source("memory:/type-model-families.ili",

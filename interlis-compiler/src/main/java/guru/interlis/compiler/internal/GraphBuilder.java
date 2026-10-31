@@ -1453,31 +1453,6 @@ final class GraphBuilder {
     }
 
     private void validateAssociationRules() {
-        Map<SymbolId, Set<String>> classAttributes = new LinkedHashMap<>();
-        for (Symbol symbol : symbols.values()) {
-            checkWork();
-            if (symbol instanceof ClassSymbol clazz) {
-                Set<String> names = new LinkedHashSet<>();
-                SymbolId current = clazz.id();
-                Set<SymbolId> seen = new HashSet<>();
-                while (current != null && seen.add(current)) {
-                    checkWork();
-                    Symbol currentSymbol = symbols.get(current);
-                    if (currentSymbol instanceof ClassSymbol || currentSymbol instanceof StructureSymbol) {
-                        var inheritedMembers=currentSymbol instanceof ClassSymbol c?c.members():((StructureSymbol)currentSymbol).members();
-                        for (SymbolId member : inheritedMembers) {
-                            checkWork();
-                            Symbol memberSymbol = symbols.get(member);
-                            if (memberSymbol instanceof AttributeSymbol attribute) {
-                                names.add(attribute.name().value());
-                            }
-                        }
-                    }
-                    current = baseOf.get(current);
-                }
-                classAttributes.put(clazz.id(), names);
-            }
-        }
         for (Symbol symbol : symbols.values()) {
             checkWork();
             if (symbol instanceof AssociationSymbol association) {
@@ -1499,50 +1474,6 @@ final class GraphBuilder {
                                     "role and attribute share a name in the association",
                                     "ROLE_ATTRIBUTE_CONFLICT");
                         }
-                    }
-                }
-            }
-        }
-        Map<SymbolId, Set<String>> topicRoleNames = new LinkedHashMap<>();
-        Map<SymbolId, Set<String>> topicAttributeNames = new LinkedHashMap<>();
-        for (Symbol symbol : symbols.values()) {
-            checkWork();
-            if (symbol instanceof AssociationSymbol association) {
-                SymbolId scope = scopeRoot(association.id());
-                if (scope != null && !association.name().value().startsWith("<anonymous")) {
-                    for (SymbolId roleId : association.roles()) {
-                        checkWork();
-                        Symbol role = symbols.get(roleId);
-                        if (role != null) {
-                            topicRoleNames.computeIfAbsent(scope, ignored -> new LinkedHashSet<>())
-                                    .add(role.name().value());
-                        }
-                    }
-                }
-            } else if (symbol instanceof ClassSymbol clazz) {
-                SymbolId scope = scopeRoot(clazz.id());
-                if (scope != null) {
-                    for (SymbolId member : clazz.members()) {
-                        checkWork();
-                        Symbol memberSymbol = symbols.get(member);
-                        if (memberSymbol instanceof AttributeSymbol attribute) {
-                            topicAttributeNames.computeIfAbsent(scope,
-                                    ignored -> new LinkedHashSet<>()).add(attribute.name().value());
-                        }
-                    }
-                }
-            }
-        }
-        for (Map.Entry<SymbolId, Set<String>> entry : topicRoleNames.entrySet()) {
-            checkWork();
-            Set<String> attributes = topicAttributeNames.getOrDefault(entry.getKey(), Set.of());
-            for (String roleName : entry.getValue()) {
-                checkWork();
-                if (attributes.contains(roleName)) {
-                    DeclInfo scope = index.byId(entry.getKey()).orElse(null);
-                    if (scope != null) {
-                        emitRule(scope, "role name conflicts with an attribute name in the topic",
-                                "ROLE_ATTRIBUTE_CONFLICT");
                     }
                 }
             }
@@ -1579,22 +1510,6 @@ final class GraphBuilder {
                                 && role.targetRoots().stream().anyMatch(t -> hiding.targetRoots().stream()
                                 .anyMatch(h -> targetSpecializes(t, h) || targetSpecializes(h, t)))) {
                             emitRule(decl, "HIDING conflicts with a non-hiding sibling role", "ROLE_HIDING_CONFLICT");
-                        }
-                    }
-                }
-            }
-            for (SymbolId roleId : ((AssociationSymbol) symbols.get(decl.id())).roles()) {
-                checkWork();
-                Symbol roleSymbol = symbols.get(roleId);
-                if (roleSymbol instanceof RoleSymbol role) {
-                    for (Map.Entry<SymbolId, Set<String>> entry : classAttributes.entrySet()) {
-                        checkWork();
-                        SymbolId classId = entry.getKey();
-                        boolean subtype = roleAccepts(role, classId);
-                        if (subtype && entry.getValue().contains(role.name().value())) {
-                            emitRule(decl, "role name conflicts with an attribute in its target hierarchy",
-                                    "ROLE_ATTRIBUTE_CONFLICT");
-                            break;
                         }
                     }
                 }
@@ -1649,10 +1564,14 @@ final class GraphBuilder {
             checkWork();
             Set<SymbolId> chain = new LinkedHashSet<>();
             SymbolId current = classSymbol.id();
-            Set<SymbolId> seen = new HashSet<>();
             while (current != null && chain.add(current)) {
                 checkWork();
                 current = baseOf.get(current);
+            }
+            Map<String, DeclInfo> attributes = new LinkedHashMap<>();
+            for (SymbolId ancestor : chain) for (DeclInfo member : index.children(ancestor)) {
+                checkWork();
+                if (member.kind() == SymbolKind.ATTRIBUTE) attributes.putIfAbsent(member.name(), member);
             }
             for (SymbolId classId : chain) {
                 checkWork();
@@ -1660,50 +1579,20 @@ final class GraphBuilder {
                 if (names == null) {
                     continue;
                 }
-                ClassSymbol currentClass = (ClassSymbol) symbols.get(classId);
-                if (currentClass == null) {
-                    continue;
-                }
-                for (SymbolId member : currentClass.members()) {
+                for (DeclInfo memberDecl : attributes.values()) {
                     checkWork();
-                    DeclInfo memberDecl = index.byId(member).orElse(null);
-                    if (memberDecl == null || memberDecl.kind() != SymbolKind.ATTRIBUTE) {
-                        continue;
-                    }
-                    boolean conflict = names.containsKey(memberDecl.name());
-                    SymbolId memberTopic = scopeRoot(classSymbol.id());
-                    for (AssociationSymbol association : symbols.values().stream()
-                            .filter(AssociationSymbol.class::isInstance)
-                            .map(AssociationSymbol.class::cast).toList()) {
-                        checkWork();
-                        for (SymbolId roleId : association.roles()) {
-                            checkWork();
-                            DeclInfo roleDecl = index.byId(roleId).orElse(null);
-                            if (roleDecl == null || !roleDecl.name().equals(memberDecl.name())) {
-                                continue;
-                            }
-                            if (memberTopic != null && memberTopic.equals(scopeRoot(roleId))) {
-                                conflict = true;
-                            }
-                        }
-                    }
-                    for (AssociationSymbol association : symbols.values().stream()
-                            .filter(AssociationSymbol.class::isInstance)
-                            .map(AssociationSymbol.class::cast).toList()) {
-                        checkWork();
-                        for (SymbolId roleId : association.roles()) {
-                            checkWork();
-                            if (!(symbols.get(roleId) instanceof RoleSymbol role)
-                                    || !roleAccepts(role, classId)) {
-                                continue;
-                            }
-                            DeclInfo roleDecl = index.byId(roleId).orElse(null);
-                            if (roleDecl != null && roleDecl.name().equals(memberDecl.name())) {
-                                conflict = true;
-                            }
-                        }
-                    }
-                    if (conflict) {
+                    DeclInfo role = names.get(memberDecl.name());
+                    if (role == null) continue;
+                    DeclInfo association = role.owner().flatMap(index::byId).orElse(null);
+                    DeclInfo attributeOwner = memberDecl.owner().flatMap(index::byId).orElse(null);
+                    // A later association cannot retroactively add an inherited name to
+                    // an already declared subclass. The direct target still owns its
+                    // own namespace and is checked regardless of declaration order.
+                    if (!memberDecl.owner().filter(classId::equals).isPresent()
+                            && association != null && attributeOwner != null
+                            && association.sourceId().equals(attributeOwner.sourceId())
+                            && association.syntax().range().startOffset() > attributeOwner.syntax().range().startOffset()) continue;
+                    {
                         emitRule(memberDecl, "attribute name conflicts with role name",
                                 "ATTRIBUTE_ROLE_CONFLICT");
                     }
@@ -1816,7 +1705,8 @@ final class GraphBuilder {
                 overridden.addAll(baseChain(id).stream().filter(base -> !base.equals(id)).toList());
             viewables.removeAll(overridden);
             Set<TypeId> seen = new HashSet<>();
-            for (SymbolId id : viewables) collectViewableGenerics(id, visible, topic.id(), used, seen);
+            Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses=new LinkedHashMap<>();
+            for (SymbolId id : viewables) collectViewableGenerics(id, visible, topic.id(), used, referenceUses, seen);
             var available = contexts.getOrDefault(model, Map.of());
             Set<SymbolId> declaredDeferred = new LinkedHashSet<>();
             for (SymbolId id : baseChain(topic.id())) if (symbols.get(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
@@ -1829,6 +1719,13 @@ final class GraphBuilder {
             List<TopicSymbol.GenericBinding> bindings = new ArrayList<>();
             for (SymbolId generic : used) {
                 var binding = available.get(generic);
+                if(binding!=null) for(var range:referenceUses.getOrDefault(generic,Set.of())) for(var alternative:binding.alternatives()) {
+                    checkWork();var reference=range.referenceSystem().orElseThrow();
+                    var concrete=new guru.interlis.model.NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),range.unit(),
+                            Optional.of(new guru.interlis.model.NumericRange.ReferenceSystem(alternative,true,reference.axis())));
+                    // Validate known alternatives without rewriting the published generic identity.
+                    metadata.validateRange(decl,concrete);
+                }
                 if (binding == null) {
                     if (topic.header().modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
                         bindings.add(new TopicSymbol.GenericBinding(generic, List.of(), List.of(), TopicSymbol.BindingState.ABSTRACT));
@@ -1895,31 +1792,46 @@ final class GraphBuilder {
     }
 
     private void collectViewableGenerics(SymbolId viewable, Set<SymbolId> visible, SymbolId topic,
-            Set<SymbolId> used, Set<TypeId> seen) {
+            Set<SymbolId> used, Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses, Set<TypeId> seen) {
         for (var member : effectiveMembers.getOrDefault(viewable, List.of())) {
             checkWork();
-            if (symbols.get(member.declaredSymbol()) instanceof AttributeSymbol attr) collectGenericUses(attr.declaredType(), visible, topic, used, seen);
+            if (symbols.get(member.declaredSymbol()) instanceof AttributeSymbol attr) collectGenericUses(attr.declaredType(), visible, topic, used, referenceUses, seen);
         }
     }
 
-    private void collectGenericUses(TypeId type, Set<SymbolId> visible, SymbolId topic, Set<SymbolId> used, Set<TypeId> seen) {
+    private void collectGenericUses(TypeId type, Set<SymbolId> visible, SymbolId topic, Set<SymbolId> used,
+            Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses, Set<TypeId> seen) {
         if (type == null || !seen.add(type)) return;
         checkWork(); TypeDescriptor descriptor = types.get(type);
         if (descriptor instanceof DomainReferenceType ref && symbols.get(ref.targetDomain()) instanceof DomainSymbol domain) {
             if (domain.generic()) used.add(domain.id());
-            collectGenericUses(domain.typeId(), visible, topic, used, seen);
+            collectGenericUses(domain.typeId(), visible, topic, used, referenceUses, seen);
         } else if (descriptor instanceof GeometryType geometry) {
             geometry.vertexDomain().map(symbols::get).filter(DomainSymbol.class::isInstance).map(DomainSymbol.class::cast).ifPresent(domain -> {
-                if (domain.generic()) used.add(domain.id()); collectGenericUses(domain.typeId(), visible, topic, used, seen);
+                if (domain.generic()) used.add(domain.id()); collectGenericUses(domain.typeId(), visible, topic, used, referenceUses, seen);
             });
+        } else if (descriptor instanceof NumericType numeric) {
+            collectRangeGenerics(numeric.range(),visible,topic,used,referenceUses,seen);
+        } else if (descriptor instanceof CoordinateType coordinate) {
+            for(var range:coordinate.axes())collectRangeGenerics(range,visible,topic,used,referenceUses,seen);
         } else if (descriptor instanceof CollectionType collection) {
-            collectGenericUses(collection.elementType(), visible, topic, used, seen);
+            collectGenericUses(collection.elementType(), visible, topic, used, referenceUses, seen);
         } else if (descriptor instanceof StructureValueType structure) {
             for (Symbol symbol : symbols.values()) if (symbol instanceof StructureSymbol candidate
                     && visible.contains(index.modelOfSymbol(candidate.id()).orElse(null))
                     && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> baseChain(candidate.id()).contains(root)))
                     && (!(symbols.get(scopeRoot(candidate.id())) instanceof TopicSymbol) || baseChain(topic).contains(scopeRoot(candidate.id()))))
-                collectViewableGenerics(candidate.id(), visible, topic, used, seen);
+                collectViewableGenerics(candidate.id(), visible, topic, used, referenceUses, seen);
+        }
+    }
+
+    private void collectRangeGenerics(guru.interlis.model.NumericRange range,Set<SymbolId> visible,SymbolId topic,
+            Set<SymbolId> used,Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses,Set<TypeId> seen) {
+        checkWork();var reference=range.referenceSystem().orElse(null);
+        if(reference==null||!reference.domain())return;
+        if(symbols.get(reference.target()) instanceof DomainSymbol domain&&domain.generic()) {
+            used.add(domain.id());referenceUses.computeIfAbsent(domain.id(),ignored->new LinkedHashSet<>()).add(range);
+            collectGenericUses(domain.typeId(),visible,topic,used,referenceUses,seen);
         }
     }
 
@@ -1949,7 +1861,10 @@ final class GraphBuilder {
         if (modelSyntax.modelKind() == guru.interlis.model.ModelKind.TYPE) {
             for (var child : index.children(decl.id())) {
                 checkWork();
-                if (Set.of(SymbolKind.TOPIC, SymbolKind.PARAMETER, SymbolKind.METADATA_BASKET).contains(child.kind())
+                if (Set.of(SymbolKind.TOPIC, SymbolKind.PARAMETER).contains(child.kind())
+                        || child.kind() == SymbolKind.METADATA_BASKET
+                        && (!(child.syntax() instanceof guru.interlis.syntax.MetadataBasketDeclarationSyntax basket)
+                            || basket.basketKind()!=guru.interlis.model.MetadataBasketSymbol.Kind.REFSYSTEM)
                         || child.kind() == SymbolKind.CLASS && !child.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
                     emitRule(child, "TYPE MODEL may only declare type definitions", "TYPE_MODEL_CONTENT");
             }
@@ -3619,16 +3534,21 @@ final class GraphBuilder {
 
     /** Simple predefined domains allowed by DomainRef. No fallback for unknown names. */
     private Optional<SymbolId> builtinSimpleDomain(DeclInfo context, String name) {
-        if (!Set.of("INTERLIS.INTERLIS_1_DATE", "INTERLIS.HALIGNMENT", "INTERLIS.VALIGNMENT").contains(name))
+        if (!Set.of("INTERLIS.URI", "INTERLIS.NAME", "INTERLIS.BOOLEAN", "INTERLIS.INTERLIS_1_DATE", "INTERLIS.HALIGNMENT", "INTERLIS.VALIGNMENT").contains(name))
             return Optional.empty();
         SymbolId symbol = new SymbolId("predefined:" + context.language() + ":domain:" + name);
         if (symbols.containsKey(symbol)) return Optional.of(symbol);
         Origin origin = new Origin.PredefinedOrigin(context.language(), name);
         TypeId type = nextTypeId();
-        types.put(type, name.equals("INTERLIS.INTERLIS_1_DATE")
-                ? new TextType(type, origin, TextKind.TEXT, java.util.OptionalInt.of(8))
-                : new guru.interlis.model.AlignmentType(type, origin, name.equals("INTERLIS.HALIGNMENT")
-                        ? guru.interlis.model.AlignmentKind.HORIZONTAL : guru.interlis.model.AlignmentKind.VERTICAL));
+        TypeDescriptor descriptor=switch(name) {
+            case "INTERLIS.URI" -> new TextType(type,origin,TextKind.URI,java.util.OptionalInt.of(1023));
+            case "INTERLIS.NAME" -> new TextType(type,origin,TextKind.NAME,java.util.OptionalInt.of(255));
+            case "INTERLIS.BOOLEAN" -> new guru.interlis.model.BooleanType(type,origin);
+            case "INTERLIS.INTERLIS_1_DATE" -> new TextType(type,origin,TextKind.TEXT,java.util.OptionalInt.of(8));
+            default -> new guru.interlis.model.AlignmentType(type,origin,name.equals("INTERLIS.HALIGNMENT")
+                    ? guru.interlis.model.AlignmentKind.HORIZONTAL : guru.interlis.model.AlignmentKind.VERTICAL);
+        };
+        types.put(type,descriptor);
         declaredTypes.put(symbol, type);
         symbols.put(symbol, new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN,
                 DeclaredName.synthetic(name), Optional.empty(), 0, origin, Optional.empty(), context.language(),
@@ -4932,7 +4852,10 @@ final class GraphBuilder {
             checkWork();
             if (association.kind() != SymbolKind.ASSOCIATION) continue;
             SymbolId topic = scopeRoot(association.id());
-            if (!topicAvailable(contextTopic, topic)) continue;
+            // Traversing a role or projecting an object retains the role namespace
+            // of that reached object, in addition to the declaring context.
+            if (!topicAvailable(contextTopic, topic)
+                    && !fromTargets.stream().allMatch(from -> topicAvailable(scopeRoot(from), topic))) continue;
             // A declaration appearing later cannot retroactively add an access to a constraint.
             if (association.sourceId().equals(name.range().source())
                     && association.syntax().range().startOffset() > name.range().startOffset()) continue;
@@ -5442,6 +5365,7 @@ final class GraphBuilder {
         }
         if (decl.kind() == SymbolKind.CLASS || decl.kind() == SymbolKind.STRUCTURE
                 || decl.kind() == SymbolKind.ASSOCIATION) {
+            if (decl.kind() != SymbolKind.ASSOCIATION) metadata.ensureBases(decl.id());
             List<SymbolId> chain = baseChain(decl.id());
             if (hasCycle(chain)) {
                 emitCycle(decl);
@@ -5472,6 +5396,7 @@ final class GraphBuilder {
                     if (attribute.kind() != SymbolKind.ATTRIBUTE && attribute.kind() != SymbolKind.ROLE) {
                         continue;
                     }
+                    buildSymbol(attribute);
                     Integer existing = positions.get(attribute.name());
                     if (existing != null) {
                         if (depth == 0 && !attribute.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {

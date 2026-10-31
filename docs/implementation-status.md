@@ -11,8 +11,14 @@ unabhängig PASS am Produktcommit `5eac6b64fb352982376f054a765597688d5f975b`.
 [P3-2-Review](p3/reviews/P3-2-review.md): Transport0/Manifest passed,
 1148 Fälle ohne Fehler/Skips, Portable je3548, SDK9, neue eigene Proben24/24+4/4.
 Windows/Linux x64 bestehen denselben Produkt-SHA.
-Aktuell P3-3: Browser-/Diagrammintegration, danach Corpus-/Belastungsmessungen und SDK-/
-Plattformgesamtgate. [P3-Plan](p3/EXECUTION_PLAN.md),
+P3-3 ist unabhängig PASS am Produktcommit `253d9ca837d05cc86959caf04fb2f4bab34c74c0`:
+[Review](p3/reviews/P3-3-review.md), Transport0/Manifest passed,1171 Fälle,
+Portable-/Browser-/Safari-/WebImage-/SDK-/Conformance-Prüfungen grün; F1–F7 geschlossen.
+Aktuell P3-4: alle347 offiziellen
+Closures eingefroren, fachliche Bewertung262 positive/85 strikte negative Fälle;
+TYPE-MODEL-REFSYSTEM-Freigabe dokumentiert. Vollständige JVM-/Node-/Browser-/Safari-
+Piloten, neue Corekorrekturen, feste Sollbudgets und1000-Edit-Prüfungen;
+noch keine P3-4-Abnahme. SDK-/Plattformgesamtgate bleibt fällig. [P3-Plan](p3/EXECUTION_PLAN.md),
 [operativer P3-Status](p3/STATUS.md). Unabhängige Reviews mit OpenCode über die
 direkte DeepSeek API bleiben pro Lieferung und kumulativ verpflichtend.
 G3 ist offen; Windows-/Linux-x64-Prozessnachweise werden nach Nutzerfreigabe

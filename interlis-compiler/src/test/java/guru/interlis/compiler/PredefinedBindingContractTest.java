@@ -34,6 +34,27 @@ class PredefinedBindingContractTest {
         return rejected;
     }
 
+    @Test void qualifiedTextAndBooleanDomainsUseCanonicalPredefinedBindingsInBothLanguages() {
+        for(var version:List.of("2.3","2.4")) {
+            var text=model(version,"TOPIC T=CLASS C=url:INTERLIS.URI;name:INTERLIS.NAME;flag:INTERLIS.BOOLEAN;END C;END T;");
+            var compiled=ok(text);var graph=compiled.schema().semanticGraph();
+            for(String name:List.of("URI","NAME","BOOLEAN")) {
+                var refs=compiled.analysis().queries().findQualifiedName(new QualifiedName(List.of("INTERLIS",name)));
+                assertEquals(1,refs.size());
+                var domain=assertInstanceOf(DomainSymbol.class,compiled.analysis().queries().symbol(refs.getFirst()).known().orElseThrow());
+                assertTrue(domain.header().has(Modifier.FINAL));
+                if(name.equals("BOOLEAN"))assertInstanceOf(BooleanType.class,graph.type(domain.typeId()).orElseThrow());
+                else {var type=assertInstanceOf(TextType.class,graph.type(domain.typeId()).orElseThrow());assertEquals(name.equals("URI")?TextKind.URI:TextKind.NAME,type.textKind());assertEquals(name.equals("URI")?1023:255,type.maxLength().orElseThrow());}
+                var source=compiled.analysis().syntaxSnapshots().values().iterator().next().source();
+                int offset=text.indexOf("INTERLIS."+name)+10;
+                assertEquals(domain.id(),LanguageQueries.create().symbolAt(compiled.analysis(),source.range(offset,offset),TOKEN).known().orElseThrow().symbol());
+                var attribute=graph.symbols().stream().filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
+                        .filter(a->a.name().value().equals(name.equals("URI")?"url":name.equals("NAME")?"name":"flag")).findFirst().orElseThrow();
+                assertEquals(domain.id(),assertInstanceOf(DomainReferenceType.class,graph.type(attribute.declaredType()).orElseThrow()).targetDomain());
+            }
+        }
+    }
+
     @Test void predefinedDomainsRetainTypesFinalityOriginAndNavigationTargets() {
         for (var version : List.of("2.3", "2.4")) {
             var text = model(version, "TOPIC T=CLASS C= "

@@ -236,11 +236,20 @@ public final class AntlrSyntaxService implements SyntaxService {
             return TokenKind.NUMBER;
         }
         String text = token.getText();
-        if (text != null && text.matches("[A-Z][A-Z0-9_]*")) {
-            return TokenKind.KEYWORD;
-        }
-        if (text != null && text.matches("[!-/:-@\\[-`{-~]+")) {
-            return TokenKind.PUNCTUATION;
+        if (text != null && !text.isEmpty()) {
+            // The same ASCII categories as before, with constant stack usage.
+            // Hidden-channel separator comments can contain thousands of glyphs.
+            boolean keyword = text.charAt(0) >= 'A' && text.charAt(0) <= 'Z';
+            boolean punctuation = true;
+            for (int index = 0; index < text.length() && (keyword || punctuation); index++) {
+                char value = text.charAt(index);
+                keyword &= value >= 'A' && value <= 'Z' || index > 0
+                        && (value >= '0' && value <= '9' || value == '_');
+                punctuation &= value >= '!' && value <= '/' || value >= ':' && value <= '@'
+                        || value >= '[' && value <= '`' || value >= '{' && value <= '~';
+            }
+            if (keyword) return TokenKind.KEYWORD;
+            if (punctuation) return TokenKind.PUNCTUATION;
         }
         return TokenKind.OTHER;
     }

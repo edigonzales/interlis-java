@@ -58,6 +58,27 @@ export async function verifyBrowserClient(){
     assert(limited.completeness==='LIMITED'&&limited.nodes.length===1,'wire budget ignored');
     try{await client.diagram(partialSession,{snapshotId:partialAnalysis.snapshotId,selection:[]});throw new Error('empty selection silently defaulted');}catch(error){assert(error.code==='INVALID_REQUEST','empty selection error mismatch');}
     await client.closeSession(partialSession);await client.closeSession(partialSession);assert(client.currentSessions().length===1,'repeated close changed another session');
+    const languageText='INTERLIS 2.4;MODEL English(en) AT "x" VERSION "1"=DOMAIN Identifier=TEXT*10;TOPIC Data=CLASS Road=name:Identifier;END Road;END Data;END English.'+
+      'MODEL French(fr) AT "x" VERSION "1" TRANSLATION OF English["1"]=DOMAIN Identifiant=TEXT*10;TOPIC Donnees=CLASS Route=nom:Identifiant;END Route;END Donnees;END French.';
+    const languages=await client.openSession({sources:[{sourceId:'memory:/languages',text:languageText}]});
+    const languageCompile=await client.compile(languages,{expectedWorkspaceRevision:client.state(languages).workspaceRevision,roots:[{kind:'bySource',source:'memory:/languages'}]});
+    assert(languageCompile.outcome==='succeeded','language fixture rejected: '+JSON.stringify(languageCompile));
+    const allLanguages=await client.diagram(languages,{schemaId:languageCompile.schemaId}),originalModel=allLanguages.containers.find(c=>c.canonicalName==='English').symbol,translationModel=allLanguages.containers.find(c=>c.canonicalName==='French').symbol;
+    const canonicalLanguage=await client.diagram(languages,{schemaId:languageCompile.schemaId,selection:[originalModel]});
+    const translatedLanguage=await client.diagram(languages,{schemaId:languageCompile.schemaId,selection:[originalModel],options:{schemaVersion:'1.0',labelPolicy:'TRANSLATED',translationModel}});
+    assert(JSON.stringify(translatedLanguage.nodes.map(n=>n.id))===JSON.stringify(canonicalLanguage.nodes.map(n=>n.id)),'label language changed diagram identity');
+    const road=canonicalLanguage.nodes.find(n=>n.label==='Road'),route=translatedLanguage.nodes.find(n=>n.id===road.id);
+    assert(route.label==='Route'&&route.canonicalName==='English.Data.Road'&&JSON.stringify(route.anchor)===JSON.stringify(road.anchor),'translated label changed canonical navigation');
+    assert(route.compartments.flatMap(c=>c.members).some(m=>m.label==='nom'&&m.typeLabel==='Identifiant'),'translated members/types missing');
+    const languageSources=new Map([['memory:/languages',{text:languageText,revision:'1'}]]),languageView=diagramAdapter.adapt(translatedLanguage,languageSources);
+    assert((await diagramAdapter.render(languageView)).svg.includes('Route'),'translated label absent from actual SVG');
+    assert(diagramAdapter.resolveNavigation(languageView,route.id,languageCompile.snapshotId,languageSources).kind==='resolved','translated source anchor does not navigate');
+    const focused=await client.diagram(languages,{schemaId:languageCompile.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:0}});
+    assert(JSON.stringify(focused.nodes.filter(n=>n.kind!=='EXTERNAL_REFERENCE').map(n=>n.label))==='["Road"]','depth0 expanded unrelated nodes');
+    const neighbour=await client.diagram(languages,{schemaId:languageCompile.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:1}});
+    assert(JSON.stringify(neighbour.nodes.filter(n=>n.kind!=='EXTERNAL_REFERENCE').map(n=>n.label).sort())==='["Identifier","Road"]','depth1 lost bound type neighbour');
+    try{await client.diagram(languages,{schemaId:languageCompile.schemaId,options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:33}});throw Error('depth33 accepted');}catch(error){assert(error.code==='INVALID_REQUEST','bad neighbourhood depth contract');}
+    await client.closeSession(languages);
   }finally{await client.dispose();}
   // A real worker script failure has its own failure kind and may recover all
   // confirmed sessions. No JavaScript stack text is a compiler diagnostic.

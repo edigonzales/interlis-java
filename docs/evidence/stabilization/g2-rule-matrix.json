@@ -11896,7 +11896,7 @@
     "E4": "Paths, all builtins and constraints.",
     "E5": "Views, translation, metadata/metaattributes, GENERIC/DEFERRED and graphics."
   },
-  "latestGrammarSha256": "9fd333fdba05d11d4b97810119b971fade90f974056afa39a7add0f593ee7915",
+  "latestGrammarSha256": "0d798a4f8f9384ae02f741faf1d777d8b03fc78f52fe01f1f16425078ff48468",
   "executionPlan": {
     "path": "g2-completion-plan.md",
     "version": "2026-10-27",
@@ -12021,7 +12021,7 @@
     "path": "g2-source-inventory.json",
     "scope": "All syntax occurrences, numbered requirements, actual standard-function names, 130 predefined declarations/members/constraints, 21 special values/type variants and explicit lexical profiles. Paragraph/method-contract/assertion audit still open.",
     "acceptance": "MISSING_EVIDENCE",
-    "sha256": "c6571876d90fbcfb4a7aba49caf44bd16fa1ce3e74802ec917f4d44910578ca2"
+    "sha256": "ed125b24bb2c9f8d37ca31bfe6437f547c1d021c317ce8ff432e746b0de18c6a"
   },
   "atomicRules": [
     {
@@ -12619,9 +12619,9 @@
         {
           "candidateTest": "ModelKindContractTest.typeModelPermittedFamiliesExposePublicSymbolsAndQueries",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelKindContractTest.java",
-          "sourceSha256": "13b41eafb8cbff6885c32fc63d108e01d8a2a0e555cabf5028b4bff2ce80def0",
-          "methodStart": 3380,
-          "methodEnd": 5551,
+          "sourceSha256": "98b14e9e5944a0af0486805ea179ea7a35a441cfec453acf3ddc2f8e481b635d",
+          "methodStart": 5646,
+          "methodEnd": 7817,
           "methodSha256": "556bf073c88b15c2d1bec9b5aa81937ad34b1c32e231d1ef4b4f7c2d485f6124",
           "assertionFragments": [
             "ModelKind.TYPE",
@@ -12789,7 +12789,7 @@
         {
           "candidateTest": "PredefinedNameBindingContractTest.qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
-          "sourceSha256": "f82fff04e3da5942a08d0f3ccd9f7fa195573a300dd74cc2452c770745ecf3e9",
+          "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
           "methodStart": 3521,
           "methodEnd": 4489,
           "methodSha256": "7aceaa3f145f04c437f46c7b45f89ed36c315f5a7ff53852dedf54ac970b1bd0",
@@ -12808,9 +12808,9 @@
         {
           "candidateTest": "PredefinedNameBindingContractTest.unknownQualifiedTargetsFailAndBareLenBindsTheActualCallTarget",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
-          "sourceSha256": "f82fff04e3da5942a08d0f3ccd9f7fa195573a300dd74cc2452c770745ecf3e9",
-          "methodStart": 9867,
-          "methodEnd": 11767,
+          "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
+          "methodStart": 11210,
+          "methodEnd": 13110,
           "methodSha256": "25583fd145a7d1cab99c363e445cb27c5cda95c66f2f2afe7f028d2c9f020fe3",
           "assertionFragments": [
             "INTERLIS.NoSuchDomain",
@@ -12884,7 +12884,7 @@
         {
           "candidateTest": "PredefinedNameBindingContractTest.qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
-          "sourceSha256": "f82fff04e3da5942a08d0f3ccd9f7fa195573a300dd74cc2452c770745ecf3e9",
+          "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
           "methodStart": 3521,
           "methodEnd": 4489,
           "methodSha256": "7aceaa3f145f04c437f46c7b45f89ed36c315f5a7ff53852dedf54ac970b1bd0",
@@ -12903,9 +12903,9 @@
         {
           "candidateTest": "PredefinedNameBindingContractTest.unknownQualifiedTargetsFailAndBareLenBindsTheActualCallTarget",
           "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
-          "sourceSha256": "f82fff04e3da5942a08d0f3ccd9f7fa195573a300dd74cc2452c770745ecf3e9",
-          "methodStart": 9867,
-          "methodEnd": 11767,
+          "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
+          "methodStart": 11210,
+          "methodEnd": 13110,
           "methodSha256": "25583fd145a7d1cab99c363e445cb27c5cda95c66f2f2afe7f028d2c9f020fe3",
           "assertionFragments": [
             "INTERLIS.NoSuchDomain",
@@ -14050,7 +14050,7 @@
   },
   "grammarInventory": {
     "path": "g2-grammar-inventory.json",
-    "sha256": "f935941ae2c7e3608c1a63060bbd80d787545d5644ef2596319dfa76b7acfedd",
+    "sha256": "3fde28e788cfe0f408a17484e9b32090e6b48826019eae3b2f46796ea1e1a122",
     "acceptance": "PLANNED_NOT_ACCEPTED",
     "productions": 321,
     "occurrences": 1225,
@@ -14081,9 +14081,9 @@
   },
   "testCandidateIndex": {
     "path": "g2-test-candidate-index.json",
-    "sha256": "2c1d88136f7e00c6246cb8347215f76cf821d986f16f7599a4441b57db825a14",
+    "sha256": "bc0e129ecb16203defc202efc4cb8ef9f741478d2d2c7b176b4b6ed7d125942d",
     "acceptance": "CANDIDATE_ONLY",
-    "testMethods": 738,
+    "testMethods": 749,
     "conditions": 621,
     "requirements": 80,
     "withCandidate": 669,

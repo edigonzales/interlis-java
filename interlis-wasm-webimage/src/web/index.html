@@ -6,13 +6,15 @@
 <pre id="out">loading…</pre>
 <script src="interlis-compiler.js"></script>
 <script src="stabilization-contract.js"></script>
+<script src="token-classification-contract.js"></script>
 <script>
 window.webImageProbe = (async () => {
   for (let i = 0; i < 200 && typeof globalThis.interlisCompilerHandle !== 'function'; i++) {
     await new Promise(r => setTimeout(r, 50));
   }
   if (typeof globalThis.interlisCompilerHandle !== 'function') {
-    return {status: 'no-handle'};
+    const corpusRegressionCases = await globalThis.verifyTokenClassification({handle:globalThis.interlisCompilerHandle});
+  return {status: 'no-handle'};
   }
   const call = (operation, sessionId, params) => JSON.parse(
       globalThis.interlisCompilerHandle(JSON.stringify({
@@ -49,6 +51,7 @@ END WebImage.
   });
   return {status: capabilities.status,
     stabilizationCases,
+    corpusRegressionCases,
     tool: capabilities.result && capabilities.result.toolVersion,
     outcome: compile.result && compile.result.outcome};
 })();

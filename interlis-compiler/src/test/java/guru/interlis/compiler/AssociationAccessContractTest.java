@@ -199,4 +199,34 @@ class AssociationAccessContractTest {
                 .map(PathStep.AssociationAccessStep.class::cast).findFirst().orElseThrow();
         assertEquals("Derived", graph.symbol(access.association()).orElseThrow().name().value());
     }
+
+    @Test void pathsKeepRoleAccessInTheReachedObjectTopic() {
+        for (String version : List.of("2.3", "2.4")) {
+            var result = succeeds(version, """
+                    TOPIC Base = OID AS INTERLIS.UUIDOID;
+                      CLASS A = END A; CLASS B = END B;
+                      ASSOCIATION AB = a -- {1} A; b -- {1..*} B; END AB;
+                    END Base;
+                    TOPIC Use = OID AS INTERLIS.UUIDOID; DEPENDS ON Base;
+                      CLASS C = END C;
+                      ASSOCIATION CA = c -- {1} C; a (EXTERNAL) -- {1} F.Base.A; END CA;
+                      CONSTRAINTS OF C = MANDATORY CONSTRAINT INTERLIS.objectCount(a->b)>0; END;
+                      VIEW V PROJECTION OF src~F.Base.A; =
+                        MANDATORY CONSTRAINT INTERLIS.objectCount(b)>0;
+                      END V;
+                    END Use;
+                    """);
+            var graph = result.schema().semanticGraph();
+            var accesses = graph.expressions().stream().filter(PathExpression.class::isInstance)
+                    .map(PathExpression.class::cast).flatMap(p -> p.path().steps().stream())
+                    .filter(PathStep.AssociationAccessStep.class::isInstance)
+                    .map(PathStep.AssociationAccessStep.class::cast)
+                    .filter(a -> graph.symbol(a.targetRole()).orElseThrow().name().value().equals("b")).toList();
+            assertEquals(2, accesses.size());
+            for (var access : accesses) {
+                assertEquals("AB", graph.symbol(access.association()).orElseThrow().name().value());
+                assertTrue(((ObjectArgumentType) graph.type(access.resultType()).orElseThrow()).objects());
+            }
+        }
+    }
 }

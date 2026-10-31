@@ -66,6 +66,7 @@ tasks.register('checkBrowser') {
     def browserModule = subprojects.find { it.name == 'interlis-wasm-teavm' }
     if (browserModule != null) {
         dependsOn "${browserModule.path}:browserContractTest"
+        dependsOn "${browserModule.path}:uiProjectionTest"
         dependsOn "${browserModule.path}:safariContractTest"
         def webimage = subprojects.find { it.name == 'interlis-wasm-webimage' }
         if (webimage != null) {
@@ -124,11 +125,53 @@ tasks.register('browserBenchmark', Exec) {
     commandLine nodeExecutable.get(), 'interlis-wasm-teavm/browser-benchmark.cjs'
 }
 
-tasks.register('performanceCheck') {
-    group = 'verification'
-    description = 'Pins the corpus and refreshes JVM, WasmGC and browser measurements.'
-    dependsOn 'geoCorpus', 'jvmBenchmark', 'wasmBenchmark', 'browserBenchmark'
+// The historical 13-root benchmark tasks remain individually reproducible.
+// P3 requires the complete pinned closure profile with no browser exceptions.
+tasks.register('fullCorpusWasm', Exec) {
+    dependsOn 'fullCorpusJvm', 'checkNodeRuntime', ':interlis-wasm-teavm:buildWasmGC'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/performance/full-corpus-node.cjs'
 }
+tasks.register('fullCorpusBrowsers', Exec) {
+    dependsOn 'fullCorpusWasm', ':interlis-wasm-teavm:prepareBrowserHarness'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/performance/full-corpus-browser.cjs'
+}
+tasks.register('fullCorpusSafari', Exec) {
+    dependsOn 'fullCorpusBrowsers'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/performance/full-corpus-browser.cjs', 'safari'
+}
+tasks.register('fullCorpusEditorWasm', Exec) {
+    dependsOn 'fullCorpusSafari', 'fullCorpusArtifacts'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/performance/editor-node.cjs'
+}
+tasks.register('fullCorpusArtifacts', Exec) {
+    dependsOn ':interlis-wasm-teavm:prepareBrowserHarness', 'checkNodeRuntime'
+    workingDir rootProject.projectDir
+    mustRunAfter 'fullCorpusSafari'
+    commandLine nodeExecutable.get(), 'tools/performance/artifacts.cjs'
+}
+tasks.register('performanceCheckerTest', Exec) {
+    dependsOn 'checkNodeRuntime'
+    workingDir rootProject.projectDir
+    mustRunAfter 'observationPressure'
+    commandLine nodeExecutable.get(), '--test', 'tools/performance/check.test.cjs'
+}
+tasks.register('performanceCheck', Exec) {
+    group = 'verification'
+    description = 'Runs all 347 pinned closures on JVM/Node/real browsers, long sessions and fixed fail-closed budgets.'
+    dependsOn 'fullCorpusEditorWasm', 'editorPressure', 'observationPressure', 'fullCorpusArtifacts', 'performanceCheckerTest'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/performance/check.cjs'
+}
+project(':interlis-cli') {
+    tasks.matching { it.name == 'fullCorpusJvm' }.configureEach { dependsOn 'fullCorpus'; mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':sdkProcessCheck', ':sdkPackage', ':legacyCliCheck', ':interlis-wasm-webimage:webImageProbe', ':interlis-wasm-teavm:prepareBrowserHarness' }
+    tasks.matching { it.name == 'editorPressure' }.configureEach { mustRunAfter ':fullCorpusEditorWasm' }
+    tasks.matching { it.name == 'observationPressure' }.configureEach { mustRunAfter 'editorPressure' }
+}
+
 
 tasks.named('wasmBenchmark') { mustRunAfter 'checkPortable', 'checkBrowser', 'conformanceCheck', ':interlis-wasm-webimage:webImageProbe' }
 tasks.named('browserBenchmark') { mustRunAfter 'wasmBenchmark', 'checkPortable', 'checkBrowser', 'conformanceCheck', ':interlis-wasm-webimage:webImageProbe' }

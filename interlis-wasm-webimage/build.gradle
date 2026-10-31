@@ -66,6 +66,9 @@ tasks.register('webImagePrepareBrowser', Copy) {
     description = 'Stages the Web Image browser harness.'
     dependsOn 'webImageBuild'
     from 'src/web'
+    from(project(':interlis-wasm-teavm').file('token-classification-contract.cjs')) {
+        rename { 'token-classification-contract.js' }
+    }
     from(project(':interlis-wasm-teavm').file('stabilization-contract.cjs')) {
         rename { 'stabilization-contract.js' }
     }

@@ -511,7 +511,7 @@
         "SEM-010"
       ],
       "state": "OPEN",
-      "occurrenceCount": 11,
+      "occurrenceCount": 14,
       "acceptance": "PLANNED_NOT_ACCEPTED"
     },
     {
@@ -13879,8 +13879,8 @@
       "source": "interlis-compiler/src/main/antlr/InterlisParser.g4",
       "line": 182,
       "kind": "ALTERNATIVE",
-      "text": "INTERLIS DOT (Name | HALIGNMENT | VALIGNMENT | UUIDOID | ANYOID)",
-      "sha256": "25aa0ac685402753017df96835fff51ee6d7a685d8d1dcd6d1046c968bda2897",
+      "text": "INTERLIS DOT (Name | URI | NAME | BOOLEAN | HALIGNMENT | VALIGNMENT | UUIDOID | ANYOID)",
+      "sha256": "439909ed4ab0607f9667327bf0ec98468cd5f14eebf078b31225ac9b1c7ce442",
       "matrixRule": "SYN:domainRef",
       "matrixRuleSource": "MATRIX",
       "ownerStep": "B2",
@@ -14061,6 +14061,66 @@
       "kind": "OPTIONAL",
       "text": "(Name DOT (Name DOT)*)?",
       "sha256": "3de643c3be0e8648d1a6280a22d0552002a1d37f97d6bc321b271d6fe39420e0",
+      "matrixRule": "SYN:domainRef",
+      "matrixRuleSource": "MATRIX",
+      "ownerStep": "B2",
+      "requirements": [
+        "SYN-004",
+        "SEM-010"
+      ],
+      "state": "OPEN",
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "remainingCause": "Grammar occurrence has an owner step and matrix rule; concrete parser/lexer acceptance and independent review remain open."
+    },
+    {
+      "id": "GRAMMAR:parser:domainRef:root/group2/predefined-URI",
+      "production": "domainRef",
+      "class": "parser",
+      "source": "interlis-compiler/src/main/antlr/InterlisParser.g4",
+      "line": 182,
+      "kind": "ALTERNATIVE",
+      "text": "URI",
+      "sha256": "d70fbad88d0f9eaf2c818d5a20f24c06dcb4a4ef8a2a03f9059683cd625d1551",
+      "matrixRule": "SYN:domainRef",
+      "matrixRuleSource": "MATRIX",
+      "ownerStep": "B2",
+      "requirements": [
+        "SYN-004",
+        "SEM-010"
+      ],
+      "state": "OPEN",
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "remainingCause": "Grammar occurrence has an owner step and matrix rule; concrete parser/lexer acceptance and independent review remain open."
+    },
+    {
+      "id": "GRAMMAR:parser:domainRef:root/group2/predefined-NAME",
+      "production": "domainRef",
+      "class": "parser",
+      "source": "interlis-compiler/src/main/antlr/InterlisParser.g4",
+      "line": 182,
+      "kind": "ALTERNATIVE",
+      "text": "NAME",
+      "sha256": "eaa589322731009980d99891b5c7850ac5172dda7cdf73a533ab403332d7e944",
+      "matrixRule": "SYN:domainRef",
+      "matrixRuleSource": "MATRIX",
+      "ownerStep": "B2",
+      "requirements": [
+        "SYN-004",
+        "SEM-010"
+      ],
+      "state": "OPEN",
+      "acceptance": "PLANNED_NOT_ACCEPTED",
+      "remainingCause": "Grammar occurrence has an owner step and matrix rule; concrete parser/lexer acceptance and independent review remain open."
+    },
+    {
+      "id": "GRAMMAR:parser:domainRef:root/group2/predefined-BOOLEAN",
+      "production": "domainRef",
+      "class": "parser",
+      "source": "interlis-compiler/src/main/antlr/InterlisParser.g4",
+      "line": 182,
+      "kind": "ALTERNATIVE",
+      "text": "BOOLEAN",
+      "sha256": "d10613c3c3aae5ec703acc33fb70f17fa54b6c537efbd6ed8ff2eb728737a295",
       "matrixRule": "SYN:domainRef",
       "matrixRuleSource": "MATRIX",
       "ownerStep": "B2",
@@ -32687,7 +32747,7 @@
   ],
   "validation": {
     "productions": 321,
-    "occurrences": 1225,
+    "occurrences": 1228,
     "parserProductions": 125,
     "lexerProductions": 196,
     "acceptance": "PLANNED_NOT_ACCEPTED"

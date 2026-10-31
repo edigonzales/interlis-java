@@ -46,8 +46,10 @@ END WebImage.
   const stabilizationCases = await require('../interlis-wasm-teavm/stabilization-contract.cjs')({
     handle: globalThis.interlisCompilerHandle
   });
+  const corpusRegressionCases = await require('../interlis-wasm-teavm/token-classification-contract.cjs')({handle:globalThis.interlisCompilerHandle});
   const result = {
     stabilizationCases,
+    corpusRegressionCases,
     status: capabilities.status,
     tool: capabilities.result.toolVersion,
     outcome: compiled.result ? compiled.result.outcome : compiled.status,

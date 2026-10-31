@@ -5409,7 +5409,7 @@
         },
         {
           "source": "build.gradle",
-          "sha256": "ef9fcb2171101ca82349159a43ff81f9efe7205846e334443ab13135ef4d94aa"
+          "sha256": "3087160464070fe997fd0e18611764ea1f9c1960042570ebc735badbd726700d"
         }
       ],
       "resolution": "Modulabhängigkeiten und frischer JVM-/Wasm-/Browserbuild belegen portable Loggingunabhängigkeit."
@@ -5580,11 +5580,11 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "b02160709cdbb5dac4273127824cb4328fc3aba1f164d116d66c32c6a39b16aa"
+          "sha256": "459e36ab0619a1d27e2dc9bedf275dbda3a5d9c74556c739826fc02f728042a9"
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-          "sha256": "511932882a0f7b6e3b36deedad87a0bef5fabcbf83473e44b7da24cc0fc4c4fa"
+          "sha256": "c1b16628120135224aa7ec492eaf8ba0119ad864fde963e255661374f265cccf"
         },
         {
           "source": "docs/spec/05-metamodell-und-typensystem.md",
@@ -5592,7 +5592,7 @@
         },
         {
           "source": "docs/spec/06-kompilierung-und-semantik.md",
-          "sha256": "dbe2525bb6dc044468df9bc9edb411d5c5b8398971c40ab9c97a448452b7f413"
+          "sha256": "65eb29ebabdd695ccd2eedadef74815e17f2ef19fd54317340dc6fcb108fbef4"
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
@@ -5637,11 +5637,11 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "b02160709cdbb5dac4273127824cb4328fc3aba1f164d116d66c32c6a39b16aa"
+          "sha256": "459e36ab0619a1d27e2dc9bedf275dbda3a5d9c74556c739826fc02f728042a9"
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
-          "sha256": "15364f183b02a1c3027a54278f6f41c70d55ed916ffb80a7da4aa8d671ba0dc4"
+          "sha256": "7786722eacf54c4eaed163631bab6743980fb5d5ceba69031628bd1274e41d1f"
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
@@ -6303,7 +6303,10 @@
         "GRAMMAR:parser:domainRef:root/group2/alt3",
         "GRAMMAR:parser:domainRef:root/group2/alt4",
         "GRAMMAR:parser:domainRef:root/group2/alt5",
-        "GRAMMAR:parser:domainRef:root/quantifier2"
+        "GRAMMAR:parser:domainRef:root/quantifier2",
+        "GRAMMAR:parser:domainRef:root/group2/predefined-URI",
+        "GRAMMAR:parser:domainRef:root/group2/predefined-NAME",
+        "GRAMMAR:parser:domainRef:root/group2/predefined-BOOLEAN"
       ],
       "group": "3.8"
     },
@@ -9662,7 +9665,8 @@
         "GeometryInspectionContractTest.customSegmentsPreserveMembersConstraintsAndCanonicalIdentity",
         "GeometryRulesContractTest.surfaceToleranceIsExplicitIn23AndSymbolicIn24",
         "GeometryInspectionContractTest.areaContextsAreBoundAndAllOfRemainsAnExplicitLanguageError",
-        "GeometryRulesContractTest.extensionAndAssignmentUseDifferentToleranceRulesAndRejectWrongFamilies"
+        "GeometryRulesContractTest.extensionAndAssignmentUseDifferentToleranceRulesAndRejectWrongFamilies",
+        "PredefinedBindingContractTest.qualifiedTextAndBooleanDomainsUseCanonicalPredefinedBindingsInBothLanguages"
       ],
       "conditionIds": [
         "NORM:2.4:3.8:C01",
@@ -12007,7 +12011,7 @@
       "methodStart": 2161,
       "methodEnd": 3374,
       "methodSha256": "caf21c922a5535f2a360badb09395e47e20cbfd26ff5fd2deebf8fc4be12d94a",
-      "sourceSha256": "13b41eafb8cbff6885c32fc63d108e01d8a2a0e555cabf5028b4bff2ce80def0",
+      "sourceSha256": "98b14e9e5944a0af0486805ea179ea7a35a441cfec453acf3ddc2f8e481b635d",
       "observations": [
         "TYPE MODEL content",
         "TYPE MODEL"
@@ -12029,10 +12033,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelKindContractTest.java",
       "suite": "guru.interlis.compiler.ModelKindContractTest",
       "method": "symbologyContractedRequirementIsVersionedWhileAdvisoryFamiliesStayAdvisory",
-      "methodStart": 5556,
-      "methodEnd": 6395,
+      "methodStart": 7822,
+      "methodEnd": 8661,
       "methodSha256": "8a6ead9af3a30d57c350f913c11075c90a5af286d900fc0261c9abe3da5d9586",
-      "sourceSha256": "13b41eafb8cbff6885c32fc63d108e01d8a2a0e555cabf5028b4bff2ce80def0",
+      "sourceSha256": "98b14e9e5944a0af0486805ea179ea7a35a441cfec453acf3ddc2f8e481b635d",
       "observations": [
         "SYMBOLOGY/CONTRACTED"
       ]
@@ -12057,7 +12061,7 @@
       "methodStart": 3521,
       "methodEnd": 4489,
       "methodSha256": "7aceaa3f145f04c437f46c7b45f89ed36c315f5a7ff53852dedf54ac970b1bd0",
-      "sourceSha256": "f82fff04e3da5942a08d0f3ccd9f7fa195573a300dd74cc2452c770745ecf3e9",
+      "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
       "observations": [
         "IMPORTS/UNQUALIFIED",
         "qualification"
@@ -12381,7 +12385,7 @@
       "methodStart": 12025,
       "methodEnd": 13120,
       "methodSha256": "d8413ee754f79f4180bf5e09c92e89b342a3f074a9fda60701f571095a959d1c",
-      "sourceSha256": "57211af8f96bdce8c6447d9b4990fde9938a32e6d50e05f75de6a6fb6411770c",
+      "sourceSha256": "1620c8a2297dac4518d02f702f4b181f2face85b469ba54d4370de2b76ad8331",
       "observations": [
         "access/hiding"
       ]
@@ -12431,7 +12435,7 @@
       "methodStart": 5437,
       "methodEnd": 7510,
       "methodSha256": "84e74f92f89184862928d1243338e853d1418002ef91bc557ad76a7941ea69e8",
-      "sourceSha256": "57211af8f96bdce8c6447d9b4990fde9938a32e6d50e05f75de6a6fb6411770c",
+      "sourceSha256": "1620c8a2297dac4518d02f702f4b181f2face85b469ba54d4370de2b76ad8331",
       "observations": [
         "role vs association access",
         "access"
@@ -12598,10 +12602,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedBindingContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedBindingContractTest",
       "method": "predefinedDomainsRetainTypesFinalityOriginAndNavigationTargets",
-      "methodStart": 2043,
-      "methodEnd": 4844,
+      "methodStart": 3990,
+      "methodEnd": 6791,
       "methodSha256": "6d965e0e0923a43432b88bb21131905bf03b94453243fa4bf958c4857d5a4a25",
-      "sourceSha256": "29b5c9106ce337dcd55d696336a6f3f2ea2827d9121f5f5678b669c4bc11f1c8",
+      "sourceSha256": "6f567643e5f74424a1a3ac842c18d97332fe42942924724ad16124df914cca67",
       "observations": [
         "HALIGNMENT/VALIGNMENT predefined domains",
         "HALIGNMENT/VALIGNMENT",
@@ -13435,10 +13439,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewFoundationContractTest.java",
       "suite": "guru.interlis.compiler.ViewFoundationContractTest",
       "method": "inheritedAreaInspectionsCannotBypassTheAllOfProhibition",
-      "methodStart": 1804,
-      "methodEnd": 2834,
+      "methodStart": 3386,
+      "methodEnd": 4416,
       "methodSha256": "db5fba3bf1c365c23b7bd8658f4d75340fc217c7874297cebfb9ec618a52b03f",
-      "sourceSha256": "c7a176cd7085dd52874f10a6a3bea0b9526fb1ab8221520ab59951ea66780028",
+      "sourceSha256": "a6a480ae6fe4f2257523b0ba9f875eb6494b5c3153da70a64cfc0b33e075ece7",
       "observations": [
         "AREA/ALL OF"
       ]
@@ -13513,7 +13517,7 @@
       "methodStart": 3110,
       "methodEnd": 4527,
       "methodSha256": "75a55e0918e7467d7ec338c36578545adcc0cbbf546066094a986921a251279d",
-      "sourceSha256": "69f761eaa080e402c71fef2e750f44c6df7c4bff67fcf394c54fee4b9302893b",
+      "sourceSha256": "97198f5e7dd1872b77d1437975f077f489eee86e820a289c9cdba073f203dfa3",
       "observations": [
         "GENERIC/DEFERRED",
         "CONTEXT/GENERIC"
@@ -13607,10 +13611,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewFoundationContractTest.java",
       "suite": "guru.interlis.compiler.ViewFoundationContractTest",
       "method": "allOfIn24CopiesAssociationRolesInOrderAndPreservesSingleParticipantTargets",
-      "methodStart": 4402,
-      "methodEnd": 6678,
+      "methodStart": 5984,
+      "methodEnd": 8260,
       "methodSha256": "39c997090ca2226dac73a5ce61e4d8ab90ff5c537129530063e1af50e3edfd55",
-      "sourceSha256": "c7a176cd7085dd52874f10a6a3bea0b9526fb1ab8221520ab59951ea66780028",
+      "sourceSha256": "a6a480ae6fe4f2257523b0ba9f875eb6494b5c3153da70a64cfc0b33e075ece7",
       "observations": [
         "ALL OF 2.4"
       ]
@@ -14206,7 +14210,7 @@
       "methodStart": 4533,
       "methodEnd": 5649,
       "methodSha256": "d82dc2e0586ab5b94c74a2a33de97adf7074ec70194cae8414ef02e867bbbb1e",
-      "sourceSha256": "69f761eaa080e402c71fef2e750f44c6df7c4bff67fcf394c54fee4b9302893b",
+      "sourceSha256": "97198f5e7dd1872b77d1437975f077f489eee86e820a289c9cdba073f203dfa3",
       "observations": [
         "concrete/abstract/deferred distinct"
       ]
@@ -14274,7 +14278,7 @@
       "methodStart": 9511,
       "methodEnd": 11775,
       "methodSha256": "d2908994bdbbb722066feb4a7cc78c80ef0d8b2e1c38908ba1b8988003f42bfb",
-      "sourceSha256": "69f761eaa080e402c71fef2e750f44c6df7c4bff67fcf394c54fee4b9302893b",
+      "sourceSha256": "97198f5e7dd1872b77d1437975f077f489eee86e820a289c9cdba073f203dfa3",
       "observations": [
         "import edits"
       ]
@@ -15096,14 +15100,27 @@
       "observations": [
         "PI/LNBASE are exact symbolic constants without fabricated decimal values"
       ]
+    },
+    "PredefinedBindingContractTest.qualifiedTextAndBooleanDomainsUseCanonicalPredefinedBindingsInBothLanguages": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedBindingContractTest.java",
+      "sourceSha256": "6f567643e5f74424a1a3ac842c18d97332fe42942924724ad16124df914cca67",
+      "suite": "guru.interlis.compiler.PredefinedBindingContractTest",
+      "method": "qualifiedTextAndBooleanDomainsUseCanonicalPredefinedBindingsInBothLanguages",
+      "methodStart": 2043,
+      "methodEnd": 3984,
+      "methodSha256": "ca9e78369ddfc5ac2976705fdef0719f57c098c7ab88556290fce56eacd1d3a3",
+      "observations": [
+        "Public compile gate accepts qualified INTERLIS.URI, INTERLIS.NAME and INTERLIS.BOOLEAN in both language versions.",
+        "Canonical predefined domain identity, finality, exact text kind/length and BooleanType are exposed through the published graph and language queries."
+      ]
     }
   },
   "sourcePins": {
     "docs/evidence/stabilization/g2-norm-conditions.json": "c148ddf364826a453d833b4b14bb8bfc0ff74d23e65b6db13d4a4f183adc318a",
-    "docs/evidence/stabilization/g2-grammar-inventory.json": "f935941ae2c7e3608c1a63060bbd80d787545d5644ef2596319dfa76b7acfedd",
+    "docs/evidence/stabilization/g2-grammar-inventory.json": "3fde28e788cfe0f408a17484e9b32090e6b48826019eae3b2f46796ea1e1a122",
     "docs/evidence/stabilization/g2-builtin-inventory.json": "e1c8f2489a31712e807a47ea5a0dbd53d3e43c9218c8167ca66539cb5b1f9a50",
     "docs/evidence/stabilization/g2-spec-contract-inventory.json": "e2bd1dcf3b627987de6c459ff0c5dc99c634215a36e5ea6ad04b7516dd50a968",
-    "testdata/g2/predefined-catalogue.json": "8262c026b8fe465f62a83a5418b1a208d87d3d6ac864aaf24907cb92169994e6",
+    "testdata/g2/predefined-catalogue.json": "cef03fd21b3dbbd76502b73bd5341c06070312bc4566283d287326116ec48332",
     "testdata/g2/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
   }
 }
