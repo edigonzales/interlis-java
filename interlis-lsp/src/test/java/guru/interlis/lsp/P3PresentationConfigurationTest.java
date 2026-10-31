@@ -25,6 +25,28 @@ class P3PresentationConfigurationTest {
             END F.
             """;
 
+    @Test void aValidSmallBudgetReportsResourceCancellationAndCanBeRestored() throws Exception {
+        var server=server();
+        try {
+            open(server,TEXT);
+            server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI))).get(5,TimeUnit.SECONDS);
+            assertDoesNotThrow(()->server.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(JsonParser.parseString("""
+                {"interlis":{"analysisBudget":{"maxSourceUtf16Length":10,"maxTotalSourceUtf16Length":10}}}
+                """))));
+            for(var request:List.<java.util.function.Supplier<CompletableFuture<?>>>of(
+                    ()->server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI))),
+                    ()->server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())))) {
+                var failure=assertThrows(ExecutionException.class,()->request.get().get(5,TimeUnit.SECONDS));
+                var response=assertInstanceOf(org.eclipse.lsp4j.jsonrpc.ResponseErrorException.class,failure.getCause());
+                assertEquals(-32800,response.getResponseError().getCode()); assertTrue(response.getMessage().contains("RESOURCE_LIMIT")); assertNull(response.getResponseError().getData());
+            }
+            server.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(JsonParser.parseString("""
+                {"interlis":{"analysisBudget":{"maxSourceUtf16Length":2097152,"maxTotalSourceUtf16Length":8388608}}}
+                """)));
+            assertFalse(server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI))).get(5,TimeUnit.SECONDS).isEmpty());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
     @Test void tokensFollowBoundSymbolsAndNeverSpanLineSeparatorsAndCommentsFold() throws Exception {
         var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));
         try {

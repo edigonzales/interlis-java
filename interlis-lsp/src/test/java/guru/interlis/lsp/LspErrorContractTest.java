@@ -43,6 +43,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** LSP-016: protocol, language and internal failures produce different answers. */
 class LspErrorContractTest {
+    @Test void compilerFailureIdentitySurvivesTheRpcBoundary() throws Exception {
+        var id=new guru.interlis.execution.FailureId("failure-p3-review-control");
+        var code=new guru.interlis.diagnostics.DiagnosticCode("ILI-INF-0001");
+        var diagnostic=new guru.interlis.diagnostics.Diagnostic(guru.interlis.diagnostics.DiagnosticIds.create(code,guru.interlis.diagnostics.Phase.INFRASTRUCTURE,java.util.Optional.empty(),"diagnostic.internal",List.of()),
+                code,guru.interlis.diagnostics.Severity.ERROR,guru.interlis.diagnostics.Phase.INFRASTRUCTURE,"diagnostic.internal",List.of(),java.util.Optional.empty(),List.of(),java.util.Optional.empty(),List.of(),java.util.Optional.empty(),java.util.Optional.of(id),List.of());
+        var engine=CompilerEngines.create();
+        var failing=(CompilerEngine)Proxy.newProxyInstance(CompilerEngine.class.getClassLoader(),new Class<?>[]{CompilerEngine.class},(proxy,method,args)->{
+            if(method.getName().equals("compile")) throw new guru.interlis.compiler.CompilerInternalException(id,diagnostic,new IllegalStateException("PRIVATE_FAILURE_DETAIL"));
+            try { return method.invoke(engine,args); } catch(InvocationTargetException failure) { throw failure.getCause(); }
+        });
+        try(var harness=new Harness(Workspaces.create(engine,WorkspaceConfiguration.defaults()),failing)) {
+            harness.open("INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = END F.");
+            var failure=assertThrows(ExecutionException.class,()->harness.compileAsync().get(5,TimeUnit.SECONDS));
+            var response=(ResponseErrorException)failure.getCause();
+            assertEquals(-32603,response.getResponseError().getCode()); assertTrue(response.getMessage().contains(id.value()));
+            org.junit.jupiter.api.Assertions.assertNull(response.getResponseError().getData()); assertTrue(!response.getMessage().contains("PRIVATE_FAILURE_DETAIL"));
+        }
+    }
     @Test void malformedCommandsReturnInvalidParamsWithoutThrowableData() throws Exception {
         try(var harness=new Harness(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()))) {
             for(var arguments:List.of(List.of(7),List.of(Map.of("uri",42)),List.of(Map.of("uri","memory:/x","symbolIds",List.of(3))),

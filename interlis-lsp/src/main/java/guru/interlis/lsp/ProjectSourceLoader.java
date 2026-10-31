@@ -14,7 +14,7 @@ import java.util.*;
 /** Bounded local project IO; model headers and imports remain compiler responsibilities. */
 final class ProjectSourceLoader {
     private static final Set<String> EXCLUDED=Set.of(".git",".gradle","build","node_modules");
-    record FileContent(Path path,Path realPath,LoadedSource loaded,boolean editable,List<Path> roots) {
+    record FileContent(Path path,Path realPath,Optional<Object> fileKey,LoadedSource loaded,boolean editable,List<Path> roots) {
         FileContent { roots=List.copyOf(roots); }
     }
     record Project(List<Path> roots,List<FileContent> files) {
@@ -30,17 +30,17 @@ final class ProjectSourceLoader {
                 // Real paths are used only for editable-root containment checks.
                 Path root=local(uri);
                 if(!Files.isDirectory(root)) throw error(ResponseErrorCode.InvalidParams,"workspace root is not a directory");
-                roots.add(root.toRealPath());
-                Files.walkFileTree(root,new SimpleFileVisitor<>() {
+                Path realRoot=root.toRealPath(); roots.add(realRoot);
+                Files.walkFileTree(realRoot,new SimpleFileVisitor<>() {
                     @Override public FileVisitResult preVisitDirectory(Path directory,BasicFileAttributes attributes) {
                         token.throwIfCancellationRequested();
-                        return !directory.equals(root) && EXCLUDED.contains(directory.getFileName().toString())
+                        return !directory.equals(realRoot) && EXCLUDED.contains(directory.getFileName().toString())
                                 ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
                     }
                     @Override public FileVisitResult visitFile(Path file,BasicFileAttributes attributes) {
                         token.throwIfCancellationRequested();
                         if(file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".ili") && Files.isRegularFile(file)) {
-                            paths.add(file.toAbsolutePath().normalize());
+                            paths.add(root.resolve(realRoot.relativize(file)).toAbsolutePath().normalize());
                             if(paths.size()>10_000) throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
                         }
                         return FileVisitResult.CONTINUE;
@@ -61,11 +61,13 @@ final class ProjectSourceLoader {
     Optional<FileContent> read(String uri,List<Path> roots,CancellationToken token) {
         Path path=local(uri);
         try {
-            Files.readAttributes(path,BasicFileAttributes.class);
+            var before=Files.readAttributes(path,BasicFileAttributes.class);
             var source=new FileSourceLoader(path.getParent()).load(new SourceLocator(path.toString()),FetchPolicy.defaults(),token);
             Path real=path.toRealPath();
+            var after=Files.readAttributes(real,BasicFileAttributes.class);
+            if(!Objects.equals(before.fileKey(),after.fileKey())) throw error(ResponseErrorCode.ContentModified,"source identity changed during load");
             boolean editable=roots.stream().anyMatch(real::startsWith) && Files.isWritable(real);
-            return Optional.of(new FileContent(path,real,source,editable,roots));
+            return Optional.of(new FileContent(path,real,Optional.ofNullable(after.fileKey()),source,editable,roots));
         } catch(NoSuchFileException missing) { return Optional.empty(); }
         catch(SourceLoadException failure) {
             if(failure.reason()==SourceLoadException.Reason.NOT_FOUND) return Optional.empty();
@@ -82,6 +84,16 @@ final class ProjectSourceLoader {
                 throw error(ResponseErrorCode.ContentModified,"CONTENT_MODIFIED: closed source changed on disk");
             if(!current.get().editable()) throw error(ResponseErrorCode.RequestFailed,"closed source is not editable");
         }
+    }
+
+    boolean sameFile(FileContent file,String uri,CancellationToken token) {
+        token.throwIfCancellationRequested();
+        try {
+            Path candidate=local(uri);
+            Object key=Files.readAttributes(candidate,BasicFileAttributes.class).fileKey();
+            return file.fileKey().isPresent() && key!=null?file.fileKey().orElseThrow().equals(key):Files.isSameFile(file.realPath(),candidate);
+        }
+        catch(IOException | ResponseErrorException unavailable) { return false; }
     }
 
     private static Path local(String uri) {

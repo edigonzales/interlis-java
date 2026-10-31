@@ -439,6 +439,38 @@ Die [LSP-Diagnostikspezifikation](https://github.com/microsoft/language-server-p
 
 ### 6.3 Scheduling und Fehlerfälle
 
+Das gleiche Konfigurationsobjekt kann in `initialize.initializationOptions`
+übergeben werden; es wird vor der Projektaufnahme validiert und übernommen.
+Discovery-Grenzen (10000 Dateien/32 Millionen UTF-16-Einheiten) ersetzen nicht
+die Compilerbudgets (standardmässig 2097152 Einheiten pro Quelle und 8388608
+gesamt). Eine überschrittene Projektquellgrenze ergibt einen sicheren
+`RequestFailed` mit `SOURCE_LIMIT_EXCEEDED`; eine erschöpfte Analysegrenze
+`RequestCancelled` mit dem ursprünglichen `CancellationReason`, insbesondere
+`RESOURCE_LIMIT`. Der Zustand kann durch passende explizite Konfiguration
+beziehungsweise einen neuen Initialisierungsversuch mit neuen Serverressourcen
+wiederhergestellt werden; Limits werden nicht automatisch angehoben.
+
+Abgelehnte `didOpen`-/`didChange`-Updates erhalten ihre ursprüngliche sichere
+Ablehnungskennung im Betriebskanal. Der abgelehnte Clienttext wird nicht als
+angenommene Quelle ausgegeben oder zusätzlich für die Wiederaufnahme gehalten.
+Bis zum gültigen Vollersatz, Wiederöffnen oder Schliessen verweigert das
+anfängliche sichere Profil Sprachabfragen und Compile mit `ContentModified`;
+es gibt keinen stillen Erfolg auf dem vorherigen Text. Clientversionen der
+abgelehnten Generation bleiben für die anschliessende Resynchronisation bekannt.
+Ein interner Compilerfehler behält dieselbe `FailureId` in Antwort und
+Betriebsmeldung; technische Exceptions bleiben vom RPC-Datenobjekt ausgeschlossen.
+
+Die Dateiidentität wird auf der I/O-Seite mit realen Pfaden beziehungsweise
+Dateischlüsseln bestimmt. Bekanntes logisches SourceId-Mapping bleibt erhalten;
+die exakte offene Client-URI wird getrennt für Diagnostik, Navigation und
+Versionsedits benutzt. Alias-Watcher erzeugen keine zweite Compilerquelle und
+überschreiben keine offene Clientquelle. Ein symlinkter Workspace-Root wird
+über seinen realen Ordner durchsucht, mit logischen Pfaden für die aufgenommenen
+Dateien. Hardlink-Aliasse behalten das explizite editierbare Primärmapping.
+Bei Löschmeldungen wird der aktuelle Zustand über den I/O-Adapter geprüft;
+das Entfernen eines Alias allein entfernt keine weiterhin vorhandene Primärdatei.
+Die Identitätsablage ist auf 40000 Pfadzuordnungen begrenzt.
+
 Das P3-Hostprofil benutzt eine begrenzte Ownerqueue, zwei Analyseplätze und
 höchstens einen neuesten ausstehenden Capture. Explizite Compiles laufen
 abgetrennt und besitzen eigene Abbruchtoken/Laufkontexte. Auch Anfragen,

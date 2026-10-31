@@ -5492,7 +5492,7 @@
         },
         {
           "source": "interlis-lsp/src/main/java/guru/interlis/lsp/InterlisLanguageServer.java",
-          "sha256": "b0a501a4c1f16c2f690daff4fc3ffea873f84e729b065396e38c03c786ae0634"
+          "sha256": "bfa1a736372ca408f2058e153d13a00ef8179d775d87bf69ad9af038897194b2"
         }
       ],
       "resolution": "Frischer tatsächlicher LSP-stdio-Prozesstest und eigene Adapter; stdout enthält ausschliesslich JSON-RPC."
@@ -5596,7 +5596,7 @@
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-          "sha256": "304af27e6b7218c64c377610d14bd884ab4f1b08ded925a68240255eda97db29"
+          "sha256": "bb1382f1ff2c7b1470a44c0e62e67920939ee1ce628d41efdb7a6393b5de6842"
         }
       ],
       "resolution": "Fach-/Register-/Javadocreview ist eine Inspektionsabnahme; öffentliche Invarianten zusätzlich direkt getestet."
@@ -14362,10 +14362,10 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspFeatureTest.java",
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "oldDocumentVersionsAreIgnoredAndClosingRestoresDiskText",
-      "methodStart": 13453,
-      "methodEnd": 14909,
+      "methodStart": 13627,
+      "methodEnd": 15083,
       "methodSha256": "0213a5722db90db83a72c5faa28a18cd4de238a81d2687ea8ad81152b74d51ef",
-      "sourceSha256": "c94771fa74baaff24399e4534c1b2492e76a7554432bd24cebb2c84fde56f7d7",
+      "sourceSha256": "4af4a08233828553d26611abdbb5a8172917e3e79d081a01ed72af12278e5bcf",
       "observations": [
         "close/reopen restores disk text"
       ]
@@ -14618,7 +14618,7 @@
       "methodStart": 10659,
       "methodEnd": 11935,
       "methodSha256": "16dbba9ec80f4d7349782d4f99fa57d59ff35bffc2534704f309acba258b4f5d",
-      "sourceSha256": "c94771fa74baaff24399e4534c1b2492e76a7554432bd24cebb2c84fde56f7d7",
+      "sourceSha256": "4af4a08233828553d26611abdbb5a8172917e3e79d081a01ed72af12278e5bcf",
       "observations": [
         "changed document rejected"
       ]
@@ -14678,9 +14678,9 @@
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "configurationAndWatchedFilesRefreshAreAccepted",
       "methodStart": 11941,
-      "methodEnd": 13447,
-      "methodSha256": "e23c330d0fb38fd340f08dbff3ec5e0e3139edb6d95d5c46c8c2b683b76a8455",
-      "sourceSha256": "c94771fa74baaff24399e4534c1b2492e76a7554432bd24cebb2c84fde56f7d7",
+      "methodEnd": 13621,
+      "methodSha256": "e4154d9f3a5b4d7f3187108fb6e9f04d3a522b9a9ad7c4e14bc15f920062bc59",
+      "sourceSha256": "4af4a08233828553d26611abdbb5a8172917e3e79d081a01ed72af12278e5bcf",
       "observations": [
         "operations"
       ]

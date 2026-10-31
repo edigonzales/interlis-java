@@ -21,6 +21,11 @@ final class LspFailures {
         while((failure instanceof java.util.concurrent.CompletionException || failure instanceof java.util.concurrent.ExecutionException)
                 && failure.getCause()!=null) failure=failure.getCause();
         if(failure instanceof ResponseErrorException || failure instanceof java.util.concurrent.CancellationException) return failure;
+        if(failure instanceof guru.interlis.execution.OperationCancelledException cancelled)
+            return error(ResponseErrorCode.RequestCancelled,"operation cancelled: "+cancelled.reason());
+        if(failure instanceof guru.interlis.workspace.UpdateRejectedException rejected)
+            return error(rejected.code()==guru.interlis.workspace.UpdateRejectionCode.VERSION_CONFLICT?ResponseErrorCode.ContentModified:ResponseErrorCode.RequestFailed,
+                    "workspace update rejected: "+rejected.code());
         return internal(failure,operations);
     }
 }

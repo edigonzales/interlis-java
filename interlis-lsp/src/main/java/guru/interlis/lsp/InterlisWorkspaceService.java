@@ -83,6 +83,8 @@ final class InterlisWorkspaceService implements WorkspaceService {
                 catch(OperationCancelledException cancelled) { result.completeExceptionally(LspFailures.error(
                         org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.RequestCancelled,"file operation cancelled: "+cancelled.reason())); }
                 catch(org.eclipse.lsp4j.jsonrpc.ResponseErrorException expected) { result.completeExceptionally(expected); }
+                catch(guru.interlis.workspace.UpdateRejectedException rejected) { result.completeExceptionally(LspFailures.error(
+                        org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.RequestFailed,"workspace update rejected: "+rejected.code())); }
                 catch(RuntimeException failure) { result.completeExceptionally(LspFailures.internal(failure,documents::operation)); }
             });
         } catch(java.util.concurrent.RejectedExecutionException full) {
@@ -98,13 +100,18 @@ final class InterlisWorkspaceService implements WorkspaceService {
         };
     }
 
-    private void reloadFile(String uri) {
+    private void reloadFile(String requestedUri) {
+        if(requestedUri==null) return;
+        String uri=documents.canonicalUri(requestedUri);
         if(uri==null || !uri.startsWith("file:") || documents.isOpen(uri)) return;
         long request=nextFileRequest.incrementAndGet(); fileRequests.put(uri,request);
+        var known=documents.fileSources();
         documents.beginExternal(uri,request);
         requestIo(token -> {
             var loaded=files.read(uri,roots,token); token.throwIfCancellationRequested();
-            documents.applyExternal(uri,request,loaded,() -> !token.isCancellationRequested() && fileRequests.getOrDefault(uri,0L)==request);
+            var openAlias=known.containsKey(new SourceId(uri))?java.util.Optional.of(new SourceId(uri)):
+                    loaded.flatMap(file -> known.entrySet().stream().filter(entry -> files.sameFile(file,entry.getValue(),token)).map(Map.Entry::getKey).findFirst());
+            documents.applyExternal(uri,request,loaded,openAlias,() -> !token.isCancellationRequested() && fileRequests.getOrDefault(uri,0L)==request);
             return null;
         }).exceptionally(failure -> {
             try { documents.externalFailed(uri,request,failure); } catch(RuntimeException closed) { }
@@ -125,8 +132,9 @@ final class InterlisWorkspaceService implements WorkspaceService {
         for (var event : params.getChanges()) {
             if(documents.isOpen(event.getUri())) continue;
             if (event.getType() == FileChangeType.Deleted) {
-                fileRequests.put(event.getUri(),nextFileRequest.incrementAndGet());
-                documents.deleteExternal(event.getUri());
+                String uri=documents.canonicalUri(event.getUri());
+                documents.forgetFileAlias(event.getUri());
+                reloadFile(uri);
                 continue;
             }
             reloadFile(event.getUri());

@@ -72,6 +72,8 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
                 org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,"initialize parameters are required"));
         if(shutdown || !initializeStarted.compareAndSet(false,true)) return CompletableFuture.failedFuture(LspFailures.error(
                 org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidRequest,"initialize may run only once"));
+        try { if(params.getInitializationOptions()!=null) textDocuments.initializeConfiguration(params.getInitializationOptions()); }
+        catch(RuntimeException invalid) { return CompletableFuture.failedFuture(LspFailures.response(invalid,textDocuments::operation)); }
         var client=params.getCapabilities();
         boolean versioned=client!=null && client.getWorkspace()!=null && client.getWorkspace().getWorkspaceEdit()!=null
                 && Boolean.TRUE.equals(client.getWorkspace().getWorkspaceEdit().getDocumentChanges());

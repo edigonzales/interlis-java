@@ -42,6 +42,7 @@ final class AnalysisScheduler implements AutoCloseable {
     private Job pending;
     private boolean current;
     private WorkspaceRevision acceptedRevision;
+    private ResponseErrorException captureFailure;
     private final Set<CompletableFuture<CompilationOutcome>> compiles = new LinkedHashSet<>();
 
     AnalysisScheduler(Workspace workspace, CompilerEngine engine, CompilerServices services,
@@ -73,6 +74,7 @@ final class AnalysisScheduler implements AutoCloseable {
         requireOwner();
         generation++;
         current = false;
+        captureFailure=null;
         running.forEach(job -> job.cancelled.set(true));
         pending = null;
         for (var query : List.copyOf(queries)) query.result.completeExceptionally(changed());
@@ -86,7 +88,13 @@ final class AnalysisScheduler implements AutoCloseable {
         if (workspace.state().sourceRevisions().isEmpty()) return;
         var roots = workspace.state().sourceRevisions().keySet().stream()
                 .<ModelSelector>map(ModelSelector.BySource::new).toList();
-        var capture = workspace.capture(new AnalysisRequest(workspace.currentRevision(), roots));
+        WorkspaceCapture capture;
+        try { capture=workspace.capture(new AnalysisRequest(workspace.currentRevision(), roots)); }
+        catch(OperationCancelledException cancelled) {
+            captureFailure=error(ResponseErrorCode.RequestCancelled,"analysis capture cancelled: "+cancelled.reason());
+            try { operations.accept("Analysis unavailable: "+cancelled.reason()); } catch(RuntimeException unavailable) { }
+            return;
+        }
         var job = new Job(generation, capture);
         if (running.size() < 2) launch(job);
         else pending = job;
@@ -103,10 +111,12 @@ final class AnalysisScheduler implements AutoCloseable {
             if(result.isDone()) return;
             activeQueries.add(result);
             if(current && !workspace.currentRevision().equals(acceptedRevision)) schedule();
+            if(captureFailure!=null) { result.completeExceptionally(captureFailure); return; }
             if (current || workspace.state().sourceRevisions().isEmpty()) {
                 invoke(new PendingQuery<>(generation, action, result));
             } else {
                 if (running.stream().noneMatch(job -> job.generation == generation) && pending == null) schedule();
+                if(captureFailure!=null) { result.completeExceptionally(captureFailure); return; }
                 if (queries.size() >= 128) {
                     result.completeExceptionally(error(ResponseErrorCode.RequestFailed, "language request queue is full"));
                     return;
@@ -201,9 +211,13 @@ final class AnalysisScheduler implements AutoCloseable {
                 for (var query : List.copyOf(queries)) invoke(query);
                 queries.clear();
             } else {
-                var error = failure instanceof OperationCancelledException
-                        ? error(ResponseErrorCode.RequestCancelled, "analysis was cancelled")
+                var error = failure instanceof OperationCancelledException cancelled
+                        ? error(ResponseErrorCode.RequestCancelled, "analysis cancelled: "+cancelled.reason())
                         : failure == null ? changed() : internal(failure);
+                if(failure instanceof OperationCancelledException cancelled) {
+                    captureFailure=error;
+                    try { operations.accept("Analysis unavailable: "+cancelled.reason()); } catch(RuntimeException unavailable) { }
+                }
                 for (var query : List.copyOf(queries)) query.result.completeExceptionally(error);
                 queries.clear();
             }
@@ -239,10 +253,7 @@ final class AnalysisScheduler implements AutoCloseable {
     }
 
     private ResponseErrorException internal(RuntimeException failure) {
-        String id = "lsp-" + UUID.randomUUID();
-        try { operations.accept("Internal language service failure " + id); }
-        catch(RuntimeException unavailable) { /* the transport may already be closed */ }
-        return error(ResponseErrorCode.InternalError, "internal language service failure " + id);
+        return LspFailures.internal(failure,operations);
     }
 
     private void enqueue(Runnable action, CompletableFuture<?> result) {
@@ -251,7 +262,7 @@ final class AnalysisScheduler implements AutoCloseable {
             if(closed) { if(result!=null) result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"server is closed")); return; }
             try { action.run(); }
             catch(RuntimeException failure) {
-                var response=internal(failure);
+                var response=LspFailures.response(failure,operations);
                 if(result!=null) result.completeExceptionally(response);
                 else {
                     var waiting=List.copyOf(queries);

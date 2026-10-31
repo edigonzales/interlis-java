@@ -118,6 +118,103 @@ class P3ProjectRenameTest {
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
+    @Test void watcherAliasesReferToTheExistingPhysicalSourceAndKeepOpenClientAuthority() throws Exception {
+        Path folder=project(),alias=temporary.resolve("project-alias");
+        Files.createSymbolicLink(alias,folder);
+        var publications=new ConcurrentLinkedQueue<PublishDiagnosticsParams>();
+        var server=open(alias,true,null,publications);
+        Path root=alias.resolve("Root.ili"),base=alias.resolve("Base.ili");
+        try {
+            ready(server,root);
+            assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+            assertTrue(publications.stream().filter(value->value.getUri().equals(root.toUri().toString())).toList().getLast().getDiagnostics().isEmpty());
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(
+                    new FileEvent(base.toRealPath().toUri().toString(),FileChangeType.Changed),
+                    new FileEvent(root.toRealPath().toUri().toString(),FileChangeType.Changed))));
+            ready(server,root);
+            assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+            assertTrue(server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text().contains("unsaved 😀"));
+            var latest=publications.stream().filter(value->value.getUri().equals(root.toUri().toString())).toList().getLast();
+            assertTrue(latest.getDiagnostics().isEmpty(),latest.toString());
+            assertEquals(5,latest.getVersion());
+            assertEquals(2,rename(server,root).getDocumentChanges().size());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void reopeningThroughARealSingleSlashUriPreservesClientVersionsAndEditUris() throws Exception {
+        Path folder=project(),alias=temporary.resolve("reopen-alias"); Files.createSymbolicLink(alias,folder);
+        Path root=alias.resolve("Root.ili"); var publications=new ConcurrentLinkedQueue<PublishDiagnosticsParams>();
+        var server=open(alias,true,null,publications);
+        String clientUri=root.toRealPath().toUri().toString().replace("file:///","file:/");
+        try {
+            ready(server,root);
+            server.getTextDocumentService().didClose(new DidCloseTextDocumentParams(new TextDocumentIdentifier(root.toUri().toString())));
+            server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(clientUri,"interlis",7,ROOT+"\n!! real client 😀")));
+            var selected=new TextDocumentIdentifier(clientUri);
+            assertFalse(server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(selected)).get(5,TimeUnit.SECONDS).isEmpty());
+            assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+            String current=server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text();
+            assertTrue(current.contains("real client 😀"),current+"\n"+server.workspaceForTest().state());
+            var latest=publications.stream().filter(value->value.getUri().equals(clientUri)).toList().getLast();
+            assertEquals(7,latest.getVersion()); assertTrue(latest.getDiagnostics().isEmpty(),latest.toString());
+            var edit=server.getTextDocumentService().rename(new RenameParams(selected,cursor(),"Renamed")).get(5,TimeUnit.SECONDS);
+            var opened=edit.getDocumentChanges().stream().map(value->value.getLeft().getTextDocument()).filter(value->value.getVersion()!=null).findFirst().orElseThrow();
+            assertEquals(clientUri,opened.getUri()); assertEquals(7,opened.getVersion());
+            assertNotNull(server.getTextDocumentService().hover(new HoverParams(new TextDocumentIdentifier(root.toUri().toString()),cursor())).get(5,TimeUnit.SECONDS));
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void unknownWatcherAliasesOfOpenFilesWithoutAProjectNeverReplaceClientBuffers() throws Exception {
+        Path folder=project(),alias=temporary.resolve("unmapped-alias"); Files.createSymbolicLink(alias,folder);
+        var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));
+        server.initialize(new InitializeParams()).get(5,TimeUnit.SECONDS);
+        Path root=alias.resolve("Root.ili"),base=alias.resolve("Base.ili");
+        try {
+            for(Path file:List.of(base,root)) server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(file.toUri().toString(),"interlis",1,Files.readString(file)+"\n!! open 😀")));
+            ready(server,root);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(root.toRealPath().toUri().toString(),FileChangeType.Changed))));
+            ready(server,root);
+            assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+            assertTrue(server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text().contains("open 😀"));
+            assertEquals(2,rename(server,root).getChanges().size());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void hardlinkWatcherAliasesDoNotDuplicateOrDeleteTheCanonicalProjectSource() throws Exception {
+        Path folder=project(),root=folder.resolve("Root.ili"),base=folder.resolve("Base.ili"),link=temporary.resolve("Hardlink.ili");
+        var server=open(folder,true,null,null);
+        try {
+            ready(server,root); Files.createLink(link,base);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(link.toUri().toString(),FileChangeType.Changed))));
+            ready(server,root); assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+            assertEquals(2,rename(server,root).getDocumentChanges().size());
+            Files.delete(link);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(link.toUri().toString(),FileChangeType.Deleted))));
+            ready(server,root); assertEquals(BASE,server.workspaceForTest().source(new SourceId(base.toUri().toString())).orElseThrow().text());
+            assertEquals(2,rename(server,root).getDocumentChanges().size());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void oversizedProjectInputHasAControlledSourceLimitFailure() throws Exception {
+        Path folder=Files.createDirectory(temporary.resolve("large-project"));
+        Files.writeString(folder.resolve("Large.ili"),"INTERLIS 2.4; MODEL Large AT \"x\" VERSION \"1\" = END Large.\n!!"+"x".repeat(2_100_000));
+        var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));
+        var initialize=new InitializeParams();initialize.setWorkspaceFolders(List.of(new WorkspaceFolder(folder.toUri().toString(),"Large")));
+        try {
+            var failure=assertThrows(ExecutionException.class,()->server.initialize(initialize).get(5,TimeUnit.SECONDS));
+            var response=assertInstanceOf(ResponseErrorException.class,failure.getCause());
+            assertEquals(ResponseErrorCode.RequestFailed.getValue(),response.getResponseError().getCode());
+            assertTrue(response.getMessage().contains("SOURCE_LIMIT_EXCEEDED")); assertNull(response.getResponseError().getData());
+            assertTrue(server.workspaceForTest().state().sourceRevisions().isEmpty());
+        } finally { server.exit(); }
+        var configured=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));
+        initialize.setInitializationOptions(com.google.gson.JsonParser.parseString("{\"interlis\":{\"analysisBudget\":{\"maxSourceUtf16Length\":2200000}}}"));
+        try {
+            assertNotNull(configured.initialize(initialize).get(5,TimeUnit.SECONDS));
+            assertEquals(1,configured.workspaceForTest().state().sourceRevisions().size());
+        } finally { configured.exit(); }
+    }
+
     private Path project() throws Exception {
         Path folder=Files.createTempDirectory(temporary,"Projekt ä ");
         Files.writeString(folder.resolve("Base.ili"),BASE); Files.writeString(folder.resolve("Root.ili"),ROOT); return folder;

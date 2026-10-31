@@ -101,9 +101,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private final Workspace workspace;
     private final Map<String, DocumentState> documents = new LinkedHashMap<>();
     private final java.util.Set<String> unsynchronized = new java.util.HashSet<>();
+    private record RejectedOpen(SourceId sourceId,int version) { }
+    private final Map<String,RejectedOpen> rejectedOpens=new LinkedHashMap<>();
     private volatile java.util.function.Consumer<String> operations = ignored -> { };
     private final AnalysisScheduler scheduler;
     private final Map<String,ProjectSourceLoader.FileContent> closedFiles = new LinkedHashMap<>();
+    private final Map<java.nio.file.Path,String> fileIdentities=new LinkedHashMap<>();
     private volatile java.util.function.Consumer<String> externalReload;
     private java.util.function.BiFunction<List<ProjectSourceLoader.FileContent>,CancellationToken,CompletableFuture<Void>> verifyFiles =
             (files,token) -> failed(ResponseErrorCode.RequestFailed,"project file service is not initialized");
@@ -135,26 +138,28 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     void close() { scheduler.close(() -> {
         filesReady.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing"));
-        pendingFiles.clear(); closedFiles.clear(); documents.clear(); unsynchronized.clear();
+        pendingFiles.clear(); closedFiles.clear(); fileIdentities.clear(); documents.clear(); rejectedOpens.clear(); unsynchronized.clear();
     }); }
 
     CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
-        return afterFiles(scheduler::compile);
+        return afterFiles(() -> unsynchronized.isEmpty()?scheduler.compile():failed(ResponseErrorCode.ContentModified,"full document resynchronization is required"));
     }
 
     private <T> CompletableFuture<T> requestReady(java.util.function.BiFunction<HostView,CancellationToken,CompletableFuture<T>> action) {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
-        return afterFiles(() -> scheduler.requestNow(token -> {
+        return afterFiles(() -> unsynchronized.isEmpty()?scheduler.requestNow(token -> {
             HostView view=captureView();
             return scheduler.detached(token,() -> action.apply(view,token));
-        }));
+        }):failed(ResponseErrorCode.ContentModified,"full document resynchronization is required"));
     }
 
     private record HostView(Map<String,DocumentState> documents,Map<SourceId,SourceText> sources,
                             Map<String,ProjectSourceLoader.FileContent> closedFiles,java.util.Set<String> unsynchronized,
                             boolean versionedEdits) {
         Optional<SourceText> source(SourceId id) { return Optional.ofNullable(sources.get(id)); }
+        DocumentState open(SourceId id) { return documents.values().stream().filter(state -> state.sourceId.equals(id)).findFirst().orElse(null); }
+        String uri(SourceId id) { return documents.entrySet().stream().filter(entry -> entry.getValue().sourceId.equals(id)).map(Map.Entry::getKey).findFirst().orElse(id.value()); }
     }
 
     private HostView captureView() {
@@ -198,7 +203,38 @@ final class InterlisTextDocumentService implements TextDocumentService {
         return result;
     }
 
-    boolean isOpen(String uri) { return scheduler.onOwner(() -> documents.containsKey(uri)); }
+    boolean isOpen(String uri) { return scheduler.onOwner(() -> openSource(new SourceId(canonicalUriNow(uri)))); }
+    String canonicalUri(String uri) { return scheduler.onOwner(() -> canonicalUriNow(uri)); }
+    Map<SourceId,String> fileSources() {
+        return scheduler.onOwner(() -> {
+            var result=new LinkedHashMap<SourceId,String>();
+            closedFiles.forEach((uri,file) -> result.put(new SourceId(uri),file.path().toUri().toString()));
+            documents.forEach((uri,state) -> result.put(state.sourceId,uri)); rejectedOpens.forEach((uri,state) -> result.put(state.sourceId,uri)); return Map.copyOf(result);
+        });
+    }
+    void forgetFileAlias(String uri) {
+        scheduler.onOwner(() -> { filePath(uri).ifPresent(path -> {
+            String canonical=fileIdentities.get(path);
+            if(canonical!=null && !path.toUri().toString().equals(canonical)) fileIdentities.remove(path);
+        }); return null; });
+    }
+    private boolean openSource(SourceId id) { return documents.values().stream().anyMatch(state -> state.sourceId.equals(id)) || rejectedOpens.values().stream().anyMatch(state -> state.sourceId.equals(id)); }
+    private static Optional<java.nio.file.Path> filePath(String uri) {
+        try { var value=java.net.URI.create(uri); return "file".equalsIgnoreCase(value.getScheme())
+                ? Optional.of(java.nio.file.Path.of(value).toAbsolutePath().normalize()) : Optional.empty(); }
+        catch(IllegalArgumentException invalid) { return Optional.empty(); }
+    }
+    private String canonicalUriNow(String uri) {
+        return filePath(uri).map(path -> fileIdentities.getOrDefault(path,path.toUri().toString())).orElse(uri);
+    }
+    private String rememberFile(ProjectSourceLoader.FileContent file,Optional<SourceId> openAlias) {
+        String uri=openAlias.map(SourceId::value).orElseGet(() -> fileIdentities.getOrDefault(file.realPath(),canonicalUriNow(file.path().toUri().toString())));
+        int added=(fileIdentities.containsKey(file.path())?0:1)
+                +(file.path().equals(file.realPath()) || fileIdentities.containsKey(file.realPath())?0:1);
+        if(fileIdentities.size()+added>40_000)
+            throw LspFailures.error(ResponseErrorCode.RequestFailed,"file identity limit reached");
+        fileIdentities.put(file.path(),uri); fileIdentities.put(file.realPath(),uri); return uri;
+    }
 
     void beginExternal(String uri,long request) {
         scheduler.onOwner(() -> {
@@ -223,8 +259,9 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     void externalFailed(String uri,long request,Throwable failure) {
         scheduler.onOwner(() -> {
-            if(Objects.equals(pendingFiles.get(uri),request) && !documents.containsKey(uri)) {
-                closedFiles.remove(uri); deleteExternalNow(uri);
+            String canonical=canonicalUriNow(uri);
+            if(Objects.equals(pendingFiles.get(uri),request) && !openSource(new SourceId(canonical))) {
+                closedFiles.remove(canonical); deleteExternalNow(canonical);
             }
             finishExternal(uri,request,failure); return null;
         });
@@ -243,12 +280,11 @@ final class InterlisTextDocumentService implements TextDocumentService {
             var updates=new ArrayList<SourceUpdate>();
             var acceptedFiles=new LinkedHashMap<String,ProjectSourceLoader.FileContent>();
             for(var file:project.files()) {
-                var source=file.loaded(); String uri=source.sourceId().value();
-                if(!current.test(uri)) continue;
-                acceptedFiles.put(uri,file);
-                if(documents.containsKey(uri)) continue;
-                var previous=workspace.source(source.sourceId());
-                updates.add(new SourceUpdate(source.sourceId(),previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
+                var source=file.loaded(); if(!current.test(source.sourceId().value())) continue;
+                String uri=rememberFile(file,Optional.empty()); var id=new SourceId(uri);
+                if(acceptedFiles.putIfAbsent(uri,file)!=null || openSource(id)) continue;
+                var previous=workspace.source(id);
+                updates.add(new SourceUpdate(id,previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
                         .orElseGet(SourceExpectation.Absent::new),new SourceChange.Replace(source.text())));
             }
             workspace.applyBatch(updates,workspace.currentRevision());
@@ -256,14 +292,19 @@ final class InterlisTextDocumentService implements TextDocumentService {
         });
     }
 
-    void applyExternal(String uri,long request,Optional<ProjectSourceLoader.FileContent> file,java.util.function.BooleanSupplier current) {
+    void applyExternal(String uri,long request,Optional<ProjectSourceLoader.FileContent> file,Optional<SourceId> openAlias,java.util.function.BooleanSupplier current) {
         scheduler.onOwner(() -> {
             if(!current.getAsBoolean()) return null;
-            if(file.isPresent()) closedFiles.put(uri,file.get()); else closedFiles.remove(uri);
-            if(documents.containsKey(uri)) { finishExternal(uri,request,null); return null; }
-            if(file.isEmpty()) deleteExternalNow(uri);
+            String canonical=file.map(value -> rememberFile(value,openAlias)).orElseGet(() -> canonicalUriNow(uri));
+            if(openSource(new SourceId(canonical))) { finishExternal(uri,request,null); return null; }
+            if(file.isPresent()) {
+                var incoming=file.orElseThrow(); var known=closedFiles.get(canonical);
+                closedFiles.put(canonical,known!=null && !incoming.path().toUri().toString().equals(canonical)
+                        ? new ProjectSourceLoader.FileContent(known.path(),known.realPath(),incoming.fileKey(),incoming.loaded(),known.editable(),known.roots()) : incoming);
+            } else closedFiles.remove(canonical);
+            if(file.isEmpty()) deleteExternalNow(canonical);
             else {
-                var id=new SourceId(uri); var previous=workspace.source(id);
+                var id=new SourceId(canonical); var previous=workspace.source(id);
                 workspace.update(new SourceUpdate(id,previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
                         .orElseGet(SourceExpectation.Absent::new),new SourceChange.Replace(file.get().loaded().text())));
             }
@@ -281,20 +322,31 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private void didOpenNow(DidOpenTextDocumentParams params) {
         documentGeneration++;
-        String uri = params.getTextDocument().getUri();
-        String text = params.getTextDocument().getText();
-        SourceId sourceId = new SourceId(uri);
-        unsynchronized.remove(uri);
-        var existing = workspace.source(sourceId);
-        if (existing.isEmpty()) {
-            workspace.update(new SourceUpdate(sourceId, new SourceExpectation.Absent(),
-                    new SourceChange.Replace(text)));
-        } else {
-            workspace.update(new SourceUpdate(sourceId,
-                    new SourceExpectation.At(existing.get().revision()),
-                    new SourceChange.Replace(text)));
+        String uri=params.getTextDocument().getUri();
+        SourceId id=new SourceId(canonicalUriNow(uri));
+        if(documents.entrySet().stream().anyMatch(entry -> !entry.getKey().equals(uri) && entry.getValue().sourceId.equals(id))) {
+            operation("Document is already open under another URI"); return;
         }
-        analyze(uri, params.getTextDocument().getVersion());
+        try { replaceSource(id,params.getTextDocument().getText()); }
+        catch(guru.interlis.workspace.UpdateRejectedException rejected) {
+            rejectDocument(uri,id,params.getTextDocument().getVersion(),rejected.code().name()); return;
+        }
+        rejectedOpens.remove(uri); unsynchronized.remove(uri);
+        analyze(uri,params.getTextDocument().getVersion());
+    }
+
+    private void replaceSource(SourceId id,String text) {
+        var existing=workspace.source(id);
+        workspace.update(new SourceUpdate(id,existing.<SourceExpectation>map(source -> new SourceExpectation.At(source.revision()))
+                .orElseGet(SourceExpectation.Absent::new),new SourceChange.Replace(text)));
+    }
+
+    private void rejectDocument(String uri,SourceId id,int version,String code) {
+        var previous=documents.get(uri);
+        if(previous!=null) documents.put(uri,new DocumentState(id,version,previous.source,null));
+        else rejectedOpens.put(uri,new RejectedOpen(id,version));
+        unsynchronized.add(uri); scheduler.invalidate();
+        operation("Document update rejected: "+code+"; full document resynchronization is required (full replacement or reopen).");
     }
 
     @Override
@@ -304,36 +356,28 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void didChangeNow(DidChangeTextDocumentParams params) {
-        String uri = params.getTextDocument().getUri();
-        DocumentState previous = documents.get(uri);
-        if (previous == null || params.getTextDocument().getVersion() <= previous.lspVersion) {
-            return;
-        }
+        String uri=params.getTextDocument().getUri();
+        var previous=documents.get(uri); var rejected=rejectedOpens.get(uri);
+        int version=params.getTextDocument().getVersion();
+        if(previous==null && rejected==null) return;
+        if(version<=(previous!=null?previous.lspVersion:rejected.version)) return;
         documentGeneration++;
-        SourceId sourceId = new SourceId(uri);
-        SourceText current = workspace.source(sourceId).orElseThrow(
-                () -> new IllegalStateException("document is not open: " + uri));
-        if (unsynchronized.contains(uri) && (params.getContentChanges().isEmpty()
-                || params.getContentChanges().getFirst().getRange() != null)) {
-            documents.put(uri, new DocumentState(previous.sourceId, params.getTextDocument().getVersion(),
-                    previous.source, previous.analysis));
+        SourceId id=previous!=null?previous.sourceId:rejected.sourceId;
+        var changes=params.getContentChanges();
+        if(unsynchronized.contains(uri) && (changes==null || changes.isEmpty() || changes.getFirst()==null || changes.getFirst().getRange()!=null)) {
+            if(previous!=null) documents.put(uri,new DocumentState(id,version,previous.source,null));
+            else rejectedOpens.put(uri,new RejectedOpen(id,version));
             return;
         }
+        // Only used to interpret a full replacement followed by deltas when an
+        // oversized initial open had no accepted Core source. Never published.
+        var base=workspace.source(id).orElseGet(() -> new SourceText(id,guru.interlis.source.SourceRevision.initial(),""));
         String text;
-        try { text = materialize(current, params.getContentChanges()); }
-        catch (ResponseErrorException invalid) {
-            unsynchronized.add(uri);
-            scheduler.invalidate();
-            documents.put(uri, new DocumentState(previous.sourceId, params.getTextDocument().getVersion(),
-                    previous.source, previous.analysis));
-            operations.accept("Invalid didChange range for " + uri
-                    + "; full document resynchronization is required (full replacement or reopen).");
-            return;
-        }
-        unsynchronized.remove(uri);
-        workspace.update(new SourceUpdate(sourceId,
-                new SourceExpectation.At(current.revision()), new SourceChange.Replace(text)));
-        analyze(uri, params.getTextDocument().getVersion());
+        try { text=materialize(base,changes); }
+        catch(ResponseErrorException invalid) { rejectDocument(uri,id,version,"INVALID_EDIT"); return; }
+        try { replaceSource(id,text); }
+        catch(guru.interlis.workspace.UpdateRejectedException invalid) { rejectDocument(uri,id,version,invalid.code().name()); return; }
+        rejectedOpens.remove(uri); unsynchronized.remove(uri); analyze(uri,version);
     }
 
     @Override
@@ -344,12 +388,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private void didCloseNow(DidCloseTextDocumentParams params) {
         String uri = params.getTextDocument().getUri();
-        if(documents.remove(uri)==null) return;
+        var closed=documents.remove(uri); var rejected=rejectedOpens.remove(uri); if(closed==null && rejected==null) return;
         documentGeneration++;
         unsynchronized.remove(uri);
-        SourceId id = new SourceId(uri);
-        if (uri.startsWith("file:")) {
-            reloadExternal(uri);
+        SourceId id = closed!=null?closed.sourceId:rejected.sourceId;
+        if (filePath(uri).isPresent()) {
+            reloadExternal(id.value());
         } else {
             workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
         }
@@ -417,7 +461,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             SourceText targetSource = view.source(target.nameRange().source()).orElse(null);
             if (targetSource != null) {
                 return CompletableFuture.completedFuture(Either.forLeft(List.of(
-                        new Location(target.nameRange().source().value(),
+                        new Location(view.uri(target.nameRange().source()),
                                 toLspRange(targetSource, target.nameRange())))));
             }
         }
@@ -464,7 +508,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         List<Either<org.eclipse.lsp4j.SymbolInformation, DocumentSymbol>> result = new ArrayList<>();
         for (Symbol symbol : state.analysis.semanticGraph().declarationsInOrder()) {
             if (symbol.origin() instanceof guru.interlis.model.Origin.DeclaredOrigin declared
-                    && declared.range().source().value().equals(uri)
+                    && declared.range().source().equals(state.sourceId)
                     && symbol.nameRange().isPresent()) {
                 DocumentSymbol documentSymbol = new DocumentSymbol(symbol.name().value(),
                         symbolKind(symbol),
@@ -500,7 +544,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             SourceText source = view.source(occurrence.range().source()).orElse(null);
             if(source==null || !source.revision().equals(occurrence.range().revision()))
                 return failed(ResponseErrorCode.ContentModified,"CONTENT_MODIFIED: reference source changed");
-            locations.add(new Location(occurrence.range().source().value(),toLspRange(source,occurrence.range())));
+            locations.add(new Location(view.uri(occurrence.range().source()),toLspRange(source,occurrence.range())));
         }
         return CompletableFuture.completedFuture(locations);
     }
@@ -575,10 +619,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
                     .map(edit -> new TextEdit(toLspRange(source, edit.range()),
                             edit.replacement()))
                     .toList();
-            changes.put(document.source().value(), edits);
-            var open=view.documents().get(document.source().value());
+            String uri=view.uri(document.source()); changes.put(uri, edits);
+            var open=view.open(document.source());
             versioned.add(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(
-                    document.source().value(),open==null?null:open.lspVersion),edits)));
+                    uri,open==null?null:open.lspVersion),edits)));
             if(open==null) closed.add(view.closedFiles().get(document.source().value()));
         }
         WorkspaceEdit edit = new WorkspaceEdit();
@@ -589,7 +633,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private static boolean editable(HostView view,SourceId id) {
         var known=view.closedFiles().get(id.value());
-        return view.documents().containsKey(id.value()) ? known==null || known.editable() : known!=null && known.editable();
+        return view.open(id)!=null ? known==null || known.editable() : known!=null && known.editable();
     }
 
     @Override
@@ -633,7 +677,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         CodeAction action = new CodeAction("Format INTERLIS source");
         action.setKind("source.format");
         WorkspaceEdit edit = new WorkspaceEdit();
-        edit.setChanges(Map.of(state.sourceId.value(), List.of(new TextEdit(
+        edit.setChanges(Map.of(view.uri(state.sourceId), List.of(new TextEdit(
                 toLspRange(state.source, state.source.range(0, state.source.length())),
                 formatted.text()))));
         action.setEdit(edit);
@@ -653,12 +697,24 @@ final class InterlisTextDocumentService implements TextDocumentService {
         });
     }
 
+    void initializeConfiguration(Object settings) {
+        scheduler.onOwner(() -> {
+            guru.interlis.workspace.WorkspaceConfiguration configuration;
+            try { configuration=LspConfiguration.read(settings,workspace.configuration()); }
+            catch(IllegalArgumentException | ArithmeticException invalid) {
+                throw LspFailures.error(ResponseErrorCode.InvalidParams,"invalid initial INTERLIS configuration");
+            }
+            workspace.configure(configuration,workspace.currentRevision()); return null;
+        });
+    }
+
     void reloadExternal(String uri) { Objects.requireNonNull(externalReload,"project file service").accept(uri); }
 
     void deleteExternal(String uri) {
         scheduler.onOwner(() -> {
-            if(documents.containsKey(uri)) return null;
-            documentGeneration++; closedFiles.remove(uri); deleteExternalNow(uri);
+            String canonical=canonicalUriNow(uri);
+            if(openSource(new SourceId(canonical))) return null;
+            documentGeneration++; closedFiles.remove(canonical); deleteExternalNow(canonical);
             var request=pendingFiles.get(uri);
             if(request!=null) finishExternal(uri,request,null); else reanalyzeOpenNow();
             return null;
@@ -666,8 +722,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void deleteExternalNow(String uri) {
-        if (documents.containsKey(uri)) return;
-        SourceId id = new SourceId(uri);
+        if (openSource(new SourceId(canonicalUriNow(uri)))) return;
+        SourceId id = new SourceId(canonicalUriNow(uri));
         workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
     }
 
@@ -682,7 +738,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 documents.put(uri,new DocumentState(state.sourceId,state.lspVersion,state.source,null));
             }
         }
-        if(pendingFiles.isEmpty()) scheduler.schedule(); else scheduler.invalidate();
+        if(pendingFiles.isEmpty() && unsynchronized.isEmpty()) scheduler.schedule(); else scheduler.invalidate();
     }
 
     private static <T> T copyParams(T value, Class<T> type) {
@@ -849,12 +905,13 @@ final class InterlisTextDocumentService implements TextDocumentService {
         if(document==null || document.getUri()==null || document.getUri().isBlank())
             throw LspFailures.error(ResponseErrorCode.InvalidParams,"document URI is required");
         String uri = document.getUri();
-        DocumentState state = view.documents().get(uri);
+        var direct=view.documents().get(uri);
+        DocumentState state = direct!=null?direct:view.open(new SourceId(uri));
         if (state == null) {
             throw new ResponseErrorException(new ResponseError(ResponseErrorCode.InvalidParams,
                     "document is not available", null));
         }
-        if (view.unsynchronized().contains(uri)) throw new ResponseErrorException(new ResponseError(
+        if (view.unsynchronized().contains(view.uri(state.sourceId))) throw new ResponseErrorException(new ResponseError(
                 ResponseErrorCode.ContentModified, "full document resynchronization is required", null));
         if (view.source(state.sourceId).filter(source -> source.revision().equals(state.source.revision())).isEmpty()
                 || state.analysis == null) throw new ResponseErrorException(new ResponseError(
@@ -864,14 +921,15 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void analyze(String uri, int lspVersion) {
-        SourceId sourceId = new SourceId(uri);
+        SourceId sourceId = new SourceId(canonicalUriNow(uri));
         SourceText source = workspace.source(sourceId).orElseThrow();
         DocumentState state = new DocumentState(sourceId, lspVersion, source, null);
         documents.put(uri, state);
-        if(pendingFiles.isEmpty()) scheduler.schedule(); else scheduler.invalidate();
+        if(pendingFiles.isEmpty() && unsynchronized.isEmpty()) scheduler.schedule(); else scheduler.invalidate();
     }
 
     private void accepted(AnalysisSnapshot analysis) {
+        if(!unsynchronized.isEmpty()) return;
         for (String uri : List.copyOf(documents.keySet())) {
             if (unsynchronized.contains(uri)) continue;
             var previous = documents.get(uri);
@@ -880,11 +938,11 @@ final class InterlisTextDocumentService implements TextDocumentService {
                     || !source.get().revision().equals(analysis.sourceRevisions().get(previous.sourceId))) continue;
             var state = new DocumentState(previous.sourceId, previous.lspVersion, source.orElseThrow(), analysis);
             documents.put(uri, state);
-            publish(state);
+            publish(uri,state);
         }
     }
 
-    private void publish(DocumentState state) {
+    private void publish(String uri,DocumentState state) {
         DiagnosticSink current = sink.get();
         if (current == null) {
             return;
@@ -908,7 +966,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         diagnostics.sort(Comparator.comparingInt((org.eclipse.lsp4j.Diagnostic d) ->
                         d.getRange().getStart().getLine())
                 .thenComparingInt(d -> d.getRange().getStart().getCharacter()));
-        var publication = new PublishDiagnosticsParams(state.sourceId.value(), diagnostics);
+        var publication = new PublishDiagnosticsParams(uri, diagnostics);
         publication.setVersion(state.lspVersion);
         current.publish(publication);
     }

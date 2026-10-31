@@ -88,6 +88,37 @@ class P3DocumentSynchronizationTest {
         } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
     }
 
+    @Test void sourceLimitRejectionsNeverServeOldAnswersAndRecoverThroughFullReplacement() throws Exception {
+        var defaults=WorkspaceConfiguration.defaults();var options=defaults.compilerOptions();
+        var limited=new guru.interlis.compiler.CompilerOptions(options.semanticProfile(),options.allowedLanguages(),options.warningPolicy(),options.budget().withMaxSourceUtf16Length(100),options.overlays());
+        for(boolean opened:new boolean[]{false,true}) {
+            var workspace=Workspaces.create(CompilerEngines.create(),new WorkspaceConfiguration(limited,defaults.resolutionPolicy(),defaults.resolverCatalog(),defaults.cacheLimits()));
+            var server=new InterlisLanguageServer(workspace);server.initialize(new InitializeParams()).get(5,TimeUnit.SECONDS);
+            var messages=new java.util.ArrayList<String>();server.textDocumentsForTest().operationSink(messages::add);
+            try {
+                var service=server.getTextDocumentService();
+                if(opened) {
+                    service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(URI,"interlis",1,TEXT)));
+                    service.documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI))).get(5,TimeUnit.SECONDS);
+                }
+                String oversized="!! SECRET_PAYLOAD_"+"x".repeat(200);
+                assertDoesNotThrow(()-> {
+                    if(opened) service.didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(URI,2),List.of(new TextDocumentContentChangeEvent(oversized))));
+                    else service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(URI,"interlis",2,oversized)));
+                });
+                assertEquals(ResponseErrorCode.ContentModified.getValue(),error(()->service.documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI)))).getResponseError().getCode());
+                assertEquals(ResponseErrorCode.ContentModified.getValue(),error(()->server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of()))).getResponseError().getCode());
+                assertTrue(messages.stream().anyMatch(message->message.contains("SOURCE_LIMIT_EXCEEDED")));
+                assertTrue(messages.stream().noneMatch(message->message.contains("SECRET_PAYLOAD")));
+                assertEquals(opened?TEXT:null,workspace.source(new SourceId(URI)).map(value->value.text()).orElse(null));
+                service.didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(URI,3),List.of(new TextDocumentContentChangeEvent(new Range(new Position(0,0),new Position(0,0)),"ignored"))));
+                service.didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(URI,4),List.of(new TextDocumentContentChangeEvent(TEXT))));
+                assertFalse(service.documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(URI))).get(5,TimeUnit.SECONDS).isEmpty());
+                assertEquals(TEXT,workspace.source(new SourceId(URI)).orElseThrow().text());
+            } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+        }
+    }
+
     private static ResponseErrorException error(Supplier<CompletableFuture<?>> request) {
         var failed = CompletableFuture.supplyAsync(request).thenCompose(value -> value);
         var exception = assertThrows(CompletionException.class, failed::join);

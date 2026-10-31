@@ -38,21 +38,27 @@ Safari je 3548 PASS, Exit 0. Vollständiger frischer kumulativer Lauf bleibt G3.
 
 ## Laufend: P3-2
 
-Implementierter Kandidat, **unabhängiger Review offen**, AC-P3-05–08.
-[Umsetzung, RED→GREEN und tatsächliche Läufe](implementation/P3-2.md).
-Abgetrennte Analyse/Sprachqueries/Compilearbeit, immutable Hostsicht,
-atomare Synchronisation und Konfiguration, geschlossene Projektquellen,
-vollständige revisions-/schreibrechtsgeprüfte Versionsedits, Scopecompletion,
-gebundene Tokens/Folding/Formatierung und echter stdio-Lebenszyklus umgesetzt.
-744 Compiler- und34 LSP-Tests ohne Fehler/Skips. Aktive Evidenzbindungen
-mechanisch nachgeführt; Norm-/Corpus-/Suiteerwartungen unverändert.
+**Erster unabhängiger Review FAIL**, Kandidat 466790c, AC05/08 FAIL und
+AC06/07/kumulativ P3-1 PASS. [Unveränderter Bericht](reviews/P3-2-466790c-FAIL.md),
+SHA-256 a4ec9ca453398ad5776106130a0e5eaf2d377bd967c0eb5ef60ea29f1b40f01b;
+OpenCode/direkte DeepSeek API, sauberer separater Checkout, OS-Python-Sperre,
+Transportexit 0/Manifest passed. Fünf Mussbefunde zu Symlinkroot/Aliasidentität,
+Ressourcen-/Updatefehlern und FailureId. [Umsetzung und Korrekturen](implementation/P3-2.md).
 
-Breiter eigener Lauf: check/Portable/Browser/echtesSafari/WebImage/SDK/Paket
-PASS, je3548 portable Fälle. Conformance577 PASS/16XFAIL. Fehlversuche und
-präzisierte Completion-Abfrageposition bleiben im Bericht sichtbar. Nach der
-letzten LSP-Workertrennung eigener JVM-/Evidenz-/SDK-/Distributionlauf PASS.
-Neue unabhängige Gegenprobe und sauberer Kandidatenreview folgen jetzt;
-dieser Stand ist noch kein P3-2-PASS und kein G3-Abschluss.
+F1–F5 im Korrekturkandidaten bearbeitet und gezielt verifiziert; eigener
+check/Evidenz145/SDK 9/Paket/LSP-installDist-Lauf grün,42 LSP-Tests ohne Fehler/Skips.
+Unveränderte Reviewer-Reproduktionen selbst nochmals ausgeführt und bewertet;
+die fehlgeschlagene falsche Probedateibenennung bleibt dokumentiert.
+Neue unabhängige Gegenprobe und sauberer Korrekturkandidatenreview folgen;
+**P3-2 und G3 bleiben offen**. Norm-/Corpus-/Suiteerwartungen unverändert.
+
+Erster Kandidat tatsächlich auf Windows/Linux x64 geprüft:
+[Actions 41145332532](https://github.com/edigonzales/interlis-java/actions/runs/41145332532),
+beide PASS. Heruntergeladene Artefakte belegen je 1128 JUnit ohne Fehler/Skips,
+54 Legacy-Prozesse, Java 25.0.3/amd64 und identischen vollständigen Kandidaten-SHA.
+Neue Plattformmatrix der Korrektur bleibt fällig. Breiter gemeinsamer
+Core-/Portable-/Browser-/Safari-/WebImage-/SDK-Lauf am ersten Kandidaten PASS,
+je 3548; Conformance 577 PASS / 16 XFAIL. Der rohe Referenzlauf bleibt getrennt.
 
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256

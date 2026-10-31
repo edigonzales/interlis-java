@@ -243,11 +243,13 @@ class LspFeatureTest {
         server.getWorkspaceService().executeCommand(new org.eclipse.lsp4j.ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS);
         assertTrue(server.workspaceForTest().source(
                 new guru.interlis.source.SourceId(watchedUri)).isPresent());
+        Files.delete(watched);
         server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(
                 List.of(new FileEvent(watchedUri, FileChangeType.Deleted))));
+        documents.documentSymbol(new org.eclipse.lsp4j.DocumentSymbolParams(new TextDocumentIdentifier(URI))).get(5,TimeUnit.SECONDS);
         assertTrue(server.workspaceForTest().source(
                 new guru.interlis.source.SourceId(watchedUri)).isEmpty());
-        Files.delete(watched);
+        Files.deleteIfExists(watched);
         server.shutdown().get(2, TimeUnit.SECONDS);
     }
 
