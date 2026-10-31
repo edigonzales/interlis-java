@@ -5596,7 +5596,7 @@
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-          "sha256": "bb1382f1ff2c7b1470a44c0e62e67920939ee1ce628d41efdb7a6393b5de6842"
+          "sha256": "294d9745340c6f7267989abb64e208510a2975bd809bdc18d36ee3647fd5c36a"
         }
       ],
       "resolution": "Fach-/Register-/Javadocreview ist eine Inspektionsabnahme; öffentliche Invarianten zusätzlich direkt getestet."

@@ -462,6 +462,8 @@ Betriebsmeldung; technische Exceptions bleiben vom RPC-Datenobjekt ausgeschlosse
 
 Die Dateiidentität wird auf der I/O-Seite mit realen Pfaden beziehungsweise
 Dateischlüsseln bestimmt. Bekanntes logisches SourceId-Mapping bleibt erhalten;
+eine noch nicht zugeordnete Client-URI bleibt bis zu belegter Dateizuordnung
+unverändert, auch bei plattformabhängiger Pfadsyntax.
 die exakte offene Client-URI wird getrennt für Diagnostik, Navigation und
 Versionsedits benutzt. Alias-Watcher erzeugen keine zweite Compilerquelle und
 überschreiben keine offene Clientquelle. Ein symlinkter Workspace-Root wird

@@ -28,6 +28,17 @@ class P3DocumentSynchronizationTest {
         assertThrows(ResponseErrorException.class,()->PositionMapper.toOffset(source,new Position(0,-1)));
     }
 
+    @Test void anUnregisteredClientUriKeepsItsOriginalCoreSourceIdentity() throws Exception {
+        var workspace=Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults());
+        var server=new InterlisLanguageServer(workspace);server.initialize(new InitializeParams()).get(5,TimeUnit.SECONDS);
+        String uri="file:/p3-unregistered-client.ili";
+        try {
+            server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri,"interlis",1,TEXT)));
+            assertTrue(workspace.source(new SourceId(uri)).isPresent());
+            assertFalse(server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(uri))).get(5,TimeUnit.SECONDS).isEmpty());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
     @Test void anInvalidBatchIsAtomicAndBlocksDeltasUntilAFullReplacement() throws Exception {
         try (var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults())) {
             var server = new InterlisLanguageServer(workspace);

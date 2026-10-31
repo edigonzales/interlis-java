@@ -225,7 +225,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         catch(IllegalArgumentException invalid) { return Optional.empty(); }
     }
     private String canonicalUriNow(String uri) {
-        return filePath(uri).map(path -> fileIdentities.getOrDefault(path,path.toUri().toString())).orElse(uri);
+        return filePath(uri).map(path -> fileIdentities.getOrDefault(path,uri)).orElse(uri);
     }
     private String rememberFile(ProjectSourceLoader.FileContent file,Optional<SourceId> openAlias) {
         String uri=openAlias.map(SourceId::value).orElseGet(() -> fileIdentities.getOrDefault(file.realPath(),canonicalUriNow(file.path().toUri().toString())));

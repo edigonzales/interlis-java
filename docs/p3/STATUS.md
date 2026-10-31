@@ -60,6 +60,14 @@ Neue Plattformmatrix der Korrektur bleibt fällig. Breiter gemeinsamer
 Core-/Portable-/Browser-/Safari-/WebImage-/SDK-Lauf am ersten Kandidaten PASS,
 je 3548; Conformance 577 PASS / 16 XFAIL. Der rohe Referenzlauf bleibt getrennt.
 
+Korrekturkandidat 1c19acb: Linux PASS, Windows FAIL im
+[neuen Lauf 41148744929](https://github.com/edigonzales/interlis-java/actions/runs/41148744929).
+Ein unregistrierter Client-URI wurde plattformabhängig umgeschrieben; die neue
+plattformunabhängige RED→GREEN-Kontrolle ist behoben. Aktueller eigener
+check-/Evidenz-/SDK-/Distributionlauf mit 43 LSP-Fällen grün. Review 2 läuft noch
+am vorherigen Kandidaten. Eine neue unabhängige Abnahme und Plattformmatrix
+für diese Produktkorrektur folgen; P3-2 bleibt offen.
+
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256
 `ef7ac8ac673710d28c0139915af5f3fcc4043a3fe427e9228c71e46ee5c311d2`.
