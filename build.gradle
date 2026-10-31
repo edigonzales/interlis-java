@@ -8,10 +8,15 @@ def releaseRequested = gradle.startParameter.taskNames.any { it.tokenize(':').la
 if (releaseProfile.isPresent() && releaseProfile.get() != 'P3') throw new GradleException('Unknown release profile; supported: P3')
 if (gradle.startParameter.taskNames.any { it.tokenize(':').last() == 'releaseCheck' } && releaseProfile.getOrElse('') != 'P3') throw new GradleException('releaseCheck requires -PreleaseProfile=P3; alternatively use releaseCheckP3')
 if (releaseRequested) {
-    providers.exec {
+    def preflight = providers.exec {
         workingDir rootProject.projectDir
         commandLine nodeExecutable.get(), rootProject.file('tools/release/evidence.cjs'), '--preflight'
-    }.result.get().assertNormalExitValue()
+        ignoreExitValue = true
+    }
+    if (preflight.result.get().exitValue != 0) {
+        throw new GradleException('P3 release preflight failed:\n'
+                + preflight.standardError.asText.get() + preflight.standardOutput.asText.get())
+    }
 }
 
 tasks.register('checkNodeRuntime') {

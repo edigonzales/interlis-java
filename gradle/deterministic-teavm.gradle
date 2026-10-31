@@ -1,0 +1,113 @@
+// A narrowly pinned build-tool correction; no TeaVM classes enter the Java SDK.
+// TeaVM 0.16.0's class-source adapter uses a randomized JDK immutable-set order.
+// Preserve its filtered, immutable membership while making traversal lexical.
+import java.security.MessageDigest
+import java.util.zip.ZipFile
+
+configurations {
+    teavmPatchSources { canBeConsumed = false; transitive = false }
+    teavmPatchCompiler { canBeConsumed = false }
+}
+dependencies {
+    teavmPatchSources 'org.teavm:teavm-core:0.16.0:sources@jar'
+    teavmPatchCompiler 'org.teavm:teavm-tooling:0.16.0'
+}
+def patchDirectory = layout.buildDirectory.dir('tooling/teavm-ordered')
+def originalCore = providers.provider {
+    def matches = configurations.teavmPatchCompiler.files.findAll { it.name == 'teavm-core-0.16.0.jar' }
+    if (matches.size() != 1) throw new GradleException('Expected exactly the pinned TeaVM core')
+    matches.first()
+}
+def digest = { byte[] bytes -> MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString() }
+def sourceFile = patchDirectory.map { it.file('source/org/teavm/vm/TeaVM.java') }
+tasks.register('prepareOrderedTeaVmSource') {
+    inputs.files configurations.teavmPatchSources
+    inputs.file originalCore
+    inputs.file rootProject.file('gradle/deterministic-teavm.gradle')
+    outputs.file sourceFile
+    outputs.file patchDirectory.map { it.file('patch-info.json') }
+    doLast {
+        def archive = configurations.teavmPatchSources.singleFile
+        def sourceArchiveHash = digest(archive.bytes)
+        def coreHash = digest(originalCore.get().bytes)
+        if (sourceArchiveHash != '687cabf23e0d17a15be30fbc070809c2931714340aca224120fe31579f95519b'
+                || coreHash != 'c94539912c1b951fa741aecfcb6b4acad75c2e2360dc8859b1edd0c44175608a') {
+            throw new GradleException('TeaVM patch input differs from the reviewed 0.16.0 sources/core')
+        }
+        String source
+        new ZipFile(archive).withCloseable { zip ->
+            source = zip.getInputStream(zip.getEntry('org/teavm/vm/TeaVM.java')).getText('UTF-8')
+        }
+        if (digest(source.getBytes('UTF-8')) != '4680ff43f66630e27298c39012e4f94239f294c7647bca54c6dc696192f36cb6') {
+            throw new GradleException('Unexpected TeaVM.java before the ordered-set correction')
+        }
+        def before = '.collect(Collectors.toUnmodifiableSet());'
+        def after = '.collect(Collectors.collectingAndThen(Collectors.toCollection(java.util.TreeSet::new), Collections::unmodifiableSet));'
+        if (source.count(before) != 1) throw new GradleException('TeaVM class-order patch no longer applies exactly once')
+        def lazyBefore = 'private Set<String> classNames = Collections.unmodifiableSet(new HashSet<>('
+        def lazyAfter = 'private Set<String> classNames = Collections.unmodifiableSet(new java.util.TreeSet<>('
+        def eagerBefore = 'for (String className : dependency.getReachableClasses()) {'
+        def eagerAfter = 'for (String className : new java.util.TreeSet<>(dependency.getReachableClasses())) {'
+        if (source.count(lazyBefore) != 1 || source.count(eagerBefore) != 1) {
+            throw new GradleException('TeaVM lazy/eager class-source patch no longer applies exactly once')
+        }
+        def patched = source.replace(before, after).replace(lazyBefore, lazyAfter).replace(eagerBefore, eagerAfter)
+        sourceFile.get().asFile.with { parentFile.mkdirs(); setText(patched, 'UTF-8') }
+        def info = [id: 'teavm-0.16.0-ordered-class-source-v1', version: '0.16.0',
+                    sourceArchiveSha256: sourceArchiveHash, originalCoreSha256: coreHash,
+                    originalSourceSha256: digest(source.getBytes('UTF-8')),
+                    patchedSourceSha256: digest(patched.getBytes('UTF-8')),
+                    change: 'Lazy, eager and analysis class-source traversals use lexical order; membership unchanged']
+        patchDirectory.get().file('patch-info.json').asFile.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(info))+'\n', 'UTF-8')
+    }
+}
+def compiledPatch = tasks.register('compileOrderedTeaVm', JavaCompile) {
+    dependsOn 'prepareOrderedTeaVmSource'
+    source sourceFile
+    classpath = configurations.teavmPatchCompiler
+    destinationDirectory = patchDirectory.map { it.dir('classes') }
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+    options.release = 17 // Matches upstream TeaVM's class-file target.
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-proc:none']
+}
+def patchedCore = tasks.register('orderedTeaVmCore', Zip) {
+    dependsOn compiledPatch
+    from({ zipTree(originalCore.get()) }) { exclude 'org/teavm/vm/TeaVM.class', 'org/teavm/vm/TeaVM$*.class' }
+    from compiledPatch.flatMap { it.destinationDirectory }
+    destinationDirectory = patchDirectory
+    archiveFileName = 'teavm-core-0.16.0-ordered.jar'
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    reproducibleFileOrder = true
+    preserveFileTimestamps = false
+}
+def checkClasses = tasks.register('compileTeaVmOrderCheck', JavaCompile) {
+    source rootProject.file('tools/teavm/ClassOrderCheck.java')
+    classpath = configurations.teavmPatchCompiler
+    destinationDirectory = patchDirectory.map { it.dir('check-classes') }
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+    options.release = 17
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-proc:none']
+}
+tasks.register('orderedTeaVmCheck', JavaExec) {
+    group = 'verification'
+    dependsOn patchedCore, checkClasses
+    classpath = files(patchedCore.flatMap { it.archiveFile }, checkClasses.flatMap { it.destinationDirectory },
+            configurations.teavmPatchCompiler.filter { it.name != 'teavm-core-0.16.0.jar' })
+    mainClass = 'ClassOrderCheck'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+}
+tasks.named('check') { dependsOn 'orderedTeaVmCheck' }
+tasks.matching { it.name in ['generateJavaScript', 'generateWasmGC'] }.configureEach {
+    dependsOn patchedCore
+    def originalDaemonEntries = new ArrayList(daemonClasspath.from)
+    daemonClasspath.setFrom(providers.provider {
+        def raw = files(originalDaemonEntries).files
+        if (raw.count { it.name == 'teavm-core-0.16.0.jar' } != 1) {
+            throw new GradleException('Pinned TeaVM core missing/duplicated in compiler process classpath')
+        }
+        raw.collect { it.name == 'teavm-core-0.16.0.jar' ? patchedCore.get().archiveFile.get().asFile : it }
+    })
+    outOfProcess = true
+}

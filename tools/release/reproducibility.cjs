@@ -9,7 +9,7 @@ async function run(cwd,command,args,log){
 (async()=>{
  if(process.platform==='win32')throw Error('This two-clean-build profile runs on the documented macOS reference host; Windows has a separate SDK process gate');
  if(git('status','--porcelain'))throw Error('Reproducibility requires a clean committed candidate');
- const candidate=git('rev-parse','HEAD');fs.mkdirSync(output,{recursive:true});const temp=fs.mkdtempSync(path.join(os.tmpdir(),'interlis-p3-repro-'));const manifests=[];
+ const candidate=git('rev-parse','HEAD'),sourceFingerprint=require('../performance/profile.cjs').fingerprint();fs.mkdirSync(output,{recursive:true});fs.rmSync(path.join(output,'result.json'),{force:true});const temp=fs.mkdtempSync(path.join(os.tmpdir(),'interlis-p3-repro-'));const manifests=[];
  try{
   for(const name of ['first','second']){
    const cwd=path.join(temp,name),record=path.join(output,name);fs.mkdirSync(record,{recursive:true});git('worktree','add','--detach',cwd,candidate);
@@ -32,7 +32,8 @@ async function run(cwd,command,args,log){
   }
   const keys=Object.keys(manifests[0]),differences=keys.filter(k=>JSON.stringify(manifests[0][k])!==JSON.stringify(manifests[1][k]));
   if(JSON.stringify(keys)!==JSON.stringify(Object.keys(manifests[1]))||differences.length)throw Error('Non-reproducible shipped files: '+differences.join(', '));
-  const result={status:'passed',candidate,node:process.version,os:process.platform,arch:process.arch,cleanBuilds:2,shippedFiles:keys.length,artifacts:manifests[0],scope:'Two separate clean checkouts, independent Java/ANTLR/TeaVM/TypeScript generation. All shipped CLI files, SDK ZIP, TeaVM JS/Wasm/runtime and browser tools byte-identical; no native OS-image claim.'};
+  if(git('rev-parse','HEAD')!==candidate||git('status','--porcelain')||require('../performance/profile.cjs').fingerprint()!==sourceFingerprint)throw Error('Candidate changed during two-clean-build verification');
+  const result={status:'passed',candidate,sourceFingerprint,node:process.version,os:process.platform,arch:process.arch,cleanBuilds:2,shippedFiles:keys.length,artifacts:manifests[0],scope:'Two separate clean checkouts, independent Java/ANTLR/TeaVM/TypeScript generation. All shipped CLI files, SDK ZIP, TeaVM JS/Wasm/runtime and browser tools byte-identical; no native OS-image claim.'};
   fs.writeFileSync(path.join(output,'result.json'),JSON.stringify(result,null,2)+'\n');console.log('SDK_REPRODUCIBILITY_PASS',keys.length,candidate);
  }finally{try{fs.rmdirSync(temp);}catch{}}
 })().catch(error=>{console.error(error);process.exitCode=1;});

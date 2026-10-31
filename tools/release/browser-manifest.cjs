@@ -11,7 +11,9 @@ const fs=require('node:fs'),path=require('node:path');const {root,hash}=require(
  const resources={};for(const file of walk(web).sort()){const name=path.relative(web,file).split(path.sep).join('/');if(name==='build-manifest.json')continue;const bytes=fs.readFileSync(file);resources[name]={sha256:hash(bytes),bytes:bytes.length};}
  const versions=JSON.parse(fs.readFileSync(path.join(root,'build/reports/sdk/version-manifest.json'),'utf8'));
  if(versions.version!==capabilities.result.toolVersion||versions.protocol!==capabilities.result.protocol+'/'+capabilities.result.protocolVersion)throw Error('actual CLI/compiler version manifests disagree');
- const result={schemaVersion:'1.0',versions,...runtimeEvidence.finish(stamp),compilerCapabilities:capabilities.result,resources};
+ const patchFile=path.join(root,'interlis-wasm-teavm/build/tooling/teavm-ordered/patch-info.json');
+ const toolchainPatch={...JSON.parse(fs.readFileSync(patchFile,'utf8')),compiledCoreSha256:hash(fs.readFileSync(path.join(path.dirname(patchFile),'teavm-core-0.16.0-ordered.jar')))};
+ const result={schemaVersion:'1.0',versions,...runtimeEvidence.finish(stamp),compilerCapabilities:capabilities.result,toolchainPatch,resources};
  const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])])):value;
  fs.writeFileSync(path.join(web,'build-manifest.json'),JSON.stringify(canonical(result),null,2)+'\n');console.log('BROWSER_BUILD_MANIFEST_PASS',Object.keys(resources).length,stamp.gitCommit);
 })().catch(error=>{console.error(error);process.exitCode=1;});

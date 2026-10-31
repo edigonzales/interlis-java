@@ -56,6 +56,9 @@ führt die JVM-/CLI-/LSP-/SDK-Prozesse aus. `sdkReproducibilityCheck` baut zwei
 separate saubere Checkouts und vergleicht die ausgelieferten Dateien byteweise.
 Das tatsächliche Browserverzeichnis enthält `build-manifest.json` mit
 Quell-/Commitbindung, getrennten Versionen und Ressourcenhashes.
+Es nennt auch die Originalpins und den tatsächlichen Core-JAR-Hash der
+gezielten [TeaVM-Toolkorrektur](../../tools/teavm/README.md), welche stabile
+Klassenreihenfolgen für bytegleiche JavaScript-/Wasm-Erzeugung herstellt.
 
 Der Ablauf am sauberen Schlussprodukt ist:
 

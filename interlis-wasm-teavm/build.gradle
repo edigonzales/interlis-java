@@ -3,6 +3,7 @@ plugins {
     id 'org.teavm' version '0.16.0'
 }
 apply from: rootProject.file('gradle/java-conventions.gradle')
+apply from: rootProject.file('gradle/deterministic-teavm.gradle')
 
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 

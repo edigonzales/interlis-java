@@ -8,7 +8,7 @@
     "docs/spec/00-auftrag-und-agentenregeln.md": "800322b4d895fc37692b2c2bc201e332cfd677664f948953cec7f3d757053fc9",
     "docs/spec/01-zielbild-und-anforderungen.md": "34fa7b08d0cb50d4ba51ef59398bf2f3987218c8795714bc37b7c73f56747214",
     "docs/spec/02-architektur-und-modulgrenzen.md": "02b0af3a36469edfb461149f102859e20a1a2732353564718ca7dd9d2afe45cc",
-    "docs/spec/03-build-und-repository.md": "1b43e3744ac2d7276d061bd273ad4774ba37ff55a759541dd41166d3c42f570e",
+    "docs/spec/03-build-und-repository.md": "10743a875d614c4e3dbc499e8260869b34377d61bb0c7b3347a5e3724f970022",
     "docs/spec/04-quelltext-syntax-und-parser.md": "c1b16628120135224aa7ec492eaf8ba0119ad864fde963e255661374f265cccf",
     "docs/spec/05-metamodell-und-typensystem.md": "54da24d1fb19d51fc1c733596f67b06ed39635b216312e700d33a6d6c70d22f5",
     "docs/spec/06-kompilierung-und-semantik.md": "65eb29ebabdd695ccd2eedadef74815e17f2ef19fd54317340dc6fcb108fbef4",
@@ -15282,7 +15282,7 @@
       "phase": "P0",
       "acceptance": "Frischer Checkout baut ohne Maven/Ant-Installation.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 219,
+      "line": 231,
       "sourceLineSha256": "e17b14e57d3631793f14cd485b377d1eda2072a73949c635b1de00c7629625fe"
     },
     {
@@ -15291,7 +15291,7 @@
       "phase": "P0",
       "acceptance": "Versionen-/Wrapper-/Dependencyreport.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 220,
+      "line": 232,
       "sourceLineSha256": "bbf17b9b20630a826fb2c07fcf3484415516a423779f476af7724be76b11a05f"
     },
     {
@@ -15300,7 +15300,7 @@
       "phase": "P0",
       "acceptance": "Dependencytest, keine impliziten Zwischen-JAR-Kopien.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 221,
+      "line": 233,
       "sourceLineSha256": "23f5abc2419142c4b04243395b5bbdec7c385292f6d39ff3498e702dd65cbcd2"
     },
     {
@@ -15309,7 +15309,7 @@
       "phase": "P0",
       "acceptance": "Konfiguration ist deklarativ, Taskabhängigkeiten explizit.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 222,
+      "line": 234,
       "sourceLineSha256": "84e512df347e0632ba2b86bdff3f98ab764160476e2ab3a1c06978f8a4a711c4"
     },
     {
@@ -15318,7 +15318,7 @@
       "phase": "P0",
       "acceptance": "Runtimeclasspath und generierter Parser geprüft.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 223,
+      "line": 235,
       "sourceLineSha256": "58054b59ee286322c72e945d4a4a2260e51f7f7cd7b9843bee38a4c8303fb5f0"
     },
     {
@@ -15327,7 +15327,7 @@
       "phase": "P0",
       "acceptance": "Zwei saubere Läufe ohne Zeitstempel-/Pfadabhängigkeit in fachlichen Outputs.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 224,
+      "line": 236,
       "sourceLineSha256": "fbe43eb8c0540850e536d33c54bd5b282da7e0fd145b4db12fd379ae62944491"
     },
     {
@@ -15336,7 +15336,7 @@
       "phase": "P0",
       "acceptance": "Wiederholung offline ohne Live-Repositoryzugriff.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 225,
+      "line": 237,
       "sourceLineSha256": "a4735800d257dedc75c92cc6acae159744b8e98ef4dc288c0b29e48fac7987fe"
     },
     {
@@ -15345,7 +15345,7 @@
       "phase": "P1",
       "acceptance": "Releaseprofil scheitert mit konkreter Vorbedingung.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 226,
+      "line": 238,
       "sourceLineSha256": "58b1a8bcb68777f90997cddb733f9ade3f8169e7358807158000133cd049bcee"
     },
     {
@@ -15354,7 +15354,7 @@
       "phase": "P0",
       "acceptance": "Lokale Distribution funktioniert ohne Zugangsdaten.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 227,
+      "line": 239,
       "sourceLineSha256": "6e8e9d0aeac0aedd2f39b68bae43d98d8330093980f95b8757d49e92318c9e65"
     },
     {
@@ -15363,7 +15363,7 @@
       "phase": "P0",
       "acceptance": "Gradle reproduziert die Probe; POM bleibt nur in Evidenzarchiv.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 228,
+      "line": 240,
       "sourceLineSha256": "2265e55d3fc68a4d5bc6a2cccc078d9eb95b576c5de978cadd5d5dd3a3f4fb55"
     },
     {

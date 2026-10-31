@@ -202,6 +202,18 @@ fremde JARs, fehlende Browser und alte oder übersprungene Belege ergeben keinen
 Erfolg. Der interne Taskerfolg ersetzt weder den erfolgreichen Abschluss des
 äusseren Schutzprozesses noch den unabhängigen kumulativen G3-Review.
 
+Der aktuelle P3-Build verwendet für die beiden offiziellen TeaVM-Generatoren
+eine eng gepinnte0.16.0-Toolkorrektur aus
+`gradle/deterministic-teavm.gradle`: Klassenlisten für Analyse und beide
+Ausgabepipelines werden lexikalisch durchlaufen, bei unveränderter
+Mitgliedschaft und Unveränderlichkeit. Original-Core, Quellarchiv und
+Quelltext werden vor drei exakt passenden Ersetzungen per SHA-256 geprüft;
+andere Eingänge schliessen den Build. Eine Klassenquellenkontrolle sowie
+zwei separate saubere Erzeugungen prüfen die Korrektur. Die tatsächliche
+Toolidentität steht im Browsermanifest. Das korrigierte Buildtool ist kein
+zusätzlich ausgelieferter Java-SDK-Bestandteil; Sprach- und Fehlerverträge
+werden dadurch nicht geändert. Details: `tools/teavm/README.md`.
+
 Korpusbeschaffung, falls erforderlich, ist eine getrennte explizite Task mit festem Commit und Prüfsumme. Tests laufen gegen lokal bereitgestellte Bytes. Unit-Tests verwenden keine unstabilen Online-Modellserver. Integrationstests mit HTTP benötigen einen kontrollierten Testserver und festgelegte Antworten.
 
 ## 7. CI und lokale Entwicklung
