@@ -79,6 +79,16 @@ class DiagnosticPresentationContractTest {
         stripPresentation(a); stripPresentation(b); assertEquals(a, b);
     }
 
+    @Test void anExplicitlyRequestedDamagedFileWithoutAModelStillExplainsItsRejection() throws Exception {
+        Files.writeString(directory.resolve("NoModel.ili"), "INTERLIS 2.4;\r\nGARBAGE\r\n");
+        var text = run("check", "NoModel.ili"); assertEquals(1, text.result.exitCode());
+        assertTrue(text.out.isEmpty()); assertTrue(text.err.contains("ILI-SYN-0004"), text.err);
+        var json = run("check", "--json", "NoModel.ili"); assertEquals(1, json.result.exitCode()); assertTrue(json.err.isEmpty());
+        assertFalse(JsonParser.parseString(json.out).getAsJsonObject().getAsJsonArray("diagnostics").isEmpty());
+        var diagram = run("diagram", "NoModel.ili"); assertEquals(1, diagram.result.exitCode());
+        assertTrue(diagram.out.isEmpty()); assertTrue(diagram.err.contains("ILI-SYN-0004"));
+    }
+
     @Test void rendererUsesMatchingRevisionAndUtf16PositionsWithoutReadingFiles() {
         var id = new SourceId("memory:/🦊.ili"); var revision = new SourceRevision(7); var source = new SourceText(id, revision, "🦊\r\n  Missing");
         var range = new SourceRange(id, revision, 6, 13);

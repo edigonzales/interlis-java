@@ -134,6 +134,38 @@ class RequestDiagnosticsContractTest {
         assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(x -> x.primaryRange().map(r -> r.source().equals(original.id())).orElse(false)));
     }
 
+    @Test void requestedSourcesKeepSyntaxErrorsWhenNoModelCanBeRecovered() {
+        var damaged = source("no-model", "GARBAGE\r\n");
+        for (var selector : List.of(new ModelSelector.BySource(damaged.id()),
+                new ModelSelector.ByName("Lost", Optional.empty(), Optional.of(damaged.id())))) {
+            var request = new CompilationRequest(List.of(selector), SourceSet.of(Map.of(damaged.id(), damaged)), CompilerOptions.defaults());
+            var out = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(request, TOKEN));
+            assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")));
+            assertFalse(out.rejection().diagnosticIds().isEmpty());
+        }
+        // An unassociated file cannot acquire a model identity from its basename.
+        var named = input("Lost", List.of(damaged), WarningPolicy.ALLOW_WARNINGS);
+        var out = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(named, TOKEN));
+        assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0001")));
+        assertFalse(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")));
+    }
+
+    @Test void aResolvedImportKeepsItsRequiredSyntaxSourceEvenWhenThePromisedModelIsLost() {
+        var root = source("root", model("Root", "IMPORTS Dep;")); var damaged = source("Dep.ili", "GARBAGE\r\n");
+        var syntax = CompilerTestSupport.parse(root); var site = syntax.root().models().getFirst().imports().getFirst();
+        var binding = new ImportBinding(new ImportSite(site.range(), "Root", "Dep"), new ImportResolution.Resolved(
+                new ModelLocation(damaged.id(), damaged.revision(), "Dep", Optional.of("1"), 14)));
+        var request = CompilerTestSupport.request(List.of("Root"), Map.of(root.id(), root, damaged.id(), damaged), List.of(binding), CompilerOptions.defaults());
+        var out = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(request, TOKEN));
+        assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")
+                && d.primaryRange().orElseThrow().source().equals(damaged.id())));
+        assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0004")));
+        var unassociated = new CompilationRequest(request.roots(), SourceSet.of(request.sources().sources()), request.options());
+        var missing = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(unassociated, TOKEN));
+        assertTrue(missing.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0001")));
+        assertFalse(missing.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")));
+    }
+
     @Test void namespaceConflictsCarryTheActualRevisionBoundDeclaration() {
         for (int shift : List.of(0, 2)) {
             var source = new SourceText(new SourceId("memory:/🦊.ili"), new SourceRevision(shift + 7),

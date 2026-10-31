@@ -127,6 +127,7 @@ public final class DiagnosticMessageFormatter {
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             if (Character.isISOControl(c) || c == '\u2028' || c == '\u2029'
+                    || c == '\u200e' || c == '\u200f' || c == '\u061c'
                     || c >= '\u202a' && c <= '\u202e' || c >= '\u2066' && c <= '\u2069') {
                 String hex = Integer.toHexString(c);
                 out.append("\\u");

@@ -105,7 +105,7 @@ async function request(base, method, route, body, timeout = 60000) {
     const stabilization=await request(base,'POST',`/session/${sessionId}/execute/async`,{
       script:'const done=arguments[arguments.length-1];window.interlisBrowserTest.runStabilizationContract().then(done).catch(error=>done({error:String(error)}));',args:[]
     });
-    if(stabilization?.stabilizationCases!==3558)throw new Error('Safari stabilization failed: '+JSON.stringify(stabilization));
+    if(stabilization?.stabilizationCases!==3560)throw new Error('Safari stabilization failed: '+JSON.stringify(stabilization));
     result={...result,...stabilization};
     const stabilizationElapsedMs=Date.now()-clientFinished;
     if (!result || result.status !== 'ok' || result.exactDecimal !== true

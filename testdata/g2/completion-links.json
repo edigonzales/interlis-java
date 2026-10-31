@@ -5205,7 +5205,7 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/CompilationRun.java",
-          "sha256": "51f185dfbb49724ca132baac9e9df3b40511c8f477fe5b8ab6bf6aabd3a7f76a"
+          "sha256": "c200390bc138e583a7940572e9a794e165cb23170f0da5b3a9a21650da38f71c"
         }
       ],
       "resolution": "Keine feingranulare semantische Memoisierung aktiviert: die Pipeline baut den Graph stets vollständig neu; Syntax-/Identitätsreuse und Hostcache sind getrennt. Benchmarkbedingung vor einer künftigen semantischen Optimierung bleibt bestehen."
@@ -5592,7 +5592,7 @@
         },
         {
           "source": "docs/spec/06-kompilierung-und-semantik.md",
-          "sha256": "c8e135692ef4c49ae19c3b70726ca20cb8628a69bb2f17a1fa4c3fb41ee1d4aa"
+          "sha256": "6d9c2cbd9c31cbf352b0440e49c5b496f390ebf8967a6e420e73b0213c9ea04a"
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",

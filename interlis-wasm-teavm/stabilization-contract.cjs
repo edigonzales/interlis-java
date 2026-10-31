@@ -58,6 +58,17 @@ async function verifyStabilization(api) {
       if (!compiled.diagnostics.some(d => d.code === 'ILI-SEM-0010' && d.arguments.some(a => a.name === 'rule' && a.value.endsWith('/SCOPE_OUTER_TYPE_NAME')) && d.range.revision === '1')) throw new Error('CLI2 namespace identity lost');
     }); requestDiagnosticCases++;
   }
+  // A requested source remains relevant when recovery cannot build any model.
+  for (const version of ['2.3', '2.4']) {
+    const {sessionId} = await call('openSession');
+    try {
+      const sourceId = 'memory:/no-model-ä.ili';
+      const updated = await call('updateSource', sessionId, {sourceId, expectation:{kind:'absent'}, change:{kind:'replace',text:'INTERLIS '+version+';\r\nGARBAGE\r\n'}});
+      const compiled = await call('compile', sessionId, {expectedWorkspaceRevision:updated.workspaceRevision,roots:[{kind:'bySource',source:sourceId}]});
+      if (compiled.outcome !== 'rejected' || !compiled.diagnostics.some(d=>d.code==='ILI-SYN-0004') || !compiled.rejection.diagnosticIds.length) throw new Error('CLI2 lost requested source syntax '+JSON.stringify(compiled));
+    } finally { await call('closeSession', sessionId); }
+    requestDiagnosticCases++;
+  }
   // L4-1: duplicate-safe declaration continuity and the newly closed role rules.
   let phase4Cases=0;
   for(const version of ['2.3','2.4']) {

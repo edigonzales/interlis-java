@@ -4,7 +4,7 @@ function fixture(){
  const candidate='1'.repeat(40),sourceFingerprint='2'.repeat(64),sha='3'.repeat(64),currentArtifacts={};
  const files=new Set([...Object.values(definitions).flatMap(d=>d.artifacts),...browser,'interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js','interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js.wasm']);for(const file of files)currentArtifacts[file]=sha;
  const bound=(files,status='passed')=>({status,gitCommit:candidate,dirty:false,sourceFingerprint,artifacts:Object.fromEntries(files.map(f=>[f,sha]))});
- const suite={stabilizationCases:3558,corpusRegressionCases:24};const transport={...suite,transportChecks:29,clientContractChecks:7,exactDecimal:true,workerRestartOutcome:'succeeded'};
+ const suite={stabilizationCases:3560,corpusRegressionCases:24};const transport={...suite,transportChecks:29,clientContractChecks:7,exactDecimal:true,workerRestartOutcome:'succeeded'};
  const proofs={};for(const [name,d]of Object.entries(definitions))proofs[name]={...bound(d.artifacts,d.status),...suite,tests:d.minimum||1,failures:0,errors:0,skipped:0};
  const names=['chromium','firefox','webkit'];proofs.browsers=names.map(browserName=>({...bound(browser),browser:browserName,browserVersion:'fixture',externalRequests:[],result:{...transport}}));
  proofs.nativeBrowsers=names.map(browserName=>({...bound(['interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js','interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js.wasm']),browser:browserName,browserVersion:'fixture',runtime:'graalvm-web-image',result:{...suite,outcome:'succeeded'}}));
@@ -32,7 +32,7 @@ for(const [name,mutate]of [
 for(const [name,mutate]of [
  ['missing Node proof',f=>delete f.proofs.js],['stale source',f=>f.proofs.wasm.sourceFingerprint='old'],['foreign commit',f=>f.proofs.native.gitCommit='9'.repeat(40)],
  ['dirty proof',f=>f.proofs.client.dirty=true],['foreign module',f=>f.proofs.js.artifacts[Object.keys(f.proofs.js.artifacts)[0]]='other'],['missing module',f=>delete f.proofs.wasm.artifacts[Object.keys(f.proofs.wasm.artifacts)[0]]],
- ['missing extra regressions',f=>delete f.proofs.js.corpusRegressionCases],['incomplete original suite',f=>f.proofs.native.stabilizationCases=3557],['skipped Node case',f=>f.proofs.diagram.skipped=1],
+ ['missing extra regressions',f=>delete f.proofs.js.corpusRegressionCases],['incomplete original suite',f=>f.proofs.native.stabilizationCases=3559],['skipped Node case',f=>f.proofs.diagram.skipped=1],
  ['missing browser',f=>f.proofs.browsers.pop()],['fake Safari from WebKit',f=>f.proofs.safari.browser='webkit'],['missing actual version',f=>delete f.proofs.browsers[0].browserVersion],
  ['declared browser skip despite full case count',f=>f.proofs.browsers[0].result.skipped=1],
  ['declared Safari error despite passed report',f=>f.proofs.safari.result.errors=1],

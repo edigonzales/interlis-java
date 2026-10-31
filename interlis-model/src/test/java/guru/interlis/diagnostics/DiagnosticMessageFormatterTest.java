@@ -45,9 +45,11 @@ class DiagnosticMessageFormatterTest {
 
     @Test void terminalArgumentsAreEscapedOnceAndExactNumbersAreNotRounded() {
         var unresolved = DiagnosticCatalog.initial().require(new DiagnosticCode("ILI-SEM-0001"));
-        String raw = "🦊\n\r\t\u001b[31m\u202e{name}";
+        String raw = "🦊\n\r\t\u001b[31m\u202e{name}\u200e\u200f\u061c";
         var text = formatter.format(diagnostic(unresolved, List.of(new DiagnosticArgument.IdentifierArgument("name", raw))), DiagnosticLanguage.EN).text();
         assertTrue(text.contains("🦊\\u000a\\u000d\\u0009\\u001b[31m\\u202e{name}"), text);
+        assertTrue(text.contains("\\u200e\\u200f\\u061c"), text);
+        assertTrue(text.chars().noneMatch(c -> c == 0x200e || c == 0x200f || c == 0x061c));
         assertTrue(text.chars().noneMatch(Character::isISOControl));
         var limit = DiagnosticCatalog.initial().require(new DiagnosticCode("ILI-INF-0002"));
         var value = new BigInteger("1234567890123456789012345678901234567890");

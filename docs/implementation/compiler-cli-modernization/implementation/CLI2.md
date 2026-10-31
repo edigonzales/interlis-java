@@ -145,3 +145,58 @@ CLI2-01–11 sind implementiert und lokal geprüft; unabhängige Abnahme noch of
 CLI3-Pflichtläufe einschliesslich realer Browser/Web Image/Plattformmatrix sind
 noch nicht als Folgeabnahme ausgeführt. Nächster Schritt: unabhängiger Review
 am sauberen Kandidaten, erst nach belegtem PASS automatisch CLI3.
+
+## Unabhängiger R1: FAIL und Nacharbeit F1/F2
+
+Geprüfter Kandidat65ad26529bde5fd9e9834b336481d98c94079ff9; unveränderter
+Bericht reviews/CLI2-r1-65ad26529bde-FAIL.md, SHA256
+bca0bf5ff4d29fcdf14bf21a951aee77849240a3d52fcaec629ddd3458fd551d.
+OpenCode2.0.28/DeepSeek direkt/deepseek-flash; äusserer ProzessExit0 und
+finaler Guardpassed/0, HEAD/Produktquellen sauber. Das unabhängige Gate
+bestand3m40s/72Tasks,1214/227JUnit ohne Fehler/Skips, aber die eigenen Proben
+belegten F1/CLI2-04 und F2/CLI2-08. Deshalb kein CLI2-PASS.
+
+Die beiden ersten Reviewer-Gateversuche scheiterten an fehlenden gepinnten
+Node-Abhängigkeiten beziehungsweise einer ungetrackten node_modules-Verknüpfung
+in der strikten Quelleninventur. Nach einer echten ignorierten Dependencykopie
+bestand das volle Gate. Die Rohlogs gate1-missing-node.log/gate2-symlink.log
+bleiben erhalten. Das sind keine verschwiegenen erfolgreichen Läufe.
+
+Tatsächliches eigenes RED am weiterhin installierten65ad265-Artefakt:
+rework-r2/red-65ad265.json. check auf INTERLIS2.4;GARBAGE liefert Exit1/leeres
+stderr, JSONdiagnostics leer. Öffentliche API mit explizit aufgelöster, beschädigter
+Importquelle: full=[ILI-SYN-0004,ILI-RES-0004], request=[ILI-RES-0004].
+Formatter: bidiRaw=true für U+200E/U+200F/U+061C.
+
+F1: Die einmalige Auswahl erhält zusätzlich explizite BySource-Roots und
+ByName-Quellhinweise für konservative Syntaxrelevanz, auch ohne rekonstruierbare
+Modelldeklaration. ImportBinder behält die SourceId einer tatsächlich aufgelösten
+Importquelle bei fehlender/beschädigter versprochener Deklaration. Unverbundene
+Dateien werden nicht anhand ihres Dateinamens einem fehlenden Import zugeordnet:
+Im entsprechenden R1-Teilfall ohne Binding bleibt ILI-RES-0001 sichtbar, die
+fremde Dateisyntax gehört weiterhin zur vollen Analyse. Neue positive/negative
+Vertragstests unterscheiden diese Fälle ausdrücklich; keine CLI-Heuristik oder
+Parser-Recovery-/Sprachänderung. Der Fachvertrag in Kapitel06 ist präzisiert.
+
+F2: safeText escaped auch LRM/RLM/ALM (U+200E/U+200F/U+061C). Der bestehende
+Sicherheitstest prüft deren sichtbare Escapes und die Abwesenheit roher Marken.
+Neue CLI-Prozesse/API-Tests prüfen die no-model-Root-/Importfälle einschliesslich
+JSON und diagram. Zwei weitere echte BySource-Portablefälle (2.3/2.4) prüfen
+Rejectiondiagnosen bei nicht rekonstruierbarer Modelldeklaration; Umfang nun
+3560 statt3558. Nur aktive exakte Zähler/Gegenprobenzähler folgen diesem Zusatz.
+
+GREEN: rework-r2/green.json, Exit1 mit sichtbarem ILI-SYN-0004 und parsebarem
+JSONteilbestand; tatsächlich gebundener Import request=[ILI-SYN-0004,ILI-RES-0004],
+bidiRaw=false. Gezielt erneut Modell/Compiler/CLI/Installation: Exit0/32s,
+rework-r2/targeted.log. Vollständiges neues Gate und R2-Abnahme noch offen.
+
+R2-Nacharbeit lokal vollständig verifiziert: derselbe Pflichtgateaufruf ohne
+--continue, rework-r2/gate.log, **Exit0/3m56s/72Tasks**, finaler Guardpassed/0
+(environment.json). XMLs: **1217/227,0Failures/Errors/Skips** (junit.json).
+Node95+18+4 bestanden; JS/WasmGC je3560+24 bestanden. Conformance unverändert
+577PASS/16XFAIL/0FAIL/XPASS/ERROR; tatsächlicher Runnerexit1 unverändert.
+Semantikvergleich4Cases/8Portableprojektionen/8Mutationen bestanden.
+SDK9/CLI19 und frischer Archivverbraucher bestanden; SDK-SHA256
+**dbbb76dcbe74d4b50aa46e7ef6a27016d0a57c903e13aceee09bea75271d831b**.
+Diese lokalen Entwicklungsberichte sind nicht als saubere Commitberichte
+umetikettiert; R2 baut den neuen committeten Kandidaten separat erneut.

@@ -11,7 +11,7 @@
     "docs/spec/03-build-und-repository.md": "12d9b291626b5dc603a41071c279a3c84a9e33feb7ab8618e13f2a0d1a99e94a",
     "docs/spec/04-quelltext-syntax-und-parser.md": "c1b16628120135224aa7ec492eaf8ba0119ad864fde963e255661374f265cccf",
     "docs/spec/05-metamodell-und-typensystem.md": "54da24d1fb19d51fc1c733596f67b06ed39635b216312e700d33a6d6c70d22f5",
-    "docs/spec/06-kompilierung-und-semantik.md": "c8e135692ef4c49ae19c3b70726ca20cb8628a69bb2f17a1fa4c3fb41ee1d4aa",
+    "docs/spec/06-kompilierung-und-semantik.md": "6d9c2cbd9c31cbf352b0440e49c5b496f390ebf8967a6e420e73b0213c9ea04a",
     "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "f7c6d37de98b4ee85aee68353a7b7544db9ebba2b162c783efcc26b6eba39571",
     "docs/spec/08-modellaufloesung-und-repositories.md": "8b3975515deb96eb17aa2c9836fdc0f77b31d0932defde9bf7528e1ce46759d8",
     "docs/spec/09-diagnostik-logging-und-telemetrie.md": "c31d503211e7bd89ac754e7e2cc8f68e33def75e1ad8b9decb72224dcf964f81",

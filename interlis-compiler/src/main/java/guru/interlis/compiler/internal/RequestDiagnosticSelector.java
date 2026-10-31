@@ -5,6 +5,8 @@ import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.compiler.CompilationRequest;
+import guru.interlis.compiler.ModelSelector;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,9 +22,20 @@ final class RequestDiagnosticSelector {
 
     /** Retains original values/order. Unlocated input/configuration problems are conservative globals. */
     static List<Diagnostic> select(List<Diagnostic> all, Closure closure, RootSelection roots,
+                                   CompilationRequest request,
                                    CancellationToken cancellation) {
         Set<DiagnosticId> explicit = new HashSet<>(roots.diagnostics());
         explicit.addAll(closure.diagnostics());
+        var syntaxSources = new HashSet<>(closure.sources());
+        // Explicit source requests still exist when parser recovery yields no model.
+        // Names without a source association must never guess a file from its basename.
+        for (var selector : request.roots()) {
+            cancellation.throwIfCancellationRequested();
+            switch (selector) {
+                case ModelSelector.BySource source -> syntaxSources.add(source.source());
+                case ModelSelector.ByName name -> name.sourceHint().ifPresent(syntaxSources::add);
+            }
+        }
         var selected = new ArrayList<Diagnostic>();
         for (Diagnostic diagnostic : all) {
             cancellation.throwIfCancellationRequested();
@@ -32,7 +45,7 @@ final class RequestDiagnosticSelector {
                         // A damaged required file cannot be proved syntactically valid by model ranges.
                         boolean syntaxError = diagnostic.severity() == Severity.ERROR
                                 && (diagnostic.phase() == Phase.LEXING || diagnostic.phase() == Phase.PARSING);
-                        return syntaxError ? closure.sources().contains(range.source()) : closure.contains(range);
+                        return syntaxError ? syntaxSources.contains(range.source()) : closure.contains(range);
                     }).orElse(true);
             if (relevant) selected.add(diagnostic);
         }

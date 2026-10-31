@@ -77,6 +77,10 @@ final class ImportBinder {
                 }
                 switch (binding.resolution()) {
                     case ImportResolution.Resolved resolved -> {
+                        // The resolver's source association remains required even when
+                        // syntax recovery cannot reconstruct its promised declaration.
+                        if (sourceSet.sources().containsKey(resolved.target().source()))
+                            sources.add(resolved.target().source());
                         Optional<ModelDecl> target = index.atLocation(
                                 resolved.target().source(),
                                 resolved.target().revision().value(),
