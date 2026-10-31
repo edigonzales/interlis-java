@@ -173,7 +173,7 @@ final class CompilerSessionFacade {
                 result.put("snapshotId", JsonValues.string(
                         rejected.analysis().snapshotId().value()));
                 result.put("diagnostics", diagnostics(rejected.analysis()));
-                result.put("rejection", rejection(rejected));
+                result.put("rejection", rejection(rejected,roots));
             }
             case CompilationOutcome.Cancelled cancelled -> {
                 result.put("outcome", JsonValues.string("cancelled"));
@@ -399,15 +399,32 @@ final class CompilerSessionFacade {
         return JsonValues.array(diagnostics);
     }
 
-    private JsonValue.JsonObject rejection(CompilationOutcome.Rejected rejected) {
+    private JsonValue.JsonObject rejection(CompilationOutcome.Rejected rejected,List<ModelSelector> requestedRoots) {
         var summary = rejected.rejection();
         return JsonValues.object(
-                "reasons", JsonValues.strings(summary.reasons().stream().map(Enum::name).toList()),
+                "reasons", JsonValues.strings(summary.reasons().stream().map(Enum::name).sorted().toList()),
                 "diagnosticIds", JsonValues.strings(summary.diagnosticIds().stream()
                         .map(id -> id.value()).toList()),
-                "requestedRoots", JsonValues.strings(summary.requestedRoots().stream()
-                        .map(Object::toString).toList()),
+                "requestedRoots", JsonValues.array(requestedRoots.stream()
+                        .map(CompilerSessionFacade::selector).map(value -> (JsonValue)value).toList()),
+                "resolvedRoots", JsonValues.array(summary.requestedRoots().stream()
+                        .map(CompilerSessionFacade::selector).map(value -> (JsonValue)value).toList()),
                 "unsupportedFeatureIds", JsonValues.strings(summary.unsupportedFeatureIds()));
+    }
+
+    private static JsonValue.JsonObject selector(guru.interlis.compiler.ModelSelector selector) {
+        var fields=new LinkedHashMap<String,JsonValue>();
+        switch(selector) {
+            case guru.interlis.compiler.ModelSelector.ByName named -> {
+                fields.put("kind",JsonValues.string("byName"));fields.put("modelName",JsonValues.string(named.modelName()));
+                named.modelVersion().ifPresent(value -> fields.put("modelVersion",JsonValues.string(value)));
+                named.sourceHint().ifPresent(value -> fields.put("sourceHint",JsonValues.string(value.value())));
+            }
+            case guru.interlis.compiler.ModelSelector.BySource source -> {
+                fields.put("kind",JsonValues.string("bySource"));fields.put("source",JsonValues.string(source.source().value()));
+            }
+        }
+        return new JsonValue.JsonObject(fields);
     }
 
     private SourceRange cursor(AnalysisSnapshot snapshot, JsonValue.JsonObject query) {

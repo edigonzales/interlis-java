@@ -83,7 +83,7 @@ export interface AnalysisResultDto {
 export type CompilationResultDto =
   {readonly outcome: 'succeeded'; readonly snapshotId: string; readonly schemaId: string; readonly diagnostics: readonly DiagnosticDto[]} |
   {readonly outcome: 'rejected'; readonly snapshotId: string; readonly diagnostics: readonly DiagnosticDto[]; readonly rejection: {
-    readonly reasons: readonly string[]; readonly diagnosticIds: readonly string[]; readonly requestedRoots: readonly string[]; readonly unsupportedFeatureIds: readonly string[]}} |
+    readonly reasons: readonly string[]; readonly diagnosticIds: readonly string[]; readonly requestedRoots: readonly RootSelectorDto[]; readonly resolvedRoots: readonly RootSelectorDto[]; readonly unsupportedFeatureIds: readonly string[]}} |
   {readonly outcome: 'cancelled'; readonly cancellation: {readonly reason: string}} |
   {readonly outcome: 'failed'; readonly failureId: string; readonly diagnostic: DiagnosticDto};
 export interface PositionQueryDto {
