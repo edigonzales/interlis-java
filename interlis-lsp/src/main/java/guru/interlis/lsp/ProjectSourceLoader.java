@@ -17,8 +17,8 @@ final class ProjectSourceLoader {
     record FileContent(Path path,Path realPath,Optional<Object> fileKey,LoadedSource loaded,boolean editable,List<Path> roots,boolean symbolicLink) {
         FileContent { roots=List.copyOf(roots); }
     }
-    record Project(List<Path> roots,List<FileContent> files) {
-        Project { roots=List.copyOf(roots); files=List.copyOf(files); }
+    record Project(List<Path> roots,List<FileContent> files,Map<Path,Path> primaryPaths) {
+        Project { roots=List.copyOf(roots); files=List.copyOf(files); primaryPaths=Map.copyOf(primaryPaths); }
     }
     record FileIdentity(Path path,Path realPath,Optional<Object> fileKey) { }
     record IdentityMatch(Optional<FileIdentity> identity,Optional<guru.interlis.source.SourceId> source) { }
@@ -59,7 +59,28 @@ final class ProjectSourceLoader {
             // A final symlink must never win over its real, editable project file.
             // Parent directory aliases (e.g. a symlinked workspace root) stay logical.
             files.sort(Comparator.comparing(FileContent::symbolicLink).thenComparing(FileContent::path));
-            return new Project(roots,files);
+            var primaryPaths=new LinkedHashMap<Path,Path>();
+            var keyed=new HashMap<Object,Path>(); var realPaths=new HashMap<Path,Path>();
+            var unkeyedByHash=new HashMap<String,List<FileContent>>();
+            for(var file:files) {
+                token.throwIfCancellationRequested();
+                Path primary=file.fileKey().map(keyed::get).orElseGet(() -> realPaths.get(file.realPath()));
+                if(primary==null && file.fileKey().isEmpty()) {
+                    // Windows BasicFileAttributes has no fileKey. Hashes only
+                    // narrow candidates; physical identity still requires IO.
+                    for(var candidate:unkeyedByHash.getOrDefault(file.loaded().byteSha256(),List.of())) {
+                        token.throwIfCancellationRequested();
+                        if(Files.isSameFile(candidate.path(),file.path())) { primary=candidate.path(); break; }
+                    }
+                }
+                if(primary==null) {
+                    primary=file.path();
+                    if(file.fileKey().isEmpty()) unkeyedByHash.computeIfAbsent(file.loaded().byteSha256(),ignored -> new ArrayList<>()).add(file);
+                }
+                primaryPaths.put(file.path(),primary); realPaths.put(file.realPath(),primary);
+                if(file.fileKey().isPresent()) keyed.put(file.fileKey().orElseThrow(),primary);
+            }
+            return new Project(roots,files,primaryPaths);
         } catch(IOException unavailable) { throw error(ResponseErrorCode.RequestFailed,"project discovery failed: IO_FAILURE"); }
     }
 

@@ -300,7 +300,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
             var acceptedFiles=new LinkedHashMap<String,ProjectSourceLoader.FileContent>();
             for(var file:project.files()) {
                 var source=file.loaded(); if(!current.test(source.sourceId().value())) continue;
-                String uri=rememberFile(file,Optional.empty()); var id=new SourceId(uri);
+                String primary=project.primaryPaths().get(file.path()).toUri().toString();
+                String uri=rememberFile(file,Optional.of(new SourceId(canonicalUriNow(primary)))); var id=new SourceId(uri);
                 if(acceptedFiles.putIfAbsent(uri,file)!=null || openSource(id)) continue;
                 var previous=workspace.source(id);
                 updates.add(new SourceUpdate(id,previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
@@ -346,6 +347,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void openWithIdentity(DidOpenTextDocumentParams params) {
+        openWithIdentity(params,0);
+    }
+
+    private void openWithIdentity(DidOpenTextDocumentParams params,int retries) {
         String uri=params.getTextDocument().getUri();
         var known=fileSources();
         if(filePath(uri).isEmpty() || !canonicalUriNow(uri).equals(uri) || known.isEmpty()) { didOpenNow(params); return; }
@@ -353,6 +358,16 @@ final class InterlisTextDocumentService implements TextDocumentService {
         beginExternal(pending,request);
         identifyFile.apply(uri,known).whenComplete((match,failure) -> {
             try { scheduler.onOwner(() -> {
+                if(failure==null && !known.equals(fileSources())) {
+                    // A watcher may have admitted a hardlink while IO ran, even
+                    // on providers without file keys. Re-resolve that new set.
+                    var changed=retries<3?null:LspFailures.error(ResponseErrorCode.ContentModified,"file identities kept changing; reopen required");
+                    finishExternal(pending,request,changed); resolvingOpen=false;
+                    if(retries<3) { openWithIdentity(params,retries+1); return null; }
+                    unsynchronized.add(uri); operation("Document identities kept changing; reopen required");
+                    while(!resolvingOpen && !documentOperations.isEmpty()) documentOperations.removeFirst().run();
+                    return null;
+                }
                 Throwable problem=failure;
                 try {
                     if(problem==null) {

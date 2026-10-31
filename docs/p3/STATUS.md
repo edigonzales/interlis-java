@@ -89,6 +89,17 @@ erhalten; getrennte Kontrolle prüft genau ein Root-Modellsymbol.
 Neue unabhängige Abnahme des sauberen Kandidaten und dessen Plattformmatrix
 bleiben fällig; **P3-2 und G3 offen**.
 
+Kandidat 3018d4b: [Actions 41151205408](https://github.com/edigonzales/interlis-java/actions/runs/41151205408)
+Linux PASS, Windows FAIL in genau der neuen Startup-Hardlinkkontrolle
+(erwartet zwei Quellen, tatsächlich drei). Windows Java 25 liefert keinen
+`fileKey`; Discovery verwendet deshalb jetzt zusätzlich `Files.isSameFile`
+auf der I/O-Seite. Gleiche Dateibytes allein führen ausdrücklich nicht zur
+Zusammenführung. Weitere Kontrollen prüfen diese Trennung und geordnete
+Clientänderungen während der Identitätsprüfung. Aktueller eigener check-/
+Evidenz-/SDK-/Distributionslauf grün, **50 LSP-Fälle** ohne Fehler/Skips.
+Review 4 läuft noch am vorherigen Kandidaten; dessen mögliche Abnahme ersetzt
+weder die Windows-Korrektur noch deren neue unabhängige Abnahme/Plattformmatrix.
+
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256
 `ef7ac8ac673710d28c0139915af5f3fcc4043a3fe427e9228c71e46ee5c311d2`.

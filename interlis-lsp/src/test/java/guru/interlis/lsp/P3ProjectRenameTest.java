@@ -286,6 +286,33 @@ class P3ProjectRenameTest {
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
+    @Test void equalFileBytesDoNotCoalesceDistinctPhysicalFiles() throws Exception {
+        Path folder=project(); Files.writeString(folder.resolve("CopyBase.ili"),BASE);
+        var server=open(folder,true,null,null);
+        try {
+            ready(server,folder.resolve("Root.ili"));
+            assertEquals(3,server.workspaceForTest().state().sourceRevisions().size());
+            var response=server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile",List.of())).get(5,TimeUnit.SECONDS);
+            assertEquals("rejected",((Map<?,?>)response).get("outcome"));
+            assertTrue(((List<?>)((Map<?,?>)response).get("reasons")).contains("AMBIGUOUS_INPUT"));
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void changesQueuedBehindIdentityLookupRetainClientOrderAndVersion() throws Exception {
+        Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili");
+        var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));
+        server.initialize(new InitializeParams()).get(5,TimeUnit.SECONDS);
+        try {
+            for(Path file:List.of(base,root)) server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(
+                    new TextDocumentItem(file.toUri().toString(),"interlis",1,Files.readString(file))));
+            String updated=ROOT+"\n!! queued change 😀";
+            server.getTextDocumentService().didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(root.toUri().toString(),2),List.of(new TextDocumentContentChangeEvent(updated))));
+            ready(server,root);
+            assertEquals(updated,server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text());
+            var edit=rename(server,root); assertEquals(2,edit.getChanges().size());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
     private Path project() throws Exception {
         Path folder=Files.createTempDirectory(temporary,"Projekt ä ");
         Files.writeString(folder.resolve("Base.ili"),BASE); Files.writeString(folder.resolve("Root.ili"),ROOT); return folder;
