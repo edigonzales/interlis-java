@@ -14,11 +14,13 @@ Windows/Linux x64 bestehen denselben Produkt-SHA.
 P3-3 ist unabhängig PASS am Produktcommit `253d9ca837d05cc86959caf04fb2f4bab34c74c0`:
 [Review](p3/reviews/P3-3-review.md), Transport0/Manifest passed,1171 Fälle,
 Portable-/Browser-/Safari-/WebImage-/SDK-/Conformance-Prüfungen grün; F1–F7 geschlossen.
-Aktuell P3-4: alle347 offiziellen
-Closures eingefroren, fachliche Bewertung262 positive/85 strikte negative Fälle;
-TYPE-MODEL-REFSYSTEM-Freigabe dokumentiert. Vollständige JVM-/Node-/Browser-/Safari-
-Piloten, neue Corekorrekturen, feste Sollbudgets und1000-Edit-Prüfungen;
-noch keine P3-4-Abnahme. SDK-/Plattformgesamtgate bleibt fällig. [P3-Plan](p3/EXECUTION_PLAN.md),
+P3-4 ist unabhängig PASS am Produktcommit `280589065a7900e6b3bb2a338f2cd012865091e1`:
+[Review](p3/reviews/P3-4-review.md), Transport0/Manifest passed, alle347 offiziellen
+Closures/366 Originalquellen mit262 positiven/85 streng bewerteten negativen
+Ergebnissen. TYPE-MODEL-REFSYSTEM-Freigabe dokumentiert. Frischer vollständiger
+JVM-/Node-/Browser-/Safari-Corpus und2000 echte Änderungen bestehen die festen
+Budgets; keine Skips oder fachlichen Abweichungen. Aktuell P3-5:
+SDK-/Plattformgesamtgate und kumulativer G3-Review bleiben fällig. [P3-Plan](p3/EXECUTION_PLAN.md),
 [operativer P3-Status](p3/STATUS.md). Unabhängige Reviews mit OpenCode über die
 direkte DeepSeek API bleiben pro Lieferung und kumulativ verpflichtend.
 G3 ist offen; Windows-/Linux-x64-Prozessnachweise werden nach Nutzerfreigabe

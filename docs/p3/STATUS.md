@@ -1,10 +1,40 @@
 # P3 – operativer Status
 
 - **IN ARBEIT**, gesamter Meilenstein autonom beauftragt; **G3 offen**.
-- Aktuell **P3-4 – vollständiger Corpus und Belastung**, WP-32, AC-P3-12–16.
-  [Corpusbewertung](CORPUS_ASSESSMENT.md), [Umsetzung](implementation/P3-4.md); P3-5/G3 offen.
+- Aktuell **P3-5 – SDK, Plattformen und Gesamtgate**, WP-33, AC-P3-17–20.
+  [Vorbereitung](implementation/P3-5.md); finale Produktmatrix und G3 offen.
 - [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
   [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
+
+## Abgenommen: P3-4 – vollständiger Corpus und Belastung
+
+**PASS**, AC-P3-12–16 und kumulative P3-1–3-Gates, Produktcommit
+`280589065a7900e6b3bb2a338f2cd012865091e1`.
+[Unveränderter unabhängiger Review](reviews/P3-4-review.md), SHA-256
+`f5cb2399cab9a595ecf9ac637749a2319e6bfff05b5c66c56037225ac3cfdc65`.
+OpenCode2.0.28, direkte DeepSeek API, neuer Kontext im exakten sauberen
+separaten Checkout; Transportexit0 und äusseres OS-Sperrmanifest passed.
+Keine offenen MUSS-Findings. [Corpusbewertung](CORPUS_ASSESSMENT.md),
+[Umsetzung und Belege](implementation/P3-4.md).
+
+Reviewer: alle347 Closures/366 Originalquellen unabhängig geprüft,
+262 Erfolge/85 ausdrücklich bewertete strikte Quellablehnungen; ili2c5.6.9
+akzeptiert alle347. Eigene neue Prüfungen27/27 Provenienz,10/10 Eingänge,
+17/17 CLI und19/19 Performancechecker. Aktuelle1186 JUnit ohne Fehler/Skips,
+JS/WasmGC/echte Browser/Safari/WebImage je3548+24, UI3,29/7,
+Conformance577/16/0 mit21 Normkontrollen, SDK9/Paket und54 Legacyprozesse.
+
+Frischer vollständiger `performanceCheck` am Produktcommit: **PASS**,24m23s,
+Quellfingerprint `750b4f5857c6a974c790e0965a9ce670078604d7feb1be264500b5cdab92290e`,
+dirty=false,347 Wurzeln/sechs Laufzeiten/2000 echte Änderungen/0 Skips/
+0 Semantikabweichungen. JVM-Edit-p95 104.215ms, Wasm823.135ms;
+feste Budgets unverändert. Der frühere79a2040-Lauf bleibt eine getrennte
+Elternvorprüfung. Rohbelege `build/review/P3-4-r1/` und kopiert unter
+`build/reports/p3/P3-4/independent-r1/`.
+
+Die Windows-/Linux-Zusatzmatrix am79a2040 ersetzt keine finale G3-Matrix.
+P3-5/G3 bleiben offen. Der vollständige SDK-/Gesamtauftrag wird automatisch
+fortgesetzt; historische13er-Messungen und frühere Fehlversuche bleiben erhalten.
 
 ## Abgenommen: P3-3 – Browser und Diagramm
 
