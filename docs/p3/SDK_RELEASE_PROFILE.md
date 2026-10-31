@@ -50,7 +50,9 @@ sie werden nicht persistiert oder zwischen Clients übertragen.
 
 ## Abnahme und Belege
 
-Implementiert, noch nicht gesamthaft abgenommen: `sdkArchiveCheck` prüft den
+Am Produktcommit `4b586b1e09a2f1cbd200f7d00876e44c81df2169` unabhängig
+gesamthaft geprüft: [G3-Abnahme](STATUS.md) und
+[unveränderter Review](reviews/P3-5-review.md). `sdkArchiveCheck` prüft den
 Consumer aus dem entpackten SDK einschliesslich Launcher. `platformCheck`
 führt die JVM-/CLI-/LSP-/SDK-Prozesse aus. `sdkReproducibilityCheck` baut zwei
 separate saubere Checkouts und vergleicht die ausgelieferten Dateien byteweise.
@@ -59,6 +61,20 @@ Quell-/Commitbindung, getrennten Versionen und Ressourcenhashes.
 Es nennt auch die Originalpins und den tatsächlichen Core-JAR-Hash der
 gezielten [TeaVM-Toolkorrektur](../../tools/teavm/README.md), welche stabile
 Klassenreihenfolgen für bytegleiche JavaScript-/Wasm-Erzeugung herstellt.
+
+Der tatsächliche aktuelle Gesamtlauf besteht in35m1s mit Exit0; zwei separate
+saubere Builds liefern84 bytegleiche Dateien, das Browsermanifest enthält
+alle38 tatsächlichen Ressourcen. Der Consumer funktioniert ausschliesslich
+aus dem entpackten SDK inklusive `javac`, Run und Launchern auf macOS arm64
+und den echten [Windows-/Linux-x64-Runnern](https://github.com/edigonzales/interlis-java/actions/runs/41214503758).
+447 eigene unabhängige Gegenproben sowie Transportexit0 und das äussere
+Sperrmanifest passed ergänzen die Produktgates. Der dokumentierte blockierte
+Hilfsaufruf im Reviewbericht §15 erzeugte keine Ausgabe/Evidenz und startete
+keinen Python-Interpreter. SDK-ZIP-SHA-256:
+`5a607b4eb03b5ea46fc9b4840960c793a4c72eeaba6a4a1e97366a28ec254170`.
+Die Rohbelege unter `build/reports/p3/P3-5/independent-r2/` erhalten ihre
+ursprüngliche Commit-/Quellbindung; der spätere Dokumentcommit benennt
+ausdrücklich den geprüften Produktcommit.
 
 Der Ablauf am sauberen Schlussprodukt ist:
 

@@ -1,19 +1,81 @@
 # P3 – operativer Status
 
-- **IN ARBEIT**, gesamter Meilenstein autonom beauftragt; **G3 offen**.
-- Aktuell **P3-5 – SDK, Plattformen und Gesamtgate**, WP-33, AC-P3-17–20.
-  [Vorbereitung](implementation/P3-5.md); finale Produktmatrix und G3 offen.
+- **P3 und G3: PASS, vollständig abgeschlossen**, kumulativ AC-P3-01–20,
+  WP-30–33 und G0–G3. Der Auftrag wurde ohne Teilphasenstopp ausgeführt.
+- **Geprüfter Schlussproduktcommit:**
+  `4b586b1e09a2f1cbd200f7d00876e44c81df2169`.
+  [Unveränderter unabhängiger Gesamtreview](reviews/P3-5-review.md), SHA-256
+  `286ca12f06bc59b9efdc702db9a42b7e5b5ac8a12fc41ff67929e7f65604574c`.
+  [Umsetzung und Nachweise](implementation/P3-5.md),
+  [SDK und Migration](SDK_RELEASE_PROFILE.md).
 - [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
   [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
 
-## P3-5 – erster kumulativer Review: FAIL, Korrektur läuft
+## Abgenommen: P3-5 und kumulatives G3
+
+OpenCode 2.0.28 über die **direkte DeepSeek API**, `deepseek/deepseek-flash`,
+unabhängiger R2-Kontext im separaten sauberen Checkout. Vollständiger aktueller
+`releaseCheckP3`: **Exit 0, 35m1s**, 100 Tasks, davon 42 ausgeführt und 58
+regulär UP-TO-DATE am unveränderten Kandidaten. Keine Pflichtprüfung oder
+Testfälle übersprungen. **447 neue eigene Reviewerprüfungen** plus tatsächlicher
+TeaVM-Original-RED-/Patch-GREEN-Kontrast bestehen. F1–F3 geschlossen;
+keine offenen MUSS-Findings oder Produktblocker.
+
+Äusserer Abschluss separat nach OpenCode-Ende geprüft: **Transportexit 0**,
+**OS-Sperrmanifest passed**, Head exakt Schlussproduktcommit und dirty leer.
+Manifest-SHA-256
+`515732aaffe003ff52f7b1df5bd67a6c0139e2266175b26e089b6e889de7bd52`;
+Transportresultat-SHA-256
+`55c4c76f4e2b89b325802ddd24d1eac49676584b150ccc915f13106d53accdb9`.
+Der erste R2-Aufruf hatte seinen Hintergrundlauf vorzeitig beendet; dessen
+unvollständiges Log bleibt erhalten und zählt nicht zur Abnahme. Ein weiterer
+Verbindungsstart scheiterte vor der Prüfung an der lokalen Serverauthentisierung.
+Der erfolgreiche Wiederholungslauf hielt Server und geerbte Sperre durchgehend
+aktiv. Trotz ausdrücklicher Anweisung versuchte der Reviewer einen leeren
+`python3`-Hilfsaufruf; die Sperre blockierte ihn vor Interpreterausführung.
+Keine Probe, Ausgabe oder Evidenz hing davon ab. Der unveränderte Bericht
+§15 und das Transportlog legen diesen Prozessverstoss offen; behauptet wird
+keine vollständige Freiheit von Aufrufversuchen. Alle Prüfungen liefen ohne
+ausführbaren Python-Interpreter und ohne Python-Laufzeitabhängigkeit.
+
+| Aktueller Nachweis am Schlussprodukt | Tatsächliches Ergebnis |
+|---|---|
+| JVM und Plattformprozesse | Je 1186 Tests in 223 XML-Suites, 0 Fehler/Skips, SDK9/Legacy54 auf macOS arm64 sowie echten Windows-/Linux-x64-Runnern |
+| Portable und echte Browser | Je 3548+24 auf JS/Node, WasmGC/Node, Chromium, Firefox, WebKit, echtem Safari und Web Image; UI3, Transport29/Client7, Node-Client18/Diagramm4 |
+| Konformität | Projekt577 PASS/16 XFAIL/0 FAIL/ERROR/XPASS, 21 Normkontrollen; roher Referenzbefund separat erhalten |
+| Vollständiger Corpus | 347 Closures/366 Originalquellen, 262 Erfolge/85 ausdrücklich bewertete strikte Ablehnungen, sechs Laufzeiten, 0 Skips/Semantikabweichungen; ili2c akzeptiert unabhängig erneut347/347 |
+| Belastung und Budgets | 2000 echte Änderungen; JVM-p95 132.822ms, Wasm-p95 865.384ms, Wasm-Editor-RSS802914304B; Retention4/996 Freigaben, Ereignisdruck1000/Queue32; feste Budgets unverändert |
+| SDK und Reproduzierbarkeit | Consumer nur aus entpacktem ZIP mit javac/Run/Launchern; zwei separate saubere Builds, 84/84 Lieferdateien bytegleich, 38 vollständig gehashte Browserressourcen |
+| Fehlerabwehr | Unabhängige tatsächliche Lieferinventur, fehlende/alte/fremde/partielle/übersprungene Nachweise abgelehnt;124 Inventur-,11 echte Dateimutations- und12 Releasekonfigurationsproben |
+
+**Aktuelle Plattformmatrix:** [GitHub-Lauf41214503758](https://github.com/edigonzales/interlis-java/actions/runs/41214503758),
+Windows-Job124576089556 und Linux-Job124576089716, beide completed/success
+am selben Schlussproduktcommit. Collector prüft die autoritativen Archivdigesten;
+lokaler macOS-Nachweis stammt aus dem vollständigen aktuellen Gesamtlauf.
+
+Quellfingerprint
+`794d6e69437121e28a3705f44b869f92deee606741bd7b13c64dcb500db78c46`.
+Rohbelege: `build/review/P3-5-r2/`, `build/review-final/P3-5-r2/` sowie mit
+unveränderter Herkunft kopiert unter `build/reports/p3/P3-5/independent-r2/`.
+Dessen `origin.json` benennt den tatsächlichen Reviewcheckout und die Hashes.
+Aktuelles Releaseergebnis-SHA-256
+`3e37fa076f91541604f9661c41cf1e1a05590bd2b297170b58bc280250442ade`,
+Gesamtlauf-Log-SHA-256
+`827034adca66ae88ccbaed8f8eeb73b8c475cc69c233e915583cb98948fd9fd2`.
+Der frühere lokale f341d7b-Gesamtbeleg wird nicht als aktueller Lauf umetikettiert.
+
+Der folgende Abschlusscommit ändert ausschliesslich Bericht und Status-/SDK-
+Dokumentation. P4 ist der nächste fachliche Meilenstein und nicht beauftragt;
+keine Veröffentlichung, kein Release und kein PR-Merge.
+
+## Historie: erster kumulativer Review FAIL, anschliessend korrigiert
 
 Produkt `f341d7bd3baf8e137985723b6216c30d6580384b` besteht den eigenen
 vollständigen `releaseCheckP3` in35m54s und den frischen unabhängigen Lauf
 in30m47s. Die eigenen Negativproben des Reviewers finden trotzdem drei
 MUSS-Lücken: deklarierte Browser-/Safari-Skips,83 statt84 reproduzierte Dateien
 bei korrigiertem Selbstzähler und ein partielles Browsermanifest werden
-akzeptiert. **G3 bleibt FAIL/offen**, kein positives Gesamttestat.
+akzeptiert. **Damals G3 FAIL/offen**, kein positives Gesamttestat.
 
 [Unveränderter R1-Bericht](reviews/P3-5-f341d7b-FAIL.md), SHA-256
 `7fb05c73e70b011fd3dc35a4813a84d0f698b7673f7e11fd2417f89c8d70a697`;
@@ -24,13 +86,13 @@ Hilfsaufruf. Kein Interpreter lief; der Folge-Review muss auch solche
 Aufrufversuche vermeiden. Rohbelege `build/review/P3-5-r1/` und
 `build/review-final/P3-5-r1/`.
 
-Korrektur in isolierter Vorbereitung: vollständige Liefer-/Browserdateimengen
+Die anschliessende Korrektur ermittelt vollständige Liefer-/Browserdateimengen
 aus dem tatsächlichen Dateisystem, exakte Ressourcenhashes/-grössen und
 Ablehnung widersprüchlicher Skip-/Fehler-/Abbruchangaben.87 gezielte
 Kontrollen sowie tatsächlicher RED→GREEN-Kontrast aller drei Befunde bestehen;
 84 reale Lieferdateien/38 Browserressourcen passen zur positiven Vorprüfung.
-Neue Produktmatrix und vollständiger unabhängiger G3-Review bleiben fällig;
-die Arbeit wird ohne Teilphasenstopp fortgesetzt.
+Neue Produktmatrix und vollständiger unabhängiger G3-Review sind oben am
+Schlussprodukt belegt; dieser erste FAIL-Bericht bleibt unverändert erhalten.
 
 ## Abgenommen: P3-4 – vollständiger Corpus und Belastung
 
@@ -59,8 +121,8 @@ Elternvorprüfung. Rohbelege `build/review/P3-4-r1/` und kopiert unter
 `build/reports/p3/P3-4/independent-r1/`.
 
 Die Windows-/Linux-Zusatzmatrix am79a2040 ersetzt keine finale G3-Matrix.
-P3-5/G3 bleiben offen. Der vollständige SDK-/Gesamtauftrag wird automatisch
-fortgesetzt; historische13er-Messungen und frühere Fehlversuche bleiben erhalten.
+Zum P3-4-Abnahmezeitpunkt waren P3-5/G3 noch offen; deren Abschluss steht oben.
+Historische13er-Messungen und frühere Fehlversuche bleiben erhalten.
 
 ## Abgenommen: P3-3 – Browser und Diagramm
 
@@ -78,7 +140,7 @@ je3548, echte UI3,29 Transport-/7 Clientprüfungen, SDK9/Paket, Conformance
 Neue eigene Proben127/127 und76/76, echte UI3 undSafari; am Vorgänger
 reproduzieren sie12 beziehungsweise9 Fehler. Rohbelege
 `build/review/P3-3-r4/`, kopierte eigene Quellen/Logs unter
-`build/reports/p3/P3-3/r4-own/`. P3-4/P3-5/G3 bleiben offen.
+`build/reports/p3/P3-3/r4-own/`. P3-4/P3-5/G3 waren damals noch offen.
 
 ### Unveränderte Reviewhistorie
 

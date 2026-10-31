@@ -4,34 +4,42 @@ Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/S
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
 
-**P3 ist seit 30. Oktober 2026 autonom beauftragt und in Arbeit.**
-P3-1 (WP-30) ist unabhängig PASS am Produktcommit
-`9108b0387d9f1b82f506d8dc64e301e8522137dd`; P3-2 (WP-31, AC05–08) ist
-unabhängig PASS am Produktcommit `5eac6b64fb352982376f054a765597688d5f975b`.
-[P3-2-Review](p3/reviews/P3-2-review.md): Transport0/Manifest passed,
-1148 Fälle ohne Fehler/Skips, Portable je3548, SDK9, neue eigene Proben24/24+4/4.
-Windows/Linux x64 bestehen denselben Produkt-SHA.
-P3-3 ist unabhängig PASS am Produktcommit `253d9ca837d05cc86959caf04fb2f4bab34c74c0`:
-[Review](p3/reviews/P3-3-review.md), Transport0/Manifest passed,1171 Fälle,
-Portable-/Browser-/Safari-/WebImage-/SDK-/Conformance-Prüfungen grün; F1–F7 geschlossen.
-P3-4 ist unabhängig PASS am Produktcommit `280589065a7900e6b3bb2a338f2cd012865091e1`:
-[Review](p3/reviews/P3-4-review.md), Transport0/Manifest passed, alle347 offiziellen
-Closures/366 Originalquellen mit262 positiven/85 streng bewerteten negativen
-Ergebnissen. TYPE-MODEL-REFSYSTEM-Freigabe dokumentiert. Frischer vollständiger
-JVM-/Node-/Browser-/Safari-Corpus und2000 echte Änderungen bestehen die festen
-Budgets; keine Skips oder fachlichen Abweichungen. Aktuell P3-5:
-SDK-/Plattformgesamtgate und kumulativer G3-Review bleiben fällig.
-[P3-Plan](p3/EXECUTION_PLAN.md), [operativer P3-Status](p3/STATUS.md).
-Erster G3-Review amf341d7b: vollständiger positiver Gesamtlauf grün, aber
-**FAIL** wegen drei Nachweisprüferlücken bei Skips und partiellen Lieferlisten/
-Browsermanifesten. Die isolierte Korrektur besteht87 gezielte Kontrollen;
-neue vollständige unabhängige Abnahme bleibt fällig.
-Unabhängige Reviews mit OpenCode über die
-direkte DeepSeek API bleiben pro Lieferung und kumulativ verpflichtend.
-G3 ist offen; Windows-/Linux-x64-Prozessnachweise werden nach Nutzerfreigabe
-über die neue GitHub-Action ausgeführt und bestehen bereits am P3-1-SHA.
-Die finale Plattformmatrix am P3-Gesamtprodukt bleibt fällig. Der folgende G2-Abschluss
-bleibt als getrennte erfüllte Voraussetzung erhalten.
+**P3 und G3 sind vollständig und unabhängig mit PASS abgeschlossen**,
+kumulativ AC-P3-01–20/WP-30–33 und G0–G3. Der autonome Auftrag lief ohne
+Teilphasenstopp bis zur Gesamtprüfung. Geprüfter Schlussproduktcommit:
+`4b586b1e09a2f1cbd200f7d00876e44c81df2169`.
+[Unveränderter kumulativer Review](p3/reviews/P3-5-review.md), SHA-256
+`286ca12f06bc59b9efdc702db9a42b7e5b5ac8a12fc41ff67929e7f65604574c`.
+Direkte DeepSeek API über OpenCode2.0.28, unabhängiger separater sauberer
+Checkout; regulärer Transportexit0 und äusseres OS-Sperrmanifest passed.
+Der Bericht legt einen verbotswidrig versuchten leeren Python-Hilfsaufruf
+offen, der vor Interpreterausführung blockiert wurde; keine Ausgabe oder
+Testevidenz hängt davon ab. Es lief kein Python-Interpreter.
+
+Vollständiger aktueller `releaseCheckP3`: Exit0/35m1s,1186 JUnit/223XML ohne
+Fehler/Skips, je3548+24 auf portablen/echten Browser-/Safari-/WebImage-Pfaden,
+UI3,29 Transport-/7 Clientprüfungen,SDK9/Legacy54 und entpackter SDK-Consumer.
+Conformance577PASS/16XFAIL/0FAIL mit21 Normkontrollen;347 eingefrorene
+Closures/366 Originalquellen auf sechs Laufzeiten,262 Erfolge/85 ausdrücklich
+bewertete strikte Ablehnungen,2000 echte Änderungen,0 Skips/Semantikabweichungen.
+Feste Budgets bestehen. Nutzerfreigabe für REFSYSTEM BASKET in TYPE MODEL
+ist umgesetzt und in [COMPILER_NORM_DECISIONS.md](g2/COMPILER_NORM_DECISIONS.md)
+mit Normkapitel und Entscheidung dokumentiert.
+
+Zwei separate saubere Builds liefern84/84 bytegleiche Dateien und38 vollständig
+gehashte Browserressourcen. Echte Windows-/Linux-x64-Prozesse im
+[GitHub-Lauf41214503758](https://github.com/edigonzales/interlis-java/actions/runs/41214503758)
+und lokales macOS arm64 bestehen denselben Produktcommit.447 neue eigene
+Reviewerprüfungen sowie ein tatsächlicher TeaVM-Original-RED-/Patch-GREEN-
+Kontrast bestehen; die drei R1-Nachweisprüferlücken sind unabhängig geschlossen.
+Der frühere FAIL-Bericht und abgebrochene Vorläufe bleiben unverändert erhalten.
+Keine offenen P3-MUSS-Findings oder Produktblocker. Operativer Stand und
+Provenienz: [P3-Status](p3/STATUS.md),
+[Umsetzung/Nachweise](p3/implementation/P3-5.md),
+[SDK/Migration](p3/SDK_RELEASE_PROFILE.md), [Plan](p3/EXECUTION_PLAN.md).
+Der Abschlusscommit enthält ausschliesslich Dokumentation; P4 ist der nächste
+fachliche Meilenstein und nicht beauftragt. Keine Veröffentlichung oder Release.
+Der folgende G2-Abschluss bleibt als getrennte erfüllte Voraussetzung erhalten.
 
 **Phase 4 und G2 sind vollständig und unabhängig mit PASS abgeschlossen**,
 AC4-01–AC4-07 sowie kumulativ AC0A–AC3. Schlussproduktcommit
