@@ -145,3 +145,17 @@ Vollständiges Nacharbeitsgate: Exit0/3m21s/64 ausgeführte Tasks; JUnit1196/224
 und Node95 ohne Fehler/Skips, Conformance577/16, Norm21, SDK9/CLI19 und nativer
 SDK-Consumer. Log cli1-r3-gate.log, Guard cli1-r3-gate-guard.json (passed/Exit0),
 Counts cli1-r3-junit-counts.json. Frischer R3-Review ausstehend.
+
+## Unabhängiger CLI1-Abschluss
+
+**CLI1-01–09: PASS** am Produkt ed25d5311346e429d201f5792ff8ff464577f3e7.
+[Unveränderter R3-Review](../reviews/CLI1-r3-ed25d5311346-PASS.md), SHA256
+3ae6cebb9a3eed70f2874ec439d26040f261295bbf84b9cfba1789718726a967.
+F1/F2/F3 geschlossen. Eigener vollständiger Reviewer-Lauf Exit0/2m36s/64Tasks,
+1196 JUnit/224 XML und Node95 ohne Fehler/Skips, Conformance577/16, Norm21,
+SDK9/CLI19, direkter SDK-Start und neue tatsächliche Negativ-/Netz-/Importproben.
+Äusserer ProzessExit0, abgeschlossenes Guardmanifest passed/Exit0; Kandidaten-
+HEAD/Baum und identischer Scratch-Baum sauber. Maschinenprüfung siehe
+build/review/compiler-cli/CLI1-r3-ed25d5311346/acceptance-audit.json.
+Dieser Ablagecommit ändert ausschliesslich Bericht/Status. CLI2 startet danach
+automatisch; keine CLI2-/CLI3-Abnahme wird vorweggenommen.
