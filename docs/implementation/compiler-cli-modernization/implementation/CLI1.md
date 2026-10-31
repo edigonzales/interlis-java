@@ -123,3 +123,25 @@ Fehler/Skips, Conformance577PASS/16XFAIL/0FAIL/ERROR/XPASS und Norm21, SDK9/
 CompilerCLI19, nativer SDK-Consumer ohne chmod. Log cli1-rework-gate.log,
 Guard cli1-rework-gate-guard.json (passed/Exit0), Counts cli1-rework-junit-counts.json.
 R2-Abnahme ist noch ausstehend.
+
+## R2-FAIL: F1/F2 geschlossen, F3 korrigiert
+
+R2 am Produkt9a8c4087591a06f1f6b9a43a71dee07623ef7f12: ProzessExit0,
+Guardpassed/Exit0, unveränderter Kandidat.
+[Unveränderter Bericht](../reviews/CLI1-r2-9a8c4087591a-FAIL.md),
+SHA256 1c3ca08b55c31b4f03663690d3ab42d07ec115d896ea31cfc94a4eb0ecbfc86c.
+Alle funktionalen Kriterien bestanden; F1/F2 unabhängig geschlossen, inklusive
+mutierter0644-SDK-ZIP-Kopie (echter Consumer Exit1) und restaurierter positiver
+Kontrolle. Vollständiges unabhängiges Gate Exit0/2m31s/64 Tasks, JUnit1196/224,
+Node95, Norm21, Conformance577/16, SDK9/CLI19 ohne offene technische Fehler.
+Einziger neuer Muss-Befund F3: das aktive format-Beispiel verwendete versehentlich
+den Modulnamen als Programm. Das eine Token ist auf interlis-compiler korrigiert,
+aktive Spezifikationspins sind nachgeführt. Breiter Audit der aktuellen Aufruf-
+beispiele findet keine weiteren Modul-/Programmnamenverwechslungen. Das Programm
+aus dem tatsächlichen korrigierten Dokumentbeispiel wurde ausgeführt: format
+Exit0, stdout mit formatierter Base-Quelle, stderr leer; Rohbeleg
+build/review/compiler-cli/f3-example/result.json. Keine Produktcode-/Normänderung.
+Vollständiges Nacharbeitsgate: Exit0/3m21s/64 ausgeführte Tasks; JUnit1196/224
+und Node95 ohne Fehler/Skips, Conformance577/16, Norm21, SDK9/CLI19 und nativer
+SDK-Consumer. Log cli1-r3-gate.log, Guard cli1-r3-gate-guard.json (passed/Exit0),
+Counts cli1-r3-junit-counts.json. Frischer R3-Review ausstehend.

@@ -22,7 +22,7 @@
     "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "9464b79393185e13084d3153bc79d0ed45b5937aab83ed578509ec28af2eec36",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "efcbbaefffed904317c1d4779a5fc6e296a1c1615c783a0dbf3b6383525009a3",
     "docs/spec/16-api-register-und-vertragstests.md": "31a378080e21e348dba9de5411ddfc57673f236d0343ec27199e318681b8f458",
-    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "385aaa5925a66d582cb1ef876540289f5ad3c3279d17ba08e85d2a0cd9705966",
+    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "f1047e584782e83e00c2491a29e0543e683477a9e077fe24e1dc0ad9011ca792",
     "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3"
   },
   "grammars": [

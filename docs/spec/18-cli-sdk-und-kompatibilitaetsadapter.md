@@ -126,7 +126,7 @@ Die Formatierung MUSS:
 Die CLI bietet:
 
 ```text
-interlis-compiler-cli format [--check] [--write] [--indent N] [--line-ending lf|crlf] <files...>
+interlis-compiler format [--check] [--write] [--indent N] [--line-ending lf|crlf] <files...>
 ```
 
 Ohne Ausgabemodus geht das Ergebnis nach stdout. `--write` schreibt atomar in die
