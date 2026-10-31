@@ -9,7 +9,7 @@ function fixture(t){
   ...['compiler-cli','compiler','model','projection','repository','workspace'].map(n=>cli+'/lib/interlis-'+n+'-1-test.jar'),
   'build/releases/interlis-java-sdk-1-test.zip',tea+'/generated/teavm/js/interlis-compiler.js',tea+'/generated/teavm/wasm-gc/interlis-compiler.wasm',tea+'/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js',
   tea+'/browser-tools/z/nested.js',tea+'/browser-tools/a.js',tea+'/web/index.html',tea+'/web/build-manifest.json'];
- for(const file of [...files].reverse()){const output=path.join(root,file);fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,'fixture');}
+ for(const file of [...files].reverse()){const output=path.join(root,file);fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,'fixture');if(file.endsWith('/bin/interlis-compiler'))fs.chmodSync(output,0o755);}
  return {root,files,cli,tea};
 }
 test('inventory includes all actual shipped files once in deterministic relative order',t=>{
@@ -34,4 +34,8 @@ test('invalid distribution version fails before path traversal',t=>{const f=fixt
 
 for(const file of ['bin/interlis-cli','bin/interlis-cli.bat','bin/ili2c','bin/ili2c.bat','compat/ili2c.jar'])test('forbidden legacy artifact '+file+' fails delivery',t=>{
  const f=fixture(t),target=path.join(f.root,f.cli,file);fs.mkdirSync(path.dirname(target),{recursive:true});fs.writeFileSync(target,'legacy');assert.throws(()=>distributionFiles(f.root),/Forbidden legacy/);
+});
+
+if(process.platform!=='win32')test('non-executable delivered launcher fails inventory',t=>{
+ const f=fixture(t);fs.chmodSync(path.join(f.root,f.cli,'bin/interlis-compiler'),0o644);assert.throws(()=>distributionFiles(f.root),/not executable/);
 });

@@ -103,7 +103,7 @@ Abbruch ist ein expliziter Pfad durch diesen Ablauf. Ein interner Fehler ist wed
 | `Workspace` | Factory mit Engine, Resolverzustand und Optionen | besitzt Quellen, Revisionen und begrenzte Caches |
 | `ModelResolutionService` | Konstruktor mit provider/readers/policy | keine globale Netzwerkkonfiguration |
 | `DiagramProjector` | zustandslos oder immutable Options | reine Projektion eines Snapshots |
-| `LegacyDiagnosticRenderer` | immutable profilierter Katalog | Darstellung, keine fachliche Fehlerentscheidung |
+| `ConsoleDiagnosticRenderer` / `JsonDiagnosticWriter` | immutable kanonische Diagnosen und explizite Darstellungsoptionen | Darstellung, keine fachliche Fehlerentscheidung |
 | `TransferPlanner` / `ValidationPlanner` / `SchemaPlanner` | explizite Profil-/Capabilities-Eingaben | reine Plangenerierung; IO-Ausführung getrennt |
 
 Die exakten öffentlichen Signaturen stehen in den Fachkapiteln und im [API-Register](16-api-register-und-vertragstests.md). Diese Rollentabelle führt keine zusätzliche Factorysignatur ein. Eine testbare API rechtfertigt eine Schnittstelle; nicht jede Klasse erhält automatisch ein `I…`-Interface plus Implementierung plus Factory.

@@ -16,6 +16,8 @@ function distributionFiles(root) {
     'build/releases/interlis-java-sdk-'+version+'.zip',teavm+'/generated/teavm/js/interlis-compiler.js',
     teavm+'/generated/teavm/wasm-gc/interlis-compiler.wasm',teavm+'/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js'];
   for(const file of mandatory)if(!fs.statSync(path.join(root,file)).isFile())throw Error('Missing distribution file: '+file);
+  if(process.platform!=='win32' && (fs.statSync(path.join(root,cli,'bin/interlis-compiler')).mode & 0o111)!==0o111)
+    throw Error('Compiler launcher is not executable');
   const walk=directory=>fs.readdirSync(path.join(root,directory),{withFileTypes:true}).flatMap(entry=>{
     const file=directory+'/'+entry.name;
     if(entry.isDirectory())return walk(file);

@@ -473,6 +473,6 @@ Dreiparameterform bezeichnet einen erfolgreichen Compiler-Gate-Lauf.
 Analyse-/Versions-/Formatieraufrufe behaupten kein ausgegebenes CompiledSchema.
 Neue Host-APIs: `CommandSpec`, `CommandLineParser`, `CliParseOutcome`,
 `ParsedCommand`, `ConfigurationLoader`, `OutputPlan`/`OutputPlanner`,
-`CliOutputWriter` und das explizite `LegacyCliProfile`. Fachvertrag: Kapitel 18,
+`CliOutputWriter`. Das frühere `LegacyCliProfile` und seine Laufzeitadapter sind mit dem Compiler-CLI-Folgeauftrag entfernt; der einzige Programmeinstieg ist `Main` im Modul `interlis-compiler-cli`. Fachvertrag: Kapitel 18,
 kanonische Besitzer und Tests: Kapitel 16. LF/CRLF bewahrt werttragende
 Literal-/Metadatenzeilenenden und liefert dafür einen FormattingNotice.

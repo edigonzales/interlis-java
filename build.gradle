@@ -197,10 +197,15 @@ tasks.register('sdkPackage', Zip) {
     group = 'distribution'
     description = 'Builds the reproducible SDK/CLI archive (not published).'
     dependsOn ':interlis-compiler-cli:installDist', 'sdkProcessCheck'
+    inputs.property('compilerLauncherPermissions', '0755-v1')
     archiveFileName = "interlis-java-sdk-${project.version}.zip"
     destinationDirectory = layout.buildDirectory.dir('releases')
     from(project(':interlis-compiler-cli').layout.buildDirectory.dir('install/interlis-compiler')) {
         into 'cli'
+        eachFile { details ->
+            if (details.name in ['interlis-compiler', 'interlis-compiler.bat'])
+                details.permissions { unix('rwxr-xr-x') }
+        }
     }
     from(rootProject.file('examples/sdk')) {
         into 'examples/sdk'

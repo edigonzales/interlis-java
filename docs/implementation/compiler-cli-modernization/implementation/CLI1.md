@@ -89,3 +89,37 @@ CLI2/CLI3 beginnen erst nach unabhängigem CLI1-PASS. Vollständige Portable-/
 Browser-/Safari-/WebImage-/Performance-/Plattform-/Reproduzierbarkeitspflichten
 bleiben für ihre bezeichneten Phasen fällig und sind hier nicht als ausgeführt
 behauptet. Keine Veröffentlichung, kein Push, Merge oder Release.
+
+## Unabhängiger R1-FAIL und Nacharbeit
+
+Kandidat beca84286ba964de7c5ccbf941f4c48c2c3c0055, DeepSeek direkt/OpenCode2.0.28,
+frischer Worktree und identische saubere Scratch-Kopie. ReviewprozessExit0,
+Guardpassed/Exit0, Produkt unverändert. Unveränderter Bericht:
+[CLI1-r1-beca84286ba9-FAIL.md](../reviews/CLI1-r1-beca84286ba9-FAIL.md),
+SHA256 226081f6d0ca1490e975f9e264fb3a95306713f5cf62e2ba70a7436396624104.
+Eigenes unabhängiges Gate Exit0/2m41s/64 Tasks, 1196 JUnit ohne Fehler/Skips,
+94 Nodefälle, Conformance577/16, SDK9/Standard19. Trotzdem FAIL: F1 SDK-ZIP
+Unixlauncher0644, direkter Start Exit126, bisher durch setExecutable maskiert;
+F2 zwei aktive Legacy-API-Dokumentstellen. Keine fehlenden CLI1-Pflichtprüfungen.
+
+F1-Korrektur: SDK-Zip speichert ausschliesslich die beiden neuen Launcher
+explizit0755, inklusive benanntem Taskinput für zuverlässigen Neubau bei
+vorherigen lokalen Ausgaben. Unter Unix extrahiert der SDK-Consumer mit dem
+vorhandenen nativen /usr/bin/unzip und startet ohne Reparatur; Windows behält
+die reguläre Java-Extraktion. Geladene Einträge werden weiterhin auf sichere
+Pfade, Namen, Hashes und reguläre Dateien geprüft. Der Lieferinventarchecker
+verwirft unter POSIX nicht ausführbare Launcher; neue Negativprobe.
+
+Tatsächliches RED mit dem alten Original-SDK in isolierter Kopie: der korrigierte
+Consumer scheitert mit Exit1 und Delivered SDK Unix launcher is not executable
+(cli1-f1-canary-red2.log). Tatsächliches GREEN: sdkArchiveCheck Exit0/8s,
+SDK-ZIP b6efcbc6d6c73350bf70c19869025fce1776d6a5200da3ea4db30d162a112bae,
+zipinfo zeigt beide Launcher0755 (cli1-f1-green3.log). Kein chmod im Checker.
+F2: aktive API-Migration und Architekturrolle korrigiert, aktuelle
+Conformance-Reproduktionskommandos nachgeführt; historische Resultate unverändert.
+Vollständiges Nacharbeitsgate: **Exit0/2m33s/64 von64 Tasks ausgeführt**,
+1196 JUnit/224 XML ohne Failures/Errors/Skips, **95** Node-Checkerfälle ohne
+Fehler/Skips, Conformance577PASS/16XFAIL/0FAIL/ERROR/XPASS und Norm21, SDK9/
+CompilerCLI19, nativer SDK-Consumer ohne chmod. Log cli1-rework-gate.log,
+Guard cli1-rework-gate-guard.json (passed/Exit0), Counts cli1-rework-junit-counts.json.
+R2-Abnahme ist noch ausstehend.

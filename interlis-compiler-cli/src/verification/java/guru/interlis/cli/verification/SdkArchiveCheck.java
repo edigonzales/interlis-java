@@ -15,6 +15,7 @@ public final class SdkArchiveCheck {
         Path root=Path.of(args[0]).toAbsolutePath(),out=root.resolve("build/reports/sdk/archive-consumer.json");Files.deleteIfExists(out);
         var properties=new Properties();try(var reader=Files.newBufferedReader(root.resolve("gradle.properties"))){properties.load(reader);}
         Path archive=root.resolve("build/releases/interlis-java-sdk-"+properties.getProperty("projectVersion")+".zip");String archiveSha=hash(archive);
+        boolean windows=System.getProperty("os.name").startsWith("Windows");
         Path temporary=Files.createTempDirectory("interlis SDK consumer ");var entries=new TreeMap<String,String>();
         try {
             try(var zip=new ZipFile(archive.toFile())) {
@@ -24,8 +25,17 @@ public final class SdkArchiveCheck {
                     Path target=temporary.resolve(name).normalize();
                     require(!name.startsWith("/")&&!name.contains("\\")&&target.startsWith(temporary)&&!entries.containsKey(name),"Unsafe/duplicate SDK entry");
                     if(entry.isDirectory()){Files.createDirectories(target);continue;}
-                    Files.createDirectories(target.getParent());try(var input=zip.getInputStream(entry)){Files.copy(input,target);}
-                    entries.put(name,hash(target));
+                    Files.createDirectories(target.getParent());try(var input=zip.getInputStream(entry)){if(windows) Files.copy(input,target); else entries.put(name,hash(input.readAllBytes()));}
+                    if(windows) entries.put(name,hash(target));
+                }
+            }
+            if (!windows) {
+                // Native ZIP extraction preserves the delivered Unix modes. Never repair them.
+                var extraction=run(temporary,List.of("/usr/bin/unzip","-q",archive.toString(),"-d",temporary.toString()),Duration.ofSeconds(30));
+                require(extraction.exitCode()==0,"Native SDK extraction failed: "+extraction);
+                for(var entry:entries.entrySet()) {
+                    Path file=temporary.resolve(entry.getKey());
+                    require(Files.isRegularFile(file,LinkOption.NOFOLLOW_LINKS) && hash(file).equals(entry.getValue()),"Extracted SDK entry differs: "+entry.getKey());
                 }
             }
             for (String name : List.of("cli/bin/interlis-compiler", "cli/bin/interlis-compiler.bat",
@@ -41,8 +51,8 @@ public final class SdkArchiveCheck {
             require(compilation.exitCode()==0,"Extracted SDK does not compile separate consumer: "+compilation);
             var executed=run(temporary,List.of(java().toString(),"-cp",classes+File.pathSeparator+classpath,"SdkExample"),Duration.ofSeconds(30));
             require(executed.exitCode()==0&&executed.stdout().startsWith("SDK PASS ")&&executed.stderr().isEmpty(),"Extracted SDK consumer failed: "+executed);
-            boolean windows=System.getProperty("os.name").startsWith("Windows");Path launcher=temporary.resolve("cli/bin/interlis-compiler"+(windows?".bat":""));
-            require(windows||launcher.toFile().setExecutable(true,false),"Cannot restore executable permission after Java ZIP extraction");
+            Path launcher=temporary.resolve("cli/bin/interlis-compiler"+(windows?".bat":""));
+            require(windows||Files.isExecutable(launcher),"Delivered SDK Unix launcher is not executable");
             var version=run(temporary,List.of(launcher.toString(),"version","--json"),Duration.ofSeconds(30));require(version.exitCode()==0&&version.stderr().isEmpty(),"Extracted launcher failed");
             var shipped=read(temporary.resolve("version/version-manifest.json"));require(JsonParser.parseString(version.stdout()).equals(shipped),"Extracted SDK version manifest differs from actual launcher");SdkProcesses.version(shipped);
             require(hash(archive).equals(archiveSha),"SDK changed during separate consumer run");

@@ -7,7 +7,7 @@
     "interlis-compiler/src/main/antlr/InterlisLexer.g4": "07c4c8457dc657994b8f8c89664751f2f8efd874aafc89f49a25da271658b1bb",
     "docs/spec/00-auftrag-und-agentenregeln.md": "800322b4d895fc37692b2c2bc201e332cfd677664f948953cec7f3d757053fc9",
     "docs/spec/01-zielbild-und-anforderungen.md": "242ab8c9c6e79b035f234146e305e81034ce8727c2a1b3cab047dc2e0e0aa801",
-    "docs/spec/02-architektur-und-modulgrenzen.md": "6ab50cb73b8d3e73a84e5b7d883a9dfd6260b25bfbd1e15fa5c54640c4e2b882",
+    "docs/spec/02-architektur-und-modulgrenzen.md": "7de89a74d39ae57e8a36aed645225f637fd255ff9bd2e588cc35bc4ece7d55c0",
     "docs/spec/03-build-und-repository.md": "12d9b291626b5dc603a41071c279a3c84a9e33feb7ab8618e13f2a0d1a99e94a",
     "docs/spec/04-quelltext-syntax-und-parser.md": "c1b16628120135224aa7ec492eaf8ba0119ad864fde963e255661374f265cccf",
     "docs/spec/05-metamodell-und-typensystem.md": "54da24d1fb19d51fc1c733596f67b06ed39635b216312e700d33a6d6c70d22f5",

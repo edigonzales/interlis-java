@@ -11,12 +11,12 @@ This directory records the external INTERLIS compiler conformance run.
 | Selection | INTERLIS 2.3 and 2.4 only (`^(ili23|ili24)\.`) |
 | Excluded | INTERLIS 1.0, with the suite's own language field |
 | Runner | pinned `InterlisConformance.java` from the suite archive |
-| Compiler | `interlis-cli check` |
+| Compiler | `interlis-compiler check` |
 
-Reproduce:
+Reproduce with the current compiler CLI (historical results below keep their original revisions):
 
 ```sh
-./gradlew :interlis-cli:installDist
+./gradlew :interlis-compiler-cli:installDist
 ./gradlew conformanceCheck
 ```
 
