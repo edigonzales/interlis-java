@@ -13,8 +13,7 @@ window.webImageProbe = (async () => {
     await new Promise(r => setTimeout(r, 50));
   }
   if (typeof globalThis.interlisCompilerHandle !== 'function') {
-    const corpusRegressionCases = await globalThis.verifyTokenClassification({handle:globalThis.interlisCompilerHandle});
-  return {status: 'no-handle'};
+    return {status: 'no-handle'};
   }
   const call = (operation, sessionId, params) => JSON.parse(
       globalThis.interlisCompilerHandle(JSON.stringify({
@@ -49,6 +48,7 @@ END WebImage.
   const stabilizationCases = await globalThis.verifyInterlisStabilization({
     handle: globalThis.interlisCompilerHandle
   });
+  const corpusRegressionCases = await globalThis.verifyTokenClassification({handle:globalThis.interlisCompilerHandle});
   return {status: capabilities.status,
     stabilizationCases,
     corpusRegressionCases,
