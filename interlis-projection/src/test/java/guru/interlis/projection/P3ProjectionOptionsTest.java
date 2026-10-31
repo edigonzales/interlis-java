@@ -72,4 +72,23 @@ class P3ProjectionOptionsTest {
         var stale=options(base,base.scope(),LabelPolicy.TRANSLATED,Optional.of(new SymbolRef(new SnapshotId("other"),named(schema,"French").symbol())),OptionalInt.empty(),base.budget());
         assertInstanceOf(DiagramProjectionOutcome.Rejected.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),stale,TOKEN));
     }
+
+    @Test void memberBudgetIsSharedAcrossCompartmentsAndTypeFilterAppliesToEveryMember() {
+        var schema=compile("DOMAIN D=TEXT;TOPIC T=CLASS C=aa:D;bb:TEXT;MANDATORY CONSTRAINT R1:#true;MANDATORY CONSTRAINT R2:#true;END C;END T;");
+        var base=DiagramOptions.defaults(new DiagramSelection(List.of(named(schema,"F"))));
+        var complete=project(schema,base);assertEquals(ProjectionCompleteness.COMPLETE,complete.completeness());
+        assertEquals(4,complete.nodes().stream().filter(n->n.label().equals("C")).findFirst().orElseThrow().compartments().stream().mapToInt(c->c.members().size()).sum());
+        for(int limit:List.of(1,2,3,4)) {
+            var bounded=project(schema,options(base,base.scope(),base.labelPolicy(),Optional.empty(),OptionalInt.empty(),new ProjectionBudget(100,100,limit)));
+            assertTrue(bounded.nodes().stream().allMatch(n->n.compartments().stream().mapToInt(c->c.members().size()).sum()<=limit));
+            assertEquals(limit<4?ProjectionCompleteness.LIMITED:ProjectionCompleteness.COMPLETE,bounded.completeness());
+            assertEquals(limit<4,bounded.notices().stream().anyMatch(n->n.code()==ProjectionNoticeCode.PROJECTION_LIMIT_REACHED));
+            assertTrue(new DiagramValidator().validate(bounded).isEmpty());
+        }
+        var hidden=project(schema,new DiagramOptions(base.selection(),base.scope(),base.visibleKinds(),base.inheritedMembers(),false,
+                base.showRoleCardinalities(),base.showConstraints(),base.showImports(),base.labelPolicy(),base.associationPresentation(),base.budget()));
+        assertTrue(hidden.nodes().stream().flatMap(n->n.compartments().stream()).flatMap(c->c.members().stream()).allMatch(m->m.typeLabel().isEmpty()));
+        assertEquals(complete.nodes().stream().map(DiagramNode::id).toList(),hidden.nodes().stream().map(DiagramNode::id).toList());
+        assertTrue(new DiagramValidator().validate(hidden).isEmpty());
+    }
 }

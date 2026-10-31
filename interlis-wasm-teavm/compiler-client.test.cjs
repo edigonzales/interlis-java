@@ -205,3 +205,14 @@ test('rejected compile roots are structured original and resolved selectors on t
     }
   }finally{await client.dispose();}
 });
+
+test('a no-op configuration replacement preserves the opening fingerprint including cache limits',async()=>{
+  const {client}=create();
+  try {
+    const configuration={allowedLanguages:['2.3'],warningPolicy:'REJECT_WARNINGS',cacheLimits:{maxSyntaxEntries:3}};
+    const session=await client.openSession({configuration});const before=client.state(session);
+    const receipt=await client.setConfiguration(session,{expectedWorkspaceRevision:before.workspaceRevision,configuration});
+    assert.equal(receipt.changed,false);assert.equal(receipt.configurationFingerprint,before.configurationFingerprint);
+    assert.equal(client.state(session).configurationFingerprint,before.configurationFingerprint);
+  } finally {await client.dispose();}
+});

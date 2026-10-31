@@ -300,26 +300,35 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     compartments, anchor(symbol),symbol.header().modifiers()));
         }
 
+        private final class MemberBudget {
+            private int admitted;
+            boolean admit() {
+                if (admitted >= options.budget().maxMembersPerNode()) { limited(); return false; }
+                admitted++; return true;
+            }
+        }
+
         private List<DiagramCompartment> compartments(Symbol symbol) {
+            MemberBudget budget = new MemberBudget();
             List<DiagramMember> attributes = new ArrayList<>();
             List<DiagramMember> roles = new ArrayList<>();
             List<DiagramMember> constraints = new ArrayList<>();
             switch (symbol) {
                 case ClassSymbol clazz -> {
-                    addEffectiveMembers(symbol.id(), attributes, roles);
-                    addConstraints(clazz.constraints(), constraints);
+                    addEffectiveMembers(symbol.id(), attributes, roles, budget);
+                    addConstraints(clazz.constraints(), constraints, budget);
                 }
                 case StructureSymbol structure -> {
-                    addEffectiveMembers(symbol.id(), attributes, roles);
-                    addConstraints(structure.constraints(), constraints);
+                    addEffectiveMembers(symbol.id(), attributes, roles, budget);
+                    addConstraints(structure.constraints(), constraints, budget);
                 }
                 case AssociationSymbol association -> {
-                    addEffectiveMembers(symbol.id(), attributes, roles);
-                    addConstraints(association.constraints(), constraints);
+                    addEffectiveMembers(symbol.id(), attributes, roles, budget);
+                    addConstraints(association.constraints(), constraints, budget);
                 }
                 case guru.interlis.model.ViewSymbol view -> {
-                    addEffectiveMembers(symbol.id(), attributes, roles);
-                    addConstraints(view.constraints(), constraints);
+                    addEffectiveMembers(symbol.id(), attributes, roles, budget);
+                    addConstraints(view.constraints(), constraints, budget);
                 }
                 case DomainSymbol domain -> {
                     // detail compartment carries the declared type label
@@ -327,15 +336,11 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 default -> {
                 }
             }
-            if (attributes.size() > options.budget().maxMembersPerNode()
-                    || roles.size() > options.budget().maxMembersPerNode()) {
-                limited();
-            }
             List<DiagramCompartment> result = new ArrayList<>();
             List<SymbolId> declared = symbol instanceof ClassSymbol c ? c.members() : symbol instanceof StructureSymbol s ? s.members() : List.of();
             List<DiagramMember> parameters = new ArrayList<>();
             for (var id : declared) if (context.graph().symbol(id).orElse(null) instanceof guru.interlis.model.ParameterSymbol p) {
-                if (parameters.size() >= options.budget().maxMembersPerNode()) { limited(); break; }
+                if (!budget.admit()) break;
                 parameters.add(new DiagramMember("member-" + id.value(), DiagramMember.MemberKind.PARAMETER, displayName(p),
                         options.showTypes() ? Optional.of(typeLabel(p.typeId())) : Optional.empty(), Optional.empty(), id, symbol.id(), false, p.overrides().isPresent(), anchor(p)));
             }
@@ -352,19 +357,19 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-constraints",
                         DiagramCompartment.CompartmentKind.CONSTRAINTS, constraints));
             }
-            if (symbol instanceof DomainSymbol domain) {
+            if (symbol instanceof DomainSymbol domain && budget.admit()) {
                 result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-details",
                         DiagramCompartment.CompartmentKind.DETAILS,
                         List.of(new DiagramMember("member-" + symbol.id().value() + "-type",
                                 DiagramMember.MemberKind.ATTRIBUTE, "declared type",
-                                Optional.of(typeLabel(domain.typeId())), Optional.empty(),
+                                options.showTypes() ? Optional.of(typeLabel(domain.typeId())) : Optional.empty(), Optional.empty(),
                                 domain.id(), domain.id(), false, false, anchor(domain)))));
             }
             return result;
         }
 
         private void addEffectiveMembers(SymbolId viewable, List<DiagramMember> attributes,
-                                         List<DiagramMember> roles) {
+                                         List<DiagramMember> roles, MemberBudget budget) {
             QueryResult<List<EffectiveMember>> result = context.queries()
                     .effectiveMembers(new SymbolRef(context.snapshotId(), viewable));
             if (!(result instanceof QueryResult.Known<List<EffectiveMember>> known)) {
@@ -381,22 +386,19 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 }
                 boolean overridden = member.overridden();
                 if (declared.kind() == SymbolKind.ROLE) {
-                    addRole(member.declaredSymbol(),member.effectiveOwner(), attributes, roles, inherited, overridden);
+                    addRole(member.declaredSymbol(),member.effectiveOwner(), attributes, roles, inherited, overridden, budget);
                 } else if (declared.kind() == SymbolKind.ATTRIBUTE) {
-                    addAttribute(member.declaredSymbol(),member.effectiveOwner(), attributes, inherited, overridden);
+                    addAttribute(member.declaredSymbol(),member.effectiveOwner(), attributes, inherited, overridden, budget);
                 }
             }
         }
 
         private void addAttribute(SymbolId id,SymbolId effectiveOwner, List<DiagramMember> target,
-                                  boolean inherited, boolean overridden) {
+                                  boolean inherited, boolean overridden, MemberBudget budget) {
             if (!(context.graph().symbol(id).orElse(null) instanceof AttributeSymbol attribute)) {
                 return;
             }
-            if (target.size() >= options.budget().maxMembersPerNode()) {
-                limited();
-                return;
-            }
+            if (!budget.admit()) return;
             target.add(new DiagramMember(memberId(id,effectiveOwner,inherited),
                     DiagramMember.MemberKind.ATTRIBUTE, displayName(attribute),
                     options.showTypes() ? Optional.of(typeLabel(attribute.declaredType()))
@@ -406,14 +408,11 @@ final class DefaultDiagramProjector implements DiagramProjector {
         }
 
         private void addRole(SymbolId id,SymbolId effectiveOwner, List<DiagramMember> attributes,
-                             List<DiagramMember> roles, boolean inherited, boolean overridden) {
+                             List<DiagramMember> roles, boolean inherited, boolean overridden, MemberBudget budget) {
             if (!(context.graph().symbol(id).orElse(null) instanceof RoleSymbol role)) {
                 return;
             }
-            if (roles.size() >= options.budget().maxMembersPerNode()) {
-                limited();
-                return;
-            }
+            if (!budget.admit()) return;
             roles.add(new DiagramMember(memberId(id,effectiveOwner,inherited), DiagramMember.MemberKind.ROLE,
                     displayName(role), Optional.empty(),
                     options.showRoleCardinalities() ? Optional.of(format(role.cardinality()))
@@ -425,16 +424,17 @@ final class DefaultDiagramProjector implements DiagramProjector {
             return "member-"+declared.value()+(inherited?"-in-"+owner.value():"");
         }
 
-        private void addConstraints(List<SymbolId> ids, List<DiagramMember> target) {
+        private void addConstraints(List<SymbolId> ids, List<DiagramMember> target, MemberBudget budget) {
             if (!options.showConstraints()) {
                 return;
             }
             for (SymbolId id : ids) {
                 Symbol symbol = context.graph().symbol(id).orElse(null);
                 if (symbol instanceof ConstraintSymbol constraint) {
+                    if (!budget.admit()) break;
                     target.add(new DiagramMember("member-" + id.value(),
                             DiagramMember.MemberKind.CONSTRAINT, displayName(constraint),
-                            Optional.of(constraint.definition().getClass().getSimpleName()),
+                            options.showTypes() ? Optional.of(constraint.definition().getClass().getSimpleName()) : Optional.empty(),
                             Optional.empty(), id, constraint.owner().orElse(id), false, false,
                             anchor(constraint)));
                 }
