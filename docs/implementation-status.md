@@ -4,6 +4,15 @@ Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/S
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
 
+**Aktueller Nutzerumfang seit31.10.2026: ausschliesslich Compiler.**
+Der übergeordnete Meilenstein P4 (Transfer/Validierung) ist ausdrücklich
+zurückgestellt. Der aktive Zweig `codex/compiler-maintenance` setzt auf dem
+abgenommenen P3-Abschlussstand `0a43eee0064b68b4d1921ca80b929e3d19391533` auf.
+Begonnene P4-Transferplanarbeiten sind auf `codex/p4-transfer-validation`
+gesichert, ungeprüfte Daten-/IO-Vorbereitung auf `codex/p4-2-preparation`.
+Der laufende zweite P4-Review wurde abgebrochen; keine P4-/G4-Abnahme.
+Die Compilerabnahmen G2 und G3 bleiben unverändert erhalten.
+
 **P3 und G3 sind vollständig und unabhängig mit PASS abgeschlossen**,
 kumulativ AC-P3-01–20/WP-30–33 und G0–G3. Der autonome Auftrag lief ohne
 Teilphasenstopp bis zur Gesamtprüfung. Geprüfter Schlussproduktcommit:
