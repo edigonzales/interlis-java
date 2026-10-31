@@ -8,17 +8,17 @@
     "docs/spec/00-auftrag-und-agentenregeln.md": "800322b4d895fc37692b2c2bc201e332cfd677664f948953cec7f3d757053fc9",
     "docs/spec/01-zielbild-und-anforderungen.md": "34fa7b08d0cb50d4ba51ef59398bf2f3987218c8795714bc37b7c73f56747214",
     "docs/spec/02-architektur-und-modulgrenzen.md": "02b0af3a36469edfb461149f102859e20a1a2732353564718ca7dd9d2afe45cc",
-    "docs/spec/03-build-und-repository.md": "475da1d51dc510c5e6810a3f76820c23db7fe99829edce2fd7cc200c5bb2c737",
+    "docs/spec/03-build-und-repository.md": "1b43e3744ac2d7276d061bd273ad4774ba37ff55a759541dd41166d3c42f570e",
     "docs/spec/04-quelltext-syntax-und-parser.md": "c1b16628120135224aa7ec492eaf8ba0119ad864fde963e255661374f265cccf",
     "docs/spec/05-metamodell-und-typensystem.md": "54da24d1fb19d51fc1c733596f67b06ed39635b216312e700d33a6d6c70d22f5",
     "docs/spec/06-kompilierung-und-semantik.md": "65eb29ebabdd695ccd2eedadef74815e17f2ef19fd54317340dc6fcb108fbef4",
     "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "f7c6d37de98b4ee85aee68353a7b7544db9ebba2b162c783efcc26b6eba39571",
     "docs/spec/08-modellaufloesung-und-repositories.md": "8b3975515deb96eb17aa2c9836fdc0f77b31d0932defde9bf7528e1ce46759d8",
     "docs/spec/09-diagnostik-logging-und-telemetrie.md": "906123480c83dddb8935975d362eeb3a624073b93efe6cd0e299e279ed022b5c",
-    "docs/spec/10-webassembly-und-portabilitaet.md": "7786722eacf54c4eaed163631bab6743980fb5d5ceba69031628bd1274e41d1f",
+    "docs/spec/10-webassembly-und-portabilitaet.md": "72e1e785d62f694ca0caa620d49d554b375b6a247482bcf0f804226596cadcba",
     "docs/spec/11-visualisierung-und-projektionen.md": "e69844107bc43a6fe4835b5fe43613239ff2d03a0a803ad19e049f8ec894804f",
     "docs/spec/12-transfer-validierung-und-datenbanken.md": "10f4692d846ae931ff0e78bbcfb571093c9253b39b5cf6529b5ddbd22fd49ff1",
-    "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "4b2fe41759d4baa9876c4e333d87a89d8aefd63f663d53f67153f111de784433",
+    "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "8a7cbca44b144629fde9e816437d433ce64d15f243785740761d99c287a2b310",
     "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "14443b6b622d9f2bd36c5ad91a811cf41d4704c1d297ef4a6f14f75a833a9f88",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "efcbbaefffed904317c1d4779a5fc6e296a1c1615c783a0dbf3b6383525009a3",
     "docs/spec/16-api-register-und-vertragstests.md": "459e36ab0619a1d27e2dc9bedf275dbda3a5d9c74556c739826fc02f728042a9",
@@ -15282,7 +15282,7 @@
       "phase": "P0",
       "acceptance": "Frischer Checkout baut ohne Maven/Ant-Installation.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 201,
+      "line": 219,
       "sourceLineSha256": "e17b14e57d3631793f14cd485b377d1eda2072a73949c635b1de00c7629625fe"
     },
     {
@@ -15291,7 +15291,7 @@
       "phase": "P0",
       "acceptance": "Versionen-/Wrapper-/Dependencyreport.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 202,
+      "line": 220,
       "sourceLineSha256": "bbf17b9b20630a826fb2c07fcf3484415516a423779f476af7724be76b11a05f"
     },
     {
@@ -15300,7 +15300,7 @@
       "phase": "P0",
       "acceptance": "Dependencytest, keine impliziten Zwischen-JAR-Kopien.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 203,
+      "line": 221,
       "sourceLineSha256": "23f5abc2419142c4b04243395b5bbdec7c385292f6d39ff3498e702dd65cbcd2"
     },
     {
@@ -15309,7 +15309,7 @@
       "phase": "P0",
       "acceptance": "Konfiguration ist deklarativ, Taskabhängigkeiten explizit.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 204,
+      "line": 222,
       "sourceLineSha256": "84e512df347e0632ba2b86bdff3f98ab764160476e2ab3a1c06978f8a4a711c4"
     },
     {
@@ -15318,7 +15318,7 @@
       "phase": "P0",
       "acceptance": "Runtimeclasspath und generierter Parser geprüft.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 205,
+      "line": 223,
       "sourceLineSha256": "58054b59ee286322c72e945d4a4a2260e51f7f7cd7b9843bee38a4c8303fb5f0"
     },
     {
@@ -15327,7 +15327,7 @@
       "phase": "P0",
       "acceptance": "Zwei saubere Läufe ohne Zeitstempel-/Pfadabhängigkeit in fachlichen Outputs.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 206,
+      "line": 224,
       "sourceLineSha256": "fbe43eb8c0540850e536d33c54bd5b282da7e0fd145b4db12fd379ae62944491"
     },
     {
@@ -15336,7 +15336,7 @@
       "phase": "P0",
       "acceptance": "Wiederholung offline ohne Live-Repositoryzugriff.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 207,
+      "line": 225,
       "sourceLineSha256": "a4735800d257dedc75c92cc6acae159744b8e98ef4dc288c0b29e48fac7987fe"
     },
     {
@@ -15345,7 +15345,7 @@
       "phase": "P1",
       "acceptance": "Releaseprofil scheitert mit konkreter Vorbedingung.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 208,
+      "line": 226,
       "sourceLineSha256": "58b1a8bcb68777f90997cddb733f9ade3f8169e7358807158000133cd049bcee"
     },
     {
@@ -15354,7 +15354,7 @@
       "phase": "P0",
       "acceptance": "Lokale Distribution funktioniert ohne Zugangsdaten.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 209,
+      "line": 227,
       "sourceLineSha256": "6e8e9d0aeac0aedd2f39b68bae43d98d8330093980f95b8757d49e92318c9e65"
     },
     {
@@ -15363,7 +15363,7 @@
       "phase": "P0",
       "acceptance": "Gradle reproduziert die Probe; POM bleibt nur in Evidenzarchiv.",
       "source": "docs/spec/03-build-und-repository.md",
-      "line": 210,
+      "line": 228,
       "sourceLineSha256": "2265e55d3fc68a4d5bc6a2cccc078d9eb95b576c5de978cadd5d5dd3a3f4fb55"
     },
     {

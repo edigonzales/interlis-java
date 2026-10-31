@@ -2,7 +2,7 @@ name: P3 platform contracts
 
 on:
   push:
-    branches: [codex/p3-compiler-integration]
+    branches: [codex/p3-compiler-integration, codex/p3-5-sdk]
   workflow_dispatch:
 
 permissions:
@@ -45,7 +45,7 @@ jobs:
       - name: Verify JVM, CLI and installed SDK processes
         shell: pwsh
         run: |
-          & '${{ matrix.wrapper }}' --no-daemon check legacyCliCheck sdkProcessCheck sdkPackage :interlis-lsp:installDist
+          & '${{ matrix.wrapper }}' --no-daemon platformCheck
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Retain actual reports, including failed runs
         if: always()

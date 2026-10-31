@@ -432,3 +432,28 @@ Retention, Abbruch und begrenzten Ereignisdruck maschinell. Fehlende, alte,
 partielle oder übersprungene Nachweise sind Fehler. Negative Checkerproben
 gehören zum Gate. Budgets werden nach einem Fehllauf nicht still angehoben.
 Diese Messgrenzen sind keine fachlichen Sprachgrenzen oder Produktions-SLAs.
+
+### P3: SDK und kumulativer Freigabenachweis
+
+`sdkArchiveCheck` entpackt das tatsächlich ausgelieferte SDK-ZIP in einen
+neuen Pfad mit Leerzeichen. Ein externer Consumer wird ausschliesslich gegen
+dessen Bibliotheken mit `javac` gebaut und als eigener Prozess ausgeführt;
+auch dessen Launcher wird gestartet. Der Consumer darf keine Klassen aus dem
+Repository-Build oder Testwerkzeuge benötigen. Werkzeug-, Java-API-,
+Diagnosekatalog-, Bridge-, Formatierungs- und Diagrammschemaversionen werden
+getrennt geliefert und gegen die tatsächlichen Prozesse geprüft.
+
+`sdkReproducibilityCheck` erzeugt dasselbe saubere Produkt in zwei separaten
+Git-Checkouts. Alle ausgelieferten JVM-Dateien, das SDK-ZIP, TeaVM-JavaScript,
+Wasm samt Runtime und die Browserressourcen einschliesslich Buildmanifest
+müssen bytegleich sein. Native OS-Images und andere Rechnerarchitekturen
+werden daraus nicht als reproduzierbar behauptet.
+
+`platformCheck` verlangt echte JVM-/CLI-/LSP-/SDK-Prozesse auf Windows x64,
+Linux x64 und macOS arm64. Die beiden Actions-Nachweise werden über denselben
+Commit und verifizierte Archivhashes zugeordnet. `releaseEvidenceCheckerTest`
+prüft positive sowie absichtlich fehlende, alte, partielle, fremde und
+übersprungene Nachweise. `releaseCheckP3` koordiniert diese Prüfungen mit
+sämtlichen aktuellen funktionalen, Portable-, Browser-/Safari-/Web-Image-,
+Conformance- und Performancegates. Ein PASS-Bericht bei fehlgeschlagenem oder
+abgebrochenem Prozess ist kein bestandener Nachweis.

@@ -1,3 +1,5 @@
+const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
+const evidence=runtimeEvidence.begin(["interlis-wasm-teavm/build/web/build-manifest.json","interlis-wasm-teavm/build/web/interlis-compiler.wasm","interlis-wasm-teavm/build/web/interlis-compiler.wasm-runtime.js","interlis-wasm-teavm/build/diagram-adapter.cjs"]);
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
@@ -56,7 +58,7 @@ function serve(root) {
         })
       ]).finally(() => clearTimeout(timeout));
       if(externalRequests.length)throw new Error('compiler fixture attempted external network: '+externalRequests.join(','));
-      results.push({browser: name, externalRequests, browserVersion: browser.version(), node: process.version,
+      results.push({...runtimeEvidence.finish(evidence),browser: name, externalRequests, browserVersion: browser.version(), node: process.version,
         playwright: require('playwright/package.json').version,
         status: 'passed', result});
       console.log(`${name.toUpperCase()} PASS ${JSON.stringify(result)}`);

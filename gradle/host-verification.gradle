@@ -9,6 +9,9 @@ def hostProfiles = [
     editorPressure: ['EditorPressure', []],
     jvmBenchmark: ['JvmBenchmark', []],
     sdkProcessCheck: ['SdkProcesses', []],
+    sdkArchiveCheck: ['SdkArchiveCheck', []],
+    platformCheck: ['PlatformProcesses', []],
+    conformanceEvidence: ['ConformanceEvidence', []],
     legacyCliCheck: ['LegacyCliProcesses', []],
     referenceCheck: ['ReferenceProcesses', ['profile']],
     originalViewReferenceCheck: ['ReferenceProcesses', ['originals']],
@@ -54,6 +57,9 @@ project(':interlis-cli') {
                 args profile[1]
                 javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
                 if (name in ['sdkProcessCheck', 'legacyCliCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn 'installDist'
+                if (name == 'conformanceEvidence') dependsOn ':conformanceCheck'
+                if (name == 'sdkArchiveCheck') dependsOn ':sdkPackage'
+                if (name == 'platformCheck') dependsOn ':check', ':legacyCliCheck', ':sdkArchiveCheck', ':interlis-lsp:installDist'
                 if (name == 'jvmBenchmark') dependsOn 'geoCorpus'
                 if (name == 'jvmBenchmark') mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':interlis-wasm-webimage:webImageProbe'
                 if (name in ['viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':checkNodeRuntime'

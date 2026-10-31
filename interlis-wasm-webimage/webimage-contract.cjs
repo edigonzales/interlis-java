@@ -1,3 +1,5 @@
+const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
+const evidence=runtimeEvidence.begin(["interlis-wasm-webimage/build/webimage/interlis-compiler.js","interlis-wasm-webimage/build/webimage/interlis-compiler.js.wasm"]);
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -47,7 +49,7 @@ END WebImage.
     handle: globalThis.interlisCompilerHandle
   });
   const corpusRegressionCases = await require('../interlis-wasm-teavm/token-classification-contract.cjs')({handle:globalThis.interlisCompilerHandle});
-  const result = {
+  const result = {...runtimeEvidence.finish(evidence),
     stabilizationCases,
     corpusRegressionCases,
     status: capabilities.status,

@@ -5409,7 +5409,7 @@
         },
         {
           "source": "build.gradle",
-          "sha256": "3087160464070fe997fd0e18611764ea1f9c1960042570ebc735badbd726700d"
+          "sha256": "11c09470d693f535311d769166e78b560d2e735ff112cfc8d5c22dbb79e91cfb"
         }
       ],
       "resolution": "Modulabhängigkeiten und frischer JVM-/Wasm-/Browserbuild belegen portable Loggingunabhängigkeit."
@@ -5641,11 +5641,11 @@
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
-          "sha256": "7786722eacf54c4eaed163631bab6743980fb5d5ceba69031628bd1274e41d1f"
+          "sha256": "72e1e785d62f694ca0caa620d49d554b375b6a247482bcf0f804226596cadcba"
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "587d60f003ed0d5935bfa6bc751f43b2a3a25ff70a0e01dd10d1af9f7b96ed2c"
+          "sha256": "8de6549275c4827fff6715e2e7865a6f6bdf16d8f1e5a22abd86006b746ddc48"
         }
       ],
       "resolution": "Synchron gepflegte Fachverträge/Register/Verbraucher und echte PublicSdk-/Bridge-Konstruktion; kein synthetisches Dokument-Golden."

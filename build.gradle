@@ -3,6 +3,17 @@ plugins {
 }
 
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+def releaseProfile = providers.gradleProperty('releaseProfile')
+def releaseRequested = gradle.startParameter.taskNames.any { it.tokenize(':').last() in ['releaseCheck', 'releaseCheckP3'] }
+if (releaseProfile.isPresent() && releaseProfile.get() != 'P3') throw new GradleException('Unknown release profile; supported: P3')
+if (gradle.startParameter.taskNames.any { it.tokenize(':').last() == 'releaseCheck' } && releaseProfile.getOrElse('') != 'P3') throw new GradleException('releaseCheck requires -PreleaseProfile=P3; alternatively use releaseCheckP3')
+if (releaseRequested) {
+    providers.exec {
+        workingDir rootProject.projectDir
+        commandLine nodeExecutable.get(), rootProject.file('tools/release/evidence.cjs'), '--preflight'
+    }.result.get().assertNormalExitValue()
+}
+
 tasks.register('checkNodeRuntime') {
     group = 'verification'
     description = 'Checks the pinned Node runtime before portable tests and benchmarks.'
@@ -75,7 +86,7 @@ tasks.register('checkBrowser') {
     }
 }
 
-tasks.register('releaseCheck') {
+tasks.register('releaseCheckP3') {
     group = 'verification'
     description = 'P3 release profile including conformance, performance and platform evidence.'
     dependsOn 'conformanceCheck', 'performanceCheck'
@@ -194,4 +205,38 @@ tasks.register('sdkPackage', Zip) {
     }
     reproducibleFileOrder = true
     preserveFileTimestamps = false
+}
+
+
+tasks.register('releaseCheck') {
+    group = 'verification'
+    description = 'Runs the explicitly selected release profile (-PreleaseProfile=P3).'
+    dependsOn 'releaseCheckP3'
+}
+tasks.register('sdkReproducibilityCheck', Exec) {
+    group = 'verification'
+    dependsOn 'checkNodeRuntime'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/release/reproducibility.cjs'
+}
+tasks.register('releaseEvidenceCheckerTest', Exec) {
+    group = 'verification'
+    dependsOn 'checkNodeRuntime'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), '--test', 'tools/release/evidence.test.cjs', 'tools/verification/node-junit.test.cjs'
+}
+tasks.register('releaseEvidenceCheck', Exec) {
+    group = 'verification'
+    description = 'Fails closed on missing, stale, foreign or incomplete P3 candidate evidence.'
+    dependsOn 'checkPortable', 'checkBrowser', 'conformanceEvidence', 'performanceCheck',
+            'platformCheck', 'sdkArchiveCheck', 'sdkReproducibilityCheck',
+            'releaseEvidenceCheckerTest', ':interlis-wasm-webimage:webImageProbe'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/release/evidence.cjs'
+}
+tasks.named('releaseCheckP3') { dependsOn 'releaseEvidenceCheck' }
+project(':interlis-cli') {
+    tasks.matching { it.name == 'fullCorpusJvm' }.configureEach {
+        mustRunAfter ':sdkReproducibilityCheck', ':platformCheck', ':releaseEvidenceCheckerTest', ':conformanceEvidence'
+    }
 }

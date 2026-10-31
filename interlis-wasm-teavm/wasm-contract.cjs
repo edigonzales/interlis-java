@@ -1,3 +1,5 @@
+const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
+const evidence=runtimeEvidence.begin(["interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm","interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js"]);
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -94,7 +96,7 @@ END Wasm.
   if (closed.status !== 'ok') throw new Error('closeSession failed');
   const stabilizationCases = await require('./stabilization-contract.cjs')(api);
   const corpusRegressionCases = await require('./token-classification-contract.cjs')(api);
-  const summary = {
+  const summary = {...runtimeEvidence.finish(evidence),
     stabilizationCases,
     corpusRegressionCases,
     status: 'passed',
