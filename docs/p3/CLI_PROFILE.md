@@ -23,6 +23,14 @@ abgelehnt. Hilfe/Version gehen nach stdout. `check`/`compile`: Diagnosen stderr,
 Erfolg stdout leer; `--json` liefert ein JSON-Dokument auf stdout.
 `format`/`diagram` behalten ihre Fachausgaben; Hoststreams sind UTF-8.
 
+`--diagnostic-language de|en` gilt bei `check`, `compile`, `analyze`, `diagram`,
+`format`, Default EN unabhängig vom Host. Ungültige Werte ergeben Exit2 vor IO.
+`check`/`compile` und der Compile-Schritt von `diagram` verwenden die gemeinsame
+immutable `AnalysisSnapshot.requestDiagnostics()`-Sicht; `analyze` behält die volle
+Diagnostik. DE/EN ändern nur Prosa/Hinweise, keine IDs/Codes/Argumente/Ranges.
+Namenskonflikte zeigen die wirkliche kollidierende Deklaration. JSON ergänzt
+`message`/`hint`, RelatedLocations und Ursachenbezüge strukturiert.
+
 `./gradlew compilerCliCheck` baut die neue Distribution und prüft tatsächliche
 Prozesse mit Pfad-/Unicode-/Stream-/Fehlerfällen einschliesslich einer JVM mit
 abweichender nativer Streamkodierung. `sdkProcessCheck` und `sdkArchiveCheck`

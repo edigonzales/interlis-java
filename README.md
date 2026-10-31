@@ -1,12 +1,13 @@
 # interlis-java
 
 Moderner Java-INTERLIS-Stack für INTERLIS 2.3/2.4. Der aktuelle Stand umfasst
-den P0-/P1-Vertikalschnitt: Compilerkern, Workspace, IDE-Abfragen, LSP-Adapter,
+den Compilerumfang mit Compilerkern, Workspace, IDE-Abfragen, LSP-Adapter,
 Diagrammprojektion, CLI, TeaVM-WasmGC/JavaScript und einen GraalVM-Web-Image-
 Vergleich.
 
 - Spezifikation: [docs/spec/README.md](docs/spec/README.md)
-- Aktiver G2-Auftrag und Lieferfolge: [Plan](docs/g2/EXECUTION_PLAN.md), [Status](docs/g2/STATUS.md)
+- Compiler-CLI-Folgeauftrag: [Plan](docs/implementation/compiler-cli-modernization/EXECUTION_PLAN.md), [Status](docs/implementation/compiler-cli-modernization/STATUS.md)
+- Historischer G2-Auftrag und Lieferfolge: [Plan](docs/g2/EXECUTION_PLAN.md), [Status](docs/g2/STATUS.md)
 - Fortschritt und offene Gates: [docs/implementation-status.md](docs/implementation-status.md)
 - Ausgeführte P1-Evidenz: [docs/evidence/p1/README.md](docs/evidence/p1/README.md)
 - Gepinnte ili2c-Referenzprofilprüfung: [docs/evidence/reference/README.md](docs/evidence/reference/README.md)
@@ -16,7 +17,7 @@ Vergleich.
 - JDK 25 (Temurin 25.0.3+9 ist verifiziert), keine Preview-Features
 - Node.js 24.22.0 für portable Verträge
 - Für Browserverträge: lokal installierte Playwright-Browser
-- Optional für Web Image: Oracle GraalVM 25.4.4, `wasm-as` aus Binaryen >= 119
+- Für das vollständige Produktprofil: Oracle GraalVM 25.0.3 und Binaryen 133 (Web Image)
 
 Der Gradle-Wrapper ist gepinnt (9.8.1). Maven/Ant sind keine Build-Einstiege.
 
@@ -35,7 +36,7 @@ Der Gradle-Wrapper ist gepinnt (9.8.1). Maven/Ant sind keine Build-Einstiege.
 Portable Browserverträge (Chromium/Firefox/WebKit):
 
 ```sh
-cd interlis-wasm-teavm && npm install --no-audit --no-fund && cd ../..
+(cd interlis-wasm-teavm && npm ci)
 ./gradlew :interlis-wasm-teavm:browserContractTest
 ```
 
@@ -51,15 +52,15 @@ Web-Image-Vergleich (Toolchain separat installiert):
 
 ```sh
 ./gradlew :interlis-wasm-webimage:webImageProbe \
-  -PgraalVmHome=$HOME/.sdkman/candidates/java/25.4.4+1-graal \
+  -PgraalVmHome=$HOME/.sdkman/candidates/java/25.0.3-graal \
   -PbinaryenHome=/path/to/binaryen
 ./gradlew :interlis-wasm-webimage:webImageBrowserTest \
-  -PgraalVmHome=$HOME/.sdkman/candidates/java/25.4.4+1-graal \
+  -PgraalVmHome=$HOME/.sdkman/candidates/java/25.0.3-graal \
   -PbinaryenHome=/path/to/binaryen
 ```
 
 Der Web-Image-Browsertest nutzt dieselben lokal installierten Playwright-Browser
-wie der TeaVM-Browsertest; ohne `npm install` im TeaVM-Modul schlägt er sichtbar
+wie der TeaVM-Browsertest; ohne `npm ci` im TeaVM-Modul schlägt er sichtbar
 fehl, statt still zu überspringen.
 
 ## CLI
@@ -75,7 +76,23 @@ interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler diag
 
 `check`/`compile` liefern Exitcode 0 bei gültiger Closure, 1 bei fachlicher
 Ablehnung, 2 bei Bedienfehlern, 3 bei internem Fehler, 4 bei Abbruch.
-`--json` liefert strukturierte Diagnostik.
+`--diagnostic-language de|en` wählt Diagnoseprosa (Default `en`, unabhängig vom Host).
+`--json` liefert ein JSON-Ergebnis auf stdout, gewöhnliche Diagnosen gehen auf stderr.
+Mit `--root` prüfen `check`/`compile` nur die gewählten Modelle samt benötigten
+Abhängigkeiten; zusätzliche Dateien bleiben verfügbare Eingaben. `analyze` zeigt
+weiterhin den vollständigen Analysestand. Lokale Importdateien ausdrücklich
+angeben oder ein indexiertes Repository verwenden; kein Verzeichnisscan.
+
+```sh
+interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler check \
+  --diagnostic-language de --root Survey \
+  testdata/models/base24.ili testdata/models/survey24.ili
+./gradlew sdkPackage
+# Nach dem Entpacken: cli/bin/interlis-compiler (Windows: interlis-compiler.bat).
+```
+
+Die Compilerbibliothek bleibt `interlis-compiler`; Modul und CLI-JAR heissen
+`interlis-compiler-cli`. Alte Programme, Optionsprofile und Aliase entfallen.
 
 ## Browserdemo
 
@@ -91,10 +108,8 @@ stellt den Vertrag für die Automatisierung bereit.
 
 ## Umfang und Ehrlichkeit
 
-P1 ist ein belegter vertikaler Teilumfang, kein vollständiger INTERLIS-Compiler.
-Nicht implementierte Konstrukte werden mit `ILI-IMPL-0001` und
-`INCOMPLETE_SUPPORT` abgelehnt und erzeugen kein `CompiledSchema`. Die
-vollständige P2-Semantik und eine breitere historische Legacy-Suite bleiben
-offene Anforderungen. Die verbleibenden Javadoc-Warnungen (API-003) sind als
-dokumentierte P1-Restlücke akzeptiert; Details stehen im Statusdokument. Es wurden keine
-Releases veröffentlicht und keine Produktionsmigrationen ausgeführt.
+Die bestätigten Sprach-/Normprofile stehen in [COMPILER_NORM_DECISIONS](docs/g2/COMPILER_NORM_DECISIONS.md).
+Historische P3-/G3-Abnahmen bleiben auf ihren bezeichneten Produktcommits gültig;
+der aktuelle Compiler-CLI-Folgeauftrag wird separat im verlinkten Status geführt.
+Weitere Stackmodule und Lieferabschnitte folgen dem Spezifikationsplan.
+Es wurden keine Releases veröffentlicht und keine Produktionsmigrationen ausgeführt.

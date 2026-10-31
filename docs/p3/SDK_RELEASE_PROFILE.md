@@ -108,3 +108,20 @@ Gate. Keine Budgets oder fachlichen Erwartungen werden dabei automatisch
 angepasst. Versionierte Spezifikation, Originalpins und unveränderte unabhängige
 Reviews bleiben die Vertrags-/Abnahmequellen. Ein späterer Dokumentcommit kann
 den geprüften Produktcommit benennen; er etikettiert dessen Rohbelege nicht um.
+
+## Compiler-CLI-Folgeprofil CLI3
+
+Die unabhängigen Folge-PASS von CLI1/CLI2 ersetzen keine neue kumulative
+Produktabnahme. Das aktuelle CLI-Prozessprofil umfasst26 namentlich geprüfte
+reale Aufrufe, einschliesslich Root-/Warnungsisolation, DE-/JSON-Diagnosen,
+Syntaxfehlern ohne rekonstruierbares Modell und Sprachbedienfehlern. Die JVM-
+Untergrenze1217 Tests/227 XML-Suites stammt aus dem tatsächlich ausgeführten
+CLI2-R2-Gate; die Plattform-/Releaseprüfer verlangen diesen Umfang und alle
+26 Fälle. Vorhandene grössere tatsächliche Umfänge bleiben erhalten.
+
+Für check/compile/diagram gilt die gemeinsame Request-Diagnostik, analyze
+behält die volle Analysesicht. `--diagnostic-language de|en` ist explizit,
+Default EN; nur Präsentation ändert sich. Das SDK bleibt das gleiche lokale
+Paketformat mit `cli/bin/interlis-compiler`/`.bat`, ohne Legacylauncher oder
+Referenzcompiler. Der weitere Status und alle unveränderten Folge-Reviews
+stehen ausschliesslich im oben verlinkten CLI-Status.
