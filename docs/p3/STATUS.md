@@ -1,9 +1,8 @@
 # P3 – operativer Status
 
 - **IN ARBEIT**, gesamter Meilenstein autonom beauftragt; **G3 offen**.
-- Aktuell **P3-2 – LSP**, WP-31, AC-P3-05–08. P3-3 bis P3-5 bleiben offen.
-- P3-3: unabhängige [Browser-/Diagrammarbeiten](implementation/P3-3.md) begonnen,
-  während P3-2-Review/Plattformmatrix laufen; keine vorweggenommene Abnahme.
+- Aktuell **P3-3 – Browser und Diagramm**, WP-31, AC-P3-09–11.
+  [Browser-/Diagrammarbeiten](implementation/P3-3.md) laufen; P3-4/P3-5/G3 offen.
 - [Plan, Kriterien und Anforderungen](EXECUTION_PLAN.md); die freigegebenen
   [G2-Norm-/Kompatibilitätsprofile](../g2/COMPILER_NORM_DECISIONS.md) bleiben erhalten.
 
@@ -38,7 +37,30 @@ Ein erster TeaVM-Firefox-Timeout bleibt als Fehlversuch dokumentiert. Getrennte
 Gegenprüfung ohne Produkt-/Timeoutänderung: Chromium/Firefox/WebKit und echtes
 Safari je 3548 PASS, Exit 0. Vollständiger frischer kumulativer Lauf bleibt G3.
 
-## Laufend: P3-2
+## Abgenommen: P3-2 – LSP und gemeinsame Sprachabfragen
+
+**PASS**, AC-P3-05–08, Produktcommit
+`5eac6b64fb352982376f054a765597688d5f975b`.
+[Unveränderter unabhängiger Review 7](reviews/P3-2-review.md), SHA-256
+`12249d8c9120eb108fadebcb1850e8c377ca41e289423cf3fecd904c523b0c1d`.
+OpenCode 2.0.28 mit direkter DeepSeek API, frischer Kontext, sauberer separater
+Checkout und OS-Python-Sperre; Transportexit 0, äusseres Manifest passed.
+Alle bisherigen Mussbefunde unabhängig geschlossen. Neue eigene Proben 24/24
+und 4/4; die erste ist am Vorgänger in genau sechs F8-Prüfungen rot.
+Frischer check: 1148 Fälle ohne Fehler/Skips, darunter Compiler744/LSP53;
+Portable JS/WasmGC je3548, SDK9/Paket, Conformance577PASS/16XFAIL/0FAIL.
+Der rohe Referenzlauf bleibt getrennt FAIL.
+
+[Actions41164843248](https://github.com/edigonzales/interlis-java/actions/runs/41164843248)
+am selben vollständigen Produkt-SHA: Windows x64 und Linux x64 jeweils PASS.
+Diese externe Matrix wurde durch den Hauptlauf geprüft; der unabhängige Reviewer
+hat sie ausdrücklich nicht ausgewertet. Finale Gesamtproduktmatrix bleibt P3-5.
+Rohdaten: `build/review/P3-2-r7/`, eigener vollständiger Portable-/SDK-Lauf
+`build/reports/p3/P3-2/compile-outcome-candidate-portable.log`.
+Die nachfolgende Historie erhält sämtliche fehlgeschlagenen Versuche unverändert;
+deren damalige Aussagen zu offenen P3-2-Pflichten sind historisch.
+
+## Historie der P3-2-Korrekturen
 
 **Erster unabhängiger Review FAIL**, Kandidat 466790c, AC05/08 FAIL und
 AC06/07/kumulativ P3-1 PASS. [Unveränderter Bericht](reviews/P3-2-466790c-FAIL.md),

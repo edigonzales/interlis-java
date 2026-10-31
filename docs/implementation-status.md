@@ -6,8 +6,12 @@ geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
 **P3 ist seit 30. Oktober 2026 autonom beauftragt und in Arbeit.**
 P3-1 (WP-30) ist unabhängig PASS am Produktcommit
-`9108b0387d9f1b82f506d8dc64e301e8522137dd`; aktueller Abschnitt P3-2: LSP.
-Danach Browser-/Diagrammintegration, Corpus-/Belastungsmessungen und SDK-/
+`9108b0387d9f1b82f506d8dc64e301e8522137dd`; P3-2 (WP-31, AC05–08) ist
+unabhängig PASS am Produktcommit `5eac6b64fb352982376f054a765597688d5f975b`.
+[P3-2-Review](p3/reviews/P3-2-review.md): Transport0/Manifest passed,
+1148 Fälle ohne Fehler/Skips, Portable je3548, SDK9, neue eigene Proben24/24+4/4.
+Windows/Linux x64 bestehen denselben Produkt-SHA.
+Aktuell P3-3: Browser-/Diagrammintegration, danach Corpus-/Belastungsmessungen und SDK-/
 Plattformgesamtgate. [P3-Plan](p3/EXECUTION_PLAN.md),
 [operativer P3-Status](p3/STATUS.md). Unabhängige Reviews mit OpenCode über die
 direkte DeepSeek API bleiben pro Lieferung und kumulativ verpflichtend.
