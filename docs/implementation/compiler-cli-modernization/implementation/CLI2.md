@@ -200,3 +200,33 @@ SDK9/CLI19 und frischer Archivverbraucher bestanden; SDK-SHA256
 **dbbb76dcbe74d4b50aa46e7ef6a27016d0a57c903e13aceee09bea75271d831b**.
 Diese lokalen Entwicklungsberichte sind nicht als saubere Commitberichte
 umetikettiert; R2 baut den neuen committeten Kandidaten separat erneut.
+
+## Unabhängiger R2: PASS
+
+**Produkt-SHA dfd442c4a90d04a489bc48f1a6cbd52fc623435e**, Phasenbasis unverändert.
+Unveränderter Bericht [CLI2-r2-dfd442c4a90d-PASS.md](../reviews/CLI2-r2-dfd442c4a90d-PASS.md),
+SHA256 **1a6162944dec6a3ba4edcb511dede84a9d48bb6ac1cee5995c038de6efafbe97**.
+OpenCode2.0.28, deepseek/deepseek-flash direkt api.deepseek.com. Prozess
+vollständig beendet/Exit0; finaler Guardpassed/0, Sourceprofilhash und
+absolute Interpreter-EPERM-Proben geprüft. Review-HEAD exakt Produkt-SHA,
+Gitstatus leer; Kandidatenquellen unverändert. Alle11IDs fulfilled, keine
+offenen Muss-Findings/fehlenden Pflichtchecks; Bericht/JSON konsistent.
+
+Eigenes volles Reviewer-Gate **Exit0/3m31s/72Tasks**; XMLs unabhängig erneut
+gezählt: **1217/227,0Failures/Errors/Skips**. JS/WasmGC je3560+24,
+gitCommit exakt Produkt/dirtyfalse, gleicher SourceFingerprint
+648a345796779f57beb8ee96aec7cc01e7130c96b75ab3f6054d4e376929048a.
+Conformance577/16/0/0/0 mit21 Normbewertungen; SDKhash exakt gleich dem
+lokalen frisch gebauten dbbb76…-Archiv. SDK9/CLI19 und Semantikvergleich bestanden.
+
+Neue unabhängige Proben: zu anderer gültiger Modelldeklaration plus GARBAGE
+aufgelöste Importquelle (Syntax-/Identitätsursachen beide sichtbar), identische
+Quellen ohne Binding (nur klare Missing-Ursache, kein Dateinamensraten),
+Fresh/Reuse mit zusätzlicher fremder beschädigter Quelle und Revisionwechsel,
+Bidi/CRLF/DE-/EN-/JSON-Prozesse, Office-Original/Kontrolle. F1/F2 zusätzlich
+gegen identische Inputs am echten R1-Artefakt RED und neuen Kandidaten GREEN.
+Rohdaten: build/review/compiler-cli/CLI2-r2-dfd442c4a90d/worktree/build/review/compiler-cli/CLI2-r2/.
+Prüfaudit: build/review/compiler-cli/CLI2-r2-dfd442c4a90d/acceptance-audit.json.
+
+**CLI2 abgeschlossen/PASS.** Ohne erneute Bestätigung folgt CLI3 mit sauberer
+Phasenbasis nach diesem reinen Ablage-/Statuscommit. Die CLI3-Abnahme bleibt offen.

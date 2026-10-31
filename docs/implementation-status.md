@@ -3,7 +3,7 @@
 **Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
 [Ausführungsplan](implementation/compiler-cli-modernization/EXECUTION_PLAN.md).
 Operativer Stand und unabhängige Folgeabnahmen: [CLI-Status](implementation/compiler-cli-modernization/STATUS.md).
-Frühere G2-/P3-Abnahmen bleiben auf ihren bezeichneten Ständen gültig. CLI1 besitzt unabhängigen PASS; CLI2 ist implementiert und lokal mit1214 JVM-Tests sowie JS-/WasmGC-Verträgen verifiziert, der unabhängige CLI2-R1 meldete F1/F2 und wird nach gezielter Nacharbeit vollständig wiederholt. CLI3 ist noch offen.
+Frühere G2-/P3-Abnahmen bleiben auf ihren bezeichneten Ständen gültig. CLI1 und CLI2 besitzen unabhängigen PASS; CLI2-R2 amdfd442c4a90d schliesst F1/F2 und belegt1217 JVM-Tests sowie JS-/WasmGC-Verträge. CLI3 läuft als kumulative Produktabnahme; sie ist noch offen.
 
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
