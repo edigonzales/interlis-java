@@ -202,6 +202,14 @@ fremde JARs, fehlende Browser und alte oder übersprungene Belege ergeben keinen
 Erfolg. Der interne Taskerfolg ersetzt weder den erfolgreichen Abschluss des
 äusseren Schutzprozesses noch den unabhängigen kumulativen G3-Review.
 
+Die Vollständigkeit wird gegen die tatsächliche Lieferdateimenge geprüft,
+nicht nur gegen einen Selbstzähler im Bericht. Das Browsermanifest enthält
+exakt sämtliche tatsächlich gelieferten Webressourcen ausser sich selbst,
+jeweils mit passendem Hash und passender Bytezahl. Eine gekürzte Liste mit
+entsprechend reduziertem Zähler, ein partielles Manifest oder explizite
+Skip-/Fehler-/Abbruchangaben dürfen auch neben positiven Gesamtsummen keinen
+Erfolg ergeben.
+
 Der aktuelle P3-Build verwendet für die beiden offiziellen TeaVM-Generatoren
 eine eng gepinnte0.16.0-Toolkorrektur aus
 `gradle/deterministic-teavm.gradle`: Klassenlisten für Analyse und beide
