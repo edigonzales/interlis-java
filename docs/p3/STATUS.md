@@ -121,6 +121,16 @@ oder interne Fehler. Neue RED→GREEN-Kontrollen einschliesslich beider URI-
 Richtungen und abgelehntem Open/Change. Neuer vollständiger Kandidatenreview
 und Plattformmatrix folgen; **P3-2/G3 bleiben offen**.
 
+Review6: [unveränderter FAIL-Bericht](reviews/P3-2-e31ad29-FAIL.md), SHA-256
+`084027cd76ee6fef87584a6db3aa1db47fe36574a4f34255b43717c600ca3684`;
+Transportexit1/Manifest failed, daher kein positiver Abnahmenachweis. Die
+direkten AC05–08 und bisherigen Befunde sind in seinen eigenen Proben grün,
+aber neuer kumulativer F8: Capture-Abbruch entwich `Workspace.compile`, statt
+ein Cancelled-Ergebnis zu liefern; der unveränderte Portablefall137 ist rot.
+Dieser auch selbst nachgewiesene Regress ist im gemeinsamen Compile-Einstieg
+für beide Overloads korrigiert. Java-Positiv-/Negativkontrollen und PortableJS
+3548 bestehen, Erwartungen unverändert. Neue vollständige Abnahme bleibt fällig.
+
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256
 `ef7ac8ac673710d28c0139915af5f3fcc4043a3fe427e9228c71e46ee5c311d2`.

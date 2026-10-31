@@ -396,24 +396,36 @@ final class DefaultWorkspace implements Workspace {
 
     @Override
     public CompilationOutcome compile(WorkspaceCompileRequest request, CancellationToken token) {
-        WorkspaceCapture capture = capture(new AnalysisRequest(
-                request.expectedWorkspaceRevision(), request.roots()), token, guru.interlis.syntax.ParseMode.STRICT);
-        recordSemanticInvocation();
-        CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), token);
-        acceptOutcome(capture, outcome);
-        return outcome;
+        Objects.requireNonNull(request,"request");Objects.requireNonNull(token,"token");
+        try {
+            WorkspaceCapture capture = capture(new AnalysisRequest(
+                    request.expectedWorkspaceRevision(), request.roots()), token, guru.interlis.syntax.ParseMode.STRICT);
+            recordSemanticInvocation();
+            CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), token);
+            acceptOutcome(capture, outcome);
+            return outcome;
+        } catch(OperationCancelledException cancelled) {
+            synchronized(this) {cancellations++;}
+            return new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason());
+        }
     }
 
     @Override
     public CompilationOutcome compile(WorkspaceCompileRequest request, RunContext context,
                                       CancellationToken token) {
-        WorkspaceCapture capture = capture(new AnalysisRequest(
-                request.expectedWorkspaceRevision(), request.roots()), token, guru.interlis.syntax.ParseMode.STRICT);
-        recordSemanticInvocation();
-        CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), context,
-                token);
-        acceptOutcome(capture, outcome);
-        return outcome;
+        Objects.requireNonNull(request,"request");Objects.requireNonNull(context,"context");Objects.requireNonNull(token,"token");
+        try {
+            WorkspaceCapture capture = capture(new AnalysisRequest(
+                    request.expectedWorkspaceRevision(), request.roots()), token, guru.interlis.syntax.ParseMode.STRICT);
+            recordSemanticInvocation();
+            CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), context,
+                    token);
+            acceptOutcome(capture, outcome);
+            return outcome;
+        } catch(OperationCancelledException cancelled) {
+            synchronized(this) {cancellations++;}
+            return new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason());
+        }
     }
 
     private void acceptOutcome(WorkspaceCapture capture, CompilationOutcome outcome) {

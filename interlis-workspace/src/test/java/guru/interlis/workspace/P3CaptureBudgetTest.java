@@ -26,6 +26,11 @@ class P3CaptureBudgetTest {
                     assertEquals(CancellationReason.RESOURCE_LIMIT,failure.reason());assertEquals(revision,workspace.currentRevision());
                     assertEquals(0,workspace.metrics().acceptedAnalyses());assertEquals(text,workspace.source(id).orElseThrow().text());
                 }
+                var compileRequest=new WorkspaceCompileRequest(revision,roots);
+                var cancelled=assertInstanceOf(CompilationOutcome.Cancelled.class,workspace.compile(compileRequest,CancellationToken.none()));
+                assertEquals(CancellationReason.RESOURCE_LIMIT,cancelled.reason());assertTrue(cancelled.analysis().isEmpty());
+                var explicit=assertInstanceOf(CompilationOutcome.Cancelled.class,workspace.compile(compileRequest,RunContextFactory.defaults().createRoot(),CancellationToken.none()));
+                assertEquals(CancellationReason.RESOURCE_LIMIT,explicit.reason());assertEquals(0,workspace.metrics().acceptedAnalyses());
                 workspace.configure(base,revision);
                 assertInstanceOf(CompilationOutcome.Succeeded.class,workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(),roots),CancellationToken.none()));
             }
