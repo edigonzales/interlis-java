@@ -11,12 +11,17 @@ const definitions={
  client:{file:'interlis-wasm-teavm/build/node-client-result.json',artifacts:[js,'interlis-wasm-teavm/build/compiler-client.cjs','interlis-wasm-teavm/build/diagram-adapter.cjs'],status:'passed',minimum:18},
  diagram:{file:'interlis-wasm-teavm/build/node-diagram-result.json',artifacts:[js,'interlis-wasm-teavm/build/compiler-client.cjs','interlis-wasm-teavm/build/diagram-adapter.cjs'],status:'passed',minimum:4}
 };
+function activeGuard(guard,candidate){
+ return guard.status==='running'&&guard.gitHead===candidate&&guard.dirty.trim()===''&&guard.active===true&&Number.isInteger(guard.guardPid)&&guard.guardPid>0&&guard.probes.length>0
+  &&guard.probes.every(p=>p.status!==0&&(p.error==='EPERM'||p.status===126||(!path.isAbsolute(p.command)&&p.error==='ENOENT')))
+  &&guard.probes.some(p=>path.isAbsolute(p.command)&&p.error==='EPERM');
+}
 /** Preconditions deliberately exclude runtime results produced by this invocation. */
 function validatePreflight(candidate,sourceFingerprint,github,guard){
  assert(/^[a-f0-9]{40}$/.test(candidate)&&/^[a-f0-9]{64}$/.test(sourceFingerprint),'missing exact candidate binding');
  assert(github.gitCommit===candidate&&github.run.headSha===candidate&&github.run.status==='completed'&&github.run.conclusion==='success'&&github.run.path==='.github/workflows/p3-platforms.yml','collect successful current-candidate GitHub evidence before releaseCheckP3');
  assert(github.artifacts.length===2&&github.artifacts.map(a=>a.platform).sort().join(',')==='linux-x64,windows-x64'&&github.artifacts.every(a=>a.proof.gitCommit===candidate&&a.proof.dirty===false&&a.proof.sourceFingerprint===sourceFingerprint&&a.proof.status==='passed'),'foreign/incomplete platform preflight');
- assert(guard.status==='running'&&guard.gitHead===candidate&&guard.dirty.trim()===''&&guard.active===true&&Number.isInteger(guard.guardPid)&&guard.guardPid>0&&guard.probes.length>0&&guard.probes.every(p=>p.status!==0&&(p.error==='EPERM'||p.status===126))&&guard.probes.some(p=>path.isAbsolute(p.command)&&p.error==='EPERM'),'run releaseCheckP3 through the active OS interpreter guard');
+ assert(activeGuard(guard,candidate),'run releaseCheckP3 through the active OS interpreter guard');
  return {status:'passed',gitCommit:candidate};
 }
 function read(file){return JSON.parse(fs.readFileSync(path.join(root,file),'utf8'));}
@@ -64,7 +69,7 @@ function validate(input){
  assert(reproducibility.status==='passed'&&reproducibility.candidate===candidate&&reproducibility.cleanBuilds===2&&reproducibility.shippedFiles>30&&reproducibility.shippedFiles===Object.keys(reproducibility.artifacts).length,'missing two clean reproducible builds');
  assert(browserManifest.schemaVersion==='1.0'&&browserManifest.gitCommit===candidate&&!browserManifest.dirty&&browserManifest.sourceFingerprint===sourceFingerprint&&Object.keys(browserManifest.resources).length>20,'missing current shipped browser build manifest');
  assert(equal(browserManifest.versions,sdk.versions),'inconsistent delivered version manifests');
- assert(guard.status==='running'&&guard.gitHead===candidate&&guard.dirty.trim()===''&&Number.isInteger(guard.guardPid)&&guard.guardPid>0&&guard.active===true&&guard.probes.length>0&&guard.probes.every(p=>p.status!==0&&(p.error==='EPERM'||p.status===126))&&guard.probes.some(p=>path.isAbsolute(p.command)&&p.error==='EPERM'),'missing active inherited OS interpreter guard');
+ assert(activeGuard(guard,candidate),'missing active inherited OS interpreter guard');
  return {status:'passed',profile:'P3',gitCommit:candidate,sourceFingerprint,runtimes:6,platforms:['linux-x64','windows-x64','macos-arm64'],note:'Internal gate passed; formal acceptance additionally requires finished outer guard/independent review, both with exit0 and passed manifests.'};
 }
 function main(){

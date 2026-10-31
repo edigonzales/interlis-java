@@ -16,6 +16,10 @@ function fixture(){
  return {candidate,sourceFingerprint,currentArtifacts,proofs,platforms,sdk,github:{profile:'P3',repository:'edigonzales/interlis-java',gitCommit:candidate,run:{headSha:candidate,status:'completed',conclusion:'success',path:'.github/workflows/p3-platforms.yml'},jobs:[{status:'completed',conclusion:'success'},{status:'completed',conclusion:'success'}],artifacts:[{platform:'linux-x64',digest:'sha256:'+sha,proof:platforms[0]},{platform:'windows-x64',digest:'sha256:'+sha,proof:platforms[1]}]},performance:{status:'passed',gitCommit:candidate,dirty:false,sourceFingerprint,roots:347,runtimes:6,realCorpusEdits:2000,skipped:0,semanticMismatches:0},conformance:{status:'passed',gitCommit:candidate,dirty:false,sourceFingerprint,summary:{summary:{PASS:577,XFAIL:16,FAIL:0,XPASS:0,ERROR:0,TOTAL:593},normativeAssessments:Array(21).fill({})}},reproducibility:{status:'passed',candidate,cleanBuilds:2,shippedFiles:31,artifacts:Object.fromEntries(Array.from({length:31},(_,i)=>['file'+i,{sha256:sha}]))},browserManifest:{schemaVersion:'1.0',gitCommit:candidate,dirty:false,sourceFingerprint,resources:Object.fromEntries(Array.from({length:21},(_,i)=>['file'+i,{sha256:sha}])),versions:{...versions}},guard:{status:'running',gitHead:candidate,dirty:'',guardPid:123,active:true,probes:[{command:'/fixture/interpreter',error:'EPERM',status:null}]}};
 }
 test('complete current P3 candidate evidence validates',()=>assert.equal(validate(fixture()).status,'passed'));
+test('real guard combines unavailable PATH names with absolute OS execution denials',()=>{
+ const f=fixture();f.guard.probes.unshift({command:'absent-command',status:null,error:'ENOENT'});
+ assert.equal(validate(f).status,'passed');assert.equal(validatePreflight(f.candidate,f.sourceFingerprint,f.github,f.guard).status,'passed');
+});
 test('preflight accepts current CI and active guard before runtime results exist',()=>{
  const f=fixture();assert.equal(validatePreflight(f.candidate,f.sourceFingerprint,f.github,f.guard).status,'passed');
 });
@@ -35,5 +39,6 @@ for(const [name,mutate]of [
  ['foreign workflow',f=>f.github.repository='other/project'],['failed workflow',f=>f.github.run.conclusion='failure'],['failed job',f=>f.github.jobs[0].conclusion='failure'],['unhashed artifact',f=>f.github.artifacts[0].digest=''],
  ['inconsistent SDK version',f=>f.sdk.versions.apiVersion='0.1'],['different platform package',f=>f.platforms[2].sdkArchiveSha256='old'],['single build',f=>f.reproducibility.cleanBuilds=1],['empty repro comparison',f=>f.reproducibility.artifacts={}],
  ['stale browser manifest',f=>f.browserManifest.gitCommit='old'],['unshipped version mismatch',f=>f.browserManifest.versions.protocol='other'],
- ['old completed guard',f=>f.guard.status='passed'],['dead guard',f=>f.guard.active=false],['unproved execution denial',f=>f.guard.probes=[]],['successful interpreter',f=>f.guard.probes[0].status=0]
+ ['old completed guard',f=>f.guard.status='passed'],['dead guard',f=>f.guard.active=false],['unproved execution denial',f=>f.guard.probes=[]],['successful interpreter',f=>f.guard.probes[0].status=0],
+ ['absolute absence without execution denial',f=>f.guard.probes[0].error='ENOENT'],['unexpected PATH execution error',f=>f.guard.probes.push({command:'unavailable',status:null,error:'EACCES'})]
 ])test('P3 fails closed: '+name,()=>{const f=fixture();mutate(f);assert.throws(()=>validate(f));});
