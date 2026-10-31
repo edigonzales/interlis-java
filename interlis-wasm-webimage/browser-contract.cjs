@@ -1,3 +1,5 @@
+const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
+const evidence=runtimeEvidence.begin(["interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js","interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js.wasm"]);
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
@@ -44,7 +46,7 @@ async function serve(root) {
       if (!result || result.status !== 'ok' || result.outcome !== 'succeeded') {
         throw new Error('Web Image browser compilation failed: ' + JSON.stringify(result));
       }
-      results.push({browser: name, browserVersion: browser.version(), node: process.version,
+      results.push({...runtimeEvidence.finish(evidence),browser: name, browserVersion: browser.version(), node: process.version,
         playwright: browserRequire('playwright/package.json').version,
         runtime: 'graalvm-web-image', status: 'passed', result});
       console.log(`${name.toUpperCase()} WEBIMAGE PASS ${JSON.stringify(result)}`);

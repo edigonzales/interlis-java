@@ -1,3 +1,5 @@
+const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
+const evidence=runtimeEvidence.begin(['interlis-wasm-teavm/build/web/build-manifest.json','interlis-wasm-teavm/build/web/interlis-compiler.wasm','interlis-wasm-teavm/build/diagram-adapter.cjs']);
 'use strict';
 const {test,before,after}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),http=require('node:http');
 const {chromium,firefox,webkit}=require('playwright');
@@ -7,7 +9,7 @@ const text='INTERLIS 2.4;MODEL English(en) AT "x" VERSION "1"=DOMAIN Identifier=
 before(async()=>{fs.rmSync(output,{force:true});server=http.createServer((req,res)=>{const name=new URL(req.url,'http://localhost').pathname,file=path.resolve(web,name==='/'?'index.html':name.slice(1));if(!file.startsWith(web+path.sep)||!fs.existsSync(file)){res.writeHead(404);res.end();return;}res.writeHead(200,{'content-type':file.endsWith('.wasm')?'application/wasm':file.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8'});fs.createReadStream(file).pipe(res);});await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));url='http://127.0.0.1:'+server.address().port+'/';});
 after(async()=>{server?.close();fs.writeFileSync(output,JSON.stringify(results,null,2)+'\n');});
 for(const [name,type]of [['chromium',chromium],['firefox',firefox],['webkit',webkit]])test(name+' UI language/focus/depth and delayed actual layout remain snapshot-safe',{timeout:60000},async()=>{
-  let browser;const report={browser:name,status:'failed'};
+  let browser;const report={...evidence,browser:name,status:'failed'};
   try{
     browser=await type.launch({headless:true});report.version=browser.version();const page=await browser.newPage();
     // Test-only wrapper waits after the unchanged real pinned renderer finishes.
@@ -29,6 +31,6 @@ export const diagramAdapter={...real,render:async(...args)=>{const result=await 
     await page.locator('#source').fill(text+'\n!! newer source revision');const late=await page.evaluate(()=>{window.__releaseProjection();return window.__delayedProjection;});assert.equal(late.stale,true);assert.equal(await page.locator('#diagram-view').innerHTML(),before);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'true');
     const current=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(current.stale,undefined);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'false');const currentRoad=current.result.nodes.find(n=>n.canonicalName==='English.Data.Road');
     const navigation=await page.evaluate(id=>interlisBrowserTest.navigate(id),currentRoad.id);assert.equal(navigation.kind,'resolved');assert.equal(navigation.range.revision,current.result.sourceRevisions[navigation.range.source]);
-    report.status='passed';report.observations=['actual UI translation changes labels while preserving ids/anchors','focus does not expand unrelated siblings','neighbourhood depth0/1 applied','late actual SVG/ELK layout discarded after source edit','current source navigation succeeds'];
+    Object.assign(report,runtimeEvidence.finish(evidence));report.status='passed';report.observations=['actual UI translation changes labels while preserving ids/anchors','focus does not expand unrelated siblings','neighbourhood depth0/1 applied','late actual SVG/ELK layout discarded after source edit','current source navigation succeeds'];
   }catch(error){report.error=String(error);throw error;}finally{results.push(report);await browser?.close();}
 });

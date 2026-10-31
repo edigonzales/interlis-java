@@ -61,7 +61,7 @@ tasks.register('wasmContractTest') {
 tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
-    dependsOn 'buildWasmGC', 'buildBrowserTools'
+    dependsOn 'buildWasmGC', 'buildBrowserTools', ':sdkProcessCheck'
     from 'src/main/web'
     from(rootProject.file('tools/performance/full-corpus-contract.js'))
     from(layout.buildDirectory.dir('browser-tools'))
@@ -76,6 +76,17 @@ tasks.register('prepareBrowserHarness', Sync) {
         include 'interlis-compiler.wasm-runtime.js'
     }
     into layout.buildDirectory.dir('web')
+    inputs.file(rootProject.file('tools/release/browser-manifest.cjs'))
+    inputs.property('candidate', providers.exec {
+        workingDir rootProject.projectDir
+        commandLine nodeExecutable.get(), '-e', "const p=require('./tools/performance/profile.cjs');process.stdout.write(JSON.stringify({fingerprint:p.fingerprint(),...p.commitInfo()}));"
+    }.standardOutput.asText)
+    doLast {
+        providers.exec {
+            workingDir rootProject.projectDir
+            commandLine nodeExecutable.get(), rootProject.file('tools/release/browser-manifest.cjs'), layout.buildDirectory.dir('web').get().asFile
+        }.result.get().assertNormalExitValue()
+    }
 }
 
 tasks.register('jsContractTest') {
@@ -105,7 +116,7 @@ tasks.register('diagramAdapterTest', Exec) {
     description = 'Tests the TypeScript-contract diagram adapter without a browser.'
     dependsOn 'browserClientTest'
     workingDir = projectDir
-    commandLine nodeExecutable.get(), '--test', 'diagram-adapter.test.cjs'
+    commandLine nodeExecutable.get(), rootProject.file('tools/verification/node-contract.cjs'), 'diagram'
 }
 
 tasks.register('browserContractTest', Exec) {
@@ -140,7 +151,7 @@ tasks.register('browserClientTest', Exec) {
     description = 'Exercises the bounded worker host and client against the real TeaVM JS compiler.'
     dependsOn 'buildBrowserTools', 'generateJavaScript'
     workingDir = projectDir
-    commandLine nodeExecutable.get(), '--test', 'worker-host.test.cjs', 'compiler-client.test.cjs'
+    commandLine nodeExecutable.get(), rootProject.file('tools/verification/node-contract.cjs'), 'client'
 }
 
 tasks.register('uiProjectionTest', Exec) {

@@ -43,7 +43,7 @@ try {
   if (path.basename(args[0]).includes('gradlew') && !args.includes('--no-daemon')) args.push('--no-daemon');
   const gitHead = cp.execFileSync('git', ['rev-parse', 'HEAD'], {cwd: root, encoding: 'utf8'}).trim();
   const dirty = cp.execFileSync('git', ['status', '--porcelain'], {cwd: root, encoding: 'utf8'});
-  const report = {gitHead, dirty, status: 'running', startedAt: new Date().toISOString(), command: args, path: bin,
+  const report = {guardPid:process.pid,gitHead, dirty, status: 'running', startedAt: new Date().toISOString(), command: args, path: bin,
     firefoxContentSandbox: 'disabled only in this confined test environment to avoid sandbox_init EPERM; outer OS execution filter remains inherited',
     profile, profileSha256: crypto.createHash('sha256').update(profile).digest('hex'), probes,
     scope: 'No reachable interpreter: private PATH plus inherited OS process-exec denial, including absolute paths. Host installations are untouched.'};

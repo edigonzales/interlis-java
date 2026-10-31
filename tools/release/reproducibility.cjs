@@ -15,7 +15,7 @@ async function run(cwd,command,args,log){
    const cwd=path.join(temp,name),record=path.join(output,name);fs.mkdirSync(record,{recursive:true});git('worktree','add','--detach',cwd,candidate);
    try{
     await run(path.join(cwd,'interlis-wasm-teavm'),'npm',['ci'],path.join(record,'npm-ci.log'));
-    await run(cwd,path.join(cwd,'gradlew'),['--no-daemon','sdkPackage',':interlis-wasm-teavm:buildWasmGC',':interlis-wasm-teavm:generateJavaScript',':interlis-wasm-teavm:buildBrowserTools','-PnodeExecutable='+process.execPath],path.join(record,'build.log'));
+    await run(cwd,path.join(cwd,'gradlew'),['--no-daemon','sdkPackage',':interlis-wasm-teavm:buildWasmGC',':interlis-wasm-teavm:generateJavaScript',':interlis-wasm-teavm:prepareBrowserHarness','-PnodeExecutable='+process.execPath],path.join(record,'build.log'));
     if(cp.execFileSync('git',['status','--porcelain'],{cwd,encoding:'utf8'}).trim())throw Error('Clean build changed tracked inputs; checkout retained at '+cwd);
     const version=fs.readFileSync(path.join(cwd,'gradle.properties'),'utf8').match(/^projectVersion=(.+)$/m)[1].trim();
     const files=[...walk(path.join(cwd,'interlis-cli/build/install/interlis-cli')),
@@ -23,7 +23,7 @@ async function run(cwd,command,args,log){
       path.join(cwd,'interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm'),
       path.join(cwd,'interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js'),
       path.join(cwd,'interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js'),
-      ...walk(path.join(cwd,'interlis-wasm-teavm/build/browser-tools'))].sort();
+      ...walk(path.join(cwd,'interlis-wasm-teavm/build/browser-tools')),...walk(path.join(cwd,'interlis-wasm-teavm/build/web'))].sort();
     const manifest={};for(const file of files){const key=path.relative(cwd,file).split(path.sep).join('/');const bytes=fs.readFileSync(file);manifest[key]={sha256:hash(bytes),bytes:bytes.length};const copy=path.join(record,'artifacts',key);fs.mkdirSync(path.dirname(copy),{recursive:true});fs.writeFileSync(copy,bytes);}
     fs.writeFileSync(path.join(record,'artifacts.json'),JSON.stringify(manifest,null,2)+'\n');manifests.push(manifest);
    }finally{

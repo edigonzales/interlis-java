@@ -184,6 +184,24 @@ ausdrücklich mit Stand, Werkzeugversionen und Artefakthashes nach
 Erwartungen. Für P3 gehören Konformitäts-, Performance-, Distributions- und
 Plattformnachweise zu den Pflichtprüfungen; fehlende Nachweise halten G3 offen.
 
+Das aktuelle P3-Profil wird ausdrücklich mit `releaseCheckP3` oder
+`-PreleaseProfile=P3 releaseCheck` gewählt. `releaseCheck` ohne Profil und
+unbekannte Profile scheitern bereits bei der Konfiguration. Vor dem Gesamtlauf
+werden erfolgreiche Windows-/Linux-Actions desselben sauberen Produktcommits
+mit `tools/release/platform-evidence.cjs` bezogen und gegen die von GitHub
+gelieferten Archivprüfsummen geprüft. Der Gesamtlauf erfolgt auf der
+macOS-arm64-Referenzmaschine unter `tools/verification/without-python.cjs`;
+der aktive, vererbte OS-Ausführungsschutz ist eine Vorbedingung. Eine blosse
+frühere Erfolgsmeldung dieses Schutzes reicht nicht.
+
+`releaseEvidenceCheck` bindet die tatsächlich geladenen Laufzeitartefakte,
+Quellfingerprints, Fallzahlen, Plattformprozesse, Corpusmessungen und zwei
+saubere reproduzierbare Builds an diesen Commit. Er prüft auch das ausgelieferte
+Browser-Buildmanifest und die getrennten Versionsverträge. Geänderte Quellen,
+fremde JARs, fehlende Browser und alte oder übersprungene Belege ergeben keinen
+Erfolg. Der interne Taskerfolg ersetzt weder den erfolgreichen Abschluss des
+äusseren Schutzprozesses noch den unabhängigen kumulativen G3-Review.
+
 Korpusbeschaffung, falls erforderlich, ist eine getrennte explizite Task mit festem Commit und Prüfsumme. Tests laufen gegen lokal bereitgestellte Bytes. Unit-Tests verwenden keine unstabilen Online-Modellserver. Integrationstests mit HTTP benötigen einen kontrollierten Testserver und festgelegte Antworten.
 
 ## 7. CI und lokale Entwicklung

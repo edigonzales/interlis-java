@@ -1,3 +1,5 @@
+const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
+const evidence=runtimeEvidence.begin(["interlis-wasm-teavm/build/web/interlis-compiler.wasm","interlis-wasm-teavm/build/web/interlis-compiler.wasm-runtime.js","interlis-wasm-teavm/build/diagram-adapter.cjs"]);
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
@@ -112,7 +114,7 @@ async function request(base, method, route, body, timeout = 60000) {
     }
     fs.mkdirSync('build', {recursive: true});
     fs.writeFileSync('build/safari-result.json', JSON.stringify({
-      status: 'passed', browser: 'Safari', driverVersion, node: process.version,
+      ...runtimeEvidence.finish(evidence), status: 'passed', browser: 'Safari', driverVersion, node: process.version,
       result, stabilizationElapsedMs, driverStderr: stderr.trim()
     }, null, 2));
     console.log('SAFARI PASS ' + JSON.stringify(result));

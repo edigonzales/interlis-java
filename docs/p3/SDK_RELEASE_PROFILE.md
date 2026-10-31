@@ -50,10 +50,33 @@ sie werden nicht persistiert oder zwischen Clients übertragen.
 
 ## Abnahme und Belege
 
-Geplant sind das ausdrückliche P3-Releaseprofil, vollständige aktuelle JVM- /
-Portable-/Browser-/Safari-/WebImage-/Conformance-/Performanceprüfungen, ein
-Consumer ausschliesslich aus dem entpackten SDK, zwei unabhängige saubere
-reproduzierbare Builds und reale Windows-x64-/Linux-x64-/macOS-arm64-Prozesse
-am Schlussprodukt. Die Prüfung muss fehlende, alte, partielle, fremde oder
-übersprungene Nachweise ablehnen. Versionierte Spezifikation, Originalpins und
-unveränderte unabhängige Reviews bleiben die Vertrags-/Abnahmequellen.
+Implementiert, noch nicht gesamthaft abgenommen: `sdkArchiveCheck` prüft den
+Consumer aus dem entpackten SDK einschliesslich Launcher. `platformCheck`
+führt die JVM-/CLI-/LSP-/SDK-Prozesse aus. `sdkReproducibilityCheck` baut zwei
+separate saubere Checkouts und vergleicht die ausgelieferten Dateien byteweise.
+Das tatsächliche Browserverzeichnis enthält `build-manifest.json` mit
+Quell-/Commitbindung, getrennten Versionen und Ressourcenhashes.
+
+Der Ablauf am sauberen Schlussprodukt ist:
+
+1. Commit auf den autorisierten Arbeitsbranch pushen und beide Jobs von
+   `.github/workflows/p3-platforms.yml` erfolgreich abschliessen lassen.
+2. Mit Node24 `tools/release/platform-evidence.cjs` ausführen; bei Bedarf zeigt
+   `GH_EXECUTABLE` auf das vorhandene `gh`. Der Collector prüft den aktuellen
+   Commit, beide echten Jobs und die GitHub-Archivprüfsummen.
+3. Unter Java25, Node24, GraalVM25/Binaryen133 und den gepinnten echten Browsern
+   `node tools/verification/without-python.cjs ./gradlew --no-daemon
+   releaseCheckP3 -PnodeExecutable=/absoluter/pfad/zu/node` ausführen.
+   Gleichwertig ist `-PreleaseProfile=P3 releaseCheck`. Auf der macOS-
+   Referenzmaschine hält temporäres `caffeinate -diu` während des langen
+   UI-Laufs den Bildschirm aktiv; keine globalen Energieeinstellungen ändern.
+4. Internes `build/reports/p3/release/result.json`, regulären Prozessabschluss
+   und anschliessend `build/reports/python-free/environment.json` mit
+   `status=passed` gemeinsam prüfen. Danach ist der unabhängige kumulative
+   OpenCode-Review über die direkte DeepSeek API am selben Produkt fällig.
+
+Fehlende, alte, partielle, fremde oder übersprungene Nachweise schliessen das
+Gate. Keine Budgets oder fachlichen Erwartungen werden dabei automatisch
+angepasst. Versionierte Spezifikation, Originalpins und unveränderte unabhängige
+Reviews bleiben die Vertrags-/Abnahmequellen. Ein späterer Dokumentcommit kann
+den geprüften Produktcommit benennen; er etikettiert dessen Rohbelege nicht um.

@@ -1,3 +1,5 @@
+const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
+const evidence=runtimeEvidence.begin(["interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js"]);
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -43,7 +45,7 @@ END JsTarget.
   handle(envelope('closeSession', sessionId));
   const stabilizationCases = await require('./stabilization-contract.cjs')(api);
   const corpusRegressionCases = await require('./token-classification-contract.cjs')(api);
-  const result = {stabilizationCases, corpusRegressionCases, status: 'passed', tool: capabilities.result.toolVersion,
+  const result = {...runtimeEvidence.finish(evidence),stabilizationCases, corpusRegressionCases, status: 'passed', tool: capabilities.result.toolVersion,
     outcome: compiled.result ? compiled.result.outcome : compiled.status,
     runtime: 'teavm-js', node: process.version};
   fs.writeFileSync(path.resolve(__dirname, 'build/js-contract-result.json'),
