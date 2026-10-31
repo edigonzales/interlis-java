@@ -4,6 +4,7 @@ import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.ModelSelector;
 import guru.interlis.diagnostics.Diagnostic;
+import guru.interlis.diagnostics.DiagnosticLanguage;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.execution.RunContext;
@@ -109,6 +110,14 @@ public final class DefaultCompilerCli implements CliApplication {
                 default -> command;
             };
             if (!command.equals(arguments.getFirst())) arguments = List.of(command);
+            if (java.util.Set.of("check", "compile", "analyze", "diagram", "format").contains(command)) {
+                invocation.command = parseCommand(arguments);
+                invocation.language = switch (invocation.command.value("--diagnostic-language").orElse("en")) {
+                    case "en" -> DiagnosticLanguage.EN;
+                    case "de" -> DiagnosticLanguage.DE;
+                    default -> throw new CliUsageException("--diagnostic-language must be de or en");
+                };
+            }
             return switch (command) {
                 case "help" -> help(arguments, environment);
                 case "version" -> version(arguments, environment);
@@ -126,7 +135,12 @@ public final class DefaultCompilerCli implements CliApplication {
             return result(CliTermination.CANCELLED, List.of(),
                     "cancelled: " + cancelled.reason());
         } catch (SourceLoadException failure) {
-            String message = "source load failed: " + failure.reason();
+            String reason = switch (failure.reason()) {
+                case NOT_FOUND -> invocation.language == DiagnosticLanguage.DE ? "Quelle nicht gefunden" : "source not found";
+                case ACCESS_DENIED -> invocation.language == DiagnosticLanguage.DE ? "Zugriff auf die Quelle verweigert" : "access to the source was denied";
+                default -> invocation.language == DiagnosticLanguage.DE ? "Quelle konnte nicht gelesen werden" : "source could not be read";
+            };
+            String message = invocation.language == DiagnosticLanguage.DE ? "Laden fehlgeschlagen: " + reason : "Source loading failed: " + reason;
             environment.err().println(message);
             return result(CliTermination.OPERATIONAL_FAILURE, List.of(), message);
         } catch (CliUsageException usage) {
@@ -154,6 +168,7 @@ public final class DefaultCompilerCli implements CliApplication {
             if (specification.acceptsFiles()) help.append(" [--] [files...]");
             help.append('\n');
         }
+        help.append("Diagnostic language: --diagnostic-language de|en (default: en).\n");
         environment.out().print(help);
         return result(CliTermination.SUCCESS, List.of(), help.toString());
     }
@@ -212,7 +227,7 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private CliExecutionResult compile(List<String> args, CliEnvironment environment,
                                        CancellationToken token, Invocation invocation) {
-        ParsedCommand supplied = parseCommand(args);
+        ParsedCommand supplied = invocation.command;
         var loader = new ConfigurationLoader();
         var configuration = loader.load(supplied, environment, token);
         var warningPolicy = switch (configuration.command().value("--warnings").orElseThrow()) {
@@ -327,7 +342,7 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private CliExecutionResult analyze(List<String> args, CliEnvironment environment,
                                        CancellationToken token, Invocation invocation) {
-        ParsedArguments parsed = parseFiles(args, false);
+        ParsedArguments parsed = parseFiles(invocation.command);
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
         }
@@ -346,7 +361,7 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private CliExecutionResult diagram(List<String> args, CliEnvironment environment,
                                        CancellationToken token, Invocation invocation) {
-        ParsedArguments parsed = parseFiles(args, true);
+        ParsedArguments parsed = parseFiles(invocation.command);
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
         }
@@ -363,11 +378,13 @@ public final class DefaultCompilerCli implements CliApplication {
         invocation.compiled(outcome);
         if (!(outcome instanceof CompilationOutcome.Succeeded succeeded)) {
             List<Diagnostic> diagnostics = diagnostics(outcome);
-            print(true, environment, diagnostics, "diagram requires a checked schema",
+            print(false, environment, diagnostics, "diagram requires a checked schema",
                     loaded.sources(), invocation);
             return result(new CliOutcomeMapper().classify(outcome), diagnostics,
                     "diagram requires a checked schema");
         }
+        List<Diagnostic> requestDiagnostics = succeeded.analysis().requestDiagnostics();
+        print(false, environment, requestDiagnostics, "ok", loaded.sources(), invocation);
         CompiledSchema schema = succeeded.schema();
         DiagramSelection selection = new DiagramSelection(
                 List.of(schema.rootModels().getFirst()));
@@ -386,14 +403,14 @@ public final class DefaultCompilerCli implements CliApplication {
             default -> throw new IllegalArgumentException("unknown format: " + parsed.format());
         };
         environment.out().println(text);
-        return result(CliTermination.SUCCESS, List.of(), text);
+        return result(CliTermination.SUCCESS, requestDiagnostics, text);
         }
     }
 
     private CliExecutionResult format(List<String> args, CliEnvironment environment,
                                       CancellationToken token, Invocation invocation) {
-        FormatArguments parsed = parseFormat(args);
-        new OutputPlanner().plan(parseCommand(args), environment);
+        FormatArguments parsed = parseFormat(invocation.command);
+        new OutputPlanner().plan(invocation.command, environment);
         if (parsed.error() != null) {
             return usage(environment, parsed.error());
         }
@@ -423,7 +440,7 @@ public final class DefaultCompilerCli implements CliApplication {
             if (outcome instanceof FormatOutcome.Rejected rejected) {
                 ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
                 for (Diagnostic diagnostic : rejected.diagnostics()) {
-                    environment.err().println(renderer.render(diagnostic, sources));
+                    environment.err().println(renderer.render(diagnostic, sources, invocation.language));
                 }
                 return result(CliTermination.SOURCE_REJECTED, rejected.diagnostics(),
                         "format rejected");
@@ -435,7 +452,10 @@ public final class DefaultCompilerCli implements CliApplication {
             }
             FormatOutcome.Formatted formatted = (FormatOutcome.Formatted) outcome;
             for (var notice : formatted.notices()) {
-                environment.err().println(notice.code() + ": " + notice.message());
+                String message = invocation.language == DiagnosticLanguage.DE && notice.code().equals("VALUE_LINE_ENDING_PRESERVED")
+                        ? "Zeilenenden in einem werttragenden Literal oder Metawert bleiben zur Werterhaltung unverändert."
+                        : guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(notice.message());
+                environment.err().println(notice.code() + ": " + message);
             }
             outputs.add(new FormatOutput(input, formatted.text()));
         }
@@ -473,8 +493,7 @@ public final class DefaultCompilerCli implements CliApplication {
         return result(CliTermination.SUCCESS, List.of(), text);
     }
 
-    private static FormatArguments parseFormat(List<String> args) {
-        ParsedCommand command = parseCommand(args);
+    private static FormatArguments parseFormat(ParsedCommand command) {
         int indent;
         try { indent = Integer.parseInt(command.value("--indent").orElse("2")); }
         catch (NumberFormatException invalid) { throw new CliUsageException("invalid --indent value"); }
@@ -593,8 +612,8 @@ public final class DefaultCompilerCli implements CliApplication {
 
     private static List<Diagnostic> diagnostics(CompilationOutcome outcome) {
         return switch (outcome) {
-            case CompilationOutcome.Succeeded succeeded -> succeeded.analysis().diagnostics();
-            case CompilationOutcome.Rejected rejected -> rejected.analysis().diagnostics();
+            case CompilationOutcome.Succeeded succeeded -> succeeded.analysis().requestDiagnostics();
+            case CompilationOutcome.Rejected rejected -> rejected.analysis().requestDiagnostics();
             case CompilationOutcome.Cancelled ignored -> List.of();
             case CompilationOutcome.Failed failed -> List.of(failed.error());
         };
@@ -614,11 +633,11 @@ public final class DefaultCompilerCli implements CliApplication {
                               Map<SourceId, SourceText> sources, Invocation invocation) {
         if (json) {
             environment.out().println("{\"status\":\"" + JsonDiagnosticWriter.escape(summary)
-                    + "\",\"diagnostics\":" + new JsonDiagnosticWriter().write(diagnostics) + "}");
+                    + "\",\"diagnostics\":" + new JsonDiagnosticWriter().write(diagnostics, invocation.language) + "}");
         } else {
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
             for (Diagnostic diagnostic : diagnostics) {
-                environment.err().println(renderer.render(diagnostic, sources));
+                environment.err().println(renderer.render(diagnostic, sources, invocation.language));
             }
         }
     }
@@ -655,6 +674,8 @@ public final class DefaultCompilerCli implements CliApplication {
         boolean schemaProduced;
         boolean analysisComplete;
         final List<CliExecutionResult.Artifact> artifacts = new ArrayList<>();
+        ParsedCommand command;
+        DiagnosticLanguage language = DiagnosticLanguage.EN;
         int rootCount;
         CancellationReason cancellation = CancellationReason.USER_REQUESTED;
         FailureId failureId;

@@ -1,5 +1,7 @@
 # Migration der Vorab-API 0.1 → 0.2
 
+CLI2: `AnalysisSnapshot` verlangt im Konstruktor zusätzlich nach der vollständigen Diagnoseliste den expliziten geordneten Teilbestand `requestDiagnostics`. Compileverbraucher verwenden `requestDiagnostics()`, IDE-/Analyseverbraucher weiterhin `diagnostics()`. Gate und Snapshot teilen dieselbe interne Auswahl; keine Adapterfilter nach Dateinamen. Die reinen `DiagnosticLanguage`, `DiagnosticMessage` und `DiagnosticMessageFormatter` liegen in `guru.interlis.diagnostics`. CLI-Sprache ist explizit `--diagnostic-language de|en`, Default EN. CLI-JSON ergänzt Präsentation, RelatedLocations und Ursachenbezüge; kanonische Felder und bestehende Protokollversionen bleiben erhalten.
+
 P3-LSP-Ergänzung: Für Sichtbarkeit `ScopeId.forOwner(owner.id())` mit der
 passenden SnapshotId verwenden. `SemanticQueries.membersOf` ersetzt globale
 Präfixsuche nach Qualifizierern. Exhaustive Completion-Switches ergänzen

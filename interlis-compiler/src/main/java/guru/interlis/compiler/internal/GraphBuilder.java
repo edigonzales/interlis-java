@@ -299,36 +299,54 @@ final class GraphBuilder {
     }
 
     private void validateTypeNamespaces() {
-        var typeKinds=DeclarationNamespaces.TYPE_KINDS;
-        var names=new LinkedHashMap<SymbolId,Set<String>>();
-        var declarations=index.all().stream().sorted(Comparator.comparingInt(DeclInfo::order)).toList();
-        for(var declaration:declarations) {
+        var typeKinds = DeclarationNamespaces.TYPE_KINDS;
+        var names = new LinkedHashMap<SymbolId, Map<String, DeclInfo>>();
+        var declarations = index.all().stream().sorted(Comparator.comparingInt(DeclInfo::order)).toList();
+        for (var declaration : declarations) {
             checkWork();
-            if(declaration.owner().isPresent()&&declaration.nameRange().isPresent()&&typeKinds.contains(declaration.kind())
-                    &&!names.computeIfAbsent(declaration.owner().orElseThrow(),ignored->new LinkedHashSet<>()).add(declaration.name()))
-                emitRule(declaration,"type names must be unique in their declaring scope","SCOPE_TYPE_NAME_UNIQUE");
-        }
-        for(var declaration:declarations) {
-            checkWork();
-            if(declaration.owner().isEmpty()||declaration.nameRange().isEmpty()||!typeKinds.contains(declaration.kind()))continue;
-            var owner=declaration.owner().orElseThrow();
-            var outer=index.byId(owner).flatMap(DeclInfo::owner);
-            while(outer.isPresent()) {
-                checkWork();
-                if(names.getOrDefault(outer.orElseThrow(),Set.of()).contains(declaration.name())) {
-                    emitRule(declaration,"local type names must not shadow an enclosing type name","SCOPE_OUTER_TYPE_NAME");break;
-                }
-                outer=index.byId(outer.orElseThrow()).flatMap(DeclInfo::owner);
-            }
-            if(declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED))continue;
-            var seen=new HashSet<SymbolId>();
-            for(var inherited=baseOf.get(owner);inherited!=null&&seen.add(inherited);inherited=baseOf.get(inherited)) {
-                checkWork();
-                if(names.getOrDefault(inherited,Set.of()).contains(declaration.name())) {
-                    emitRule(declaration,"inherited type names require an explicit EXTENDED declaration","SCOPE_INHERITED_TYPE_NAME");break;
-                }
+            if (declaration.owner().isPresent() && declaration.nameRange().isPresent()
+                    && typeKinds.contains(declaration.kind())) {
+                var scope = names.computeIfAbsent(declaration.owner().orElseThrow(), ignored -> new LinkedHashMap<>());
+                var prior = scope.putIfAbsent(declaration.name(), declaration);
+                if (prior != null) emitNamespaceRule(declaration, prior,
+                        "type names must be unique in their declaring scope", "SCOPE_TYPE_NAME_UNIQUE");
             }
         }
+        for (var declaration : declarations) {
+            checkWork();
+            if (declaration.owner().isEmpty() || declaration.nameRange().isEmpty()
+                    || !typeKinds.contains(declaration.kind())) continue;
+            var owner = declaration.owner().orElseThrow();
+            var outer = index.byId(owner).flatMap(DeclInfo::owner);
+            while (outer.isPresent()) {
+                checkWork();
+                var prior = names.getOrDefault(outer.orElseThrow(), Map.of()).get(declaration.name());
+                if (prior != null) {
+                    emitNamespaceRule(declaration, prior,
+                            "local type names must not shadow an enclosing type name", "SCOPE_OUTER_TYPE_NAME");
+                    break;
+                }
+                outer = index.byId(outer.orElseThrow()).flatMap(DeclInfo::owner);
+            }
+            if (declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) continue;
+            var seen = new HashSet<SymbolId>();
+            for (var inherited = baseOf.get(owner); inherited != null && seen.add(inherited); inherited = baseOf.get(inherited)) {
+                checkWork();
+                var prior = names.getOrDefault(inherited, Map.of()).get(declaration.name());
+                if (prior != null) {
+                    emitNamespaceRule(declaration, prior,
+                            "inherited type names require an explicit EXTENDED declaration", "SCOPE_INHERITED_TYPE_NAME");
+                    break;
+                }
+            }
+        }
+    }
+
+    private void emitNamespaceRule(DeclInfo declaration, DeclInfo prior, String rule, String reason) {
+        var related = new guru.interlis.diagnostics.RelatedLocation(prior.nameRange().orElseThrow(),
+                "diagnostic.related.conflictingDeclaration",
+                List.of(new DiagnosticArgument.IdentifierArgument("name", prior.name())));
+        emitRule(declaration, rule, reason, ruleRange(declaration), List.of(related));
     }
 
     /** Named constraints share the declaring viewable's local namespace, including
@@ -5435,17 +5453,28 @@ final class GraphBuilder {
     }
 
     DiagnosticId emitRule(DeclInfo decl, String rule, String reason) {
-        return emitRule(decl, rule, reason, decl.origin() instanceof Origin.DeclaredOrigin declared
-                ? declared.range() : decl.nameRange().orElse(null));
+        return emitRule(decl, rule, reason, ruleRange(decl));
+    }
+
+    private SourceRange ruleRange(DeclInfo decl) {
+        return decl.origin() instanceof Origin.DeclaredOrigin declared
+                ? declared.range() : decl.nameRange().orElse(null);
     }
 
     DiagnosticId emitRule(DeclInfo decl, String rule, String reason, SourceRange range) {
-        return collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0010"),
+        return emitRule(decl, rule, reason, range, List.of());
+    }
+
+    private DiagnosticId emitRule(DeclInfo decl, String rule, String reason, SourceRange range,
+                                  List<guru.interlis.diagnostics.RelatedLocation> related) {
+        var draft = DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0010"),
                         Severity.ERROR, Phase.SEMANTIC_CHECKING,
                         "diagnostic.semantics.inheritance")
                 .at(range)
                 .argument(new DiagnosticArgument.IdentifierArgument("element", decl.name()))
-                .argument(new DiagnosticArgument.TextArgument("rule", rule + "/" + reason)));
+                .argument(new DiagnosticArgument.TextArgument("rule", rule + "/" + reason));
+        related.forEach(draft::related);
+        return collector.emit(draft);
     }
 
     SymbolId scopeRoot(SymbolId symbol) {

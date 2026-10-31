@@ -48,7 +48,7 @@ class ApiInvariantTest {
         assertThrows(IllegalArgumentException.class, () -> new AnalysisSnapshot(
                 new SnapshotId("snap-other"), analysis.semanticGraph(),
                 analysis.sourceRevisions(), analysis.syntaxSnapshots(),
-                analysis.diagnostics(), analysis.coverage(), analysis.fingerprint(),
+                analysis.diagnostics(), analysis.requestDiagnostics(), analysis.coverage(), analysis.fingerprint(),
                 analysis.provenance()));
     }
 }

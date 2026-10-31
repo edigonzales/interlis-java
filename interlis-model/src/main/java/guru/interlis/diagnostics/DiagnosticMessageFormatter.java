@@ -1,0 +1,138 @@
+package guru.interlis.diagnostics;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+
+/** Pure, locale-independent DE/EN presentation. No IO, language checking or mutable locale state. */
+public final class DiagnosticMessageFormatter {
+    private record Text(String en, String de) { }
+    private static Map.Entry<String, Text> text(String key, String en, String de) {
+        return Map.entry("diagnostic." + key, new Text(en, de));
+    }
+    private static final Map<String, Text> TEXTS = Map.ofEntries(
+            text("syntax.lexical", "The input contains an invalid character or token '{token}'.", "Die Eingabe enthält ein ungültiges Zeichen oder Token '{token}'."),
+            text("syntax.unexpected", "Unexpected token '{actual}'; expected {expected}.", "Unerwartetes Token '{actual}'; erwartet wird {expected}."),
+            text("syntax.missing", "A required token is missing; expected {expected}.", "Ein erforderliches Token fehlt; erwartet wird {expected}."),
+            text("syntax.trailing", "Unexpected content '{actual}' follows the end of the model input.", "Nach dem Ende der Modelleingabe folgt unerwarteter Inhalt '{actual}'."),
+            text("syntax.version", "Language version '{actual}' is not supported. Supported versions: {supported}.", "Die Sprachversion '{actual}' wird nicht unterstützt. Unterstützte Versionen: {supported}."),
+            text("syntax.versionConstruct", "The construct '{construct}' is not allowed in INTERLIS {language}.", "Das Konstrukt '{construct}' ist in INTERLIS {language} nicht erlaubt."),
+            text("syntax.redundantProperty", "The property '{property}' is repeated unnecessarily.", "Die Eigenschaft '{property}' ist unnötig mehrfach angegeben."),
+            text("resolution.missing", "The requested or imported model '{model}' could not be found.", "Das angeforderte oder importierte Modell '{model}' wurde nicht gefunden."),
+            text("resolution.ambiguous", "The model '{model}' is ambiguous. Candidates: {candidates}.", "Das Modell '{model}' ist mehrdeutig. Kandidaten: {candidates}."),
+            text("resolution.source", "The source '{source}' could not be provided: {reason}.", "Die Quelle '{source}' konnte nicht bereitgestellt werden: {reason}."),
+            text("resolution.identity", "The source was expected to contain model '{expected}', but contains {actual}.", "In der Quelle wurde das Modell '{expected}' erwartet; enthalten ist {actual}."),
+            text("resolution.overlay.missing", "The translation original '{model}' required by overlay '{overlay}' could not be found.", "Das vom Overlay '{overlay}' benötigte Übersetzungsoriginal '{model}' wurde nicht gefunden."),
+            text("resolution.overlay.ambiguous", "The translation original '{model}' for overlay '{overlay}' is ambiguous. Candidates: {candidates}.", "Das Übersetzungsoriginal '{model}' für das Overlay '{overlay}' ist mehrdeutig. Kandidaten: {candidates}."),
+            text("resolution.translation.identity", "The selected translation source has an inconsistent model identity: {reason}.", "Die ausgewählte Übersetzungsquelle hat eine widersprüchliche Modellidentität: {reason}."),
+            text("semantics.unresolved", "The name '{name}' cannot be resolved at this location.", "Der Name '{name}' kann an dieser Stelle nicht aufgelöst werden."),
+            text("semantics.ambiguous", "The name '{name}' is ambiguous at this location. Candidates: {candidates}.", "Der Name '{name}' ist an dieser Stelle mehrdeutig. Kandidaten: {candidates}."),
+            text("semantics.duplicate", "The name '{name}' is already declared in this namespace.", "Der Name '{name}' ist in diesem Namensraum bereits deklariert."),
+            text("semantics.visibility", "The name '{name}' is not accessible here: {rule}.", "Der Name '{name}' ist hier nicht zugänglich: {rule}."),
+            text("semantics.type", "Type '{actual}' is not compatible with the required type '{expected}'.", "Der Typ '{actual}' ist mit dem erforderlichen Typ '{expected}' nicht verträglich."),
+            text("semantics.cycle", "The relationship '{relationship}' contains a prohibited cycle: {cycle}.", "Die Beziehung '{relationship}' enthält einen unzulässigen Zyklus: {cycle}."),
+            text("semantics.numeric", "The numeric range or precision is invalid: {reason}.", "Der numerische Wertebereich oder seine Genauigkeit ist ungültig: {reason}."),
+            text("semantics.path", "The object-path segment '{segment}' is invalid: {reason}.", "Der Objektpfadschritt '{segment}' ist ungültig: {reason}."),
+            text("semantics.inheritance", "The definition of '{element}' violates a required condition: {rule}.", "Die Definition von '{element}' verletzt eine erforderliche Bedingung: {rule}."),
+            text("semantics.overlay", "Overlay '{overlay}' cannot be applied to '{target}': {reason}.", "Das Overlay '{overlay}' kann nicht auf '{target}' angewendet werden: {reason}."),
+            text("implementation.unsupported", "The required language feature '{feature}' is not implemented for '{construct}'; the model has not been fully checked.", "Die erforderliche Sprachfunktion '{feature}' ist für '{construct}' nicht implementiert; das Modell ist nicht vollständig geprüft."),
+            text("projection.unsupported", "The consumer '{consumer}' does not support the valid model feature '{feature}'.", "Der Verbraucher '{consumer}' unterstützt die gültige Modellfunktion '{feature}' nicht."),
+            text("internal", "An internal error prevented completion. Reference: {failureId}.", "Ein interner Fehler hat den Abschluss verhindert. Referenz: {failureId}."),
+            text("limit", "The resource limit for '{resource}' was reached ({limit}); checking is incomplete.", "Die Ressourcengrenze für '{resource}' wurde erreicht ({limit}); die Prüfung ist unvollständig.")
+    );
+
+    /**
+     * Returns safe text/hint without modifying canonical values. Unknown external
+     * codes/keys and missing arguments produce a neutral fallback, never a key dump.
+     * Null inputs are caller errors. Exact numeric values are never rounded.
+     */
+    public DiagnosticMessage format(Diagnostic diagnostic, DiagnosticLanguage language) {
+        Objects.requireNonNull(diagnostic, "diagnostic");
+        Objects.requireNonNull(language, "language");
+        var definition = DiagnosticCatalog.initial().find(diagnostic.code());
+        var template = TEXTS.get(diagnostic.messageKey());
+        if (template == null || definition.isEmpty()
+                || !definition.orElseThrow().messageKey().equals(diagnostic.messageKey()))
+            return new DiagnosticMessage(language == DiagnosticLanguage.DE
+                    ? "Für diese Diagnose sind keine weiteren Angaben verfügbar."
+                    : "No further explanation is available for this diagnostic.", Optional.empty());
+        var values = arguments(diagnostic.arguments());
+        String rule = diagnostic.arguments().stream().filter(a -> a.name().equals("rule"))
+                .filter(DiagnosticArgument.TextArgument.class::isInstance)
+                .map(DiagnosticArgument.TextArgument.class::cast).map(DiagnosticArgument.TextArgument::value)
+                .findFirst().orElse("");
+        if (diagnostic.code().value().equals("ILI-SEM-0010")) {
+            if (rule.endsWith("/SCOPE_OUTER_TYPE_NAME")) return new DiagnosticMessage(
+                    replace(language == DiagnosticLanguage.DE
+                            ? "Der lokale Typname '{element}' kollidiert mit einem Namen im umschliessenden Namensraum."
+                            : "The local type name '{element}' conflicts with a name in the enclosing namespace.", values),
+                    Optional.of(language == DiagnosticLanguage.DE
+                            ? "Verwende unterschiedliche Namen für die kollidierenden Deklarationen."
+                            : "Use distinct names for the conflicting declarations."));
+            if (rule.endsWith("/SCOPE_TYPE_NAME_UNIQUE")) return new DiagnosticMessage(
+                    replace(language == DiagnosticLanguage.DE ? "Der Typname '{element}' ist in diesem Namensraum bereits deklariert."
+                            : "The type name '{element}' is already declared in this namespace.", values), Optional.empty());
+            if (rule.endsWith("/SCOPE_INHERITED_TYPE_NAME")) return new DiagnosticMessage(
+                    replace(language == DiagnosticLanguage.DE ? "Der geerbte Typname '{element}' benötigt eine explizite EXTENDED-Deklaration."
+                            : "The inherited type name '{element}' requires an explicit EXTENDED declaration.", values), Optional.empty());
+        }
+        return new DiagnosticMessage(replace(language == DiagnosticLanguage.DE ? template.de() : template.en(), values), Optional.empty());
+    }
+
+    /** Formats a related-location explanation; its position is rendered by the host without IO. */
+    public String formatRelated(RelatedLocation location, DiagnosticLanguage language) {
+        Objects.requireNonNull(location, "location"); Objects.requireNonNull(language, "language");
+        if (location.messageKey().equals("diagnostic.related.conflictingDeclaration"))
+            return replace(language == DiagnosticLanguage.DE ? "Kollidierende Deklaration von '{name}'."
+                    : "Conflicting declaration of '{name}'.", arguments(location.arguments()));
+        return language == DiagnosticLanguage.DE ? "Verwandte Quellstelle." : "Related source location.";
+    }
+
+    private static Map<String, String> arguments(java.util.List<DiagnosticArgument> arguments) {
+        var values = new LinkedHashMap<String, String>();
+        for (var argument : arguments) {
+            String value = switch (argument) {
+                case DiagnosticArgument.TextArgument a -> a.value();
+                case DiagnosticArgument.IdentifierArgument a -> a.value();
+                case DiagnosticArgument.TokenArgument a -> a.value();
+                case DiagnosticArgument.IntegerArgument a -> a.value().toString();
+                case DiagnosticArgument.DecimalArgument a -> a.value().toString();
+                case DiagnosticArgument.TypeNameArgument a -> a.value();
+                case DiagnosticArgument.IdentifierListArgument a -> String.join(", ", a.values());
+            };
+            if (argument.name().equals("rule")) value = value.replaceFirst("/[A-Z][A-Z0-9_]*$", "");
+            values.putIfAbsent(argument.name(), safeText(value));
+        }
+        return values;
+    }
+
+    private static String replace(String template, Map<String, String> values) {
+        var result = new StringBuilder();
+        for (int i = 0; i < template.length();) {
+            int start = template.indexOf('{', i);
+            if (start < 0) { result.append(template, i, template.length()); break; }
+            result.append(template, i, start);
+            int end = template.indexOf('}', start);
+            result.append(values.getOrDefault(template.substring(start + 1, end), "?"));
+            i = end + 1;
+        }
+        return result.toString();
+    }
+
+    /** Escapes terminal controls and line/bidi separators; preserves printable Unicode and exact text. */
+    public static String safeText(String value) {
+        Objects.requireNonNull(value, "value");
+        var out = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (Character.isISOControl(c) || c == '\u2028' || c == '\u2029'
+                    || c >= '\u202a' && c <= '\u202e' || c >= '\u2066' && c <= '\u2069') {
+                String hex = Integer.toHexString(c);
+                out.append("\\u");
+                out.append("0".repeat(4 - hex.length())).append(hex);
+            } else out.append(c);
+        }
+        return out.toString();
+    }
+}

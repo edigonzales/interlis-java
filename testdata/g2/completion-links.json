@@ -5205,7 +5205,7 @@
         },
         {
           "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/CompilationRun.java",
-          "sha256": "6290badd4f7e7c44c617eab6f0325499100b2a58958b4aa98642548a2e6ae674"
+          "sha256": "51f185dfbb49724ca132baac9e9df3b40511c8f477fe5b8ab6bf6aabd3a7f76a"
         }
       ],
       "resolution": "Keine feingranulare semantische Memoisierung aktiviert: die Pipeline baut den Graph stets vollständig neu; Syntax-/Identitätsreuse und Hostcache sind getrennt. Benchmarkbedingung vor einer künftigen semantischen Optimierung bleibt bestehen."
@@ -5580,7 +5580,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "31a378080e21e348dba9de5411ddfc57673f236d0343ec27199e318681b8f458"
+          "sha256": "cd857a91073e9d0cae29723c8d0cc0f1168753ccccf1d91013b78679b516842c"
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
@@ -5592,7 +5592,7 @@
         },
         {
           "source": "docs/spec/06-kompilierung-und-semantik.md",
-          "sha256": "65eb29ebabdd695ccd2eedadef74815e17f2ef19fd54317340dc6fcb108fbef4"
+          "sha256": "c8e135692ef4c49ae19c3b70726ca20cb8628a69bb2f17a1fa4c3fb41ee1d4aa"
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
@@ -5637,7 +5637,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "31a378080e21e348dba9de5411ddfc57673f236d0343ec27199e318681b8f458"
+          "sha256": "cd857a91073e9d0cae29723c8d0cc0f1168753ccccf1d91013b78679b516842c"
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
@@ -5645,7 +5645,7 @@
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "2870512c9e18dae835469e91a2586e12916bb720e8fc2b47bcb0a10d17b54636"
+          "sha256": "f4fe0d2c311542f37d48817b0fbcd8c77b918256558685579b153e4b0efdf1dc"
         }
       ],
       "resolution": "Synchron gepflegte Fachverträge/Register/Verbraucher und echte PublicSdk-/Bridge-Konstruktion; kein synthetisches Dokument-Golden."
@@ -14130,9 +14130,9 @@
       "suite": "guru.interlis.compiler.ApiInvariantTest",
       "method": "analysisSnapshotRejectsMismatchedGraphSnapshot",
       "methodStart": 1348,
-      "methodEnd": 2263,
-      "methodSha256": "1cd4e175d518b4ef84c8127a91179eb8899026246d0212ba3c4fd433939e09fb",
-      "sourceSha256": "2ab1023097155b307f11ebbc46a28b7803739e2a9627f358117615321d5a0c9d",
+      "methodEnd": 2294,
+      "methodSha256": "2caaa1661a949c344b0ad40bb9f3be77861bd3fd7736b465e6f254cd0d6d1c0a",
+      "sourceSha256": "7a082340ef9ab3086b8d7d10a964e21862a4c41a14d47e69f92ed165d12396e0",
       "observations": [
         "mismatched snapshot rejected",
         "mismatched snapshot"
@@ -14757,7 +14757,7 @@
       "methodStart": 916,
       "methodEnd": 1342,
       "methodSha256": "f3c8bd81acf812dc3b69dfddc888b49a7fc2bbc5931f8ddb6b31769c59da9ee7",
-      "sourceSha256": "2ab1023097155b307f11ebbc46a28b7803739e2a9627f358117615321d5a0c9d",
+      "sourceSha256": "7a082340ef9ab3086b8d7d10a964e21862a4c41a14d47e69f92ed165d12396e0",
       "observations": [
         "constructor invariants"
       ]
@@ -15119,8 +15119,8 @@
     "docs/evidence/stabilization/g2-norm-conditions.json": "c148ddf364826a453d833b4b14bb8bfc0ff74d23e65b6db13d4a4f183adc318a",
     "docs/evidence/stabilization/g2-grammar-inventory.json": "3fde28e788cfe0f408a17484e9b32090e6b48826019eae3b2f46796ea1e1a122",
     "docs/evidence/stabilization/g2-builtin-inventory.json": "e1c8f2489a31712e807a47ea5a0dbd53d3e43c9218c8167ca66539cb5b1f9a50",
-    "docs/evidence/stabilization/g2-spec-contract-inventory.json": "016c1684db073b78194f43184ba2d4b371380ad820b673ab70015344fb996832",
-    "testdata/g2/predefined-catalogue.json": "cef03fd21b3dbbd76502b73bd5341c06070312bc4566283d287326116ec48332",
+    "docs/evidence/stabilization/g2-spec-contract-inventory.json": "db75803c2b7bf74421c921fcb8da874ceefb961748b26de56c78b1c52f23d786",
+    "testdata/g2/predefined-catalogue.json": "ea279974005f7dace7922099e8ea8ea499bb96ddcac9a9c5eeacb19721911e85",
     "testdata/g2/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
   }
 }

@@ -46,7 +46,7 @@ class P3CliBoundaryContractTest {
         var run = run(List.of("check", directory.resolve("missing.ili").toString()));
         assertEquals(CliTermination.OPERATIONAL_FAILURE, run.result.termination());
         assertFalse(run.err.isBlank());
-        assertTrue(run.err.contains("NOT_FOUND"), run.err);
+        assertTrue(run.err.contains("source not found"), run.err);
         assertEquals(1, run.result.exitCode());
     }
 

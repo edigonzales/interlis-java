@@ -2,6 +2,8 @@ package guru.interlis.cli;
 
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticArgument;
+import guru.interlis.diagnostics.DiagnosticLanguage;
+import guru.interlis.diagnostics.DiagnosticMessageFormatter;
 
 import java.util.List;
 
@@ -15,6 +17,13 @@ public final class JsonDiagnosticWriter {
      * @return the result
      */
     public String write(List<Diagnostic> diagnostics) {
+        return write(diagnostics, DiagnosticLanguage.EN);
+    }
+
+    /** Adds presentation only; canonical fields/arguments/numbers retain their original encoding. */
+    public String write(List<Diagnostic> diagnostics, DiagnosticLanguage language) {
+        java.util.Objects.requireNonNull(language, "language");
+        var formatter = new DiagnosticMessageFormatter();
         StringBuilder out = new StringBuilder("[");
         for (int i = 0; i < diagnostics.size(); i++) {
             if (i > 0) {
@@ -27,6 +36,9 @@ public final class JsonDiagnosticWriter {
             field(out, "severity", diagnostic.severity().name()).append(',');
             field(out, "phase", diagnostic.phase().name()).append(',');
             field(out, "messageKey", diagnostic.messageKey());
+            var message = formatter.format(diagnostic, language);
+            out.append(','); field(out, "message", message.text());
+            message.hint().ifPresent(hint -> { out.append(','); field(out, "hint", hint); });
             diagnostic.primaryRange().ifPresent(range -> {
                 out.append(",\"range\":{");
                 field(out, "source", range.source().value()).append(',');
@@ -46,7 +58,41 @@ public final class JsonDiagnosticWriter {
                 field(out, "value", value(argument));
                 out.append('}');
             }
-            out.append("]}");
+            out.append(']');
+            diagnostic.causeId().ifPresent(id -> { out.append(','); field(out, "causeId", id.value()); });
+            if (!diagnostic.dependsOn().isEmpty()) {
+                out.append(",\"dependsOn\":[");
+                for (int j = 0; j < diagnostic.dependsOn().size(); j++) {
+                    if (j > 0) out.append(',');
+                    out.append('"').append(escape(diagnostic.dependsOn().get(j).value())).append('"');
+                }
+                out.append(']');
+            }
+            if (!diagnostic.relatedLocations().isEmpty()) {
+                out.append(",\"relatedLocations\":[");
+                for (int j = 0; j < diagnostic.relatedLocations().size(); j++) {
+                    if (j > 0) out.append(',');
+                    var related = diagnostic.relatedLocations().get(j);
+                    var range = related.range();
+                    out.append("{\"range\":{");
+                    field(out, "source", range.source().value()).append(',');
+                    field(out, "revision", Long.toString(range.revision().value())).append(',');
+                    out.append("\"startOffset\":").append(range.startOffset()).append(',');
+                    out.append("\"endOffset\":").append(range.endOffset()).append("},");
+                    field(out, "messageKey", related.messageKey()).append(',');
+                    field(out, "message", formatter.formatRelated(related, language));
+                    out.append(",\"arguments\":[");
+                    for (int k = 0; k < related.arguments().size(); k++) {
+                        if (k > 0) out.append(',');
+                        var argument = related.arguments().get(k);
+                        out.append('{'); field(out, "name", argument.name()).append(',');
+                        field(out, "kind", kind(argument)).append(','); field(out, "value", value(argument)).append('}');
+                    }
+                    out.append("]}");
+                }
+                out.append(']');
+            }
+            out.append('}');
         }
         return out.append(']').toString();
     }

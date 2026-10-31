@@ -165,7 +165,7 @@ Die kanonische Sortierung verwendet zuerst `SourceId.value()` in der von Java `S
 
 ### 4.3 DiagnosticPresentation
 
-`AnalysisSnapshot.diagnostics()` enthält die vollständige kanonische Liste. Darauf arbeitet:
+`AnalysisSnapshot.diagnostics()` enthält die vollständige kanonische Liste. `requestDiagnostics()` ist die gemeinsame, im Compiler einmal ausgewählte Auftragssicht gemäss Kapitel06; das ist keine Anzeigeunterdrückung. IDE-/Workspaceverbraucher behalten die Gesamtsicht. Auf dem jeweiligen fachlichen Eingangsbestand arbeitet:
 
 ```java
 DiagnosticView project(
@@ -180,6 +180,11 @@ Die erste Ursachenregel ist konservativ: Eine abhängige Diagnose darf nur verde
 Ein Anzeige-Limit muss als Anzeige-Limit erkennbar bleiben, etwa über `hiddenCount`; die fachliche Analysevollständigkeit darf daraus nicht abgeleitet werden. Das Gate liest keine `DiagnosticView`.
 
 ### 4.4 Renderer und Quick-Fixes
+
+Die nullfreien Typen `DiagnosticLanguage { DE, EN }`, `DiagnosticMessage(String text, Optional<String> hint)` und `DiagnosticMessageFormatter` gehören zu `interlis-model/guru.interlis.diagnostics`. `format(Diagnostic, DiagnosticLanguage)` und `formatRelated(RelatedLocation, DiagnosticLanguage)` bilden ausschliesslich strukturierte Werte auf Text ab: kein IO, kein veränderlicher Sprachzustand, keine Norm-/Binderheuristik. Message und Hinweis sind immutable; der Formatter besitzt nur immutable Templates. Unbekannte externe Codes/Keys liefern einen neutralen Fallback, fehlende Argumente ein sichtbares `?`; null ist ein Aufruferfehler. Alle aktuellen Katalogcodes und Argumentplätze müssen durch sinnvolle DE-/EN-Templates abgedeckt sein. Zahlen bleiben exakt; Steuerzeichen, ANSI und Zeilen-/Bidi-Steuerung in Argumenten werden sichtbar escaped. Die normale Prosa enthält keine rohen Keys oder Recorddumps.
+
+Namenskonflikte tragen die tatsächliche kollidierende Deklaration als `RelatedLocation` mit `diagnostic.related.conflictingDeclaration` und Identifierargument `name`. Primärargumente, Regelkennung und Akzeptanz bleiben unverändert. `SCOPE_OUTER_TYPE_NAME` wird als Namenskonflikt mit Modellierungshinweis erklärt, ohne behaupteten Normabschnitt. Hostrenderer berechnen 1-basierte UTF-16-Zeile/Spalte nur aus explizit bereitgestellten passenden Revisionen; sonst nennen sie URI, Revision und Offsets. Verwandte Stellen verändern die Rootauswahl nicht.
+
 
 `DiagnosticRenderer.render(Diagnostic diagnostic, RenderingContext context)` liefert einen String und verändert keinen Diagnosezustand. `RenderingContext` enthält Sprache, Positionsformat und gegebenenfalls das Kompatibilitätsprofil. Er enthält keine Zugriffsmöglichkeiten auf Repository oder Datenbank.
 

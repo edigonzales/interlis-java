@@ -29,6 +29,7 @@ public final class AnalysisSnapshot {
     private final Map<SourceId, SourceRevision> sourceRevisions;
     private final Map<SourceId, SyntaxSnapshot> syntaxSnapshots;
     private final java.util.List<Diagnostic> diagnostics;
+    private final java.util.List<Diagnostic> requestDiagnostics;
     private final AnalysisCoverage coverage;
     private final CompilationFingerprint fingerprint;
     private final AnalysisProvenance provenance;
@@ -41,6 +42,7 @@ public final class AnalysisSnapshot {
      * @param sourceRevisions captured source revisions
      * @param syntaxSnapshots captured syntax snapshots
      * @param diagnostics complete canonical diagnostic list
+     * @param requestDiagnostics canonical ordered subset for this snapshot’s roots/options/revisions
      * @param coverage explicit analysis coverage
      * @param fingerprint canonical request fingerprint
      * @param provenance mode/reuse provenance
@@ -48,7 +50,8 @@ public final class AnalysisSnapshot {
     public AnalysisSnapshot(SnapshotId snapshotId, SemanticGraph semanticGraph,
                             Map<SourceId, SourceRevision> sourceRevisions,
                             Map<SourceId, SyntaxSnapshot> syntaxSnapshots,
-                            java.util.List<Diagnostic> diagnostics, AnalysisCoverage coverage,
+                            java.util.List<Diagnostic> diagnostics, java.util.List<Diagnostic> requestDiagnostics,
+                            AnalysisCoverage coverage,
                             CompilationFingerprint fingerprint, AnalysisProvenance provenance) {
         this.snapshotId = Objects.requireNonNull(snapshotId, "snapshotId");
         this.semanticGraph = Objects.requireNonNull(semanticGraph, "semanticGraph");
@@ -61,6 +64,14 @@ public final class AnalysisSnapshot {
         this.syntaxSnapshots = Map.copyOf(
                 Objects.requireNonNull(syntaxSnapshots, "syntaxSnapshots"));
         this.diagnostics = java.util.List.copyOf(Objects.requireNonNull(diagnostics, "diagnostics"));
+        this.requestDiagnostics = java.util.List.copyOf(Objects.requireNonNull(requestDiagnostics, "requestDiagnostics"));
+        int next = 0;
+        for (Diagnostic diagnostic : this.requestDiagnostics) {
+            while (next < this.diagnostics.size() && !this.diagnostics.get(next).equals(diagnostic)) next++;
+            if (next == this.diagnostics.size())
+                throw new IllegalArgumentException("request diagnostics must be an ordered subset of complete diagnostics");
+            next++;
+        }
         this.coverage = Objects.requireNonNull(coverage, "coverage");
         this.fingerprint = Objects.requireNonNull(fingerprint, "fingerprint");
         this.provenance = Objects.requireNonNull(provenance, "provenance");
@@ -99,6 +110,16 @@ public final class AnalysisSnapshot {
     /** Returns the complete canonical diagnostic list. */
     public java.util.List<Diagnostic> diagnostics() {
         return diagnostics;
+    }
+
+    /**
+     * Returns the immutable canonical diagnostic subset for exactly this snapshot's
+     * roots, options, source revisions and fingerprint. Values/IDs are shared with
+     * {@link #diagnostics()}; warnings and unlocated request problems are retained.
+     * This is the gate's selection, not presentation suppression. No IO is performed.
+     */
+    public java.util.List<Diagnostic> requestDiagnostics() {
+        return requestDiagnostics;
     }
 
     /** Returns the explicit analysis coverage. */

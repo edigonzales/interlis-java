@@ -1,5 +1,7 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+CLI2 konkretisiert DIAG-001–009, SEM-017/019, API-Verträge und CLI-001/006 durch die gemeinsame `requestDiagnostics()`-Auswahl (Kapitel06/16), den reinen DE-/EN-Formatter (Kapitel09) und explizite CLI-Sprach-/JSON-Verträge (Kapitel18). Multi-Source-/Multi-Modell-, Import-/Translation-/Overlay-, Fresh/Reuse-, Office-Original-/Kontroll- und Portablegegenproben prüfen unveränderte Sprachentscheidungen. Dies ist eine Vertragszuordnung; der operative Stand steht in `docs/implementation/compiler-cli-modernization/STATUS.md`.
+
 P3-2 konkretisiert die vorhandenen INC-018/019/022 und LSP-001–016 durch
 die öffentlichen Gegenproben aus Kapitel 13 §7 und die Host-/Queryverträge
 in Kapitel 07 §5–6. Kapitel 05 §3.3 und das API-Register nennen den gemeinsamen

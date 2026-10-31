@@ -111,7 +111,8 @@ final class CompilationRun {
                 sourceSet.fingerprint().value(), request.options().fingerprint(),
                 sourceFingerprints(sourceSet));
         AnalysisSnapshot analysis = new AnalysisSnapshot(snapshotId, graphResult.graph(),
-                revisions(sourceSet), syntax, diagnostics, graphResult.coverage(),
+                revisions(sourceSet), syntax, diagnostics,
+                RequestDiagnosticSelector.select(diagnostics, closure, roots, token), graphResult.coverage(),
                 fingerprint, provenance);
         return new RunOutput(analysis, closure, roots, graphResult);
     }
