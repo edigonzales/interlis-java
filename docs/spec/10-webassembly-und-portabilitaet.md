@@ -253,14 +253,14 @@ Das optionale Feld `options` folgt dem Schema
 Ist es vorhanden, verlangt es `schemaVersion: "1.0"`. Es übernimmt `scope`,
 `visibleKinds`, `inheritedMembers`, `showTypes`, `showRoleCardinalities`,
 `showConstraints`, `showImports`, `labelPolicy`, `associationPresentation`
-und `budget` aus dem gemeinsamen `DiagramOptions`-Vertrag in Kapitel11;
+`translationModel`, `neighbourhoodDepth` und `budget` aus dem gemeinsamen `DiagramOptions`-Vertrag in Kapitel11;
 ausgelassene Felder verwenden ausschliesslich dessen Defaults.
 Unbekannte Felder, falsche Typen und ungültige Grenzen sind `INVALID_REQUEST`.
 Unbekannte Optionsversionen und ausdrücklich nicht angebotene Darstellungsoptionen
 liefern `UNSUPPORTED_OPERATION`; sie werden nicht still ignoriert.
 `capabilities.diagramOptions` nennt die angebotene Version und Darstellungsprofile.
 Ein angenommener Budgetwert kann `LIMITED` erzeugen, niemals eine verdeckt
-verkleinerte vollständige Ausgabe. Die TypeScript-Form heisst `DiagramOptionsDto`.
+verkleinerte vollständige Ausgabe. Die TypeScript-Form heisst `DiagramOptionsDto`. `translationModel` ist ein SymbolRefDto mit `snapshot`/`symbol`; der Client übersetzt auch diesen öffentlichen Snapshot-Handle in den aktuellen Worker-Handle. Fremde oder alte Handles werden vor der Übernahme abgelehnt. `neighbourhoodDepth` ist eine JSON-Ganzzahl von0 bis32. Beide Modi verlangen die expliziten Parameter aus Kapitel11.
 
 `CompilerClient.closeSession` ist für dasselbe eigene Handle idempotent,
 auch bei gleichzeitig angeforderten Abschlüssen. Die Implementierung benötigt

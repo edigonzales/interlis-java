@@ -64,3 +64,13 @@ Felder und ungültige Optionen liefern explizite Fehler. Partielle Eingänge
 behalten betroffene Knoten, fehlende Importstubs und ihre tatsächliche
 Vollständigkeit. Idempotentes closeSession verwendet im Client schwache
 Handleidentität und hält keine unbegrenzte Liste abgeschlossener Sitzungen.
+
+`TRANSLATED` ist jetzt mit explizitem `translationModel: SymbolRefDto` nutzbar;
+der Client prüft und übersetzt auch dessen Snapshot-Handle. Die vorhandenen
+gebundenen TranslationLink-Paare bestimmen Anzeigenamen und benannte Typlabels.
+IDs, canonicalName und Originalanker bleiben gleich. `NEIGHBOURHOOD` verlangt
+`neighbourhoodDepth` von0 bis32 und folgt dem gebundenen Referenzgraphen gemäss
+Kapitel11. Eigentümerrahmen expandieren keine unbeteiligten Geschwister mehr.
+Die Demo bietet Fokus-, Scope-, Tiefen- und Übersetzungswahl. Neue reale
+UI-Prüfungen lassen den unveränderten gepinnten Renderer tatsächlich arbeiten,
+verzögern danach seine Antwort und belegen deren Verwerfen nach einem Edit.

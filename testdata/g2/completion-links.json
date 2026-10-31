@@ -5409,7 +5409,7 @@
         },
         {
           "source": "build.gradle",
-          "sha256": "ef9fcb2171101ca82349159a43ff81f9efe7205846e334443ab13135ef4d94aa"
+          "sha256": "22d88ba0828e2ba720ef85bb258fec98f6511053ee99f3a3f0bb828804229709"
         }
       ],
       "resolution": "Modulabhängigkeiten und frischer JVM-/Wasm-/Browserbuild belegen portable Loggingunabhängigkeit."
@@ -5580,7 +5580,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "b02160709cdbb5dac4273127824cb4328fc3aba1f164d116d66c32c6a39b16aa"
+          "sha256": "459e36ab0619a1d27e2dc9bedf275dbda3a5d9c74556c739826fc02f728042a9"
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
@@ -5637,11 +5637,11 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "b02160709cdbb5dac4273127824cb4328fc3aba1f164d116d66c32c6a39b16aa"
+          "sha256": "459e36ab0619a1d27e2dc9bedf275dbda3a5d9c74556c739826fc02f728042a9"
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
-          "sha256": "b831787769fd5682caee3a99f884dd4fbae7385189922d2ebeaec86d233bf100"
+          "sha256": "7786722eacf54c4eaed163631bab6743980fb5d5ceba69031628bd1274e41d1f"
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",

@@ -120,6 +120,7 @@ export interface DiagramOptionsDto {
   readonly visibleKinds?:readonly ('CLASS'|'STRUCTURE'|'ASSOCIATION'|'VIEW'|'DOMAIN'|'EXTERNAL_REFERENCE'|'GRAPHIC'|'DRAWING_RULE'|'LINE_FORM'|'METADATA_BASKET'|'METAOBJECT')[];
   readonly inheritedMembers?:'HIDE'|'SHOW_WITH_ORIGIN';
   readonly showTypes?:boolean;readonly showRoleCardinalities?:boolean;readonly showConstraints?:boolean;readonly showImports?:boolean;
+  readonly translationModel?:SymbolRefDto;readonly neighbourhoodDepth?:number;
   readonly labelPolicy?:'CANONICAL'|'TRANSLATED';readonly associationPresentation?:'ENTITY'|'COMPACT_BINARY';
   readonly budget?:{readonly maxNodes?:number;readonly maxEdges?:number;readonly maxMembersPerNode?:number};
 }

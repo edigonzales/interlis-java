@@ -19,7 +19,10 @@ class P3RootSelectorWireTest {
                 var envelope=JsonValues.object("protocol",JsonValues.string("interlis.compiler"),"protocolVersion",JsonValues.string("1.0"),"requestId",JsonValues.string("compile-"+(++sequence)),"operation",JsonValues.string("compile"),"sessionId",JsonValues.string(session),"params",JsonValues.object("expectedWorkspaceRevision",opened.members().get("workspaceRevision"),"roots",roots));
                 var response=BridgeCodec.object(Json.parse(bridge.handle(Json.write(envelope))));assertEquals("ok",BridgeCodec.string(response,"status"),Json.write(response));
                 var result=BridgeCodec.object(response.members().get("result"));assertEquals("rejected",BridgeCodec.string(result,"outcome"));
-                assertEquals(roots,BridgeCodec.object(result.members().get("rejection")).members().get("requestedRoots"));
+                var rejection=BridgeCodec.object(result.members().get("rejection"));assertEquals(roots,rejection.members().get("requestedRoots"));
+                var resolved=BridgeCodec.string(selector,"kind").equals("bySource")?roots:JsonValues.array(List.of(JsonValues.object(
+                        "kind",JsonValues.string("byName"),"modelName",JsonValues.string("Bad"),"modelVersion",JsonValues.string("v1"),"sourceHint",JsonValues.string("memory:/bad"))));
+                assertEquals(resolved,rejection.members().get("resolvedRoots"));
             }
         } finally {bridge.handle("{\"protocol\":\"interlis.compiler\",\"protocolVersion\":\"1.0\",\"requestId\":\"close\",\"operation\":\"closeSession\",\"sessionId\":\""+session+"\",\"params\":{}}");}
     }

@@ -138,3 +138,11 @@ tasks.register('browserClientTest', Exec) {
     workingDir = projectDir
     commandLine nodeExecutable.get(), '--test', 'worker-host.test.cjs', 'compiler-client.test.cjs'
 }
+
+tasks.register('uiProjectionTest', Exec) {
+    group = 'verification'
+    description = 'Checks real browser UI language/focus/depth and rejects a delayed actual layout.'
+    dependsOn 'prepareBrowserHarness'
+    workingDir = projectDir
+    commandLine nodeExecutable.get(), '--test', 'ui-projection.test.cjs'
+}

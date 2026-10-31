@@ -7,6 +7,8 @@ const picker=document.getElementById('sources'),canvas=document.getElementById('
 const drafts=new Map([['memory:/browser.ili',source.value]]);
 let activeSource='memory:/browser.ili',session=null,snapshot=null,schema=null,view=null,generation=0,sequence=Promise.resolve(),activeRequest=null;
 let visibleLayout=null,visibleRendered=null;
+const focusPicker=document.getElementById('diagram-focus'),scopePicker=document.getElementById('diagram-scope'),depthPicker=document.getElementById('diagram-depth'),languagePicker=document.getElementById('diagram-language');
+
 const client=new CompilerClient({onRestored:pairs=>{
   const pair=pairs.find(p=>p.previous===session);session=pair?.current??null;visibleRendered=null;invalidate(false);
 },onFailure:error=>{invalidate(false);output.textContent=error.code+': '+error.message;}});
@@ -55,17 +57,41 @@ function publishDiagram(result,rendered){
     const button=document.createElement('button');button.textContent=node.canonicalName+'.'+member.label;button.dataset.memberId=member.id;button.onclick=()=>navigate(member.id);members.append(button);
   }
 }
+function refreshDiagramOptions(document){
+  const previousFocus=focusPicker.value,previousLanguage=languagePicker.value;
+  const choice=(value,label)=>{const option=window.document.createElement('option');option.value=value;option.textContent=label;return option;};
+  focusPicker.replaceChildren(choice('','All root models'),...document.nodes.filter(n=>n.symbol).map(n=>choice(n.symbol.symbol,n.canonicalName)));
+  if([...focusPicker.options].some(o=>o.value===previousFocus))focusPicker.value=previousFocus;
+  const translated=new Set(document.edges.filter(e=>e.kind==='TRANSLATION').map(e=>e.source.elementId));
+  languagePicker.replaceChildren(choice('','Canonical'),...document.containers.filter(c=>c.symbol&&translated.has(c.id)).map(c=>choice(c.symbol.symbol,c.canonicalName)));
+  if([...languagePicker.options].some(o=>o.value===previousLanguage))languagePicker.value=previousLanguage;
+}
+function selectedDiagramRequest(){
+  const options={schemaVersion:'1.0',scope:scopePicker.value};
+  if(scopePicker.value==='NEIGHBOURHOOD')options.neighbourhoodDepth=Number(depthPicker.value);
+  if(languagePicker.value){options.labelPolicy='TRANSLATED';options.translationModel={snapshot:snapshot,symbol:languagePicker.value};}
+  return {...(schema?{schemaId:schema}:{snapshotId:snapshot}),...(focusPicker.value?{selection:[{snapshot:snapshot,symbol:focusPicker.value}]}:{}),options};
+}
+async function drawCurrent(){
+  const handle=session,mark=generation,current=snapshot,text=captured();
+  const document=await client.diagram(handle,selectedDiagramRequest());const candidate=diagramAdapter.adapt(document,sourceMap());
+  const rendered=await diagramAdapter.render(candidate,diagramAdapter.defaultDiagramSettings,visibleRendered);
+  if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
+  view=candidate;publishDiagram(document,rendered);output.textContent=JSON.stringify({document,presentationNotices:candidate.notices},null,2);return {status:'ok',result:document};
+}
 async function diagram(){
-  // Compile synchronizes every draft and releases even rejected prior results.
   const compiled=await compile();if(compiled.stale||!compiled.result.snapshotId)return compiled;
   return serial(async()=>{
     const handle=session,mark=generation,current=snapshot,text=captured();
-    const document=await client.diagram(handle,schema?{schemaId:schema}:{snapshotId:snapshot});const candidate=diagramAdapter.adapt(document,sourceMap());
-    const rendered=await diagramAdapter.render(candidate,diagramAdapter.defaultDiagramSettings,visibleRendered);
+    const document=await client.diagram(handle,schema?{schemaId:schema}:{snapshotId:snapshot});
     if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
-    view=candidate;publishDiagram(document,rendered);output.textContent=JSON.stringify({document,presentationNotices:candidate.notices},null,2);return {status:'ok',result:document};
+    refreshDiagramOptions(document);return drawCurrent();
   });
 }
+for(const control of [focusPicker,scopePicker,depthPicker,languagePicker])control.addEventListener('change',()=>{
+  generation++;canvas.dataset.stale='true';
+  void serial(async()=>{if(!snapshot)return;return drawCurrent();}).catch(displayError);
+});
 async function restartWorker(){await client.restart();return compile();}
 async function cancel(){if(!activeRequest)return 'alreadyCompleted';return client.cancel(activeRequest);}
 async function benchmark(text,modelName,expectation){

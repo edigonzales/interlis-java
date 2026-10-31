@@ -34,6 +34,17 @@ class P3DiagramProtocolReviewTest {
         var h=compiled();for(int i=0;i<2;i++)assertEquals("ok",BridgeCodec.string(call("closeSession",h.session(),JsonValues.object()),"status"));
         error(call("diagram",h.session(),JsonValues.object("schemaId",JsonValues.string(h.schema()))),"SESSION_NOT_FOUND");
     }
+    @Test void explicitNeighbourhoodDepthCrossesTheWireAndRejectsForeignLabelSelections(){
+        var h=compiled();var doc=result(call("diagram",h.session(),JsonValues.object("schemaId",JsonValues.string(h.schema()))));
+        var a=BridgeCodec.array(doc,"nodes").values().stream().map(BridgeCodec::object).filter(n->BridgeCodec.string(n,"label").equals("A")).findFirst().orElseThrow();
+        var selection=JsonValues.array(List.of(a.members().get("symbol")));
+        for(int depth:List.of(0,1)) {
+            var options=JsonValues.object("schemaVersion",JsonValues.string("1.0"),"scope",JsonValues.string("NEIGHBOURHOOD"),"neighbourhoodDepth",JsonValues.number(depth));
+            var near=result(call("diagram",h.session(),JsonValues.object("schemaId",JsonValues.string(h.schema()),"selection",selection,"options",options)));
+            assertEquals(depth+1,BridgeCodec.array(near,"nodes").values().stream().map(BridgeCodec::object).filter(n->!BridgeCodec.string(n,"kind").equals("EXTERNAL_REFERENCE")).count());
+        }
+        error(call("diagram",h.session(),JsonValues.object("schemaId",JsonValues.string(h.schema()),"options",JsonValues.object("schemaVersion",JsonValues.string("1.0"),"labelPolicy",JsonValues.string("TRANSLATED"),"translationModel",JsonValues.object("snapshot",JsonValues.string("foreign"),"symbol",JsonValues.string("unknown"))))),"SNAPSHOT_MISMATCH");
+    }
     private JsonValue.JsonObject call(String operation,String session,JsonValue.JsonObject params){
         var request=new LinkedHashMap<String,JsonValue>();request.put("protocol",JsonValues.string("interlis.compiler"));request.put("protocolVersion",JsonValues.string("1.0"));request.put("requestId",JsonValues.string("review-"+(++sequence)));request.put("operation",JsonValues.string(operation));request.put("params",params);if(session!=null)request.put("sessionId",JsonValues.string(session));
         return BridgeCodec.object(Json.parse(bridge.handle(Json.write(new JsonValue.JsonObject(request)))));

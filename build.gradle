@@ -66,6 +66,7 @@ tasks.register('checkBrowser') {
     def browserModule = subprojects.find { it.name == 'interlis-wasm-teavm' }
     if (browserModule != null) {
         dependsOn "${browserModule.path}:browserContractTest"
+        dependsOn "${browserModule.path}:uiProjectionTest"
         dependsOn "${browserModule.path}:safariContractTest"
         def webimage = subprojects.find { it.name == 'interlis-wasm-webimage' }
         if (webimage != null) {

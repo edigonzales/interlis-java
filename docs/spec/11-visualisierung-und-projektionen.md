@@ -83,9 +83,30 @@ Wird ein solcher Zustand über den gemeinsamen Verbraucher-Diagnosekanal ausgege
 | `showRoleCardinalities` | boolean | Kardinalitäten anzeigen; semantische Rollenzuordnung bleibt erhalten. |
 | `showConstraints` | boolean | Constraints als typisierte Namen/Arten in eigener Gruppe. |
 | `showImports` | boolean | Importbeziehungen und nötige externe Rahmen. |
-| `labelPolicy` | `CANONICAL`, `TRANSLATED` plus explizite Sprach-/Übersetzungsauswahl | Labelauswahl ohne Identitätsänderung. |
+| `labelPolicy` | `CANONICAL`, `TRANSLATED` | Labelauswahl ohne Identitätsänderung. |
+| `translationModel` | `Optional<SymbolRef>` | Bei TRANSLATED explizites Übersetzungsmodell desselben Snapshots mit gebundenen ModelTranslation-Korrespondenzen. |
+| `neighbourhoodDepth` | `OptionalInt`, 0..32 | Bei NEIGHBOURHOOD explizite maximale Entfernung im gebundenen Referenzgraphen. |
 | `associationPresentation` | `ENTITY`, später `COMPACT_BINARY` | Standarddarstellung jeder Assoziation als eigenständiges Element. |
 | `budget` | `ProjectionBudget(maxNodes,maxEdges,maxMembersPerNode)` | Ausdrückliche Begrenzung mit LIMITED-Meldung. |
+
+Eine Auswahl einzelner Elemente fügt deren Modell-/Topicrahmen hinzu, ohne
+unbeteiligte Geschwister zu expandieren. Ausgewählte Modelle/Topics nehmen
+hingegen ihren deklarierten Teilbaum auf. NEIGHBOURHOOD folgt beidseitig
+gebundenen TYPE_USE-/BASE_TYPE-/ROLE_TARGET-/Importreferenzen und Viewbasen;
+reine Constraintausdrücke und Deklarationsendnamen sind keine Nachbarn.
+Containermitgliedschaft verbraucht keinen Beziehungsschritt. Die Tiefe0
+expandiert keine Beziehungen; nötige externe Randstubs bleiben ausdrücklich
+als solche sichtbar. Budgets und Abbruch gelten auch für die Nachbarsuche.
+
+TRANSLATED verwendet ausschliesslich die vorhandenen TranslationLink-Paare
+des ausgewählten Übersetzungsmodells, einschliesslich gebundener mehrstufiger
+Korrespondenzen. Nicht zugeordnete externe Namen bleiben kanonisch. Nur
+Anzeigelabels und benannte Typlabels wechseln; canonicalName, IDs, SymbolRefs,
+Kardinalitäten und SourceAnchors bleiben beim ursprünglichen Diagramm.
+Fehlende Parameter, falsche oder veraltete Übersetzungsmodelle werden typisiert
+abgelehnt; es gibt keine implizite Auswahl nach Sprache oder Deklarationsreihenfolge.
+Der bisherige DiagramOptions-Konstruktor ohne diese beiden Parameter bleibt
+als Überladung erhalten. Die neue kanonische Recordform enthält beide Felder.
 
 Defaults sind in der einzigen öffentlichen Fabrik `DiagramOptions.defaults(DiagramSelection selection)` festzulegen und als Golden zu prüfen. Sie verlangt die konkrete nichtleere Auswahl, statt diese aus globalem Zustand oder einer zufälligen Modellreihenfolge zu erfinden. CLI, LSP und Browser dürfen Defaults nicht unabhängig unterschiedlich nachbauen. Ein Renderer kann eine zusätzliche Stilkonfiguration besitzen, die keine fachliche Auswahl verändert.
 

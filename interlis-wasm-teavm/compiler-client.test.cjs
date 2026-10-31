@@ -170,3 +170,38 @@ test('versioned diagram options reach the real compiler and partial snapshots re
     await client.releaseSnapshot(handle,analysis.snapshotId);await client.closeSession(handle);await client.closeSession(handle);
   }finally{await client.dispose();}
 });
+
+test('translation labels and bounded neighbourhoods preserve canonical ids and source navigation',async()=>{
+  const {client}=create();
+  const text='INTERLIS 2.4;MODEL English(en) AT "x" VERSION "1"=DOMAIN Identifier=TEXT*10;TOPIC Data=CLASS Road=name:Identifier;END Road;END Data;END English.'+
+    'MODEL French(fr) AT "x" VERSION "1" TRANSLATION OF English["1"]=DOMAIN Identifiant=TEXT*10;TOPIC Donnees=CLASS Route=nom:Identifiant;END Route;END Donnees;END French.';
+  try{
+    const session=await client.openSession({sources:[{sourceId:'memory:/languages',text}]});
+    const compiled=await client.compile(session,{expectedWorkspaceRevision:client.state(session).workspaceRevision,roots:[{kind:'bySource',source:'memory:/languages'}]});assert.equal(compiled.outcome,'succeeded',JSON.stringify(compiled));
+    const all=await client.diagram(session,{schemaId:compiled.schemaId}),original=all.containers.find(c=>c.canonicalName==='English').symbol,translationModel=all.containers.find(c=>c.canonicalName==='French').symbol;
+    const canonical=await client.diagram(session,{schemaId:compiled.schemaId,selection:[original]});
+    const translated=await client.diagram(session,{schemaId:compiled.schemaId,selection:[original],options:{schemaVersion:'1.0',labelPolicy:'TRANSLATED',translationModel}});
+    assert.deepEqual(translated.nodes.map(n=>n.id),canonical.nodes.map(n=>n.id));
+    const road=canonical.nodes.find(n=>n.label==='Road'),route=translated.nodes.find(n=>n.id===road.id);assert.equal(route.label,'Route');assert.equal(route.canonicalName,'English.Data.Road');assert.deepEqual(route.anchor,road.anchor);
+    const member=route.compartments.flatMap(c=>c.members).find(m=>m.label==='nom');assert.equal(member.typeLabel,'Identifiant');
+    const adapter=require('./build/diagram-adapter.cjs'),sources=new Map([['memory:/languages',{text,revision:'1'}]]),view=adapter.adapt(translated,sources);
+    assert.equal(adapter.resolveNavigation(view,route.id,compiled.snapshotId,sources).kind,'resolved');assert.ok((await adapter.render(view)).svg.includes('Route'));
+    const near=await client.diagram(session,{schemaId:compiled.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:0}});
+    assert.deepEqual(near.nodes.filter(n=>n.kind!=='EXTERNAL_REFERENCE').map(n=>n.label),['Road']);
+    const wide=await client.diagram(session,{schemaId:compiled.schemaId,selection:[road.symbol],options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:1}});
+    assert.deepEqual(wide.nodes.filter(n=>n.kind!=='EXTERNAL_REFERENCE').map(n=>n.label).sort(),['Identifier','Road']);
+    await assert.rejects(()=>client.diagram(session,{schemaId:compiled.schemaId,options:{schemaVersion:'1.0',scope:'NEIGHBOURHOOD',neighbourhoodDepth:33}}),{code:'INVALID_REQUEST'});
+    await assert.rejects(()=>client.diagram(session,{schemaId:compiled.schemaId,options:{schemaVersion:'1.0',labelPolicy:'TRANSLATED',translationModel:{...translationModel,snapshot:'foreign'}}}),{code:'SNAPSHOT_EXPIRED'});
+  }finally{await client.dispose();}
+});
+
+test('rejected compile roots are structured original and resolved selectors on the real portable backend',async()=>{
+  const {client}=create();
+  try{
+    const session=await client.openSession({sources:[{sourceId:'memory:/bad',text:'INTERLIS 2.4;MODEL Bad AT "x" VERSION "v1"=STRUCTURE S=n:Missing;END S;END Bad.'}]});
+    for(const roots of [[{kind:'byName',modelName:'Bad'}],[{kind:'byName',modelName:'Bad',modelVersion:'v1',sourceHint:'memory:/bad'}],[{kind:'bySource',source:'memory:/bad'}]]){
+      const compiled=await client.compile(session,{expectedWorkspaceRevision:client.state(session).workspaceRevision,roots});assert.equal(compiled.outcome,'rejected');assert.deepEqual(compiled.rejection.requestedRoots,roots);
+      assert.equal(compiled.rejection.resolvedRoots[0].kind,roots[0].kind);assert.equal(typeof compiled.rejection.resolvedRoots[0],'object');
+    }
+  }finally{await client.dispose();}
+});

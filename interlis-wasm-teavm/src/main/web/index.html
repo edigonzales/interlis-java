@@ -35,6 +35,10 @@ END Browser.
   </p>
   <details><summary>Workspace configuration</summary><textarea id="configuration-text">{}</textarea><button id="configuration">Apply configuration</button></details>
   <p><button id="cancel">Cancel</button><button id="restart">Restart worker</button></p>
+  <p><label>Focus <select id="diagram-focus"><option value="">All root models</option></select></label>
+    <label>Scope <select id="diagram-scope"><option>SELECTED</option><option>WITH_DEPENDENCIES</option><option>NEIGHBOURHOOD</option></select></label>
+    <label>Depth <input id="diagram-depth" type="number" min="0" max="32" value="1"></label>
+    <label>Labels <select id="diagram-language"><option value="">Canonical</option></select></label></p>
   <pre id="output" aria-live="polite"></pre><div id="diagram-view" style="overflow:auto;max-height:36rem"></div><div id="members"></div>
   <script type="importmap">{"imports":{"libavoid-js":"./vendor/libavoid/index.js"}}</script>
   <script src="stabilization-contract.js"></script>
