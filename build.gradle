@@ -223,7 +223,7 @@ tasks.register('releaseEvidenceCheckerTest', Exec) {
     group = 'verification'
     dependsOn 'checkNodeRuntime'
     workingDir rootProject.projectDir
-    commandLine nodeExecutable.get(), '--test', 'tools/release/evidence.test.cjs'
+    commandLine nodeExecutable.get(), '--test', 'tools/release/evidence.test.cjs', 'tools/verification/node-junit.test.cjs'
 }
 tasks.register('releaseEvidenceCheck', Exec) {
     group = 'verification'

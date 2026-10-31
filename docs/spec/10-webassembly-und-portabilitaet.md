@@ -425,6 +425,16 @@ Zeitstempel, Runtimeziel und Laufzeiten liegen ausserhalb der fachlichen Golden-
 
 Jeder Portabilitätslauf erzeugt ein maschinenlesbares Manifest mit Quellcommit, Toolchainständen, Artefakthashes, Fixture-/Konfigurationshash, Betriebssystem/Architektur, Browser-/Node-Version, Flags, Teststatus und Fehlerdetails. Der Status unterscheidet `passed`, `failed`, `blocked` und `notRun`.
 
+Ab P3 enthält auch das tatsächlich ausgelieferte Browserverzeichnis ein
+`build-manifest.json`: Commit und Quellfingerprint, Hash und Bytezahl jeder
+ausgelieferten Ressource sowie getrennte Werkzeug-/API-/Diagnose-/Bridge-/
+Formatierungs-/Diagrammschemaversionen. Fähigkeiten werden aus dem tatsächlich
+gebauten Wasm-Modul gelesen und mit dem SDK-Versionsmanifest verglichen.
+Aktuelle Laufzeitprüfungen schützen die geladenen Artefakthashes gegen
+Änderungen während des Laufs. Der P3-Freigabenachweis aus Kapitel03 vergleicht
+diese Lieferung zusätzlich mit zwei separaten sauberen Builds; ein Bericht
+eines anderen Commits oder Artefakts genügt nicht.
+
 P1 misst mindestens kalten Modulstart, erste Analyse, wiederholte unveränderte Analyse, Ein-Datei-Änderung und mehrfaches Editieren einer Sitzung. Median und Streuung werden bei ausreichend wiederholten Läufen angegeben. Der Vergleich nennt Messgrenzen: Download, Modulinstanziierung, JSON-Kodierung, Workerkommunikation und reine Compilerzeit sind getrennte Abschnitte.
 
 Erst danach werden sinnvolle Antwortzeit- und Speicherbudgets in Kapitel 13 verbindlich eingetragen. Der Agent darf keine mit kleiner Syntaxprobe gemessene Zeit als Leistungszusage für vollständige DMAV-/CHBase-Modelle verwenden.

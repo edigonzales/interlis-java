@@ -8,9 +8,7 @@ const child=cp.spawn(process.execPath,['--test','--test-reporter=spec','--test-r
 child.on('error',error=>{console.error(error);process.exitCode=1;});child.on('exit',(code,signal)=>{
  try{
   if(code!==0||signal)throw Error('Node contract failed: '+code+'/'+signal);
-  const text=fs.readFileSync(xml,'utf8'),suites=[...text.matchAll(/<testsuite\s[^>]*>/g)].map(m=>m[0]);if(!suites.length)throw Error('missing executed Node suites');
-  const counts={tests:0,failures:0,errors:0,skipped:0};for(const suite of suites)for(const key of Object.keys(counts)){const match=suite.match(new RegExp('\\b'+key+'="(\\d+)"'));if(!match)throw Error('missing Node JUnit '+key);counts[key]+=+match[1];}
-  if(counts.tests<profile.minimum||counts.failures||counts.errors||counts.skipped)throw Error('incomplete/skipped Node contracts');
+  const text=fs.readFileSync(xml,'utf8'),counts=require('./node-junit.cjs').parseJUnit(text,profile.minimum);
   fs.writeFileSync(output,JSON.stringify({...evidence.finish(stamp),status:'passed',profile:process.argv[2],...counts,junitSha256:require('../performance/profile.cjs').hash(text)},null,2)+'\n');
  }catch(error){console.error(error);process.exitCode=1;}
 });

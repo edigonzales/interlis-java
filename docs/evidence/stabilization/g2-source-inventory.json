@@ -15,7 +15,7 @@
     "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "f7c6d37de98b4ee85aee68353a7b7544db9ebba2b162c783efcc26b6eba39571",
     "docs/spec/08-modellaufloesung-und-repositories.md": "8b3975515deb96eb17aa2c9836fdc0f77b31d0932defde9bf7528e1ce46759d8",
     "docs/spec/09-diagnostik-logging-und-telemetrie.md": "906123480c83dddb8935975d362eeb3a624073b93efe6cd0e299e279ed022b5c",
-    "docs/spec/10-webassembly-und-portabilitaet.md": "7786722eacf54c4eaed163631bab6743980fb5d5ceba69031628bd1274e41d1f",
+    "docs/spec/10-webassembly-und-portabilitaet.md": "72e1e785d62f694ca0caa620d49d554b375b6a247482bcf0f804226596cadcba",
     "docs/spec/11-visualisierung-und-projektionen.md": "e69844107bc43a6fe4835b5fe43613239ff2d03a0a803ad19e049f8ec894804f",
     "docs/spec/12-transfer-validierung-und-datenbanken.md": "10f4692d846ae931ff0e78bbcfb571093c9253b39b5cf6529b5ddbd22fd49ff1",
     "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "8a7cbca44b144629fde9e816437d433ce64d15f243785740761d99c287a2b310",
