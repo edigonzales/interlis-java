@@ -215,6 +215,77 @@ class P3ProjectRenameTest {
         } finally { configured.exit(); }
     }
 
+    @Test void projectDiscoveryCoalescesHardlinksBeforeInstallingCompilerSources() throws Exception {
+        Path folder=project(); Files.createLink(folder.resolve("HardBase.ili"),folder.resolve("Base.ili"));
+        var server=open(folder,true,null,null);
+        try {
+            ready(server,folder.resolve("Root.ili"));
+            assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+            assertEquals(2,rename(server,folder.resolve("Root.ili")).getDocumentChanges().size());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void deletingASortedFirstSymlinkKeepsItsRealPrimaryAndLaterChanges() throws Exception {
+        Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili"),alias=folder.resolve("AliasBase.ili");
+        Files.createSymbolicLink(alias,base); var server=open(folder,true,null,null);
+        try {
+            ready(server,root);
+            assertTrue(server.workspaceForTest().source(new SourceId(base.toUri().toString())).isPresent());
+            Files.delete(alias);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(alias.toUri().toString(),FileChangeType.Deleted))));
+            ready(server,root);
+            assertEquals(2,rename(server,root).getDocumentChanges().size());
+            String updated=BASE+"\n!! surviving primary"; Files.writeString(base,updated);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(base.toUri().toString(),FileChangeType.Changed))));
+            ready(server,root);
+            assertEquals(updated,server.workspaceForTest().source(new SourceId(base.toUri().toString())).orElseThrow().text());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void unknownOpenAliasesCannotCreateASecondSourceOrReplaceTheFirstClientBuffer() throws Exception {
+        for(boolean hardlink:new boolean[]{false,true}) {
+            Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili"),alias=folder.resolve("AliasRoot.ili");
+            if(hardlink) Files.createLink(alias,root); else Files.createSymbolicLink(alias,root);
+            var server=new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults()));
+            server.initialize(new InitializeParams()).get(5,TimeUnit.SECONDS);
+            try {
+                for(Path file:List.of(base,root,alias)) server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(
+                        new TextDocumentItem(file.toUri().toString(),"interlis",1,Files.readString(file)+(file.equals(root)?"\n!! authoritative unsaved":""))));
+                // No sleep: the request must wait for identity IO and ordered notifications.
+                ready(server,root);
+                assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+                assertTrue(server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text().contains("authoritative unsaved"));
+                assertEquals(2,rename(server,root).getChanges().size());
+            } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+        }
+    }
+
+    @Test void aSurvivingHardlinkBecomesTheClosedEditAddressWhenItsPrimaryDisappears() throws Exception {
+        Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili"),link=folder.resolve("HardBase.ili");
+        Files.createLink(link,base); var server=open(folder,true,null,null);
+        try {
+            ready(server,root); Files.delete(base);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(base.toUri().toString(),FileChangeType.Deleted))));
+            ready(server,root);
+            var edits=rename(server,root).getDocumentChanges(); assertEquals(2,edits.size());
+            assertEquals(Set.of(root.toUri().toString(),link.toUri().toString()),edits.stream().map(edit -> edit.getLeft().getTextDocument().getUri()).collect(java.util.stream.Collectors.toSet()));
+            assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void caseAliasesUsePhysicalIdentityOnHostsWhereBothSpellingsExist() throws Exception {
+        Path folder=project(),root=folder.resolve("Root.ili"),alias=folder.resolve("ROOT.ili");
+        var server=open(folder,true,null,null);
+        try {
+            ready(server,root);
+            if(!Files.exists(alias)) Files.createLink(alias,root); // case-sensitive host control, same physical identity
+            server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(alias.toUri().toString(),"interlis",9,ROOT)));
+            ready(server,root);
+            assertEquals(2,server.workspaceForTest().state().sourceRevisions().size());
+            assertTrue(server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text().contains("unsaved 😀"));
+        } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
     private Path project() throws Exception {
         Path folder=Files.createTempDirectory(temporary,"Projekt ä ");
         Files.writeString(folder.resolve("Base.ili"),BASE); Files.writeString(folder.resolve("Root.ili"),ROOT); return folder;

@@ -464,7 +464,7 @@ Die Dateiidentität wird auf der I/O-Seite mit realen Pfaden beziehungsweise
 Dateischlüsseln bestimmt. Bekanntes logisches SourceId-Mapping bleibt erhalten;
 eine noch nicht zugeordnete Client-URI bleibt bis zu belegter Dateizuordnung
 unverändert, auch bei plattformabhängiger Pfadsyntax.
-die exakte offene Client-URI wird getrennt für Diagnostik, Navigation und
+Die exakte offene Client-URI wird getrennt für Diagnostik, Navigation und
 Versionsedits benutzt. Alias-Watcher erzeugen keine zweite Compilerquelle und
 überschreiben keine offene Clientquelle. Ein symlinkter Workspace-Root wird
 über seinen realen Ordner durchsucht, mit logischen Pfaden für die aufgenommenen
@@ -472,6 +472,15 @@ Dateien. Hardlink-Aliasse behalten das explizite editierbare Primärmapping.
 Bei Löschmeldungen wird der aktuelle Zustand über den I/O-Adapter geprüft;
 das Entfernen eines Alias allein entfernt keine weiterhin vorhandene Primärdatei.
 Die Identitätsablage ist auf 40000 Pfadzuordnungen begrenzt.
+Die Projektsuche fasst physische Dateialiasse bereits vor der Quellaufnahme
+zusammen und bevorzugt einen vorhandenen nicht-symbolischen Projektpfad.
+Unbekannte Datei-URIs aus `didOpen` werden über die begrenzte I/O-Queue
+zugeordnet; folgende Dokumentnotifications und Requests behalten dabei ihre
+Reihenfolge. Ein zweites Öffnen derselben Quelle unter einer anderen URI wird
+mit einer Betriebsmeldung abgelehnt und ersetzt keinen offenen Clienttext.
+Verschwindet die Primärdatei, bleibt ein vorhandener Hardlink unter derselben
+Core-Identität verwendbar; geschlossene Navigation und Edits benutzen dann
+die nachgewiesene vorhandene Dateiadresse.
 
 Das P3-Hostprofil benutzt eine begrenzte Ownerqueue, zwei Analyseplätze und
 höchstens einen neuesten ausstehenden Capture. Explizite Compiles laufen

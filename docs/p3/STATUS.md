@@ -64,9 +64,30 @@ Korrekturkandidat 1c19acb: Linux PASS, Windows FAIL im
 [neuen Lauf 41148744929](https://github.com/edigonzales/interlis-java/actions/runs/41148744929).
 Ein unregistrierter Client-URI wurde plattformabhängig umgeschrieben; die neue
 plattformunabhängige RED→GREEN-Kontrolle ist behoben. Aktueller eigener
-check-/Evidenz-/SDK-/Distributionlauf mit 43 LSP-Fällen grün. Review 2 läuft noch
-am vorherigen Kandidaten. Eine neue unabhängige Abnahme und Plattformmatrix
-für diese Produktkorrektur folgen; P3-2 bleibt offen.
+check-/Evidenz-/SDK-/Distributionlauf mit 43 LSP-Fällen grün.
+Die neue [Plattformmatrix 41149619185](https://github.com/edigonzales/interlis-java/actions/runs/41149619185)
+am Produkt-SHA f960cea besteht auf Windows und Linux x64.
+
+Zweiter und dritter unabhängiger Review: weiterhin **FAIL**, ursprüngliche
+F1–F5 geschlossen; neuer F6 zur physischen Identität bei Discovery und unbekannten
+`didOpen`-Aliasen. Unverändert erhalten:
+[Review 2](reviews/P3-2-1c19acb-FAIL.md), SHA-256
+`b8608148d686070d60fff6b15f746ca1bab00317a5e378578e420101e5f56504`,
+[Review 3](reviews/P3-2-f960cea-FAIL.md), SHA-256
+`81170750f39d0680c03ef0318b64e7464c622442f2c2eaae07d0452425d0f20b`.
+Beide direkte DeepSeek API, Transportexit 0, OS-Python-Sperre und äusseres
+Manifest passed, sauberer separater Kandidatencheckout.
+
+F6 jetzt bearbeitet: Dateischlüssel bei Discovery, bevorzugte reale Primärdatei,
+asynchrone Identitätszuordnung mit geordneten Dokumentnotifications/Requests,
+Erhalt des offenen Clienttexts sowie vorhandene Editadresse nach Primärlöschung.
+Drei neue RED-Reproduktionen; aktuelle eigene JVM-/Evidenz-/SDK-/Distribution-
+Prüfung grün, **48 LSP-Tests** ohne Fehler/Skips. Eigene Wiederholung der
+unveränderten Reviewerprobe: sieben sachliche Aliasprüfungen grün, eine
+unpassende Gesamtzahlannahme für die flache Symbolausgabe rot und unverändert
+erhalten; getrennte Kontrolle prüft genau ein Root-Modellsymbol.
+Neue unabhängige Abnahme des sauberen Kandidaten und dessen Plattformmatrix
+bleiben fällig; **P3-2 und G3 offen**.
 
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256

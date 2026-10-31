@@ -107,6 +107,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private final AnalysisScheduler scheduler;
     private final Map<String,ProjectSourceLoader.FileContent> closedFiles = new LinkedHashMap<>();
     private final Map<java.nio.file.Path,String> fileIdentities=new LinkedHashMap<>();
+    private final Map<Object,String> fileKeys=new LinkedHashMap<>();
+    private final java.util.ArrayDeque<Runnable> documentOperations=new java.util.ArrayDeque<>();
+    private boolean resolvingOpen;
+    private long nextOpen;
+    private java.util.function.BiFunction<String,Map<SourceId,String>,CompletableFuture<ProjectSourceLoader.IdentityMatch>> identifyFile=
+            (uri,known) -> CompletableFuture.completedFuture(new ProjectSourceLoader.IdentityMatch(Optional.empty(),Optional.empty()));
     private volatile java.util.function.Consumer<String> externalReload;
     private java.util.function.BiFunction<List<ProjectSourceLoader.FileContent>,CancellationToken,CompletableFuture<Void>> verifyFiles =
             (files,token) -> failed(ResponseErrorCode.RequestFailed,"project file service is not initialized");
@@ -116,6 +122,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private CompletableFuture<Void> filesReady=CompletableFuture.completedFuture(null);
     private Throwable filesFailure;
     private final java.util.concurrent.atomic.AtomicInteger waitingRequests=new java.util.concurrent.atomic.AtomicInteger();
+    private final java.util.Set<CompletableFuture<?>> fileWaiters=java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final LanguageQueries queries = LanguageQueries.create();
     private final AtomicReference<DiagnosticSink> sink = new AtomicReference<>();
     private Runnable requestGuard=() -> { };
@@ -137,8 +144,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     void close() { scheduler.close(() -> {
+        fileWaiters.forEach(result -> result.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing")));
+        fileWaiters.clear();
         filesReady.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing"));
-        pendingFiles.clear(); closedFiles.clear(); fileIdentities.clear(); documents.clear(); rejectedOpens.clear(); unsynchronized.clear();
+        pendingFiles.clear(); closedFiles.clear(); fileIdentities.clear(); fileKeys.clear(); documentOperations.clear(); documents.clear(); rejectedOpens.clear(); unsynchronized.clear();
     }); }
 
     CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
@@ -159,7 +168,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
                             boolean versionedEdits) {
         Optional<SourceText> source(SourceId id) { return Optional.ofNullable(sources.get(id)); }
         DocumentState open(SourceId id) { return documents.values().stream().filter(state -> state.sourceId.equals(id)).findFirst().orElse(null); }
-        String uri(SourceId id) { return documents.entrySet().stream().filter(entry -> entry.getValue().sourceId.equals(id)).map(Map.Entry::getKey).findFirst().orElse(id.value()); }
+        String uri(SourceId id) { return documents.entrySet().stream().filter(entry -> entry.getValue().sourceId.equals(id)).map(Map.Entry::getKey).findFirst()
+                .orElseGet(() -> closedFiles.containsKey(id.value())?closedFiles.get(id.value()).path().toUri().toString():id.value()); }
     }
 
     private HostView captureView() {
@@ -179,8 +189,9 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 if(changed && running!=null) running.cancel(interrupt); return changed;
             }
         };
-        result.whenComplete((ignored,failure) -> waitingRequests.decrementAndGet());
-        try { scheduler.onOwner(() -> {
+        fileWaiters.add(result);
+        result.whenComplete((ignored,failure) -> { waitingRequests.decrementAndGet(); fileWaiters.remove(result); });
+        try { scheduler.onOwner(() -> { orderedDocumentOperation(() -> {
             long captured=documentGeneration;
             filesReady.whenComplete((ignored,failure) -> {
                 if(result.isDone()) return;
@@ -198,7 +209,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
                     return null;
                 }); } catch(RuntimeException closed) { result.completeExceptionally(LspFailures.response(closed,operations)); }
             });
-            return null;
+        }); return null;
         }); } catch(RuntimeException failure) { result.completeExceptionally(LspFailures.response(failure,operations)); }
         return result;
     }
@@ -212,11 +223,15 @@ final class InterlisTextDocumentService implements TextDocumentService {
             documents.forEach((uri,state) -> result.put(state.sourceId,uri)); rejectedOpens.forEach((uri,state) -> result.put(state.sourceId,uri)); return Map.copyOf(result);
         });
     }
-    void forgetFileAlias(String uri) {
-        scheduler.onOwner(() -> { filePath(uri).ifPresent(path -> {
-            String canonical=fileIdentities.get(path);
-            if(canonical!=null && !path.toUri().toString().equals(canonical)) fileIdentities.remove(path);
-        }); return null; });
+    List<String> fileAliases(String uri) {
+        return scheduler.onOwner(() -> {
+            String canonical=canonicalUriNow(uri);
+            var paths=new java.util.LinkedHashSet<String>();
+            var primary=closedFiles.get(canonical);
+            if(primary!=null) paths.add(primary.path().toUri().toString());
+            fileIdentities.forEach((path,id) -> { if(id.equals(canonical)) paths.add(path.toUri().toString()); });
+            return List.copyOf(paths);
+        });
     }
     private boolean openSource(SourceId id) { return documents.values().stream().anyMatch(state -> state.sourceId.equals(id)) || rejectedOpens.values().stream().anyMatch(state -> state.sourceId.equals(id)); }
     private static Optional<java.nio.file.Path> filePath(String uri) {
@@ -228,12 +243,15 @@ final class InterlisTextDocumentService implements TextDocumentService {
         return filePath(uri).map(path -> fileIdentities.getOrDefault(path,uri)).orElse(uri);
     }
     private String rememberFile(ProjectSourceLoader.FileContent file,Optional<SourceId> openAlias) {
-        String uri=openAlias.map(SourceId::value).orElseGet(() -> fileIdentities.getOrDefault(file.realPath(),canonicalUriNow(file.path().toUri().toString())));
+        String uri=openAlias.map(SourceId::value).orElseGet(() -> file.fileKey().map(fileKeys::get).orElseGet(() ->
+                fileIdentities.getOrDefault(file.realPath(),canonicalUriNow(file.path().toUri().toString()))));
         int added=(fileIdentities.containsKey(file.path())?0:1)
                 +(file.path().equals(file.realPath()) || fileIdentities.containsKey(file.realPath())?0:1);
         if(fileIdentities.size()+added>40_000)
             throw LspFailures.error(ResponseErrorCode.RequestFailed,"file identity limit reached");
-        fileIdentities.put(file.path(),uri); fileIdentities.put(file.realPath(),uri); return uri;
+        fileIdentities.put(file.path(),uri); fileIdentities.put(file.realPath(),uri);
+        fileKeys.values().removeIf(uri::equals);
+        file.fileKey().ifPresent(key -> fileKeys.put(key,uri)); return uri;
     }
 
     void beginExternal(String uri,long request) {
@@ -268,9 +286,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     void fileServices(java.util.function.Consumer<String> reload,
-            java.util.function.BiFunction<List<ProjectSourceLoader.FileContent>,CancellationToken,CompletableFuture<Void>> verify) {
+            java.util.function.BiFunction<List<ProjectSourceLoader.FileContent>,CancellationToken,CompletableFuture<Void>> verify,
+            java.util.function.BiFunction<String,Map<SourceId,String>,CompletableFuture<ProjectSourceLoader.IdentityMatch>> identify) {
         externalReload=Objects.requireNonNull(reload);
-        scheduler.onOwner(() -> { verifyFiles=Objects.requireNonNull(verify); return null; });
+        scheduler.onOwner(() -> { verifyFiles=Objects.requireNonNull(verify); identifyFile=Objects.requireNonNull(identify); return null; });
     }
 
     void versionedEdits(boolean supported) { scheduler.onOwner(() -> { versionedEdits=supported; return null; }); }
@@ -298,9 +317,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             String canonical=file.map(value -> rememberFile(value,openAlias)).orElseGet(() -> canonicalUriNow(uri));
             if(openSource(new SourceId(canonical))) { finishExternal(uri,request,null); return null; }
             if(file.isPresent()) {
-                var incoming=file.orElseThrow(); var known=closedFiles.get(canonical);
-                closedFiles.put(canonical,known!=null && !incoming.path().toUri().toString().equals(canonical)
-                        ? new ProjectSourceLoader.FileContent(known.path(),known.realPath(),incoming.fileKey(),incoming.loaded(),known.editable(),known.roots()) : incoming);
+                closedFiles.put(canonical,file.orElseThrow());
             } else closedFiles.remove(canonical);
             if(file.isEmpty()) deleteExternalNow(canonical);
             else {
@@ -317,7 +334,48 @@ final class InterlisTextDocumentService implements TextDocumentService {
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
         if(!notificationReady()) return;
-        scheduler.onOwner(() -> { didOpenNow(params); return null; });
+        var captured=copyParams(params,DidOpenTextDocumentParams.class);
+        scheduler.onOwner(() -> { orderedDocumentOperation(() -> openWithIdentity(captured)); return null; });
+    }
+
+    /** Keeps document notifications and request barriers ordered while bounded IO resolves an unknown URI. */
+    private void orderedDocumentOperation(Runnable operation) {
+        if(!resolvingOpen) { operation.run(); return; }
+        if(documentOperations.size()>=256) throw LspFailures.error(ResponseErrorCode.RequestFailed,"document operation queue is full");
+        documentOperations.addLast(operation);
+    }
+
+    private void openWithIdentity(DidOpenTextDocumentParams params) {
+        String uri=params.getTextDocument().getUri();
+        var known=fileSources();
+        if(filePath(uri).isEmpty() || !canonicalUriNow(uri).equals(uri) || known.isEmpty()) { didOpenNow(params); return; }
+        resolvingOpen=true; long request=++nextOpen; String pending="open-identity:"+request;
+        beginExternal(pending,request);
+        identifyFile.apply(uri,known).whenComplete((match,failure) -> {
+            try { scheduler.onOwner(() -> {
+                Throwable problem=failure;
+                try {
+                    if(problem==null) {
+                        var identity=match.identity();
+                        String canonical=identity.flatMap(value -> value.fileKey().map(fileKeys::get)
+                                .or(() -> Optional.ofNullable(fileIdentities.get(value.realPath()))))
+                                .or(() -> match.source().map(SourceId::value)).orElse(uri);
+                        identity.ifPresent(value -> {
+                            int added=(fileIdentities.containsKey(value.path())?0:1)
+                                    +(value.path().equals(value.realPath()) || fileIdentities.containsKey(value.realPath())?0:1);
+                            if(fileIdentities.size()+added>40_000)
+                                throw LspFailures.error(ResponseErrorCode.RequestFailed,"file identity limit reached");
+                            fileIdentities.put(value.path(),canonical); fileIdentities.put(value.realPath(),canonical);
+                            value.fileKey().ifPresent(key -> fileKeys.put(key,canonical));
+                        });
+                        didOpenNow(params);
+                    } else operation("Document identity lookup failed; reopen required");
+                } catch(RuntimeException rejected) { problem=rejected; operation("Document identity admission failed; reopen required"); }
+                finally { finishExternal(pending,request,problem); resolvingOpen=false; }
+                while(!resolvingOpen && !documentOperations.isEmpty()) documentOperations.removeFirst().run();
+                return null;
+            }); } catch(RuntimeException closed) { operation("Document identity operation stopped"); }
+        });
     }
 
     private void didOpenNow(DidOpenTextDocumentParams params) {
@@ -352,7 +410,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
         if(!notificationReady()) return;
-        scheduler.onOwner(() -> { didChangeNow(params); return null; });
+        var captured=copyParams(params,DidChangeTextDocumentParams.class);
+        scheduler.onOwner(() -> { orderedDocumentOperation(() -> didChangeNow(captured)); return null; });
     }
 
     private void didChangeNow(DidChangeTextDocumentParams params) {
@@ -383,7 +442,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
         if(!notificationReady()) return;
-        scheduler.onOwner(() -> { didCloseNow(params); return null; });
+        var captured=copyParams(params,DidCloseTextDocumentParams.class);
+        scheduler.onOwner(() -> { orderedDocumentOperation(() -> didCloseNow(captured)); return null; });
     }
 
     private void didCloseNow(DidCloseTextDocumentParams params) {
@@ -408,7 +468,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
     @Override
     public void didSave(DidSaveTextDocumentParams params) {
         if(!notificationReady()) return;
-        scheduler.onOwner(() -> { didSaveNow(params); return null; });
+        var captured=copyParams(params,DidSaveTextDocumentParams.class);
+        scheduler.onOwner(() -> { orderedDocumentOperation(() -> didSaveNow(captured)); return null; });
     }
 
     boolean notificationReady() {
@@ -725,6 +786,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         if (openSource(new SourceId(canonicalUriNow(uri)))) return;
         SourceId id = new SourceId(canonicalUriNow(uri));
         workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
+        fileKeys.values().removeIf(id.value()::equals);
     }
 
     void reanalyzeOpen() {

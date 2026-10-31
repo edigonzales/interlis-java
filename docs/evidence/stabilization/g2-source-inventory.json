@@ -12,7 +12,7 @@
     "docs/spec/04-quelltext-syntax-und-parser.md": "3255249f1326267c1ebf27e0ac4479dcd7a6d628477b66cdea342f12c6a12650",
     "docs/spec/05-metamodell-und-typensystem.md": "54da24d1fb19d51fc1c733596f67b06ed39635b216312e700d33a6d6c70d22f5",
     "docs/spec/06-kompilierung-und-semantik.md": "dbe2525bb6dc044468df9bc9edb411d5c5b8398971c40ab9c97a448452b7f413",
-    "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "294d9745340c6f7267989abb64e208510a2975bd809bdc18d36ee3647fd5c36a",
+    "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "5fbf228767794775fd68a52f9ab2363aa566e91f53849dbea6abfa1998e53993",
     "docs/spec/08-modellaufloesung-und-repositories.md": "8b3975515deb96eb17aa2c9836fdc0f77b31d0932defde9bf7528e1ce46759d8",
     "docs/spec/09-diagnostik-logging-und-telemetrie.md": "906123480c83dddb8935975d362eeb3a624073b93efe6cd0e299e279ed022b5c",
     "docs/spec/10-webassembly-und-portabilitaet.md": "0d247758bd5fa35d8b4acf3be2cce596ae1b60b5d2a896866112609cf4eb97ca",

@@ -14,12 +14,14 @@ import java.util.*;
 /** Bounded local project IO; model headers and imports remain compiler responsibilities. */
 final class ProjectSourceLoader {
     private static final Set<String> EXCLUDED=Set.of(".git",".gradle","build","node_modules");
-    record FileContent(Path path,Path realPath,Optional<Object> fileKey,LoadedSource loaded,boolean editable,List<Path> roots) {
+    record FileContent(Path path,Path realPath,Optional<Object> fileKey,LoadedSource loaded,boolean editable,List<Path> roots,boolean symbolicLink) {
         FileContent { roots=List.copyOf(roots); }
     }
     record Project(List<Path> roots,List<FileContent> files) {
         Project { roots=List.copyOf(roots); files=List.copyOf(files); }
     }
+    record FileIdentity(Path path,Path realPath,Optional<Object> fileKey) { }
+    record IdentityMatch(Optional<FileIdentity> identity,Optional<guru.interlis.source.SourceId> source) { }
 
     Project scan(List<String> uris,CancellationToken token) {
         var roots=new ArrayList<Path>(); var paths=new LinkedHashSet<Path>();
@@ -54,6 +56,9 @@ final class ProjectSourceLoader {
                 if(characters>32_000_000) throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
                 files.add(file);
             }
+            // A final symlink must never win over its real, editable project file.
+            // Parent directory aliases (e.g. a symlinked workspace root) stay logical.
+            files.sort(Comparator.comparing(FileContent::symbolicLink).thenComparing(FileContent::path));
             return new Project(roots,files);
         } catch(IOException unavailable) { throw error(ResponseErrorCode.RequestFailed,"project discovery failed: IO_FAILURE"); }
     }
@@ -67,7 +72,7 @@ final class ProjectSourceLoader {
             var after=Files.readAttributes(real,BasicFileAttributes.class);
             if(!Objects.equals(before.fileKey(),after.fileKey())) throw error(ResponseErrorCode.ContentModified,"source identity changed during load");
             boolean editable=roots.stream().anyMatch(real::startsWith) && Files.isWritable(real);
-            return Optional.of(new FileContent(path,real,Optional.ofNullable(after.fileKey()),source,editable,roots));
+            return Optional.of(new FileContent(path,real,Optional.ofNullable(after.fileKey()),source,editable,roots,Files.isSymbolicLink(path)));
         } catch(NoSuchFileException missing) { return Optional.empty(); }
         catch(SourceLoadException failure) {
             if(failure.reason()==SourceLoadException.Reason.NOT_FOUND) return Optional.empty();
@@ -94,6 +99,23 @@ final class ProjectSourceLoader {
             return file.fileKey().isPresent() && key!=null?file.fileKey().orElseThrow().equals(key):Files.isSameFile(file.realPath(),candidate);
         }
         catch(IOException | ResponseErrorException unavailable) { return false; }
+    }
+
+    IdentityMatch identify(String uri,Map<guru.interlis.source.SourceId,String> known,CancellationToken token) {
+        Path path=local(uri);
+        Optional<FileIdentity> identity;
+        try {
+            token.throwIfCancellationRequested();
+            var attributes=Files.readAttributes(path,BasicFileAttributes.class);
+            identity=Optional.of(new FileIdentity(path,path.toRealPath(),Optional.ofNullable(attributes.fileKey())));
+        } catch(NoSuchFileException missing) { return new IdentityMatch(Optional.empty(),Optional.empty()); }
+        catch(IOException failure) { throw error(ResponseErrorCode.RequestFailed,"source identity lookup failed: IO_FAILURE"); }
+        for(var entry:known.entrySet()) {
+            token.throwIfCancellationRequested();
+            try { if(Files.isSameFile(path,local(entry.getValue()))) return new IdentityMatch(identity,Optional.of(entry.getKey())); }
+            catch(IOException | ResponseErrorException unavailable) { /* missing/virtual document has no physical alias */ }
+        }
+        return new IdentityMatch(identity,Optional.empty());
     }
 
     private static Path local(String uri) {

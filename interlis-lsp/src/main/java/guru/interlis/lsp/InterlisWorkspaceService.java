@@ -50,7 +50,7 @@ final class InterlisWorkspaceService implements WorkspaceService {
         this.documents = Objects.requireNonNull(documents, "documents");
         documents.fileServices(this::reloadFile,(expected,token) -> requestIo(signal -> {
             files.verify(expected,combined(token,signal)); return null;
-        }));
+        }), (uri,known) -> requestIo(token -> files.identify(uri,known,token)));
     }
 
     CompletableFuture<Void> initializeProject(List<String> folders) {
@@ -106,11 +106,25 @@ final class InterlisWorkspaceService implements WorkspaceService {
         if(uri==null || !uri.startsWith("file:") || documents.isOpen(uri)) return;
         long request=nextFileRequest.incrementAndGet(); fileRequests.put(uri,request);
         var known=documents.fileSources();
+        var aliases=documents.fileAliases(uri);
         documents.beginExternal(uri,request);
         requestIo(token -> {
-            var loaded=files.read(uri,roots,token); token.throwIfCancellationRequested();
-            var openAlias=known.containsKey(new SourceId(uri))?java.util.Optional.of(new SourceId(uri)):
-                    loaded.flatMap(file -> known.entrySet().stream().filter(entry -> files.sameFile(file,entry.getValue(),token)).map(Map.Entry::getKey).findFirst());
+            var loaded=files.read(requestedUri,roots,token);
+            if(loaded.isEmpty()) for(String alias:aliases) {
+                loaded=files.read(alias,roots,token); if(loaded.isPresent()) break;
+            }
+            // Prefer the explicit surviving primary for edits. If it was removed,
+            // retain the Core identity but use the surviving physical address.
+            if(loaded.isPresent() && !aliases.isEmpty() && files.sameFile(loaded.orElseThrow(),aliases.getFirst(),token))
+                loaded=files.read(aliases.getFirst(),roots,token);
+            token.throwIfCancellationRequested();
+            var openAlias=loaded.flatMap(file -> known.entrySet().stream().filter(entry -> files.sameFile(file,entry.getValue(),token)).map(Map.Entry::getKey).findFirst());
+            if(openAlias.isPresent() && loaded.isPresent()) {
+                String primary=known.get(openAlias.orElseThrow());
+                if(primary!=null && files.sameFile(loaded.orElseThrow(),primary,token)) loaded=files.read(primary,roots,token);
+            }
+            if(openAlias.isEmpty()) openAlias=java.util.Optional.of(new SourceId(known.containsKey(new SourceId(requestedUri))?requestedUri:
+                    loaded.isEmpty()?uri:loaded.orElseThrow().path().toUri().toString()));
             documents.applyExternal(uri,request,loaded,openAlias,() -> !token.isCancellationRequested() && fileRequests.getOrDefault(uri,0L)==request);
             return null;
         }).exceptionally(failure -> {
@@ -131,12 +145,6 @@ final class InterlisWorkspaceService implements WorkspaceService {
         if(!documents.notificationReady()) return;
         for (var event : params.getChanges()) {
             if(documents.isOpen(event.getUri())) continue;
-            if (event.getType() == FileChangeType.Deleted) {
-                String uri=documents.canonicalUri(event.getUri());
-                documents.forgetFileAlias(event.getUri());
-                reloadFile(uri);
-                continue;
-            }
             reloadFile(event.getUri());
         }
     }
