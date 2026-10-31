@@ -1,5 +1,5 @@
 const runtimeEvidence=require('../tools/verification/runtime-evidence.cjs');
-const evidence=runtimeEvidence.begin(["interlis-wasm-teavm/build/web/interlis-compiler.wasm","interlis-wasm-teavm/build/web/interlis-compiler.wasm-runtime.js","interlis-wasm-teavm/build/diagram-adapter.cjs"]);
+const evidence=runtimeEvidence.begin(["interlis-wasm-teavm/build/web/build-manifest.json","interlis-wasm-teavm/build/web/interlis-compiler.wasm","interlis-wasm-teavm/build/web/interlis-compiler.wasm-runtime.js","interlis-wasm-teavm/build/diagram-adapter.cjs"]);
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
