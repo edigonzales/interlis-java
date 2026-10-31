@@ -6,9 +6,13 @@ const webPrefix='interlis-wasm-teavm/build/web/';
 function distributionFiles(root) {
   const version=fs.readFileSync(path.join(root,'gradle.properties'),'utf8').match(/^projectVersion=(.+)$/m)?.[1].trim();
   if(!version||!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(version))throw Error('Missing/invalid distribution version');
-  const cli='interlis-cli/build/install/interlis-cli',teavm='interlis-wasm-teavm/build';
-  const mandatory=[...['interlis-cli','interlis-cli.bat','ili2c','ili2c.bat'].map(name=>cli+'/bin/'+name),cli+'/compat/ili2c.jar',
-    ...['cli','compiler','model','projection','repository','workspace'].map(name=>cli+'/lib/interlis-'+name+'-'+version+'.jar'),
+  const cli='interlis-compiler-cli/build/install/interlis-compiler',teavm='interlis-wasm-teavm/build';
+  for(const forbidden of ['bin/interlis-cli','bin/interlis-cli.bat','bin/ili2c','bin/ili2c.bat','compat/ili2c.jar']) {
+    try { fs.lstatSync(path.join(root,cli,forbidden)); } catch(error) { if(error.code==='ENOENT')continue; throw error; }
+    throw Error('Forbidden legacy distribution entry: '+forbidden);
+  }
+  const mandatory=[...['interlis-compiler','interlis-compiler.bat'].map(name=>cli+'/bin/'+name),
+    ...['compiler-cli','compiler','model','projection','repository','workspace'].map(name=>cli+'/lib/interlis-'+name+'-'+version+'.jar'),
     'build/releases/interlis-java-sdk-'+version+'.zip',teavm+'/generated/teavm/js/interlis-compiler.js',
     teavm+'/generated/teavm/wasm-gc/interlis-compiler.wasm',teavm+'/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js'];
   for(const file of mandatory)if(!fs.statSync(path.join(root,file)).isFile())throw Error('Missing distribution file: '+file);

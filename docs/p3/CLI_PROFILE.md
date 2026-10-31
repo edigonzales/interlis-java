@@ -1,106 +1,36 @@
-# ili2c-Prüfaufrufe – Profil ili2c-check/5.6.9-v1
+# Compiler-CLI – aktueller Standardvertrag
 
-P3 qualifiziert Compiler-Prüfaufrufe. Generatoren, GUI, Repositoryadministration
-und die historische Java-API sind nicht Bestandteil dieses Profils.
-Die [unabhängige P3-1-Abnahme](reviews/P3-1-review.md) ist PASS am Produktcommit
-`9108b0387d9f1b82f506d8dc64e301e8522137dd`. G3 bleibt offen.
+Der [CLI-Folgeauftrag](../implementation/compiler-cli-modernization/EXECUTION_PLAN.md)
+ersetzt die frühere ili2c-Bedienparität. Historische P3-Abnahmen bleiben in
+`reviews/` und `implementation/` unverändert auf ihren ursprünglichen SHAs gültig.
 
-Referenz: ili2c `5.6.9-bf16026e83f2377153b2e818a4f3838f0a423722`,
-JAR-SHA-256 `37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e`.
-Beschaffung/Pins: `ReferenceProcesses`, offizielles Archiv
-[ili2c-5.6.9.zip](https://downloads.interlis.ch/ili2c/ili2c-5.6.9.zip).
-Der Referenzcompiler wird ausschliesslich extern zur Verifikation gestartet;
-er ist keine Laufzeitabhängigkeit des Produkts.
+Modul `interlis-compiler-cli`, Programm `interlis-compiler`, einziger Entry
+`guru.interlis.cli.Main`. Installation:
+`interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler`
+(Windows `.bat`), im SDK `cli/bin/interlis-compiler`. Keine alten Launcher,
+Aliase, Wrapper oder `compat/ili2c.jar`. Bibliotheksmodul `interlis-compiler`
+bleibt separat.
 
-## Einstieg und Optionen
+Befehle: `help`, `version`, `capabilities`, `check`, `compile`, `analyze`,
+`diagram`, `format`. `--help`/`-h` und `--version` sind globale Kurzformen.
+Beispiel: `interlis-compiler check --root Root Root.ili Base.ili`.
+Alle lokalen Importdateien ausdrücklich angeben oder ein indexiertes Repository
+verwenden; kein impliziter Verzeichnisscan. `--` beendet Optionen.
 
-Die Distribution enthält `bin/ili2c`, `bin/ili2c.bat` sowie
-`compat/ili2c.jar` mit Main-Class `guru.interlis.cli.Ili2cMain`.
-Der normale Launcher erkennt zusätzlich bisherige Standardkommandos.
-In-process: `new DefaultCompilerCli(LegacyCliProfile.ili2c569())` mit
-injiziertem `CliEnvironment`. Alle Varianten verwenden dieselbe Compilerengine.
+Exit 0 Erfolg, 1 fachliche/operative Ablehnung, 2 Bedien-/Konfigurationsfehler,
+3 interner Fehler, 4 Abbruch. Nackte Dateien und alte Optionen werden vor IO
+abgelehnt. Hilfe/Version gehen nach stdout. `check`/`compile`: Diagnosen stderr,
+Erfolg stdout leer; `--json` liefert ein JSON-Dokument auf stdout.
+`format`/`diagram` behalten ihre Fachausgaben; Hoststreams sind UTF-8.
 
-| Unterstützte Schreibweisen | Wirkung |
-|---|---|
-| `-h`, `--help`, `-u`, `--usage` | Profilhilfe auf stderr, Exit 0 |
-| `-v`, `--version` | Eigene Toolidentität und Referenzprofil getrennt, stderr, Exit 0 |
-| `-o0` | Modellprüfung ohne Generator |
-| `--no-auto` | Nur ausdrücklich geladene Dateien; keine Suchverzeichnisinventarisierung |
-| `--modeldir VALUE` | Semikolonliste lokaler Verzeichnisse/HTTP-Repositories; `%ILI_DIR` und `%JAR_DIR` |
-| `--quiet` | Laufbanner unterdrücken; Fehler bleiben sichtbar |
-| `--without-warnings` | Warnungstext unterdrücken; kanonische Diagnosen und Gate unverändert |
-| `--trace` | Tatsächliche Lauf-/Phasenereignisse auf stderr |
-| `--` | Ende der Optionen; danach auch Dateinamen mit führendem Minus |
+`./gradlew compilerCliCheck` baut die neue Distribution und prüft tatsächliche
+Prozesse mit Pfad-/Unicode-/Stream-/Fehlerfällen einschliesslich einer JVM mit
+abweichender nativer Streamkodierung. `sdkProcessCheck` und `sdkArchiveCheck`
+prüfen die Installation und einen unabhängigen Verbraucher aus dem SDK-ZIP.
 
-Ohne `--modeldir`: `%ILI_DIR;http://models.interlis.ch/;%JAR_DIR`.
-Dateien in lokalen Verzeichnissen werden nur inventarisiert; Header/Imports
-bindet die gemeinsame Engine. Grenze: 10 000 Verzeichniseinträge/Quellen,
-typisierter RESOURCE_LIMIT-Abbruch. Modellnamen sind eine explizite Erweiterung:
-ein blosser Name wird im Inventar/Repository aufgelöst. Direkte HTTP-Dateiargumente
-sind ausserhalb des Profils; HTTP wird über `--modeldir` und Modellnamen genutzt.
-
-Die 32 übrigen Optionen des tatsächlich gelesenen Referenzhilfetexts werden vor
-Host-IO ausdrücklich mit Exit 1 abgelehnt:
-
-| Kategorie | Optionen |
-|---|---|
-| Generator/Transformation | `-o1`, `-o2`, `-oXSD`, `-oGML`, `-oILIGML2`, `-oFMT`, `-oIMD`, `-oIMD16`, `-oNLS`, `-oUML`, `-oIOM`, `--nlsxml`, `--lang`, `--trafoDiff`, `--trafoFactor`, `--trafoEpsg`, `--trafoImports`, `--trafoNewModel`, `--out`, `--with-predefined` |
-| Repositoryadministration | `--check-repo-ilis`, `--clone-repos`, `--listModels`, `--listAllModels`, `--listModels2`, `--listAllModels2`, `--listData` |
-| Weitere Hostoptionen | `--proxy`, `--proxyPort`, `--log`, `--xtflog`, `--translation` |
-
-## Ergebnis- und Textprofil
-
-Prüfaufrufe halten stdout leer. Banner, Diagnose und Trace stehen auf stderr.
-Unsere Hoststreams sind ausdrücklich UTF-8; die getrennten Java-25-
-Referenzprozesse erhalten `-Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8`.
-Das kontrolliert die Textkodierung, ohne Sprachregeln oder Quellenbytes zu
-ändern. Native Windows-Konsolencodepages werden nicht als gleich vorausgesetzt.
-Erfolg ergibt Exit 0, jede Ablehnung, Hoststörung, Nutzungsfehler und Abbruch
-Exit 1. Signal-/Timeoutbeendigung ist kein fachlicher Erfolg.
-Kanonische Diagnosen stammen aus der gemeinsamen Engine; Error/Warning/Info
-werden gerendert. Quellbereiche und Meldungsidentitäten werden nicht durch
-nachgebildete Referenztexte ersetzt.
-
-| Beobachtung im externen Referenzprozess | Festgelegtes Ersatzverhalten |
-|---|---|
-| Versionsbanner nennt ili2c | Eigene interlis-java-Version, Referenzprofil separat |
-| Zeitstempel und historische Diagnoseformulierungen | Kein Anspruch auf bytegleichen Text; stabile kanonische Diagnostik |
-| Fehlende Quelldatei: Meldung, aber Exit 0 | OPERATIONAL_FAILURE, Exit 1 |
-| Unbekannte Option mit gültiger Datei: Meldung, danach Exit 0 | Nutzungsfehler vor IO, Exit 1 |
-| Fehlender `--modeldir`-Wert: interner Arrayfehler | Nutzungsfehler ohne Stacktrace, Exit 1 |
-| Leerer headful Aufruf startet GUI; 20-Sekunden-Probe abgebrochen | Headless Nutzungsfehler, Exit 1 |
-| Blosser Modellname: keine Datei, Exit 1 | Explizite Erweiterung: eindeutiger Modellname im Suchinventar zulässig |
-| Historische Sprachakzeptanz | Die freigegebenen [Norm-/Kompatibilitätsentscheidungen](../g2/COMPILER_NORM_DECISIONS.md) gelten |
-
-Der Prozessvergleich prüft Exit, getrennte Streams und Diagnosefreiheit von
-internen Abstürzen. Er vergleicht keine irreführend normalisierten Volltexte.
-Die obigen Unterschiede sind Teil der Profilqualifikation.
-
-## Reproduktion und aktueller Nachweis
-
-`./gradlew legacyCliCheck` baut zuerst die Distribution und startet tatsächlich
-54 Ersatzprozesse sowie die zugehörigen Referenzprozesse. 44 Optionsschreibweisen
-werden gegen die echte Referenzhilfe inventarisiert; die 32 ausdrücklich
-abgelehnten Optionen werden jeweils separat ausgeführt. Der JAR-Einstieg wird
-ebenfalls gestartet. Lokale Imports, Unicode-/Leerzeichenpfade, Quiet,
-Warnungsfilter, Trace, Fehler und Namensauswahl sind enthalten.
-
-Tatsächlicher lokaler Erfolg am 30. Oktober 2026: macOS arm64, Temurin 25.0.3.
-Rohbericht: `build/reports/p3/legacy/cli-comparison.json`, Log:
-`build/reports/p3/P3-1/current-jvm-cli-r2.log`. Der Bericht enthält echte Kommandos,
-Exits, beide Streams, Laufzeiten, Runtime und Artefakt-/Quellhashes.
-Negativcanaries verhindern ein PASS bei falschen Exits, verschmutzten Streams,
-fehlenden Referenzprozessen oder erfolgreicher Unsupported-Option.
-Linux x64 und Windows x64 bestehen am selben P3-1-Produktcommit im
-[GitHub-Lauf 41120065983](https://github.com/edigonzales/interlis-java/actions/runs/41120065983).
-Die finale Plattformprüfung des gesamten P3-Produkts bleibt fällig.
-
-Der erste echte GitHub-Lauf am Kandidaten `a096d7e` besteht auf Linux x64;
-Windows legt eine falsche UTF-8-Annahme beim Lesen nativer Java-Streams offen.
-Eine neue eigene Gegenprobe am unveränderten Kandidaten mit erzwungener
-windows-1252-Ausgabe verliert `Grüezi 😀` tatsächlich (`encoding-red.json`).
-Der Fix setzt unsere Hostausgabe explizit auf UTF-8 und prüft sie unter derselben
-JVM-Gegenkonfiguration als echten Prozess. `encoding-green.log` besteht lokal
-mit 54 Profil-/JAR-Aufrufen, dieser zusätzlichen Encodingprobe und neun
-SDK-Aufrufen. Die erneute Windows-Ausführung besteht inzwischen am oben verlinkten
-P3-1-Produktcommit. Der erste Fehlversuch bleibt als Provenienz erhalten.
+Sprach-/Norm-/Metamodellvergleiche mit echtem externem ili2c bleiben erhalten.
+Referenz 5.6.9, JAR-SHA-256
+`37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e`.
+Der Referenzcompiler und Testhilfen gehören nicht zur Produktdistribution.
+Der aktuelle Umsetzungs-/Abnahmestand steht ausschliesslich im
+[CLI-Status](../implementation/compiler-cli-modernization/STATUS.md).

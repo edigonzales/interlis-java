@@ -13,6 +13,10 @@ dependencies {
     testRuntimeOnly libs.junit.platform.launcher
 }
 
+// The ANTLR plugin adds its tool configuration to api. Keep generation isolated;
+// consumers need the explicitly declared runtime, never generator dependencies.
+configurations.api.setExtendsFrom(configurations.api.extendsFrom.findAll { it != configurations.antlr })
+
 def sdkExampleOutput = layout.buildDirectory.dir('sdk-example')
 
 tasks.register('compileSdkExample', JavaCompile) {

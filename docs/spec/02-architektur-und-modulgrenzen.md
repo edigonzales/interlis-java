@@ -17,7 +17,7 @@ Ein Pfeil in dieser Tabelle bedeutet: Das Modul links darf im Produktionscode di
 | `interlis-workspace` | compiler, model | Quellenrevisionen, Resolver-SPI, importierte Closure, Cache/Invalidierung, Sitzungen | P1 |
 | `interlis-repository` | workspace, compiler, model | JVM-Datei-/HTTP-Beschaffung, Repositoryindex, Inhaltsspeicher | P1 lokale Basis; P2 vollständig |
 | `interlis-projection` | compiler, model | Editor-/Diagramm-DTOs und lesende Exporte; kein Workspacebesitz | P1 |
-| `interlis-cli` | compiler, workspace, repository, projection, model | CLI-Vertrag, Streams, Legacydarstellung, Prozessstatus | P1/P3 |
+| `interlis-compiler-cli` | compiler, workspace, repository, projection, model | Compiler-CLI-Vertrag, Streams, Text-/JSON-Darstellung, Prozessstatus | P1/P3 |
 | `interlis-lsp` | workspace, repository, compiler, projection, model | LSP4J-/JVM-Adapter und laufende Editorintegration | P1/P3 |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames Sessionprotokoll/JSON, sobald tatsächlich von beiden Adaptern genutzt | P1 bei Bedarf |
 | `interlis-wasm-teavm` | wasm-bridge sofern vorhanden; workspace, compiler, projection, model | TeaVM-Exports, Runtime-/Workeranbindung | P0/P1 |

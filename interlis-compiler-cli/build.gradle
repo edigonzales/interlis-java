@@ -1,0 +1,40 @@
+plugins {
+    id 'application'
+}
+apply from: rootProject.file('gradle/java-conventions.gradle')
+
+dependencies {
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-repository')
+    implementation project(':interlis-projection')
+    implementation project(':interlis-model')
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testImplementation libs.gson
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+application {
+    mainClass = 'guru.interlis.cli.Main'
+    applicationName = 'interlis-compiler'
+}
+
+distributions.main.distributionBaseName = 'interlis-compiler'
+
+tasks.named('test') {
+    systemProperty 'repo.root', rootProject.projectDir.absolutePath
+    inputs.dir(rootProject.file('testdata/conformance/b1-b3-acceptance'))
+            .withPropertyName('pinnedOriginalViewFixtures').withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(rootProject.file('interlis-wasm-teavm/stabilization-contract.cjs'))
+            .withPropertyName('portableOriginalViewFixtures').withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
+tasks.register('conformanceAssessment', JavaExec) {
+    group = 'verification'
+    description = 'Checks only project-specific normative exceptions against fresh external suite reports.'
+    dependsOn 'testClasses', ':runConformanceSuite'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'guru.interlis.cli.conformance.NormativeConformance'
+    args rootProject.projectDir.absolutePath
+}

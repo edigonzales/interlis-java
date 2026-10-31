@@ -59,7 +59,7 @@ tasks.register('prepareConformanceSuite') {
 tasks.register('runConformanceSuite', Exec) {
     group = 'verification'
     description = 'Directly runs the pinned external InterlisConformance.java; preserves its raw exit and reports.'
-    dependsOn 'prepareConformanceSuite', ':interlis-cli:installDist', 'conformanceWrapperTest'
+    dependsOn 'prepareConformanceSuite', ':interlis-compiler-cli:installDist', 'conformanceWrapperTest'
     timeout = java.time.Duration.ofMinutes(30)
     doFirst {
         def dir = output.get().asFile
@@ -67,8 +67,8 @@ tasks.register('runConformanceSuite', Exec) {
         delete new File(dir, 'summary.json'), new File(dir, 'report.json'),
                 new File(dir, 'report.junit.xml'), new File(dir, 'normative-assessment.json'),
                 new File(dir, 'runner-exit.txt'), layout.buildDirectory.file('reports/conformance/conformance-summary.json')
-        def cliName = System.getProperty('os.name').startsWith('Windows') ? 'interlis-cli.bat' : 'interlis-cli'
-        def cli = project(':interlis-cli').layout.buildDirectory.file("install/interlis-cli/bin/${cliName}").get().asFile
+        def cliName = System.getProperty('os.name').startsWith('Windows') ? 'interlis-compiler.bat' : 'interlis-compiler'
+        def cli = project(':interlis-compiler-cli').layout.buildDirectory.file("install/interlis-compiler/bin/${cliName}").get().asFile
         def config = [suite: suite.get().file('suite/test-cases.json').asFile.absolutePath,
                       outputDirectory: dir.absolutePath,
                       cacheDirectory: new File(cache.get(), 'fixtures').absolutePath,
@@ -80,7 +80,7 @@ tasks.register('runConformanceSuite', Exec) {
         def configFile = new File(dir, 'run-config.json')
         configFile.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(config)) + '\n'
         new File(dir, 'run-start.txt').text = System.currentTimeMillis().toString()
-        def launcher = project(':interlis-cli').javaToolchains.launcherFor {
+        def launcher = project(':interlis-compiler-cli').javaToolchains.launcherFor {
             languageVersion = JavaLanguageVersion.of(25)
         }.get()
         workingDir rootProject.projectDir
@@ -103,12 +103,12 @@ tasks.register('runConformanceSuite', Exec) {
 tasks.register('conformanceWrapperTest') {
     group = 'verification'
     description = 'JUnit failure paths for normative exceptions and pinned portable fixtures.'
-    dependsOn ':interlis-cli:test'
+    dependsOn ':interlis-compiler-cli:test'
 }
 tasks.named('check') { dependsOn 'conformanceWrapperTest' }
 
 tasks.register('conformanceCheck') {
     group = 'verification'
     description = 'Pinned external Java suite plus separate normative JUnit-contract assessment.'
-    dependsOn ':interlis-cli:conformanceAssessment'
+    dependsOn ':interlis-compiler-cli:conformanceAssessment'
 }

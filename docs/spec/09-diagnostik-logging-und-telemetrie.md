@@ -16,7 +16,7 @@ Verwandte Verträge: [Kompilierung](06-kompilierung-und-semantik.md), [Workspace
 | Neutrale Ausführungswerte und Schnittstellen | `interlis-model`, `guru.interlis.execution` |
 | Laufgebundener Collector und Compilerfehlererfassung | `interlis-compiler`, interne Pakete; keine öffentlichen Builder in Snapshots |
 | Neutraler Lifecycle-Zustandsautomat und Kontextfactory | `interlis-model`, `guru.interlis.execution`; ausschliesslich lokale Ereignisstrukturierung, keine Ausgabesenke |
-| Legacy-Renderer, CLI-Statuszuordnung und konkrete Ausgabe | `interlis-cli`, `guru.interlis.cli` und werkzeugspezifische Adapter |
+| Text-/JSON-Renderer, CLI-Statuszuordnung und konkrete Ausgabe | `interlis-compiler-cli`, `guru.interlis.cli` und werkzeugspezifische Adapter |
 | LSP-Diagnoseabbildung und Quick-Fix-Protokollanbindung | `interlis-lsp`; reine fachliche Vorschläge dürfen compilerseitige Querydienste nutzen |
 | JSON-/WASM-Protokollserialisierung | Zieladapter; nur bei tatsächlicher gemeinsamer Implementierung eigenes kleines gemeinsames Paket |
 | OpenTelemetry-/Datei-/Dienstintegration | Optionaler Host-Adapter; keine transitive SDK-Abhängigkeit des Kerns |
@@ -39,7 +39,7 @@ Verwandte Verträge: [Kompilierung](06-kompilierung-und-semantik.md), [Workspace
 | LOG-002 | Jeder angenommene öffentliche Lauf MUSS genau einen Abschlusszustand besitzen: erfolgreich, abgelehnt, abgebrochen oder intern fehlgeschlagen. Der Ablehnungsgrund MUSS Quelle, fehlende Voraussetzung und unvollständige Implementierung unterscheiden. | P1 | Ereignisautomat einschliesslich Exception-, Coverage- und Abbruchpfaden. |
 | LOG-003 | Eine intern kontrollierte Ausführung MUSS genau einen Abschluss-Emissionsversuch durchführen. Eine Exactly-once-Zustellung über Prozessgrenzen darf daraus nicht behauptet werden. | P1 | Testobserver zählt Abschlussversuche, einschliesslich Observerfehlern. |
 | LOG-004 | Ein Fehler einer optionalen Beobachtungssenke DARF das fachliche Ergebnis nicht überschreiben und DARF keine rekursive Logging-Schleife auslösen. | P1 | Werfender Observer verändert das Compile-Ergebnis nicht. |
-| LOG-005 | Legacy-CLI-Ausgabekanäle, Meldungstexte, Reihenfolge und Exitcodes MÜSSEN anhand benannter Referenzprofile aufgenommen werden. Unbekannte Werte dürfen nicht erfunden werden. | P3 | Gepinnte CLI-Fixtures mit getrennt erfasstem stdout, stderr und Exitcode. |
+| LOG-005 | CLI-Ausgabekanäle, Meldungstexte, Reihenfolge und Exitcodes MÜSSEN anhand des freigegebenen Werkzeugprofils geprüft werden. Das Compiler-CLI hat ausschliesslich den Standardvertrag; externe Sprachreferenzen bleiben unabhängig. | P3 | Gepinnte CLI-Fixtures mit getrennt erfasstem stdout, stderr und Exitcode. |
 | LOG-006 | Der LSP-Adapter MUSS Diagnosen direkt projizieren. Bei stdio-Transport MUSS stdout ausschliesslich Protokollnachrichten enthalten. | P1 | LSP-Test mit parallelen Diagnosen und Betriebsereignissen. |
 | LOG-007 | Strukturierte Ereignisse MÜSSEN ein dokumentiertes Schema mit Ereignisname, Laufbezug und geordneter Sequenz besitzen. | P1 | Schema- und Reihenfolgetests. |
 | LOG-008 | Der Host MUSS die Vertraulichkeit von Credentials und optional von Quellinhalten wahren. Bekannte Geheimnisfelder dürfen nicht in Ereignisse übernommen werden. | P1 | Resolver- und JDBC-Tests mit markierten Testgeheimnissen. |
@@ -183,7 +183,7 @@ Ein Anzeige-Limit muss als Anzeige-Limit erkennbar bleiben, etwa über `hiddenCo
 
 `DiagnosticRenderer.render(Diagnostic diagnostic, RenderingContext context)` liefert einen String und verändert keinen Diagnosezustand. `RenderingContext` enthält Sprache, Positionsformat und gegebenenfalls das Kompatibilitätsprofil. Er enthält keine Zugriffsmöglichkeiten auf Repository oder Datenbank.
 
-`LegacyDiagnosticRenderer` verwendet den erfassten Katalog des aktiven `LegacyCliProfile`. Das fachliche `LegacyCompilerProfile` referenziert dieses CLI-Profil über `cliProfile()`, statt dessen Felder nochmals unabhängig zu definieren. Fehlt ein Mapping, wird eine dokumentierte allgemeine Darstellung verwendet und die Kompatibilitätslücke im Testbericht sichtbar. Ein fehlendes Mapping darf nicht durch erfundene historische Formulierung kaschiert werden.
+Das Compiler-CLI verwendet ausschliesslich ConsoleDiagnosticRenderer und JsonDiagnosticWriter mit kanonischen Diagnosedaten; LegacyCliProfile und LegacyDiagnosticRenderer entfallen. Externe Sprachreferenzprozesse bleiben eigenständige Tests.
 
 `JsonDiagnosticWriter.write(Diagnostic diagnostic, JsonOutput output)` gehört in einen Adapter. Strings werden korrekt escaped; Severity und Codes bleiben maschinenlesbar. Die Klassifikation entspricht dem [WASM-Vertrag](10-webassembly-und-portabilitaet.md).
 
@@ -191,7 +191,7 @@ Ein Anzeige-Limit muss als Anzeige-Limit erkennbar bleiben, etwa über `hiddenCo
 
 ## 5. Anfänglicher Diagnosekatalog
 
-Diese Codes sind **neue normative Codes des geplanten Projekts**. Sie sind keine Behauptung über Codes des bisherigen ili2c. Legacy-Meldungstexte werden zusätzlich anhand reproduzierbarer Referenzfälle aufgenommen. Die konkrete Semantik einer Sprachregel wird durch die Referenzhandbücher und entsprechende Tests bestimmt, nicht allein durch diese Tabelle.
+Diese Codes sind **neue normative Codes des geplanten Projekts**. Sie sind keine Behauptung über Codes des bisherigen ili2c. Die CLI-Darstellung wird unabhängig von externen Sprachreferenztexten geprüft. Die konkrete Semantik einer Sprachregel wird durch die Referenzhandbücher und entsprechende Tests bestimmt, nicht allein durch diese Tabelle.
 
 | Code | Bedeutung / Standard-Severity | Phase | Verbindliche Argumente und Quellbezug |
 |---|---|---|---|
@@ -339,9 +339,9 @@ Der Failure-Handler hat keine Rückwirkung auf das fachliche Ergebnis. Der Host 
 
 ### 7.1 CLI-Kompatibilität
 
-`LegacyCompilerProfile.cliProfile()` verweist auf das in [CLI und SDK](18-cli-sdk-und-kompatibilitaetsadapter.md) definierte `LegacyCliProfile`. Dieses bestimmt je Referenzversion die Aufrufe, Standardoptionen, Severity-Darstellung, stdout-/stderr-Zuordnung, Textnormalisierung, Reihenfolge und Exitcodes. Die Werte müssen aufgenommen werden, bevor sie implementiert werden. Insbesondere wird hier nicht angenommen, dass alle bisherigen Fehler immer Exitcode 1 oder alle Meldungen stderr verwenden.
+Der Compiler verwendet den expliziten Standardbedienvertrag aus [CLI und SDK](18-cli-sdk-und-kompatibilitaetsadapter.md). Die frühere ili2c-Bedienparität entfällt; der externe Referenzcompiler bleibt auf Testprozesse beschränkt.
 
-`CliOutcomeMapper.classify(CompilationOutcome outcome)` liefert die passende `CliTermination` anhand der typisierten Ergebnisvariante und im Ablehnungsfall ihrer `RejectionSummary`. `ExitCodePolicy.exitCode(CliTermination termination, LegacyCliProfile profile)` bildet diese auf den erfassten numerischen Wert ab. `CliOutputWriter.writeDiagnostics(...)` verwendet den Renderer und den geplanten Ausgabekanal. Diese Schritte dürfen das semantische Ergebnis nicht verändern. Insbesondere ergibt `Rejected` wegen `INCOMPLETE_SUPPORT` keine Meldung „Quelltext ungültig“. `WARNINGS_REJECTED` bleibt eine Policyentscheidung bei unverändertem Warnungsschweregrad. Eine erneute Ableitung der Gateentscheidung aus sämtlichen, möglicherweise rootfremden Diagnosen ist unzulässig. Ein nachfolgender Export-/Flushfehler kann den gesamten CLI-Aufruf betrieblich scheitern lassen, obwohl die Kompilierung erfolgreich war; erst der vollständige Ablauf erzeugt das abschliessende `CliExecutionResult`.
+`CliOutcomeMapper.classify(CompilationOutcome outcome)` liefert die passende `CliTermination` anhand der typisierten Ergebnisvariante und im Ablehnungsfall ihrer `RejectionSummary`. `ExitCodePolicy.exitCode(CliTermination termination)` bildet diese auf den festgelegten Standardwert ab. Die Anwendung verwendet den Renderer und den geplanten Ausgabekanal. Diese Schritte dürfen das semantische Ergebnis nicht verändern. Insbesondere ergibt `Rejected` wegen `INCOMPLETE_SUPPORT` keine Meldung „Quelltext ungültig“. `WARNINGS_REJECTED` bleibt eine Policyentscheidung bei unverändertem Warnungsschweregrad. Eine erneute Ableitung der Gateentscheidung aus sämtlichen, möglicherweise rootfremden Diagnosen ist unzulässig. Ein nachfolgender Export-/Flushfehler kann den gesamten CLI-Aufruf betrieblich scheitern lassen, obwohl die Kompilierung erfolgreich war; erst der vollständige Ablauf erzeugt das abschliessende `CliExecutionResult`.
 
 Eine neue strukturierte Ausgabe wird als expliziter Modus angeboten. Ihre Option und die Behandlung gemischter Formate sind im CLI-Vertrag festzulegen. Ein JSON-Lines-Datenstrom enthält pro Zeile genau ein vollständiges Objekt; normale Textmeldungen dürfen nicht hineingemischt werden. Ungültige CLI-Optionen sind Bedienfehler des Adapters.
 
@@ -397,7 +397,7 @@ Revision 20 wird analysiert, während Revision 21 eingeht. Der Host kann für 20
 | `RunContextPropagationTest` | Convenience und voller Aufruf emittieren genau einen Engine-Lauf; Workspace verdoppelt ihn nicht; zwei parallele Eltern mit getrennten Enginekindern vermischen keine Korrelation |
 | `ObserverFailureIsolationTest` | Senkenausfall überdeckt weder gültiges Ergebnis noch ursprünglichen internen Fehler |
 | `LspStdoutPurityTest` | Keine Nicht-Protokollausgabe auf stdout unter realer Compilerintegration |
-| `LegacyDiagnosticProfileTest` | Referenztexte, Reihenfolge, Kanäle und Exitcodes für erfasste Profile |
+| `CompilerCliIdentityContractTest` / `compilerCliCheck` | Standardentry, Reihenfolge, Kanäle und Exitcodes |
 | `RejectionPresentationTest` | Warnungspolitik, unvollständige Implementierung, Umgebungsfehler und Quellfehler bleiben typisiert; rootfremde Fehler verändern die Gatezusammenfassung nicht |
 | `ObservationBudgetTest` | Begrenzte Queue, dokumentiertes Verwerfen, keine unbeschränkten Strings oder Metriklabels |
 

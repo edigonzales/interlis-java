@@ -4781,7 +4781,7 @@
         },
         {
           "source": "interlis-compiler/build.gradle",
-          "sha256": "b48d25690bdf9ad6675b6c1470c8bde7897356f7f28e413db7fb4567b6bcbd06"
+          "sha256": "e9eab0c35567fd57f8a0588657641b2a89e7576681b28eb8fd8b618e285fd40a"
         }
       ],
       "resolution": "Gepinnte ANTLR-Generator-/Runtimeversion und Wrapper; tatsächlicher Wrapperbuild statt erfundener Compiler-JUnit für Buildreproduzierbarkeit."
@@ -5401,7 +5401,7 @@
       "processEvidence": [
         {
           "source": "interlis-compiler/build.gradle",
-          "sha256": "b48d25690bdf9ad6675b6c1470c8bde7897356f7f28e413db7fb4567b6bcbd06"
+          "sha256": "e9eab0c35567fd57f8a0588657641b2a89e7576681b28eb8fd8b618e285fd40a"
         },
         {
           "source": "interlis-model/build.gradle",
@@ -5409,7 +5409,7 @@
         },
         {
           "source": "build.gradle",
-          "sha256": "2eda1ad8e3b35652467e019fe97e0f5c7ceb774eba48b959a4069230b316aad7"
+          "sha256": "cbc4e45dc8032675a64feb817306119434da05a8fdc9f6cf338b53233f44243c"
         }
       ],
       "resolution": "Modulabhängigkeiten und frischer JVM-/Wasm-/Browserbuild belegen portable Loggingunabhängigkeit."
@@ -5465,11 +5465,11 @@
           "sha256": "27dd6884d90f90a0de39709936fccfb1f593478597f149bdcd5270f85ab2c442"
         },
         {
-          "source": "interlis-cli/src/verification/java/guru/interlis/cli/verification/ReferenceProcesses.java",
+          "source": "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/ReferenceProcesses.java",
           "sha256": "52248b18b1b9560f59d2a0c4993fd5c51bc2de27640f30235611aa699d74019a"
         },
         {
-          "source": "interlis-cli/src/verification/java/guru/interlis/cli/verification/SdkProcesses.java",
+          "source": "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/SdkProcesses.java",
           "sha256": "3597d9a3dd0fe80209b407a80ea7d28360484d9bd9559eea6dee1a40f68715cc"
         }
       ],
@@ -5580,7 +5580,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "459e36ab0619a1d27e2dc9bedf275dbda3a5d9c74556c739826fc02f728042a9"
+          "sha256": "31a378080e21e348dba9de5411ddfc57673f236d0343ec27199e318681b8f458"
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
@@ -5637,7 +5637,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "459e36ab0619a1d27e2dc9bedf275dbda3a5d9c74556c739826fc02f728042a9"
+          "sha256": "31a378080e21e348dba9de5411ddfc57673f236d0343ec27199e318681b8f458"
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
@@ -5645,7 +5645,7 @@
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "8de6549275c4827fff6715e2e7865a6f6bdf16d8f1e5a22abd86006b746ddc48"
+          "sha256": "2870512c9e18dae835469e91a2586e12916bb720e8fc2b47bcb0a10d17b54636"
         }
       ],
       "resolution": "Synchron gepflegte Fachverträge/Register/Verbraucher und echte PublicSdk-/Bridge-Konstruktion; kein synthetisches Dokument-Golden."
@@ -14489,7 +14489,7 @@
       ]
     },
     "CliApplicationTest.jsonOutputIsMachineReadable": {
-      "source": "interlis-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "jsonOutputIsMachineReadable",
       "methodStart": 5948,
@@ -14665,7 +14665,7 @@
       ]
     },
     "CliApplicationTest.checkPositiveAndNegativeModels": {
-      "source": "interlis-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "checkPositiveAndNegativeModels",
       "methodStart": 2082,
@@ -14824,7 +14824,7 @@
       ]
     },
     "CliApplicationTest.formatWritesStdoutChecksAndWritesAtomically": {
-      "source": "interlis-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "formatWritesStdoutChecksAndWritesAtomically",
       "methodStart": 3512,
@@ -14837,7 +14837,7 @@
       ]
     },
     "CliApplicationTest.formatDoesNotWriteInvalidSource": {
-      "source": "interlis-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "formatDoesNotWriteInvalidSource",
       "methodStart": 5534,
@@ -15119,7 +15119,7 @@
     "docs/evidence/stabilization/g2-norm-conditions.json": "c148ddf364826a453d833b4b14bb8bfc0ff74d23e65b6db13d4a4f183adc318a",
     "docs/evidence/stabilization/g2-grammar-inventory.json": "3fde28e788cfe0f408a17484e9b32090e6b48826019eae3b2f46796ea1e1a122",
     "docs/evidence/stabilization/g2-builtin-inventory.json": "e1c8f2489a31712e807a47ea5a0dbd53d3e43c9218c8167ca66539cb5b1f9a50",
-    "docs/evidence/stabilization/g2-spec-contract-inventory.json": "e2bd1dcf3b627987de6c459ff0c5dc99c634215a36e5ea6ad04b7516dd50a968",
+    "docs/evidence/stabilization/g2-spec-contract-inventory.json": "016c1684db073b78194f43184ba2d4b371380ad820b673ab70015344fb996832",
     "testdata/g2/predefined-catalogue.json": "cef03fd21b3dbbd76502b73bd5341c06070312bc4566283d287326116ec48332",
     "testdata/g2/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
   }

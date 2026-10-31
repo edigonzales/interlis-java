@@ -108,7 +108,7 @@ Alle übrigen hier definierten Ergebnisse sind geplante Abnahmekriterien. Ein Ag
 | TEST-014 | Abbruch, Fehler, Observerausfall und veraltete Publikation MÜSSEN die gleichen Qualitätsgates wie der Erfolgsfall erhalten. | P1 | Zustands- und Integrationstests. |
 | TEST-015 | Architekturtests MÜSSEN verbotene Abhängigkeiten und nach aussen geleakte ANTLR-/Host-Typen erkennen. | P0/P1 | Abhängigkeits- und öffentliche API-Prüfung. |
 | COMPAT-001 | Kompatibilität MUSS getrennt für Sprache, CLI, Diagnostik, Metamodell, Transfer, Java-API und DB ausgewiesen werden. | P0 | Benannte Profile und Matrix; kein pauschaler Kompatibilitätsclaim. |
-| COMPAT-002 | CLI-Exitcodes und Ausgabekanäle MÜSSEN vom Referenztool erfasst werden; dieser Katalog darf keine unbekannten Werte fest erfinden. | P3 | Getrennte stdout-/stderr-/Exitcode-Fixtures. |
+| COMPAT-002 | CLI-Exitcodes und Ausgabekanäle MÜSSEN für das freigegebene Werkzeugprofil geprüft werden; der Compiler-CLI-Standardvertrag ersetzt ausschliesslich dessen frühere Bedienparität. | P3 | Getrennte stdout-/stderr-/Exitcode-Fixtures. |
 | COMPAT-003 | Ein semantischer Unterschied zum Altcompiler MUSS gegen Norm und Verbraucherwirkung bewertet werden. | P2 | Dokumentierte Entscheidung: Regression, bewusste Normkorrektur oder offener Fall. |
 | COMPAT-004 | Ein Legacy-Java-Adapter ist derzeit nicht Bestandteil von P3/P4; bei Wiederaufnahme MUSS er echte verwendete Objektgraph- und gegebenenfalls API-/ABI-Verträge prüfen. | zurückgestellt (nicht P3/P4) | Eigener Auftrag mit gepinnten Verbrauchern; blosse Gettergleichheit genügt nicht. |
 | COMPAT-005 | Datenbankkompatibilität MUSS bidirektionale Operationen gegen das bisherige Werkzeug umfassen. | P5 | Alt→Neu und Neu→Alt pro unterstütztem DB-Profil. |
@@ -138,7 +138,7 @@ Die aktuellen und historischen Referenzhandbücher werden über die offizielle [
 
 ### 3.2 Profilklassen
 
-`LegacyCompilerProfile` enthält `ProfileId`, `ReferenceArtifact`, Sprachumfang, relevante semantische Flags und `cliProfile(): LegacyCliProfile`. Das generische CLI-Profil ist in [CLI und SDK](18-cli-sdk-und-kompatibilitaetsadapter.md) definiert und enthält Aufrufmuster, CLI-Defaults, Umgebung, Kanäle und die Regeln der Ausgabeaufnahme. Die vollständigen erfassten Exitcodewerte und Meldungsfixtures werden dort versioniert. Die beiden Profile dürfen diese Werte nicht unabhängig und widersprüchlich duplizieren.
+`LegacyCompilerProfile` enthält `ProfileId`, `ReferenceArtifact`, Sprachumfang, relevante semantische Flags für externe Referenzprozesse. Das eigene Compilerprogramm nutzt den Standardvertrag aus [CLI und SDK](18-cli-sdk-und-kompatibilitaetsadapter.md); es gibt kein Laufzeit-Legacyprofil.
 
 `LegacyMetamodelProfile` enthält denselben Compilerbezug und einen Versionsstand des semantischen Extraktors. Es beschreibt ausdrücklich, welche Modellfelder vergleichbar sind. Das optionale `LegacyApiProfile` referenziert dieses Profil und ergänzt die tatsächlich zugesagten Java-Typen, API-/gegebenenfalls ABI-Verträge, Referenzartefakte und Verbraucher. `LegacyTransferProfile` bindet Reader-/Writer-/Validatorversionen und Transferoptionen. `DbCompatibilityProfile` wird in [Überbau und Datenbanken](12-transfer-validierung-und-datenbanken.md) spezifiziert.
 
@@ -342,13 +342,13 @@ Differentialfuzzing nutzt Legacycompiler ergänzend. Eine unterschiedliche Akzep
 
 Ressourcenlimits sind zunächst bewusst konservativ und konfigurierbar. Konkrete CI-Grenzen werden nach der ersten Messung festgelegt und dokumentiert. Dieses Dokument erfindet keine nicht gemessene Millisekundengarantie. Ein Benchmark darf wegen langsamer CI-Hardware nicht fälschlich zur Sprachnorm werden.
 
-## 10. CLI- und Diagnosekompatibilität
+## 10. CLI- und Diagnoseverträge
 
-`ReferenceCliRecorder.record(CliFixture fixture, LegacyCompilerProfile profile)` startet das Referenzwerkzeug mit Argumentliste und kontrollierter Umgebung. Es erfasst Exitcode, stdout und stderr getrennt sowie erzeugte Dateien und relevante Metadaten. Temporäre Pfade, Locale, Zeilenende und Laufzeitversion werden dokumentiert.
+Externe Sprach-/Metamodellprüfungen starten das Referenzwerkzeug mit Argumentliste und kontrollierter Umgebung. Die frühere reine ili2c-Bedienparität entfällt gemäss Compiler-CLI-Folgeauftrag. Es erfasst Exitcode, stdout und stderr getrennt sowie erzeugte Dateien und relevante Metadaten. Temporäre Pfade, Locale, Zeilenende und Laufzeitversion werden dokumentiert.
 
-`CliCompatibilityComparator.compare(RecordedCliResult legacy, RecordedCliResult replacement, CliComparisonPolicy policy)` liefert Unterschiede je Kanal und Datei. Erlaubte Normalisierungen sind einzeln begründet, etwa ein temporärer absoluter Arbeitsordner. Sie dürfen keine Diagnoseposition, keinen Modellnamen, keine Reihenfolge oder fachlich relevante Meldung entfernen.
+compilerCliCheck prüft echte Standardprozesse je Kanal und Exitcode. Erlaubte Normalisierungen sind einzeln begründet, etwa ein temporärer absoluter Arbeitsordner. Sie dürfen keine Diagnoseposition, keinen Modellnamen, keine Reihenfolge oder fachlich relevante Meldung entfernen.
 
-`P3OutcomePriorityContractTest` prüft die Abbildung der vom Compiler gelieferten `RejectionSummary` auf die internen CLI-Zustände und anschliessend auf profilierte Exitcodes. Fehlende Implementierung und abgelehnte Warnungen dürfen nicht als nachgewiesener ungültiger Quelltext ausgegeben werden. Ein erfolgreicher Compile mit anschliessendem Ausgabe-, Formatierungs- oder Flushfehler ergibt keinen erfolgreichen Gesamtaufruf. Bei mehreren Ablehnungsgründen gilt die in Kapitel 18 ausdrücklich festgelegte Priorität, während alle Gründe im strukturierten Resultat erhalten bleiben.
+`P3OutcomePriorityContractTest` prüft die Abbildung der vom Compiler gelieferten `RejectionSummary` auf die internen CLI-Zustände und anschliessend auf Standard-Exitcodes. Fehlende Implementierung und abgelehnte Warnungen dürfen nicht als nachgewiesener ungültiger Quelltext ausgegeben werden. Ein erfolgreicher Compile mit anschliessendem Ausgabe-, Formatierungs- oder Flushfehler ergibt keinen erfolgreichen Gesamtaufruf. Bei mehreren Ablehnungsgründen gilt die in Kapitel 18 ausdrücklich festgelegte Priorität, während alle Gründe im strukturierten Resultat erhalten bleiben.
 
 Zu erfassen sind mindestens gültiger Compile, Syntaxfehler, Semantikfehler, fehlende Datei, fehlender Import, ungültige Option, Hilfe-/Versionsaufruf und mehrere Eingabedateien. Formatierungsoptionen erhalten eigene Profile und Fixtures; ein nicht implementierter Formatierungsmodus darf nicht still als vorhandener CLI-Umfang gelten.
 

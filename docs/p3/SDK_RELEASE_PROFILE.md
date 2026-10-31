@@ -4,6 +4,15 @@ P3 bereitet lokale Artefakte vor. Ein G3-PASS ist keine Veröffentlichung und
 keine uneingeschränkte Drop-in-Zusage: die bestätigten Norm-/Kompatibilitäts-
 profile und die expliziten nicht unterstützten CLI-Generatoroptionen gelten.
 
+## Aktueller Compiler-CLI-Folgeauftrag
+
+Modul interlis-compiler-cli, Programm interlis-compiler; Installation unter
+interlis-compiler-cli/build/install/interlis-compiler, im SDK cli/bin/interlis-compiler
+(Windows .bat). Alte Launcher, Legacyprofile und compat/ili2c.jar entfallen.
+Sprach-/Norm-/SDK-Verträge bleiben. Der neue Abnahmestand steht im
+[CLI-Status](../implementation/compiler-cli-modernization/STATUS.md).
+Die nachstehenden P3-Nachweise bezeichnen ausschliesslich den historischen P3-SHA.
+
 ## Getrennte Versionen
 
 | Vertrag | Aktueller Wert | Bedeutung |
@@ -62,7 +71,7 @@ Es nennt auch die Originalpins und den tatsächlichen Core-JAR-Hash der
 gezielten [TeaVM-Toolkorrektur](../../tools/teavm/README.md), welche stabile
 Klassenreihenfolgen für bytegleiche JavaScript-/Wasm-Erzeugung herstellt.
 
-Der tatsächliche aktuelle Gesamtlauf besteht in35m1s mit Exit0; zwei separate
+Der damalige P3-Gesamtlauf besteht in35m1s mit Exit0; zwei separate
 saubere Builds liefern84 bytegleiche Dateien, das Browsermanifest enthält
 alle38 tatsächlichen Ressourcen. Der Consumer funktioniert ausschliesslich
 aus dem entpackten SDK inklusive `javac`, Run und Launchern auf macOS arm64
@@ -78,7 +87,7 @@ ausdrücklich den geprüften Produktcommit.
 
 Der Ablauf am sauberen Schlussprodukt ist:
 
-1. Commit auf den autorisierten Arbeitsbranch pushen und beide Jobs von
+1. Einen ausdrücklich autorisierten CI-Weg für den exakten Produktcommit nutzen und beide Jobs von
    `.github/workflows/p3-platforms.yml` erfolgreich abschliessen lassen.
 2. Mit Node24 `tools/release/platform-evidence.cjs` ausführen; bei Bedarf zeigt
    `GH_EXECUTABLE` auf das vorhandene `gh`. Der Collector prüft den aktuellen

@@ -1,0 +1,11 @@
+# Compiler-CLI – operativer Status
+
+- Auftrag: CLI1–CLI3 nacheinander gemäss EXECUTION_PLAN.md; nach unabhängigem PASS automatisch weiter.
+- Auftrags-/CLI1-Basis: `c3d736ac82365524835adef8df40789f3fa3ae60`, sauberer Arbeitsbaum, Zweig `codex/compiler-cli-modernization`.
+- Aktuelle Phase: **CLI1 / AWAITING_REVIEW**, Kriterien CLI1-01–09.
+- Baseline: P3/G3-PASS am Produkt `4b586b1e09a2f1cbd200f7d00876e44c81df2169`; historische Berichte bleiben unverändert.
+- Office-Original: vor Änderung SHA-256 `fbb1bccc0e84795284f9fb1a3c0be9e6db516c3c4b8ae43ad2f856cf70948431` bestätigt.
+- OpenCode-Preflight: v2.0.28, gespeicherte DeepSeek-Anmeldung, `deepseek/deepseek-flash`, Katalogendpoint `https://api.deepseek.com`; offizielle Modellzuordnung am 31.10.2026 als V4.1-Flash-1017 bestätigt. Frischer privater Standaloneaufruf antwortet READY, Exit 0; Python-Guard passed mit PATH-ENOENT und absoluten EPERM-Proben. Rohdaten `build/review/compiler-cli/preflight/`.
+- Letzter unabhängiger Produkt-PASS dieses Auftrags: keiner.
+- CLI1 implementiert und vollständiges Arbeitsstandgate verifiziert: Exit0/3m21s/64 Tasks, 1196 JUnit/224 Suites ohne Fehler/Skips, Node94, Conformance577PASS/16XFAIL, Norm21, SDK9/Standardprozesse19 und entpackter SDK-Consumer; Python-Guard passed. Details implementation/CLI1.md.
+- Nächste Aktion: sauberer Kandidatencommit, frischer unabhängiger CLI1-Review. Nach gültigem PASS automatisch CLI2.

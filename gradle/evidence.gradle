@@ -69,7 +69,7 @@ project(':interlis-compiler') {
     }
 }
 
-project(':interlis-cli') {
+project(':interlis-compiler-cli') {
     plugins.withId('java') {
         sourceSets { evidenceTest }
         configurations {
@@ -83,7 +83,7 @@ project(':interlis-cli') {
             // Completion links include real public contracts in every G2 consumer.
             dependsOn ':interlis-compiler:test', ':interlis-model:test', ':interlis-workspace:test',
                     ':interlis-repository:test', ':interlis-projection:test', ':interlis-wasm-bridge:test',
-                    ':interlis-cli:test', ':interlis-lsp:test'
+                    ':interlis-compiler-cli:test', ':interlis-lsp:test'
             testClassesDirs = sourceSets.evidenceTest.output.classesDirs
             classpath = sourceSets.evidenceTest.runtimeClasspath
             useJUnitPlatform()

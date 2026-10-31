@@ -1,5 +1,10 @@
 # Implementierungsstatus interlis-java
 
+**Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
+[Ausführungsplan](implementation/compiler-cli-modernization/EXECUTION_PLAN.md).
+Operativer Stand und unabhängige Folgeabnahmen: [CLI-Status](implementation/compiler-cli-modernization/STATUS.md).
+Frühere G2-/P3-Abnahmen bleiben auf ihren bezeichneten Ständen gültig.
+
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 

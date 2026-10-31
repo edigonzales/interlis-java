@@ -26,7 +26,7 @@ Der Gradle-Wrapper ist gepinnt (9.8.1). Maven/Ant sind keine Build-Einstiege.
 ./gradlew check                # JVM-Tests + SDK-Beispiel gegen gebaute JARs
 ./gradlew checkPortable        # JVM + TeaVM WasmGC/JS unter Node
 ./gradlew conformanceCheck     # gepinnte externe Suite und getrennte Projektbewertung
-./gradlew :interlis-cli:installDist
+./gradlew :interlis-compiler-cli:installDist
 ./gradlew :interlis-lsp:installDist
 ./gradlew referenceCheck       # gepinntes ili2c-Referenzprofil
 ./gradlew pythonFreeCheck      # Quellen-/Buildpfade ohne Python-Abhängigkeit
@@ -65,10 +65,10 @@ fehl, statt still zu überspringen.
 ## CLI
 
 ```sh
-interlis-cli/build/install/interlis-cli/bin/interlis-cli version
-interlis-cli/build/install/interlis-cli/bin/interlis-cli check \
+interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler version
+interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler check \
   testdata/models/base24.ili testdata/models/survey24.ili
-interlis-cli/build/install/interlis-cli/bin/interlis-cli diagram \
+interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler diagram \
   --root Survey --format mermaid \
   testdata/models/base24.ili testdata/models/survey24.ili
 ```

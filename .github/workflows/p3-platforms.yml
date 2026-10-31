@@ -56,7 +56,7 @@ jobs:
           retention-days: 30
           path: |
             build/reports/p3/platform/
-            build/reports/p3/legacy/
+            build/reports/p3/compiler-cli/
             build/reports/sdk/
             build/releases/
             */build/test-results/
