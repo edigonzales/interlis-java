@@ -25,7 +25,7 @@ allprojects {
 
 subprojects { sub ->
     sub.tasks.matching { it.name in ['wasmContractTest', 'jsContractTest',
-            'browserContractTest', 'safariContractTest', 'diagramAdapterTest',
+            'browserContractTest', 'safariContractTest', 'diagramAdapterTest', 'browserClientTest', 'buildBrowserTools',
             'webImageProbe', 'webImageBrowserTest'] }.configureEach {
         dependsOn rootProject.tasks.named('checkNodeRuntime')
         // Keep functional deadlines independent of competing compiler/native-image
@@ -56,6 +56,7 @@ tasks.register('checkPortable') {
     if (teavm != null) {
         dependsOn "${teavm.path}:wasmContractTest"
         dependsOn "${teavm.path}:jsContractTest"
+        dependsOn "${teavm.path}:diagramAdapterTest"
     }
 }
 

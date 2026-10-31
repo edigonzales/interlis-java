@@ -156,6 +156,6 @@ für beide Overloads korrigiert. Java-Positiv-/Negativkontrollen und PortableJS
 Historischer [P3-Voraudit](reviews/P3-voraudit.md): AUDIT mit 15 Musslücken,
 kein G3-PASS; Bericht-SHA-256
 `ef7ac8ac673710d28c0139915af5f3fcc4043a3fe427e9228c71e46ee5c311d2`.
-P3-3 Browser/Diagramm, P3-4 Corpus/Belastung und P3-5 SDK/Gesamtgate beginnen
-anschliessend automatisch. Der Benutzer wird nicht nach Teilphasen zum
+P3-3 Browser/Diagramm läuft; P3-4 Corpus/Belastung und P3-5 SDK/Gesamtgate folgen
+automatisch. Der Benutzer wird nicht nach Teilphasen zum
 Weiterfahren aufgefordert.

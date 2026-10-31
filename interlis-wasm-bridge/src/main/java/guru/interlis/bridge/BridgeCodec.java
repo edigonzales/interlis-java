@@ -201,8 +201,19 @@ public final class BridgeCodec {
         return array;
     }
 
+    static JsonValue.JsonObject object(JsonValue value) {
+        if (!(value instanceof JsonValue.JsonObject object)) throw new BridgeException("INVALID_REQUEST", "expected object");
+        return object;
+    }
+
+    static int intValue(JsonValue value, String field) {
+        try { return Math.toIntExact(longValue(value, field)); }
+        catch (ArithmeticException invalid) { throw new BridgeException("INVALID_REQUEST", "integer out of range " + field); }
+    }
+
     static long longValue(JsonValue value, String field) {
-        return switch (value) {
+        if(value==null) throw new BridgeException("INVALID_REQUEST","missing number "+field);
+        try { return switch (value) {
             case JsonValue.JsonString string -> {
                 try {
                     yield Long.parseLong(string.value());
@@ -212,6 +223,6 @@ public final class BridgeCodec {
             }
             case JsonValue.JsonNumber number -> number.value().longValueExact();
             default -> throw new BridgeException("INVALID_REQUEST", "invalid number " + field);
-        };
+        }; } catch(ArithmeticException invalid) { throw new BridgeException("INVALID_REQUEST","invalid integer "+field); }
     }
 }

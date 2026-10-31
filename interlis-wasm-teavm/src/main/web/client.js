@@ -1,310 +1,157 @@
-(() => {
-  let worker;
-  let nextId = 1;
-  let workerGeneration = 0;
-  const pending = new Map();
-  function attach(candidate) {
-    const generation = workerGeneration;
-    candidate.onmessage = (event) => {
-      if (candidate !== worker || generation !== workerGeneration) return;
-      const {id, response, error} = event.data;
-      const entry = pending.get(id);
-      if (!entry) return;
-      pending.delete(id);
-      if (error) entry.reject(new Error(error));
-      else entry.resolve(JSON.parse(response));
-    };
-  }
-  function newWorker() {
-    workerGeneration++;
-    worker = new Worker('worker.js');
-    attach(worker);
-    return worker;
-  }
-  newWorker();
-  function call(request) {
-    const id = nextId++;
-    return new Promise((resolve, reject) => {
-      pending.set(id, {resolve, reject});
-      worker.postMessage({id, request: JSON.stringify(request)});
-    });
-  }
-  function envelope(operation, sessionId, params) {
-    const request = {
-      protocol: 'interlis.compiler',
-      protocolVersion: '1.0',
-      requestId: 'w-' + (nextId++),
-      operation,
-      params: params || {}
-    };
-    if (sessionId) request.sessionId = sessionId;
-    return request;
-  }
+import {verifyBrowserClient} from './browser-client-contract.js';
+import {CompilerClient} from './compiler-client.js';
+import {diagramAdapter} from './compiler-diagram.js';
 
-  const output = document.getElementById('output');
-  const source = document.getElementById('source');
-  const state = {sessionId: null, revision: '0', sourceRevision: null, snapshotId: null, schemaId: null, hasSource: false, diagramView: null, benchmarkRevision: null};
-
-  function resetState() {
-    state.sessionId = null;
-    state.revision = '0';
-    state.sourceRevision = null;
-    state.snapshotId = null;
-    state.schemaId = null;
-    state.hasSource = false;
-    state.benchmarkRevision = null;
+const source=document.getElementById('source'),output=document.getElementById('output');
+const picker=document.getElementById('sources'),canvas=document.getElementById('diagram-view'),members=document.getElementById('members');
+const drafts=new Map([['memory:/browser.ili',source.value]]);
+let activeSource='memory:/browser.ili',session=null,snapshot=null,schema=null,view=null,generation=0,sequence=Promise.resolve(),activeRequest=null;
+let visibleLayout=null,visibleRendered=null;
+const client=new CompilerClient({onRestored:pairs=>{
+  const pair=pairs.find(p=>p.previous===session);session=pair?.current??null;visibleRendered=null;invalidate(false);
+},onFailure:error=>{invalidate(false);output.textContent=error.code+': '+error.message;}});
+function invalidate(release=true){const old=snapshot,handle=session;generation++;snapshot=null;schema=null;view=null;canvas.dataset.stale='true';canvas.setAttribute('aria-label','Diagram is stale; compile again.');members.replaceChildren();if(release&&old&&handle)void client.releaseSnapshot(handle,old).catch(displayError);}
+function serial(operation){const pending=sequence.then(operation);sequence=pending.catch(()=>{});return pending;}
+function displayError(error){output.textContent=JSON.stringify({code:error.code??'HOST_FAILURE',message:error.message},null,2);}
+function sourceMap(){return new Map([...drafts].map(([id,text])=>[id,{text,revision:session?client.state(session).sourceRevisions[id]??'absent':'absent'}]));}
+function captured(){return JSON.stringify([...drafts]);}
+async function ensureSession(){if(!session)session=await client.openSession();return session;}
+async function discard(){const old=snapshot,handle=session;invalidate(false);if(old&&handle)await client.releaseSnapshot(handle,old);}
+async function synchronize(){
+  const handle=await ensureSession();await discard();const state=client.state(handle),updates=[];
+  for(const [sourceId,text] of drafts)if(client.sourceText(handle,sourceId)!==text)updates.push({sourceId,expectation:state.sourceRevisions[sourceId]?{kind:'at',revision:state.sourceRevisions[sourceId]}:{kind:'absent'},change:{kind:'replace',text}});
+  if(updates.length)await client.updateSources(handle,{expectedWorkspaceRevision:state.workspaceRevision,updates});
+  for(const sourceId of Object.keys(client.state(handle).sourceRevisions))if(!drafts.has(sourceId))await client.removeSource(handle,{sourceId,expectedRevision:client.state(handle).sourceRevisions[sourceId]});
+  return handle;
+}
+function request(handle){return {expectedWorkspaceRevision:client.state(handle).workspaceRevision,roots:[{kind:'bySource',source:activeSource}]};}
+async function execute(operation){
+  return serial(async()=>{
+    const handle=await synchronize(),mark=generation,text=captured(),requestId='ui-'+Date.now()+'-'+generation;activeRequest=requestId;
+    try{
+      const result=await client[operation](handle,request(handle),{requestId});
+      if(mark!==generation||text!==captured()||handle!==session){if(result.snapshotId)await client.releaseSnapshot(handle,result.snapshotId);return {status:'ok',result,stale:true};}
+      snapshot=result.snapshotId??null;schema=result.schemaId??null;output.textContent=JSON.stringify(result,null,2);
+      return {status:'ok',result};
+    }finally{if(activeRequest===requestId)activeRequest=null;}
+  });
+}
+const analyze=()=>execute('analyze'),compile=()=>execute('compile');
+function navigate(id){
+  if(!view)return {kind:'stale',code:'STALE_SELECTION'};
+  const result=diagramAdapter.resolveNavigation(view,id,snapshot??'',sourceMap());
+  if(result.kind==='resolved'){
+    activeSource=result.range.source;refreshPicker();source.value=drafts.get(activeSource);source.focus();source.setSelectionRange(result.range.startOffset,result.range.endOffset);
+  }else output.textContent=JSON.stringify(result);return result;
+}
+function refreshPicker(){picker.replaceChildren(...[...drafts.keys()].map(id=>{const option=document.createElement('option');option.value=id;option.textContent=id;option.selected=id===activeSource;return option;}));}
+function publishDiagram(result,rendered){
+  const scroll={left:canvas.scrollLeft,top:canvas.scrollTop};
+  canvas.innerHTML=rendered.svg;canvas.dataset.stale='false';canvas.setAttribute('aria-label','Current INTERLIS diagram');
+  canvas.scrollLeft=scroll.left;canvas.scrollTop=scroll.top;visibleLayout=rendered.layout;visibleRendered=rendered;
+  canvas.querySelectorAll('[data-symbol-id],[data-edge-id]').forEach(element=>element.addEventListener('click',event=>{event.stopPropagation();navigate(element.getAttribute('data-symbol-id')??element.getAttribute('data-edge-id'));}));
+  members.replaceChildren();
+  for(const node of result.nodes)for(const compartment of node.compartments)for(const member of compartment.members){
+    const button=document.createElement('button');button.textContent=node.canonicalName+'.'+member.label;button.dataset.memberId=member.id;button.onclick=()=>navigate(member.id);members.append(button);
   }
+}
+async function diagram(){
+  // Compile synchronizes every draft and releases even rejected prior results.
+  const compiled=await compile();if(compiled.stale||compiled.result.outcome!=='succeeded')return compiled;
+  return serial(async()=>{
+    const handle=session,mark=generation,current=snapshot,text=captured();
+    const document=await client.diagram(handle,{schemaId:schema});const candidate=diagramAdapter.adapt(document,sourceMap());
+    const rendered=await diagramAdapter.render(candidate,diagramAdapter.defaultDiagramSettings,visibleRendered);
+    if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
+    view=candidate;publishDiagram(document,rendered);output.textContent=JSON.stringify({document,presentationNotices:candidate.notices},null,2);return {status:'ok',result:document};
+  });
+}
+async function restartWorker(){await client.restart();return compile();}
+async function cancel(){if(!activeRequest)return 'alreadyCompleted';return client.cancel(activeRequest);}
+async function benchmark(text,modelName,expectation){
+  const handle=await client.openSession({sources:[{sourceId:'memory:/benchmark.ili',text}]});
+  try{
+    const req={expectedWorkspaceRevision:client.state(handle).workspaceRevision,roots:[{kind:'byName',modelName}]};
+    const analyzed=await client.analyze(handle,req);await client.releaseSnapshot(handle,analyzed.snapshotId);
+    const start=performance.now(),result=await client.compile(handle,req),elapsed=performance.now()-start;
+    if(result.outcome!==(expectation?.outcome??'succeeded'))throw new Error('benchmark outcome: '+JSON.stringify(result));
+    if(expectation){
+      if(JSON.stringify(result.rejection?.reasons)!=='["SOURCE_ERRORS"]'||result.rejection.unsupportedFeatureIds.length)throw new Error('benchmark rejection mismatch');
+      const diagnostics=structuredClone(result.diagnostics);
+      for(const diagnostic of diagnostics){if(diagnostic.range?.source!=='memory:/benchmark.ili'||diagnostic.range.revision!==client.state(handle).sourceRevisions['memory:/benchmark.ili'])throw new Error('benchmark revision mismatch');delete diagnostic.id;delete diagnostic.range.source;delete diagnostic.range.revision;}
+      const canonical=v=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
+      if(JSON.stringify(canonical(diagnostics))!==JSON.stringify(canonical(expectation.diagnostics)))throw new Error('benchmark diagnostics mismatch: '+JSON.stringify(diagnostics));
+    }
+    if(result.snapshotId)await client.releaseSnapshot(handle,result.snapshotId);return elapsed;
+  }finally{await client.closeSession(handle);}
+}
+async function runClientContract(){
+  const assert=(condition,message)=>{if(!condition)throw new Error(message);};
+  window.interlisContractProgress="transport";
+  const transportChecks=await verifyBrowserClient();
+  window.interlisContractProgress="UI";
+  const initial=source.value;
+  const analyzed=await analyze();assert(analyzed.result.snapshotId,'analysis snapshot missing');
+  drafts.set(activeSource,initial.replace('height : 0..999;','height : ;'));
+  const rejected=await compile();assert(rejected.result.outcome==='rejected','invalid source accepted');
+  drafts.set(activeSource,initial);
+  const succeeded=await compile();assert(succeeded.result.outcome==='succeeded','valid source rejected: '+JSON.stringify(succeeded));
+  const drawn=await diagram();assert(!drawn.stale&&drawn.result.nodes.length>0,'diagram missing');
+  assert(JSON.stringify(drawn.result).includes('9007199254740993.0010'),'decimal lost');
+  assert(canvas.querySelector('svg')&&visibleLayout.nodes.length,'actual pinned renderer missing');
+  const node=drawn.result.nodes.find(n=>n.anchor);assert(navigate(node.id).kind==='resolved','source navigation failed');
+  const old=view;assert(diagramAdapter.isStale(old,'expired'),'stale diagram accepted');
+  const nodeCount=drawn.result.nodes.length,edgeCount=drawn.result.edges.length,associationCount=old.associations.size;
+  const base='INTERLIS 2.4;MODEL Base AT "x" VERSION "1"=DOMAIN D=TEXT;END Base.';
+  const root='INTERLIS 2.4;MODEL Root AT "x" VERSION "1"=IMPORTS Base;TOPIC T=CLASS C=a:Base.D;END C;END T;END Root.';
+  let restored;const local=new CompilerClient({onRestored:pairs=>{restored=pairs;}});
+  let checks=0;
+  try{
+    let a=await local.openSession({sources:[{sourceId:'memory:/base',text:base},{sourceId:'memory:/root',text:root}],limits:{maxRetainedSnapshots:1},configuration:{warningPolicy:'REJECT_WARNINGS'}});
+    let b=await local.openSession({sources:[{sourceId:'memory:/base',text:base}],configuration:{allowedLanguages:['2.3']}});
+    const req=(h,name)=>({expectedWorkspaceRevision:local.state(h).workspaceRevision,roots:[{kind:'byName',modelName:name}]});
+    let result=await local.compile(a,req(a,'Root'));assert(result.outcome==='succeeded','multifile compile failed');checks++;
+    try{await local.analyze(a,req(a,'Root'));throw new Error('retention limit ignored');}catch(error){assert(error.code==='LIMIT_EXCEEDED','wrong retention error');checks++;}
+    await local.releaseSnapshot(a,result.snapshotId);
+    const fingerprint=local.state(b).configurationFingerprint,oldHandle=a;
+    await local.restart();a=restored.find(p=>p.previous===a).current;b=restored.find(p=>p.previous===b).current;
+    assert(local.state(b).configurationFingerprint===fingerprint&&local.sourceText(a,'memory:/root')===root,'restart lost state');checks++;
+    try{local.state(oldHandle);throw new Error('old handle accepted');}catch(error){assert(error.code==='SESSION_EXPIRED','wrong old handle error');checks++;}
+    result=await local.compile(a,req(a,'Root'));assert(result.outcome==='succeeded','restored compile failed');await local.releaseSnapshot(a,result.snapshotId);checks++;
+    assert((await local.compile(b,req(b,'Base'))).outcome==='rejected','configuration not replayed');checks++;
 
-  async function restartWorker() {
-    worker.terminate();
-    pending.forEach(entry => entry.reject(new Error('worker restarted')));
-    pending.clear();
-    newWorker();
-    resetState();
-    await openRevision();
-    const compiled = await call(envelope('compile', state.sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName: 'Browser'}]
-    }));
-    return compiled;
-  }
+  }finally{await local.dispose();}
+  const restarted=await restartWorker();assert(restarted.result.outcome==='succeeded','UI restart failed');
 
-  async function openSession() {
-    if (state.sessionId) return state.sessionId;
-    const response = await call(envelope('openSession'));
-    if (response.status !== 'ok') throw new Error(JSON.stringify(response));
-    state.sessionId = response.result.sessionId;
-    state.revision = response.result.workspaceRevision;
-    return state.sessionId;
-  }
+  return {status:'ok',rejectedOutcome:rejected.result.outcome,compiledOutcome:succeeded.result.outcome,diagramNodes:nodeCount,diagramEdges:edgeCount,diagramAssociations:associationCount,diagnostics:succeeded.result.diagnostics.length,exactDecimal:true,workerRestartOutcome:restarted.result.outcome,clientContractChecks:checks,transportChecks};
+}
+async function runStabilizationContract(){
+  window.interlisContractProgress='stabilization';
+  const worker=new Worker(new URL('./stabilization-worker.js',import.meta.url));
+  try{return await new Promise((resolve,reject)=>{
+    worker.onmessage=event=>{const message=event.data;if(message.kind==='progress')window.interlisContractProgress={phase:'stabilization',...message};else if(message.kind==='result')resolve(message.result);else if(message.kind==='error')reject(new Error(message.message));};
+    worker.onerror=()=>reject(new Error('stabilization worker failed'));
+    worker.postMessage({kind:'verify'});
+  });}finally{worker.terminate();}
+}
 
-  async function discardResult() {
-    const snapshotId = state.snapshotId;
-    state.snapshotId = null;
-    state.schemaId = null;
-    state.diagramView = null;
-    if (snapshotId && state.sessionId) {
-      const response = await call(envelope('releaseSnapshot', state.sessionId, {snapshotId}));
-      if (response.status !== 'ok') throw new Error('snapshot release failed');
-    }
-  }
+async function runContract(){const client=await runClientContract();return {...client,...await runStabilizationContract()};}
 
-  async function replaceSource(text) {
-    const sessionId = await openSession();
-    const response = await call(envelope('updateSource', sessionId, {
-      sourceId: 'memory:/browser.ili',
-      expectation: {kind: 'at', revision: state.sourceRevision},
-      change: {kind: 'replace', text}
-    }));
-    if (response.status !== 'ok') throw new Error(JSON.stringify(response));
-    state.revision = response.result.workspaceRevision;
-    state.sourceRevision = response.result.sourceRevision;
-    state.hasSource = true;
-    await discardResult();
-    return response;
-  }
-
-  async function openRevision() {
-    const sessionId = await openSession();
-    const response = await call(envelope('updateSource', sessionId, {
-      sourceId: 'memory:/browser.ili',
-      expectation: {kind: 'absent'},
-      change: {kind: 'replace', text: source.value}
-    }));
-    if (response.status !== 'ok') throw new Error(JSON.stringify(response));
-    state.revision = response.result.workspaceRevision;
-    state.sourceRevision = response.result.sourceRevision;
-    state.hasSource = true;
-    await discardResult();
-  }
-
-  async function analyze() {
-    const inputText = source.value;
-    if (!state.hasSource) await openRevision();
-    else await replaceSource(inputText);
-    const generation = workerGeneration;
-    const revision = state.revision;
-    const text = inputText;
-    const response = await call(envelope('analyze', state.sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName: 'Browser'}]
-    }));
-    if (generation !== workerGeneration || revision !== state.revision || text !== source.value) {
-      if (generation === workerGeneration && response.result?.snapshotId
-          && response.result.snapshotId !== state.snapshotId) {
-        await call(envelope('releaseSnapshot', state.sessionId, {snapshotId: response.result.snapshotId}));
-      }
-      return response;
-    }
-    if (response.status === 'ok') {
-      state.snapshotId = response.result.snapshotId;
-      output.textContent = JSON.stringify(response.result, null, 2);
-    } else {
-      output.textContent = JSON.stringify(response, null, 2);
-    }
-    return response;
-  }
-
-  async function compile() {
-    const inputText = source.value;
-    if (!state.hasSource) await openRevision();
-    else await replaceSource(inputText);
-    const generation = workerGeneration;
-    const revision = state.revision;
-    const text = inputText;
-    const response = await call(envelope('compile', state.sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName: 'Browser'}]
-    }));
-    if (generation !== workerGeneration || revision !== state.revision || text !== source.value) {
-      if (generation === workerGeneration && response.result?.snapshotId
-          && response.result.snapshotId !== state.snapshotId) {
-        await call(envelope('releaseSnapshot', state.sessionId, {snapshotId: response.result.snapshotId}));
-      }
-      return response;
-    }
-    if (response.status === 'ok' && response.result.outcome === 'succeeded') {
-      state.schemaId = response.result.schemaId;
-      state.snapshotId = response.result.snapshotId;
-    }
-    output.textContent = JSON.stringify(response, null, 2);
-    return response;
-  }
-
-  async function diagram() {
-    if (!state.schemaId) {
-      const compiled = await compile();
-      if (!compiled.result || compiled.result.outcome !== 'succeeded') return compiled;
-    }
-    const response = await call(envelope('diagram', state.sessionId, {
-      schemaId: state.schemaId
-    }));
-    if (response.status === 'ok' && window.interlisDiagramAdapter) {
-      state.diagramView = window.interlisDiagramAdapter.adapt(response.result);
-    }
-    output.textContent = JSON.stringify(response, null, 2);
-    return response;
-  }
-
-  async function benchmark(text, modelName, expectation) {
-    const sessionId = await openSession();
-    const sourceId = 'memory:/benchmark.ili';
-    const updated = await call(envelope('updateSource', sessionId, {
-      sourceId,
-      expectation: state.benchmarkRevision === null ? {kind: 'absent'}
-        : {kind: 'at', revision: state.benchmarkRevision},
-      change: {kind: 'replace', text}
-    }));
-    if (updated.status !== 'ok') throw new Error('benchmark update failed: ' + JSON.stringify(updated));
-    state.benchmarkRevision = updated.result.sourceRevision;
-    state.revision = updated.result.workspaceRevision;
-    const analyzed = await call(envelope('analyze', sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName}]
-    }));
-    if (analyzed.status !== 'ok') throw new Error('benchmark analyze failed: ' + JSON.stringify(analyzed));
-    const started = performance.now();
-    const compiled = await call(envelope('compile', sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName}]
-    }));
-    const elapsed = performance.now() - started;
-    if (compiled.status !== 'ok' || compiled.result.outcome !== (expectation?.outcome || 'succeeded')) {
-      throw new Error('benchmark compile failed: ' + JSON.stringify(compiled));
-    }
-    if (expectation) {
-      const result = compiled.result;
-      if (JSON.stringify(result.rejection?.reasons) !== '["SOURCE_ERRORS"]'
-          || result.rejection.unsupportedFeatureIds.length) throw new Error('benchmark did not reject source');
-      const diagnostics = structuredClone(result.diagnostics);
-      for (const diagnostic of diagnostics) {
-        if (diagnostic.range?.source !== sourceId || diagnostic.range.revision !== state.benchmarkRevision)
-          throw new Error('benchmark diagnostic has wrong source/revision');
-        delete diagnostic.id; delete diagnostic.range.source; delete diagnostic.range.revision;
-      }
-      const canonical = value => Array.isArray(value) ? value.map(canonical)
-        : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(k => [k, canonical(value[k])])) : value;
-      if (JSON.stringify(canonical(diagnostics)) !== JSON.stringify(canonical(expectation.diagnostics)))
-        throw new Error('benchmark has wrong diagnostic fields or multiplicity: ' + JSON.stringify(diagnostics));
-    }
-    return elapsed;
-  }
-
-  async function runContract() {
-    const capabilities = await call(envelope('capabilities'));
-    if (capabilities.status !== 'ok') throw new Error('capabilities failed');
-    const sessionId = await openSession();
-    await openRevision();
-    const analyzed = await call(envelope('analyze', sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName: 'Browser'}]
-    }));
-    if (analyzed.status !== 'ok') throw new Error('analyze failed: ' + JSON.stringify(analyzed));
-    const broken = source.value.replace('height : 0..999;', 'height : ;');
-    await replaceSource(broken);
-    const rejected = await call(envelope('compile', sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName: 'Browser'}]
-    }));
-    if (rejected.status !== 'ok' || rejected.result.outcome !== 'rejected') {
-      throw new Error('invalid model was not rejected: ' + JSON.stringify(rejected));
-    }
-    await replaceSource(source.value);
-    const succeeded = await call(envelope('compile', sessionId, {
-      expectedWorkspaceRevision: state.revision,
-      roots: [{kind: 'byName', modelName: 'Browser'}]
-    }));
-    if (succeeded.status !== 'ok' || succeeded.result.outcome !== 'succeeded') {
-      throw new Error('compile failed: ' + JSON.stringify(succeeded));
-    }
-    const diagram = await call(envelope('diagram', sessionId, {
-      schemaId: succeeded.result.schemaId
-    }));
-    if (diagram.status !== 'ok' || !diagram.result.nodes || diagram.result.nodes.length === 0) {
-      throw new Error('diagram failed');
-    }
-    const diagramText = JSON.stringify(diagram);
-    if (!diagramText.includes('9007199254740993.0010')) {
-      throw new Error('exact decimal literal missing from diagram');
-    }
-    if (!window.interlisDiagramAdapter) throw new Error('diagram TypeScript adapter missing');
-    const diagramView = window.interlisDiagramAdapter.adapt(diagram.result);
-    if (diagramView.snapshotId !== diagram.result.snapshotId) {
-      throw new Error('diagram adapter snapshot mismatch');
-    }
-    if (window.interlisDiagramAdapter.isStale(diagramView, 'stale-snapshot')) {
-      // expected stale; no-op branch keeps the check explicit
-    } else {
-      throw new Error('diagram adapter stale check failed');
-    }
-    const restarted = await restartWorker();
-    if (restarted.status !== 'ok' || restarted.result.outcome !== 'succeeded') {
-      throw new Error('compile after restart failed: ' + JSON.stringify(restarted));
-    }
-    const stabilizationCases = await window.verifyInterlisStabilization({
-      handle: async request => JSON.stringify(await call(JSON.parse(request)))
-    });
-    return {
-      status: 'ok',
-      stabilizationCases,
-      capabilities: capabilities.result.toolVersion,
-      analyzeRevision: state.revision,
-      rejectedOutcome: rejected.result ? rejected.result.outcome : rejected.status,
-      compiledOutcome: succeeded.result.outcome,
-      diagramNodes: diagram.result.nodes.length,
-      diagramEdges: diagramView.edges.length,
-      diagramAssociations: diagramView.associations.size,
-      diagnostics: succeeded.result.diagnostics.length,
-      exactDecimal: true,
-      workerRestartOutcome: restarted.result ? restarted.result.outcome : restarted.status
-    };
-  }
-
-  source.addEventListener('input', () => { discardResult().catch(error => { output.textContent = String(error); }); });
-
-  document.getElementById('analyze').onclick = () => analyze();
-  document.getElementById('compile').onclick = () => compile();
-  document.getElementById('diagram').onclick = () => diagram();
-
-  window.interlisBrowserTest = {runContract, analyze, compile, diagram, benchmark, restartWorker};
-})();
+source.addEventListener('input',()=>{drafts.set(activeSource,source.value);invalidate();});
+source.addEventListener('select',()=>{
+  if(!snapshot||!view||!session)return;const handle=session,current=snapshot,selection=source.selectionStart,id=activeSource;
+  client.query(handle,{snapshotId:current,query:{kind:'symbolAt',sourceId:id,revision:client.state(handle).sourceRevisions[id],startOffset:selection,endOffset:selection}}).then(result=>{
+    if(current!==snapshot||handle!==session)return;
+    const ids=result.kind==='known'?diagramAdapter.elementsForSymbol(view,{snapshot:current,symbol:result.symbolId}):[];
+    canvas.querySelectorAll('[data-symbol-id]').forEach(element=>element.classList.toggle('selected',ids.includes(element.getAttribute('data-symbol-id'))));
+  }).catch(error=>{if(current===snapshot&&handle===session)displayError(error);});
+});
+picker.onchange=()=>{drafts.set(activeSource,source.value);activeSource=picker.value;source.value=drafts.get(activeSource);};
+document.getElementById('add-source').onclick=()=>{const input=document.getElementById('source-name'),id=input.value.trim();if(!id||drafts.has(id)){output.textContent='Enter a unique source URI.';return;}drafts.set(id,'');activeSource=id;source.value='';refreshPicker();invalidate();};
+document.getElementById('remove-source').onclick=()=>{if(drafts.size<=1)return;invalidate();drafts.delete(activeSource);activeSource=drafts.keys().next().value;source.value=drafts.get(activeSource);refreshPicker();void serial(synchronize).catch(displayError);};
+document.getElementById('configuration').onclick=()=>void serial(async()=>{const configuration=JSON.parse(document.getElementById('configuration-text').value);const handle=await synchronize();await client.setConfiguration(handle,{expectedWorkspaceRevision:client.state(handle).workspaceRevision,configuration});output.textContent='Configuration accepted.';}).catch(displayError);
+for(const [id,action]of [['analyze',analyze],['compile',compile],['diagram',diagram],['restart',restartWorker],['cancel',cancel]])document.getElementById(id).onclick=()=>void action().catch(displayError);
+window.addEventListener('pagehide',()=>{void client.dispose();});
+refreshPicker();
+window.interlisDiagramAdapter=diagramAdapter;
+window.interlisBrowserTest={runContract,runClientContract,runStabilizationContract,analyze,compile,diagram,benchmark,restartWorker,client,get session(){return session;},navigate};

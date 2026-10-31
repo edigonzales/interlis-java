@@ -65,7 +65,14 @@ final class DefaultDiagramProjector implements DiagramProjector {
                         Optional.of(ref), Optional.empty())));
             }
         }
-        ProjectionState state = new ProjectionState(context, options, notices);
+        if(options.scope()==DiagramScope.NEIGHBOURHOOD || options.labelPolicy()==LabelPolicy.TRANSLATED) {
+            return new DiagramProjectionOutcome.Rejected(List.of(new ProjectionNotice(ProjectionNoticeCode.UNSUPPORTED_PRESENTATION,
+                    Severity.WARNING,"projection.unsupportedOptions",List.of(options.scope().name(),options.labelPolicy().name()),Optional.empty(),Optional.empty())));
+        }
+        if(options.associationPresentation()==AssociationPresentation.COMPACT_BINARY)
+            notices.add(new ProjectionNotice(ProjectionNoticeCode.UNSUPPORTED_PRESENTATION,Severity.WARNING,
+                    "projection.entityFallback",List.of("COMPACT_BINARY"),Optional.empty(),Optional.empty()));
+        ProjectionState state = new ProjectionState(context, options, notices, token);
         for (SymbolRef ref : options.selection().symbols()) {
             token.throwIfCancellationRequested();
             state.include(ref.symbol());
@@ -106,15 +113,18 @@ final class DefaultDiagramProjector implements DiagramProjector {
         private final List<DiagramEdge> edges = new ArrayList<>();
         private final Set<String> edgeKeys = new LinkedHashSet<>();
         private boolean limited;
+        private final CancellationToken token;
 
         private ProjectionState(Context context, DiagramOptions options,
-                                List<ProjectionNotice> notices) {
+                                List<ProjectionNotice> notices, CancellationToken token) {
+            this.token = token;
             this.context = context;
             this.options = options;
             this.notices = notices;
         }
 
         void include(SymbolId id) {
+            token.throwIfCancellationRequested();
             Symbol symbol = context.graph().symbol(id).orElse(null);
             if (symbol == null) {
                 return;
@@ -197,7 +207,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
             nodes.put(nodeId, new DiagramNode(nodeId, kind, containerId, symbol.name().value(),
                     qualifiedName(symbol), DiagramNodeStatus.RESOLVED,
                     Optional.of(new SymbolRef(context.snapshotId(), symbol.id())),
-                    compartments, anchor(symbol)));
+                    compartments, anchor(symbol),symbol.header().modifiers()));
         }
 
         private List<DiagramCompartment> compartments(Symbol symbol) {
@@ -281,14 +291,14 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 }
                 boolean overridden = member.overridden();
                 if (declared.kind() == SymbolKind.ROLE) {
-                    addRole(member.declaredSymbol(), attributes, roles, inherited, overridden);
+                    addRole(member.declaredSymbol(),member.effectiveOwner(), attributes, roles, inherited, overridden);
                 } else if (declared.kind() == SymbolKind.ATTRIBUTE) {
-                    addAttribute(member.declaredSymbol(), attributes, inherited, overridden);
+                    addAttribute(member.declaredSymbol(),member.effectiveOwner(), attributes, inherited, overridden);
                 }
             }
         }
 
-        private void addAttribute(SymbolId id, List<DiagramMember> target,
+        private void addAttribute(SymbolId id,SymbolId effectiveOwner, List<DiagramMember> target,
                                   boolean inherited, boolean overridden) {
             if (!(context.graph().symbol(id).orElse(null) instanceof AttributeSymbol attribute)) {
                 return;
@@ -297,15 +307,15 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 limited();
                 return;
             }
-            target.add(new DiagramMember("member-" + id.value(),
+            target.add(new DiagramMember(memberId(id,effectiveOwner,inherited),
                     DiagramMember.MemberKind.ATTRIBUTE, attribute.name().value(),
                     options.showTypes() ? Optional.of(typeLabel(attribute.declaredType()))
                             : Optional.empty(),
-                    Optional.empty(), id, attribute.owner().orElse(id), inherited, overridden,
+                    Optional.empty(), id, effectiveOwner, inherited, overridden,
                     anchor(attribute)));
         }
 
-        private void addRole(SymbolId id, List<DiagramMember> attributes,
+        private void addRole(SymbolId id,SymbolId effectiveOwner, List<DiagramMember> attributes,
                              List<DiagramMember> roles, boolean inherited, boolean overridden) {
             if (!(context.graph().symbol(id).orElse(null) instanceof RoleSymbol role)) {
                 return;
@@ -314,11 +324,15 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 limited();
                 return;
             }
-            roles.add(new DiagramMember("member-" + id.value(), DiagramMember.MemberKind.ROLE,
+            roles.add(new DiagramMember(memberId(id,effectiveOwner,inherited), DiagramMember.MemberKind.ROLE,
                     role.name().value(), Optional.empty(),
                     options.showRoleCardinalities() ? Optional.of(format(role.cardinality()))
                             : Optional.empty(),
-                    id, role.owner().orElse(id), inherited, overridden, anchor(role)));
+                    id, effectiveOwner, inherited, overridden, anchor(role)));
+        }
+
+        private static String memberId(SymbolId declared,SymbolId owner,boolean inherited) {
+            return "member-"+declared.value()+(inherited?"-in-"+owner.value():"");
         }
 
         private void addConstraints(List<SymbolId> ids, List<DiagramMember> target) {
@@ -343,8 +357,10 @@ final class DefaultDiagramProjector implements DiagramProjector {
          * @return the value
          */
         void finishEdges() {
+            addModelEdges();
             List<DiagramNode> snapshot = List.copyOf(nodes.values());
             for (DiagramNode node : snapshot) {
+                token.throwIfCancellationRequested();
                 if (node.symbol().isEmpty()) {
                     continue;
                 }
@@ -352,7 +368,15 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 if (symbol == null) {
                     continue;
                 }
-                if (symbol instanceof guru.interlis.model.GraphicSymbol graphic) {
+                for (var member : context.graph().effectiveMembers(symbol.id())) {
+                    var declaration=context.graph().symbol(member.declaredSymbol()).orElse(null);
+                    if (declaration instanceof AttributeSymbol attribute)
+                        addAttributeTypeEdges(node.id(), attribute, attribute.declaredType(), Optional.empty(), new LinkedHashSet<>());
+                }
+                if (symbol instanceof guru.interlis.model.DomainSymbol domain) {
+                    domain.baseDomain().ifPresent(base -> addInheritance(node.id(), base));
+                    addAttributeTypeEdges(node.id(),domain,domain.typeId(),Optional.empty(),new LinkedHashSet<>());
+                } else if (symbol instanceof guru.interlis.model.GraphicSymbol graphic) {
                     graphic.baseGraphic().ifPresent(id->addInheritance(node.id(),id));
                     graphic.basis().ifPresent(id->addMetadataReference(node.id(),graphic,id,"basis"));
                 } else if(symbol instanceof guru.interlis.model.DrawingRuleSymbol rule) {
@@ -391,6 +415,82 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     }
                 }
             }
+        }
+
+
+        /** Projects only already bound type identities; no name or inheritance binding here. */
+        private void addAttributeTypeEdges(String node, Symbol origin, guru.interlis.model.TypeId typeId,
+                Optional<Cardinality> cardinality, Set<guru.interlis.model.TypeId> visited) {
+            token.throwIfCancellationRequested();
+            if (!visited.add(typeId)) return;
+            var type=context.graph().type(typeId).orElse(null);
+            if (type instanceof guru.interlis.model.DomainReferenceType domain) {
+                addTypeEdge(node,origin,domain.targetDomain(),DiagramEdge.EdgeKind.DOMAIN_USE,Optional.empty());
+                var target=context.graph().symbol(domain.targetDomain()).orElse(null);
+                if (target instanceof guru.interlis.model.DomainSymbol declaration)
+                    addAttributeTypeEdges(node,origin,declaration.typeId(),cardinality,visited);
+            } else if (type instanceof guru.interlis.model.ReferenceType reference) {
+                for(var target:reference.targetRoots()) addTypeEdge(node,origin,target,DiagramEdge.EdgeKind.REFERENCE,cardinality);
+            } else if (type instanceof guru.interlis.model.StructureValueType structure) {
+                for(var target:structure.targetRoots()) addTypeEdge(node,origin,target,DiagramEdge.EdgeKind.STRUCTURE_COMPOSITION,cardinality);
+            } else if (type instanceof guru.interlis.model.CollectionType collection) {
+                addAttributeTypeEdges(node,origin,collection.elementType(),Optional.of(collection.cardinality()),visited);
+            }
+        }
+        private void addTypeEdge(String node, Symbol origin, SymbolId target, DiagramEdge.EdgeKind kind,
+                Optional<Cardinality> cardinality) {
+            String other=ensureExternal(target,false);
+            if(other!=null) addEdge(new DiagramEdge("edge-"+node+"-"+origin.id().value()+"-"+kind+"-"+target.value(),kind,
+                    new DiagramEndpoint(node,Optional.empty()),new DiagramEndpoint(other,Optional.empty()),
+                    Optional.of(new SymbolRef(context.snapshotId(),origin.id())),emptyEnd(),
+                    new DiagramEdgeEnd(Optional.empty(),cardinality,guru.interlis.model.RoleAggregation.NONE),origin.name().value(),anchor(origin)));
+        }
+        private void addModelEdges() {
+            var processed=new LinkedHashSet<String>();
+            while(true) {
+                var pending=containers.values().stream().filter(c -> !processed.contains(c.id())).toList();
+                if(pending.isEmpty())break;
+                for(var container:pending) {
+                    token.throwIfCancellationRequested();
+                    processed.add(container.id());
+                    var declaration=container.symbol().flatMap(ref -> context.graph().symbol(ref.symbol())).orElse(null);
+                    if(declaration instanceof ModelSymbol model) {
+                        if(options.showImports()) for(var imported:model.imports()) imported.targetModel().ifPresent(target -> {
+                            String other=modelFrame(target);
+                            if(other!=null)addEdge(new DiagramEdge("edge-import-"+model.id().value()+"-"+target.value(),DiagramEdge.EdgeKind.MODEL_IMPORT,
+                                    new DiagramEndpoint(container.id(),Optional.empty()),new DiagramEndpoint(other,Optional.empty()),
+                                    Optional.of(new SymbolRef(context.snapshotId(),model.id())),emptyEnd(),emptyEnd(),imported.importedModel(),
+                                    Optional.of(new SourceAnchor(context.snapshotId(),imported.range(),Optional.empty()))));
+                        });
+                        model.translation().flatMap(guru.interlis.model.ModelTranslation::sourceTarget).ifPresent(target -> {
+                            String other=modelFrame(target);
+                            if(other!=null)addEdge(new DiagramEdge("edge-translation-"+model.id().value()+"-"+target.value(),DiagramEdge.EdgeKind.TRANSLATION,
+                                    new DiagramEndpoint(container.id(),Optional.empty()),new DiagramEndpoint(other,Optional.empty()),
+                                    Optional.of(new SymbolRef(context.snapshotId(),model.id())),emptyEnd(),emptyEnd(),"translation",anchor(model)));
+                        });
+                    } else if(declaration instanceof TopicSymbol topic) topic.baseTopic().ifPresent(target -> {
+                        var base=context.graph().symbol(target).orElse(null);
+                        if(base==null)return;
+                        base.owner().ifPresent(this::modelFrame);
+                        String other="container-"+target.value();
+                        containers.putIfAbsent(other,new DiagramContainer(other,DiagramContainer.ContainerKind.TOPIC,
+                                base.owner().map(id -> "container-"+id.value()),base.name().value(),qualifiedName(base),
+                                Optional.of(new SymbolRef(context.snapshotId(),target)),anchor(base)));
+                        addEdge(new DiagramEdge("edge-topic-inherits-"+topic.id().value()+"-"+target.value(),DiagramEdge.EdgeKind.INHERITANCE,
+                                new DiagramEndpoint(container.id(),Optional.empty()),new DiagramEndpoint(other,Optional.empty()),
+                                Optional.of(new SymbolRef(context.snapshotId(),topic.id())),emptyEnd(),emptyEnd(),"extends",anchor(topic)));
+                    });
+                }
+            }
+        }
+        private String modelFrame(SymbolId target) {
+            var declaration=context.graph().symbol(target).orElse(null);
+            if(!(declaration instanceof ModelSymbol))return null;
+            if(options.scope()==DiagramScope.WITH_DEPENDENCIES)include(target);
+            String id="container-"+target.value();
+            containers.putIfAbsent(id,new DiagramContainer(id,DiagramContainer.ContainerKind.MODEL,Optional.empty(),declaration.name().value(),qualifiedName(declaration),
+                    Optional.of(new SymbolRef(context.snapshotId(),target)),anchor(declaration)));
+            return id;
         }
 
         private void addViewDerivation(String sourceNode, SymbolId basisId) {
@@ -464,7 +564,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     containerId, symbol.name().value(), qualifiedName(symbol),
                     DiagramNodeStatus.RESOLVED,
                     Optional.of(new SymbolRef(context.snapshotId(), symbol.id())),
-                    List.of(), anchor(symbol)));
+                    List.of(), anchor(symbol),symbol.header().modifiers()));
             return nodeId;
         }
 

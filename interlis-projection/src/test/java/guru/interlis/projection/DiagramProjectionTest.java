@@ -26,6 +26,17 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiagramProjectionTest {
+    @Test void declarationModifiersRemainAvailableToTypedRendererAdapters() {
+        var schema=compile("INTERLIS 2.4;MODEL DiagramModel AT \"x\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS A(ABSTRACT)=value:TEXT;END A;CLASS B(FINAL) EXTENDS A=END B;END T;END DiagramModel.");
+        var document=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),DiagramOptions.defaults(new DiagramSelection(schema.rootModels())),CancellationToken.none())).document();
+        var a=document.nodes().stream().filter(node -> node.label().equals("A")).findFirst().orElseThrow();
+        var b=document.nodes().stream().filter(node -> node.label().equals("B")).findFirst().orElseThrow();
+        assertTrue(a.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT));
+        assertFalse(b.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT));
+        assertTrue(b.modifiers().contains(guru.interlis.model.Modifier.FINAL));
+        org.junit.jupiter.api.Assertions.assertThrows(UnsupportedOperationException.class,() -> a.modifiers().clear());
+        assertTrue(new DiagramJsonCodec().encode(document).contains("\"modifiers\":[\"ABSTRACT\"]"));
+    }
     private static final String MODEL = """
             INTERLIS 2.4;
             MODEL DiagramModel AT "https://example.interlis.ch" VERSION "1.0" =
@@ -129,6 +140,10 @@ class DiagramProjectionTest {
         assertTrue(derived.compartments().stream()
                 .flatMap(c -> c.members().stream())
                 .anyMatch(m -> m.label().equals("label") && m.inherited()));
+        var inherited=derived.compartments().stream().flatMap(c -> c.members().stream()).filter(m -> m.label().equals("label")).findFirst().orElseThrow();
+        assertEquals(derived.symbol().orElseThrow().symbol(),inherited.effectiveOwner());
+        var memberIds=document.nodes().stream().flatMap(n -> n.compartments().stream()).flatMap(c -> c.members().stream()).map(DiagramMember::id).toList();
+        assertEquals(memberIds.size(),new java.util.HashSet<>(memberIds).size());
         assertTrue(document.nodes().stream()
                 .anyMatch(n -> n.kind() == DiagramNodeKind.EXTERNAL_REFERENCE
                         || n.label().equals("Base")));
@@ -206,6 +221,15 @@ class DiagramProjectionTest {
         assertEquals(ProjectionCompleteness.LIMITED, produced.document().completeness());
         assertTrue(produced.notices().stream()
                 .anyMatch(n -> n.code() == ProjectionNoticeCode.PROJECTION_LIMIT_REACHED));
+    }
+
+
+    @Test void sharedBoundTypesProduceDistinctDomainReferenceAndCompositionEdges() {
+        var schema=compile("INTERLIS 2.4;MODEL DiagramModel AT \"x\" VERSION \"1\"=DOMAIN Code=TEXT;TOPIC T=OID AS INTERLIS.UUIDOID;STRUCTURE Detail=label:TEXT;END Detail;CLASS Target=END Target;CLASS Owner=code:Code;ref:REFERENCE TO Target;parts:BAG OF Detail;END Owner;END T;END DiagramModel.");
+        var document=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),DiagramOptions.defaults(new DiagramSelection(schema.rootModels())),CancellationToken.none())).document();
+        for(var kind:List.of(DiagramEdge.EdgeKind.DOMAIN_USE,DiagramEdge.EdgeKind.REFERENCE,DiagramEdge.EdgeKind.STRUCTURE_COMPOSITION))
+            assertEquals(1,document.edges().stream().filter(edge->edge.kind()==kind).count(),kind.toString());
+        assertTrue(new DiagramValidator().validate(document).isEmpty());
     }
 
     private static CompiledSchema compile(String text) {

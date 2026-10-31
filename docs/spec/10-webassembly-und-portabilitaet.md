@@ -285,7 +285,7 @@ Bridgefehler sind getrennt von Compilerdiagnosen wie `ILI-SEM-0001`:
 
 Fehlerdetails dürfen erwartete/beobachtete Revision, zulässige Grenzen und Feldpfade enthalten. Quelltext oder unbekannte JSON-Inhalte werden nicht pauschal in Fehlermeldungen und Logs kopiert. Diagnoseargumente werden nach dem getaggten Vertrag aus Kapitel 09 kodiert.
 
-`LIMIT_EXCEEDED` bezeichnet die Bridge-/Sitzungsgrenze vor einem Commit. Ein während der semantischen Analyse ausgeschöpftes `AnalysisBudget` folgt dagegen dem gemeinsamen Ausführungsvertrag: `status: cancelled` und `reason: RESOURCE_LIMIT`, gegebenenfalls mit ausdrücklich unvollständiger Coverage. Andere CancellationReasons sind `USER_REQUESTED`, `SUPERSEDED`, `DEADLINE_EXCEEDED` und `HOST_SHUTDOWN`. UI-Diagrammbegrenzungen nach Kapitel 11 haben den gesonderten Status LIMITED und dürfen nicht mit einer abgebrochenen Sprachprüfung verwechselt werden.
+`LIMIT_EXCEEDED` bezeichnet die Bridge-/Sitzungsgrenze vor einem Commit. Ein ausgeschöpftes `AnalysisBudget` folgt dagegen dem gemeinsamen Ausführungsvertrag: `analyze` liefert `status: cancelled` und `reason: RESOURCE_LIMIT`, gegebenenfalls mit ausdrücklich unvollständiger Coverage. `compile` liefert gemäss dem geschlossenen `CompilationOutcome` aus Kapitel 07 eine erfolgreiche Protokollhülle (`status: ok`) mit `outcome: cancelled` und demselben ursprünglichen Abbruchgrund. Dies gilt auch für frühe Capture-Abbrüche vor dem Engine-Einstieg; es entsteht kein Schema. Andere CancellationReasons sind `USER_REQUESTED`, `SUPERSEDED`, `DEADLINE_EXCEEDED` und `HOST_SHUTDOWN`. UI-Diagrammbegrenzungen nach Kapitel 11 haben den gesonderten Status LIMITED und dürfen nicht mit einer abgebrochenen Sprachprüfung verwechselt werden.
 
 ### 5.5 Präzision und JSON
 

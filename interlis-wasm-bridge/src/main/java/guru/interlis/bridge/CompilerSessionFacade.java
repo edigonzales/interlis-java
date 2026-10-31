@@ -62,15 +62,20 @@ final class CompilerSessionFacade {
     private final Map<String, AnalysisSnapshot> snapshots = new LinkedHashMap<>();
     private final Map<String, CompiledSchema> schemas = new LinkedHashMap<>();
     private final LanguageQueries queries = LanguageQueries.create();
+    private final SessionLimits limits;
     private int schemaCounter;
 
-    CompilerSessionFacade(CompilerEngine engine, Workspace workspace) {
+    CompilerSessionFacade(CompilerEngine engine, Workspace workspace,SessionLimits limits) {
         this.engine = Objects.requireNonNull(engine, "engine");
         this.workspace = Objects.requireNonNull(workspace, "workspace");
+        this.limits=Objects.requireNonNull(limits,"limits");
     }
+
+    SessionLimits limits() { return limits; }
 
     JsonValue.JsonObject updateSource(JsonValue.JsonObject params) {
         SourceUpdate update = update(params);
+        validateSources(List.of(update));
         UpdateReceipt receipt = workspace.update(update);
         return receipt(receipt);
     }
@@ -80,8 +85,9 @@ final class CompilerSessionFacade {
                 "expectedWorkspaceRevision");
         List<SourceUpdate> updates = new ArrayList<>();
         for (JsonValue value : BridgeCodec.array(params, "updates").values()) {
-            updates.add(update((JsonValue.JsonObject) value));
+            updates.add(update(BridgeCodec.object(value)));
         }
+        validateSources(updates);
         var receipt = workspace.applyBatch(updates,
                 new guru.interlis.workspace.WorkspaceRevision(expected));
         Map<String, JsonValue> result = new LinkedHashMap<>();
@@ -104,19 +110,7 @@ final class CompilerSessionFacade {
     JsonValue.JsonObject setConfiguration(JsonValue.JsonObject params) {
         long expected = BridgeCodec.longValue(params.members().get("expectedWorkspaceRevision"),
                 "expectedWorkspaceRevision");
-        WorkspaceConfiguration current = WorkspaceConfiguration.defaults();
-        CompilerOptions options = OverlayCodec.options(params,current.compilerOptions());
-        guru.interlis.workspace.CacheLimits limits = current.cacheLimits();
-        if (params.members().get("cacheLimits") instanceof JsonValue.JsonObject cache) {
-            limits = new guru.interlis.workspace.CacheLimits(
-                    intValue(cache, "maxSyntaxEntries", limits.maxSyntaxEntries()),
-                    intValue(cache, "maxAnalysisEntries", limits.maxAnalysisEntries()),
-                    intValue(cache, "maxQueryEntries", limits.maxQueryEntries()),
-                    longValue(cache, "maxRetainedSourceUtf16Units",
-                            limits.maxRetainedSourceUtf16Units()));
-        }
-        WorkspaceConfiguration configuration = new WorkspaceConfiguration(options,
-                ResolutionPolicyCodec.read(params), current.resolverCatalog(), limits);
+        WorkspaceConfiguration configuration = WorkspaceConfigurationCodec.read(params);
         var receipt = workspace.configure(configuration,
                 new guru.interlis.workspace.WorkspaceRevision(expected));
         return JsonValues.object(
@@ -130,6 +124,7 @@ final class CompilerSessionFacade {
     }
 
     JsonValue.JsonObject analyze(JsonValue.JsonObject params) {
+        requireSnapshotCapacity();
         long expected = BridgeCodec.longValue(params.members().get("expectedWorkspaceRevision"),
                 "expectedWorkspaceRevision");
         List<ModelSelector> roots = roots(params);
@@ -153,6 +148,7 @@ final class CompilerSessionFacade {
     }
 
     JsonValue.JsonObject compile(JsonValue.JsonObject params) {
+        requireSnapshotCapacity();
         long expected = BridgeCodec.longValue(params.members().get("expectedWorkspaceRevision"),
                 "expectedWorkspaceRevision");
         List<ModelSelector> roots = roots(params);
@@ -196,10 +192,10 @@ final class CompilerSessionFacade {
     JsonValue.JsonObject query(JsonValue.JsonObject params) {
         String snapshotId = BridgeCodec.string(params, "snapshotId");
         AnalysisSnapshot snapshot = requireSnapshot(snapshotId);
-        JsonValue.JsonObject query = (JsonValue.JsonObject) params.members().get("query");
+        JsonValue.JsonObject query = BridgeCodec.object(params.members().get("query"));
         String kind = BridgeCodec.string(query, "kind");
         CancellationToken token = CancellationToken.none();
-        return switch (kind) {
+        JsonValue.JsonObject answer = switch (kind) {
             case "symbolAt" -> encodeQueryResult(queries.symbolAt(snapshot, cursor(snapshot, query),
                     token), snapshotId);
             case "definition" -> definition(queries.definition(snapshot,
@@ -210,6 +206,9 @@ final class CompilerSessionFacade {
             default -> throw new BridgeException("UNSUPPORTED_OPERATION",
                     "unsupported query kind " + kind);
         };
+        var result = new LinkedHashMap<>(answer.members());
+        result.put("snapshotId", JsonValues.string(snapshotId));
+        return new JsonValue.JsonObject(result);
     }
 
     JsonValue.JsonObject diagram(JsonValue.JsonObject params) {
@@ -242,13 +241,39 @@ final class CompilerSessionFacade {
                             rejected.reasons().stream().map(Object::toString).toList())));
         }
         DiagramDocument document = ((DiagramProjectionOutcome.Produced) outcome).document();
-        return (JsonValue.JsonObject) Json.parse(new DiagramJsonCodec().encode(document));
+        return BridgeCodec.object(Json.parse(new DiagramJsonCodec().encode(document)));
     }
 
     void releaseSnapshot(String snapshotId) {
         snapshots.remove(snapshotId);
         schemas.entrySet().removeIf(entry -> entry.getValue().snapshotId().value()
                 .equals(snapshotId));
+    }
+
+    private void requireSnapshotCapacity() {
+        if(snapshots.size()>=limits.maxRetainedSnapshots()) throw new BridgeException("LIMIT_EXCEEDED","retained snapshot limit reached; release a snapshot first");
+    }
+
+    private void validateSources(List<SourceUpdate> updates) {
+        var lengths=new LinkedHashMap<SourceId,Long>();
+        for(var id:workspace.state().sourceRevisions().keySet()) lengths.put(id,(long)workspace.source(id).orElseThrow().length());
+        for(var update:updates) {
+            long length;
+            if(update.change() instanceof SourceChange.Replace replace) length=replace.text().length();
+            else {
+                var current=workspace.source(update.source()).orElseThrow(() -> new BridgeException("VERSION_CONFLICT","source is missing"));
+                length=current.length();
+                for(var edit:((SourceChange.ApplyEdits)update.change()).edits()) {
+                    current.slice(edit.range());
+                    length+=(long)edit.replacement().length()-(edit.range().endOffset()-edit.range().startOffset());
+                }
+            }
+            if(length>limits.maxSourceUtf16Length()) throw new BridgeException("LIMIT_EXCEEDED","source UTF-16 limit reached");
+            lengths.put(update.source(),length);
+        }
+        if(lengths.size()>limits.maxSources()) throw new BridgeException("LIMIT_EXCEEDED","source count limit reached");
+        long total=0;for(long length:lengths.values())total+=length;
+        if(total>limits.maxTotalSourceUtf16Length()) throw new BridgeException("LIMIT_EXCEEDED","total source UTF-16 limit reached");
     }
 
     /**
@@ -273,7 +298,7 @@ final class CompilerSessionFacade {
     private List<ModelSelector> roots(JsonValue.JsonObject params) {
         List<ModelSelector> roots = new ArrayList<>();
         for (JsonValue value : BridgeCodec.array(params, "roots").values()) {
-            JsonValue.JsonObject root = (JsonValue.JsonObject) value;
+            JsonValue.JsonObject root = BridgeCodec.object(value);
             String kind = BridgeCodec.string(root, "kind");
             if ("byName".equals(kind)) {
                 roots.add(new ModelSelector.ByName(BridgeCodec.string(root, "modelName"),
@@ -294,14 +319,14 @@ final class CompilerSessionFacade {
 
     private SourceUpdate update(JsonValue.JsonObject params) {
         SourceId sourceId = new SourceId(BridgeCodec.string(params, "sourceId"));
-        JsonValue.JsonObject expectation = (JsonValue.JsonObject) params.members().get("expectation");
+        JsonValue.JsonObject expectation = BridgeCodec.object(params.members().get("expectation"));
         SourceExpectation sourceExpectation = switch (BridgeCodec.string(expectation, "kind")) {
             case "absent" -> new SourceExpectation.Absent();
             case "at" -> new SourceExpectation.At(new SourceRevision(BridgeCodec.longValue(
                     expectation.members().get("revision"), "revision")));
             default -> throw new BridgeException("INVALID_REQUEST", "unknown expectation");
         };
-        JsonValue.JsonObject change = (JsonValue.JsonObject) params.members().get("change");
+        JsonValue.JsonObject change = BridgeCodec.object(params.members().get("change"));
         SourceChange sourceChange = switch (BridgeCodec.string(change, "kind")) {
             case "replace" -> new SourceChange.Replace(BridgeCodec.string(change, "text"));
             case "edits" -> {
@@ -309,10 +334,10 @@ final class CompilerSessionFacade {
                         () -> new BridgeException("VERSION_CONFLICT", "source is missing"));
                 List<TextEdit> edits = new ArrayList<>();
                 for (JsonValue value : BridgeCodec.array(change, "edits").values()) {
-                    JsonValue.JsonObject edit = (JsonValue.JsonObject) value;
-                    int start = (int) BridgeCodec.longValue(edit.members().get("startOffset"),
+                    JsonValue.JsonObject edit = BridgeCodec.object(value);
+                    int start = BridgeCodec.intValue(edit.members().get("startOffset"),
                             "startOffset");
-                    int end = (int) BridgeCodec.longValue(edit.members().get("endOffset"),
+                    int end = BridgeCodec.intValue(edit.members().get("endOffset"),
                             "endOffset");
                     edits.add(new TextEdit(current.range(start, end),
                             BridgeCodec.string(edit, "text")));
@@ -390,9 +415,9 @@ final class CompilerSessionFacade {
         if (!revision.equals(snapshot.sourceRevisions().get(sourceId))) {
             throw new BridgeException("SNAPSHOT_MISMATCH", "cursor revision is stale");
         }
-        int start = (int) BridgeCodec.longValue(query.members().get("startOffset"), "startOffset");
-        int end = (int) BridgeCodec.longValue(query.members().get("endOffset"), "endOffset");
-        if (start < 0 || end < start) {
+        int start = BridgeCodec.intValue(query.members().get("startOffset"), "startOffset");
+        int end = BridgeCodec.intValue(query.members().get("endOffset"), "endOffset");
+        if (start < 0 || end < start || end > snapshot.syntaxSnapshot(sourceId).orElseThrow(() -> new BridgeException("SNAPSHOT_MISMATCH", "source not captured")).source().text().length()) {
             throw new BridgeException("INVALID_REQUEST", "invalid cursor");
         }
         return new SourceRange(sourceId, revision, start, end);
@@ -448,7 +473,7 @@ final class CompilerSessionFacade {
                                             CancellationToken token) {
         SourceRange cursor = cursor(snapshot, query);
         String prefix = BridgeCodec.optionalString(query, "prefix").orElse("");
-        int limit = (int) BridgeCodec.longValue(query.members().getOrDefault("limit",
+        int limit = BridgeCodec.intValue(query.members().getOrDefault("limit",
                 JsonValues.number(100)), "limit");
         CompletionResult result = queries.complete(snapshot,
                 new CompletionQuery(cursor, new NamePrefix(prefix), limit), token);
@@ -472,9 +497,11 @@ final class CompilerSessionFacade {
                 && !array.values().isEmpty()) {
             List<SymbolRef> result = new ArrayList<>();
             for (JsonValue value : array.values()) {
-                JsonValue.JsonObject ref = (JsonValue.JsonObject) value;
+                JsonValue.JsonObject ref = BridgeCodec.object(value);
+                if (!snapshotId.value().equals(BridgeCodec.string(ref, "snapshot")))
+                    throw new BridgeException("SNAPSHOT_MISMATCH", "selection belongs to another snapshot");
                 result.add(new SymbolRef(snapshotId,
-                        new guru.interlis.model.SymbolId(BridgeCodec.string(ref, "symbolId"))));
+                        new guru.interlis.model.SymbolId(BridgeCodec.string(ref, "symbol"))));
             }
             return result;
         }
@@ -565,7 +592,7 @@ final class CompilerSessionFacade {
 
     private static int intValue(JsonValue.JsonObject object, String name, int fallback) {
         return object.members().containsKey(name)
-                ? (int) BridgeCodec.longValue(object.members().get(name), name) : fallback;
+                ? BridgeCodec.intValue(object.members().get(name), name) : fallback;
     }
 
     private static long longValue(JsonValue.JsonObject object, String name, long fallback) {

@@ -8,11 +8,14 @@
     textarea { width: 100%; height: 18rem; font-family: ui-monospace, monospace; }
     pre { background: #f4f4f4; padding: 1rem; overflow: auto; max-height: 24rem; }
     button { margin-right: .5rem; }
+    [data-stale="true"] { opacity:.45; pointer-events:none; }
+    .selected rect { stroke:#c40; stroke-width:3; }
   </style>
 </head>
 <body>
   <h1>interlis-java portable compiler</h1>
   <p>TeaVM WasmGC in a worker. No server-side compiler is used.</p>
+  <p><label>Sources <select id="sources"></select></label> <input id="source-name" placeholder="memory:/additional.ili"><button id="add-source">Add source</button><button id="remove-source">Remove source</button></p>
   <textarea id="source">!! Grüezi 😀
 INTERLIS 2.4;
 MODEL Browser AT "https://example.interlis.ch" VERSION "1.0" =
@@ -30,9 +33,11 @@ END Browser.
     <button id="compile">Compile</button>
     <button id="diagram">Diagram</button>
   </p>
-  <pre id="output"></pre>
-  <script src="diagram-adapter.js"></script>
+  <details><summary>Workspace configuration</summary><textarea id="configuration-text">{}</textarea><button id="configuration">Apply configuration</button></details>
+  <p><button id="cancel">Cancel</button><button id="restart">Restart worker</button></p>
+  <pre id="output" aria-live="polite"></pre><div id="diagram-view" style="overflow:auto;max-height:36rem"></div><div id="members"></div>
+  <script type="importmap">{"imports":{"libavoid-js":"./vendor/libavoid/index.js"}}</script>
   <script src="stabilization-contract.js"></script>
-  <script src="client.js"></script>
+  <script type="module" src="client.js"></script>
 </body>
 </html>

@@ -110,7 +110,7 @@ Defaults sind in der einzigen öffentlichen Fabrik `DiagramOptions.defaults(Diag
 | DTO | Erforderliche Felder |
 |---|---|
 | `DiagramContainer` | ID, Kind MODEL/TOPIC, optionaler Parent, Label, kanonischer qualifizierter Name, optionaler SymbolRef, Herkunft/SourceAnchor. |
-| `DiagramNode` | ID, Kind, Container-ID, Label, kanonischer Name, Status, SymbolRef oder expliziter Stubbezug, Fachmerkmale, Compartments, SourceAnchor. |
+| `DiagramNode` | ID, Kind, Container-ID, Label, kanonischer Name, Status, SymbolRef oder expliziter Stubbezug, unveränderliche `Set<Modifier> modifiers` aus dem gemeinsamen Symbolheader, Compartments, SourceAnchor. |
 | `DiagramCompartment` | ID, Kind ATTRIBUTES/ROLES/CONSTRAINTS/ENUM_VALUES/DETAILS, geordnete Mitglieder. |
 | `DiagramMember` | ID, Kind, Label, optionale Typ-/Kardinalitätsdarstellung, Ursprungssymbol, deklariert-in-Symbol, geerbt/überschrieben, SourceAnchor. |
 | `DiagramEdge` | ID, Beziehungskind, Source-/Target-Endpoint, semantischer Ursprungsref, Endinformationen, Label, SourceAnchor. |
@@ -121,6 +121,14 @@ Defaults sind in der einzigen öffentlichen Fabrik `DiagramOptions.defaults(Diag
 `DiagramNodeKind` umfasst mindestens CLASS, STRUCTURE, ASSOCIATION, VIEW, DOMAIN und EXTERNAL_REFERENCE. Aufzählungen können als Domäne mit ENUM_VALUES-Compartment dargestellt werden; verschachtelte Enumerationseinträge behalten ihren Pfad und ihre Reihenfolge. Ein späterer zusätzlicher Knotentyp benötigt eine versionierte Capability und kompatible Fallbackdarstellung.
 
 `DiagramNodeStatus` unterscheidet RESOLVED, PARTIAL und UNRESOLVED. „Extern“ als INTERLIS-Eigenschaft und „importiert aus einer anderen Quelle“ sind getrennte Fach-/Herkunftsmerkmale; sie dürfen nicht aus einem einzigen missverständlichen Boolean abgeleitet werden.
+
+`modifiers` wird im JSON additiv als nach Enumname sortierte Stringliste
+übertragen. Insbesondere ABSTRACT wird aus dem Compilergraphen übernommen,
+nicht aus Labels oder Modelltext rekonstruiert. Der frühere Java-Konstruktor
+ohne Modifikatoren bleibt als explizite Fabrik für eine leere Menge verfügbar;
+der Standardprojektor übergibt immer die tatsächlichen Headerwerte.
+Ältere DiagramDocument-1.0-Nachrichten ohne dieses additive Feld bleiben
+strukturell lesbar, belegen aber keine verfügbare Modifikatordarstellung.
 
 Kardinalitäten werden als `minimum`-Dezimalstring und `maximum` als getaggte Variante `bounded(value)` oder `unbounded` serialisiert. Dadurch gibt es weder `-1` als verstecktes Unendlich noch Rundungsverlust bei grossen Werten. Anzeigeformen wie `0..*` erzeugt ein gemeinsamer Formatter. Fachlich genaue Dezimalwerte folgen dem Wire-Vertrag aus Kapitel 10.
 

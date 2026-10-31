@@ -38,9 +38,14 @@ function serve(root) {
   const results = [];
   for (const [name, type] of matrix) {
     let browser;
+    const browserErrors=[];
     try {
       browser = await type.launch({headless: true});
-      const page = await browser.newPage();
+      const context=await browser.newContext();
+      const externalRequests=[];
+      await context.route('**/*',route=>{const requestUrl=new URL(route.request().url());if(requestUrl.origin===new URL(url).origin)return route.continue();externalRequests.push(requestUrl.origin);return route.abort();});
+      const page = await context.newPage();
+      page.on("pageerror",error=>browserErrors.push(String(error)));
       await page.goto(url, {waitUntil: 'load'});
       await page.waitForFunction(() => Boolean(window.interlisBrowserTest), {timeout: 30000});
       let timeout;
@@ -50,12 +55,13 @@ function serve(root) {
           timeout = setTimeout(() => reject(new Error('browser contract exceeded 60 seconds')), 60000);
         })
       ]).finally(() => clearTimeout(timeout));
-      results.push({browser: name, browserVersion: browser.version(), node: process.version,
+      if(externalRequests.length)throw new Error('compiler fixture attempted external network: '+externalRequests.join(','));
+      results.push({browser: name, externalRequests, browserVersion: browser.version(), node: process.version,
         playwright: require('playwright/package.json').version,
         status: 'passed', result});
       console.log(`${name.toUpperCase()} PASS ${JSON.stringify(result)}`);
     } catch (error) {
-      results.push({browser: name, status: 'failed', error: String(error)});
+      results.push({browser: name, status: 'failed', error: String(error),browserErrors});
       console.log(`${name.toUpperCase()} FAIL ${error}`);
     } finally {
       if (browser) await browser.close();

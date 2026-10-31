@@ -10,6 +10,7 @@ import java.util.Optional;
 public final class BridgeDispatcher {
     private final BridgeCodec codec = new BridgeCodec();
     private final SessionRegistry sessions;
+    private long failureSequence;
 
     /** Creates a dispatcher with its own session registry. */
     public BridgeDispatcher() {
@@ -36,7 +37,14 @@ public final class BridgeDispatcher {
      */
     public String handle(String requestJson) {
         BridgeRequest request;
+        MessageHeader header;
         try {
+            header=MessageHeader.read(requestJson);
+            if(header.sessionId().isPresent()) {
+                var existing=sessions.find(header.sessionId().orElseThrow());
+                if(existing.isPresent() && requestJson.length()>existing.orElseThrow().limits().maxMessageUtf16Length())
+                    return errorEnvelope(header.requestId(),header.sessionId().orElseThrow(),"LIMIT_EXCEEDED","session message UTF-16 limit reached",new JsonValue.JsonObject(java.util.Map.of()));
+            }
             request = codec.decode(requestJson);
         } catch (BridgeException failure) {
             return errorEnvelope("unknown", "unknown", failure.code(),
@@ -48,6 +56,8 @@ public final class BridgeDispatcher {
                 return codec.success(request, Optional.empty(), codec.capabilities());
             }
             if ("openSession".equals(request.operation())) {
+                if(requestJson.length()>SessionLimits.read(request.params()).maxMessageUtf16Length())
+                    throw new BridgeException("LIMIT_EXCEEDED","session opening message UTF-16 limit reached");
                 JsonValue.JsonObject opened = sessions.open(request.params());
                 String id = BridgeCodec.string(opened, "sessionId");
                 return codec.success(request, Optional.of(id), opened);
@@ -90,7 +100,13 @@ public final class BridgeDispatcher {
             return codec.error(request, sessionId, failure.code(), failure.getMessage(),
                     failure.details());
         } catch (UpdateRejectedException failure) {
-            return codec.error(request, sessionId, "VERSION_CONFLICT", failure.getMessage(),
+            String code=switch(failure.code()) {
+                case SOURCE_LIMIT_EXCEEDED -> "LIMIT_EXCEEDED";
+                case INVALID_EDIT,INVALID_CONFIGURATION -> "INVALID_REQUEST";
+                case WORKSPACE_CLOSED -> "SESSION_NOT_FOUND";
+                default -> "VERSION_CONFLICT";
+            };
+            return codec.error(request, sessionId, code, failure.getMessage(),
                     JsonValues.object("updateCode", JsonValues.string(failure.code().name())));
         } catch (OperationCancelledException cancelled) {
             return codec.cancelled(request, sessionId, cancelled.reason());
@@ -100,8 +116,9 @@ public final class BridgeDispatcher {
                     new JsonValue.JsonObject(java.util.Map.of()));
         } catch (RuntimeException failure) {
             return codec.error(request, sessionId, "INTERNAL_FAILURE",
-                    failure.getClass().getSimpleName(),
-                    new JsonValue.JsonObject(java.util.Map.of()));
+                    "bridge.internalFailure",
+                    JsonValues.object("failureId", JsonValues.string(failure instanceof guru.interlis.compiler.CompilerInternalException internal
+                            ? internal.failureId().value() : "bridge-failure-" + (++failureSequence))));
         }
     }
 

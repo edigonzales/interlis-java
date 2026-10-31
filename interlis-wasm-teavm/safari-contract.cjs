@@ -58,6 +58,7 @@ async function request(base, method, route, body, timeout = 60000) {
   child.stderr.on('data', chunk => { stderr += chunk.toString(); });
   let sessionId = null;
   let result;
+  let step="driver";
   try {
     let ready = false;
     let lastStatus;
@@ -73,12 +74,15 @@ async function request(base, method, route, body, timeout = 60000) {
     }
     if (!ready) throw new Error('safaridriver did not become ready: ' + JSON.stringify(lastStatus));
 
+    step='create session';
     const created = await request(base, 'POST', '/session', {
       capabilities: {alwaysMatch: {browserName: 'safari'}}
     });
     sessionId = created.sessionId;
     await request(base, 'POST', `/session/${sessionId}/timeouts`, {script: 60000});
+    step='navigate';
     await request(base, 'POST', `/session/${sessionId}/url`, {url});
+    step='await client';
     for (let i = 0; i < 80; i++) {
       const available = await request(base, 'POST', `/session/${sessionId}/execute/sync`, {
         script: 'return Boolean(window.interlisBrowserTest);', args: []
@@ -86,13 +90,22 @@ async function request(base, method, route, body, timeout = 60000) {
       if (available) break;
       await new Promise(resolve => setTimeout(resolve, 250));
     }
+    step='run contract';
     result = await request(base, 'POST', `/session/${sessionId}/execute/async`, {
       script: 'const done = arguments[arguments.length - 1]; ' +
-        'window.interlisBrowserTest.runContract()' +
+        'window.interlisBrowserTest.runClientContract()' +
         '.then(value => done(value))' +
         '.catch(error => done({status: "error", error: String(error), stack: error && error.stack}));',
       args: []
     });
+    const clientFinished=Date.now();
+    step='stabilization';
+    const stabilization=await request(base,'POST',`/session/${sessionId}/execute/async`,{
+      script:'const done=arguments[arguments.length-1];window.interlisBrowserTest.runStabilizationContract().then(done).catch(error=>done({error:String(error)}));',args:[]
+    });
+    if(stabilization?.stabilizationCases!==3548)throw new Error('Safari stabilization failed: '+JSON.stringify(stabilization));
+    result={...result,...stabilization};
+    const stabilizationElapsedMs=Date.now()-clientFinished;
     if (!result || result.status !== 'ok' || result.exactDecimal !== true
         || !(result.diagramNodes > 0) || result.workerRestartOutcome !== 'succeeded') {
       throw new Error('Safari contract returned an unexpected result: ' + JSON.stringify(result));
@@ -100,15 +113,16 @@ async function request(base, method, route, body, timeout = 60000) {
     fs.mkdirSync('build', {recursive: true});
     fs.writeFileSync('build/safari-result.json', JSON.stringify({
       status: 'passed', browser: 'Safari', driverVersion, node: process.version,
-      result, driverStderr: stderr.trim()
+      result, stabilizationElapsedMs, driverStderr: stderr.trim()
     }, null, 2));
     console.log('SAFARI PASS ' + JSON.stringify(result));
   } catch (error) {
+    let progress;try{if(sessionId)progress=await request(base,'POST',`/session/${sessionId}/execute/sync`,{script:'return window.interlisContractProgress;',args:[]},5000);}catch{}
     fs.mkdirSync('build', {recursive: true});
     fs.writeFileSync('build/safari-result.json', JSON.stringify({
       status: sessionId ? 'failed' : 'notRun', browser: 'Safari', driverVersion,
       node: process.version, error: String(error),
-      partialResult: result, driverStderr: stderr.trim()
+      partialResult: result, step, progress, driverStderr: stderr.trim()
     }, null, 2));
     console.error('SAFARI NOT_RUN ' + String(error));
     if (stderr.trim()) console.error(stderr.trim());

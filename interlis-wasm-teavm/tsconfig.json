@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [],
+    "paths": {
+      "@ilic/language-service": [
+        "./src/main/typescript/vendor/ilic-diagram/compiler-contract.d.ts"
+      ],
+      "libavoid-js": [
+        "./src/main/typescript/vendor/ilic-diagram/libavoid-js.d.ts"
+      ],
+      "elkjs/lib/elk-api.js": [
+        "./src/main/typescript/vendor/ilic-diagram/elk-contract.d.ts"
+      ],
+      "elkjs/lib/elk.bundled.js": [
+        "./src/main/typescript/vendor/ilic-diagram/elk-contract.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "src/main/typescript/**/*.ts"
+  ]
+}

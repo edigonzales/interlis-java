@@ -168,6 +168,15 @@ Quellnavigation; die portable Suite prüft denselben Compilerkern.
 | projection | `guru.interlis.projection` und Unterpackages | `DiagramProjectors`, `DiagramProjector`, `DiagramOptions`, `DiagramDocument`, Diagramm-/Notice-Typen | [11](11-visualisierung-und-projektionen.md) |
 | Hostadapter | werkzeugspezifisch | `PublicationController`, LSP-Adapter, Beobachtungssenken | [07](07-workspace-inkrementalitaet-und-lsp.md), [09](09-diagnostik-logging-und-telemetrie.md) |
 | CLI | `guru.interlis.cli` | `CliApplication`, `CliExecutionResult`, `CliTermination`, `CliOutcomeMapper`, `CommandLineParser`, `ExitCodePolicy`, `OutputPlanner` | [18](18-cli-sdk-und-kompatibilitaetsadapter.md) |
+| Browserhost | `interlis-wasm-teavm/src/main/typescript` | `CompilerClient`, `CompilerWorkerHost`, `SprottyDiagramAdapter` und ihre unveränderlichen Protokoll-/Diagramm-DTOs; keine Java-Core-Abhängigkeit auf DOM oder Renderer | [10](10-webassembly-und-portabilitaet.md), [11](11-visualisierung-und-projektionen.md) |
+
+`guru.interlis.projection.DiagramNode.modifiers()` liefert die unveränderliche
+Menge `guru.interlis.model.Modifier` der projizierten Deklaration. Besitzer ist
+`interlis-projection`; die Bedeutung der Modifikatoren bleibt im gemeinsamen
+Compilergraphen. Der volle Record-Konstruktor nimmt diese Menge nach `anchor`
+entgegen, kopiert sie defensiv und lehnt null ab. Der bestehende Konstruktor
+ohne Menge delegiert mit `Set.of()`. JSON 1.0 überträgt die Namen additiv und
+kanonisch sortiert; Details und Regressionen stehen in Kapitel11.
 
 `LanguageVersion` ist der gemeinsame Modellwert `{ ILI23, ILI24 }`. Er wird nicht pro Parser, Host oder Plan neu deklariert. `SemanticOverlays` ist der kanonische Name der unveränderlichen fachlichen Overlayeingabe aus CompilerOptions; allgemeine Formulierungen „Modell-Overlays“ führen keine zweite Klasse `ModelOverlaySet` ein.
 

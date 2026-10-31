@@ -61,8 +61,9 @@ tasks.register('wasmContractTest') {
 tasks.register('prepareBrowserHarness', Copy) {
     group = 'verification'
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
-    dependsOn 'buildWasmGC'
+    dependsOn 'buildWasmGC', 'buildBrowserTools'
     from 'src/main/web'
+    from(layout.buildDirectory.dir('browser-tools'))
     from('stabilization-contract.cjs') {
         rename { 'stabilization-contract.js' }
     }
@@ -98,8 +99,9 @@ tasks.register('jsContractTest') {
 tasks.register('diagramAdapterTest', Exec) {
     group = 'verification'
     description = 'Tests the TypeScript-contract diagram adapter without a browser.'
+    dependsOn 'browserClientTest'
     workingDir = projectDir
-    commandLine nodeExecutable.get(), 'src/main/web/diagram-adapter.test.cjs'
+    commandLine nodeExecutable.get(), '--test', 'diagram-adapter.test.cjs'
 }
 
 tasks.register('browserContractTest', Exec) {
@@ -120,4 +122,19 @@ tasks.register('safariContractTest', Exec) {
 
 tasks.named('prepareBrowserHarness') {
     from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt'))
+}
+
+// TypeScript and bundling remain inputs of the repository Gradle build.
+tasks.register('buildBrowserTools', Exec) {
+    group = 'build'
+    description = 'Strictly checks the pinned TypeScript client and builds ESM/declarations.'
+    workingDir = projectDir
+    commandLine nodeExecutable.get(), 'build-browser-tools.cjs'
+}
+tasks.register('browserClientTest', Exec) {
+    group = 'verification'
+    description = 'Exercises the bounded worker host and client against the real TeaVM JS compiler.'
+    dependsOn 'buildBrowserTools', 'generateJavaScript'
+    workingDir = projectDir
+    commandLine nodeExecutable.get(), '--test', 'worker-host.test.cjs', 'compiler-client.test.cjs'
 }

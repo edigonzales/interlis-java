@@ -15,13 +15,13 @@
     "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": "f7c6d37de98b4ee85aee68353a7b7544db9ebba2b162c783efcc26b6eba39571",
     "docs/spec/08-modellaufloesung-und-repositories.md": "8b3975515deb96eb17aa2c9836fdc0f77b31d0932defde9bf7528e1ce46759d8",
     "docs/spec/09-diagnostik-logging-und-telemetrie.md": "906123480c83dddb8935975d362eeb3a624073b93efe6cd0e299e279ed022b5c",
-    "docs/spec/10-webassembly-und-portabilitaet.md": "0d247758bd5fa35d8b4acf3be2cce596ae1b60b5d2a896866112609cf4eb97ca",
-    "docs/spec/11-visualisierung-und-projektionen.md": "154c9a04880df3e66bf22a9ab79147310ce29184759c81850141d14a98c21b4d",
+    "docs/spec/10-webassembly-und-portabilitaet.md": "8aad1f220bede992e78503f7a2d63d7b878cd2fea4c511b424338929d54672e1",
+    "docs/spec/11-visualisierung-und-projektionen.md": "d8a5438c46c1867f1b0d753ebd37069ea38e387ae6942449c3a7f23e4d175f09",
     "docs/spec/12-transfer-validierung-und-datenbanken.md": "10f4692d846ae931ff0e78bbcfb571093c9253b39b5cf6529b5ddbd22fd49ff1",
     "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "6790f87c3bd3fb198ca7d4fe659a6f3260460c23fc98cf42b7f857e2c0405ee7",
     "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "14443b6b622d9f2bd36c5ad91a811cf41d4704c1d297ef4a6f14f75a833a9f88",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "efcbbaefffed904317c1d4779a5fc6e296a1c1615c783a0dbf3b6383525009a3",
-    "docs/spec/16-api-register-und-vertragstests.md": "5cae79fde6a91ac353233406800fde94c79870e785eec3f75831abade583f245",
+    "docs/spec/16-api-register-und-vertragstests.md": "b02160709cdbb5dac4273127824cb4328fc3aba1f164d116d66c32c6a39b16aa",
     "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "14bd661101ea3552c194635b696602a3667001559efd712d8151c238fabbde83",
     "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3"
   },
@@ -17253,7 +17253,7 @@
       "phase": "P0/P1",
       "acceptance": "Register, Modulgraph und reale Imports stimmen überein.",
       "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 291,
+      "line": 300,
       "sourceLineSha256": "90d837abc9acb9ceca9dc28554f361af0bfe7eebd7b5cd08fc5fe94e3e3287d9"
     },
     {
@@ -17262,7 +17262,7 @@
       "phase": "P1",
       "acceptance": "PublicSdkConstructionTest gegen Artefakte.",
       "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 292,
+      "line": 301,
       "sourceLineSha256": "39978c6027b28b3da65465989691cafa033e9adaeca440544ac450911a480c01"
     },
     {
@@ -17271,7 +17271,7 @@
       "phase": "P1",
       "acceptance": "Vertragstest-/Javadocreview.",
       "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 293,
+      "line": 302,
       "sourceLineSha256": "44bb403ca9586afddcb360c661e95d37b09830f1a22dae1403a1085187477809"
     },
     {
@@ -17280,7 +17280,7 @@
       "phase": "P1",
       "acceptance": "Outcome-/CLI-/Bridge-Matrix.",
       "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 294,
+      "line": 303,
       "sourceLineSha256": "09eaa6438711e981bc87c551b19f8a787a3a31f5e2bf679abc29df1539f33a9e"
     },
     {
@@ -17289,7 +17289,7 @@
       "phase": "P1",
       "acceptance": "Selection-/Ownershiptests.",
       "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 295,
+      "line": 304,
       "sourceLineSha256": "0e9df0b6002cf3aed03f2de951c5a68453870478c647bbfb8f124a9deeb26cbc"
     },
     {
@@ -17298,7 +17298,7 @@
       "phase": "P1",
       "acceptance": "Kein Drift nach API-Änderung.",
       "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 296,
+      "line": 305,
       "sourceLineSha256": "36c4a7d4ca6f61a5d5f363f1403e7eefb40572e4c2df402490cea86a21b24a16"
     },
     {

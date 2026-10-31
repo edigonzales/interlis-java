@@ -3,60 +3,601 @@
   "$id": "https://interlis.ch/schema/diagram-document-1.0.schema.json",
   "title": "DiagramDocument 1.0",
   "type": "object",
-  "required": ["schemaVersion", "snapshotId", "sourceRevisions", "inputKind", "completeness",
-    "selection", "optionsFingerprint", "containers", "nodes", "edges", "notices"],
+  "required": [
+    "schemaVersion",
+    "snapshotId",
+    "sourceRevisions",
+    "inputKind",
+    "completeness",
+    "selection",
+    "optionsFingerprint",
+    "containers",
+    "nodes",
+    "edges",
+    "notices"
+  ],
   "properties": {
-    "schemaVersion": {"const": "1.0"},
-    "snapshotId": {"type": "string", "minLength": 1},
-    "sourceRevisions": {"type": "object", "additionalProperties": {"type": "string"}},
-    "inputKind": {"type": "string"},
-    "completeness": {"type": "string"},
-    "selection": {"type": "array", "items": {"type": "object"}},
-    "optionsFingerprint": {"type": "string"},
-    "containers": {"type": "array", "items": {"type": "object"}},
-    "nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
-    "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}},
-    "notices": {"type": "array", "items": {"type": "object"}}
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "snapshotId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceRevisions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(0|[1-9][0-9]*)$"
+      }
+    },
+    "inputKind": {
+      "enum": [
+        "ANALYSIS",
+        "CHECKED_SCHEMA"
+      ]
+    },
+    "completeness": {
+      "enum": [
+        "COMPLETE",
+        "PARTIAL",
+        "LIMITED"
+      ]
+    },
+    "selection": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/symbol"
+      }
+    },
+    "optionsFingerprint": {
+      "type": "string"
+    },
+    "containers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/container"
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    },
+    "notices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/notice"
+      }
+    }
   },
   "$defs": {
     "anchor": {
       "type": "object",
-      "required": ["source"],
+      "required": [
+        "snapshotId",
+        "nameRange",
+        "declarationRange"
+      ],
       "properties": {
-        "source": {"type": "string"},
-        "range": {"type": "object"}
+        "snapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nameRange": {
+          "$ref": "#/$defs/range"
+        },
+        "declarationRange": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/range"
+            }
+          ]
+        }
       },
       "additionalProperties": true
     },
     "node": {
       "type": "object",
-      "required": ["id", "kind", "label", "canonicalName", "status", "compartments"],
+      "required": [
+        "id",
+        "kind",
+        "containerId",
+        "label",
+        "canonicalName",
+        "status",
+        "symbol",
+        "compartments",
+        "anchor"
+      ],
       "properties": {
-        "id": {"type": "string"},
-        "kind": {"type": "string"},
-        "containerId": {"type": "string"},
-        "label": {"type": "string"},
-        "canonicalName": {"type": "string"},
-        "status": {"type": "string"},
-        "symbol": {"type": ["object", "null"]},
-        "compartments": {"type": "array", "items": {"type": "object"}},
-        "anchor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/anchor"}]}
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string"
+        },
+        "containerId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "canonicalName": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "RESOLVED",
+            "PARTIAL",
+            "UNRESOLVED"
+          ]
+        },
+        "symbol": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/symbol"
+            }
+          ]
+        },
+        "compartments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/compartment"
+          }
+        },
+        "anchor": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/anchor"
+            }
+          ]
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
       },
       "additionalProperties": true
     },
     "edge": {
       "type": "object",
-      "required": ["id", "kind", "source", "target", "label", "sourceEnd", "targetEnd"],
+      "required": [
+        "id",
+        "kind",
+        "source",
+        "target",
+        "origin",
+        "sourceEnd",
+        "targetEnd",
+        "label",
+        "anchor"
+      ],
       "properties": {
-        "id": {"type": "string"},
-        "kind": {"type": "string"},
-        "source": {"type": "object"},
-        "target": {"type": "object"},
-        "origin": {"type": ["object", "null"]},
-        "sourceEnd": {"type": "object"},
-        "targetEnd": {"type": "object"},
-        "label": {"type": "string"},
-        "anchor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/anchor"}]}
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "target": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "origin": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/symbol"
+            }
+          ]
+        },
+        "sourceEnd": {
+          "$ref": "#/$defs/edgeEnd"
+        },
+        "targetEnd": {
+          "$ref": "#/$defs/edgeEnd"
+        },
+        "label": {
+          "type": "string"
+        },
+        "anchor": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/anchor"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "range": {
+      "type": "object",
+      "required": [
+        "source",
+        "revision",
+        "startOffset",
+        "endOffset"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "startOffset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "endOffset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "additionalProperties": true
+    },
+    "symbol": {
+      "type": "object",
+      "required": [
+        "snapshot",
+        "symbol"
+      ],
+      "properties": {
+        "snapshot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "symbol": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "container": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "parentId",
+        "label",
+        "canonicalName",
+        "symbol",
+        "anchor"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "MODEL",
+            "TOPIC"
+          ]
+        },
+        "parentId": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        },
+        "label": {
+          "type": "string"
+        },
+        "canonicalName": {
+          "type": "string"
+        },
+        "symbol": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/symbol"
+            }
+          ]
+        },
+        "anchor": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/anchor"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "member": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "label",
+        "typeLabel",
+        "cardinality",
+        "declaredSymbol",
+        "effectiveOwner",
+        "inherited",
+        "overridden",
+        "anchor"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string"
+        },
+        "typeLabel": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "cardinality": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "declaredSymbol": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effectiveOwner": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inherited": {
+          "type": "boolean"
+        },
+        "overridden": {
+          "type": "boolean"
+        },
+        "anchor": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/anchor"
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "compartment": {
+      "type": "object",
+      "required": [
+        "id",
+        "kind",
+        "members"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string"
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/member"
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "endpoint": {
+      "type": "object",
+      "required": [
+        "elementId",
+        "memberId"
+      ],
+      "properties": {
+        "elementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "memberId": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "cardinality": {
+      "type": "object",
+      "required": [
+        "minimum",
+        "maximum"
+      ],
+      "properties": {
+        "minimum": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "maximum": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": [
+                "kind",
+                "value"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "bounded"
+                },
+                "value": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)$"
+                }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "unbounded"
+                }
+              },
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "edgeEnd": {
+      "type": "object",
+      "required": [
+        "roleName",
+        "cardinality",
+        "aggregation"
+      ],
+      "properties": {
+        "roleName": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "cardinality": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/cardinality"
+            }
+          ]
+        },
+        "aggregation": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "notice": {
+      "type": "object",
+      "required": [
+        "code",
+        "severity",
+        "messageKey",
+        "arguments",
+        "symbol",
+        "range"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string"
+        },
+        "messageKey": {
+          "type": "string"
+        },
+        "arguments": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "symbol": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/symbol"
+            }
+          ]
+        },
+        "range": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/range"
+            }
+          ]
+        }
       },
       "additionalProperties": true
     }

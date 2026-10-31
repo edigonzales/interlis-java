@@ -103,6 +103,10 @@ public final class DiagramJsonCodec {
         field(out, "label", string(node.label())).append(',');
         field(out, "canonicalName", string(node.canonicalName())).append(',');
         field(out, "status", string(node.status().name())).append(',');
+        out.append("\"modifiers\":[");
+        var modifiers=node.modifiers().stream().map(Enum::name).sorted().toList();
+        for(int i=0;i<modifiers.size();i++) { if(i>0)out.append(',');out.append(string(modifiers.get(i))); }
+        out.append("],");
         optionalSymbol(out, "symbol", node.symbol()).append(',');
         out.append("\"compartments\":[");
         for (int i = 0; i < node.compartments().size(); i++) {

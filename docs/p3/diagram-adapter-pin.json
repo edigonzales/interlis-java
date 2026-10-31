@@ -1,0 +1,66 @@
+{
+  "schema": "interlis.p3.diagram-adapter-pin/1",
+  "diagramSchema": {
+    "file": "interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json",
+    "sha256": "105e7eeb24f6ef682e04695ecbbc127a51805178c6ee1a4310cb7ca1426fc779"
+  },
+  "upstreams": [
+    {
+      "repository": "https://github.com/edigonzales/interlis-language-tools",
+      "commit": "f27801bfebf0fdac82a19e016f4c347ae2b6f8fb",
+      "path": "packages/diagram/src"
+    },
+    {
+      "repository": "https://github.com/edigonzales/ilic-fork",
+      "commit": "c601f1c9d88eb68f67991fd05fc4653884d104c7",
+      "path": "packages/compiler-wasm/index.d.ts"
+    }
+  ],
+  "vendoredFiles": {
+    "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/index.ts": {
+      "sha256": "9289f3c19fc3ce1e86a1b20b8fe98b5dd971f296091b8392f7ec8a50935d2f71",
+      "gitBlob": "eb7fbfd3f58e761f675c033ebdf55eff36032a56"
+    },
+    "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/libavoid-router.ts": {
+      "sha256": "6dfdecd0aee744d6ae210501b26f30f1d8fe652bb1b180c0f6e6562be08285dc",
+      "gitBlob": "efbc5c0f1f2aeaed6ad7d4353d2a6867d9ea2c20"
+    },
+    "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/libavoid-js.d.ts": {
+      "sha256": "85f2c7a7721e2cd8f6a61a296e9238d4199bf3f361bcfd49d2d7c19119c90cb7",
+      "gitBlob": "7af886b70d745019c51f00dc93b1e2cb48762883"
+    },
+    "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/compiler-contract.d.ts": {
+      "sha256": "bee44b1788b726e7cc5308241cb102a09b51f8e253c53f0ae02ab3441019a155",
+      "gitBlob": "ba86f44846846ab2eb204e80bb0fe9154aec5ff1"
+    },
+    "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/elk-contract.d.ts": {
+      "sha256": "2e992211afcd079a0cd0a5df424086388b4ffcb0bd8d9ff3741940ad52006d4a",
+      "gitBlob": "fe6b12a0a74e63e1c444a1684a0796699f46141c"
+    },
+    "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/LICENSE": {
+      "sha256": "91904e7f7a936e2f873b6c7d893b34ecc43fa9f2beffe96a9d8e24c9ad449798",
+      "gitBlob": "09ef8102326d15b24cd23da6cac45ffd02e84bd7"
+    },
+    "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/ELK-LICENSE.md": {
+      "sha256": "89591d4578fb1ebd91501312a3d25f021bd865a2e436641c1cf7b1bc7e3c1617",
+      "gitBlob": "2849d27f5b829e3106a0fe4db9dcf2508e6b9855"
+    }
+  },
+  "packages": {
+    "ajv": "8.20.0",
+    "elkjs": "0.11.0",
+    "esbuild": "0.28.2",
+    "libavoid-js": "0.5.0-beta.5",
+    "playwright": "1.64.1",
+    "sprotty-protocol": "1.4.0",
+    "typescript": "7.0.2"
+  },
+  "patches": [
+    {
+      "file": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/elk-contract.d.ts",
+      "upstream": "elkjs@0.11.0/lib/elk-api.d.ts",
+      "change": "One strict declaration correction: T['children'][number] -> NonNullable<T['children']>[number]. Runtime elkjs source unchanged."
+    }
+  ],
+  "provenance": "Source vendoring because @ilic/diagram@0.1.2 and its requested compiler-wasm@0.10.0 are not published. No replacement compiler runtime. Historical docs/evidence/p3/diagram-schema-pin.json remains unchanged."
+}
