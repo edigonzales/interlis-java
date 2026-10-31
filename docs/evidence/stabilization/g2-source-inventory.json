@@ -38020,7 +38020,7 @@
     "profileCallSites": [
       {
         "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/AntlrSyntaxService.java",
-        "line": 396,
+        "line": 403,
         "text": "LanguageProfile.classify(",
         "feature": null,
         "operation": "classify",
@@ -38028,7 +38028,7 @@
       },
       {
         "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/AntlrSyntaxService.java",
-        "line": 398,
+        "line": 405,
         "text": "LanguageProfile.featureForToken(",
         "feature": null,
         "operation": "featureForToken",
@@ -38036,7 +38036,7 @@
       },
       {
         "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/antlr/AntlrSyntaxService.java",
-        "line": 399,
+        "line": 406,
         "text": "LanguageProfile.supports(",
         "feature": null,
         "operation": "supports",
