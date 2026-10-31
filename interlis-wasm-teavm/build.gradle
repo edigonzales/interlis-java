@@ -58,7 +58,7 @@ tasks.register('wasmContractTest') {
     }
 }
 
-tasks.register('prepareBrowserHarness', Copy) {
+tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
     dependsOn 'buildWasmGC', 'buildBrowserTools'
