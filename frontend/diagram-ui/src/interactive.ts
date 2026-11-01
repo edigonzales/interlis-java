@@ -6,7 +6,7 @@ import {TYPES,loadDefaultModules,configureModelElement,configureViewerOptions,co
  SRoutingHandleImpl,SRoutingHandleView,PolylineEdgeRouter,ManhattanEdgeRouter,SRoutableElementImpl,
  MouseListener,SModelElementImpl,SModelRootImpl,CommandStack,selectFeature,editFeature,deletableFeature,
  boundsFeature,hoverFeedbackFeature,svg,type RenderingContext,type IActionDispatcher} from 'sprotty';
-import {FitToScreenAction,SelectAction,UndoAction,RedoAction,type Action,type SModelRoot,type SNode,type SEdge,type Point} from 'sprotty-protocol';
+import {SetViewportAction,SelectAction,UndoAction,RedoAction,type Action,type SModelRoot,type SNode,type SEdge,type Point} from 'sprotty-protocol';
 import type {VNode} from 'snabbdom';
 import {adapt,legacyProjection,type DiagramView} from './adapter';
 import {defaultDiagramSettings,type DiagramSettings,type LayoutDiagram} from './layout';
@@ -252,7 +252,13 @@ export class DiagramCanvas {
  private setStatus(status:DiagramStatus,message:string):void {this.status=status;this.element.dataset.status=status;this.callbacks.status?.(status,message);}
  getViewState():DiagramViewState {return structuredClone(this.state);}
  getDocument():DiagramDocumentDto|undefined {return this.document;}
- async fit():Promise<void> {await this.dispatcher.dispatch(FitToScreenAction.create([],{padding:30,maxZoom:1,animate:false}));}
+ async fit():Promise<void> {
+  const graph=this.element.querySelector('svg.sprotty-graph>g') as SVGGElement|null;
+  if(!graph||this.closed)return;const bounds=graph.getBBox(),width=this.element.clientWidth,height=this.element.clientHeight;
+  if(width<=60||height<=60||bounds.width<=0||bounds.height<=0)return;
+  const zoom=Math.max(.08,Math.min(1,(width-60)/bounds.width,(height-60)/bounds.height));
+  await this.dispatcher.dispatch(SetViewportAction.create('interlis-diagram',{zoom,scroll:{x:bounds.x+bounds.width/2-width/(2*zoom),y:bounds.y+bounds.height/2-height/(2*zoom)}},{animate:false}));
+ }
  async select(ids:string[]):Promise<void> {await this.dispatcher.dispatch(SelectAction.create({selectedElementsIDs:ids,deselectedElementsIDs:[]}));}
  async undo():Promise<void> {await this.dispatcher.dispatch(UndoAction.create());}
  async redo():Promise<void> {await this.dispatcher.dispatch(RedoAction.create());}

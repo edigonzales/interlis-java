@@ -20,3 +20,5 @@
 .interlis-canvas .sprotty-routing-handle-selected{fill:var(--diagram-selection)}
 .interlis-canvas[data-status=STALE]>.sprotty-graph{opacity:.65}
 .interlis-canvas .sprotty-hidden{position:absolute;width:0;height:0;visibility:hidden;overflow:hidden}
+
+.interlis-canvas[data-status=STALE] .interlis-viewer,.interlis-canvas[data-status=LOADING] .interlis-viewer{opacity:.65;pointer-events:none}

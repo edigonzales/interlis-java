@@ -6,6 +6,7 @@ test('actual Sprotty views support native node/container drag and interior route
  let browser;const errors=[];
  try{
   browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1400,height:1000}});page.on('pageerror',e=>errors.push(String(e)));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await page.goto('http://127.0.0.1:'+server.address().port);await page.waitForFunction(()=>document.querySelector('#canvas').dataset.status==='FRESH',{timeout:15000});
+  const viewport=await page.locator('#canvas').boundingBox();for(const item of await page.locator('#canvas [data-kind]').all()){const bounds=await item.boundingBox();assert.ok(bounds.x>=viewport.x-1&&bounds.y>=viewport.y-1&&bounds.x+bounds.width<=viewport.x+viewport.width+1&&bounds.y+bounds.height<=viewport.y+viewport.height+1,'Fit clipped a current semantic element');}
   await page.screenshot({path:path.join(out,'ready.png'),fullPage:true});assert.deepEqual(errors,[]);
   const node=page.locator('#canvas [data-label="A"]');const box=await node.boundingBox();assert.ok(box&&box.width>20);const original=await node.getAttribute('transform');
   const drag=async(x,y,dx,dy)=>{await page.mouse.move(x,y);await page.mouse.down();await page.mouse.move(x+dx,y+dy,{steps:10});await page.mouse.up();};
