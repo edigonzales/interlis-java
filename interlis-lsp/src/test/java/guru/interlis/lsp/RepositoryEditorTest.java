@@ -81,7 +81,7 @@ class RepositoryEditorTest {
             open(s,"untitled:Broken.ili",1,"INTERLIS 2.4; MODEL Broken AT \"x\" VERSION \"1\" = DOMAIN Invalid=10..0; END Broken.");
             open(s,URI,9,ROOT);
             assertEquals("untitled:Dep.ili",definitions(s,URI,3,ROOT.split("\n")[3].indexOf("Value")).getFirst().getUri());
-            assertEquals("succeeded",compile(s,URI,9).outcome());assertEquals(0,requests.get());
+            var rootReport=compile(s,URI,9);assertEquals("succeeded",rootReport.outcome());assertTrue(rootReport.summary().diagnostics().isEmpty());assertEquals(0,requests.get());
             assertEquals("rejected",s.compileModel(new CompileModelParams("workspace",null,null,null)).get(10,TimeUnit.SECONDS).outcome());
             assertThrows(ExecutionException.class,()->compile(s,URI,8));
         } finally { s.shutdown().get(5,TimeUnit.SECONDS); }
@@ -121,9 +121,15 @@ class RepositoryEditorTest {
         String base=serve();var s=server(base,false,directory.resolve("cache"));
         try {
             open(s,URI,1,ROOT);var remote=definitions(s,URI,3,ROOT.split("\n")[3].indexOf("Value")).getFirst();
+            var opened=s.sourceContent(new SourceContentParams(remote.getUri(),java.net.URI.create(remote.getUri()).getQuery())).get();
+            open(s,remote.getUri(),1,opened.text());
             int online=requests.get();
             s.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(Map.of("offline",true)));
             assertEquals("succeeded",compile(s,URI,1).outcome());assertEquals(online,requests.get());
+            var refreshed=definitions(s,URI,3,ROOT.split("\n")[3].indexOf("Value")).getFirst();
+            var freshText=s.sourceContent(new SourceContentParams(refreshed.getUri(),java.net.URI.create(refreshed.getUri()).getQuery())).get();
+            open(s,refreshed.getUri(),2,freshText.text());
+            assertFalse(definitions(s,refreshed.getUri(),4,DEP.split("\n")[4].indexOf("Count")).isEmpty());
             assertThrows(ExecutionException.class,()->s.sourceContent(new SourceContentParams(remote.getUri(),java.net.URI.create(remote.getUri()).getQuery())).get());
             open(s,"untitled:local-dependency.ili",5,DEP+"!! dirty local override\n");
             assertEquals("untitled:local-dependency.ili",definitions(s,URI,3,ROOT.split("\n")[3].indexOf("Value")).getFirst().getUri());
@@ -139,7 +145,9 @@ class RepositoryEditorTest {
             open(s,URI,2,text);var selected=compile(s,URI,2);
             assertEquals("selectionRequired",selected.outcome());assertEquals(List.of("Good","Broken"),selected.modelChoices().stream().map(CompileReport.ModelChoice::modelName).toList());
             assertEquals("succeeded",s.compileModel(new CompileModelParams("current",new VersionedTextDocumentIdentifier(URI,2),"Good","1")).get(5,TimeUnit.SECONDS).outcome());
-            assertEquals("rejected",s.compileModel(new CompileModelParams("current",new VersionedTextDocumentIdentifier(URI,2),"Broken","1")).get(5,TimeUnit.SECONDS).outcome());
+            var broken=s.compileModel(new CompileModelParams("current",new VersionedTextDocumentIdentifier(URI,2),"Broken","1")).get(5,TimeUnit.SECONDS);
+            assertEquals("rejected",broken.outcome());assertFalse(broken.summary().diagnostics().isEmpty());
+            assertTrue(broken.summary().diagnostics().stream().allMatch(d -> !d.message().contains("diagnostic.") && d.range().size()==2 && d.uri().equals(URI)));
             s.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(Map.of("sourcePins",List.of(Map.of("sourceId",URI,"sha256","0".repeat(64))))));
             assertThrows(ExecutionException.class,()->s.compileModel(new CompileModelParams("current",new VersionedTextDocumentIdentifier(URI,2),"Good","1")).get(5,TimeUnit.SECONDS));
         } finally { s.shutdown().get(5,TimeUnit.SECONDS); }

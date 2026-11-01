@@ -648,3 +648,12 @@ bisherigen Stände. UI-/Launcherfelder gehören nicht in diesen Decoder.
 `RepositoryEditorTest` prüft echte transitive Quellen, frische Serverinstanzen,
 Offline ohne HTTP, Revalidierung, Dirty-Overrides, Rootauswahl, lokalisierte
 RelatedInformation, hierarchische Outline und Readonly nach didOpen.
+
+CompileReport.Summary ist ein typisierter immutable Wert mit snapshotId,
+modelCount, reasons, diagnostics, cancellationReason und failureId; nicht
+verfügbare Werte sind leere Strings/Listen. DiagnosticEntry enthält code,
+severity, lokalisierte message, uri und range (zwei UTF-16-Coordinate-Werte,
+bei globalen Diagnosen leer und uri leer). LspCompileMapper verwendet dafür
+allein `requestDiagnostics()` des Gateergebnisses. Unbeteiligte IDE-Problems
+werden nicht in den Rootreport kopiert. Die alten ExecuteCommand-Summarymaps
+bleiben für bestehende Verbraucher unverändert.

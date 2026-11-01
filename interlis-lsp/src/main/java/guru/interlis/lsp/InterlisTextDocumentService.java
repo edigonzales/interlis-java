@@ -170,7 +170,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         if(params==null || params.mode()==null || !java.util.Set.of("current","workspace").contains(params.mode())) return failed(ResponseErrorCode.InvalidParams,"compile mode must be current or workspace");
         if("workspace".equals(params.mode())) {
             if(params.textDocument()!=null || params.modelName()!=null || params.modelVersion()!=null) return failed(ResponseErrorCode.InvalidParams,"workspace compile accepts no document selection");
-            return LspFutures.map(compileWorkspace(),InterlisWorkspaceService::report,operations);
+            return LspFutures.map(compileWorkspace(),this::compileReport,operations);
         }
         if(params.textDocument()==null || params.textDocument().getVersion()==null) return failed(ResponseErrorCode.InvalidParams,"current compile requires a versioned document");
         var captured=copyParams(params,CompileModelParams.class);
@@ -193,12 +193,16 @@ final class InterlisTextDocumentService implements TextDocumentService {
             return CompletableFuture.completedFuture(new CompileSelection(roots,List.of()));
         });
         return LspFutures.compose(choosing,selection -> selection.roots().isEmpty()?CompletableFuture.completedFuture(
-                new CompileReport("selectionRequired",selection.choices(),Map.of())):
+                new CompileReport("selectionRequired",selection.choices(),CompileReport.Summary.empty())):
                 LspFutures.map(afterFiles(() -> scheduler.compileRoots(selection.roots(),() -> {
                     var open=documents.get(captured.textDocument().getUri());
                     if(open==null || open.lspVersion!=captured.textDocument().getVersion() || !unsynchronized.isEmpty()) throw LspFailures.error(ResponseErrorCode.ContentModified,"compile document version changed");
-                })),InterlisWorkspaceService::report,operations),operations);
+                })),this::compileReport,operations),operations);
     }
+    private CompileReport compileReport(guru.interlis.compiler.CompilationOutcome outcome) {
+        return scheduler.onOwner(() -> new LspCompileMapper().map(outcome,diagnosticLanguage,captureView()::uri));
+    }
+
     private record CompileSelection(List<guru.interlis.compiler.ModelSelector> roots,List<CompileReport.ModelChoice> choices) { }
 
     private <T> CompletableFuture<T> requestReady(java.util.function.BiFunction<HostView,CancellationToken,CompletableFuture<T>> action) {
@@ -856,6 +860,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
             boolean compilerChanged=!configuration.equals(userConfiguration);
             var current=workspace.configuration();
             if(repositoryChanged) {
+                // An expired virtual editor must not reserve its old SourceId as
+                // an active open alias when fresh navigation opens a new handle.
+                for(var entry:List.copyOf(documents.entrySet())) if(externalSources.contains(entry.getValue().sourceId)) {
+                    documents.remove(entry.getKey());unsynchronized.remove(entry.getKey());rejectedOpens.remove(entry.getKey());
+                    var publisher=sink.get();if(publisher!=null) publisher.publish(new PublishDiagnosticsParams(entry.getKey(),List.of()));
+                }
                 for(var id:externalSources.uris().keySet()) workspace.source(id).ifPresent(source -> workspace.remove(id,source.revision()));
                 externalSources.close();
                 current=configuration;
