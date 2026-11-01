@@ -1,0 +1,2 @@
+# Exact CRLF/emoji source fixture for revision and navigation contract tests.
+frontend/diagram-ui/test/fixtures/interactive.ili -text whitespace=cr-at-eol
