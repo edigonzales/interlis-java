@@ -47,6 +47,7 @@ export class DiagramCanvas extends RealCanvas {
     await page.waitForFunction(()=>{try{const d=JSON.parse(document.getElementById('output').textContent).document;return document.getElementById('diagram-view').dataset.stale==='false'&&d.edges.some(e=>e.kind==='ASSOCIATION'&&e.source.elementId===e.target.elementId);}catch{return false;}});
     await page.locator('#fit-diagram').click();
     await page.waitForFunction(()=>Boolean(document.querySelector('#diagram-view svg .sprotty-edge')));
+    const loop=await page.locator('#diagram-view .sprotty-edge path').first().evaluate(path=>{const box=path.getBBox(),start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength());return {width:box.width,height:box.height,endSeparation:Math.hypot(end.x-start.x,end.y-start.y)};});assert.ok(loop.width>15&&loop.height>15&&loop.endSeparation>15,'Self association collapsed instead of returning to a distinct boundary anchor: '+JSON.stringify(loop));
     const compact=await page.evaluate(()=>JSON.parse(document.getElementById('output').textContent).document),self=compact.edges.find(e=>e.kind==='ASSOCIATION');
     assert.equal(self.source.elementId,self.target.elementId);assert.equal(compact.nodes.some(n=>n.kind==='ASSOCIATION'),false);
     const rendered=await page.locator('#diagram-view').innerText();assert.match(rendered,/parent/);assert.match(rendered,/children/);

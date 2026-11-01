@@ -3,7 +3,7 @@ import {Container,ContainerModule,inject,injectable} from 'inversify';
 import {TYPES,loadDefaultModules,configureModelElement,configureViewerOptions,configureCommandStackOptions,
  configureCommand,edgeEditModule,labelEditModule,labelEditUiModule,SwitchEditModeCommand,
  LocalModelSource,SGraphImpl,SGraphView,SNodeImpl,SLabelImpl,SEdgeImpl,ShapeView,PolylineEdgeView,
- SRoutingHandleImpl,SRoutingHandleView,PolylineEdgeRouter,ManhattanEdgeRouter,SRoutableElementImpl,
+ SRoutingHandleImpl,SRoutingHandleView,PolylineEdgeRouter,ManhattanEdgeRouter,DefaultAnchors,SRoutableElementImpl,
  MouseListener,SModelElementImpl,SModelRootImpl,CommandStack,ModelViewer,selectFeature,editFeature,deletableFeature,
  boundsFeature,hoverFeedbackFeature,svg,type RenderingContext,type IActionDispatcher} from 'sprotty';
 import {SetViewportAction,SelectAction,UndoAction,RedoAction,type Action,type SModelRoot,type SNode,type SEdge,type Point} from 'sprotty-protocol';
@@ -123,6 +123,11 @@ class InterlisEdgeView extends PolylineEdgeView {
 }
 @injectable()
 class InteriorPolylineRouter extends PolylineEdgeRouter {
+ override route(edge:SRoutableElementImpl) {
+  if(edge.source&&edge.source===edge.target&&edge.routingPoints.length===0)
+   edge.routingPoints=this.calculateDefaultCorners(edge,new DefaultAnchors(edge.source,edge.parent,'source'),new DefaultAnchors(edge.target,edge.parent,'target'),this.getOptions(edge));
+  return super.route(edge);
+ }
  override createRoutingHandles(edge:SRoutableElementImpl):void {super.createRoutingHandles(edge);edge.removeAll(child=>child instanceof SRoutingHandleImpl&&(child.kind==='source'||child.kind==='target'));}
  override applyReconnect():void {throw new Error('Semantic reconnect is unavailable');}
 }
@@ -190,7 +195,10 @@ function build(document:DiagramDocumentDto,layout:LayoutDiagram,state:DiagramVie
  const byEdge=new Map(layout.edges.map(edge=>[edge.id,edge]));
  const edges=document.edges.map(edge=>{
   const route=byEdge.get(edge.id);if(!route)throw new Error('Layout omitted an edge');
-  const routingPoints=state.routes[edge.id]??route.points.slice(1,-1).map(point=>({...point}));
+  // ELK's self-edge ports are distinct, while Sprotty anchors attach to shapes.
+  // Reusing those port bends can fold both ends onto the same anchor. Let the
+  // native router construct its self loop until the user supplies route bends.
+  const routingPoints=state.routes[edge.id]??(edge.source.elementId===edge.target.elementId?[]:route.points.slice(1,-1).map(point=>({...point})));
   return {type:'edge:interlis',id:edge.id,sourceId:edge.source.elementId,targetId:edge.target.elementId,routerKind:settings.edgeRouting==='ORTHOGONAL'?'manhattan':'polyline',routingPoints,data:edge,children:[]} as SEdge;
  });
  return {type:'graph',id:'interlis-diagram',generation,children:[...roots,...edges],zoom:1,scroll:{x:0,y:0}} as SModelRoot;
