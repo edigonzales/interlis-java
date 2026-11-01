@@ -11,6 +11,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiagnosticCatalogTest {
+    @Test void operationalRepositoryDefinitionsAreVersionedGlobalInfoOnly() {
+        var catalog = DiagnosticCatalog.initial();
+        assertEquals("interlis-diagnostics/v4", DiagnosticCatalog.VERSION);
+        for (String code : List.of("ILI-RES-0011", "ILI-RES-0012", "ILI-RES-0013")) {
+            var definition = catalog.find(new DiagnosticCode(code)).orElseThrow();
+            assertEquals(Severity.INFO, definition.defaultSeverity());
+            assertEquals(Set.of(Phase.SOURCE_RESOLUTION), definition.allowedPhases());
+            assertEquals(DiagnosticDefinition.PositionRule.FORBIDDEN, definition.positionRule());
+        }
+        assertEquals(List.of("model", "repository"), catalog.find(new DiagnosticCode("ILI-RES-0011")).orElseThrow()
+                .arguments().stream().map(ArgumentDefinition::name).toList());
+        assertEquals(List.of("model", "detail"), catalog.find(new DiagnosticCode("ILI-RES-0012")).orElseThrow()
+                .arguments().stream().map(ArgumentDefinition::name).toList());
+        assertTrue(catalog.find(new DiagnosticCode("ILI-RES-0013")).orElseThrow().arguments().isEmpty());
+    }
+
     @Test
     void initialCatalogIsStableAndUnique() {
         DiagnosticCatalog catalog = DiagnosticCatalog.initial();

@@ -841,7 +841,7 @@ die bisherigen Enum-Callbacks bleiben erhalten. Werte, Sanitierung und
 Observerfehlervertrag folgen Kapitel 08 §14. Keine doppelte Ereigniszustellung.
 CLI / `guru.interlis.cli`: `RepositoryCacheRenderer` projiziert die
 Beobachtungen nur zur Darstellung über ConsoleDiagnosticRenderer.
-Katalog v3 und ILI-RES-0010 folgen Kapitel 09; Ausgabe folgt Kapitel 18.
+Der aktuelle Katalog v4 und ILI-RES-0010 folgen Kapitel 09; Ausgabe folgt Kapitel 18.
 
 ### HTTP-Netzwerkpolicy
 
@@ -854,3 +854,17 @@ Bestehende Loader-/Hosteinstiege verwenden SystemDefault. Vollständige Wert-,
 Fehler-, Besitz- und Zeitverträge: Kapitel08 §15. CLI-Konversion und Präzedenz:
 Kapitel18, keine zweite HTTP-Semantik im CLI. Abnahmen NET-01–05, insbesondere
 SDK-Kompilierung, HttpNetworkPolicyTest und RepositoryNetworkConfigurationTest.
+
+### Chronologische Repositorybeobachtung (WP-26/30)
+
+Besitzer repository / guru.interlis.repository: RepositoryResolutionObservation
+mit SearchStep(RepositorySearchStep step) und VerificationStarted().
+RepositoryClosureService.resolve(Workspace,AnalysisRequest,RepositoryResolveOptions,
+Consumer<RepositoryResolutionObservation>,CancellationToken) ergänzt den
+bisherigen Einstieg kompatibel. Nullfreiheit, Unveränderlichkeit, Aufrufbesitz,
+synchrone Reihenfolge, Fehlerisolation und Abbruch gemäss Kapitel08 §16.
+Besitzer CLI: RepositoryResolutionRenderer projiziert die Beobachtungen über
+ConsoleDiagnosticRenderer, ohne IO oder Modellwahl. Katalog v4, Codes0011–0013
+und feste Schweregradpräfixe folgen Kapitel09/18. Vertragstests:
+RepositoryResolutionObservationTest, RepositoryLogOrderTest,
+ConsoleSeverityFormatTest, HttpIdentityCacheTest sowie bestehende Cachefälle.

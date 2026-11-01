@@ -604,3 +604,32 @@ Grund bleibt als interne Ursache erhalten, rohe Locationwerte gelangen nicht in
 Redirectlimit-, Timeout-, Abbruch- und Cacheverträge bleiben erhalten.
 Abnahmen: HttpRedirectFailureTest, MalformedRepositoryRedirectTest sowie
 [gezielte Distributionsprozesse](../implementation/http-redirect-fix/EXECUTION_PLAN.md).
+
+## 16. Chronologische Beobachtung und feste HTTP-Darstellung
+
+WP-26/30, RES-009/013, LOG-004/005/008: RepositoryResolutionObservation im
+Repositorymodul ist ein geschlossener unveränderlicher Typ mit SearchStep
+(RepositorySearchStep step, nullfrei) und VerificationStarted(). Die additive
+resolve(Workspace,AnalysisRequest,RepositoryResolveOptions,Consumer<RepositoryResolutionObservation>,CancellationToken)
+Überladung beobachtet ausschliesslich den aktuellen Aufruf; der bisherige
+Einstieg verwendet einen leeren Observer. Zustellung erfolgt synchron in
+Erfassungsreihenfolge, LOOKUP vor Indexzugriff und SELECTED nach Kandidatenwahl.
+Historische Lockschritte werden nicht wiedergegeben. RuntimeExceptions des
+Observers bleiben ohne Einfluss; Abbruch erfolgt über den CancellationToken.
+VerificationStarted erscheint einmal unmittelbar vor tatsächlicher Online-
+Abschlussprüfung geladener oder zuvor nicht verfügbarer Quellen; nicht offline
+oder ohne ausstehende Zugriffe. Keine globalen Observer oder neue Gateentscheidung.
+
+Jeder HTTP-GET einschliesslich Redirects und Retries MUSS Accept-Encoding:
+identity senden. Vary ist nur bei fehlendem/leeren Wert oder ausschliesslich
+Accept-Encoding wiederverwendbar; Feldnamen werden ohne Grossschreibung über
+alle Headerzeilen und Kommalisten geprüft. Vary:* und andere Felder sowie
+no-store bleiben nicht persistierbar. Angenommene 200-/304-Antworten erlauben
+nur fehlendes Content-Encoding oder identity; andere Codings ergeben vor
+Dekodierung/Cacheveröffentlichung IO_FAILURE mit wertfreiem Text. Keine
+automatische Dekomprimierung. Starke identische ETag-Bestätigung, Digestprüfung,
+Redirectzielbindung, Retryregeln, Pins/Locks und Cacheformat bleiben erhalten.
+Dies konkretisiert die bisher nicht unterstützten Vary-Profile in §13;
+kein allgemeiner Varianten- oder Kompressionscache. Grundlage:
+[RFC9110 §12.5.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-12.5.3),
+[RFC9111 §4.1](https://www.rfc-editor.org/rfc/rfc9111.html#section-4.1).

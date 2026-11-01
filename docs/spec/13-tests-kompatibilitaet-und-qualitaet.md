@@ -530,7 +530,7 @@ statt aus Meldungstexten eine Cachefunktion abzuleiten. Die sieben
 RepositoryCacheRegressionTest-Fälle schützen die zuletzt korrigierten
 starken ETags und optionalen Sites. CLI-Tests und reale Prozesse vergleichen
 alle vier Befehle, kompakte/ausführliche DE-/EN-Meldungen, JSON, Farben und
-unveränderte Ergebnisse. Katalog v3 erhält die zentralen Katalog-/Formatter-/
+unveränderte Ergebnisse. Katalog v4 erhält die zentralen Katalog-/Formatter-/
 Versionsprüfungen; die schmale portable Probe prüft weiterhin Wireversion und
 Fähigkeiten sowie das Fehlen von Hostcacheinfos in Compilerdiagnosen.
 Der unabhängige OpenCode-/DeepSeek-1017-Review auditiert Rohbelege und ergänzt
@@ -555,3 +555,17 @@ Fehler/Exit3, wertfreie Diagnosen, fehlende Teilcachepublikation und gültige re
 Redirects. Bestehende Timeout-/Abbruch-/Redirectlimit-/Cachefälle werden gezielt
 geprüft; unabhängiger OpenCode/deepseek-flash-Review mit eigener Gegenprobe und
 Rohbelegaudit. [Plan](../implementation/http-redirect-fix/EXECUTION_PLAN.md).
+
+### Chronologische CLI und identity-Cache: gezielte Abnahme
+
+RES-009/013, CLI-004/006, DIAG-002/003/006, LOG-004/005/008: gezielte
+Renderer-, Katalog-, Repositorybeobachtungs-, HTTP- und CLI-Prozessfälle prüfen
+Schweregrad zuerst, DE/EN/Farbe/Positionen, aktuelle Ereignisreihenfolge ohne
+Replay, Abschlussankündigung, Fehler-/Abbruch-/Observerisolation und parallele
+Aufrufe. Vary:Accept-Encoding erhält 200/304 über Instanzgrenzen; andere
+Varianten, no-store und Content-Codings sind Gegenfälle. Bestehende ETag-,
+Digest-, Pin-/Lock-, Quellenänderungs- und Offlinefälle bleiben verpflichtend.
+repositoryDiagnosticCheck prüft schmal JS/WasmGC und das Fehlen aller
+operativen Repositorycodes in Compilerdiagnosen. Reale Launcher prüfen
+Streams/Exits/Artefakte. Kein pauschaler Korpus-/Benchmark-/Browser-/Releasevollauf.
+Nachweise: [Bericht](../implementation/cli-log-order-cache/REPORT.md).

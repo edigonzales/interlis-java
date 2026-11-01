@@ -943,3 +943,13 @@ API-001–006 (FetchPolicy-Migration, Hosteinstiege, SDK). NET-01–05 und Tests
 [EXECUTION_PLAN.md](../implementation/http-network-policy/EXECUTION_PLAN.md).
 Die Fachverträge bleiben Kapitel08 §15 und Kapitel18; diese Zuordnung behauptet
 keinen zusätzlich ausgeführten Plattform- oder Releaseabschluss.
+
+### Chronologische CLI und identity-Cache
+
+WP-26/30: RES-009/013 werden durch HttpIdentityCacheTest und bestehende
+Cache-/Closure-/Pin-/Lockregressionen geprüft. CLI-004/006, DIAG-002/003/006,
+LOG-004/005/008 erhalten ConsoleSeverityFormatTest, RepositoryLogOrderTest und
+RepositoryResolutionObservationTest, Katalog-/Formatter- und reale Launcherfälle.
+Die schmale repositoryDiagnosticCheck-Probe prüft JS/WasmGC ohne operative
+Repositoryinfos in Compilerdiagnosen. Fachverträge Kapitel08 §16, Kapitel09/18;
+[Nachweise](../implementation/cli-log-order-cache/REPORT.md), kein neues Phasengate.

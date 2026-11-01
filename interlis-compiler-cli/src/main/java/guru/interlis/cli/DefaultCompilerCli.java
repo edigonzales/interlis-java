@@ -312,7 +312,12 @@ public final class DefaultCompilerCli implements CliApplication {
                 }, RepositoryNetworkOptions.proxy(configuration.command()));
                 var outcome = access.closureService()
                         .resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
-                                new RepositoryResolveOptions(config, parsed.modelPins(), parsed.sourcePins(), lock), token);
+                                new RepositoryResolveOptions(config, parsed.modelPins(), parsed.sourcePins(), lock), observation -> {
+                                    if (invocation.command.has("--verbose") && !parsed.json()) {
+                                        new RepositoryResolutionRenderer().render(observation, invocation.language, invocation.ansiEnabled)
+                                                .ifPresent(environment.err()::println);
+                                    }
+                                }, token);
                 switch (outcome) {
                     case RepositoryResolutionOutcome.Prepared prepared -> {
                         update = prepared.update();
@@ -635,8 +640,6 @@ public final class DefaultCompilerCli implements CliApplication {
                     + "\",\"diagnostics\":" + new JsonDiagnosticWriter().write(diagnostics, invocation.language)
                     + new RepositoryReportWriter().json(invocation.resolutionLock,invocation.repositorySteps) + "}");
         } else {
-            if (invocation.command.has("--verbose") && diagnostics.stream().noneMatch(d -> d.severity() == guru.interlis.diagnostics.Severity.ERROR))
-                new RepositoryReportWriter().text(invocation.repositorySteps,invocation.language).forEach(environment.err()::println);
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
             for (Diagnostic diagnostic : new DiagnosticPresentation().project(diagnostics, new DiagnosticDisplayPolicy(true, Integer.MAX_VALUE)).visibleDiagnostics()) {
                 environment.err().println(renderer.render(diagnostic, sources, invocation.language, new RenderOptions(invocation.ansiEnabled, 1, 1, 160, invocation.command.has("--verbose"))));

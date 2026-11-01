@@ -13,9 +13,9 @@ class RepositoryCacheRendererTest {
             var o=new RepositoryCacheObservation(event,Optional.of("https://example.org/model.ili"));
             if(event==RepositoryCacheEvent.WRITE_UNAVAILABLE) {assertTrue(renderer.render(o,DiagnosticLanguage.EN,false).isEmpty());continue;}
             String en=renderer.render(o,DiagnosticLanguage.EN,false).orElseThrow(),de=renderer.render(o,DiagnosticLanguage.DE,false).orElseThrow();
-            assertTrue(en.startsWith("INFO [ILI-RES-0010]"),en);assertTrue(de.startsWith("Information [ILI-RES-0010]"),de);
+            assertTrue(en.startsWith("INFO [ILI-RES-0010]"),en);assertTrue(de.startsWith("INFO [ILI-RES-0010]"),de);
             assertTrue(en.contains("https://example.org/model.ili"));assertFalse(en.contains(event.name()));assertFalse(en.contains("\u001b"));
-            assertTrue(renderer.render(o,DiagnosticLanguage.DE,true).orElseThrow().contains("\u001b[36mInformation\u001b[0m"));
+            assertTrue(renderer.render(o,DiagnosticLanguage.DE,true).orElseThrow().contains("\u001b[36mINFO\u001b[0m"));
             if(event==RepositoryCacheEvent.CACHE_MISS) {assertFalse(de.contains("fehlt"));assertFalse(de.contains("erneut"));}
             if(event==RepositoryCacheEvent.DOWNLOAD)assertFalse(de.contains("gespeichert"));
         }

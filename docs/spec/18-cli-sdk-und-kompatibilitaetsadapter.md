@@ -457,7 +457,7 @@ Inhalte derselben URL verdrängen die für ältere Locks gespeicherten Bytes nic
 
 CLI-003/004/006 / LOG-005/008: Die vier semantischen Befehle zeigen bei
 `--verbose` jeden beobachteten Cachezugriff mit sicherer Quelle als
-INFO/Information [ILI-RES-0010] auf stderr. Sprache und Farbpolicy sind dieselben
+INFO [ILI-RES-0010] auf stderr. Sprache und Farbpolicy sind dieselben
 wie bei anderen Meldungen. Ohne Verbose sowie bei Diagnose-JSON erscheinen
 keine zusätzlichen Cachetextmeldungen; JSON-Daten und Schema bleiben unverändert.
 DOWNLOAD behauptet nur einen Download; NOT_MODIFIED nur einen bestätigten
@@ -494,3 +494,20 @@ für Repositoryzugriffe; lokale Quellen bleiben lokal. Offline erzeugt keine
 Netzwerkanfragen. Compilerdiagnosen, Gate und Exitklassifikation bleiben unverändert.
 Java-SDK-Migration: FetchPolicy verwendet die fünf Komponenten aus Kapitel08;
 der bisherige Konstruktor und timeout() werden entfernt.
+
+## Chronologische und einheitliche Meldungen
+
+CLI-004/006, LOG-005/008: Alle Diagnose- und Repositorykopfzeilen verwenden
+SCHWEREGRAD [CODE] optionale-Quellposition: Meldung. INFO/WARNING/ERROR/HINT
+bleiben auch bei deutscher Meldungssprache Englisch; Texte und ergänzende
+Beschriftungen bleiben lokalisiert. Keine erfundenen Positionen für globale
+Meldungen. Quellenframes und ergänzende Hinweise bleiben eingerückt.
+Bei --verbose werden aktuelle LOOKUP-/SELECTED-Ereignisse sofort über den
+zentralen Renderer ausgegeben, einschliesslich später abgelehnter Läufe. Kein
+nachträglicher Suchtextdump; JSON-/Lockschritte bleiben vollständig erhalten.
+Die tatsächliche Online-Abschlussprüfung wird einmal vor ihren Zugriffen
+angekündigt; offline oder ohne ausstehende Prüfung entfällt diese Meldung.
+Alle Betriebsinfos bleiben auf stderr und bei --json unterdrückt; fachliche
+Artefakte, Diagnoselisten, Warnungspolitik und Exits behalten ihre Bedeutung.
+Vary:Accept-Encoding verhindert wegen des festen identity-Abrufs keine sichere
+304-Wiederverwendung mehr; Kapitel08 §16 und Kapitel09 definieren die Verträge.

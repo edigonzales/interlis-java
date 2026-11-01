@@ -1,5 +1,20 @@
 # Implementierungsstatus interlis-java
 
+Chronologische CLI-/Cachekorrektur abgeschlossen (WP-26/30; RES-009/013,
+CLI-004/006, DIAG-002/003/006, LOG-004/005/008): feste Schweregradpräfixe zuerst,
+aktuelle Suchereignisse, angekündigte Abschlussprüfung und sichere
+Vary:Accept-Encoding-Wiederverwendung mit identity-Abrufen. Additive synchrone
+Beobachtungs-API, Katalogv4; Pins/Locks und das Compiler-Gate bleiben erhalten.
+Vor Korrektur sechs von sieben neuen Regressionen RED; danach 126 gezielte
+JUnit-Fälle/24 Suites ohne Fehler/Skips, 20 reale kontrollierte CLI-Prozesse
+und JS-/WasmGC-Proben unter Node24.22.0 erfolgreich. Vier zusätzliche öffentliche
+Prozesse mit dem unveränderten Screenshot-Modell Exit0; beide warmen Läufe
+null vollständige Downloads und zwölf304. Distribution am bisherigen
+entpackten Aufrufpfad aktualisiert. Keine offenen Pflichtprüfungen oder Blocker
+dieses Folgeauftrags; kein Commit, Push oder Release.
+[Bericht, Kommandos und unveränderte Rohbelege](implementation/cli-log-order-cache/REPORT.md).
+
+
 HTTP-Redirectfix abgeschlossen (WP-26/30, RES-009, CLI-001–007): OBS-02
 behoben durch enge URI-/Requestfehlerabbildung auf IO_FAILURE statt internem
 Fehler. Vorher 4/5 neue Loaderfälle RED, danach 27 gezielte JUnit-Fälle in fünf

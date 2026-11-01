@@ -88,7 +88,7 @@ public final class HttpSourceLoader implements SourceLoader {
                 for (int redirects=0;redirects<=MAX_REDIRECTS;redirects++) {
                     token.throwIfCancellationRequested();
                     HttpRequest.Builder request;
-                    try { request = HttpRequest.newBuilder(current).GET(); }
+                    try { request = HttpRequest.newBuilder(current).header("Accept-Encoding", "identity").GET(); }
                     catch (IllegalArgumentException invalid) {
                         throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP source address", invalid);
                     }
@@ -113,6 +113,7 @@ public final class HttpSourceLoader implements SourceLoader {
                     current=next;
                 }
                 token.throwIfCancellationRequested();
+                if (response.statusCode()==200 || response.statusCode()==304) requireIdentity(response);
                 if(response.statusCode()==304) {
                     if(requestedEtag!=null && requestedEtag.equals(entityTag(response).orElse(null)) && cached.isPresent()) {
                         var content=store.lookup(cached.orElseThrow().digest());
@@ -181,10 +182,21 @@ public final class HttpSourceLoader implements SourceLoader {
     }
 
     private static boolean reusable(HttpResponse<?> response) {
-        // The loader sends a single fixed representation. Other Vary profiles are not cached.
+        // Every request fixes Accept-Encoding to identity. Other Vary profiles are not cached.
         boolean noStore=response.headers().allValues("Cache-Control").stream().flatMap(v -> Arrays.stream(v.split(",")))
                 .anyMatch(v -> v.trim().equalsIgnoreCase("no-store"));
-        return !noStore && response.headers().allValues("Vary").stream().allMatch(String::isBlank);
+        return !noStore && response.headers().allValues("Vary").stream()
+                .flatMap(v -> Arrays.stream(v.split(",")))
+                .map(String::trim).allMatch(v -> v.isEmpty() || v.equalsIgnoreCase("Accept-Encoding"));
+    }
+
+    /** Reject unsolicited compression before decoding or publishing any accepted representation. */
+    private static void requireIdentity(HttpResponse<?> response) {
+        boolean identity = response.headers().allValues("Content-Encoding").stream()
+                .flatMap(v -> Arrays.stream(v.split(",", -1)))
+                .allMatch(v -> v.trim().equalsIgnoreCase("identity"));
+        if (!identity) throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,
+                "unsupported HTTP content coding", null);
     }
 
     private static LoadedSource decode(SourceId id, byte[] bytes, FetchPolicy policy, String origin) {

@@ -36,6 +36,7 @@ class DefaultRepositoryCacheTest {
         server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         server.createContext("/",exchange -> {
             requests.incrementAndGet();
+            exchange.getResponseHeaders().set("Vary", "Accept-Encoding");
             String text=switch(exchange.getRequestURI().getPath()) {
                 case "/ilimodels.xml" -> "<TRANSFER><ModelMetadata><Name>Basis</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>Basis.ili</File></ModelMetadata></TRANSFER>";
                 case "/Basis.ili" -> "INTERLIS 2.4; MODEL Basis AT \"https://example.org\" VERSION \"1\" = END Basis.";

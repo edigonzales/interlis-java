@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.CliApplicationTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-01T19:21:51.756Z" hostname="Monterrico.local" time="0.589">
+  <properties/>
+  <testcase name="formatDoesNotWriteInvalidSource()" classname="guru.interlis.cli.CliApplicationTest" time="0.191"/>
+  <testcase name="versionAndCapabilities()" classname="guru.interlis.cli.CliApplicationTest" time="0.005"/>
+  <testcase name="brokenOutputNeverReportsSuccess()" classname="guru.interlis.cli.CliApplicationTest" time="0.002"/>
+  <testcase name="checkPositiveAndNegativeModels()" classname="guru.interlis.cli.CliApplicationTest" time="0.286"/>
+  <testcase name="formatWritesStdoutChecksAndWritesAtomically()" classname="guru.interlis.cli.CliApplicationTest" time="0.021"/>
+  <testcase name="missingImportIsReportedAsMissingInput()" classname="guru.interlis.cli.CliApplicationTest" time="0.022"/>
+  <testcase name="jsonOutputIsMachineReadable()" classname="guru.interlis.cli.CliApplicationTest" time="0.011"/>
+  <testcase name="unsupportedGeneratorAndUnknownOptionsAreRejected()" classname="guru.interlis.cli.CliApplicationTest" time="0.003"/>
+  <testcase name="diagramExportUsesCheckedSchema()" classname="guru.interlis.cli.CliApplicationTest" time="0.028"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

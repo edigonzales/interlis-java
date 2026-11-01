@@ -34,7 +34,7 @@ const infos=s=>s.split('\n').filter(line=>line.includes('[ILI-RES-0010]'));
  for(const command of ['check','compile','analyze','diagram']) {
   const hot=await run('hot-'+command,[command,...common,'--verbose','--warnings','reject']);assert.equal(infos(hot.stderr).length,4);assert.ok(hot.http.every(r=>r.status===304));
   assert.ok(infos(hot.stderr).every(s=>s.startsWith('INFO [ILI-RES-0010]')&&s.includes(base)));
-  const de=await run('de-'+command,[command,...common,'--verbose','--diagnostic-language','de']);assert.ok(de.stderr.includes('Information [ILI-RES-0010]'));
+  const de=await run('de-'+command,[command,...common,'--verbose','--diagnostic-language','de']);assert.ok(de.stderr.includes('INFO [ILI-RES-0010]'));
   const compact=await run('compact-'+command,[command,...common]);assert.equal(infos(compact.stderr).length,0);
   if(command!=='diagram') {
    const a=await run('json-'+command,[command,...common,'--json']);const b=await run('json-verbose-'+command,[command,...common,'--json','--verbose']);
@@ -52,7 +52,7 @@ const infos=s=>s.split('\n').filter(line=>line.includes('[ILI-RES-0010]'));
  mode='no-store';const nostore=await run('no-store',['check',...common,'--cache',path.join(dir,'private-cache'),'--verbose']);assert.equal(infos(nostore.stderr).length,4);assert.ok(!nostore.stderr.includes('content used from cache'));
  mode='strong';const color=await run('color-always',['check',...common,'--verbose','--color','always']);assert.ok(color.stderr.includes('\x1b[36mINFO\x1b[0m'));
  const plain=await run('color-never',['check',...common,'--verbose','--color','never']);assert.ok(!plain.stderr.includes('\x1b'));
- const version=await run('version',['version','--json']);assert.equal(JSON.parse(version.stdout).diagnosticCatalogVersion,'interlis-diagnostics/v3');
+ const version=await run('version',['version','--json']);assert.equal(JSON.parse(version.stdout).diagnosticCatalogVersion,'interlis-diagnostics/v4');
  const jars=Object.fromEntries(fs.readdirSync(path.join(path.dirname(launcher),'../lib')).filter(f=>f.endsWith('.jar')).sort().map(f=>[f,crypto.createHash('sha256').update(fs.readFileSync(path.join(path.dirname(launcher),'../lib',f))).digest('hex')]));
  fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:true,node:process.version,javaHome:process.env.JAVA_HOME,launcher,cases,jars},null,2));console.log('CACHE_LOG_PROCESSES_PASS '+cases.length);
 })().catch(error=>{fs.writeFileSync(path.join(out,'failed.json'),JSON.stringify({error:String(error),cases},null,2));console.error(error);process.exitCode=1;}).finally(()=>server.close());

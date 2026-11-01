@@ -152,13 +152,21 @@ Es wurden keine Releases veröffentlicht und keine Produktionsmigrationen ausgef
 
 Mit `--verbose` zeigen Repositoryzugriffe zusätzlich Informationsmeldungen pro
 Quelle: Download, bestätigte Cacheverwendung (HTTP 304) oder Offlinecache.
-Sie verwenden denselben DE-/EN-/Farbstil wie andere Meldungen und erscheinen
-auf stderr. Diagnose-JSON und Compilerentscheidungen bleiben davon unabhängig.
+Modellsuche, Auswahl und Cachezugriffe erscheinen unmittelbar in ihrer
+tatsächlichen Reihenfolge auf stderr. Vor der zweiten Quellenprüfung erscheint
+eine Abschlussankündigung. Alle Kopfzeilen beginnen mit `INFO`, `WARNING`,
+`ERROR` oder `HINT`, gefolgt von `[Code]`, optionaler Quellposition und Text.
+Die Präfixe bleiben auch bei deutscher Meldungssprache Englisch; Texte und
+Farben folgen der gemeinsamen Sprach-/Farbpolicy. Diagnose-JSON und
+Compilerentscheidungen bleiben davon unabhängig.
 
 Repositorydownloads werden standardmässig unter `~/.interlis-cache` gespeichert.
 Online prüft jeder Beschaffungslauf die Aktualität. Nur ein in der 304-Antwort
 identisch bestätigter starker ETag erlaubt die Wiederverwendung vorhandener
-Bytes. Bei schwachen ETags, Last-Modified allein oder fehlenden Validatoren
+Bytes. HTTP-Abrufe fordern mit `Accept-Encoding: identity` eine unkomprimierte
+Darstellung an; `Vary: Accept-Encoding` erlaubt damit sichere Cachetreffer.
+Andere Variantenfelder und `no-store` werden nicht wiederverwendet.
+Bei schwachen ETags, Last-Modified allein oder fehlenden Validatoren
 wird erneut vollständig geladen, um exakte Pins und Locks zu prüfen. `--cache DIR` ändert den Pfad,
 `--no-cache` deaktiviert persistente Zugriffe. `--offline` verwendet den letzten
 vollständig vorhandenen lokalen Repositorystand auch ohne Lockfile. Für exakt

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.RepositoryLogOrderTest" tests="2" skipped="0" failures="2" errors="0" timestamp="2026-11-01T19:19:03.161Z" hostname="Monterrico.local" time="0.453">
+  <properties/>
+  <testcase name="lockHistoryIsNotReplayedOfflineAndFailuresRetainEarlierProgress()" classname="guru.interlis.cli.RepositoryLogOrderTest" time="0.431">
+    <failure message="org.opentest4j.AssertionFailedError: INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52656/ilimodels.xml': source unavailable in offline cache.&#10;INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52656/ilisite.xml': source unavailable in offline cache.&#10;WARNING [ILI-RES-0008] Repository 'http://127.0.0.1:52656/', model 'Basis': model index unavailable; continuing search.&#10;  Hint: OFFLINE&#10;WARNING [ILI-RES-0008] Repository 'http://127.0.0.1:52656/', model 'Basis': repository links unavailable; continuing search.&#10;  Hint: OFFLINE&#10;file:///var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/junit-4537207189190108173/Projekt.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:52656/ilimodels.xml' could not be provided: verified content is unavailable offline.&#10;  1 | ...&quot; = IMPORTS Basis; END Projekt.&#10;    |                ^~~~~&#10;  Hint: LOOKUP http://127.0.0.1:52656/ INTERLIS 2.4; REPOSITORY_UNAVAILABLE http://127.0.0.1:52656/ OFFLINE; SITE_UNAVAILABLE http://127.0.0.1:52656/ OFFLINE; http://127.0.0.1:52656/ilimodels.xml&#10; ==&gt; expected: &lt;SUCCESS&gt; but was: &lt;OPERATIONAL_FAILURE&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52656/ilimodels.xml': source unavailable in offline cache.
+INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52656/ilisite.xml': source unavailable in offline cache.
+WARNING [ILI-RES-0008] Repository 'http://127.0.0.1:52656/', model 'Basis': model index unavailable; continuing search.
+  Hint: OFFLINE
+WARNING [ILI-RES-0008] Repository 'http://127.0.0.1:52656/', model 'Basis': repository links unavailable; continuing search.
+  Hint: OFFLINE
+file:///var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/junit-4537207189190108173/Projekt.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:52656/ilimodels.xml' could not be provided: verified content is unavailable offline.
+  1 | ...&quot; = IMPORTS Basis; END Projekt.
+    |                ^~~~~
+  Hint: LOOKUP http://127.0.0.1:52656/ INTERLIS 2.4; REPOSITORY_UNAVAILABLE http://127.0.0.1:52656/ OFFLINE; SITE_UNAVAILABLE http://127.0.0.1:52656/ OFFLINE; http://127.0.0.1:52656/ilimodels.xml
+ ==&gt; expected: &lt;SUCCESS&gt; but was: &lt;OPERATIONAL_FAILURE&gt;
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1156)
+	at guru.interlis.cli.DefaultRepositoryCacheTest.success(DefaultRepositoryCacheTest.java:52)
+	at guru.interlis.cli.RepositoryLogOrderTest.lockHistoryIsNotReplayedOfflineAndFailuresRetainEarlierProgress(RepositoryLogOrderTest.java:39)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+</failure>
+  </testcase>
+  <testcase name="allCommandsStreamCurrentLookupSelectionAndVerificationInActualAccessOrder()" classname="guru.interlis.cli.RepositoryLogOrderTest" time="0.022">
+    <failure message="org.opentest4j.AssertionFailedError: INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/ilimodels.xml': source downloaded.&#10;INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/Basis.ili': source downloaded.&#10;INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/ilimodels.xml': source downloaded.&#10;INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/Basis.ili': source downloaded.&#10;Model lookup: Basis @ http://127.0.0.1:52674/&#10;Model selected: Basis 1 http://127.0.0.1:52674/Basis.ili&#10; ==&gt; expected: &lt;7&gt; but was: &lt;4&gt;" type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/ilimodels.xml': source downloaded.
+INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/Basis.ili': source downloaded.
+INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/ilimodels.xml': source downloaded.
+INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:52674/Basis.ili': source downloaded.
+Model lookup: Basis @ http://127.0.0.1:52674/
+Model selected: Basis 1 http://127.0.0.1:52674/Basis.ili
+ ==&gt; expected: &lt;7&gt; but was: &lt;4&gt;
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+	at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+	at org.junit.jupiter.api.AssertEquals.failNotEqual(AssertEquals.java:197)
+	at org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:150)
+	at org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:563)
+	at guru.interlis.cli.RepositoryLogOrderTest.allCommandsStreamCurrentLookupSelectionAndVerificationInActualAccessOrder(RepositoryLogOrderTest.java:21)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1604)
+</failure>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

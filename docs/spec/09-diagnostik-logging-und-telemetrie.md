@@ -489,7 +489,8 @@ weiterhin am Gate wirksam. Observerfehler ändern kein Ladeergebnis.
 
 ## Cacheinformationen im gemeinsamen Meldungsstil
 
-DIAG-002/003/006 / LOG-005/008: Katalog `interlis-diagnostics/v3` ergänzt
+DIAG-002/003/006 / LOG-005/008: Der seit v3 eingeführte, in
+`interlis-diagnostics/v4` erhaltene Katalogeintrag ist
 `ILI-RES-0010`, Schwere INFO, Phase SOURCE_RESOLUTION, ohne Quellposition,
 messageKey `diagnostic.resolution.cache`, Argumente `event:TEXT` und
 `source:TEXT`. Der zentrale Formatter lokalisiert die Ereignisse. Es werden
@@ -501,3 +502,17 @@ Sanitierung dar. Wiederholte echte Zugriffe werden nicht zusammengefasst.
 CACHE_MISS bedeutet fehlende sichere Wiederverwendbarkeit, auch bei
 unbestätigter 304; die Meldung verspricht keinen weiteren Retry.
 WRITE_UNAVAILABLE behält seine bestehende einmalige Warnung.
+
+## Chronologische Repositorypräsentation (Katalog v4)
+
+DIAG-002/003/006, LOG-004/005/008: interlis-diagnostics/v4 ergänzt drei
+positionslose INFO-Definitionen, Phase SOURCE_RESOLUTION:
+ILI-RES-0011 / diagnostic.resolution.lookup mit model:IDENTIFIER, repository:TEXT;
+ILI-RES-0012 / diagnostic.resolution.selected mit model:IDENTIFIER, detail:TEXT;
+ILI-RES-0013 / diagnostic.resolution.verification ohne Argumente. Wie ILI-RES-0010
+sind dies ausschliesslich Hostpräsentationswerte, keine Compilerdiagnosen und
+kein Teil von Snapshot, Gate, Warnungsablehnung oder Bridgeergebnissen.
+Der zentrale Formatter liefert DE-/EN-Texte; der ConsoleDiagnosticRenderer
+verwendet sprachunabhängig INFO/WARNING/ERROR/HINT am Anfang der Kopfzeile,
+gefolgt von Code, optionaler Quellposition und Text. Sanitierung, Farben und
+revisionstreue eingerückte Frames/Ergänzungen bleiben erhalten.

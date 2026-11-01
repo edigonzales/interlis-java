@@ -100,3 +100,10 @@ und ohne `--verbose` vollständig; das Flag ändert nur die Textdiagnosen.
 Die Fälle `repository-http-compile`, `repository-http-analyze` und
 `repository-http-diagram` ergänzen `repository-http`; `compact` und `verbose`
 prüfen die beiden Darstellungen aus der gebauten Distribution.
+
+Repositoryfortschritt wird bei `--verbose` unmittelbar in Ereignisreihenfolge
+angezeigt, mit Ankündigung vor tatsächlicher Online-Abschlussprüfung. Alle
+Diagnose-/Repositorykopfzeilen verwenden `SEVERITY [CODE] [Position: ]Text`;
+INFO/WARNING/ERROR/HINT sind sprachunabhängig, Texte DE/EN. Suchschritte
+werden im Text nicht nachträglich wiederholt; JSON-/Lockprovenienz bleibt
+erhalten. HTTP verwendet identity und unterstützt damit Vary:Accept-Encoding.

@@ -33,7 +33,7 @@ class RepositoryDiagnosticsContractTest {
             assertTrue(compact.err.contains("ILI-RES-0001"));assertTrue(compact.err.contains("Missing"));assertTrue(compact.err.contains("root.ili:1:"));
             assertFalse(compact.err.contains("resolution rejected:"));assertFalse(compact.err.contains("Hint:"));assertTrue(compact.result.artifacts().isEmpty());
             var verbose=run(command,"--repository",repo.toString(),"--verbose","--diagnostic-language","de",root.toString());
-            assertTrue(verbose.err.contains("Fehler [ILI-RES-0001]"));assertTrue(verbose.err.contains("Hinweis:"));assertTrue(verbose.err.contains("LOOKUP"));assertTrue(verbose.err.contains("IMPORTS Missing"));
+            assertTrue(verbose.err.contains("ERROR [ILI-RES-0001]"));assertTrue(verbose.err.contains("Hinweis:"));assertTrue(verbose.err.contains("LOOKUP"));assertTrue(verbose.err.contains("IMPORTS Missing"));
             if (command.equals("diagram")) continue; // --format json selects diagram artifacts, not diagnostic JSON.
             var json=run(command,"--repository",repo.toString(),"--json",root.toString());
             var payload=JsonParser.parseString(json.out).getAsJsonObject();assertFalse(payload.getAsJsonArray("diagnostics").isEmpty());

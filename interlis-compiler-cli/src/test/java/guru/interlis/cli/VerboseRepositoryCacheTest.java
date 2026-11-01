@@ -27,9 +27,9 @@ class VerboseRepositoryCacheTest {
             assertTrue(verbose.err().contains("INFO [ILI-RES-0010]"));assertTrue(verbose.err().contains(base+"Basis.ili"));assertTrue(verbose.err().contains(base+"ilimodels.xml"));
             assertTrue(verbose.err().contains("content used from cache (HTTP 304)"));
             assertEquals(fixture.events.stream().filter(e->e instanceof RunEvent.CacheLookup).count(),infos(verbose.err()));assertEquals(4,infos(verbose.err()));
-            assertEquals(compact.result().diagnostics(),verbose.result().diagnostics());assertTrue(verbose.result().diagnostics().stream().noneMatch(d -> d.code().value().equals("ILI-RES-0010")));
+            assertEquals(compact.result().diagnostics(),verbose.result().diagnostics());assertTrue(verbose.result().diagnostics().stream().noneMatch(d -> List.of("ILI-RES-0010","ILI-RES-0011","ILI-RES-0012","ILI-RES-0013").contains(d.code().value())));
             assertEquals(compact.result().artifacts(),verbose.result().artifacts());
-            var de=fixture.run(command,"Projekt.ili","--repository",base,"--verbose","--diagnostic-language","de");fixture.success(de);assertTrue(de.err().contains("Information [ILI-RES-0010]"));
+            var de=fixture.run(command,"Projekt.ili","--repository",base,"--verbose","--diagnostic-language","de");fixture.success(de);assertTrue(de.err().contains("INFO [ILI-RES-0010]"));
             if(!command.equals("diagram")) {
                 var json=fixture.run(command,"Projekt.ili","--repository",base,"--json");
                 var jsonVerbose=fixture.run(command,"Projekt.ili","--repository",base,"--json","--verbose");

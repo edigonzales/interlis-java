@@ -40,7 +40,7 @@ class DiagnosticPresentationContractTest {
         assertEquals(0, foreign.result.exitCode()); assertTrue(foreign.err.isEmpty());
         assertEquals(CliTermination.WARNINGS_REJECTED, run("check", "--warnings", "reject", "--root", "Other", "warnings.ili").result.termination());
         var diagram = run("diagram", "--root", "Other", "--diagnostic-language", "de", "warnings.ili");
-        assertEquals(0, diagram.result.exitCode()); assertTrue(diagram.err.contains("Warnung")); assertFalse(diagram.out.isBlank());
+        assertEquals(0, diagram.result.exitCode()); assertTrue(diagram.err.contains("WARNING")); assertFalse(diagram.out.isBlank());
     }
 
     @Test void languageIsExplicitPerInvocationAndValidatedBeforeLoading() throws Exception {

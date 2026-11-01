@@ -1,6 +1,5 @@
 package guru.interlis.cli;
 
-import guru.interlis.diagnostics.*;
 import guru.interlis.repository.*;
 import java.util.*;
 
@@ -24,14 +23,6 @@ final class RepositoryReportWriter {
             }
         }
         return out.append("]}").toString();
-    }
-    List<String> text(List<RepositorySearchStep> steps,DiagnosticLanguage language) {
-        boolean de=language==DiagnosticLanguage.DE;var out=new ArrayList<String>();
-        for(var step:steps) {
-            if(step.kind()==RepositorySearchStep.Kind.LOOKUP)out.add((de?"Modellsuche: ":"Model lookup: ")+step.modelName()+" @ "+step.repository());
-            if(step.kind()==RepositorySearchStep.Kind.SELECTED)out.add((de?"Modellauswahl: ":"Model selected: ")+step.modelName()+" "+step.detail());
-        }
-        return out.stream().map(DiagnosticMessageFormatter::safeText).toList();
     }
     private static void field(StringBuilder out,String name,String value) {
         out.append('"').append(name).append("\":\"").append(JsonDiagnosticWriter.escape(value)).append('"');

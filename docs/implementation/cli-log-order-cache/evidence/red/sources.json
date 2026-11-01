@@ -1,0 +1,5 @@
+{
+  "interlis-repository/src/main/java/guru/interlis/repository/HttpSourceLoader.java": "d4a7fe1a8456945206dd944ca62c1fdb0cb1762028f6bf7a400e3524f06c3b7f",
+  "interlis-compiler-cli/src/main/java/guru/interlis/cli/ConsoleDiagnosticRenderer.java": "dff672ce9b85f3b481d997203d49dbad02bed60c7d083689f0219cec0a4eb9a3",
+  "interlis-compiler-cli/src/main/java/guru/interlis/cli/DefaultCompilerCli.java": "f6ac919cd2eb92e5430390db61cdba1d038d65488f9e8106c122d8d1104e2158"
+}

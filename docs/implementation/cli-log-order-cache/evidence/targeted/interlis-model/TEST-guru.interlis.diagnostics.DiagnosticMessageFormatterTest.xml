@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.diagnostics.DiagnosticMessageFormatterTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-01T19:21:51.587Z" hostname="Monterrico.local" time="0.034">
+  <properties/>
+  <testcase name="terminalArgumentsAreEscapedOnceAndExactNumbersAreNotRounded()" classname="guru.interlis.diagnostics.DiagnosticMessageFormatterTest" time="0.019"/>
+  <testcase name="namespaceConflictExplainsTheCauseAndHintWithoutChangingCanonicalArguments()" classname="guru.interlis.diagnostics.DiagnosticMessageFormatterTest" time="0.001"/>
+  <testcase name="everyActualCatalogTemplateUsesEveryTypedParameterInBothLanguages()" classname="guru.interlis.diagnostics.DiagnosticMessageFormatterTest" time="0.006"/>
+  <testcase name="missingExternalArgumentsAndUnknownKeysCannotCrashOrDumpRecords()" classname="guru.interlis.diagnostics.DiagnosticMessageFormatterTest" time="0.004"/>
+  <testcase name="repositoryReasonLocalizationDoesNotRewriteSemanticReasonArguments()" classname="guru.interlis.diagnostics.DiagnosticMessageFormatterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

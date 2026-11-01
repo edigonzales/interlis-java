@@ -42,10 +42,11 @@ public final class ConsoleDiagnosticRenderer {
         var formatter = new DiagnosticMessageFormatter();
         var message = formatter.format(diagnostic, language);
         var out = new StringBuilder();
-        diagnostic.primaryRange().ifPresent(range -> out.append(styler.style(AnsiStyler.Role.LOCATION, location(range, sources), ansiEnabled)).append(": "));
         out.append(styler.style(AnsiStyler.Role.valueOf(diagnostic.severity().name()),
-                severity(diagnostic.severity(), language), ansiEnabled)).append(" [")
-                .append(styler.style(AnsiStyler.Role.CODE, diagnostic.code().value(), ansiEnabled)).append("] ").append(message.text());
+                diagnostic.severity().name(), ansiEnabled)).append(" [")
+                .append(styler.style(AnsiStyler.Role.CODE, diagnostic.code().value(), ansiEnabled)).append("] ");
+        diagnostic.primaryRange().ifPresent(range -> out.append(styler.style(AnsiStyler.Role.LOCATION, location(range, sources), ansiEnabled)).append(": "));
+        out.append(message.text());
         if (!options.verbose()) return out.toString();
         new DiagnosticSnippetRenderer().renderPrimary(diagnostic, sources, options, styler)
                 .ifPresent(frame -> out.append('\n').append(frame));
@@ -71,10 +72,4 @@ public final class ConsoleDiagnosticRenderer {
                 + range.startOffset() + ".." + range.endOffset() + ")";
     }
 
-    private static String severity(Severity severity, DiagnosticLanguage language) {
-        if (language == DiagnosticLanguage.EN) return severity.name();
-        return switch (severity) {
-            case ERROR -> "Fehler"; case WARNING -> "Warnung"; case INFO -> "Information"; case HINT -> "Hinweis";
-        };
-    }
 }

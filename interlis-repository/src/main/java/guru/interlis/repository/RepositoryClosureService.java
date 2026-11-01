@@ -52,6 +52,27 @@ public final class RepositoryClosureService {
      */
     public RepositoryResolutionOutcome resolve(Workspace workspace, AnalysisRequest request,
                                                RepositoryResolveOptions options, CancellationToken token) {
+        return resolve(workspace, request, options, event -> { }, token);
+    }
+
+    /**
+     * Prepares the same closure while observing current search decisions and the
+     * beginning of actual online completion verification. All inputs are non-null.
+     * The observer belongs to this invocation, is called synchronously in occurrence
+     * order and is never retained after return. RuntimeExceptions from observation
+     * are ignored; cancellation remains controlled by {@code token}. Concurrent
+     * invocations do not share observers. No historical lock steps are replayed.
+     * Other failure, revision and atomic-application conditions match {@link
+     * #resolve(Workspace, AnalysisRequest, RepositoryResolveOptions, CancellationToken)}.
+     */
+    public RepositoryResolutionOutcome resolve(Workspace workspace, AnalysisRequest request,
+                                               RepositoryResolveOptions options,
+                                               java.util.function.Consumer<RepositoryResolutionObservation> observer,
+                                               CancellationToken token) {
+        Objects.requireNonNull(observer, "observer");
+        java.util.function.Consumer<RepositoryResolutionObservation> safeObserver = event -> {
+            try { observer.accept(event); } catch (RuntimeException ignored) { /* observation only */ }
+        };
         Objects.requireNonNull(workspace, "workspace"); Objects.requireNonNull(request, "request");
         Objects.requireNonNull(options, "options"); Objects.requireNonNull(token, "token");
         var expected = request.expectedWorkspaceRevision();
@@ -90,7 +111,7 @@ public final class RepositoryClosureService {
                     originalConfig.compilerOptions().budget().maxTotalSourceUtf16Length());
             boolean legacy = options.lock().map(l -> l.formatVersion() == 1).orElse(false);
             var search = new RepositorySearch(verified, options.repositories(), token,
-                    originalConfig.compilerOptions().budget().maxSemanticWorkUnits(),originalConfig.compilerOptions().budget().maxDiagnostics());
+                    originalConfig.compilerOptions().budget().maxSemanticWorkUnits(),originalConfig.compilerOptions().budget().maxDiagnostics(),safeObserver);
             RepositoryCatalog catalog = null;
             LockedRepositoryCatalog lockedCatalog = null;
             var indexDigests = new LinkedHashMap<SourceId, ContentDigest>();
@@ -136,8 +157,13 @@ public final class RepositoryClosureService {
                                     new ResolverCatalog(entries), originalConfig.cacheLimits(),warnings.stream().distinct().toList());
                         }
                         recordSelected(capture, ranks.keySet(), pins, options.sourcePins(), options.lock(), selectedPins);
+                        var unavailable = options.lock().filter(l -> l.formatVersion()==2).map(ResolutionLock::unavailable).orElse(search.unavailable());
+                        if (!options.repositories().fetchPolicy().offline() && (!verified.seen.isEmpty() || !unavailable.isEmpty())) {
+                            token.throwIfCancellationRequested();
+                            safeObserver.accept(new RepositoryResolutionObservation.VerificationStarted());
+                        }
                         verified.verifyUnchanged();
-                        verified.verifyUnavailable(options.lock().filter(l -> l.formatVersion()==2).map(ResolutionLock::unavailable).orElse(search.unavailable()));
+                        verified.verifyUnavailable(unavailable);
                         if (!workspace.currentRevision().equals(expected)) return stale(workspace, expected);
                         trace.addAll(capture.resolution().trace().decisions());
                         var previousLock = originalConfig.resolverCatalog().entries().get("repository-lock");

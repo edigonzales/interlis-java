@@ -1,0 +1,34 @@
+{
+  "platform": "macOS-15.8.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "javaHome": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem",
+  "commands": [
+    {
+      "command": [
+        "./gradlew",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "\n------------------------------------------------------------\nGradle 9.8.1\n------------------------------------------------------------\n\nBuild time:    2026-10-07 16:57:46 UTC\nRevision:      39daf39feb60a18b1b6ddccde53366522fef516f\n\nKotlin:        2.4.10\nGroovy:        4.0.33\nAnt:           Apache Ant(TM) version 1.10.17 compiled on April 6 2026\nLauncher JVM:  25.0.3 (Eclipse Adoptium 25.0.3+9-LTS)\nDaemon JVM:    /Users/stefan/.sdkman/candidates/java/25.0.3-tem (no Daemon JVM specified, using current Java home)\nOS:            Mac OS X 15.8.1 aarch64\n\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+        "-version"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "openjdk version \"25.0.3\" 2026-04-21 LTS\nOpenJDK Runtime Environment Temurin-25.0.3+9 (build 25.0.3+9-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.3+9 (build 25.0.3+9-LTS, mixed mode, sharing)\n"
+    },
+    {
+      "command": [
+        "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "v24.22.0\n",
+      "stderr": ""
+    }
+  ]
+}

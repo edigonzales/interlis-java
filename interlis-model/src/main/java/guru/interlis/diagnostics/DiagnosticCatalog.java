@@ -14,7 +14,7 @@ import java.util.Set;
  * adapter before they enter the compiler.
  */
 public final class DiagnosticCatalog {
-    public static final String VERSION = "interlis-diagnostics/v3";
+    public static final String VERSION = "interlis-diagnostics/v4";
     private final Map<DiagnosticCode, DiagnosticDefinition> definitions;
 
     /**
@@ -156,6 +156,17 @@ public final class DiagnosticCatalog {
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.cache",
                 DiagnosticDefinition.PositionRule.FORBIDDEN,
                 arg("event", ArgumentKind.TEXT), arg("source", ArgumentKind.TEXT)));
+        list.add(def("ILI-RES-0011", "operational model lookup information", Severity.INFO,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.lookup",
+                DiagnosticDefinition.PositionRule.FORBIDDEN,
+                arg("model", ArgumentKind.IDENTIFIER), arg("repository", ArgumentKind.TEXT)));
+        list.add(def("ILI-RES-0012", "operational model selection information", Severity.INFO,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.selected",
+                DiagnosticDefinition.PositionRule.FORBIDDEN,
+                arg("model", ArgumentKind.IDENTIFIER), arg("detail", ArgumentKind.TEXT)));
+        list.add(def("ILI-RES-0013", "operational source verification information", Severity.INFO,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.verification",
+                DiagnosticDefinition.PositionRule.FORBIDDEN));
         list.add(def("ILI-RES-0008", "repository selection adjustment", Severity.WARNING,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.adjustment",
                 DiagnosticDefinition.PositionRule.OPTIONAL, arg("model", ArgumentKind.IDENTIFIER),

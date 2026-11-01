@@ -21,7 +21,7 @@ function probe(api) {
   const text = 'INTERLIS 2.4;\n!! 😀 ä\nMODEL Root AT "x" VERSION "1" = IMPORTS Missing; STRUCTURE P=p:Missing.Point; q:Other; END P; END Root.';
   const revision = handle('updateSource', {sourceId: 'memory:/root.ili', expectation: {kind: 'absent'}, change: {kind: 'replace', text}}).workspaceRevision;
   const result = handle('compile', {expectedWorkspaceRevision: revision, roots: [{kind: 'byName', modelName: 'Root'}]});
-  assert.ok(result.diagnostics.every(d => d.code !== 'ILI-RES-0010'));
+  assert.ok(result.diagnostics.every(d => !['ILI-RES-0010', 'ILI-RES-0011', 'ILI-RES-0012', 'ILI-RES-0013'].includes(d.code)));
   assert.equal(result.outcome, 'rejected'); assert.ok(result.rejection.reasons.includes('MISSING_INPUT'));
   const missing = result.diagnostics.find(d => d.code === 'ILI-RES-0001');
   const dependent = result.diagnostics.find(d => d.code === 'ILI-SEM-0001' && d.arguments.some(a => a.value === 'Missing.Point'));

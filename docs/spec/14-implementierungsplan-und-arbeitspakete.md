@@ -230,3 +230,12 @@ HTTP-Proxyauswahl, CLI/Properties und API-Migration. Abnahme NET-01–05 samt
 unabhängigem OpenCode/deepseek-flash-Review.
 [Plan und operative Nachweise](../implementation/http-network-policy/EXECUTION_PLAN.md).
 Kein neuer Phasen- oder Releaseabschluss.
+
+### WP-26/30: chronologische Meldungen und identity-Cache
+
+Gezielter Folgeauftrag RES-009/013, CLI-004/006, DIAG-002/003/006,
+LOG-004/005/008. Lieferfolge: Verträge und Regressionen, additive aktuelle
+Aufrufbeobachtung, gemeinsames Format, sichere Vary:Accept-Encoding-Unterstützung,
+gezielte JUnit-/Portable-/Launcherabnahme und Rohbelege. Modellwahl, Pins/Locks
+und Abschlussprüfung bleiben erhalten; kein Releaseauftrag.
+[Plan und operativer Nachweis](../implementation/cli-log-order-cache/REPORT.md).
