@@ -50,7 +50,7 @@ test('actual snapshot identity changes preserve only exact current declarations'
  const project=async()=>{const result=await client.compile(session,{expectedWorkspaceRevision:client.state(session).workspaceRevision,roots:[{kind:'byName',modelName:'LayoutKeyCase'}]});assert.equal(result.outcome,'succeeded');return client.diagram(session,{schemaId:result.schemaId});};
  const before=await project(),first=before.nodes.find(node=>node.label==='BeforeNode'),second=before.nodes.find(node=>node.label==='UnchangedNode');
  await client.updateSource(session,{sourceId:'memory:/identity.ili',expectation:{kind:'at',revision:client.state(session).sourceRevisions['memory:/identity.ili']},change:{kind:'replace',text:changed}});
- const after=await project(),replacement=after.nodes.find(node=>node.label==='ReplacementNode'),currentSecond=after.nodes.find(node=>node.label==='Second');assert.notEqual(before.snapshotId,after.snapshotId);assert.notEqual(second.id,currentSecond.id,'Counterprobe requires real changed snapshot-local IDs');
+ const after=await project(),replacement=after.nodes.find(node=>node.label==='ReplacementNode'),currentSecond=after.nodes.find(node=>node.label==='UnchangedNode');assert.notEqual(before.snapshotId,after.snapshotId);assert.notEqual(second.id,currentSecond.id,'Counterprobe requires real changed snapshot-local IDs');
  const geometry=adapter.reconcileGeometry(before,after,{positions:{[first.id]:{x:10,y:20},[second.id]:{x:300,y:400},[replacement.id]:{x:10,y:20}},routes:{}});
  assert.equal(geometry.positions[replacement.id],undefined,'Reassigned opaque ID inherited a different declaration position');assert.deepEqual(geometry.positions[currentSecond.id],{x:300,y:400});
  }finally{await client.dispose();}

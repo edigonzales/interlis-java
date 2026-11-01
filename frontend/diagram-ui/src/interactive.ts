@@ -24,11 +24,13 @@ interface NodeData {label:string;kind:string;canonicalName:string;titleLines:str
 
 @injectable()
 class InterlisGraph extends SGraphImpl { generation=0; }
-/** An iframe's activeElement survives when the enclosing editor receives focus. */
+/** Only native pointer/keyboard actions may acquire focus in an embedded viewer. */
 @injectable()
 class HostAwareModelViewer extends ModelViewer {
- protected override hasFocus():boolean {return document.hasFocus()&&super.hasFocus();}
- protected override restoreFocus(focus:boolean):void {super.restoreFocus(focus&&document.hasFocus());}
+ protected override restoreFocus(_focus:boolean):void {
+  // The host can activate a source editor while this iframe retains activeElement.
+  // A background projection/selection patch must never focus the SVG again.
+ }
 }
 @injectable()
 class InterlisNode extends SNodeImpl {
