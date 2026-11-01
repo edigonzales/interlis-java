@@ -131,6 +131,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
         private final Set<SymbolId> expandedContainers=new LinkedHashSet<>();
         private final Map<SymbolId,SymbolId> translatedLabels=new LinkedHashMap<>();
         private final CancellationToken token;
+        private Map<SourceRange,Symbol> enumDeclarations;
 
         private ProjectionState(Context context, DiagramOptions options,
                                 List<ProjectionNotice> notices, CancellationToken token) {
@@ -365,7 +366,37 @@ final class DefaultDiagramProjector implements DiagramProjector {
                                 options.showTypes() ? Optional.of(typeLabel(domain.typeId())) : Optional.empty(), Optional.empty(),
                                 domain.id(), domain.id(), false, false, anchor(domain)))));
             }
+            if(symbol instanceof DomainSymbol domain) {
+                var seen=new LinkedHashSet<TypeId>();TypeDescriptor type=context.graph().type(domain.typeId()).orElse(null);
+                while(type instanceof DomainReferenceType reference && seen.add(type.id())) {
+                    token.throwIfCancellationRequested();
+                    var target=context.graph().symbol(reference.targetDomain()).orElse(null);
+                    type=target instanceof DomainSymbol base?context.graph().type(base.typeId()).orElse(null):null;
+                }
+                if(type instanceof guru.interlis.model.EnumerationType enumeration) {
+                    var values=new ArrayList<DiagramMember>();
+                    for(var value:enumeration.values()) {
+                        token.throwIfCancellationRequested();
+                        var enumDeclaration=value.range().map(enumDeclarations()::get);
+                        var origin=enumDeclaration.map(Symbol::id).orElse(domain.id());
+                        Symbol owner=enumDeclaration.orElse(domain);var ownerPath=new LinkedHashSet<SymbolId>();
+                        while(!(owner instanceof DomainSymbol)&&owner.owner().isPresent()&&ownerPath.add(owner.id())){token.throwIfCancellationRequested();owner=context.graph().symbol(owner.owner().orElseThrow()).orElse(domain);}
+                        boolean inherited=!owner.id().equals(domain.id());
+                        if(inherited&&options.inheritedMembers()==InheritedMembers.HIDE)continue;
+                        if(!budget.admit())break;
+                        var valueAnchor=value.range().map(range->new SourceAnchor(context.snapshotId(),range,Optional.empty()));
+                        values.add(new DiagramMember("member-"+domain.id().value()+"-enum-"+value.order(),DiagramMember.MemberKind.ENUM_VALUE,
+                                enumDeclaration.map(this::displayName).orElse(value.path()),Optional.empty(),Optional.empty(),origin,domain.id(),inherited,false,valueAnchor));
+                    }
+                    if(!values.isEmpty())result.add(new DiagramCompartment("comp-"+domain.id().value()+"-enum",DiagramCompartment.CompartmentKind.ENUM_VALUES,values));
+                }
+            }
             return result;
+        }
+
+        private Map<SourceRange,Symbol> enumDeclarations() {
+            if(enumDeclarations==null){var index=new LinkedHashMap<SourceRange,Symbol>();for(var symbol:context.graph().symbols()){token.throwIfCancellationRequested();if(symbol instanceof guru.interlis.model.EnumElementSymbol)symbol.nameRange().ifPresent(range->index.putIfAbsent(range,symbol));}enumDeclarations=Map.copyOf(index);}
+            return enumDeclarations;
         }
 
         private void addEffectiveMembers(SymbolId viewable, List<DiagramMember> attributes,

@@ -83,7 +83,7 @@ export function adapt(raw:unknown,sources:HostSources=new Map()):DiagramView {
     let members=0;if(Array.isArray(value.nodes))for(const node of value.nodes)if(Array.isArray(node?.compartments))for(const compartment of node.compartments)if(Array.isArray(compartment?.members))members+=compartment.members.length;
     if(members>10000)throw new TypeError('diagram exceeds member presentation limit');
   }
-  if(!validate(raw))throw new TypeError('diagram schema mismatch: '+JSON.stringify(validate.errors));
+  if(!validate(raw))throw new TypeError('diagram schema mismatch: '+JSON.stringify(Array.isArray(validate.errors)?validate.errors.slice(0,5):validate.errors));
   const document=freeze(detached(raw));
   const data:Details={anchors:new Map(),symbols:new Map(),sources:new Map(),coordinates:new Map()};
   for(const [id,source] of sources){data.sources.set(id,Object.freeze({text:source.text,revision:source.revision}));data.coordinates.set(id,new Coordinates(source.text));}

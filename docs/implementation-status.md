@@ -1389,3 +1389,11 @@ Gezielte Anfangsfehler und Rohbelege stehen ausserhalb des Repos unter
 `interlis-vscode-evidence/phases/V2`. Kein Parser-/Norm-/XFAIL-Eingriff.
 Installierte Customeditor-GUI12–18 und unabhängiges V2-PASS stehen noch aus;
 V2 ist ausdrücklich nicht freigegeben. Der operative Stand bleibt im Extensionrepo.
+
+V2-GUI-Nacharbeit: Der erste wirkliche Customeditorlauf erkannte zu Recht
+fehlende explizite Nullfelder in der LSP4J-Wireantwort. DiagramWireAdapter schreibt
+nun den kanonischen Codec über einen nullerhaltenden TypeAdapter; wirklicher
+stdio-Test prüft Pflichtfelder. Aufzählungsdomänen erhalten ausserdem ihre
+kanonischen ENUM_VALUES statt bloss eines abstrakten Typnamens; keine neue
+Sprachakzeptanz. Domain-/Vererbungs-/Quell-/Budgettests und erneute installierte
+Diagrammqualifikation sind für diesen Nacharbeitsstand fällig. V2 bleibt offen.

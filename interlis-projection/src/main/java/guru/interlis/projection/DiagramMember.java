@@ -38,6 +38,8 @@ public record DiagramMember(String id, MemberKind kind, String label,
 
     public enum MemberKind {
         PARAMETER,
+        /** Effective enumeration path in declaration order, including its original source anchor. */
+        ENUM_VALUE,
         /** The {@code ATTRIBUTE} constant. */
         ATTRIBUTE,
         /** The {@code ROLE} constant. */

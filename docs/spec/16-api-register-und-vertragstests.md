@@ -850,3 +850,10 @@ transportiert echte Layoutwerte und Abbruch; ein Test darf Antworten verzögern,
 aber keine fachlichen Erfolgsantworten erfinden. Public Hosttypen liegen in
 `interlis-lsp/src/main/typescript/editor-protocol.ts` und werden mit Verweis auf
 dieselben Diagrammtypen im Editorbundle geliefert. Keine zweite ASTkopie.
+
+Additiv in `interlis-projection`: DiagramMember.MemberKind.ENUM_VALUE benutzt
+das vorhandene ENUM_VALUES-Kompartiment; Kapitel11 regelt Reihenfolge,
+Deklarations-/Quellbezug, Inherited-Option und gemeinsames Budget. Der Wireadapter
+schreibt erforderliche Nullfelder auch unter LSP4Js standardmässigem Gsonwriter.
+LspProcessTest und der paketierte Node-stdio-Test prüfen die wirkliche JSONform;
+ein reines Gsonbaum- oder Javaobjekt-Ergebnis ersetzt diese Prüfung nicht.

@@ -14,6 +14,7 @@ import type {DiagramDocumentDto,DiagramEdgeDto,DiagramNodeDto,DiagramContainerDt
 import {ElkLayoutService,type LayoutServicePort} from './elk-layout-service';
 import {presentation,endLabel} from './presentation';
 
+export const defaultInteractiveSettings:DiagramSettings=Object.freeze({...defaultDiagramSettings,attributeMode:'OWN_AND_INHERITED'});
 export type DiagramStatus='EMPTY'|'LOADING'|'FRESH'|'PARTIAL'|'STALE'|'ERROR';
 export interface DiagramViewState {positions:Record<string,Point>;routes:Record<string,Point[]>;}
 export interface DiagramCallbacks {navigate:(id:string)=>void;status?:(status:DiagramStatus,message:string)=>void;changed?:(state:DiagramViewState)=>void;singleClickNavigation?:boolean;}
@@ -33,6 +34,7 @@ class InterlisNode extends SNodeImpl {
 class InterlisMember extends SLabelImpl {
  static override readonly DEFAULT_FEATURES=[boundsFeature,selectFeature,hoverFeedbackFeature];
  elementId!:string;
+ compartmentKind!:string;
 }
 @injectable()
 class InterlisEdge extends SEdgeImpl {
@@ -59,7 +61,7 @@ class InterlisContainerView extends InterlisNodeView { }
 @injectable()
 class InterlisMemberView extends ShapeView {
  render(member:Readonly<InterlisMember>):VNode {
-  return svg('text',{'class-interlis-member':true,'class-selected':member.selected,'data-element-id':member.elementId,'data-member-id':member.elementId,x:0,y:0},member.text);
+  return svg('text',{'class-interlis-member':true,'class-selected':member.selected,'data-element-id':member.elementId,'data-member-id':member.elementId,'data-compartment':member.compartmentKind,x:0,y:0},member.text);
  }
 }
 function pointAt(points:Point[],fraction:number):Point {
@@ -161,7 +163,7 @@ function build(document:DiagramDocumentDto,layout:LayoutDiagram,state:DiagramVie
   const position=state.positions[node.id]??{x:node.x-(parent?.x??0),y:node.y-(parent?.y??0)};
   const data:NodeData={label:value.label,canonicalName:value.canonicalName,kind:value.kind,titleLines:p.titleLines,abstract:'modifiers' in value&&!!value.modifiers?.includes('ABSTRACT'),status:'status' in value?value.status:'RESOLVED'};
   nodes.set(node.id,{type:isContainer?'node:container':'node:interlis',id:node.id,position:{...position},size:{width:node.width,height:node.height},data,
-   children:isContainer?[]:p.lines.map((line,index)=>({type:'label:member',id:line.id+':line:'+index,elementId:line.id,text:line.text,position:{x:12,y:line.y},size:{width:node.width-24,height:18}}))} as SNode);
+   children:isContainer?[]:p.lines.map((line,index)=>({type:'label:member',id:line.id+':line:'+index,elementId:line.id,compartmentKind:line.kind,text:line.text,position:{x:12,y:line.y},size:{width:node.width-24,height:18}}))} as SNode);
  }
  // Reconcile only presentation geometry. Stable identities preserve manual moves; new
  // siblings are placed without covering the retained view, and containers grow to fit.
@@ -225,7 +227,7 @@ export class DiagramCanvas {
   }));
   this.source=this.container.get<LocalModelSource>(TYPES.ModelSource);this.dispatcher=this.container.get<IActionDispatcher>(TYPES.IActionDispatcher);
  }
- async accept(raw:unknown,sessionKey:string,settings:DiagramSettings=defaultDiagramSettings):Promise<boolean> {
+ async accept(raw:unknown,sessionKey:string,settings:DiagramSettings=defaultInteractiveSettings):Promise<boolean> {
   if(this.closed)return false;
   if(settings.edgeRouting==='SPLINES'||settings.renderingTarget!=='STANDARD')throw new Error('This interactive viewer currently supports standard orthogonal and polyline routing');
   const view=adapt(raw);const document=view.document;
@@ -242,7 +244,7 @@ export class DiagramCanvas {
    if(first)await this.source.setModel(model);else await this.source.updateModel(model);
    if(this.closed||mark!==this.generation)return false;
    if(first){await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));if(this.closed||mark!==this.generation)return false;await this.fit();}
-   this.setStatus(document.completeness==='COMPLETE'?'FRESH':'PARTIAL',document.completeness==='COMPLETE'?'Diagram is current':'Partial diagram — check Problems');
+   this.setStatus(document.completeness==='COMPLETE'?'FRESH':'PARTIAL',document.completeness==='COMPLETE'?'Diagram is current':document.completeness==='LIMITED'?'Limited diagram — narrow the selection or increase the explicit projection budget':'Partial diagram — check Problems');
    return true;
   }catch(error){if(mark!==this.generation||this.closed)return false;this.setStatus('ERROR',error instanceof Error?error.message:'Diagram failed');throw error;}
  }

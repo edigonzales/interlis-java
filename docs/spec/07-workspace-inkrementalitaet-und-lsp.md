@@ -678,7 +678,9 @@ Fehlerhafte Quellen behalten ihre wirkliche PARTIAL-Completeness.
 
 Grenzen: 500 Knoten, 1000 Kanten, 200 Member pro Knoten, 500 Container,
 10000 Member insgesamt und 4000000 UTF-16-Codeeinheiten des kodierten Dokuments.
-Überbudget wird abgewiesen, nicht still abgeschnitten. Queryworker und Abbruch
+Angeforderte Budgets über diesen Hostgrenzen werden abgewiesen. Erreicht die
+Projektion ihr explizites Budget, bleiben LIMITED und die Projektionshinweise
+erhalten; zusätzliche harte Serialisierungsgrenzen werden abgewiesen. Queryworker und Abbruch
 verwenden die bestehenden begrenzten Hostqueues. Die Navigationsregistry behält
 höchstens16 veröffentlichte Diagramme; Shutdown löscht sie. Navigation prüft
 Server-, Diagramm-, Snapshot-, Workspace- und Dokumentidentität erneut und löst

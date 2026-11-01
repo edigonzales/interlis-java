@@ -1,12 +1,27 @@
 package guru.interlis.lsp;
 
-import com.google.gson.*;
-import guru.interlis.projection.*;
-import java.lang.reflect.Type;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import guru.interlis.projection.DiagramDocument;
+import guru.interlis.projection.DiagramJsonCodec;
+import java.io.IOException;
 
-/** Preserves DiagramDocument 1.0's scalar/nullable/exact-number wire shape without a second DTO copy or JSON string envelope. */
-final class DiagramWireAdapter implements JsonSerializer<DiagramDocument> {
-    @Override public JsonElement serialize(DiagramDocument value,Type type,JsonSerializationContext context) {
-        return JsonParser.parseString(new DiagramJsonCodec().encode(value));
+/** Preserves the canonical response shape, including required explicit nulls, under LSP4J's default Gson writer. */
+final class DiagramWireAdapter extends TypeAdapter<DiagramDocument> {
+    private static final TypeAdapter<JsonElement> JSON=new Gson().getAdapter(JsonElement.class);
+    @Override public void write(JsonWriter output,DiagramDocument document) throws IOException {
+        boolean previous=output.getSerializeNulls();
+        try {
+            output.setSerializeNulls(true);
+            JSON.write(output,JsonParser.parseString(new DiagramJsonCodec().encode(document)));
+        } finally {output.setSerializeNulls(previous);}
+    }
+    @Override public DiagramDocument read(JsonReader input) {
+        throw new JsonParseException("DiagramDocument is a server response; use the versioned DiagramRequest input");
     }
 }

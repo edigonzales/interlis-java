@@ -76,8 +76,9 @@ class LspProcessTest {
             var wire=com.google.gson.JsonParser.parseString(readResponse(output,20)).getAsJsonObject().getAsJsonObject("result");
             assertNotNull(wire);assertEquals(1,wire.get("protocolVersion").getAsInt());assertEquals("wire-diagram",wire.get("requestId").getAsString());
             assertEquals(uri,wire.get("rootUri").getAsString());assertEquals(1,wire.get("documentVersion").getAsInt());
-            var documentDto=wire.getAsJsonObject("document");assertEquals("COMPLETE",documentDto.get("completeness").getAsString());
+            var documentDto=wire.getAsJsonObject("document");assertTrue(documentDto.getAsJsonArray("containers").get(0).getAsJsonObject().has("parentId"),"Canonical nullable fields must survive LSP4J serialization");assertEquals("COMPLETE",documentDto.get("completeness").getAsString());
             var building=StreamSupport.stream(documentDto.getAsJsonArray("nodes").spliterator(),false).map(v->v.getAsJsonObject()).filter(v->v.get("label").getAsString().equals("Building")).findFirst().orElseThrow();
+            assertTrue(building.getAsJsonArray("compartments").get(0).getAsJsonObject().getAsJsonArray("members").get(0).getAsJsonObject().has("cardinality"),"Nullable member cardinality must survive the real launcher");
             var navigation=Map.of("protocolVersion",1,"serverInstanceId",wire.get("serverInstanceId").getAsString(),"diagramId",wire.get("diagramId").getAsString(),"snapshotId",wire.get("snapshotId").getAsString(),"textDocument",Map.of("uri",uri,"version",1),"elementId",building.get("id").getAsString());
             send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",21,"method","interlis/diagramNavigate","params",navigation)));
             var location=com.google.gson.JsonParser.parseString(readResponse(output,21)).getAsJsonObject().getAsJsonObject("result");assertEquals(uri,location.get("uri").getAsString());assertEquals(3,location.getAsJsonObject("range").getAsJsonObject("start").get("line").getAsInt());

@@ -345,3 +345,13 @@ SPLINES und Inkscape im interaktiven Viewer sind bis zur folgenden UMLlieferung
 explizit abgewiesen; vorhandene statische Adapterexporte bleiben erhalten.
 Browsercontract- und native Mausinteraktionstests prüfen dieselbe Quelle; sie
 ersetzen keine installierten VS-Code-GUItests oder spätere Exportabnahme.
+
+Aufzählungsdomänen behalten ihre effektiven Pfade in ENUM_VALUES als
+`DiagramMember.MemberKind.ENUM_VALUE`, mit Deklarationsreihenfolge, echtem
+EnumElementSymbol (sofern deklariert), ursprünglichem Quellanker und
+Inherited-Markierung. HIDE und gemeinsames Memberbudget gelten auch dafür;
+LIMITED bleibt explizit. Identitäten/Anker bleiben bei übersetzten Labels
+kanonisch. Das vorhandene Schema1.0 erlaubt offene Memberkind-Zeichenketten.
+DiagramProjectionTest prüft verschachtelte/effektive Werte, Quellen, HIDE und
+Budget. Inline-Enum-Komfort-/Filterfunktionen bleiben dem folgenden UIumfang
+zugeordnet. Der neutrale interaktive Default zeigt eigene und geerbte Member.
