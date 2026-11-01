@@ -22,7 +22,7 @@ class RepositoryCacheRegressionTest {
     String base;
     final AtomicInteger requests=new AtomicInteger();
     static final CancellationToken TOKEN=CancellationToken.none();
-    static final FetchPolicy ONLINE=new FetchPolicy(false,16_777_216,Duration.ofSeconds(2));
+    static final FetchPolicy ONLINE=new FetchPolicy(false, 16_777_216, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2)));
     static final String A="INTERLIS 2.4; MODEL Dep AT \"https://example.org\" VERSION \"1\" = END Dep.";
     static final String INDEX="<TRANSFER><ModelMetadata><Name>Dep</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>Dep.ili</File></ModelMetadata></TRANSFER>";
     final AtomicReference<String> content=new AtomicReference<>(A), site=new AtomicReference<>();
@@ -69,7 +69,7 @@ class RepositoryCacheRegressionTest {
             w.update(new SourceUpdate(id,new SourceExpectation.Absent(),new SourceChange.Replace(
                     "INTERLIS 2.4; MODEL Root AT \"https://example.org\" VERSION \"1\" = IMPORTS "+dependency+"; END Root.")));
             var config=new RepositoryConfig(List.of(new RepositorySource(new RepositoryBase(URI.create(base)),new SourceLocator(base+"ilimodels.xml"))),
-                    new FetchPolicy(offline,ONLINE.maxBytes(),ONLINE.timeout()));
+                    new FetchPolicy(offline,ONLINE.maxBytes(),ONLINE.connectTimeout(),ONLINE.readTimeout(),ONLINE.requestTimeout()));
             return host().closureService().resolve(w,new AnalysisRequest(w.currentRevision(),List.of(new ModelSelector.BySource(id))),
                     new RepositoryResolveOptions(config,Map.of(),pins,lock),TOKEN);
         }

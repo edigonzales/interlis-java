@@ -34,6 +34,7 @@ public final class ConfigurationLoader {
         Objects.requireNonNull(cancellation, "cancellation");
         if(command.has("--cache") && command.has("--no-cache"))
             throw new CliUsageException("--cache and --no-cache are mutually exclusive");
+        RepositoryNetworkOptions.rejectProxyConflict(command.options());
         var options = new LinkedHashMap<String, List<List<String>>>();
         var origins = new TreeMap<String, Origin>();
         options.put("--warnings", List.of(List.of("allow")));
@@ -42,7 +43,7 @@ public final class ConfigurationLoader {
         command.value("--config").ifPresent(file -> {
             var defaults = FetchPolicy.defaults();
             var loaded = new FileSourceLoader(environment.workingDirectory()).load(new SourceLocator(file),
-                    new FetchPolicy(false, 1_048_576, defaults.timeout()), cancellation);
+                    new FetchPolicy(false, 1_048_576, defaults.connectTimeout(), defaults.readTimeout(), defaults.requestTimeout()), cancellation);
             var properties = new Properties() {
                 @Override public synchronized Object put(Object key, Object value) {
                     if (containsKey(key)) throw new CliUsageException("duplicate configuration key: " + key);
@@ -53,10 +54,10 @@ public final class ConfigurationLoader {
             catch (IOException impossible) { throw new IllegalStateException(impossible); }
             catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid configuration encoding"); }
             for (String key : new TreeSet<>(properties.stringPropertyNames())) {
-                if (!Set.of("root", "repository", "cache", "read-lock", "write-lock", "offline", "no-cache", "warnings").contains(key))
+                if (!Set.of("root", "repository", "cache", "read-lock", "write-lock", "offline", "no-cache", "warnings", "connect-timeout", "read-timeout", "request-timeout", "proxy", "proxyPort", "no-proxy").contains(key))
                     throw new CliUsageException("unsupported configuration key: " + key);
                 String value = properties.getProperty(key);
-                if (key.equals("offline") || key.equals("no-cache")) {
+                if (key.equals("offline") || key.equals("no-cache") || key.equals("no-proxy")) {
                     if (!value.equals("true") && !value.equals("false"))
                         throw new CliUsageException(key + " must be true or false");
                     if (value.equals("true")) options.put("--" + key, List.of(List.of()));
@@ -67,6 +68,11 @@ public final class ConfigurationLoader {
                 origins.put("--" + key, Origin.CONFIGURATION_FILE);
             }
         });
+        RepositoryNetworkOptions.rejectProxyConflict(options);
+        if (command.has("--no-proxy")) {
+            for (String name : List.of("--proxy", "--proxyPort")) { options.remove(name); origins.remove(name); }
+        }
+        if (command.has("--proxy")) { options.remove("--no-proxy"); origins.remove("--no-proxy"); }
         if(command.has("--cache")) { options.remove("--no-cache"); origins.remove("--no-cache"); }
         if(command.has("--no-cache")) { options.remove("--cache"); origins.remove("--cache"); }
         command.options().forEach((name, values) -> {
@@ -89,6 +95,7 @@ public final class ConfigurationLoader {
                 } catch(IllegalArgumentException invalid) { throw new CliUsageException("invalid cache directory"); }
             }
         }
+        RepositoryNetworkOptions.normalize(options, origins);
         return new ResolvedConfiguration(new ParsedCommand(command.command(), options, command.files()), origins);
     }
 
@@ -104,7 +111,7 @@ public final class ConfigurationLoader {
                     .append(entry.getValue()).append("\",\"values\":[");
             var occurrences = configuration.command().occurrences(entry.getKey());
             var values = occurrences.stream().flatMap(Collection::stream).toList();
-            if (entry.getKey().equals("--offline") || entry.getKey().equals("--no-cache")) values = List.of(Boolean.toString(configuration.command().has(entry.getKey())));
+            if (entry.getKey().equals("--offline") || entry.getKey().equals("--no-cache") || entry.getKey().equals("--no-proxy")) values = List.of(Boolean.toString(configuration.command().has(entry.getKey())));
             for (int index = 0; index < values.size(); index++) {
                 if (index > 0) output.append(',');
                 output.append('"').append(JsonDiagnosticWriter.escape(safeValue(values.get(index)))).append('"');

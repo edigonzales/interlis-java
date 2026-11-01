@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.RepositorySearchContractTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-01T18:46:24.701Z" hostname="Monterrico.local" time="0.063">
+  <properties/>
+  <testcase name="siteReaderPreservesOrderAndRejectsEntitiesAndUnsafeSchemes()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.015"/>
+  <testcase name="excludesBrowseOnlyAndDoesNotChooseARootlessCycle()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.002"/>
+  <testcase name="followsConfiguredThenParentThenSubsidiaryOrderAndStopsBeforeReadingUnneededSites()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.013"/>
+  <testcase name="visitsSubsidiaryParentsBeforeNextSiblingAndTerminatesCycles()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.009"/>
+  <testcase name="anEmptyStandardIndexCanActAsAMotherWithoutAnInvalidIndexWarning()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.004"/>
+  <testcase name="malformedChainsFollowIndexOrderAndExplainIgnoredEntries()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.004"/>
+  <testcase name="missingRepositoryDoesNotPreventLaterConfiguredHitAndLimitsCancelWithoutAPartialResult()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.007"/>
+  <testcase name="selectsChainNotLexicalLatestAndHonoursExplicitOldVersionAndLanguage()" classname="guru.interlis.repository.RepositorySearchContractTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

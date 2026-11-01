@@ -1,0 +1,47 @@
+> Task :interlis-workspace:processResources NO-SOURCE
+> Task :interlis-repository:processResources NO-SOURCE
+> Task :interlis-compiler-cli:processResources NO-SOURCE
+> Task :interlis-compiler-cli:processTestResources NO-SOURCE
+> Task :interlis-projection:processResources UP-TO-DATE
+> Task :interlis-model:compileJava UP-TO-DATE
+> Task :interlis-model:processResources NO-SOURCE
+> Task :interlis-model:classes UP-TO-DATE
+> Task :interlis-model:jar UP-TO-DATE
+> Task :interlis-compiler:generateGrammarSource UP-TO-DATE
+> Task :interlis-compiler:compileJava UP-TO-DATE
+> Task :interlis-compiler:processResources UP-TO-DATE
+> Task :interlis-compiler:classes UP-TO-DATE
+> Task :interlis-compiler:jar UP-TO-DATE
+> Task :interlis-workspace:compileJava UP-TO-DATE
+> Task :interlis-projection:compileJava UP-TO-DATE
+> Task :interlis-workspace:classes UP-TO-DATE
+> Task :interlis-projection:classes UP-TO-DATE
+> Task :interlis-workspace:jar UP-TO-DATE
+> Task :interlis-projection:jar UP-TO-DATE
+> Task :interlis-repository:compileJava UP-TO-DATE
+> Task :interlis-repository:classes UP-TO-DATE
+> Task :interlis-repository:jar UP-TO-DATE
+> Task :interlis-compiler-cli:compileJava UP-TO-DATE
+> Task :interlis-compiler-cli:classes UP-TO-DATE
+> Task :interlis-compiler-cli:jar UP-TO-DATE
+> Task :interlis-compiler-cli:compileTestJava
+> Task :interlis-compiler-cli:testClasses
+
+> Task :interlis-compiler-cli:test FAILED
+
+MalformedRepositoryRedirectTest > malformedRedirectsRemainOperationalFailuresForAllRepositoryCommands() FAILED
+    org.opentest4j.AssertionFailedError at MalformedRepositoryRedirectTest.java:42
+
+1 test completed, 1 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':interlis-compiler-cli:test'.
+> There were failing tests. See the report at: file:///Users/stefan/sources/interlis-java/interlis-compiler-cli/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 1s
+17 actionable tasks: 2 executed, 15 up-to-date

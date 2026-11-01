@@ -42,7 +42,7 @@ class RepositoryParityIntegrationTest {
                 lock=new ResolutionLockCodec().decode(new ResolutionLockCodec().encode(update.lock()));assertEquals(2,lock.formatVersion());
                 update.apply(w);compile(w,"Root");
             }
-            var offline=new RepositoryConfig(config(start).sources(),new FetchPolicy(true,2_000_000,Duration.ofSeconds(1)));
+            var offline=new RepositoryConfig(config(start).sources(),new FetchPolicy(true, 2_000_000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
             try(var w=workspace(root)) {
                 var update=prepared(new RepositoryClosureService((l,p,t)->{fail("offline IO");return null;},cache)
                         .resolve(w,request(w),new RepositoryResolveOptions(offline,Map.of(),Map.of(),Optional.of(lock)),TOKEN));
@@ -63,7 +63,7 @@ class RepositoryParityIntegrationTest {
             assertTrue(out.analysis().diagnostics().stream().anyMatch(d->d.code().value().equals("ILI-RES-0008")));
         }
         try(var w=workspace(model("Root","1","IMPORTS Dep;"))) {
-            var offline=new RepositoryConfig(config(base).sources(),new FetchPolicy(true,10000,Duration.ofSeconds(1)));
+            var offline=new RepositoryConfig(config(base).sources(),new FetchPolicy(true, 10000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
             var update=prepared(new RepositoryClosureService((l,p,t)->{fail("offline IO");return null;},cache).resolve(w,request(w),new RepositoryResolveOptions(offline,Map.of(),Map.of(),Optional.of(lock)),TOKEN));
             assertEquals(lock,update.lock());update.apply(w);assertEquals(1,compile(w,"Root").analysis().diagnostics().size());
         }
@@ -104,7 +104,7 @@ class RepositoryParityIntegrationTest {
             assertEquals(2,lock.indexes().size());assertEquals(Set.of("Dep","NewDep"),lock.models().keySet());
         }
         try(var w=workspace(edited)) {
-            var offline=new RepositoryConfig(config.sources(),new FetchPolicy(true,10000,Duration.ofSeconds(1)));
+            var offline=new RepositoryConfig(config.sources(),new FetchPolicy(true, 10000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
             var update=prepared(new RepositoryClosureService((l,p,t)->{fail("offline IO");return null;},cache).resolve(w,request(w),new RepositoryResolveOptions(offline,Map.of(),Map.of(),Optional.of(lock)),TOKEN));
             assertEquals(lock,update.lock());update.apply(w);compile(w,"Root");
         }

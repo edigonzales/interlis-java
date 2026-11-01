@@ -1,0 +1,11 @@
+{
+  "candidateSha": "7fa83ef1bfdec7f8dacc2925c5c27dd4cfa891f3",
+  "productFiles": 944,
+  "evidenceFiles": 23,
+  "jars": 7,
+  "manifestMismatches": 0,
+  "jarMismatches": 0,
+  "documentErrors": [],
+  "gitHead": "958f186a92361c3b827a5f0de13a8afee3fe0294",
+  "note": "Original reviewed inputs unchanged; only final status/report and supplementary evidence added."
+}

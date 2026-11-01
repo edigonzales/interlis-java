@@ -28,6 +28,24 @@ class RepositoryClientTest {
             """;
 
     @Test
+    void allTimeoutComponentsAffectCatalogRevision() {
+        var client = new RepositoryClient(new MapLoader(Map.of()), new RepositoryIndexReader());
+        var defaults = FetchPolicy.defaults();
+        var policies = java.util.List.of(defaults,
+                new FetchPolicy(false, defaults.maxBytes(), java.time.Duration.ofSeconds(16), defaults.readTimeout(), Optional.empty()),
+                new FetchPolicy(false, defaults.maxBytes(), defaults.connectTimeout(), java.time.Duration.ofSeconds(41), Optional.empty()),
+                new FetchPolicy(false, defaults.maxBytes(), defaults.connectTimeout(), defaults.readTimeout(), Optional.of(java.time.Duration.ofSeconds(60))));
+        var revisions = new java.util.HashSet<Object>();
+        for (var policy : policies) {
+            var config = new RepositoryConfig(java.util.List.of(), policy);
+            var catalog = client.catalog(config, CancellationToken.none());
+            revisions.add(catalog.revision());
+            assertEquals(catalog.revision(), client.catalog(config, CancellationToken.none()).revision());
+        }
+        assertEquals(4, revisions.size());
+    }
+
+    @Test
     void returnsCandidatesWithDeterministicPriorities() {
         RepositoryClient client = new RepositoryClient(new MapLoader(Map.of(
                 "https://a.example/repo/ilimodels.xml", INDEX,
@@ -75,7 +93,7 @@ class RepositoryClientTest {
                 INDEX.replace("</Version>","</Version><precursorVersion>old</precursorVersion>"))) {
             assertTrue(!previous.equals(new RepositoryClient(new MapLoader(Map.of(uri,changed)),new RepositoryIndexReader()).catalog(config,CancellationToken.none()).revision()));
         }
-        var offline=new RepositoryConfig(config.sources(),new FetchPolicy(true,1000,java.time.Duration.ofSeconds(1)));
+        var offline=new RepositoryConfig(config.sources(),new FetchPolicy(true, 1000, java.time.Duration.ofSeconds(1), java.time.Duration.ofSeconds(1), java.util.Optional.of(java.time.Duration.ofSeconds(1))));
         // The injected no-IO loader supplies the same fixture; policy remains a distinct catalog input.
         assertTrue(!previous.equals(new RepositoryClient(new MapLoader(Map.of(uri,INDEX)),new RepositoryIndexReader()).catalog(offline,CancellationToken.none()).revision()));
     }

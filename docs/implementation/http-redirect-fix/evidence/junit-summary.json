@@ -1,0 +1,59 @@
+{
+  "suites": 5,
+  "tests": 27,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "results": [
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.HttpNetworkPolicyTest.xml",
+      "name": "Monterrico.local",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:54:22.894Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.HttpRedirectFailureTest.xml",
+      "name": "Monterrico.local",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:54:22.587Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.HttpSourceLoaderTest.xml",
+      "name": "Monterrico.local",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:54:26.750Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryCacheRegressionTest.xml",
+      "name": "Monterrico.local",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:54:26.880Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.MalformedRepositoryRedirectTest.xml",
+      "name": "Monterrico.local",
+      "tests": "1",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:56:27.035Z"
+    }
+  ]
+}

@@ -50,7 +50,7 @@ class FileSourceLoaderTest {
         Files.writeString(large, "0123456789", StandardCharsets.UTF_8);
         SourceLoadException oversized = assertThrows(SourceLoadException.class, () -> loader.load(
                 new SourceLocator("large.ili"),
-                new FetchPolicy(false, 4, Duration.ofSeconds(1)), CancellationToken.none()));
+                new FetchPolicy(false, 4, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))), CancellationToken.none()));
         assertEquals(SourceLoadException.Reason.TOO_LARGE, oversized.reason());
     }
 
@@ -58,7 +58,7 @@ class FileSourceLoaderTest {
     void rejectsOfflineCancelledAndInvalidPath() {
         FileSourceLoader loader = new FileSourceLoader(directory);
         SourceLoadException offline = assertThrows(SourceLoadException.class, () -> loader.load(
-                new SourceLocator("model.ili"), new FetchPolicy(true, 100, Duration.ofSeconds(1)),
+                new SourceLocator("model.ili"), new FetchPolicy(true, 100, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))),
                 CancellationToken.none()));
         assertEquals(SourceLoadException.Reason.OFFLINE, offline.reason());
         assertThrows(OperationCancelledException.class, () -> loader.load(

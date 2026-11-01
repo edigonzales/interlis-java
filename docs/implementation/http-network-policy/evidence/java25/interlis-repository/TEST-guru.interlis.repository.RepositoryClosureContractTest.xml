@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.RepositoryClosureContractTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-11-01T18:46:22.815Z" hostname="Monterrico.local" time="0.298">
+  <properties/>
+  <testcase name="namedMissingRootIsDiscoveredAndCyclicImportsTerminateWithoutPretendingSemanticValidity()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.006"/>
+  <testcase name="sourceChangesDuringResolutionAndStaleBatchesNeverOverwriteEditors()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.013"/>
+  <testcase name="wrongDeclaredHeaderDigestAndPublishedMd5AreRejectedWithoutFallback()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.006"/>
+  <testcase name="preparesTransitiveLocalAndFileUriSourcesAndInstallsOneAtomicBatch()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.01"/>
+  <testcase name="editingDuringFetchReturnsStaleAndCancellationReturnsNoBatch()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.008"/>
+  <testcase name="twoExplicitOriginalVersionsRetainTheirIdentitiesAndBothReplayOffline()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.049"/>
+  <testcase name="repositoryPriorityWinsAndDuplicateStartsUseIndexOrder()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.006"/>
+  <testcase name="lockRejectsChangedIndexesAndUnlockedNewDependencies()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.022"/>
+  <testcase name="externalOverlayOriginalAndItsImportsAreDownloadedByTheSameHostLoop()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.036"/>
+  <testcase name="twoExplicitOriginalSourcesWithOneVersionRemainSeparatePerTranslation()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.024"/>
+  <testcase name="workspaceOverridesKeepIdentityAndAreNotReplacedByDownloads()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.006"/>
+  <testcase name="indexOrderResolvesDuplicateStartsAndExactPinsBindTheRealSelectedDefinition()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.025"/>
+  <testcase name="completeFrozenClosureNeedsNoIndexOrProviderEvenOfflineAndRetainsEarlierRemoteLock()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.029"/>
+  <testcase name="cacheOnlyConfigurationEditsAlsoPreventStaleBatchApplication()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.005"/>
+  <testcase name="resolvesViaRealHttpAndReplaysLockOfflineWithoutCallingAnyProvider()" classname="guru.interlis.repository.RepositoryClosureContractTest" time="0.043"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

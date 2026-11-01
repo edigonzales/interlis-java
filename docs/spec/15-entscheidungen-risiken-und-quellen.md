@@ -225,3 +225,15 @@ additive JVM-Host-API; bestehende Enum-Callbacks bleiben kompatibel.
 ILI-RES-0010 und Katalog v3 dienen nur der gemeinsamen Präsentation, nicht
 Gate, Snapshot, Warnungspolitik oder einer neuen JSON-Ausgabe.
 Die zuletzt korrigierte starke ETag-/optionale Site-Politik ist unverändert.
+
+### HTTP-Netzwerkpolicy: explizite Nutzerentscheidung
+
+15/40/off statt bisherigem 20-s-Gesamtlimit; JVM-Proxyauswahl bleibt Default.
+Die FetchPolicy-API wird bewusst bereinigt, kein Legacy-Konstruktor/timeout().
+Proxywerte bleiben pro Hostinstanz, ohne globale Produktionsmutationen.
+Fachvertrag Kapitel08 §15;
+[Implementierungs-/Reviewplan](../implementation/http-network-policy/EXECUTION_PLAN.md).
+ili2c-Referenz 5.6.9, bf16026e83f2377153b2e818a4f3838f0a423722:
+RepositoryAccess setzt 15 s Connect und 40 s Read, Main bietet --proxy/--proxyPort.
+Globale Systempropertyänderungen der Referenz werden bewusst durch
+instanzbezogene Konfiguration ersetzt.

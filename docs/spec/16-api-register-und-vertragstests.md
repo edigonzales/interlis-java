@@ -842,3 +842,15 @@ Observerfehlervertrag folgen Kapitel 08 §14. Keine doppelte Ereigniszustellung.
 CLI / `guru.interlis.cli`: `RepositoryCacheRenderer` projiziert die
 Beobachtungen nur zur Darstellung über ConsoleDiagnosticRenderer.
 Katalog v3 und ILI-RES-0010 folgen Kapitel 09; Ausgabe folgt Kapitel 18.
+
+### HTTP-Netzwerkpolicy
+
+Besitzer interlis-repository / guru.interlis.repository: FetchPolicy(offline,
+maxBytes,connectTimeout,readTimeout,Optional<Duration> requestTimeout) ersetzt
+den früheren Dreiparameterkonstruktor und timeout(). RepositoryProxyConfiguration
+mit SystemDefault, Direct und HttpProxy(host,port); HttpSourceLoader(proxy) und
+HostRepositories.create/createObserved mit zusätzlichem letztem Proxyparameter.
+Bestehende Loader-/Hosteinstiege verwenden SystemDefault. Vollständige Wert-,
+Fehler-, Besitz- und Zeitverträge: Kapitel08 §15. CLI-Konversion und Präzedenz:
+Kapitel18, keine zweite HTTP-Semantik im CLI. Abnahmen NET-01–05, insbesondere
+SDK-Kompilierung, HttpNetworkPolicyTest und RepositoryNetworkConfigurationTest.

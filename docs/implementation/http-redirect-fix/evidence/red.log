@@ -1,0 +1,54 @@
+> Task :interlis-workspace:processResources NO-SOURCE
+> Task :interlis-repository:processResources NO-SOURCE
+> Task :interlis-model:compileJava UP-TO-DATE
+> Task :interlis-repository:processTestResources UP-TO-DATE
+> Task :interlis-model:processResources NO-SOURCE
+> Task :interlis-model:classes UP-TO-DATE
+> Task :interlis-model:jar UP-TO-DATE
+> Task :interlis-compiler:generateGrammarSource UP-TO-DATE
+> Task :interlis-compiler:compileJava UP-TO-DATE
+> Task :interlis-compiler:processResources UP-TO-DATE
+> Task :interlis-compiler:classes UP-TO-DATE
+> Task :interlis-compiler:jar UP-TO-DATE
+> Task :interlis-workspace:compileJava UP-TO-DATE
+> Task :interlis-workspace:classes UP-TO-DATE
+> Task :interlis-workspace:jar UP-TO-DATE
+> Task :interlis-repository:compileJava UP-TO-DATE
+> Task :interlis-repository:classes UP-TO-DATE
+> Task :interlis-repository:compileTestJava
+> Task :interlis-repository:testClasses
+
+> Task :interlis-repository:test FAILED
+
+HttpRedirectFailureTest > invalidInitialHttpAddressesUseTheSameTypedBoundary() FAILED
+    org.opentest4j.AssertionFailedError at HttpRedirectFailureTest.java:46
+        Caused by: java.lang.IllegalArgumentException at HttpRedirectFailureTest.java:89
+            Caused by: java.net.URISyntaxException at HttpRedirectFailureTest.java:89
+
+HttpRedirectFailureTest > badRedirectDoesNotPublishContentOrSuccessObservation() FAILED
+    org.opentest4j.AssertionFailedError at HttpRedirectFailureTest.java:55
+        Caused by: java.lang.IllegalArgumentException at HttpRedirectFailureTest.java:89
+            Caused by: java.net.URISyntaxException at HttpRedirectFailureTest.java:89
+
+HttpRedirectFailureTest > nonRequestableHttpTargetsAreTyped() FAILED
+    org.opentest4j.AssertionFailedError at HttpRedirectFailureTest.java:39
+        Caused by: java.lang.IllegalArgumentException at HttpRedirectFailureTest.java:89
+
+HttpRedirectFailureTest > malformedRedirectLocationsAreTypedAndSafe() FAILED
+    org.opentest4j.AssertionFailedError at HttpRedirectFailureTest.java:25
+        Caused by: java.lang.IllegalArgumentException at HttpRedirectFailureTest.java:89
+            Caused by: java.net.URISyntaxException at HttpRedirectFailureTest.java:89
+
+5 tests completed, 4 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':interlis-repository:test'.
+> There were failing tests. See the report at: file:///Users/stefan/sources/interlis-java/interlis-repository/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 2s
+12 actionable tasks: 2 executed, 10 up-to-date

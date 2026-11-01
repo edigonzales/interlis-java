@@ -1,0 +1,254 @@
+{
+  "command": [
+    "./gradlew",
+    ":interlis-repository:test",
+    "--rerun",
+    ":interlis-compiler-cli:test",
+    "--rerun",
+    "--tests",
+    "*RepositoryNetworkConfigurationTest",
+    "--tests",
+    "*P3ConfigurationContractTest",
+    "--tests",
+    "*DefaultRepositoryCacheTest",
+    "--tests",
+    "*SemanticRepositoryCommandsTest",
+    "--tests",
+    "*RepositoryCacheRendererTest",
+    "--tests",
+    "*VerboseRepositoryCacheTest",
+    "--tests",
+    "*CliApplicationTest",
+    "--console=plain"
+  ],
+  "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem",
+  "exitCode": 0,
+  "note": "Repeat justified solely by discovery that original Gradle launcher used Java21; same unchanged Java25-compiled product/test content.",
+  "suites": 22,
+  "tests": 126,
+  "skipped": 0,
+  "failures": 0,
+  "errors": 0,
+  "results": [
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.ContentStoreTest.xml",
+      "name": "Monterrico.local",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:14.481Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.FileSourceLoaderTest.xml",
+      "name": "Monterrico.local",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:14.519Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.HttpNetworkPolicyTest.xml",
+      "name": "Monterrico.local",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:14.532Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.HttpSourceLoaderTest.xml",
+      "name": "Monterrico.local",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:19.708Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.PinnedRealClosureTest.xml",
+      "name": "Monterrico.local",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:19.966Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryCacheContractTest.xml",
+      "name": "Monterrico.local",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:21.710Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryCacheObservationTest.xml",
+      "name": "Monterrico.local",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:22.341Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryCacheRegressionTest.xml",
+      "name": "Monterrico.local",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:22.554Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryClientTest.xml",
+      "name": "Monterrico.local",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:22.803Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryClosureContractTest.xml",
+      "name": "Monterrico.local",
+      "tests": "15",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:22.815Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryIndexReaderTest.xml",
+      "name": "Monterrico.local",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:23.113Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryParityIntegrationTest.xml",
+      "name": "Monterrico.local",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:23.137Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositoryRefreshServiceTest.xml",
+      "name": "Monterrico.local",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:24.670Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.RepositorySearchContractTest.xml",
+      "name": "Monterrico.local",
+      "tests": "8",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:24.701Z"
+    },
+    {
+      "module": "interlis-repository",
+      "file": "TEST-guru.interlis.repository.ResolutionLockContractTest.xml",
+      "name": "Monterrico.local",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:24.764Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.CliApplicationTest.xml",
+      "name": "Monterrico.local",
+      "tests": "9",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:14.654Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.DefaultRepositoryCacheTest.xml",
+      "name": "Monterrico.local",
+      "tests": "5",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:15.213Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.P3ConfigurationContractTest.xml",
+      "name": "Monterrico.local",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:15.627Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.RepositoryCacheRendererTest.xml",
+      "name": "Monterrico.local",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:15.653Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.RepositoryNetworkConfigurationTest.xml",
+      "name": "Monterrico.local",
+      "tests": "6",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:15.656Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.SemanticRepositoryCommandsTest.xml",
+      "name": "Monterrico.local",
+      "tests": "7",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:15.688Z"
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "file": "TEST-guru.interlis.cli.VerboseRepositoryCacheTest.xml",
+      "name": "Monterrico.local",
+      "tests": "4",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-11-01T18:46:16.847Z"
+    }
+  ]
+}

@@ -466,3 +466,31 @@ CACHE_MISS meldet neutral, dass der Cache nicht verwendet werden konnte.
 Die bestehende globale Schreibwarnung wird nicht als Info dupliziert.
 Betriebsinformationen beeinflussen keine Diagnoselisten, Warnungsablehnung
 oder Exits. Ein zweiter Zugriff in der Abschlussprüfung bleibt sichtbar.
+
+## Repository-Netzwerkeinstellungen (WP-26/30)
+
+check, compile, analyze und diagram unterstützen --connect-timeout SECONDS,
+--read-timeout SECONDS, --request-timeout SECONDS|off sowie --proxy HOST,
+--proxyPort PORT und --no-proxy. Properties verwenden dieselben Schlüssel ohne
+führende Bindestriche; no-proxy ist true oder false. Zeitwerte sind positive
+ganze Sekunden im long-Nanosekundenbereich; off ist nur für request-timeout
+zulässig. Defaults: 15 s Connect, 40 s Leseinaktivität, Requestlimit off,
+JVM-Proxyauswahl. Ein expliziter Proxy hat ohne Portangabe Port 80.
+Host-/Portvalidierung und Timeoutsemantik folgen Kapitel08 §15.
+
+CLI überschreibt Datei, Datei überschreibt Profildefault. no-proxy und
+Proxyhost/-port derselben Ebene sind bei aktivem no-proxy ein Nutzungsfehler;
+dieser Konflikt wird vor Übersteuerung geprüft. CLI --no-proxy entfernt
+Dateihost und -port, CLI --proxy entfernt Datei-no-proxy und übernimmt einen
+Dateiport, andernfalls Port80. Ein Port allein benötigt einen effektiven Host.
+no-proxy=false wählt keinen expliziten Modus. Ohne explizite Wahl gilt die JVM.
+
+Alle effektiven Werte werden vor Quell-/Netzwerkzugriffen validiert, auch bei
+--explain-config. Fehlertexte geben ungültige Hostwerte nicht wieder.
+--explain-config zeigt Werte und Herkunft einschliesslich der Defaults und dem
+abgeleiteten --proxy-mode (system/direct/http, kein CLI-Argument). Die Herkunft
+von proxy-mode folgt dem wirksamen Modusgeber. Einstellungen gelten ausschliesslich
+für Repositoryzugriffe; lokale Quellen bleiben lokal. Offline erzeugt keine
+Netzwerkanfragen. Compilerdiagnosen, Gate und Exitklassifikation bleiben unverändert.
+Java-SDK-Migration: FetchPolicy verwendet die fünf Komponenten aus Kapitel08;
+der bisherige Konstruktor und timeout() werden entfernt.

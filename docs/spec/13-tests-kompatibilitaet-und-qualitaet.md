@@ -535,3 +535,23 @@ Versionsprüfungen; die schmale portable Probe prüft weiterhin Wireversion und
 Fähigkeiten sowie das Fehlen von Hostcacheinfos in Compilerdiagnosen.
 Der unabhängige OpenCode-/DeepSeek-1017-Review auditiert Rohbelege und ergänzt
 eigene gezielte Gegenproben, keine pauschalen Korpus-/Benchmarkwiederholungen.
+
+### HTTP-Netzwerkpolicy: gezielte Abnahme
+
+RES-009, ARCH-005, CLI-001–007, API-001–006: NET-01–05 unter
+[EXECUTION_PLAN.md](../implementation/http-network-policy/EXECUTION_PLAN.md)
+prüfen positive/negative API-Werte, monotone Read-/Requestbudgets,
+TLS-Connecttimeout, Header-/Bodyfortschritt, Redirect-/Retrybudgets,
+HTTP/HTTPS-CONNECT, parallele Proxyisolation, Offline ohne Netz sowie
+CLI-Präzedenz/Fehlerexits. Lokale kontrollierte Server und echte
+Distributionsprozesse; Cache/Pin/Lock/Diagnose-Regressionsfälle gezielt erhalten.
+Unabhängiger OpenCode/deepseek-flash-Review auditiert Originalbelege und ergänzt
+eigene Gegenproben am festen Kandidaten; keine doppelten breiten Pflichtläufe.
+
+HTTP-Redirectfehler (RES-009, CLI-001–007): Der ursprüngliche OBS-02 wird mit
+HttpRedirectFailureTest vor der Korrektur reproduziert. Danach prüfen gezielte
+Loader-/CLI- und Distributionsfälle typisierten IO_FAILURE, Exit1 statt internem
+Fehler/Exit3, wertfreie Diagnosen, fehlende Teilcachepublikation und gültige relative
+Redirects. Bestehende Timeout-/Abbruch-/Redirectlimit-/Cachefälle werden gezielt
+geprüft; unabhängiger OpenCode/deepseek-flash-Review mit eigener Gegenprobe und
+Rohbelegaudit. [Plan](../implementation/http-redirect-fix/EXECUTION_PLAN.md).

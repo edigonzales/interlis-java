@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.RepositoryCacheContractTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-01T18:31:15.872Z" hostname="Monterrico.local" time="0.214">
+  <properties/>
+  <testcase name="offlineDiscoveryUsesConfiguredRepositoriesAndLockPinsRetainOldBytes()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.086"/>
+  <testcase name="lastModifiedNoValidatorsRedirectsAndUnsupportedVariants()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.023"/>
+  <testcase name="corruptBody304RetriesUnconditionallyAndCorruptMetadataIsAMiss()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.024"/>
+  <testcase name="parallelWritersPublishOnlyCompleteMatchingEntries()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.016"/>
+  <testcase name="legacyFunctionalLoadersAreNeverInvokedForUnpinnedOfflineRequests()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.002"/>
+  <testcase name="conditionalFinalCheckDetectsChangesAndNoStoreIsNotPersistedByClosure()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.019"/>
+  <testcase name="unavailableWritesWarnOnceDisabledCacheDoesNoDiskIOAndLimitsStillApply()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.011"/>
+  <testcase name="closureNeverPersistsNoStoreModelBytes()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.016"/>
+  <testcase name="persistsRevalidatesAcrossInstancesAndOfflineNeverConnects()" classname="guru.interlis.repository.RepositoryCacheContractTest" time="0.015"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

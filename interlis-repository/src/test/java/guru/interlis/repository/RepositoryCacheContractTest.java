@@ -22,8 +22,8 @@ class RepositoryCacheContractTest {
     final AtomicInteger requests=new AtomicInteger(), bodies=new AtomicInteger();
     final List<String> conditions=Collections.synchronizedList(new ArrayList<>());
     static final CancellationToken TOKEN=CancellationToken.none();
-    static final FetchPolicy ONLINE=new FetchPolicy(false,16_777_216,Duration.ofSeconds(2));
-    static final FetchPolicy OFFLINE=new FetchPolicy(true,16_777_216,Duration.ofSeconds(2));
+    static final FetchPolicy ONLINE=new FetchPolicy(false, 16_777_216, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2)));
+    static final FetchPolicy OFFLINE=new FetchPolicy(true, 16_777_216, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2)));
     @AfterEach void stop() { if(server!=null)server.stop(0); }
     String serve(HttpHandler handler) throws Exception {
         server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
@@ -111,7 +111,7 @@ class RepositoryCacheContractTest {
         var disabled=HostRepositories.create(directory,RepositoryCacheConfiguration.disabled(),event -> { });
         load(disabled,url,ONLINE);assertFalse(Files.exists(directory.resolve("cache")));assertThrows(SourceLoadException.class,()->load(disabled,url,OFFLINE));
         load(host(),url,ONLINE);
-        assertEquals(SourceLoadException.Reason.TOO_LARGE,assertThrows(SourceLoadException.class,()->load(host(),url,new FetchPolicy(true,1,Duration.ofSeconds(2)))).reason());
+        assertEquals(SourceLoadException.Reason.TOO_LARGE,assertThrows(SourceLoadException.class,()->load(host(),url,new FetchPolicy(true, 1, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2))))).reason());
         assertThrows(OperationCancelledException.class,()->host().loader().load(new SourceLocator(url),ONLINE,()->true));
     }
 

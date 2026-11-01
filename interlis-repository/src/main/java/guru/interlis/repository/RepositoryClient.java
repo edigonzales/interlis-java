@@ -25,13 +25,12 @@ public final class RepositoryClient {
     }
 
     /**
-     * Discovers exact model candidates. Load/index failures are returned as
+     * Builds a catalog of all model candidates. Load/index failures are returned as
      * data and do not suppress candidates from other repositories.
      *
-     * @param query exact model query
      * @param config ordered repositories
      * @param token cancellation signal
-     * @return candidates plus repository-local failures
+     * @return immutable catalog with revision, candidates and repository-local failures
      */
     public RepositoryCatalog catalog(RepositoryConfig config, CancellationToken token) {
         Objects.requireNonNull(config, "config");
@@ -126,10 +125,12 @@ public final class RepositoryClient {
 
     private static String revision(RepositoryConfig config, List<ModelCandidate> candidates,
                                    List<RepositoryFailure> failures) {
-        StringBuilder canonical = new StringBuilder("repository-catalog-v3");
+        StringBuilder canonical = new StringBuilder("repository-catalog-v4");
         field(canonical, Boolean.toString(config.fetchPolicy().offline()));
         field(canonical, Integer.toString(config.fetchPolicy().maxBytes()));
-        field(canonical, config.fetchPolicy().timeout().toString());
+        field(canonical, config.fetchPolicy().connectTimeout().toString());
+        field(canonical, config.fetchPolicy().readTimeout().toString());
+        field(canonical, config.fetchPolicy().requestTimeout().map(Object::toString).orElse("off"));
         field(canonical, Integer.toString(config.sources().size()));
         config.sources().forEach(source -> {
             field(canonical, source.base().uri().toString());

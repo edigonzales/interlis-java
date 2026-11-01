@@ -17,22 +17,36 @@ import java.util.function.Consumer;
 /** Explicit HTTP loader with timeout, size and redirect limits. */
 public final class HttpSourceLoader implements SourceLoader {
     private static final int MAX_REDIRECTS = 5;
-    private final HttpClient client;
+    private final java.net.ProxySelector proxySelector;
+    private final java.util.concurrent.ConcurrentMap<java.time.Duration, HttpClient> clients = new java.util.concurrent.ConcurrentHashMap<>();
     private final ContentStore store;
     private final DirectoryMetadataStore metadata;
     private final CacheObservations observer;
 
     /** Explicit uncached loader; existing callers retain their host policy. */
-    public HttpSourceLoader() { this(new InMemoryContentStore(), null, event -> { }); }
+    public HttpSourceLoader() { this(new RepositoryProxyConfiguration.SystemDefault()); }
+
+    /** Creates an uncached host loader and captures its non-null proxy choice without network IO. */
+    public HttpSourceLoader(RepositoryProxyConfiguration proxy) {
+        this(new InMemoryContentStore(), null, CacheObservations.detailed(event -> { }), proxy);
+    }
 
     HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, Consumer<RepositoryCacheEvent> observer) {
         this(store,metadata,CacheObservations.legacy(observer));
     }
     static HttpSourceLoader observed(ContentStore store, DirectoryMetadataStore metadata, Consumer<RepositoryCacheObservation> observer) {
-        return new HttpSourceLoader(store,metadata,CacheObservations.detailed(observer));
+        return observed(store,metadata,observer,new RepositoryProxyConfiguration.SystemDefault());
+    }
+    static HttpSourceLoader observed(ContentStore store, DirectoryMetadataStore metadata,
+                                      Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy) {
+        return new HttpSourceLoader(store,metadata,CacheObservations.detailed(observer),proxy);
     }
     private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer) {
-        this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
+        this(store, metadata, observer, new RepositoryProxyConfiguration.SystemDefault());
+    }
+    private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer,
+                              RepositoryProxyConfiguration proxy) {
+        this.proxySelector = Objects.requireNonNull(proxy, "proxy").selector();
         this.store = store; this.metadata = metadata; this.observer = observer;
     }
 
@@ -59,7 +73,11 @@ public final class HttpSourceLoader implements SourceLoader {
             observer.publish(RepositoryCacheEvent.OFFLINE_HIT,id);
             return loaded;
         }
-        URI uri = URI.create(locator.location());
+        URI uri;
+        try { uri = URI.create(locator.location()); }
+        catch (IllegalArgumentException invalid) {
+            throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP source address", invalid);
+        }
         try {
             // Missing byte identity proof or a vanished/corrupt 304 body gets one unconditional retry.
             for (int attempt=0;attempt<2;attempt++) {
@@ -69,7 +87,12 @@ public final class HttpSourceLoader implements SourceLoader {
                 String requestedEtag = null;
                 for (int redirects=0;redirects<=MAX_REDIRECTS;redirects++) {
                     token.throwIfCancellationRequested();
-                    var request = HttpRequest.newBuilder(current).timeout(policy.timeout()).GET();
+                    HttpRequest.Builder request;
+                    try { request = HttpRequest.newBuilder(current).GET(); }
+                    catch (IllegalArgumentException invalid) {
+                        throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP source address", invalid);
+                    }
+                    policy.requestTimeout().ifPresent(request::timeout);
                     String requestLocation=current.toString();
                     requestedEtag = attempt==0 ? cached.filter(m -> m.responseSource().value().equals(requestLocation))
                             .flatMap(RepositoryCacheMetadata::etag).filter(HttpSourceLoader::isStrongEtag).orElse(null) : null;
@@ -80,7 +103,11 @@ public final class HttpSourceLoader implements SourceLoader {
                     String location=response.headers().firstValue("Location").orElse(null);
                     if(location==null)throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"redirect response without Location",null);
                     if(redirects==MAX_REDIRECTS)throw new SourceLoadException(SourceLoadException.Reason.REDIRECT_LIMIT,"redirect limit exceeded",null);
-                    URI next=current.resolve(location);
+                    URI next;
+                    try { next = current.resolve(location); }
+                    catch (IllegalArgumentException invalid) {
+                        throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP redirect address", invalid);
+                    }
                     if(!"http".equalsIgnoreCase(next.getScheme()) && !"https".equalsIgnoreCase(next.getScheme()))
                         throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"redirect to unsupported scheme",null);
                     current=next;
@@ -172,16 +199,27 @@ public final class HttpSourceLoader implements SourceLoader {
     }
     private HttpResponse<byte[]> receive(HttpRequest request, FetchPolicy policy,
                                          CancellationToken token) throws IOException, InterruptedException {
-        var future = client.sendAsync(request, info -> new BoundedBody(policy.maxBytes()));
+        var client = clients.computeIfAbsent(policy.connectTimeout(), timeout -> HttpClient.newBuilder()
+                .connectTimeout(timeout).proxy(proxySelector).followRedirects(HttpClient.Redirect.NEVER).build());
         long started = System.nanoTime();
+        var lastActivity = new java.util.concurrent.atomic.AtomicLong(started);
+        var body = new java.util.concurrent.atomic.AtomicReference<BoundedBody>();
+        var future = client.sendAsync(request, info -> {
+            lastActivity.set(System.nanoTime());
+            var subscriber = new BoundedBody(policy.maxBytes(), lastActivity);
+            body.set(subscriber);
+            return subscriber;
+        });
         try {
             while (true) {
                 token.throwIfCancellationRequested();
-                long remaining = policy.timeout().toNanos() - (System.nanoTime() - started);
-                if (remaining <= 0) throw new java.net.http.HttpTimeoutException("body timed out");
+                long now = System.nanoTime();
+                long remaining = policy.readTimeout().toNanos() - (now - lastActivity.get());
+                if (policy.requestTimeout().isPresent()) remaining = Math.min(remaining,
+                        policy.requestTimeout().orElseThrow().toNanos() - (now - started));
+                if (remaining <= 0) throw new java.net.http.HttpTimeoutException("HTTP exchange timed out");
                 try {
-                    return future.get(Math.min(remaining, 50_000_000L),
-                            java.util.concurrent.TimeUnit.NANOSECONDS);
+                    return future.get(Math.min(remaining, 50_000_000L), java.util.concurrent.TimeUnit.NANOSECONDS);
                 } catch (java.util.concurrent.TimeoutException waiting) {
                     // Polling bounds cancellation latency even when no body bytes arrive.
                 } catch (java.util.concurrent.ExecutionException failed) {
@@ -192,7 +230,11 @@ public final class HttpSourceLoader implements SourceLoader {
                 }
             }
         } finally {
-            if (!future.isDone()) future.cancel(true);
+            if (!future.isDone()) {
+                future.cancel(true);
+                var subscriber = body.get();
+                if (subscriber != null) subscriber.cancel();
+            }
         }
     }
 
@@ -201,10 +243,18 @@ public final class HttpSourceLoader implements SourceLoader {
         private final HttpResponse.BodySubscriber<byte[]> delegate = HttpResponse.BodySubscribers.ofByteArray();
         private final long maximum;
         private long received;
-        private java.util.concurrent.Flow.Subscription subscription;
+        private volatile java.util.concurrent.Flow.Subscription subscription;
         private boolean failed;
+        private final java.util.concurrent.atomic.AtomicLong lastActivity;
 
-        BoundedBody(long maximum) { this.maximum = maximum; }
+        BoundedBody(long maximum, java.util.concurrent.atomic.AtomicLong lastActivity) {
+            this.maximum = maximum; this.lastActivity = lastActivity;
+        }
+
+        void cancel() {
+            var active = subscription;
+            if (active != null) active.cancel();
+        }
 
         @Override
         public java.util.concurrent.CompletionStage<byte[]> getBody() { return delegate.getBody(); }
@@ -226,6 +276,7 @@ public final class HttpSourceLoader implements SourceLoader {
                             "source exceeds configured byte limit", null));
                     return;
                 }
+                if (buffer.hasRemaining()) lastActivity.set(System.nanoTime());
                 received += buffer.remaining();
             }
             delegate.onNext(buffers);

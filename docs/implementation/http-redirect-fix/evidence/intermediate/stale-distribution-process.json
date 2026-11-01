@@ -1,0 +1,23 @@
+{
+  "passed": false,
+  "cases": [
+    {
+      "name": "invalid-syntax-check",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://127.0.0.1:62301/",
+        "--no-cache",
+        "--no-proxy",
+        "--json"
+      ],
+      "exitCode": 3,
+      "signal": null,
+      "stdout": "",
+      "stderr": "internal failure: cli-2a131d45-45dd-4313-89b9-54d88e33837f\n"
+    }
+  ]
+}

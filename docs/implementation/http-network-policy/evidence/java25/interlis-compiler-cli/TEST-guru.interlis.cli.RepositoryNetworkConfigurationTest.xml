@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.RepositoryNetworkConfigurationTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-01T18:46:15.656Z" hostname="Monterrico.local" time="0.031">
+  <properties/>
+  <testcase name="networkOptionsDoNotChangeLocalSourceCompilation()" classname="guru.interlis.cli.RepositoryNetworkConfigurationTest" time="0.004"/>
+  <testcase name="invalidPropertiesAndSameLevelConflictsCannotBeHiddenByCli()" classname="guru.interlis.cli.RepositoryNetworkConfigurationTest" time="0.004"/>
+  <testcase name="directAndManualChoicesOverrideLowerLevelChoice()" classname="guru.interlis.cli.RepositoryNetworkConfigurationTest" time="0.005"/>
+  <testcase name="commandLineOverridesFileWhileHostRetainsConfiguredPort()" classname="guru.interlis.cli.RepositoryNetworkConfigurationTest" time="0.002"/>
+  <testcase name="invalidCliValuesFailBeforeSourceLoadingEvenWhenExplaining()" classname="guru.interlis.cli.RepositoryNetworkConfigurationTest" time="0.014"/>
+  <testcase name="defaultsAreExplainedForEveryRepositoryCommand()" classname="guru.interlis.cli.RepositoryNetworkConfigurationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

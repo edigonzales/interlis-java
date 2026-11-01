@@ -1,0 +1,13 @@
+AssertionError [ERR_ASSERTION]: invalid-syntax-check: internal failure: cli-b12f1fd4-d9c7-47d6-8ff0-8b2d60191d13
+
+
+3 !== 1
+
+    at run (/Users/stefan/sources/interlis-java/tools/verification/http-redirect-processes.cjs:24:47)
+    at async /Users/stefan/sources/interlis-java/tools/verification/http-redirect-processes.cjs:30:149 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 3,
+  expected: 1,
+  operator: 'strictEqual'
+}

@@ -166,3 +166,29 @@ festgelegte Abhängigkeiten `--write-lock projekt.lock` und später
 `--read-lock projekt.lock --offline` verwenden. Netzfehler aktivieren keinen
 stillen Offlinefallback. Cache und Lockfile ersetzen keine aktuellen lokalen
 Projekttexte. [Verhalten und Beispiele](docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md#standardcache-hostumgebung-und-beispiele).
+
+### HTTP-Timeouts und Proxy
+
+Online-Repositories verwenden standardmässig 15 Sekunden Connecttimeout und
+40 Sekunden Leseinaktivität. Ein regelmässig fortschreitender Download darf länger
+dauern. Ein Gesamtlimit pro HTTP-Austausch ist optional; Redirects und Cache-Retries
+beginnen neue Budgets.
+
+```sh
+interlis-compiler check --root Basis --repository https://models.example/ --connect-timeout 15 --read-timeout 40 --request-timeout 120
+interlis-compiler check --root Basis --repository https://models.example/ --proxy proxy.example --proxyPort 3128
+interlis-compiler check --root Basis --repository https://models.example/ --no-proxy
+interlis-compiler check --explain-config
+```
+
+Dieselben Einstellungen sind in einer expliziten Properties-Datei verfügbar:
+connect-timeout, read-timeout, request-timeout (positive ganze Sekunden bzw.
+off für das Gesamtlimit), proxy, proxyPort, no-proxy (true/false).
+CLI überschreibt Datei, dann Defaults. Ohne Proxywahl gilt die JVM-Auswahl;
+ein expliziter Proxy verwendet standardmässig Port80. --no-proxy erzwingt einen
+direkten Zugriff. Proxyhost und aktives no-proxy derselben Ebene sind unzulässig.
+Offline kontaktiert weder Ziel noch Proxy. Eigene Proxy-Authentisierung ist nicht
+implementiert. Java-SDK: FetchPolicy benötigt jetzt offline, maxBytes,
+connectTimeout, readTimeout und Optional<Duration> requestTimeout; der bisherige
+Konstruktor und timeout() entfallen. Details und Nachweise:
+[HTTP-Netzwerkpolicy](docs/implementation/http-network-policy/EXECUTION_PLAN.md).

@@ -1,0 +1,17 @@
+> Task :interlis-repository:processResources NO-SOURCE
+> Task :interlis-compiler-cli:processResources NO-SOURCE
+> Task :interlis-compiler:generateGrammarSource UP-TO-DATE
+> Task :interlis-model:compileJava UP-TO-DATE
+> Task :interlis-compiler:compileJava UP-TO-DATE
+> Task :interlis-workspace:compileJava UP-TO-DATE
+> Task :interlis-projection:compileJava UP-TO-DATE
+> Task :interlis-repository:compileJava
+> Task :interlis-repository:classes
+> Task :interlis-repository:compileTestJava
+> Task :interlis-compiler-cli:compileJava
+> Task :interlis-compiler-cli:classes
+> Task :interlis-compiler-cli:compileTestJava
+
+BUILD SUCCESSFUL in 5s
+9 actionable tasks: 4 executed, 5 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.8.1/userguide/configuration_cache_enabling.html

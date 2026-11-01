@@ -934,3 +934,12 @@ RepositoryCacheRendererTest und VerboseRepositoryCacheTest prüfen
 Quellenbezug, gemeinsame Darstellung und unveränderte Fachentscheidungen.
 Die jüngste Cachekorrektur bleibt eine eigene Regression. Kriterien und
 Reviewpflicht: [CL-01–08](../implementation/cache-logging/EXECUTION_PLAN.md).
+
+### HTTP-Netzwerkpolicy
+
+WP-26/30 konkretisiert RES-009 (Zeitlimits/Fehler/Abbruch), ARCH-005
+(instanzbezogene Proxywahl), CLI-001–007 (Optionen, Herkunft und Prozesse) sowie
+API-001–006 (FetchPolicy-Migration, Hosteinstiege, SDK). NET-01–05 und Tests:
+[EXECUTION_PLAN.md](../implementation/http-network-policy/EXECUTION_PLAN.md).
+Die Fachverträge bleiben Kapitel08 §15 und Kapitel18; diese Zuordnung behauptet
+keinen zusätzlich ausgeführten Plattform- oder Releaseabschluss.

@@ -1,0 +1,75 @@
+{
+  "guardPid": 88017,
+  "gitHead": "53eb35743ee3e51afa809f74daea575c5a32ccf5",
+  "dirty": "",
+  "status": "passed",
+  "startedAt": "2026-11-01T18:37:56.414Z",
+  "command": [
+    "/Users/stefan/.opencode/bin/opencode",
+    "run",
+    "--standalone",
+    "--auto",
+    "--agent",
+    "build",
+    "--model",
+    "deepseek/deepseek-flash",
+    "--format",
+    "json",
+    "--title",
+    "Independent HTTP timeout and proxy review 53eb357",
+    "--file",
+    "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/request.json",
+    "--file",
+    "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/REVIEW_PROMPT.md",
+    "Independently review NET-01 through NET-05 in request.json and REVIEW_PROMPT.md. Audit code and original raw evidence, add your own focused timeout and proxy counterprobes, write review.md and verdict.json in reviewDirectory, and finish normally with your factual PASS or FAIL. Obey the read-only tracked files and narrow-test restrictions."
+  ],
+  "path": "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis-without-python-cJurRd/bin",
+  "firefoxContentSandbox": "disabled only in this confined test environment to avoid sandbox_init EPERM; outer OS execution filter remains inherited",
+  "profile": "(version 1)(allow default)(deny process-exec (regex #\".*/([Pp]ython[^/]*|[Pp]y[Pp]y[^/]*|[Pp][Ii][Pp][0-9.]*|[Uu][Vv][Xx]?|gradlew|gradle)$\"))",
+  "profileSha256": "d30ca5a8abdd0e2873d6fe5daf4cd1d6240a9fcbed9976aa24b306a2ff071177",
+  "probes": [
+    {
+      "command": "python",
+      "status": null,
+      "error": "ENOENT"
+    },
+    {
+      "command": "python3",
+      "status": null,
+      "error": "ENOENT"
+    },
+    {
+      "command": "pip",
+      "status": null,
+      "error": "ENOENT"
+    },
+    {
+      "command": "pip3",
+      "status": null,
+      "error": "ENOENT"
+    },
+    {
+      "command": "pypy",
+      "status": null,
+      "error": "ENOENT"
+    },
+    {
+      "command": "uv",
+      "status": null,
+      "error": "ENOENT"
+    },
+    {
+      "command": "/usr/bin/python3",
+      "status": null,
+      "error": "EPERM"
+    },
+    {
+      "command": "/usr/bin/pip3",
+      "status": null,
+      "error": "EPERM"
+    }
+  ],
+  "scope": "No reachable interpreter: private PATH plus inherited OS process-exec denial, including absolute paths. Host installations are untouched.",
+  "exitCode": 0,
+  "finishedAt": "2026-11-01T18:50:15.398Z"
+}

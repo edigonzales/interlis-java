@@ -1,5 +1,28 @@
 # Implementierungsstatus interlis-java
 
+HTTP-Redirectfix abgeschlossen (WP-26/30, RES-009, CLI-001–007): OBS-02
+behoben durch enge URI-/Requestfehlerabbildung auf IO_FAILURE statt internem
+Fehler. Vorher 4/5 neue Loaderfälle RED, danach 27 gezielte JUnit-Fälle in fünf
+Suites ohne Fehler/Skips und elf finale Distributionsprozesse erfolgreich.
+Unabhängiger OpenCode2.0.28/deepseek-flash-Review auf
+7fa83ef1bfdec7f8dacc2925c5c27dd4cfa891f3 **PASS für REDIR-01–05**, keine offenen
+Muss-Findings; Rohbelegaudit und eigene Redirectgegenprobe mit gültiger Kontrolle.
+ProzessExit0, Guard passed/Exit0, sauberer Reviewcheckout. Keine offenen
+Pflichtprüfungen oder Blocker dieses Auftrags. Kein Push/Release.
+[Abschlussbericht und unveränderte Reviewbelege](implementation/http-redirect-fix/REPORT.md).
+
+HTTP-Netzwerkpolicy abgeschlossen (WP-26/30, RES-009, ARCH-005, CLI-001–007,
+API-001–006): getrennte 15/40/off-Limits, instanzbezogene JVM-/Direkt-/HTTP-Proxywahl,
+CLI/Properties und bewusste FetchPolicy-API-Migration. 126 unterschiedliche Tests
+in 22 Suites ohne Fehler/Skips, 17 reale Distributions- und zwei SDK-Prozesse;
+zusätzlicher gleicher Testlauf mit Gradle-Launcher/Daemon unter Java25 erfolgreich.
+Unabhängiger OpenCode2.0.28/deepseek-flash-Review auf
+53eb35743ee3e51afa809f74daea575c5a32ccf5 **PASS für NET-01–05**: Originalbelegaudit,
+zehn Java- und zwölf CLI-Gegenproben; ProzessExit0, Guard passed/Exit0. Keine
+offenen Muss-Findings oder Pflichtprüfungen. Nicht blockierender vorbestehender
+Redirectfehler separat im Bericht festgehalten. Kein Push/Release.
+[Abschlussbericht und unveränderte Reviewbelege](implementation/http-network-policy/REPORT.md).
+
 Cachemeldungen pro Quelle (WP-26/30, CL-01–08) abgeschlossen auf Basis 59141fa:
 Beobachtungs-API und gemeinsame INFO-Darstellung implementiert und gezielt
 verifiziert: 69 JUnit-Fälle/14 Suites ohne Fehler/Skips, 29 reale

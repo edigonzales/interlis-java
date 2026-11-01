@@ -1,0 +1,23 @@
+{
+  "startedAt": "2026-11-01T18:37:56.125Z",
+  "worktree": "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree",
+  "command": [
+    "/Users/stefan/.opencode/bin/opencode",
+    "run",
+    "--standalone",
+    "--auto",
+    "--agent",
+    "build",
+    "--model",
+    "deepseek/deepseek-flash",
+    "--format",
+    "json",
+    "--title",
+    "Independent HTTP timeout and proxy review 53eb357",
+    "--file",
+    "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/request.json",
+    "--file",
+    "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/REVIEW_PROMPT.md",
+    "Independently review NET-01 through NET-05 in request.json and REVIEW_PROMPT.md. Audit code and original raw evidence, add your own focused timeout and proxy counterprobes, write review.md and verdict.json in reviewDirectory, and finish normally with your factual PASS or FAIL. Obey the read-only tracked files and narrow-test restrictions."
+  ]
+}

@@ -150,7 +150,7 @@ Paket `guru.interlis.repository`, Modul `interlis-repository`. Diese APIs dürfe
 | `ContentStore` | `lookup(ContentDigest)`, `put(VerifiedContent)` | Cache kann fehlen; Treffer nur bei passendem Digest, atomare Speicherung |
 | `RepositoryRefreshService` | `refresh(RepositoryConfig, previousState, token)` | neuer unveränderlicher Katalog mit Revision; keine Mutation laufender Analysen |
 
-`FetchPolicy` benennt `offline`, Connect-/Requesttimeout, maximale Bytes, Redirectlimit und Cacheverhalten. Die Standardwerte werden im JVM-Hostprofil dokumentiert und sind pro Anwendung konfigurierbar. Der Kern kennt keine HTTP-Authentisierung. Tokens, Cookies oder signierte Querywerte dürfen weder zu DiagnosticArgument noch in öffentliche ResolutionTrace-Werte gelangen.
+`FetchPolicy` benennt `offline`, `maxBytes`, `connectTimeout`, `readTimeout` und optionalen `requestTimeout`. Die Defaults und Methodenbedingungen stehen in §15. Redirects sind auf fünf begrenzt; Cache und Proxy werden separat im Host konfiguriert. Der Kern kennt keine HTTP-Authentisierung. Tokens, Cookies oder signierte Querywerte dürfen weder zu DiagnosticArgument noch in öffentliche ResolutionTrace-Werte gelangen.
 
 Originalbytes und Java-Text haben getrennte Digests: `byteProvenance.sha256` gilt für geladene Bytes. `SourceText.contentFingerprint()` gilt gemäss Kapitel 04 für UTF-16-BE-Codeeinheiten ohne BOM. Dekodierungsfehler werden gemeldet, nicht durch stilles Ersetzen unbekannter Bytes im Modell behoben. BOM-/Zeichensatzregeln für Legacyprofile werden als Inputvertrag getestet.
 
@@ -542,3 +542,65 @@ Jeder tatsächliche Zugriff veröffentlicht sein Ereignis einmal je angeschlosse
 Schnittstelle. Observerfehler ändern die Beschaffung nicht; kein globaler Zustand.
 HTTP- und beide Offlinepfade liefern die angefragte Quelle, einschliesslich
 Abschlussprüfungen. Starke ETags, optionale Sites, Pins und Locks bleiben unverändert.
+
+## 15. HTTP-Netzwerkpolicy (RES-009, ARCH-005)
+
+`FetchPolicy(boolean offline,int maxBytes,Duration connectTimeout,Duration readTimeout,
+Optional<Duration> requestTimeout)` ist unveränderlich und nullfrei. Bytezahl und
+alle gesetzten Dauern sind positiv; Dauern müssen in long-Nanosekunden darstellbar
+sein. Ungültige Werte ergeben IllegalArgumentException, Nullwerte
+NullPointerException. Defaults: online, 16 MiB, Connect 15 s, Read 40 s, kein
+Requestgesamtlimit. Der frühere Dreiparameterkonstruktor und timeout() entfallen
+auf ausdrücklichen Nutzerentscheid; sämtliche aktiven Verbraucher werden migriert.
+Dateihosts verwenden weiterhin nur die für sie relevanten Limits.
+
+Der Connecttimeout gilt für neue Verbindungen einschliesslich TLS-Aufbau über
+HttpClient.Builder.connectTimeout. Ein Loader hält Clients nach Connecttimeout
+getrennt. Der Readtimeout beginnt beim Absenden und wird beim Empfang der
+Antwortheader sowie nicht leerer Bodydaten zurückgesetzt. Er begrenzt somit
+Headerwartezeit und Leseinaktivität, nicht die Gesamtdownloadzeit. Der optionale
+Requesttimeout gilt für einen vollständigen HTTP-Austausch einschliesslich Body.
+Jeder Redirect und jeder bestehende Cache-Retry erhält neue Zeitbudgets; es gibt
+kein Closuregesamtlimit. Monotone Zeitmessung, begrenzte Abbruchlatenz und
+Abbruch des Requests/Bodyempfangs sind verpflichtend. Timeout bleibt TIMEOUT,
+Nutzerabbruch bleibt OperationCancelledException, andere IO-Fehler bleiben getrennt.
+Unvollständige Antworten werden nicht in den Cache veröffentlicht.
+
+`RepositoryProxyConfiguration` ist ein geschlossener unveränderlicher Hosttyp:
+`SystemDefault()`, `Direct()`, `HttpProxy(String host,int port)`. Host und
+Konfiguration sind nullfrei; ein manueller Host ist ein blosser Hostname oder
+IP-Wert (IPv6 geklammert), ohne Schema, Zugangsdaten, Pfad, Query oder Fragment;
+Port 1–65535. Validierung führt kein DNS/IO aus. Ungültige Werte werden abgewiesen.
+SystemDefault übernimmt beim Erzeugen des Loaders den aktuellen JVM-ProxySelector
+(bei null direkt); Direct verwendet NO_PROXY, HttpProxy einen eigenen HTTP-Selector
+für HTTP und HTTPS-CONNECT. Der übernommene Selector ist eine Referenz auf die
+Hostabhängigkeit, keine tiefe Kopie eines fremden mutierbaren Selectors.
+Produktionscode verändert weder Systemproperties noch globale Selector-/
+Authenticatorwerte. Eigene Authentisierung, PAC und Environmentinterpretation
+sind nicht Teil dieses Abschnitts; SystemDefault delegiert an die JVM.
+
+Neue öffentliche Einstiege: HttpSourceLoader(RepositoryProxyConfiguration),
+HostRepositories.create(Path,RepositoryCacheConfiguration,Consumer<RepositoryCacheEvent>,RepositoryProxyConfiguration)
+und createObserved mit Consumer<RepositoryCacheObservation> und demselben letzten
+Parameter. Bisherige Einstiege verwenden SystemDefault. Hostinstanzen besitzen
+ihre Clients und Proxywahl; Konstruktion löst keine Netzwerkzugriffe aus.
+Offline lädt ausschliesslich verifizierte lokale Inhalte und kontaktiert keinen
+Proxy. FetchPolicy-Felder gehen in die deterministische Katalogrevision v4 ein;
+Proxywerte gehören weder zu Locks noch zum Compilerzustand.
+
+Abnahme: NET-01–05 in
+[EXECUTION_PLAN.md](../implementation/http-network-policy/EXECUTION_PLAN.md),
+HttpNetworkPolicyTest, HttpSourceLoaderTest, RepositoryClientTest sowie die
+gezielten Cache-/CLI- und Distributionsfälle. Kein neues Compiler-/Bridgeformat.
+
+HTTP-Adressfehler (RES-009): Syntaktisch ungültige Redirect-Location und von der
+HTTP-Requestkonstruktion abgewiesene Zieladressen ergeben IO_FAILURE mit festem,
+wertfreiem Fehlertext. Dasselbe gilt für die initiale HTTP-Adresskonstruktion.
+Die Abbildung fängt IllegalArgumentException ausschliesslich beim URI-Parsen,
+beim Auflösen der Location und bei der Requestkonstruktion ab; ein allgemeiner
+RuntimeException-Fang über den gesamten Loader ist nicht zulässig. Der ursprüngliche
+Grund bleibt als interne Ursache erhalten, rohe Locationwerte gelangen nicht in
+öffentliche Diagnosetexte. Relative HTTP(S)-Redirects und bisherige Scheme-/
+Redirectlimit-, Timeout-, Abbruch- und Cacheverträge bleiben erhalten.
+Abnahmen: HttpRedirectFailureTest, MalformedRepositoryRedirectTest sowie
+[gezielte Distributionsprozesse](../implementation/http-redirect-fix/EXECUTION_PLAN.md).

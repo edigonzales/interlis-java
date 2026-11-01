@@ -1,0 +1,11 @@
+PASS defaults-and-validation
+PASS catalog-fingerprint-all-three-timeouts
+PASS tls-connect-timeout elapsedMs=402
+PASS read-timeout-before-headers elapsedMs=262 requests=1
+PASS read-timeout-after-partial-body elapsedMs=285 requests=2
+PASS progressing-body-resets-read-budget elapsedMs=1247 requests=3
+PASS redirect-fresh-total-budget elapsedMs=521 requests=2
+PASS total-budget-without-read-inactivity elapsedMs=456
+PASS timed-out-content-not-cached files=0
+PASS proxy-isolation proxyRequests=2 originRequests=1
+TIMEOUT_PROBE_PASS

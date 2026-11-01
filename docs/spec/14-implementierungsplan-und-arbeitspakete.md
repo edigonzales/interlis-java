@@ -221,3 +221,12 @@ Review auf festem Kandidatencommit. Kriterien CL-01–08 stehen im
 [Ausführungsplan](../implementation/cache-logging/EXECUTION_PLAN.md).
 Kein neuer Cachealgorithmus; starke bestätigte ETags und optionale Sites
 bleiben erhalten. Abschluss verlangt tatsächliches Review-PASS.
+
+### WP-26/30: HTTP-Netzwerkpolicy
+
+Gezielter Folgeauftrag RES-009, ARCH-005, CLI-001–007, API-001–006: getrennte
+Connect-/Read-/optionale Requestlimits (15/40/off), instanzbezogene JVM-/Direkt-/
+HTTP-Proxyauswahl, CLI/Properties und API-Migration. Abnahme NET-01–05 samt
+unabhängigem OpenCode/deepseek-flash-Review.
+[Plan und operative Nachweise](../implementation/http-network-policy/EXECUTION_PLAN.md).
+Kein neuer Phasen- oder Releaseabschluss.

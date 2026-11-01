@@ -41,10 +41,11 @@ public record CommandSpec(String command, List<Option> options, boolean acceptsF
                 options.add(new Option("--repository", 1, true));
                 options.add(new Option("--model-pin", 4, true));
                 options.add(new Option("--source-pin", 2, true));
-                for (String name : List.of("--read-lock", "--write-lock", "--cache", "--config", "--warnings"))
+                for (String name : List.of("--read-lock", "--write-lock", "--cache", "--config", "--warnings", "--connect-timeout", "--read-timeout", "--request-timeout", "--proxy", "--proxyPort"))
                     options.add(new Option(name, 1, false));
                 options.add(new Option("--offline", 0, false));
                 options.add(new Option("--no-cache", 0, false));
+                options.add(new Option("--no-proxy", 0, false));
                 options.add(new Option("--explain-config", 0, false));
                 yield true;
             }

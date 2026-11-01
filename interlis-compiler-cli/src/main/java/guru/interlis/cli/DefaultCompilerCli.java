@@ -286,8 +286,7 @@ public final class DefaultCompilerCli implements CliApplication {
                             }))
                         throw new CliUsageException("lock output collides with a source or repository index");
                 }
-                var fetch = FetchPolicy.defaults();
-                var config = new RepositoryConfig(sources, new FetchPolicy(parsed.offline(), fetch.maxBytes(), fetch.timeout()));
+                var config = new RepositoryConfig(sources, RepositoryNetworkOptions.fetchPolicy(configuration.command()));
                 Optional<ResolutionLock> lock = Optional.empty();
                 if (parsed.readLock().isPresent()) {
                     try (var input = Files.newInputStream(hostPath(parsed.readLock().orElseThrow(), environment))) {
@@ -310,7 +309,7 @@ public final class DefaultCompilerCli implements CliApplication {
                         var warning=RepositoryDiagnostics.cacheUnavailable();
                         environment.err().println(new ConsoleDiagnosticRenderer().render(warning,Map.of(),invocation.language,invocation.ansiEnabled));
                     }
-                });
+                }, RepositoryNetworkOptions.proxy(configuration.command()));
                 var outcome = access.closureService()
                         .resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
                                 new RepositoryResolveOptions(config, parsed.modelPins(), parsed.sourcePins(), lock), token);
@@ -649,6 +648,8 @@ public final class DefaultCompilerCli implements CliApplication {
         environment.err().println("usage: interlis-compiler "
                 + "<version|capabilities|check|compile|analyze|diagram|format> [options] [files]");
         environment.err().println("check/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
+        environment.err().println("               [--connect-timeout SECONDS] [--read-timeout SECONDS] [--request-timeout SECONDS|off]");
+        environment.err().println("               [--proxy HOST [--proxyPort PORT] | --no-proxy]");
         environment.err().println("               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]");
         environment.err().println("Text diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]");
         environment.err().println("Example: interlis-compiler check <File.ili>");

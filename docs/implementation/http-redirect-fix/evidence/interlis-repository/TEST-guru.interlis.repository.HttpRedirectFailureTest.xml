@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.HttpRedirectFailureTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-01T18:54:22.587Z" hostname="Monterrico.local" time="0.306">
+  <properties/>
+  <testcase name="invalidInitialHttpAddressesUseTheSameTypedBoundary()" classname="guru.interlis.repository.HttpRedirectFailureTest" time="0.023"/>
+  <testcase name="badRedirectDoesNotPublishContentOrSuccessObservation()" classname="guru.interlis.repository.HttpRedirectFailureTest" time="0.23"/>
+  <testcase name="nonRequestableHttpTargetsAreTyped()" classname="guru.interlis.repository.HttpRedirectFailureTest" time="0.021"/>
+  <testcase name="validRelativeRedirectsAndUnsupportedSchemesRetainTheirBehavior()" classname="guru.interlis.repository.HttpRedirectFailureTest" time="0.013"/>
+  <testcase name="malformedRedirectLocationsAreTypedAndSafe()" classname="guru.interlis.repository.HttpRedirectFailureTest" time="0.01"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

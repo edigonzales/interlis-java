@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.RepositoryIndexReaderTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-01T18:46:23.113Z" hostname="Monterrico.local" time="0.023">
+  <properties/>
+  <testcase name="opaqueVersionStringsPreserveSignificantWhitespace()" classname="guru.interlis.repository.RepositoryIndexReaderTest" time="0.003"/>
+  <testcase name="readsOwn09And20ReferenceProfileFixtures()" classname="guru.interlis.repository.RepositoryIndexReaderTest" time="0.002"/>
+  <testcase name="rejectsDecodedTraversalAndCanonicalizesFileUriAliases()" classname="guru.interlis.repository.RepositoryIndexReaderTest" time="0.005"/>
+  <testcase name="rejectsPathEscapingRepositoryBase()" classname="guru.interlis.repository.RepositoryIndexReaderTest" time="0.001"/>
+  <testcase name="rejectsMissingMetadataAndMalformedXml()" classname="guru.interlis.repository.RepositoryIndexReaderTest" time="0.007"/>
+  <testcase name="readsStandardModelMetadataAndResolvesRelativeFiles()" classname="guru.interlis.repository.RepositoryIndexReaderTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Fatal Error] :1:9: XML document structures must start and end within the same entity.
+]]></system-err>
+</testsuite>

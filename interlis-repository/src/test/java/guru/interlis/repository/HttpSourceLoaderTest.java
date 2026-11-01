@@ -38,7 +38,7 @@ class HttpSourceLoaderTest {
             send(exchange, 200, "INTERLIS 2.4;".getBytes(StandardCharsets.UTF_8));
         });
         HttpSourceLoader loader = new HttpSourceLoader();
-        FetchPolicy policy = new FetchPolicy(false, 1024, Duration.ofSeconds(2));
+        FetchPolicy policy = new FetchPolicy(false, 1024, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2)));
         LoadedSource loaded = loader.load(new SourceLocator(base + "/ok"), policy,
                 CancellationToken.none());
         assertEquals("INTERLIS 2.4;", loaded.text());
@@ -65,14 +65,14 @@ class HttpSourceLoaderTest {
             }
         });
         HttpSourceLoader loader = new HttpSourceLoader();
-        FetchPolicy small = new FetchPolicy(false, 64, Duration.ofSeconds(2));
+        FetchPolicy small = new FetchPolicy(false, 64, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2)));
         assertEquals(SourceLoadException.Reason.ACCESS_DENIED, reason(loader, base + "/forbidden", small));
         assertEquals(SourceLoadException.Reason.INVALID_ENCODING, reason(loader, base + "/invalid", small));
         assertEquals(SourceLoadException.Reason.TOO_LARGE, reason(loader, base + "/large", small));
         assertEquals(SourceLoadException.Reason.NOT_FOUND, reason(loader, base + "/missing", small));
         assertEquals(SourceLoadException.Reason.REDIRECT_LIMIT, reason(loader, base + "/loop", small));
         assertEquals(SourceLoadException.Reason.OFFLINE, reason(loader, base + "/ok",
-                new FetchPolicy(true, 64, Duration.ofSeconds(2))));
+                new FetchPolicy(true, 64, Duration.ofSeconds(2), Duration.ofSeconds(2), java.util.Optional.of(Duration.ofSeconds(2)))));
     }
 
     @Test
@@ -86,7 +86,7 @@ class HttpSourceLoaderTest {
             send(exchange, 200, new byte[0]);
         });
         HttpSourceLoader loader = new HttpSourceLoader();
-        FetchPolicy policy = new FetchPolicy(false, 1024, Duration.ofMillis(50));
+        FetchPolicy policy = new FetchPolicy(false, 1024, Duration.ofMillis(50), Duration.ofMillis(50), java.util.Optional.of(Duration.ofMillis(50)));
         assertEquals(SourceLoadException.Reason.TIMEOUT, reason(loader, base + "/slow", policy));
     }
 
@@ -117,7 +117,7 @@ class HttpSourceLoaderTest {
         var cancelled = new java.util.concurrent.atomic.AtomicBoolean();
         var result = java.util.concurrent.CompletableFuture.supplyAsync(() ->
                 new HttpSourceLoader().load(new SourceLocator(base + "/stream"),
-                        new FetchPolicy(false, 1024, Duration.ofSeconds(10)), cancelled::get));
+                        new FetchPolicy(false, 1024, Duration.ofSeconds(10), Duration.ofSeconds(10), java.util.Optional.of(Duration.ofSeconds(10))), cancelled::get));
         try {
             assertTrue(headersSent.await(2, java.util.concurrent.TimeUnit.SECONDS));
             cancelled.set(true);
@@ -147,7 +147,7 @@ class HttpSourceLoaderTest {
         });
         var result = java.util.concurrent.CompletableFuture.supplyAsync(() ->
                 reason(new HttpSourceLoader(), base + "/stream",
-                        new FetchPolicy(false, 64, Duration.ofSeconds(10))));
+                        new FetchPolicy(false, 64, Duration.ofSeconds(10), Duration.ofSeconds(10), java.util.Optional.of(Duration.ofSeconds(10)))));
         try {
             assertEquals(SourceLoadException.Reason.TOO_LARGE,
                     result.get(2, java.util.concurrent.TimeUnit.SECONDS));

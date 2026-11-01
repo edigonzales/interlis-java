@@ -1,0 +1,18 @@
+{
+  "source": "interlis-repository/src/main/java/guru/interlis/repository/HttpSourceLoader.java",
+  "sourceSha256": "9de52549c02edd5577977276e53949ac4dd0b7912bd3cdd244a4a0aad40be353",
+  "sourceSnapshot": "53eb35743ee3e51afa809f74daea575c5a32ccf5",
+  "test": "interlis-repository/src/test/java/guru/interlis/repository/HttpRedirectFailureTest.java",
+  "testSha256": "f973d19972f9ed446c31560d487cc1303b63f105baa5b04d6a439ed5b57116c3",
+  "command": [
+    "./gradlew",
+    ":interlis-repository:test",
+    "--tests",
+    "*HttpRedirectFailureTest",
+    "--console=plain"
+  ],
+  "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem",
+  "exitCode": 1,
+  "tests": 5,
+  "failures": 4
+}

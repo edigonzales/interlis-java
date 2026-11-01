@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.RepositoryCacheObservationTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-01T18:46:22.341Z" hostname="Monterrico.local" time="0.211">
+  <properties/>
+  <testcase name="actualHttpAndOfflineAccessesCarrySanitizedSourcesAndLegacyCallbacksAreNotDuplicated()" classname="guru.interlis.repository.RepositoryCacheObservationTest" time="0.026"/>
+  <testcase name="observationAndLegacyObserverFailuresDoNotChangeLoadingAndNoStoreDoesNotClaimPersistence()" classname="guru.interlis.repository.RepositoryCacheObservationTest" time="0.04"/>
+  <testcase name="digestBasedOfflineReplayReportsEachActualSourceOnce()" classname="guru.interlis.repository.RepositoryCacheObservationTest" time="0.082"/>
+  <testcase name="corruptBytesGiveMissThenDownloadAndNeverAFalseHit()" classname="guru.interlis.repository.RepositoryCacheObservationTest" time="0.018"/>
+  <testcase name="unconfirmedAndSecond304DoNotClaimAHitOrInventAnExtraDownload()" classname="guru.interlis.repository.RepositoryCacheObservationTest" time="0.038"/>
+  <testcase name="publicObservationSanitizesAtConstructionAndGlobalWritesCanOmitSource()" classname="guru.interlis.repository.RepositoryCacheObservationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

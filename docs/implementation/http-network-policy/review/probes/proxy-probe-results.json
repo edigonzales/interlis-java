@@ -1,0 +1,428 @@
+{
+  "passed": true,
+  "node": "v22.13.0",
+  "launcher": "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+  "jars": {
+    "antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-compiler-0.2.0-SNAPSHOT.jar": "86460db600ab375a07bccd2c1996d7dbe21942e6ac0ddbffd57707ab1dec2c4c",
+    "interlis-compiler-cli-0.2.0-SNAPSHOT.jar": "cdbb616c5ac6165438191f275814b2c102e2b10db7868063d9352dfbae1a960e",
+    "interlis-model-0.2.0-SNAPSHOT.jar": "8443f74b6ae1f0a187aa4c919d9fb4f0a03b65271e28142c0bb948b15b40a755",
+    "interlis-projection-0.2.0-SNAPSHOT.jar": "46fc3a6ad1e35c19e1999c5df09251915fd6631e9c09f19bda9e2ac65b0ade41",
+    "interlis-repository-0.2.0-SNAPSHOT.jar": "ed29cf56ec28dad2c881daa8112d0897bcb1b429e5fb383cde28b67d98bb5ba0",
+    "interlis-workspace-0.2.0-SNAPSHOT.jar": "e9efee37214c38e1292fd26d3f802c2ada1e25bf0abdb7a77b015ef8724085ad"
+  },
+  "cases": [
+    {
+      "name": "explain-defaults",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--explain-config"
+      ],
+      "javaOptions": "",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 157,
+      "stdout": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--cache\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/probes/node-run-8VKUsk/home/.interlis-cache\"]},\"--connect-timeout\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"15\"]},\"--no-proxy\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--proxy-mode\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"system\"]},\"--read-timeout\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"40\"]},\"--request-timeout\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"off\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n",
+      "stderr": "",
+      "requests": []
+    },
+    {
+      "name": "explicit-proxy-hostname",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://unreachable.invalid/",
+        "--proxy",
+        "localhost",
+        "--proxyPort",
+        "60062",
+        "--no-cache",
+        "--json"
+      ],
+      "javaOptions": "-Djava.net.preferIPv4Stack=true",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 533,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://unreachable.invalid/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4/2.3\"},{\"model\":\"Basis\",\"repository\":\"http://unreachable.invalid/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://unreachable.invalid/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://unreachable.invalid/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "requests": [
+        {
+          "kind": "proxy",
+          "path": "/ilimodels.xml",
+          "absolute": true,
+          "at": "2026-11-01T18:47:31.382Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/Basis.ili",
+          "absolute": true,
+          "at": "2026-11-01T18:47:31.419Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/ilimodels.xml",
+          "absolute": true,
+          "at": "2026-11-01T18:47:31.481Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/Basis.ili",
+          "absolute": true,
+          "at": "2026-11-01T18:47:31.482Z"
+        }
+      ]
+    },
+    {
+      "name": "system-proxy",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://unreachable.invalid/",
+        "--no-cache",
+        "--json"
+      ],
+      "javaOptions": "-Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=60062 -Dhttp.nonProxyHosts= -Djava.net.preferIPv4Stack=true",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 972,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://unreachable.invalid/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4/2.3\"},{\"model\":\"Basis\",\"repository\":\"http://unreachable.invalid/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://unreachable.invalid/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://unreachable.invalid/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "requests": [
+        {
+          "kind": "proxy",
+          "path": "/ilimodels.xml",
+          "absolute": true,
+          "at": "2026-11-01T18:47:31.811Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/Basis.ili",
+          "absolute": true,
+          "at": "2026-11-01T18:47:31.837Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/ilimodels.xml",
+          "absolute": true,
+          "at": "2026-11-01T18:47:32.397Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/Basis.ili",
+          "absolute": true,
+          "at": "2026-11-01T18:47:32.401Z"
+        }
+      ]
+    },
+    {
+      "name": "direct-overrides-system",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://127.0.0.1:60061/",
+        "--no-cache",
+        "--json",
+        "--no-proxy"
+      ],
+      "javaOptions": "-Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=1 -Dhttp.nonProxyHosts= -Djava.net.preferIPv4Stack=true",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 499,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4/2.3\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:60061/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:60061/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "requests": [
+        {
+          "kind": "origin",
+          "path": "/ilimodels.xml",
+          "absolute": false,
+          "at": "2026-11-01T18:47:32.849Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/Basis.ili",
+          "absolute": false,
+          "at": "2026-11-01T18:47:32.873Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/ilimodels.xml",
+          "absolute": false,
+          "at": "2026-11-01T18:47:32.928Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/Basis.ili",
+          "absolute": false,
+          "at": "2026-11-01T18:47:32.930Z"
+        }
+      ]
+    },
+    {
+      "name": "config-precedence",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--config",
+        "network.properties",
+        "--proxy",
+        "127.0.0.1",
+        "--proxyPort",
+        "60062",
+        "--read-timeout",
+        "8",
+        "--request-timeout",
+        "off",
+        "--explain-config"
+      ],
+      "javaOptions": "",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 114,
+      "stdout": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--cache\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/probes/node-run-8VKUsk/home/.interlis-cache\"]},\"--connect-timeout\":{\"origin\":\"CONFIGURATION_FILE\",\"values\":[\"7\"]},\"--no-proxy\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--proxy\":{\"origin\":\"CLI\",\"values\":[\"127.0.0.1\"]},\"--proxy-mode\":{\"origin\":\"CLI\",\"values\":[\"http\"]},\"--proxyPort\":{\"origin\":\"CLI\",\"values\":[\"60062\"]},\"--read-timeout\":{\"origin\":\"CLI\",\"values\":[\"8\"]},\"--request-timeout\":{\"origin\":\"CLI\",\"values\":[\"off\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n",
+      "stderr": "",
+      "requests": []
+    },
+    {
+      "name": "properties-proxy",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://unreachable.invalid/",
+        "--config",
+        "network.properties",
+        "--json"
+      ],
+      "javaOptions": "-Djava.net.preferIPv4Stack=true",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 415,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://unreachable.invalid/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4/2.3\"},{\"model\":\"Basis\",\"repository\":\"http://unreachable.invalid/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://unreachable.invalid/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://unreachable.invalid/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "requests": [
+        {
+          "kind": "proxy",
+          "path": "/ilimodels.xml",
+          "absolute": true,
+          "at": "2026-11-01T18:47:33.385Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/Basis.ili",
+          "absolute": true,
+          "at": "2026-11-01T18:47:33.413Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/ilimodels.xml",
+          "absolute": true,
+          "at": "2026-11-01T18:47:33.481Z"
+        },
+        {
+          "kind": "proxy",
+          "path": "/Basis.ili",
+          "absolute": true,
+          "at": "2026-11-01T18:47:33.486Z"
+        }
+      ]
+    },
+    {
+      "name": "file-proxy-overridden-direct",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://127.0.0.1:60061/",
+        "--no-cache",
+        "--json",
+        "--config",
+        "network.properties",
+        "--no-proxy"
+      ],
+      "javaOptions": "",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 422,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4/2.3\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:60061/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:60061/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "requests": [
+        {
+          "kind": "origin",
+          "path": "/ilimodels.xml",
+          "absolute": false,
+          "at": "2026-11-01T18:47:33.818Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/Basis.ili",
+          "absolute": false,
+          "at": "2026-11-01T18:47:33.842Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/ilimodels.xml",
+          "absolute": false,
+          "at": "2026-11-01T18:47:33.898Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/Basis.ili",
+          "absolute": false,
+          "at": "2026-11-01T18:47:33.899Z"
+        }
+      ]
+    },
+    {
+      "name": "invalid-timeout-no-network",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--read-timeout",
+        "0",
+        "--explain-config"
+      ],
+      "javaOptions": "",
+      "exit": 2,
+      "signal": null,
+      "elapsedMs": 102,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--connect-timeout SECONDS] [--read-timeout SECONDS] [--request-timeout SECONDS|off]\n               [--proxy HOST [--proxyPort PORT] | --no-proxy]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\n--read-timeout requires positive whole seconds within the nanosecond range\n",
+      "requests": []
+    },
+    {
+      "name": "proxy-conflict",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--proxy",
+        "127.0.0.1",
+        "--no-proxy",
+        "--explain-config"
+      ],
+      "javaOptions": "",
+      "exit": 2,
+      "signal": null,
+      "elapsedMs": 105,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--connect-timeout SECONDS] [--read-timeout SECONDS] [--request-timeout SECONDS|off]\n               [--proxy HOST [--proxyPort PORT] | --no-proxy]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nno-proxy and proxy/proxyPort are mutually exclusive at the same configuration level\n",
+      "requests": []
+    },
+    {
+      "name": "orphan-port",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--proxyPort",
+        "80",
+        "--explain-config"
+      ],
+      "javaOptions": "",
+      "exit": 2,
+      "signal": null,
+      "elapsedMs": 104,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--connect-timeout SECONDS] [--read-timeout SECONDS] [--request-timeout SECONDS|off]\n               [--proxy HOST [--proxyPort PORT] | --no-proxy]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nproxyPort requires a proxy host\n",
+      "requests": []
+    },
+    {
+      "name": "total-timeout-progressing",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://127.0.0.1:60061/",
+        "--no-cache",
+        "--json",
+        "--no-proxy",
+        "--read-timeout",
+        "3",
+        "--request-timeout",
+        "1"
+      ],
+      "javaOptions": "",
+      "exit": 1,
+      "signal": null,
+      "elapsedMs": 1641,
+      "stdout": "{\"status\":\"resolution rejected\",\"diagnostics\":[{\"id\":\"diag-643c16585160932c1c12f9b2\",\"code\":\"ILI-RES-0003\",\"severity\":\"ERROR\",\"phase\":\"SOURCE_RESOLUTION\",\"messageKey\":\"diagnostic.resolution.source\",\"message\":\"The source 'http://127.0.0.1:60061/Basis.ili' could not be provided: loading timed out.\",\"hint\":\"LOOKUP http://127.0.0.1:60061/ INTERLIS 2.4/2.3; SELECTED http://127.0.0.1:60061/ 1 http://127.0.0.1:60061/Basis.ili; http://127.0.0.1:60061/Basis.ili\",\"arguments\":[{\"name\":\"source\",\"kind\":\"TEXT\",\"value\":\"http://127.0.0.1:60061/Basis.ili\"},{\"name\":\"reason\",\"kind\":\"TEXT\",\"value\":\"TIMEOUT\"},{\"name\":\"detail\",\"kind\":\"TEXT\",\"value\":\"LOOKUP http://127.0.0.1:60061/ INTERLIS 2.4/2.3; SELECTED http://127.0.0.1:60061/ 1 http://127.0.0.1:60061/Basis.ili; http://127.0.0.1:60061/Basis.ili\"}]}],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4/2.3\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:60061/Basis.ili\"}],\"models\":[]}}\n",
+      "stderr": "",
+      "requests": [
+        {
+          "kind": "origin",
+          "path": "/ilimodels.xml",
+          "absolute": false,
+          "at": "2026-11-01T18:47:34.548Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/Basis.ili",
+          "absolute": false,
+          "at": "2026-11-01T18:47:34.573Z"
+        }
+      ]
+    },
+    {
+      "name": "read-inactivity-progressing",
+      "command": [
+        "/Users/stefan/sources/interlis-java/build/review/http-network-policy/r1/worktree/build/reviewer/distribution/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Basis",
+        "--repository",
+        "http://127.0.0.1:60061/",
+        "--no-cache",
+        "--json",
+        "--no-proxy",
+        "--read-timeout",
+        "1"
+      ],
+      "javaOptions": "",
+      "exit": 0,
+      "signal": null,
+      "elapsedMs": 5323,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4/2.3\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:60061/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:60061/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:60061/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "requests": [
+        {
+          "kind": "origin",
+          "path": "/ilimodels.xml",
+          "absolute": false,
+          "at": "2026-11-01T18:47:36.201Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/Basis.ili",
+          "absolute": false,
+          "at": "2026-11-01T18:47:36.226Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/ilimodels.xml",
+          "absolute": false,
+          "at": "2026-11-01T18:47:38.728Z"
+        },
+        {
+          "kind": "origin",
+          "path": "/Basis.ili",
+          "absolute": false,
+          "at": "2026-11-01T18:47:38.730Z"
+        }
+      ]
+    }
+  ]
+}

@@ -113,7 +113,7 @@ class RepositoryClosureContractTest {
                     .resolve(w, request(w), RepositoryResolveOptions.defaults(config(base)), TOKEN));
             lock = update.lock(); update.apply(w); compile(w, "Root"); assertEquals(6, calls.get());
         } finally { server.stop(0); }
-        var offline = new RepositoryConfig(List.of(source(base)), new FetchPolicy(true, 100_000, Duration.ofSeconds(1)));
+        var offline = new RepositoryConfig(List.of(source(base)), new FetchPolicy(true, 100_000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
         try (var w = workspace(model("Root", "1", "IMPORTS Middle; DOMAIN D EXTENDS Middle.D=TEXT*7;"))) {
             var update = prepared(new RepositoryClosureService((l,p,t) -> { fail("offline provider called"); return null; }, cache)
                     .resolve(w, request(w), new RepositoryResolveOptions(offline, Map.of(), Map.of(), Optional.of(lock)), TOKEN));
@@ -253,7 +253,7 @@ class RepositoryClosureContractTest {
         String base="https://repo.example/";var service=new RepositoryClosureService(loader(closure(base)),new InMemoryContentStore());
         try(var w=workspace(model("Root","1","IMPORTS Middle;"))) {
             var first=prepared(service.resolve(w,request(w),RepositoryResolveOptions.defaults(config(base)),TOKEN));first.apply(w);
-            var offline=new RepositoryConfig(config(base).sources(),new FetchPolicy(true,10000,Duration.ofSeconds(1)));
+            var offline=new RepositoryConfig(config(base).sources(),new FetchPolicy(true, 10000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
             var noIO=new RepositoryClosureService((l,p,t)->{fail("complete frozen closure must not perform IO");return null;},new InMemoryContentStore());
             var again=prepared(noIO.resolve(w,request(w),RepositoryResolveOptions.defaults(offline),TOKEN));
             assertTrue(again.sources().isEmpty());assertEquals(first.lock(),again.lock());again.apply(w);compile(w,"Root");
@@ -308,7 +308,7 @@ class RepositoryClosureContractTest {
                 lock=new ResolutionLockCodec().decode(new ResolutionLockCodec().encode(update.lock()));assertEquals(update.lock(),lock);
                 update.apply(w);assertBothOriginals(w,base,List.of("1","2"));
             }
-            var offline=new RepositoryConfig(config(base).sources(),new FetchPolicy(true,10000,Duration.ofSeconds(1)));
+            var offline=new RepositoryConfig(config(base).sources(),new FetchPolicy(true, 10000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
             try(var w=workspace(roots)) {
                 var update=prepared(new RepositoryClosureService((l,p,t)->{fail("offline provider called");return null;},cache).resolve(w,request(w),
                         new RepositoryResolveOptions(offline,Map.of(),Map.of(),Optional.of(lock)),TOKEN));

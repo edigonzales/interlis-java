@@ -1,0 +1,33 @@
+{
+  "baseSha": "53eb35743ee3e51afa809f74daea575c5a32ccf5",
+  "candidateSha": "7fa83ef1bfdec7f8dacc2925c5c27dd4cfa891f3",
+  "treeSha": "4a2a597b38dc4d35ac3818f1a0bca6295fe16d46",
+  "reviewWorktree": "/Users/stefan/sources/interlis-java/build/review/http-redirect-fix/r1/worktree",
+  "reviewDirectory": "/Users/stefan/sources/interlis-java/build/review/http-redirect-fix/r1/output",
+  "scratchDirectory": "/Users/stefan/sources/interlis-java/build/review/http-redirect-fix/r1/worktree/build/reviewer",
+  "implementationReport": "docs/implementation/http-redirect-fix/REPORT.md",
+  "plan": "docs/implementation/http-redirect-fix/EXECUTION_PLAN.md",
+  "manifest": "docs/implementation/http-redirect-fix/evidence/manifest.json",
+  "reviewScope": [
+    "interlis-repository/src/main/java/guru/interlis/repository/HttpSourceLoader.java",
+    "interlis-repository/src/test/java/guru/interlis/repository/HttpRedirectFailureTest.java",
+    "interlis-compiler-cli/src/test/java/guru/interlis/cli/MalformedRepositoryRedirectTest.java",
+    "tools/verification/http-redirect-processes.cjs",
+    "docs/spec/08-modellaufloesung-und-repositories.md",
+    "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md"
+  ],
+  "distribution": "/Users/stefan/sources/interlis-java/build/review/http-redirect-fix/r1/worktree/build/reviewer/distribution",
+  "criteria": [
+    "REDIR-01",
+    "REDIR-02",
+    "REDIR-03",
+    "REDIR-04",
+    "REDIR-05"
+  ],
+  "provider": {
+    "id": "deepseek",
+    "model": "deepseek-flash",
+    "api": "https://api.deepseek.com"
+  },
+  "constraints": "Narrow redirect follow-up only. Read-only tracked files. No delegation, credentials, Gradle, Python, broad test/corpus/benchmark/browser/release runs. Audit original RED/GREEN XMLs/logs/process exits and run one own new local redirect counterprobe. Prior network policy was already independently reviewed; do not repeat its full audit."
+}
