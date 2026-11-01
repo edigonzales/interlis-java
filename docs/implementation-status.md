@@ -3,7 +3,25 @@
 **Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
 [Ausführungsplan](implementation/compiler-cli-modernization/EXECUTION_PLAN.md).
 Operativer Stand und unabhängige Folgeabnahmen: [CLI-Status](implementation/compiler-cli-modernization/STATUS.md).
-Frühere G2-/P3-Abnahmen bleiben auf ihren bezeichneten Ständen gültig. CLI1 und CLI2 besitzen unabhängigen PASS; CLI2-R2 amdfd442c4a90d schliesst F1/F2 und belegt1217 JVM-Tests sowie JS-/WasmGC-Verträge. CLI3 läuft als kumulative Produktabnahme; sie ist noch offen. Windows-/Linux-CI auf f950863433a1 besteht nach Windows-Unicode-Launcherfix. Das lokale Gesamtgate scheitert während Safari bei gesperrtem Mac; Entsperren ist angefragt. Eine danach entdeckte alte13-Modell-Benchmarkprüfung wird an den vereinbarten CLI2-JSON-Vertrag angepasst, ohne Sprach-/Normausgänge zu ändern; dafür sind ein neuer Kandidat und neue exakte Nachweise fällig.
+CLI1–CLI3 sind vollständig implementiert und unabhängig mit PASS abgeschlossen,
+alle28 Kriterien kumulativ am Produktcommit
+`0136aec461b60c668c63344f7a30ee4bcec4fd78`.
+[Unveränderter CLI3-R2-Review](implementation/compiler-cli-modernization/reviews/CLI3-r2-0136aec461b6-PASS.md),
+SHA256 `84bad97078c1250aea35e5abe1d4fface02e1739c9f0315b1b07d6279f694035`.
+OpenCode2.0.28/DeepSeek direkt, ProzessExit0 und originales äusseres Guardmanifest
+passed/0; alle28 erfüllt, keine offenen Muss-Findings oder Pflichtnachweise.
+Eigener kompletter P3-Gate Exit0/31m36s, unabhängig erfolgreich32m20s;
+1217 JUnit/227 Suites ohne Fehler/Skips, Conformance577PASS/16XFAIL/Norm21,
+347 reale Closures auf sechs Laufzeiten einschliesslich echtem Safari,
+2000 Editoränderungen und feste Ressourcenbudgets,76 bytegleiche Dateien aus
+zwei sauberen Builds. Echte Windows-/Linux-CI41267880218 und macOS-Prozesse
+am selben SHA,26CLI-/9SDK-Fälle; neue Launcher, Root-Diagnostik und DE/EN/JSON
+vollständig qualifiziert. Frühere CLI3-Safari-Blockade ist nach tatsächlichem
+Entsperren mit unverändertem Kandidaten im vollen eigenen und unabhängigen
+Lauf geschlossen; der BLOCKED-Bericht bleibt unverändert erhalten.
+Frühere G2-/P3-Abnahmen behalten ihre bezeichneten historischen Stände.
+Dieser Abschluss ändert ausschliesslich Statusnotizen und unveränderte
+Berichtskopien; der tatsächlich geprüfte Produkt-SHA bleibt ausdrücklich benannt.
 
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
@@ -11,8 +29,9 @@ geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).
 
 **Aktueller Nutzerumfang seit31.10.2026: ausschliesslich Compiler.**
 Der übergeordnete Meilenstein P4 (Transfer/Validierung) ist ausdrücklich
-zurückgestellt. Der aktive Zweig `codex/compiler-maintenance` setzt auf dem
+zurückgestellt. Der vorherige Compiler-Wartungszweig `codex/compiler-maintenance` setzte auf dem
 abgenommenen P3-Abschlussstand `0a43eee0064b68b4d1921ca80b929e3d19391533` auf.
+Der aktuelle abgeschlossene CLI-Folgeauftrag liegt auf `codex/compiler-cli-modernization`.
 Begonnene P4-Transferplanarbeiten sind auf `codex/p4-transfer-validation`
 gesichert, ungeprüfte Daten-/IO-Vorbereitung auf `codex/p4-2-preparation`.
 Der laufende zweite P4-Review wurde abgebrochen; keine P4-/G4-Abnahme.
