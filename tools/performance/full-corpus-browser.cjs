@@ -17,7 +17,7 @@ function parity(row,index){if(row.model!==baseline.roots[index].model||JSON.stri
 async function serve(){return new Promise(resolve=>{const server=http.createServer((request,response)=>{
   const pathname=new URL(request.url,'http://localhost').pathname,relative=pathname==='/'?'index.html':decodeURIComponent(pathname.slice(1)),file=path.resolve(web,relative);
   if(!file.startsWith(web+path.sep)||!fs.existsSync(file)||!fs.statSync(file).isFile()){response.writeHead(404);response.end();return;}
-  response.writeHead(200,{'content-type':file.endsWith('.wasm')?'application/wasm':file.endsWith('.html')?'text/html; charset=utf-8':'text/javascript; charset=utf-8'});fs.createReadStream(file).pipe(response);
+  response.writeHead(200,{'content-type':file.endsWith('.wasm')?'application/wasm':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':'text/javascript; charset=utf-8'});fs.createReadStream(file).pipe(response);
 });server.listen(0,'127.0.0.1',()=>resolve(server));});}
 async function playwright(url){
   const {chromium,firefox,webkit}=require(path.join(root,'interlis-wasm-teavm/node_modules/playwright'));

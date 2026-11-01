@@ -22,4 +22,4 @@
 .interlis-canvas .sprotty-hidden{position:absolute;width:0;height:0;visibility:hidden;overflow:hidden}
 
 .interlis-canvas[data-status=STALE] .interlis-viewer,.interlis-canvas[data-status=LOADING] .interlis-viewer{opacity:.65;pointer-events:none}
-.interlis-canvas .sprotty-edge .interlis-edge-hit{stroke:transparent;stroke-width:10;pointer-events:stroke}
+.interlis-canvas .sprotty-edge path.interlis-edge-hit{stroke:transparent;stroke-width:10;pointer-events:stroke}

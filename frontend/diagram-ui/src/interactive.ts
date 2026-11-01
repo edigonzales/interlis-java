@@ -4,7 +4,7 @@ import {TYPES,loadDefaultModules,configureModelElement,configureViewerOptions,co
  configureCommand,edgeEditModule,labelEditModule,labelEditUiModule,SwitchEditModeCommand,
  LocalModelSource,SGraphImpl,SGraphView,SNodeImpl,SLabelImpl,SEdgeImpl,ShapeView,PolylineEdgeView,
  SRoutingHandleImpl,SRoutingHandleView,PolylineEdgeRouter,ManhattanEdgeRouter,SRoutableElementImpl,
- MouseListener,SModelElementImpl,SModelRootImpl,CommandStack,selectFeature,editFeature,deletableFeature,
+ MouseListener,SModelElementImpl,SModelRootImpl,CommandStack,ModelViewer,selectFeature,editFeature,deletableFeature,
  boundsFeature,hoverFeedbackFeature,svg,type RenderingContext,type IActionDispatcher} from 'sprotty';
 import {SetViewportAction,SelectAction,UndoAction,RedoAction,type Action,type SModelRoot,type SNode,type SEdge,type Point} from 'sprotty-protocol';
 import type {VNode} from 'snabbdom';
@@ -23,6 +23,12 @@ interface NodeData {label:string;kind:string;canonicalName:string;titleLines:str
 
 @injectable()
 class InterlisGraph extends SGraphImpl { generation=0; }
+/** An iframe's activeElement survives when the enclosing editor receives focus. */
+@injectable()
+class HostAwareModelViewer extends ModelViewer {
+ protected override hasFocus():boolean {return document.hasFocus()&&super.hasFocus();}
+ protected override restoreFocus(focus:boolean):void {super.restoreFocus(focus&&document.hasFocus());}
+}
 @injectable()
 class InterlisNode extends SNodeImpl {
  static override readonly DEFAULT_FEATURES=SNodeImpl.DEFAULT_FEATURES.filter(feature=>feature!==deletableFeature);
@@ -215,7 +221,7 @@ export class DiagramCanvas {
   const events:DiagramCallbacks={...callbacks,navigate:id=>{if(this.status==='FRESH'||this.status==='PARTIAL')callbacks.navigate(id);}};
   this.container.load(new ContainerModule((bind,unbind,isBound,rebind)=>{
    const context={bind,unbind,isBound,rebind};bind(LABELS).toConstantValue(labels);bind(OBSERVER).toConstantValue(observe);bind(CALLBACKS).toConstantValue(events);
-   rebind(TYPES.ICommandStack).to(ObservedCommandStack).inSingletonScope();bind(TYPES.ModelSource).to(LocalModelSource).inSingletonScope();
+   rebind(TYPES.ICommandStack).to(ObservedCommandStack).inSingletonScope();rebind(ModelViewer).to(HostAwareModelViewer).inSingletonScope();bind(TYPES.ModelSource).to(LocalModelSource).inSingletonScope();
    configureCommand(context,SwitchEditModeCommand);
    configureModelElement(context,'graph',InterlisGraph,SGraphView);
    configureModelElement(context,'node:interlis',InterlisNode,InterlisNodeView);
