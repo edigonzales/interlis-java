@@ -28,16 +28,19 @@ public final class PlatformProcesses {
                 tests+=count;suites++;xmlHashes.put(root.relativize(file).toString().replace('\\','/'),hash(file));
             }
         }
-        require(tests>=1217 && suites>=227 && xmlHashes.size()>=227,"Incomplete current JVM profile");
+        require(tests>=1230 && suites>=229 && xmlHashes.size()>=229,"Incomplete current JVM profile");
         var sdk=read(root.resolve("build/reports/sdk/sdk-process-comparison.json"));var archive=read(root.resolve("build/reports/sdk/archive-consumer.json"));var cli=read(root.resolve("build/reports/p3/compiler-cli/processes.json"));
         require(s(sdk,"status").equals("passed")&&rows(sdk,"commands").size()==9,"Missing SDK processes");
         require(s(archive,"status").equals("passed")&&s(cli,"status").equals("passed")&&cli.getAsJsonObject("cases").keySet().equals(CompilerCliProcesses.REQUIRED),"Missing installed consumer/standard CLI processes");
         require(s(cli,"profile").equals("compiler-cli/v1") && s(cli,"gitCommit").equals(ProfileFingerprint.commit(root))
                 && s(cli,"sourceFingerprint").equals(ProfileFingerprint.current(root)), "Stale/foreign standard CLI process report");
+        var colorCases=new LinkedHashMap<String,Result>();
+        cli.getAsJsonObject("cases").entrySet().forEach(e -> colorCases.put(e.getKey(),JSON.fromJson(e.getValue(),Result.class)));
+        CompilerCliProcesses.verifyColorCases(colorCases);
         var versions=read(root.resolve("build/reports/sdk/version-manifest.json"));SdkProcesses.version(versions);
         var report=new JsonObject();report.addProperty("schemaVersion","1.0");report.addProperty("profile","P3-jvm-distribution-v1");report.addProperty("status","passed");report.addProperty("gitCommit",ProfileFingerprint.commit(root));report.addProperty("dirty",ProfileFingerprint.dirty(root));report.addProperty("sourceFingerprint",ProfileFingerprint.current(root));
         report.addProperty("os",System.getProperty("os.name"));report.addProperty("arch",System.getProperty("os.arch"));report.addProperty("java",System.getProperty("java.runtime.version"));report.addProperty("tests",tests);report.addProperty("suites",suites);report.addProperty("failures",0);report.addProperty("errors",0);report.addProperty("skipped",0);report.add("xmlHashes",JSON.toJsonTree(xmlHashes));
-        report.add("versions",versions);report.addProperty("sdkCommands",rows(sdk,"commands").size());report.add("compilerCliCases",JSON.toJsonTree(new TreeSet<>(cli.getAsJsonObject("cases").keySet())));report.addProperty("sdkArchiveSha256",s(archive,"archiveSha256"));report.add("installedJars",JSON.toJsonTree(artifacts(root)));
+        report.addProperty("compilerCliColorVerified",true);report.add("versions",versions);report.addProperty("sdkCommands",rows(sdk,"commands").size());report.add("compilerCliCases",JSON.toJsonTree(new TreeSet<>(cli.getAsJsonObject("cases").keySet())));report.addProperty("sdkArchiveSha256",s(archive,"archiveSha256"));report.add("installedJars",JSON.toJsonTree(artifacts(root)));
         write(out,report);System.out.println("PLATFORM_PROCESSES_PASS "+System.getProperty("os.name")+"/"+System.getProperty("os.arch")+" tests="+tests+" sdkArchive="+s(archive,"archiveSha256"));
     }
 }

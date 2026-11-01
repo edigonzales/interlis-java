@@ -177,6 +177,9 @@ public final class DefaultCompilerCli implements CliApplication {
         }
         help.append("Diagnostic color: --color=auto|always|never or --color MODE (default: auto).\n");
         help.append("Diagnostic language: --diagnostic-language de|en (default: en).\n");
+        help.append("Auto colors only terminal stderr; nonempty NO_COLOR or TERM=dumb disables auto. Windows auto is plain.\n");
+        help.append("Color affects text diagnostics only; JSON and artifact outputs remain plain.\n");
+        help.append("Source frames: at most 3 lines / 160 columns; uncertain Unicode widths show UTF-16 offsets without a caret.\n");
         environment.out().print(help);
         return result(CliTermination.SUCCESS, List.of(), help.toString());
     }

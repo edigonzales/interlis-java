@@ -6,6 +6,7 @@ Diagrammprojektion, CLI, TeaVM-WasmGC/JavaScript und einen GraalVM-Web-Image-
 Vergleich.
 
 - Spezifikation: [docs/spec/README.md](docs/spec/README.md)
+- CLI-Farbausgabe: [Plan](docs/implementation/compiler-cli-color-output/EXECUTION_PLAN.md), [Status](docs/implementation/compiler-cli-color-output/STATUS.md)
 - Compiler-CLI-Folgeauftrag: [Plan](docs/implementation/compiler-cli-modernization/EXECUTION_PLAN.md), [Status](docs/implementation/compiler-cli-modernization/STATUS.md)
 - Historischer G2-Auftrag und Lieferfolge: [Plan](docs/g2/EXECUTION_PLAN.md), [Status](docs/g2/STATUS.md)
 - Fortschritt und offene Gates: [docs/implementation-status.md](docs/implementation-status.md)
@@ -78,6 +79,17 @@ interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler diag
 Ablehnung, 2 bei Bedienfehlern, 3 bei internem Fehler, 4 bei Abbruch.
 `--diagnostic-language de|en` wählt Diagnoseprosa (Default `en`, unabhängig vom Host).
 `--json` liefert ein JSON-Ergebnis auf stdout, gewöhnliche Diagnosen gehen auf stderr.
+`--color=auto|always|never` (auch `--color MODE`) gilt bei allen fünf Diagnosebefehlen,
+Default `auto`. AUTO färbt nur sicher interaktives stderr; `2>errors.log` bleibt
+farbfrei, auch bei interaktivem stdout. Nichtleeres `NO_COLOR` oder `TERM=dumb`
+deaktiviert AUTO. Explizites ALWAYS übersteuert diese Defaults, NEVER unterdrückt
+Farbe. Unter Windows bleibt AUTO konservativ farbfrei. JSON, format-/diagram-
+stdout und Dateien erhalten keine zusätzlichen ANSI-Sequenzen.
+
+Textdiagnosen zeigen bis zu drei revisionstreue Quellzeilen mit maximal160
+sichtbaren Spalten. Unsichere Unicodebreiten erhalten einen UTF-16-Hinweis statt
+eines ungenauen Carets; Steuerzeichen werden druckbar escaped. Beispiel:
+`interlis-compiler check --color=always --diagnostic-language de Modell.ili`.
 Mit `--root` prüfen `check`/`compile` nur die gewählten Modelle samt benötigten
 Abhängigkeiten; zusätzliche Dateien bleiben verfügbare Eingaben. `analyze` zeigt
 weiterhin den vollständigen Analysestand. Lokale Importdateien ausdrücklich

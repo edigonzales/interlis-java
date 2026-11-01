@@ -42,12 +42,19 @@ final class HostChecks {
         pin(target,expected);
     }
     static Result run(Path root, List<String> command, Duration timeout) throws Exception {
+        return run(root, command, timeout, Map.of());
+    }
+    static Result run(Path root, List<String> command, Duration timeout, Map<String,String> environment) throws Exception {
         Path directory=Files.createTempDirectory("interlis-process-");
         Path stdout=directory.resolve("stdout"),stderr=directory.resolve("stderr");
         Process process=null;
         try {
             long started=System.nanoTime();
-            process=new ProcessBuilder(command).directory(root.toFile()).redirectOutput(stdout.toFile()).redirectError(stderr.toFile()).start();
+            var builder=new ProcessBuilder(command).directory(root.toFile()).redirectOutput(stdout.toFile()).redirectError(stderr.toFile());
+            builder.environment().putAll(environment);
+            if (System.getProperty("os.name").equals("Mac OS X") && command.getFirst().equals("/usr/bin/script"))
+                builder.redirectInput(new File("/dev/null"));
+            process=builder.start();
             if(!process.waitFor(timeout.toMillis(),TimeUnit.MILLISECONDS)) throw new IOException("Process timeout: "+command);
             return new Result(List.copyOf(command),process.exitValue(),Files.readString(stdout),Files.readString(stderr),(System.nanoTime()-started)/1_000_000.0);
         } finally {

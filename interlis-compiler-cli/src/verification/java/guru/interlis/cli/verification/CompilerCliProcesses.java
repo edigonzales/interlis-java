@@ -12,7 +12,11 @@ public final class CompilerCliProcesses {
             "legacy-option", "invalid-option", "valid", "compile", "analyze", "diagram", "syntax",
             "semantic", "missing-file", "missing-import", "explicit-import", "multiple-models",
             "option-end", "format-utf8", "root-isolation", "foreign-warning", "relevant-warning",
-            "diagnostic-de", "diagnostic-json", "no-model-root", "invalid-language");
+            "diagnostic-de", "diagnostic-json", "no-model-root", "invalid-language",
+            "color-auto", "color-always", "color-never", "color-no-color", "color-empty-no-color",
+            "color-term-dumb", "color-always-override", "color-never-override", "color-invalid", "color-duplicate",
+            "color-json-always", "color-json-never", "color-json-auto", "color-format-always", "color-format-never",
+            "color-diagram-always", "color-diagram-never", "color-format-error", "color-compile", "color-analyze");
 
     static void verify(String name, Result result, int exit, boolean stdout) {
         require(result.exitCode() == exit, "Wrong compiler CLI exit: " + name + result);
@@ -22,12 +26,14 @@ public final class CompilerCliProcesses {
 
     public static void main(String[] args) throws Exception {
         Path root = Path.of(args[0]).toAbsolutePath();
+        Path suppliedLauncher = args.length > 1 ? Path.of(args[1]).toAbsolutePath() : null;
         Path output = root.resolve("build/reports/p3/compiler-cli/processes.json");
         Files.deleteIfExists(output);
         var before = artifacts(root);
         Path folder = Files.createTempDirectory("interlis compiler ä 😀 ");
         var cases = new LinkedHashMap<String, Result>();
         try {
+            Path launcher = suppliedLauncher != null ? suppliedLauncher : copyDistribution(root, folder);
             String base = "INTERLIS 2.4; MODEL Base AT \"x\" VERSION \"1\" = DOMAIN Name = TEXT*20; END Base.";
             String imported = "MODEL Root AT \"x\" VERSION \"1\" = IMPORTS Base; DOMAIN Name EXTENDS Base.Name = TEXT*10; END Root.";
             Files.writeString(folder.resolve("Base.ili"), base);
@@ -69,14 +75,14 @@ public final class CompilerCliProcesses {
                     new Fixture("multiple-models", List.of("check", "Multiple.ili"), 0, false),
                     new Fixture("option-end", List.of("check", "--", "-Gültig 😀 & [x]!.ili"), 0, false));
             for (var fixture : fixtures) {
-                var command = new ArrayList<String>(); command.add(cli(root).toString()); command.addAll(fixture.args());
+                var command = new ArrayList<String>(); command.add(launcher.toString()); command.addAll(fixture.args());
                 var result = run(folder, command, Duration.ofSeconds(45));
                 verify(fixture.name(), result, fixture.exit(), fixture.stdout()); cases.put(fixture.name(), result);
             }
-            Path lib = cli(root).getParent().getParent().resolve("lib");
+            Path lib = launcher.getParent().getParent().resolve("lib");
             var encoding = run(folder, List.of(java().toString(), "-Dstdout.encoding=windows-1252",
-                    "-Dstderr.encoding=windows-1252", "-cp", lib + java.io.File.separator + "*",
-                    "guru.interlis.cli.Main", "format", "Encoding.ili"), Duration.ofSeconds(45));
+                    "-Dstderr.encoding=windows-1252", "--module-path", lib.toString(),
+                    "--add-modules", "ALL-MODULE-PATH", "--module", "interlis.compiler.cli/guru.interlis.cli.Main", "format", "Encoding.ili"), Duration.ofSeconds(45));
             verify("format-utf8", encoding, 0, true);
             require(encoding.stdout().contains("Grüezi 😀") && encoding.stderr().isEmpty(), "Native encoding leaked into UTF-8 streams");
             cases.put("format-utf8", encoding);
@@ -92,13 +98,127 @@ public final class CompilerCliProcesses {
             require(cases.get("diagnostic-json").stderr().isEmpty()
                     && diagnostic.get("code").getAsString().equals("ILI-SEM-0001")
                     && diagnostic.get("message").getAsString().contains("kann an dieser Stelle nicht aufgelöst werden"), "Canonical JSON or presentation missing");
+            colorCases(folder, launcher, cases);
+            verifyColorCases(cases);
+            var terminal = terminalCases(folder, launcher);
             require(cases.keySet().equals(REQUIRED), "Incomplete standard CLI process profile");
             require(before.equals(artifacts(root)), "CLI artifacts changed during processes");
             write(output, Map.of("status", "passed", "profile", "compiler-cli/v1", "cases", cases,
+                    "terminal", terminal, "launcher", launcher.toString(),
                     "gitCommit", ProfileFingerprint.commit(root), "sourceFingerprint", ProfileFingerprint.current(root), "artifacts", before));
             System.out.println("COMPILER_CLI_PROCESSES_PASS " + cases.size());
         } finally {
             try (var files = Files.walk(folder)) { for (var file : files.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(file); }
         }
     }
+    private static Path copyDistribution(Path root, Path temporary) throws Exception {
+        Path installed=cli(root).getParent().getParent(),target=temporary.resolve("distribution ä 😀");
+        try (var files=Files.walk(installed)) {
+            for (var source:files.sorted().toList()) {
+                Path destination=target.resolve(installed.relativize(source));
+                if (Files.isDirectory(source)) Files.createDirectories(destination);
+                else Files.copy(source,destination,StandardCopyOption.COPY_ATTRIBUTES);
+            }
+        }
+        return target.resolve("bin").resolve(cli(root).getFileName());
+    }
+
+    private static void colorCases(Path folder, Path launcher, Map<String,Result> cases) throws Exception {
+        record ColorCase(String name, List<String> args, Map<String,String> environment, int exit, boolean stdout) { }
+        var standard = Map.of("NO_COLOR", "", "TERM", "xterm");
+        var muted = Map.of("NO_COLOR", "1", "TERM", "DuMb");
+        var fixtures = List.of(
+                new ColorCase("color-auto",List.of("check","--color=auto","Bad.ili"),standard,1,false),
+                new ColorCase("color-always",List.of("check","--color","always","Bad.ili"),standard,1,false),
+                new ColorCase("color-never",List.of("check","--color=never","Bad.ili"),standard,1,false),
+                new ColorCase("color-no-color",List.of("check","--diagnostic-language","de","Bad.ili"),muted,1,false),
+                new ColorCase("color-empty-no-color",List.of("check","Bad.ili"),standard,1,false),
+                new ColorCase("color-term-dumb",List.of("check","Bad.ili"),Map.of("NO_COLOR","","TERM","DUMB"),1,false),
+                new ColorCase("color-always-override",List.of("check","--color=always","Bad.ili"),muted,1,false),
+                new ColorCase("color-never-override",List.of("check","--color=never","Bad.ili"),standard,1,false),
+                new ColorCase("color-invalid",List.of("check","--color=bad","missing.ili"),standard,2,false),
+                new ColorCase("color-duplicate",List.of("check","--color=auto","--color","never","missing.ili"),standard,2,false),
+                new ColorCase("color-json-always",List.of("check","--json","--color=always","--diagnostic-language","de","Bad.ili"),standard,1,true),
+                new ColorCase("color-json-never",List.of("check","--json","--color=never","--diagnostic-language","de","Bad.ili"),standard,1,true),
+                new ColorCase("color-json-auto",List.of("check","--json","--color=auto","--diagnostic-language","de","Bad.ili"),standard,1,true),
+                new ColorCase("color-format-always",List.of("format","--color=always","Encoding.ili"),standard,0,true),
+                new ColorCase("color-format-never",List.of("format","--color=never","Encoding.ili"),standard,0,true),
+                new ColorCase("color-diagram-always",List.of("diagram","--color=always","Base.ili"),standard,0,true),
+                new ColorCase("color-diagram-never",List.of("diagram","--color=never","Base.ili"),standard,0,true),
+                new ColorCase("color-format-error",List.of("format","--color=always","Syntax.ili"),standard,1,false),
+                new ColorCase("color-compile",List.of("compile","--color=always","Bad.ili"),standard,1,false),
+                new ColorCase("color-analyze",List.of("analyze","--color=always","Bad.ili"),standard,0,false));
+        for (var fixture : fixtures) {
+            var command = new ArrayList<String>(); command.add(launcher.toString()); command.addAll(fixture.args());
+            var result = run(folder, command, Duration.ofSeconds(45), fixture.environment());
+            verify(fixture.name(),result,fixture.exit(),fixture.stdout()); cases.put(fixture.name(),result);
+        }
+    }
+
+    /** Rejects report mutation as well as actual terminal byte/exit/channel regressions. */
+    static void verifyColorCases(Map<String,Result> cases) {
+        for (String name : REQUIRED.stream().filter(n -> n.startsWith("color-")).toList())
+            require(cases.containsKey(name), "Missing color process: " + name);
+        for (String name : REQUIRED.stream().filter(n -> n.startsWith("color-")).toList()) {
+            boolean artifact=name.startsWith("color-json-") || name.startsWith("color-diagram-")
+                    || name.equals("color-format-always") || name.equals("color-format-never");
+            int exit=name.equals("color-invalid") || name.equals("color-duplicate") ? 2
+                    : artifact && !name.startsWith("color-json-") || name.equals("color-analyze") ? 0 : 1;
+            verify(name,cases.get(name),exit,artifact);
+        }
+        String plain = cases.get("color-never").stderr();
+        require(plain.contains("ILI-SEM-0001") && plain.contains(" | ") && plain.contains("^"), "Missing real source diagnostic");
+        for (String name : List.of("color-auto","color-empty-no-color","color-term-dumb","color-never-override"))
+            require(cases.get(name).stderr().equals(plain), "Auto/plain mismatch: " + name);
+        require(cases.get("color-no-color").stderr().contains("kann an dieser Stelle nicht aufgelöst werden")
+                && !cases.get("color-no-color").stderr().contains("\u001b"), "NO_COLOR/DE failure");
+        for (String name : List.of("color-always","color-always-override","color-compile","color-analyze")) {
+            var text = cases.get(name).stderr();
+            require(text.contains("\u001b[31mERROR\u001b[0m") && stripSgr(text).equals(plain), "ANSI parity/reset failure: " + name);
+        }
+        var formatError = cases.get("color-format-error");
+        require(formatError.stderr().contains("\u001b[31mERROR\u001b[0m") && formatError.stderr().contains(" | "), "Formatter color missing");
+        stripSgr(formatError.stderr());
+        for (String name : List.of("color-json-always","color-json-never","color-json-auto")) {
+            var result = cases.get(name);
+            require(result.exitCode()==1 && result.stderr().isEmpty() && !result.stdout().contains("\u001b"), "ANSI/exit/channel leak in JSON");
+            var json = com.google.gson.JsonParser.parseString(result.stdout()).getAsJsonObject();
+            require(!json.getAsJsonArray("diagnostics").isEmpty(), "Missing JSON diagnostics");
+            require(result.stdout().equals(cases.get("color-json-never").stdout()), "Color changed canonical JSON");
+        }
+        for (String command : List.of("format","diagram")) {
+            var a=cases.get("color-"+command+"-always");var b=cases.get("color-"+command+"-never");
+            require(a.exitCode()==0 && b.exitCode()==0 && a.stdout().equals(b.stdout()) && !a.stdout().contains("\u001b"), "ANSI in artifact stdout");
+        }
+        for (String name : List.of("color-invalid","color-duplicate"))
+            require(cases.get(name).exitCode()==2 && cases.get(name).stdout().isEmpty(), "Color usage failure");
+    }
+
+    static String stripSgr(String text) {
+        String stripped=text.replaceAll("\\x1b\\[(?:0|31|33|34|36|90)m", "");
+        require(!stripped.contains("\u001b"), "Non-SGR terminal control in diagnostic");
+        return stripped;
+    }
+
+    private static Map<String,Object> terminalCases(Path folder, Path launcher) throws Exception {
+        if (!System.getProperty("os.name").equals("Mac OS X"))
+            return Map.of("hostDetection","conservative-or-headless", "realPty", false);
+        Path script=folder.resolve("terminal-check.sh");
+        var results=new LinkedHashMap<String,Result>();
+        for (boolean redirect : List.of(false,true)) for (String mode : List.of("auto","always","never")) {
+            Files.writeString(script,"test -t 1 && test -t 2 || exit 80\n\"$1\" check --color=\"$2\" \"$3\""
+                    +(redirect?" 2>\"$4\"":"")+"\nresult=$?\ntest \"$result\" = 1 || exit 81\n");
+            Path error=folder.resolve("redirect.err"),capture=folder.resolve("terminal.capture");
+            var result=run(folder,List.of("/usr/bin/script","-q",capture.toString(),"/bin/sh",script.toString(),
+                    launcher.toString(),mode,folder.resolve("Bad.ili").toString(),error.toString()),Duration.ofSeconds(45),Map.of("NO_COLOR","","TERM","xterm"));
+            require(result.exitCode()==0,"Actual PTY process failed: "+result);
+            String text=redirect?Files.readString(error):Files.readString(capture);
+            require(text.contains("ILI-SEM-0001"),"PTY did not execute source rejection");
+            require(text.contains("\u001b[31mERROR\u001b[0m") == (mode.equals("always") || mode.equals("auto")&&!redirect),"Wrong PTY/redirect color");
+            // script itself may emit an initial EOT marker; inspect only CLI SGR/content here.
+            results.put(mode+(redirect?"-stderr-file":"-stderr-pty"),result);
+        }
+        return Map.of("hostDetection","posix-fd2", "realPty", true,"cases",results);
+    }
+
 }
