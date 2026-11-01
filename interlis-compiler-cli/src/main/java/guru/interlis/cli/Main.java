@@ -19,10 +19,24 @@ public final class Main {
      */
     public static void main(String[] args) {
         var application = new DefaultCompilerCli();
-        CliExecutionResult result = application.run(java.util.List.of(args), CliEnvironment.system(),
+        var arguments = Boolean.getBoolean("guru.interlis.cli.windowsArguments")
+                ? windowsArguments() : java.util.List.of(args);
+        CliExecutionResult result = application.run(arguments, CliEnvironment.system(),
                 CancellationToken.none());
         if (result.exitCode() != 0) {
             System.exit(result.exitCode());
         }
+    }
+
+    /** Reads the Windows launcher's ordered Unicode arguments, including empty values. */
+    private static java.util.List<String> windowsArguments() {
+        int count = Integer.parseInt(System.getenv("_INTERLIS_COMPILER_ARG_COUNT"));
+        var arguments = new java.util.ArrayList<String>(count);
+        for (int index = 0; index < count; index++) {
+            // Windows deletes an environment variable when SET assigns an empty value.
+            arguments.add(java.util.Objects.requireNonNullElse(
+                    System.getenv("_INTERLIS_COMPILER_ARG_" + index), ""));
+        }
+        return java.util.List.copyOf(arguments);
     }
 }

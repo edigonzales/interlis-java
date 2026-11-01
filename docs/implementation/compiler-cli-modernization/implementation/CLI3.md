@@ -41,6 +41,30 @@ sauberen platformCheck und das vollständige Produktprofil erneut ausgeführt.
 Toolchains tatsächlich gelesen: native-image25.0.3+9.1, Binaryen133,
 Safari27.0 (20625.1.29.18.28). Keine Pins/Normen/XFAILs verändert.
 
+## Plattformbefund und Korrektur
+
+Der Nutzer hat den Push von a01c5f874421604e2451ed6ee9cb153595d38b59
+und den CI-Start ausdrücklich autorisiert. Run41262729579: Linux erfolgreich,
+Windows fehlgeschlagen beim unveränderten Prozessfall `option-end` mit
+`-Gültig 😀.ili`. Java25 konvertiert Windows-argv über CP_ACP und ersetzt
+das Emoji durch `?` (OpenJDK JDK-8337506; launcher/main.c, jdk-25-ga).
+Der erzeugte Windows-Launcher übergibt deshalb seine Argumente einzeln über
+Unicode-Umgebungsvariablen. Main liest sie nur im ausdrücklich vom Launcher
+aktivierten Modus; kein neuer Bedienweg, keine Zusatzruntime und keine
+Änderung der Sprach-/Pfad-/Stream-Erwartungen. Delayed expansion und CALL-
+Expansion der Argumentwerte bleiben ausgeschaltet. Die tatsächliche Korrektur
+ist erst mit erneuter Windows-CI am neuen sauberen Kandidaten belegt.
+
+Der lokale Gesamtlauf auf a01c5f874421 hat nach35m56s bei Full-Corpus-Safari
+abgebrochen:321/347 Roots, HTTP-Timeout vor Root322 SO_ARP_MJPNL_20240606.
+Alle347 JVM-/Node-/Chromium-/Firefox-/WebKit-Roots waren vollständig erfasst;
+die funktionalen Safari-/Web-Image-/Browserprofile bestanden. Root322 einzeln
+und die unveränderte Sequenz320–322 bestanden im diagnostischen Scratchlauf.
+Diese Teilproben ersetzen keinen vollständigen Safari-Nachweis. Timeout,
+Rootliste, Erwartungen und Budgets sind unverändert. Zwei tatsächliche saubere
+Reproduzierbarkeitsbuilds ergaben76 byteidentische Lieferdateien auf a01c5f874421.
+Rohdaten einschliesslich Fehlläufen liegen unter build/review/compiler-cli/CLI3/.
+
 ## Plattformwege und noch offene Pflichten
 
 Der vorhandene GitHub-Workflow p3-platforms.yml ist erreichbar; bestehende
