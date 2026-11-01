@@ -857,3 +857,11 @@ Deklarations-/Quellbezug, Inherited-Option und gemeinsames Budget. Der Wireadapt
 schreibt erforderliche Nullfelder auch unter LSP4Js standardmässigem Gsonwriter.
 LspProcessTest und der paketierte Node-stdio-Test prüfen die wirkliche JSONform;
 ein reines Gsonbaum- oder Javaobjekt-Ergebnis ersetzt diese Prüfung nicht.
+
+Additiv: DiagramEdge.EdgeKind.ASSOCIATION bezeichnet eine kanonisch kompaktierte
+binäre Assoziation. Die Eligibility-, Reihenfolge-, Quell- und Budgetbedingungen
+stehen in Kapitel11. CompactAssociationProjection bearbeitet nur noch nicht
+publizierte Projektionsbuilder; veröffentlichte DiagramDocument-Werte bleiben
+immutable. Parser, Binder und SemanticGraph werden weder geändert noch erneut
+interpretiert. JVM-/LSP-/portable Vertragstests und beide neutralen Consumer
+verwenden dieselbe Information. DiagramDocument1.0 bleibt strukturell unverändert.

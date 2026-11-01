@@ -49,6 +49,16 @@ class DiagramProtocolTest {
             var fresh=diagram(server,URI,4,null);assertNotEquals(response.diagramId(),fresh.diagramId());assertNotEquals(response.snapshotId(),fresh.snapshotId());
         } finally {server.shutdown().get(5,TimeUnit.SECONDS);}
     }
+    @Test void compactSelfEdgesUseTheCanonicalAssociationAnchorAndBothRoleEnds() throws Exception {
+        var server=server();String text="INTERLIS 2.4;MODEL Diagram AT \"x\" VERSION \"1\"=TOPIC T=OID AS INTERLIS.UUIDOID;CLASS A=END A;ASSOCIATION Self=parent--{0..1}A;children--{*}A;END Self;END T;END Diagram.";
+        try {
+            open(server,URI,1,text);var response=diagram(server,URI,1,"{\"schemaVersion\":\"1.0\",\"associationPresentation\":\"COMPACT_BINARY\"}");
+            var self=response.document().edges().stream().filter(edge->edge.kind()==guru.interlis.projection.DiagramEdge.EdgeKind.ASSOCIATION).findFirst().orElseThrow();
+            assertEquals(self.source(),self.target());assertEquals("parent",self.sourceEnd().roleName().orElseThrow());assertEquals("children",self.targetEnd().roleName().orElseThrow());
+            var target=server.diagramNavigate(navigation(response,1,self.id())).get(5,TimeUnit.SECONDS);int column=text.indexOf("ASSOCIATION Self")+"ASSOCIATION ".length();assertEquals(new Range(new Position(0,column),new Position(0,column+4)),target.range());assertEquals(URI,target.uri());
+            assertEquals(guru.interlis.projection.ProjectionCompleteness.COMPLETE,response.document().completeness());
+        }finally{server.shutdown().get(5,TimeUnit.SECONDS);}
+    }
     @Test void strictOptionsAndServerIdentityFailClosedWhilePartialAnalysisIsHonest() throws Exception {
         var server=server();try {
             open(server,URI,1,SOURCE);var response=diagram(server,URI,1,null);

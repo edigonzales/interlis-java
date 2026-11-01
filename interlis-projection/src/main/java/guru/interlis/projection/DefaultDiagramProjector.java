@@ -76,9 +76,6 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     || model.translation().orElseThrow().sourceTarget().isEmpty()
                     || model.translation().orElseThrow().correspondences().isEmpty())return invalidOptions("projection.invalidTranslationSelection");
         }
-        if(options.associationPresentation()==AssociationPresentation.COMPACT_BINARY)
-            notices.add(new ProjectionNotice(ProjectionNoticeCode.UNSUPPORTED_PRESENTATION,Severity.WARNING,
-                    "projection.entityFallback",List.of("COMPACT_BINARY"),Optional.empty(),Optional.empty()));
         ProjectionState state = new ProjectionState(context, options, notices, token);
         for (SymbolRef ref : options.selection().symbols()) {
             token.throwIfCancellationRequested();
@@ -86,6 +83,8 @@ final class DefaultDiagramProjector implements DiagramProjector {
         }
         if(options.scope()==DiagramScope.NEIGHBOURHOOD)state.includeNeighbourhood();
         state.finishEdges();
+        if(options.associationPresentation()==AssociationPresentation.COMPACT_BINARY)
+            CompactAssociationProjection.apply(context.graph(),state.nodes,state.edges,token);
         ProjectionCompleteness completeness = state.completeness();
         DiagramDocument document = new DiagramDocument(DiagramDocument.SCHEMA_VERSION,
                 context.snapshotId(), context.sourceRevisions(), context.inputKind(),

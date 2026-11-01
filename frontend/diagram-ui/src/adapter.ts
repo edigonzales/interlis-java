@@ -113,7 +113,7 @@ export function adapt(raw:unknown,sources:HostSources=new Map()):DiagramView {
     addAnchor(data,document,edge.id,edge.anchor);symbol(edge.id,edge.origin);
     if(edge.kind==='ASSOCIATION_ROLE' && source.kind==='ASSOCIATION'){
       const origin=source.symbol?symbolKey(source.symbol):source.id;const group=groups.get(origin)??[];group.push(edge);groups.set(origin,group);
-    }
+    }else if(edge.kind==='ASSOCIATION'&&edge.origin){const origin=symbolKey(edge.origin),group=groups.get(origin)??[];group.push(edge);groups.set(origin,group);}
   }
   const view:DiagramView=Object.freeze({document,snapshotId:document.snapshotId,associations:new ReadonlyGroups([...groups].map(([key,value])=>[key,Object.freeze(value)] as const)),notices:freeze(notices)});
   details.set(view,data);return view;

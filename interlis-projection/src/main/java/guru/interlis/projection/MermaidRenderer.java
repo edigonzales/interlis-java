@@ -38,6 +38,10 @@ public final class MermaidRenderer {
             }
             if (edge.kind() == DiagramEdge.EdgeKind.INHERITANCE) {
                 out.append("  ").append(source).append(" <|-- ").append(target).append('\n');
+            } else if(edge.kind()==DiagramEdge.EdgeKind.ASSOCIATION) {
+                out.append("  ").append(source).append(" \"").append(GraphTextFormatter.mermaidEscape(GraphTextFormatter.endLabel(edge.sourceEnd())))
+                    .append("\" ").append(GraphTextFormatter.connector(edge)).append(" \"").append(GraphTextFormatter.mermaidEscape(GraphTextFormatter.endLabel(edge.targetEnd())))
+                    .append("\" ").append(target).append(" : ").append(GraphTextFormatter.mermaidEscape(edge.label())).append('\n');
             } else {
                 out.append("  ").append(source).append(" --> ").append(target);
                 if (!edge.label().isBlank()) {

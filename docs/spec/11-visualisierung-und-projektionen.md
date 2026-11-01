@@ -86,7 +86,7 @@ Wird ein solcher Zustand über den gemeinsamen Verbraucher-Diagnosekanal ausgege
 | `labelPolicy` | `CANONICAL`, `TRANSLATED` | Labelauswahl ohne Identitätsänderung. |
 | `translationModel` | `Optional<SymbolRef>` | Bei TRANSLATED explizites Übersetzungsmodell desselben Snapshots mit gebundenen ModelTranslation-Korrespondenzen. |
 | `neighbourhoodDepth` | `OptionalInt`, 0..32 | Bei NEIGHBOURHOOD explizite maximale Entfernung im gebundenen Referenzgraphen. |
-| `associationPresentation` | `ENTITY`, später `COMPACT_BINARY` | Standarddarstellung jeder Assoziation als eigenständiges Element. |
+| `associationPresentation` | `ENTITY`, `COMPACT_BINARY` | Standard ENTITY; verlustfrei geeignete binäre Assoziationen können Kanten sein. |
 | `budget` | `ProjectionBudget(maxNodes,maxEdges,maxMembersPerNode)` | Ausdrückliche Begrenzung mit LIMITED-Meldung. |
 
 Eine Auswahl einzelner Elemente fügt deren Modell-/Topicrahmen hinzu, ohne
@@ -196,7 +196,7 @@ Diamanten für Aggregation/Komposition werden aus den semantischen Endinformatio
 
 ### 4.3 Weitere Beziehungen
 
-Das Beziehungsschema unterscheidet mindestens INHERITANCE, ASSOCIATION_ROLE, REFERENCE, STRUCTURE_COMPOSITION, DOMAIN_USE, VIEW_DERIVATION, MODEL_IMPORT und TRANSLATION. Kategorien können zunächst deaktiviert sein, müssen dann aber über die Projektionsfähigkeiten kenntlich werden.
+Das Beziehungsschema unterscheidet mindestens INHERITANCE, ASSOCIATION_ROLE, ASSOCIATION, REFERENCE, STRUCTURE_COMPOSITION, DOMAIN_USE, VIEW_DERIVATION, MODEL_IMPORT und TRANSLATION. Kategorien können zunächst deaktiviert sein, müssen dann aber über die Projektionsfähigkeiten kenntlich werden.
 
 Eine `REFERENCE TO`-Verwendung und eine Strukturkomposition sind unterschiedliche Beziehungen. Modellimports verbinden Rahmen, nicht zufällige Klassen im importierten Modell. Fachlich verschiedene Beziehungen zwischen denselben zwei Knoten bleiben getrennte Kanten mit eigener Identität.
 
@@ -355,3 +355,22 @@ kanonisch. Das vorhandene Schema1.0 erlaubt offene Memberkind-Zeichenketten.
 DiagramProjectionTest prüft verschachtelte/effektive Werte, Quellen, HIDE und
 Budget. Inline-Enum-Komfort-/Filterfunktionen bleiben dem folgenden UIumfang
 zugeordnet. Der neutrale interaktive Default zeigt eigene und geerbte Member.
+
+COMPACT_BINARY wird im reinen Java-Projektor aus bereits gebundenen Symbolen
+gebildet. Genau zwei eindeutige Rollen ohne eigene Attribute/Constraints,
+Vererbungs-/Ableitungsbezüge, zusätzliche Rollenflags/Restriktionen oder besondere
+Linkkardinalität dürfen eine ASSOCIATION-Kante ersetzen. Andere eingehende
+Bezüge auf den Assoziationsknoten verhindern die Reduktion. Alle übrigen
+Assoziationen bleiben vollständige Entitäten; dies ist kein unimplementierter
+Optionsfallback und macht eine vollständige Projektion nicht PARTIAL.
+
+Die neue Kante übernimmt beide Zielendpunkte und Endmetadaten in
+Rollendeklarationsreihenfolge, mit eigener Assoziations-ID, SymbolRef und
+ursprünglichem Assoziationsanker. Selbstbeziehungen behalten denselben Knoten
+an beiden Enden, parallele Beziehungen verschiedene Kantenidentitäten. Bestehende
+Schemas1.0 erlauben den additiven Kindstring ASSOCIATION. Der neutrale Adapter
+ordnet auch kompakte Kanten ihrem Assoziationssymbol zu; bestehende Textconsumer
+bewahren beide Endlabels und Diamanten. Die portable Capability kündigt beide
+implementierten Darstellungen an. CompactAssociationProjectionTest,
+DiagramProtocolTest und der tatsächliche portable Adaptervertrag prüfen diese
+Daten gemeinsam mit n-ären/attributtragenden Entitäten.

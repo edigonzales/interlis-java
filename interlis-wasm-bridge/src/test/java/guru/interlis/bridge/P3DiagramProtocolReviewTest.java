@@ -11,6 +11,7 @@ class P3DiagramProtocolReviewTest {
         String session=BridgeCodec.string(opened,"sessionId");var compiled=result(call("compile",session,JsonValues.object("expectedWorkspaceRevision",opened.members().get("workspaceRevision"),"roots",JsonValues.array(List.of(JsonValues.object("kind",JsonValues.string("byName"),"modelName",JsonValues.string("F")))))));
         assertEquals("succeeded",BridgeCodec.string(compiled,"outcome"));return new Handles(session,BridgeCodec.string(compiled,"snapshotId"),BridgeCodec.string(compiled,"schemaId"));
     }
+    @Test void capabilitiesAdvertiseTheImplementedCompactPresentation(){var capabilities=result(call("capabilities",null,JsonValues.object()));assertTrue(Json.write(capabilities).contains("COMPACT_BINARY"));}
     @Test void absentAndExplicitlyEmptySelectionsAreDifferentInputs(){
         var h=compiled();assertEquals("ok",BridgeCodec.string(call("diagram",h.session(),JsonValues.object("schemaId",JsonValues.string(h.schema()))),"status"));
         error(call("diagram",h.session(),JsonValues.object("schemaId",JsonValues.string(h.schema()),"selection",JsonValues.array(List.of()))),"INVALID_REQUEST");

@@ -1397,3 +1397,11 @@ stdio-Test prüft Pflichtfelder. Aufzählungsdomänen erhalten ausserdem ihre
 kanonischen ENUM_VALUES statt bloss eines abstrakten Typnamens; keine neue
 Sprachakzeptanz. Domain-/Vererbungs-/Quell-/Budgettests und erneute installierte
 Diagrammqualifikation sind für diesen Nacharbeitsstand fällig. V2 bleibt offen.
+
+V2 weitere GUI-Nacharbeit: Der deklarierte COMPACT_BINARY-Fallback genügte nicht
+für echte Selbst-/Parallelkanten. Ein eigener reiner Projektionsschritt kompaktet
+nun ausschliesslich verlustfrei geeignete, gebundene binäre Assoziationen und
+behält n-äre/attributtragende/komplexe Entitäten. Beide Endmetadaten und
+Assoziationsanker bleiben kanonisch; Textconsumer und portable Capability sind
+angepasst. Neue JVM-/LSP-/Bridge-Verträge bestanden; frischer portabler und
+installierter Nachweis für diesen Stand ist noch fällig. Keine neue Sprachregel.
