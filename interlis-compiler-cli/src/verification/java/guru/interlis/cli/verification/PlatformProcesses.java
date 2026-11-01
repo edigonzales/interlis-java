@@ -28,7 +28,7 @@ public final class PlatformProcesses {
                 tests+=count;suites++;xmlHashes.put(root.relativize(file).toString().replace('\\','/'),hash(file));
             }
         }
-        require(tests>=1230 && suites>=229 && xmlHashes.size()>=229,"Incomplete current JVM profile");
+        require(tests>=1232 && suites>=229 && xmlHashes.size()>=229,"Incomplete current JVM profile");
         var sdk=read(root.resolve("build/reports/sdk/sdk-process-comparison.json"));var archive=read(root.resolve("build/reports/sdk/archive-consumer.json"));var cli=read(root.resolve("build/reports/p3/compiler-cli/processes.json"));
         require(s(sdk,"status").equals("passed")&&rows(sdk,"commands").size()==9,"Missing SDK processes");
         require(s(archive,"status").equals("passed")&&s(cli,"status").equals("passed")&&cli.getAsJsonObject("cases").keySet().equals(CompilerCliProcesses.REQUIRED),"Missing installed consumer/standard CLI processes");

@@ -19,7 +19,7 @@ public final class DefaultCommandLineParser implements CommandLineParser {
             if (!fileMode && arg.equals("--")) { fileMode = true; continue; }
             if (!fileMode && arg.startsWith("-")) {
                 String inlineColor = null;
-                if (arg.startsWith("--color=")) { inlineColor = arg.substring(8); arg = "--color"; }
+                if (isInlineColorOption(arg, definitions)) { inlineColor = arg.substring(8); arg = "--color"; }
                 var option = definitions.get(arg);
                 if (option == null) return new CliParseOutcome.InvalidCommandLine("unsupported option: " + arg);
                 if (!option.repeatable() && options.containsKey(arg))
@@ -30,11 +30,11 @@ public final class DefaultCommandLineParser implements CommandLineParser {
                 if (inlineColor != null) values.add(inlineColor);
                 for (int count = 0; inlineColor == null && count < option.valueCount(); count++) {
                     String value = args.get(++index);
-                    if (value.equals("--") || definitions.containsKey(value))
+                    if (value.equals("--") || definitions.containsKey(value) || isInlineColorOption(value, definitions))
                         return new CliParseOutcome.InvalidCommandLine(arg + " has a missing value");
                     values.add(value);
                 }
-                if (arg.equals("--color") && !Set.of("auto", "always", "never").contains(values.getFirst()))
+                if (arg.equals("--color") && option.valueCount() == 1 && !Set.of("auto", "always", "never").contains(values.getFirst()))
                     return new CliParseOutcome.InvalidCommandLine("--color must be auto, always or never");
                 options.computeIfAbsent(arg, ignored -> new ArrayList<>()).add(values);
             } else {
@@ -49,5 +49,9 @@ public final class DefaultCommandLineParser implements CommandLineParser {
             case "version" -> new CliParseOutcome.VersionRequested(parsed);
             default -> parsed;
         };
+    }
+    private static boolean isInlineColorOption(String argument, Map<String, CommandSpec.Option> definitions) {
+        var color = definitions.get("--color");
+        return color != null && color.valueCount() == 1 && argument.startsWith("--color=");
     }
 }

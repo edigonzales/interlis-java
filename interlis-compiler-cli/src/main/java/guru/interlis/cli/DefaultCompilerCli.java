@@ -148,14 +148,14 @@ public final class DefaultCompilerCli implements CliApplication {
                 default -> invocation.language == DiagnosticLanguage.DE ? "Quelle konnte nicht gelesen werden" : "source could not be read";
             };
             String message = invocation.language == DiagnosticLanguage.DE ? "Laden fehlgeschlagen: " + reason : "Source loading failed: " + reason;
-            environment.err().println(message);
+            environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
             return result(CliTermination.OPERATIONAL_FAILURE, List.of(), message);
         } catch (CliUsageException usage) {
             return usage(environment, usage.getMessage());
         } catch (RuntimeException failure) {
             invocation.failureId = new FailureId("cli-" + java.util.UUID.randomUUID());
             String message = "internal failure: " + invocation.failureId.value();
-            environment.err().println(message);
+            environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
             return result(CliTermination.INTERNAL_FAILURE, List.of(), message);
         }
     }
@@ -302,7 +302,7 @@ public final class DefaultCompilerCli implements CliApplication {
                         String reason = problem.reason() + problem.loadReason().map(value -> "/" + value).orElse("");
                         String output = "resolution rejected: " + reason;
                         print(parsed.json(), environment, List.of(), output, loaded.sources(), invocation);
-                        if (!parsed.json()) environment.err().println(output);
+                        if (!parsed.json()) environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(output));
                         return result(problem.reason() == RepositoryProblem.Reason.LOAD_FAILURE || problem.reason() == RepositoryProblem.Reason.INDEX_FAILURE
                                 ? CliTermination.OPERATIONAL_FAILURE : CliTermination.INPUT_UNRESOLVED, List.of(), output);
                     }
@@ -466,7 +466,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 String message = invocation.language == DiagnosticLanguage.DE && notice.code().equals("VALUE_LINE_ENDING_PRESERVED")
                         ? "Zeilenenden in einem werttragenden Literal oder Metawert bleiben zur Werterhaltung unverändert."
                         : guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(notice.message());
-                environment.err().println(notice.code() + ": " + message);
+                environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(notice.code()) + ": " + message);
             }
             outputs.add(new FormatOutput(input, formatted.text()));
         }
@@ -475,7 +475,7 @@ public final class DefaultCompilerCli implements CliApplication {
                     .filter(output -> !output.text().equals(output.input().source().text()))
                     .map(output -> output.input().file().toString()).toList();
             if (!changed.isEmpty()) {
-                changed.forEach(path -> environment.err().println("would format: " + path));
+                changed.forEach(path -> environment.err().println("would format: " + guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(path)));
                 return result(CliTermination.FORMAT_CHECK_FAILED, List.of(),
                         String.join("\n", changed));
             }
@@ -493,7 +493,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 }
             } catch (java.io.IOException failure) {
                 String message = "format write failed: " + failure.getMessage();
-                environment.err().println(message);
+                environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
                 return result(CliTermination.OPERATIONAL_FAILURE, List.of(), message);
             }
             return result(CliTermination.SUCCESS, List.of(), "");
@@ -659,7 +659,7 @@ public final class DefaultCompilerCli implements CliApplication {
         environment.err().println("check/compile: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
         environment.err().println("               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]");
         environment.err().println("Example: interlis-compiler check <File.ili>");
-        environment.err().println(message);
+        environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
         return result(CliTermination.USAGE_ERROR, List.of(), message);
     }
 

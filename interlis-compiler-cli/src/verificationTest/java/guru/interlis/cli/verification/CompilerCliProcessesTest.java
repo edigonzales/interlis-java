@@ -22,23 +22,26 @@ class CompilerCliProcessesTest {
         String ansi=plain.replace("ERROR","\u001b[31mERROR\u001b[0m");
         for(String name:CompilerCliProcesses.REQUIRED)if(name.startsWith("color-")) {
             boolean artifact=name.startsWith("color-json-")||name.startsWith("color-diagram-")||name.equals("color-format-always")||name.equals("color-format-never");
-            int exit=name.equals("color-invalid")||name.equals("color-duplicate")?2:artifact&&!name.startsWith("color-json-")||name.equals("color-analyze")?0:1;
+            int exit=List.of("color-invalid","color-duplicate","color-missing-inline","color-usage-control").contains(name)?2:artifact&&!name.startsWith("color-json-")||name.equals("color-analyze")?0:1;
             String out=artifact?(name.startsWith("color-json-")?"{\"diagnostics\":[{}]}":"artifact"):"";
             String err=artifact?"":name.equals("color-no-color")?"kann an dieser Stelle nicht aufgelöst werden":
                     List.of("color-always","color-always-override","color-compile","color-analyze","color-format-error").contains(name)?ansi:plain;
+            if(name.equals("color-usage-control"))err="usage: --bad\\u001b[2J\\u202e";
+            if(name.equals("color-format-check-control"))err="would format: Control\\u202e.ili";
             rows.put(name,new HostChecks.Result(List.of(),exit,out,err,1));
         }
         return rows;
     }
     @Test void strictColorCheckerRejectsAnsiLeaksMissingResetsAndFalseExits() {
         assertDoesNotThrow(()->CompilerCliProcesses.verifyColorCases(colors()));
-        for(String mutation:List.of("json","reset","cursor","exit","artifact","missing")) {
+        for(String mutation:List.of("json","reset","cursor","exit","artifact","missing","control")) {
             var rows=colors();String key=mutation.equals("json")?"color-json-always":mutation.equals("artifact")?"color-format-always":"color-always";
+            if(mutation.equals("control"))key="color-format-check-control";
             var r=rows.get(key);
             if(mutation.equals("missing"))rows.remove(key);
             else rows.put(key,new HostChecks.Result(r.command(),mutation.equals("exit")?0:r.exitCode(),
                     mutation.equals("json")||mutation.equals("artifact")?r.stdout()+"\u001b[31m":r.stdout(),
-                    mutation.equals("reset")?r.stderr().replace("\u001b[0m",""):mutation.equals("cursor")?r.stderr()+"\u001b[2J":r.stderr(),1));
+                    mutation.equals("control")?r.stderr()+"\u202e":mutation.equals("reset")?r.stderr().replace("\u001b[0m",""):mutation.equals("cursor")?r.stderr()+"\u001b[2J":r.stderr(),1));
             assertThrows(IllegalArgumentException.class,()->CompilerCliProcesses.verifyColorCases(rows),mutation);
         }
         assertThrows(IllegalArgumentException.class,()->CompilerCliProcesses.stripSgr("\u001b]8;;bad\u0007"));

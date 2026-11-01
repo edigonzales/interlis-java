@@ -45,6 +45,44 @@ class ColorOutputContractTest {
         assertEquals(2, run(List.of("check", "--config", "absent.properties", "--color=bad"), Map.of(), true).result.exitCode());
     }
 
+    @Test void inlineColorCannotBeConsumedAsAnotherOptionsValue() {
+        var parser = new DefaultCommandLineParser();
+        for (var command : List.of("check", "compile", "analyze", "diagram", "format")) {
+            var spec = CommandSpec.standard(command);
+            for (var option : spec.options()) for (int position=0; position<option.valueCount(); position++) {
+                for (var color : List.of(List.of("--color=always"), List.of("--color", "always"))) {
+                    var args = new ArrayList<>(List.of(command, option.name()));
+                    for (int i=0; i<position; i++) args.add("value");
+                    args.addAll(color); args.add("missing.ili");
+                    assertInstanceOf(CliParseOutcome.InvalidCommandLine.class, parser.parse(args, spec), args.toString());
+                }
+            }
+        }
+        assertEquals(2, run(List.of("check", "--config", "--color=always", "missing.ili"), Map.of(), false).result.exitCode());
+        for (int arity : List.of(0, 2)) {
+            var spec = new CommandSpec("custom", List.of(new CommandSpec.Option("--color", arity, false)), true);
+            var args = new ArrayList<>(List.of("custom", "--color"));
+            for (int i=0; i<arity; i++) args.add("value");
+            assertInstanceOf(ParsedCommand.class, parser.parse(args, spec));
+            assertInstanceOf(CliParseOutcome.InvalidCommandLine.class, parser.parse(List.of("custom", "--color=always"), spec));
+        }
+    }
+
+    @Test void usageAndFormatCheckEscapeUntrustedControls() throws Exception {
+        var usage = run(List.of("check", "--bad\u001b[2J\u202e"), Map.of(), false);
+        assertEquals(2, usage.result.exitCode());
+        assertTrue(usage.err.contains("\\u001b")); assertTrue(usage.err.contains("\\u202e"));
+        assertFalse(usage.err.contains("\u001b")); assertFalse(usage.err.contains("\u202e"));
+        for (String name : System.getProperty("os.name").startsWith("Windows")
+                ? List.of("Control\u202e.ili") : List.of("Control\u202e.ili", "Control\u001b[2J\u202e.ili")) {
+            Files.writeString(directory.resolve(name), "INTERLIS 2.4;MODEL F AT \"x\" VERSION \"1\"=END F.");
+            var formatted = run(List.of("format", "--check", "--color=always", name), Map.of(), false);
+            assertEquals(CliTermination.FORMAT_CHECK_FAILED, formatted.result.termination());
+            assertTrue(formatted.out.isEmpty()); assertTrue(formatted.err.contains("\\u202e"));
+            assertFalse(formatted.err.contains("\u001b")); assertFalse(formatted.err.contains("\u202e"));
+        }
+    }
+
     @Test void exhaustivePolicyTable() {
         var policy = new ColorPolicy();
         for (var mode : ColorMode.values()) for (boolean terminal : List.of(false,true))

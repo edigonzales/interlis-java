@@ -160,3 +160,18 @@ Gezielte GREEN-Prüfung nach Fix: `compilerCliCheck :interlis-compiler-cli:test
 Verificationtests,100 Nodechecker,1466 Sourceinputs; originaler Guard passed0
 (`color3-http-fix.log`, `color3-http-fix-guard.json`).
 Neue Commit-/CI-/FullRelease-/unabhängige C3-Gesamtabnahme ist erforderlich.
+
+Kandidat2d1c914d7e6733a2aa1f13e48b58abf74013d5b5 wurde nach erfolgreichen
+Linux-/Windows-Profilen (CI41294662800, je1230 Tests/229 Suites/47 Prozesse)
+ohne Gesamtabnahme zurückgezogen. Eigene echte Gegenproben belegten Exit1
+statt UsageError2 für `check --config --color=always missing.ili` sowie rohe
+ESC-/Bidi-Zeichen im Dateinamen von `format --check`. Der laufende Gesamtgate
+wurde kontrolliert beendet; kein unabhängiger Review dieses Kandidaten gestartet.
+Rohbelege: `build/review/compiler-cli-color/{parser-and-path-red.json,2d1c914-withdrawal.json}`.
+Die Nacharbeit prüft Inline-Farbe an jeder Optionswertposition vor Host-IO, erhält
+benutzerdefinierte Optionsaritäten und verwendet zentrales safeText für freie
+Usage-/Formatpfadtexte. Zwei neue JUnit-Tests und drei reale Prozesse ergänzen
+den aktiven Pflichtumfang auf mindestens1232 Tests/229 Suites/50 Prozesse.
+Frische CI, vollständiger Gesamtgate und unabhängiger kumulativer Review bleiben fällig.
+
+Nacharbeit GREEN: eigener Guardlauf `:interlis-compiler-cli:test :interlis-compiler-cli:verificationTest compilerCliCheck pythonFreeCheck` mit Node24/JDK25, --no-parallel/--max-workers=2: Exit0/25s,102+25 Tests ohne Fehler/Skips,50 echte CLI- und6 macOS-PTY-Fälle,1466 Pythonfreie Inputs. `node --test tools/release/evidence.test.cjs`:73/73 PASS,0 Skips. Rohlogs controls-green-r3.log/controls-green-guard.json/controls-evidence-tests.log. Vorheriger lokaler Zwischenlauf meldete korrekt fehlende Parserhilfsmethode, danach zeigte der neue Test den noch ungeschützten Usagepfad; beide behoben, keine Abnahme dieser Zwischenstände.

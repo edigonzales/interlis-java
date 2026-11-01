@@ -55,10 +55,10 @@ Der aktuelle Umsetzungs-/Abnahmestand steht ausschliesslich im
 [CLI-Status](../implementation/compiler-cli-modernization/STATUS.md); der neue
 Farbumfang wird separat im [COLOR-Status](../implementation/compiler-cli-color-output/STATUS.md) geführt.
 
-Das aktuelle Prozessprofil umfasst47 echte Fälle mit20 Farb-/JSON-/Kanalgegenproben;
+Das aktuelle Prozessprofil umfasst50 echte Fälle mit23 Farb-/JSON-/Kanalgegenproben;
 auf macOS kommen6 reale PTY-/Redirectfälle hinzu. Headless Windows/Linux
 behaupten kein interaktives Terminal. Die bestehenden Releaseprüfer verlangen
-1230 Tests/229 Suites sowie alle47 Fälle und erneut validierte Farbausgaben.
+1232 Tests/229 Suites sowie alle50 Fälle und erneut validierte Farbausgaben.
 Prüfung einer entpackten Distribution ausserhalb des Checkouts:
 `java -cp <verification-classpath> guru.interlis.cli.verification.CompilerCliProcesses <repo-root> <external-launcher>`.
 Das ist eine Hostprüfhilfe, kein Bestandteil der Produktdistribution.

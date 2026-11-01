@@ -61,3 +61,16 @@ wurde ohne Urteil/Abnahme kontrolliert beendet, Rohsession/Withdrawal bleiben
 erhalten. ALL-DEFAULT ergänzt die bisherigen Standardmodule; neuer aktiver
 HTTP-Prozessfall (jetzt47 CLI-Fälle) besteht lokal. Neue CI und vollständige
 Gesamtqualifikation am nächsten Kandidaten bleiben fällig.
+
+Kandidat2d1c914d7e6733a2aa1f13e48b58abf74013d5b5 wurde nach erfolgreichen
+Linux-/Windows-Profilen (CI41294662800, je1230 Tests/229 Suites/47 Prozesse)
+ohne Gesamtabnahme zurückgezogen. Eigene echte Gegenproben belegten Exit1
+statt UsageError2 für `check --config --color=always missing.ili` sowie rohe
+ESC-/Bidi-Zeichen im Dateinamen von `format --check`. Der laufende Gesamtgate
+wurde kontrolliert beendet; kein unabhängiger Review dieses Kandidaten gestartet.
+Rohbelege: `build/review/compiler-cli-color/{parser-and-path-red.json,2d1c914-withdrawal.json}`.
+Die Nacharbeit prüft Inline-Farbe an jeder Optionswertposition vor Host-IO, erhält
+benutzerdefinierte Optionsaritäten und verwendet zentrales safeText für freie
+Usage-/Formatpfadtexte. Zwei neue JUnit-Tests und drei reale Prozesse ergänzen
+den aktiven Pflichtumfang auf mindestens1232 Tests/229 Suites/50 Prozesse.
+Frische CI, vollständiger Gesamtgate und unabhängiger kumulativer Review bleiben fällig.

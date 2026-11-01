@@ -14,7 +14,7 @@ public final class CompilerCliProcesses {
             "option-end", "format-utf8", "root-isolation", "foreign-warning", "relevant-warning",
             "diagnostic-de", "diagnostic-json", "no-model-root", "invalid-language", "repository-http",
             "color-auto", "color-always", "color-never", "color-no-color", "color-empty-no-color",
-            "color-term-dumb", "color-always-override", "color-never-override", "color-invalid", "color-duplicate",
+            "color-term-dumb", "color-always-override", "color-never-override", "color-invalid", "color-duplicate", "color-missing-inline", "color-usage-control", "color-format-check-control",
             "color-json-always", "color-json-never", "color-json-auto", "color-format-always", "color-format-never",
             "color-diagram-always", "color-diagram-never", "color-format-error", "color-compile", "color-analyze");
 
@@ -37,6 +37,7 @@ public final class CompilerCliProcesses {
             String base = "INTERLIS 2.4; MODEL Base AT \"x\" VERSION \"1\" = DOMAIN Name = TEXT*20; END Base.";
             String imported = "MODEL Root AT \"x\" VERSION \"1\" = IMPORTS Base; DOMAIN Name EXTENDS Base.Name = TEXT*10; END Root.";
             Files.writeString(folder.resolve("Base.ili"), base);
+            Files.writeString(folder.resolve("Control\u202e.ili"), base);
             Files.writeString(folder.resolve("Root.ili"), "INTERLIS 2.4; " + imported);
             Files.writeString(folder.resolve("-Gültig 😀 & [x]!.ili"), base);
             Files.writeString(folder.resolve("Multiple.ili"), base + "\n" + imported);
@@ -159,6 +160,9 @@ public final class CompilerCliProcesses {
                 new ColorCase("color-term-dumb",List.of("check","Bad.ili"),Map.of("NO_COLOR","","TERM","DUMB"),1,false),
                 new ColorCase("color-always-override",List.of("check","--color=always","Bad.ili"),muted,1,false),
                 new ColorCase("color-never-override",List.of("check","--color=never","Bad.ili"),standard,1,false),
+                new ColorCase("color-missing-inline",List.of("check","--config","--color=always","missing.ili"),standard,2,false),
+                new ColorCase("color-usage-control",List.of("check","--bad\u001b[2J\u202e"),standard,2,false),
+                new ColorCase("color-format-check-control",List.of("format","--check","--color=always","Control\u202e.ili"),standard,1,false),
                 new ColorCase("color-invalid",List.of("check","--color=bad","missing.ili"),standard,2,false),
                 new ColorCase("color-duplicate",List.of("check","--color=auto","--color","never","missing.ili"),standard,2,false),
                 new ColorCase("color-json-always",List.of("check","--json","--color=always","--diagnostic-language","de","Bad.ili"),standard,1,true),
@@ -185,10 +189,11 @@ public final class CompilerCliProcesses {
         for (String name : REQUIRED.stream().filter(n -> n.startsWith("color-")).toList()) {
             boolean artifact=name.startsWith("color-json-") || name.startsWith("color-diagram-")
                     || name.equals("color-format-always") || name.equals("color-format-never");
-            int exit=name.equals("color-invalid") || name.equals("color-duplicate") ? 2
+            int exit=List.of("color-invalid","color-duplicate","color-missing-inline","color-usage-control").contains(name) ? 2
                     : artifact && !name.startsWith("color-json-") || name.equals("color-analyze") ? 0 : 1;
             verify(name,cases.get(name),exit,artifact);
         }
+        verifySafeControlCases(cases);
         String plain = cases.get("color-never").stderr();
         require(plain.contains("ILI-SEM-0001") && plain.contains(" | ") && plain.contains("^"), "Missing real source diagnostic");
         for (String name : List.of("color-auto","color-empty-no-color","color-term-dumb","color-never-override"))
@@ -213,8 +218,17 @@ public final class CompilerCliProcesses {
             var a=cases.get("color-"+command+"-always");var b=cases.get("color-"+command+"-never");
             require(a.exitCode()==0 && b.exitCode()==0 && a.stdout().equals(b.stdout()) && !a.stdout().contains("\u001b"), "ANSI in artifact stdout");
         }
-        for (String name : List.of("color-invalid","color-duplicate"))
+        for (String name : List.of("color-invalid","color-duplicate","color-missing-inline","color-usage-control"))
             require(cases.get(name).exitCode()==2 && cases.get(name).stdout().isEmpty(), "Color usage failure");
+    }
+
+    private static void verifySafeControlCases(Map<String,Result> cases) {
+        for (String name : List.of("color-usage-control","color-format-check-control")) {
+            String text=cases.get(name).stderr();
+            require(!text.contains("\u001b")&&!text.contains("\u202e")&&text.contains("\\u202e"), "Raw terminal control: "+name);
+        }
+        require(cases.get("color-usage-control").stderr().contains("\\u001b"), "Missing escaped ESC");
+        require(cases.get("color-format-check-control").stderr().contains("would format: "), "Missing real format check");
     }
 
     static String stripSgr(String text) {

@@ -1283,3 +1283,5 @@ Infrastruktur. Normabweichungen einzeln begründen, Goldens und XFAILs nicht zur
 Herstellung grüner Gates lockern. Den grossen GraphBuilder entlang tatsächlich
 bearbeiteter Verantwortungen vereinfachen. Offene Abschnitte bleiben offen,
 bis ihre Abnahme vorliegt.
+
+COLOR3-Nacharbeit: Kandidat2d1c914 nach echten Inline-Options-/Kontrollpfad-Gegenproben zurückgezogen; kein Gesamt-PASS. Aktuelle Pflichtmenge1232 JUnit/229 Suites/50 reale CLI-Prozesse; neue Gesamtqualifikation erforderlich. Details im COLOR-STATUS.
