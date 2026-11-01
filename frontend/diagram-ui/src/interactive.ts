@@ -92,6 +92,10 @@ class LabelPlacement {
 @injectable()
 class InterlisEdgeView extends PolylineEdgeView {
  @inject(LABELS) private labels!:LabelPlacement;
+ override renderLine(edge:InterlisEdge,route:Point[],context:RenderingContext,args?:Parameters<PolylineEdgeView['renderLine']>[3]):VNode {
+  const line=super.renderLine(edge,route,context,args);line.data??={};line.data.attrs={...line.data.attrs,'vector-effect':'non-scaling-stroke'};
+  return svg('g',{},svg('path',{d:line.data.attrs['d'],'class-interlis-edge-hit':true,'vector-effect':'non-scaling-stroke'}),line);
+ }
  protected override renderAdditionals(edge:InterlisEdge,route:Point[]):VNode[] {
   if(route.length<2)return [];
   const data=edge.data,center=pointAt(route,.5),first=pointAt(route,.16),last=pointAt(route,.84);
@@ -232,7 +236,7 @@ export class DiagramCanvas {
   if(settings.edgeRouting==='SPLINES'||settings.renderingTarget!=='STANDARD')throw new Error('This interactive viewer currently supports standard orthogonal and polyline routing');
   const view=adapt(raw);const document=view.document;
   if(document.nodes.length>500||document.edges.length>1000||document.nodes.reduce((sum,node)=>sum+node.compartments.reduce((sum,c)=>sum+c.members.length,0),0)>10000)throw new Error('Diagram exceeds presentation limits');
-  if(this.sessionKey!==sessionKey){this.state={positions:{},routes:{}};this.sessionKey=sessionKey;}
+  if(this.sessionKey!==sessionKey){this.state={positions:{},routes:{}};this.sessionKey=sessionKey;this.document=undefined;this.root=undefined;this.view=undefined;}
   const mark=++this.generation;this.setStatus('LOADING','Updating diagram…');
   const projection=legacyProjection(view);for(const node of projection.nodes){const value=[...document.nodes,...document.containers].find(value=>value.id===node.id);if(value){const p=presentation(value,settings);node.layoutSize=p;node.headerHeight=p.titleLines.length*18+22;}}
   try {
