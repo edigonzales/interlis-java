@@ -1,14 +1,22 @@
 # Implementierungsstatus interlis-java
 
-Aktiver Folgeauftrag seit 01.11.2026: farbige CLI-Textdiagnosen, COLOR1–3.
+Abgeschlossener Folgeauftrag vom 01.11.2026: farbige CLI-Textdiagnosen, COLOR1–3.
 [Operativer COLOR-Status](implementation/compiler-cli-color-output/STATUS.md).
 COLOR1 unabhängig PASS auf `792811e2bb1b7186c3eecc4a1a4f3930469a1c19`.
 COLOR2 unabhängig PASS auf `7524356c9689654ce7a4ffc95f523af937b906b9`.
-COLOR3 implementiert und lokal geprüft; vollständige Release-/Plattform- und
-unabhängige kumulative Abnahme noch ausstehend.
+COLOR3 kumulativ unabhängig PASS,alle29 Kriterien auf
+`65a1571b3de14550d4bf596a9e4481861f9c843a`.
+OpenCode2.0.28/DeepSeek direkt, finaler ProzessExit0/Guard passed0, sauberer
+exakter Worktree.1232 JUnit/229 Suites,50 CLI+6 PTY,9 SDK,3 Plattformen,
+347 Closures/6 Laufzeiten/2000 Änderungen/0 semantische Abweichungen und76
+reproduzierbare Dateien belegt. [Unveränderter COLOR3-Review](implementation/compiler-cli-color-output/reviews/COLOR3-r3-65a1571b3de1-PASS.md).
+Auf aktuelle Nutzerweisung redundanten unabhängigen Vollauf beendet; vollständige
+Rohdaten desselben SHAs unabhängig geprüft und eigene gezielte Gegenproben
+ausgeführt. Keine offenen Pflichtnachweise oder Blocker. Künftige Testauswahl
+folgt betroffenen Verträgen und konkreten Risiken; keine pauschale Verdopplung.
 Frühere CLI-/G2-/P3-Abnahmen bezeichnen weiterhin ihre historischen Produktstände.
 
-**Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
+**Historischer abgeschlossener Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
 [Ausführungsplan](implementation/compiler-cli-modernization/EXECUTION_PLAN.md).
 Operativer Stand und unabhängige Folgeabnahmen: [CLI-Status](implementation/compiler-cli-modernization/STATUS.md).
 CLI1–CLI3 sind vollständig implementiert und unabhängig mit PASS abgeschlossen,

@@ -1,3 +1,36 @@
+# COLOR3 – Abschluss auf dem geprüften Produktstand
+
+Kumulativ alle29 Kriterien C1-01–08/C2-01–11/C3-01–10 unabhängig PASS auf
+`65a1571b3de14550d4bf596a9e4481861f9c843a`.
+[Unveränderter Review](../reviews/COLOR3-r3-65a1571b3de1-PASS.md), SHA256
+`e182e6e0bdb3aba73ebb703a6c4fe003d67b15d2d8dd1a948d253d2b9df840e1`.
+OpenCode2.0.28/DeepSeek direkt; Session `ses_e68ecfd9efferkBLboAuEqCs9O`;
+finaler ProzessExit0/Guard passed0; sauberer exakter Worktree und Berichtskonsistenz geprüft.
+Keine offenen Muss-Findings oder fehlenden Pflichtnachweise.
+
+Produkt:50 reale CLI-Fälle plus6 PTY,1232 JUnit/229 Suites ohne Fehler/Skips,
+DE/EN/JSON-/Artefaktparität, externe ZIP-/SDK-Launcher auch in Emoji-Pfaden,
+fehlende Inline-Optionswerte vor Host-IO abgewiesen, freie Usage-/Formatpfadtexte
+zentral escaped. Kein Eingriff in Compilersemantik, Normen, Goldens oder XFAILs.
+Eigener vollständiger Gate (releaseCheckP3 plus Referenzen, semanticComparison,
+jvmBenchmark,distZip) Exit0/57m28s,106 Tasks (50 ausgeführt/56 aktuell aus
+frischem Vorlauf am identischen SHA); erster Vorlauf Firefox-Timeout, isoliert
+und danach im gesamten Gate unverändert erfolgreich. Linux-/Windows-CI41300835686
+und macOS bestanden am selben SHA;347 Closures/6 Laufzeiten/2000 Änderungen/
+0 semantische Abweichungen/76 reproduzierbare Dateien.
+
+Aktuelle Nutzersteuerung reduzierte doppelte vollständige Testwiederholungen.
+Der zweite unabhängige Vollauf wurde kontrolliert abgebrochen und niemals als
+PASS behandelt. Der unabhängige Reviewer nutzte seine frischen abgeschlossenen
+Prüfungen und eigenen3619 Renderer-/222 Prozess-/6 PTY-/333 Negativgegenproben;
+er verifizierte die vollständigen Codex-Rohdaten desselben SHAs zusätzlich mit
+830+117+60 eigenen Checks und dem aktiven Performancechecker. So bleiben alle29
+fachlichen Kriterien unabhängig belegt. Keine weitere Pflichtprüfung offen.
+Die operative Übersicht mit CI-/Toolchain-/Guard-/Hashdetails steht im
+[STATUS](../STATUS.md); Rohbelege unter build/review/compiler-cli-color.
+
+## Historischer Implementierungsverlauf
+
 # COLOR3 – Releaseintegration und kumulativer Abschluss
 
 BASE_SHA: `7524356c9689654ce7a4ffc95f523af937b906b9` (unabhängiges COLOR2-PASS).
