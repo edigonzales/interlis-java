@@ -33,7 +33,11 @@ export class DiagramCanvas extends RealCanvas {
     await page.waitForFunction(()=>{try{let d=JSON.parse(document.getElementById('output').textContent).document;return document.getElementById('diagram-view').dataset.stale==='false'&&!d.optionsFingerprint.includes('translation=')&&d.optionsFingerprint.includes('scope=SELECTED')&&d.nodes.length===4;}catch{return false;}});
     // Drain queued option changes before holding this particular new layout.
     await page.evaluate(()=>interlisBrowserTest.diagram());
-    const before=await page.locator('#diagram-view').innerHTML();await page.evaluate(()=>{window.__layoutHeld=false;window.__holdProjection=true;window.__delayedProjection=interlisBrowserTest.diagram();});await page.waitForFunction(()=>window.__layoutHeld===true);
+    await page.evaluate(()=>{window.__layoutHeld=false;window.__holdProjection=true;window.__delayedProjection=interlisBrowserTest.diagram();});await page.waitForFunction(()=>window.__layoutHeld===true);
+    // Finish pending viewport/culling paints before comparing the retained view.
+    // The real next layout is already held and cannot publish during this drain.
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const before=await page.locator('#diagram-view').innerHTML();
     await page.locator('#source').fill(text+'\n!! newer source revision');const late=await page.evaluate(()=>{window.__releaseProjection();return window.__delayedProjection;});assert.equal(late.stale,true);assert.equal(await page.locator('#diagram-view').innerHTML(),before);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'true');
     const current=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(current.stale,undefined);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'false');const currentRoad=current.result.nodes.find(n=>n.canonicalName==='English.Data.Road');
     const navigation=await page.evaluate(id=>interlisBrowserTest.navigate(id),currentRoad.id);assert.equal(navigation.kind,'resolved');assert.equal(navigation.range.revision,current.result.sourceRevisions[navigation.range.source]);
