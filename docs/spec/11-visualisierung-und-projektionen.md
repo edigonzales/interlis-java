@@ -317,3 +317,31 @@ Quellanker stammen aus dem gemeinsamen Graphen. Das Schema 1.0 und der
 TypeScript-Adapter unterstützen die vorhandenen offenen Kind-Strings.
 `DiagramProjectionTest.projectsGraphicBasisRuleSignatureAndInheritance` prüft
 die Knoten, Beziehungen und den Diagrammvalidator.
+
+### Eigener gemeinsamer interaktiver Diagrammconsumer
+
+`frontend/diagram-ui` besitzt die neutrale Darstellung für Core-Browser und
+VS-Code-Host. Es importiert ausschliesslich eigene DiagramDocument1.0-/Layout-
+DTOs, Sprotty/ELK und deklarierte Hilfsbibliotheken; keine Compiler-AST- oder
+Language-Service-Typen. Die alte aktive Vendorquelle ist entfernt. Provenienz,
+Originalhashes und MIT-/EPL-Hinweise bleiben erhalten. `diagramUiBuild` baut
+strikte Deklarationen, den echten Sprotty-Viewer, CSS, native ELKworker und
+Lizenzinventar. Der Diagrammschemavalidator wird zur Buildzeit erzeugt, sodass
+eine Webview keine Eval-Freigabe benötigt. `editorBundle` paketiert Server,
+neutralen Renderer als TGZ und entpackte Assets, Schemas und eigene Hosttypen;
+sein Manifest bindet Nutzdateien über SHA-256 und den Core-Commit.
+
+DiagramCanvas hält eingefrorene Semantik getrennt vom mutierbaren Sprotty-
+Viewmodell. Native Move-/Routing-/Selectioncommands verändern Positionen und
+innere Stützpunkte, niemals fachliche Endpunktsymbole oder Quelltext. Neuere
+Generationen, Server-/Quellenwechsel und dispose brechen alte Worker ab.
+Unveränderte Elementidentitäten behalten ihre Geometrie; neue Geschwister
+werden neben belegten Positionen platziert, Container wachsen entsprechend.
+Navigation wird als opaque Element-ID an den Host delegiert. Komposition und
+Aggregation stammen unverändert vom jeweils publizierten Diagrammende.
+
+Die erste interaktive Lieferung unterstützt STANDARD mit ORTHOGONAL/POLYLINE.
+SPLINES und Inkscape im interaktiven Viewer sind bis zur folgenden UMLlieferung
+explizit abgewiesen; vorhandene statische Adapterexporte bleiben erhalten.
+Browsercontract- und native Mausinteraktionstests prüfen dieselbe Quelle; sie
+ersetzen keine installierten VS-Code-GUItests oder spätere Exportabnahme.

@@ -6,4 +6,6 @@ import java.util.concurrent.CompletableFuture;
 public interface InterlisLanguageServerApi extends LanguageServer {
     @JsonRequest("interlis/compile") CompletableFuture<CompileReport> compileModel(CompileModelParams params);
     @JsonRequest("interlis/source") CompletableFuture<SourceContent> sourceContent(SourceContentParams params);
+    @JsonRequest("interlis/diagram") CompletableFuture<DiagramResponse> diagram(DiagramRequest params);
+    @JsonRequest("interlis/diagramNavigate") CompletableFuture<DiagramNavigation> diagramNavigate(DiagramNavigationParams params);
 }

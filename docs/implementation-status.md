@@ -1371,3 +1371,21 @@ Offline verwendet ausschliesslich den expliziten Cacheport. Konfigurationswechse
 und Shutdown lösen wartende Reads mit typisiertem Abbruch. LSP65 inklusive fünf
 gezielter Parallelitäts-/Lebensdauertests bestanden (0 Fehler/Skips); Rohbelege
 unter `interlis-vscode-evidence/qualification/V1-coalescing` ausserhalb des Repos.
+
+## VS-Code V1 freigegeben; V2 in Umsetzung
+
+V1 wurde unabhängig durch OpenCode2/direct DeepSeek Flash1017 auf Core
+`3b60e6c1309a4897ad6d0e99f6d8dfd137520ca9` und Extension
+`d237d92fbe22f6fb41d7d6f3f0965c0d080e30e9` abgenommen; Originalreview und äussere
+Prüfung im Extensionrepo unter `docs/implementation/vscode-extension/reviews/V1`.
+Dies öffnet nur V2, keine spätere Phase.
+
+V2 implementiert einen eigenen neutralen Sprotty-/ELK-Baustein, migriert den
+bestehenden Browserconsumer auf dieselbe Quelle und ergänzt typisierte readonly
+Diagramm-/Navigationsrequests mit Analysebenachrichtigung. stdio-/Diagrammtests
+6/6, portable Client18/18, Diagrammadapter4/4, bestehende reale Browserconsumer
+Chromium/Firefox/WebKit3/3 und native Rendererinteraktion1/1 aktuell erfolgreich.
+Gezielte Anfangsfehler und Rohbelege stehen ausserhalb des Repos unter
+`interlis-vscode-evidence/phases/V2`. Kein Parser-/Norm-/XFAIL-Eingriff.
+Installierte Customeditor-GUI12–18 und unabhängiges V2-PASS stehen noch aus;
+V2 ist ausdrücklich nicht freigegeben. Der operative Stand bleibt im Extensionrepo.

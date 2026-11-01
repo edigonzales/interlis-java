@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.StreamSupport;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -65,9 +66,23 @@ class LspProcessTest {
                     "params", Map.of("command", "interlis.diagram",
                             "arguments", List.of(Map.of("uri", uri,
                                     "symbolIds", List.of()))))));
-            String diagram = readResponse(output, 2);
+            boolean analysisReady=false;String diagram;
+            do {diagram=readMessage(output);if(diagram.contains("interlis/analysisReady"))analysisReady=true;} while(!diagram.contains("\"id\":2"));
+            assertTrue(analysisReady, "Accepted analysis notification must precede the derived diagram");
             assertTrue(diagram.contains("snapshotId"), diagram);
             assertTrue(diagram.contains("Building"), diagram);
+
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",20,"method","interlis/diagram","params",Map.of("protocolVersion",1,"requestId","wire-diagram","textDocument",Map.of("uri",uri,"version",1),"options",Map.of("schemaVersion","1.0")))));
+            var wire=com.google.gson.JsonParser.parseString(readResponse(output,20)).getAsJsonObject().getAsJsonObject("result");
+            assertNotNull(wire);assertEquals(1,wire.get("protocolVersion").getAsInt());assertEquals("wire-diagram",wire.get("requestId").getAsString());
+            assertEquals(uri,wire.get("rootUri").getAsString());assertEquals(1,wire.get("documentVersion").getAsInt());
+            var documentDto=wire.getAsJsonObject("document");assertEquals("COMPLETE",documentDto.get("completeness").getAsString());
+            var building=StreamSupport.stream(documentDto.getAsJsonArray("nodes").spliterator(),false).map(v->v.getAsJsonObject()).filter(v->v.get("label").getAsString().equals("Building")).findFirst().orElseThrow();
+            var navigation=Map.of("protocolVersion",1,"serverInstanceId",wire.get("serverInstanceId").getAsString(),"diagramId",wire.get("diagramId").getAsString(),"snapshotId",wire.get("snapshotId").getAsString(),"textDocument",Map.of("uri",uri,"version",1),"elementId",building.get("id").getAsString());
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",21,"method","interlis/diagramNavigate","params",navigation)));
+            var location=com.google.gson.JsonParser.parseString(readResponse(output,21)).getAsJsonObject().getAsJsonObject("result");assertEquals(uri,location.get("uri").getAsString());assertEquals(3,location.getAsJsonObject("range").getAsJsonObject("start").get("line").getAsInt());
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",22,"method","interlis/diagram","params",Map.of("protocolVersion",1,"requestId","bad-version","textDocument",Map.of("uri",uri,"version",0)))));
+            assertTrue(readResponse(output,22).contains("-32801"),"Old client versions must fail over the real launcher");
 
             send(input, new Gson().toJson(Map.of(
                     "jsonrpc", "2.0", "id", 3, "method", "workspace/executeCommand",

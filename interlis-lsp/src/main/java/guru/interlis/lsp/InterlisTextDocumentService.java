@@ -132,6 +132,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private final java.util.concurrent.atomic.AtomicInteger waitingRequests=new java.util.concurrent.atomic.AtomicInteger();
     private final java.util.Set<CompletableFuture<?>> fileWaiters=java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final LanguageQueries queries = LanguageQueries.create();
+    private final LspDiagramService diagrams=new LspDiagramService();
+    private volatile java.util.function.Consumer<AnalysisReady> analysisReady=ignored -> { };
+    void analysisReadySink(java.util.function.Consumer<AnalysisReady> sink) {analysisReady=Objects.requireNonNull(sink);}
+    String serverInstanceId() {return diagrams.serverInstanceId();}
     private final AtomicReference<DiagnosticSink> sink = new AtomicReference<>();
     private Runnable requestGuard=() -> { };
     void requestGuard(Runnable guard) { requestGuard=Objects.requireNonNull(guard); }
@@ -158,6 +162,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         fileWaiters.clear();
         filesReady.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing"));
         externalSources.close(); publishedExternal.clear();
+        diagrams.close();analysisReady=ignored -> { };
         pendingFiles.clear(); closedFiles.clear(); fileIdentities.clear(); fileKeys.clear(); documentOperations.clear(); documents.clear(); rejectedOpens.clear(); unsynchronized.clear();
     }); }
 
@@ -215,7 +220,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private record HostView(Map<String,DocumentState> documents,Map<SourceId,SourceText> sources,
                             Map<String,ProjectSourceLoader.FileContent> closedFiles,java.util.Set<String> unsynchronized,
-                            boolean versionedEdits, Map<SourceId,String> externalUris) {
+                            boolean versionedEdits, Map<SourceId,String> externalUris,String workspaceRevision) {
         Optional<SourceText> source(SourceId id) { return Optional.ofNullable(sources.get(id)); }
         DocumentState open(SourceId id) { return documents.values().stream().filter(state -> state.sourceId.equals(id)).findFirst().orElse(null); }
         String uri(SourceId id) { if(externalUris.containsKey(id)) return externalUris.get(id); return documents.entrySet().stream().filter(entry -> entry.getValue().sourceId.equals(id)).map(Map.Entry::getKey).findFirst()
@@ -225,7 +230,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private HostView captureView() {
         var sources=new LinkedHashMap<SourceId,SourceText>();
         for(var id:workspace.state().sourceRevisions().keySet()) workspace.source(id).ifPresent(source -> sources.put(id,source));
-        return new HostView(Map.copyOf(documents),Map.copyOf(sources),Map.copyOf(closedFiles),java.util.Set.copyOf(unsynchronized),versionedEdits,externalSources.uris());
+        return new HostView(Map.copyOf(documents),Map.copyOf(sources),Map.copyOf(closedFiles),java.util.Set.copyOf(unsynchronized),versionedEdits,externalSources.uris(),Long.toString(workspace.currentRevision().value()));
     }
 
     private <T> CompletableFuture<T> afterFiles(java.util.function.Supplier<CompletableFuture<T>> start) {
@@ -1052,40 +1057,41 @@ final class InterlisTextDocumentService implements TextDocumentService {
                             org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,
                             "snapshotId is stale for the requested document", null)));
         }
-        List<SymbolRef> selected = new ArrayList<>();
-        if (params.symbolIds().isEmpty()) {
-            for (guru.interlis.model.SymbolId id : state.analysis.semanticGraph().rootModels()) {
-                selected.add(new SymbolRef(state.analysis.snapshotId(), id));
-            }
-            if (selected.isEmpty()) {
-                for (guru.interlis.model.SymbolId id : state.analysis.semanticGraph().models()) {
-                    selected.add(new SymbolRef(state.analysis.snapshotId(), id));
-                }
-            }
-        } else {
-            for (String id : params.symbolIds()) {
-                selected.add(new SymbolRef(state.analysis.snapshotId(),
-                        new guru.interlis.model.SymbolId(id)));
-            }
-        }
-        if (selected.isEmpty()) {
-            return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
-                    new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
-                            org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,
-                            "no diagram selection available", null)));
-        }
-        DiagramOptions options = DiagramOptions.defaults(new DiagramSelection(selected));
-        DiagramProjectionOutcome outcome = DiagramProjectors.create().project(
-                new DiagramInput.FromAnalysis(state.analysis), options,
-                token);
-        if (outcome instanceof DiagramProjectionOutcome.Rejected rejected) {
-            return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
-                    new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
-                            org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.RequestFailed,
-                            rejected.reasons().toString(), null)));
-        }
-        DiagramDocument document = ((DiagramProjectionOutcome.Produced) outcome).document();
-        return CompletableFuture.completedFuture(new DiagramJsonCodec().encode(document));
+        var request=new DiagramRequest(1,"legacy-command",new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(params.uri(),state.lspVersion),params.symbolIds(),null);
+        var response=diagrams.project(request,diagramContext(view,state,params.uri()),token);
+        return CompletableFuture.completedFuture(new DiagramJsonCodec().encode(response.document()));
+    }
+
+    CompletableFuture<DiagramResponse> diagramRequest(DiagramRequest params) {
+        if(params==null||params.textDocument()==null||params.textDocument().getVersion()==null)return failed(ResponseErrorCode.InvalidParams,"diagram requires a versioned document");
+        var captured=copyParams(params,DiagramRequest.class);
+        return requestReady((view,token)-> {
+            var state=requireState(view,new Position(0,0),captured.textDocument());
+            if(state.lspVersion!=captured.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"diagram document version changed");
+            return CompletableFuture.completedFuture(diagrams.project(captured,diagramContext(view,state,captured.textDocument().getUri()),token));
+        });
+    }
+
+    CompletableFuture<DiagramNavigation> diagramNavigate(DiagramNavigationParams params) {
+        if(params==null||params.textDocument()==null||params.textDocument().getVersion()==null)return failed(ResponseErrorCode.InvalidParams,"diagram navigation requires a versioned root document");
+        var captured=copyParams(params,DiagramNavigationParams.class);
+        return requestReady((view,token)-> {
+            var state=requireState(view,new Position(0,0),captured.textDocument());
+            if(state.lspVersion!=captured.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"diagram document version changed");
+            var anchor=diagrams.navigation(captured,diagramContext(view,state,captured.textDocument().getUri()));
+            var range=anchor.nameRange();var source=view.source(range.source()).orElse(null);
+            if(source==null||!source.revision().equals(range.revision()))return failed(ResponseErrorCode.ContentModified,"diagram source revision changed");
+            var result=new DiagramNavigation(diagrams.serverInstanceId(),anchor.snapshotId().value(),view.uri(range.source()),toLspRange(source,range),!editable(view,range.source()));
+            var closed=view.closedFiles().get(range.source().value());
+            return closed!=null&&view.open(range.source())==null?verifyFiles.apply(List.of(closed),token).thenApply(ignored->result):CompletableFuture.completedFuture(result);
+        });
+    }
+
+    private static Map<String,Integer> documentVersions(HostView view) {
+        var result=new LinkedHashMap<String,Integer>();view.documents().forEach((uri,state)->result.put(uri,state.lspVersion));return Map.copyOf(result);
+    }
+    private static LspDiagramService.Context diagramContext(HostView view,DocumentState state,String uri) {
+        return new LspDiagramService.Context(state.analysis,state.sourceId,uri,state.lspVersion,view.workspaceRevision(),documentVersions(view));
     }
 
     private static DocumentState requireState(HostView view,Position position, TextDocumentIdentifier document) {
@@ -1160,6 +1166,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
             documents.put(uri, state);
             publish(uri,state);
         }
+        var view=captureView();
+        analysisReady.accept(new AnalysisReady(1,diagrams.serverInstanceId(),view.workspaceRevision(),analysis.snapshotId().value(),documentVersions(view)));
     }
 
     private void publishClosedDiagnostics(AnalysisSnapshot analysis) {

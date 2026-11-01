@@ -1,18 +1,18 @@
 import {verifyBrowserClient} from './browser-client-contract.js';
 import {CompilerClient} from './compiler-client.js';
-import {diagramAdapter} from './compiler-diagram.js';
+import {diagramAdapter,DiagramCanvas} from './diagram-ui.js';
 
 const source=document.getElementById('source'),output=document.getElementById('output');
 const picker=document.getElementById('sources'),canvas=document.getElementById('diagram-view'),members=document.getElementById('members');
 const drafts=new Map([['memory:/browser.ili',source.value]]);
 let activeSource='memory:/browser.ili',session=null,snapshot=null,schema=null,view=null,generation=0,sequence=Promise.resolve(),activeRequest=null;
-let visibleLayout=null,visibleRendered=null;
+const diagramCanvas=new DiagramCanvas(canvas,{navigate:id=>navigate(id),singleClickNavigation:true,status:(_status,message)=>{document.getElementById('diagram-status').textContent=message;}},new URL('./diagram-layout-worker.js',import.meta.url));
 const focusPicker=document.getElementById('diagram-focus'),scopePicker=document.getElementById('diagram-scope'),depthPicker=document.getElementById('diagram-depth'),languagePicker=document.getElementById('diagram-language');
 
 const client=new CompilerClient({onRestored:pairs=>{
-  const pair=pairs.find(p=>p.previous===session);session=pair?.current??null;visibleRendered=null;invalidate(false);
+  const pair=pairs.find(p=>p.previous===session);session=pair?.current??null;invalidate(false);
 },onFailure:error=>{invalidate(false);output.textContent=error.code+': '+error.message;}});
-function invalidate(release=true){const old=snapshot,handle=session;generation++;snapshot=null;schema=null;view=null;canvas.dataset.stale='true';canvas.setAttribute('aria-label','Diagram is stale; compile again.');members.replaceChildren();if(release&&old&&handle)void client.releaseSnapshot(handle,old).catch(displayError);}
+function invalidate(release=true){diagramCanvas.invalidate();const old=snapshot,handle=session;generation++;snapshot=null;schema=null;view=null;canvas.dataset.stale='true';canvas.setAttribute('aria-label','Diagram is stale; compile again.');members.replaceChildren();if(release&&old&&handle)void client.releaseSnapshot(handle,old).catch(displayError);}
 function serial(operation){const pending=sequence.then(operation);sequence=pending.catch(()=>{});return pending;}
 function displayError(error){output.textContent=JSON.stringify({code:error.code??'HOST_FAILURE',message:error.message},null,2);}
 function sourceMap(){return new Map([...drafts].map(([id,text])=>[id,{text,revision:session?client.state(session).sourceRevisions[id]??'absent':'absent'}]));}
@@ -47,16 +47,16 @@ function navigate(id){
   }else output.textContent=JSON.stringify(result);return result;
 }
 function refreshPicker(){picker.replaceChildren(...[...drafts.keys()].map(id=>{const option=document.createElement('option');option.value=id;option.textContent=id;option.selected=id===activeSource;return option;}));}
-function publishDiagram(result,rendered){
-  const scroll={left:canvas.scrollLeft,top:canvas.scrollTop};
-  canvas.innerHTML=rendered.svg;canvas.dataset.stale='false';canvas.setAttribute('aria-label',result.completeness==='COMPLETE'?'Current INTERLIS diagram':'Partial INTERLIS diagram');
-  canvas.scrollLeft=scroll.left;canvas.scrollTop=scroll.top;visibleLayout=rendered.layout;visibleRendered=rendered;
-  canvas.querySelectorAll('[data-symbol-id],[data-edge-id]').forEach(element=>element.addEventListener('click',event=>{event.stopPropagation();navigate(element.getAttribute('data-symbol-id')??element.getAttribute('data-edge-id'));}));
+async function publishDiagram(result){
+  const accepted=await diagramCanvas.accept(result,String(session));if(!accepted)return false;
+  canvas.dataset.stale='false';canvas.setAttribute('aria-label',result.completeness==='COMPLETE'?'Current INTERLIS diagram':'Partial INTERLIS diagram');
   members.replaceChildren();
   for(const node of result.nodes)for(const compartment of node.compartments)for(const member of compartment.members){
     const button=document.createElement('button');button.textContent=node.canonicalName+'.'+member.label;button.dataset.memberId=member.id;button.onclick=()=>navigate(member.id);members.append(button);
   }
+  return true;
 }
+
 function refreshDiagramOptions(document){
   const previousFocus=focusPicker.value,previousLanguage=languagePicker.value;
   const choice=(value,label)=>{const option=window.document.createElement('option');option.value=value;option.textContent=label;return option;};
@@ -75,9 +75,10 @@ function selectedDiagramRequest(){
 async function drawCurrent(){
   const handle=session,mark=generation,current=snapshot,text=captured();
   const document=await client.diagram(handle,selectedDiagramRequest());const candidate=diagramAdapter.adapt(document,sourceMap());
-  const rendered=await diagramAdapter.render(candidate,diagramAdapter.defaultDiagramSettings,visibleRendered);
   if(mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
-  view=candidate;publishDiagram(document,rendered);output.textContent=JSON.stringify({document,presentationNotices:candidate.notices},null,2);return {status:'ok',result:document};
+  const accepted=await publishDiagram(document);
+  if(!accepted||mark!==generation||current!==snapshot||handle!==session||text!==captured())return {status:'ok',result:document,stale:true};
+  view=candidate;output.textContent=JSON.stringify({document,presentationNotices:candidate.notices},null,2);return {status:'ok',result:document};
 }
 async function diagram(){
   const compiled=await compile();if(compiled.stale||!compiled.result.snapshotId)return compiled;
@@ -125,7 +126,7 @@ async function runClientContract(){
   const succeeded=await compile();assert(succeeded.result.outcome==='succeeded','valid source rejected: '+JSON.stringify(succeeded));
   const drawn=await diagram();assert(!drawn.stale&&drawn.result.nodes.length>0,'diagram missing');
   assert(JSON.stringify(drawn.result).includes('9007199254740993.0010'),'decimal lost');
-  assert(canvas.querySelector('svg')&&visibleLayout.nodes.length,'actual pinned renderer missing');
+  assert(canvas.querySelector('svg.sprotty-graph')&&Object.keys(diagramCanvas.getViewState().positions).length,'actual pinned renderer missing');
   const node=drawn.result.nodes.find(n=>n.anchor);assert(navigate(node.id).kind==='resolved','source navigation failed');
   const old=view;assert(diagramAdapter.isStale(old,'expired'),'stale diagram accepted');
   const nodeCount=drawn.result.nodes.length,edgeCount=drawn.result.edges.length,associationCount=old.associations.size;
@@ -171,7 +172,7 @@ source.addEventListener('select',()=>{
   client.query(handle,{snapshotId:current,query:{kind:'symbolAt',sourceId:id,revision:client.state(handle).sourceRevisions[id],startOffset:selection,endOffset:selection}}).then(result=>{
     if(current!==snapshot||handle!==session)return;
     const ids=result.kind==='known'?diagramAdapter.elementsForSymbol(view,{snapshot:current,symbol:result.symbolId}):[];
-    canvas.querySelectorAll('[data-symbol-id]').forEach(element=>element.classList.toggle('selected',ids.includes(element.getAttribute('data-symbol-id'))));
+    void diagramCanvas.select(ids);
   }).catch(error=>{if(current===snapshot&&handle===session)displayError(error);});
 });
 picker.onchange=()=>{drafts.set(activeSource,source.value);activeSource=picker.value;source.value=drafts.get(activeSource);};
@@ -179,7 +180,7 @@ document.getElementById('add-source').onclick=()=>{const input=document.getEleme
 document.getElementById('remove-source').onclick=()=>{if(drafts.size<=1)return;invalidate();drafts.delete(activeSource);activeSource=drafts.keys().next().value;source.value=drafts.get(activeSource);refreshPicker();void serial(synchronize).catch(displayError);};
 document.getElementById('configuration').onclick=()=>void serial(async()=>{const configuration=JSON.parse(document.getElementById('configuration-text').value);const handle=await synchronize();await client.setConfiguration(handle,{expectedWorkspaceRevision:client.state(handle).workspaceRevision,configuration});output.textContent='Configuration accepted.';}).catch(displayError);
 for(const [id,action]of [['analyze',analyze],['compile',compile],['diagram',diagram],['restart',restartWorker],['cancel',cancel]])document.getElementById(id).onclick=()=>void action().catch(displayError);
-window.addEventListener('pagehide',()=>{void client.dispose();});
+window.addEventListener('pagehide',()=>{diagramCanvas.dispose();void client.dispose();});
 refreshPicker();
 window.interlisDiagramAdapter=diagramAdapter;
 window.interlisBrowserTest={runContract,runClientContract,runStabilizationContract,analyze,compile,diagram,benchmark,restartWorker,client,get session(){return session;},navigate};

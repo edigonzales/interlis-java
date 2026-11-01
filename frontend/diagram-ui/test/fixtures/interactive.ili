@@ -1,0 +1,13 @@
+!! Grüezi 😀
+INTERLIS 2.4;
+MODEL Interactive AT "https://example.org" VERSION "1" =
+DOMAIN Number=0..999; State=(first,second);
+TOPIC Data=OID AS INTERLIS.UUIDOID;
+STRUCTURE Info=value:TEXT*12;END Info;
+CLASS A=number:Number;part:Info;END A;
+CLASS B EXTENDS A=state:State;END B;
+CLASS C=END C;
+ASSOCIATION Many=one--{1}A;two--{0..*}B;three--{1}C;note:TEXT*20;END Many;
+ASSOCIATION Contains=owner-<#>{1}A;items--{*}B;END Contains;
+ASSOCIATION Self=parent--{0..1}A;children--{*}A;END Self;
+END Data;END Interactive.

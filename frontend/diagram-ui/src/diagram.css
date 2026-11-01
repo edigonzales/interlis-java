@@ -1,0 +1,22 @@
+:root{--diagram-background:#fff;--diagram-foreground:#223247;--diagram-border:#60748c;--diagram-selection:#0777bf;--diagram-container:#f1f5f8}
+.interlis-canvas{position:relative;min-width:0;min-height:240px;width:100%;height:100%;overflow:hidden;color:var(--diagram-foreground);background:var(--diagram-background)}
+.interlis-canvas .sprotty-graph{width:100%;height:100%;outline:none;background:var(--diagram-background)}
+.interlis-viewer{width:100%;height:100%}
+.interlis-hidden{position:absolute;left:-10000px;top:-10000px;width:0;height:0;visibility:hidden;overflow:hidden}
+.interlis-canvas .interlis-frame{fill:var(--diagram-background);stroke:var(--diagram-border);stroke-width:1.5}
+.interlis-canvas .interlis-container>.interlis-frame{fill:var(--diagram-container);stroke-dasharray:6 3}
+.interlis-canvas .selected>.interlis-frame{stroke:var(--diagram-selection);stroke-width:3}
+.interlis-canvas text{font:12px monospace;fill:var(--diagram-foreground);user-select:none}
+.interlis-canvas .interlis-title{font-weight:bold}
+.interlis-canvas .abstract>.interlis-title{font-style:italic}
+.interlis-canvas .interlis-stereotype,.interlis-canvas .interlis-warning{font-size:11px}
+.interlis-canvas .interlis-member{cursor:pointer}
+.interlis-canvas .interlis-member.selected{fill:var(--diagram-selection);font-weight:bold}
+.interlis-canvas .sprotty-edge path{fill:none;stroke:var(--diagram-border);stroke-width:1.7}
+.interlis-canvas .sprotty-edge.selected path{stroke:var(--diagram-selection);stroke-width:2.5}
+.interlis-canvas .interlis-marker{stroke:var(--diagram-border);stroke-width:1.5}
+.interlis-canvas .interlis-edge-label,.interlis-canvas .interlis-end-label{font:11px monospace;paint-order:stroke;stroke:var(--diagram-background);stroke-width:4px;stroke-linejoin:round;fill:var(--diagram-foreground)}
+.interlis-canvas .sprotty-routing-handle{fill:var(--diagram-background);stroke:var(--diagram-selection);stroke-width:2;cursor:move}
+.interlis-canvas .sprotty-routing-handle-selected{fill:var(--diagram-selection)}
+.interlis-canvas[data-status=STALE]>.sprotty-graph{opacity:.65}
+.interlis-canvas .sprotty-hidden{position:absolute;width:0;height:0;visibility:hidden;overflow:hidden}

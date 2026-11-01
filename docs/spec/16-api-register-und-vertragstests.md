@@ -830,3 +830,23 @@ LSP besitzt `InterlisLanguageServerApi`, `CompileModelParams`, `CompileReport`,
 und revisionsgebundenen Vertrag. Sie enthalten keine Compilerzertifikate;
 Readonly-Handles autorisieren keine frei wählbare Beschaffung. `LspProcessTest`
 prüft beide neuen Methoden durch den tatsächlich gestarteten stdio-Launcher.
+
+### Typisierter Diagrammhost und neutraler Viewer
+
+Besitzer `interlis-lsp/guru.interlis.lsp`: `DiagramRequest`, `DiagramResponse`,
+`DiagramNavigationParams`, `DiagramNavigation`, `AnalysisReady`,
+`InterlisLanguageClientApi`. Die DTOs sind readonly Transportwerte; Listen und
+Versionsmaps der veröffentlichten Antworten werden defensiv kopiert. Der
+`DiagramResponse.document` verwendet direkt den kanonischen
+`interlis-projection/DiagramJsonCodec` über DiagramWireAdapter. Kapitel07 §9.1
+regelt Identitäten, Lebensdauer, Grenzen, Abbruch und Fehler. Abnahmen:
+DiagramProtocolTest und der echte LspProcessTest. Vorhandene Compile-/Source-
+Verträge bleiben erhalten.
+
+Besitzer `frontend/diagram-ui`: DiagramCanvas, DiagramViewState,
+ElkLayoutService/LayoutServicePort und eigene neutrale DiagramDocument-DTOs.
+Kapitel11 beschreibt die fachlich readonly Interaktion. LayoutServicePort
+transportiert echte Layoutwerte und Abbruch; ein Test darf Antworten verzögern,
+aber keine fachlichen Erfolgsantworten erfinden. Public Hosttypen liegen in
+`interlis-lsp/src/main/typescript/editor-protocol.ts` und werden mit Verweis auf
+dieselben Diagrammtypen im Editorbundle geliefert. Keine zweite ASTkopie.

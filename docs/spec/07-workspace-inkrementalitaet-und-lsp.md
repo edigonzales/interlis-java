@@ -616,7 +616,8 @@ veraltete Captures werden weiterhin über WorkspaceRevision abgewiesen.
 `InterlisLanguageServerApi extends LanguageServer` exportiert `interlis/compile`
 und `interlis/source` mittels LSP4J-JsonRequest über den realen stdio-Launcher.
 `experimental.interlis.protocolVersion=1`, `compile=true`, `sourceContent=true`
-werden ausgehandelt; Diagramm-/semantische Schreibfähigkeiten sind dabei false.
+werden ausgehandelt. Der folgende Diagrammvertrag ergänzt readonly Projektionen;
+semantische Schreibfähigkeiten bleiben false.
 
 `CompileModelParams(mode,textDocument,modelName,modelVersion)` hat die Modi
 `current` und `workspace`. Current verlangt ein offenes editierbares Dokument
@@ -657,3 +658,37 @@ bei globalen Diagnosen leer und uri leer). LspCompileMapper verwendet dafür
 allein `requestDiagnostics()` des Gateergebnisses. Unbeteiligte IDE-Problems
 werden nicht in den Rootreport kopiert. Die alten ExecuteCommand-Summarymaps
 bleiben für bestehende Verbraucher unverändert.
+
+### 9.1 Versionierte readonly Diagramme für Editorhosts
+
+`InterlisLanguageServerApi` ergänzt `interlis/diagram(DiagramRequest)` und
+`interlis/diagramNavigate(DiagramNavigationParams)`. Protokollversion1 und
+DiagramDocument1.0 werden zusammen mit einer zufälligen `serverInstanceId`
+ausgehandelt. `diagram=true` bezeichnet die readonly Projektion, weiterhin gilt
+`semanticEditing=false`. Der ältere ExecuteCommand-Einstieg bleibt kompatibel.
+
+DiagramRequest enthält Request-ID, genaue offene LSP-Dokumentversion, optionale
+opaque Symbol-IDs und streng validierte DiagramOptions1.0. Ohne Symbolauswahl
+sind nur Modellwurzeln der expliziten Quelle ausgewählt. Die reine Projektion
+benutzt den angenommenen unveränderlichen AnalysisSnapshot; sie startet keine
+zweite Sprachinterpretation. Die Antwort enthält ein JSON-Objekt des kanonischen
+DiagramDocument-Codecs, keine JSON-Zeichenkette, und zusätzlich Root-URI,
+Clientversion, WorkspaceRevision, Snapshot-ID und die erfassten Dokumentversionen.
+Fehlerhafte Quellen behalten ihre wirkliche PARTIAL-Completeness.
+
+Grenzen: 500 Knoten, 1000 Kanten, 200 Member pro Knoten, 500 Container,
+10000 Member insgesamt und 4000000 UTF-16-Codeeinheiten des kodierten Dokuments.
+Überbudget wird abgewiesen, nicht still abgeschnitten. Queryworker und Abbruch
+verwenden die bestehenden begrenzten Hostqueues. Die Navigationsregistry behält
+höchstens16 veröffentlichte Diagramme; Shutdown löscht sie. Navigation prüft
+Server-, Diagramm-, Snapshot-, Workspace- und Dokumentidentität erneut und löst
+nur einen tatsächlich publizierten Quellanker auf. Alte Identitäten liefern
+ContentModified, fehlende Anker RequestFailed, ungültige Eingaben InvalidParams.
+Readonly Repositoryanker verwenden ausschliesslich die bestehenden Quellhandles.
+
+`InterlisLanguageClientApi` erhält nach angenommener Analyse die leichte
+`interlis/analysisReady(AnalysisReady)`-Notification mit Protokoll-, Server-,
+Workspace-, Snapshot- und Dokumentversionen; sie berechnet selbst kein Diagramm.
+Der Client verwirft alte Requests/Layoutgenerationen und fordert nur für offene
+Panels neu an. `DiagramProtocolTest` und `LspProcessTest` prüfen diese Verträge,
+einschliesslich CRLF/Emoji, Partial, readonly Imports und realem stdio-JSON.

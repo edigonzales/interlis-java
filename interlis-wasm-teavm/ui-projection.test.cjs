@@ -14,8 +14,11 @@ for(const [name,type]of [['chromium',chromium],['firefox',firefox],['webkit',web
     browser=await type.launch({headless:true});report.version=browser.version();const page=await browser.newPage();
     // Test-only wrapper waits after the unchanged real pinned renderer finishes.
     // The original bundle is served byte-for-byte via a query URL.
-    await page.route(/\/compiler-diagram\.js$/,route=>route.fulfill({contentType:'text/javascript',body:`import {diagramAdapter as real} from './compiler-diagram.js?unmodified-renderer';
-export const diagramAdapter={...real,render:async(...args)=>{const result=await real.render(...args);if(window.__holdProjection){window.__holdProjection=false;window.__layoutHeld=true;await new Promise(resolve=>window.__releaseProjection=resolve);}return result;}};`}));
+    await page.route(/\/diagram-ui\.js$/,route=>route.fulfill({contentType:'text/javascript',body:`import {DiagramCanvas as RealCanvas,ElkLayoutService} from './diagram-ui.js?unmodified-renderer';
+export {diagramAdapter} from './diagram-ui.js?unmodified-renderer';
+export class DiagramCanvas extends RealCanvas {
+ constructor(element,callbacks,url){const real=new ElkLayoutService(url);const delayed={layout:async(...args)=>{const result=await real.layout(...args);if(window.__holdProjection){window.__holdProjection=false;window.__layoutHeld=true;await new Promise(resolve=>window.__releaseProjection=resolve);}return result;},cancel:()=>real.cancel(),close:()=>real.close()};super(element,callbacks,url,delayed);}
+}`}));
     await page.goto(url);await page.waitForFunction(()=>Boolean(window.interlisBrowserTest));await page.locator('#source').fill(text);
     const initial=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(initial.stale,undefined);const doc=initial.result,model=doc.containers.find(c=>c.canonicalName==='French').symbol,road=doc.nodes.find(n=>n.canonicalName==='English.Data.Road');
     await page.selectOption('#diagram-language',model.symbol);
@@ -27,7 +30,9 @@ export const diagramAdapter={...real,render:async(...args)=>{const result=await 
     await page.waitForFunction(()=>{try{let d=JSON.parse(document.getElementById('output').textContent).document;return document.getElementById('diagram-view').dataset.stale==='false'&&d.optionsFingerprint.includes('depth=0')&&d.nodes.filter(n=>n.kind!=='EXTERNAL_REFERENCE').length===1;}catch{return false;}});
     await page.selectOption('#diagram-focus','');await page.selectOption('#diagram-scope','SELECTED');await page.selectOption('#diagram-language','');
     await page.waitForFunction(()=>{try{let d=JSON.parse(document.getElementById('output').textContent).document;return document.getElementById('diagram-view').dataset.stale==='false'&&!d.optionsFingerprint.includes('translation=')&&d.optionsFingerprint.includes('scope=SELECTED')&&d.nodes.length===4;}catch{return false;}});
-    const before=await page.locator('#diagram-view').innerHTML();await page.evaluate(()=>{window.__holdProjection=true;window.__delayedProjection=interlisBrowserTest.diagram();});await page.waitForFunction(()=>window.__layoutHeld===true);
+    // Drain queued option changes before holding this particular new layout.
+    await page.evaluate(()=>interlisBrowserTest.diagram());
+    const before=await page.locator('#diagram-view').innerHTML();await page.evaluate(()=>{window.__layoutHeld=false;window.__holdProjection=true;window.__delayedProjection=interlisBrowserTest.diagram();});await page.waitForFunction(()=>window.__layoutHeld===true);
     await page.locator('#source').fill(text+'\n!! newer source revision');const late=await page.evaluate(()=>{window.__releaseProjection();return window.__delayedProjection;});assert.equal(late.stale,true);assert.equal(await page.locator('#diagram-view').innerHTML(),before);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'true');
     const current=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(current.stale,undefined);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'false');const currentRoad=current.result.nodes.find(n=>n.canonicalName==='English.Data.Road');
     const navigation=await page.evaluate(id=>interlisBrowserTest.navigate(id),currentRoad.id);assert.equal(navigation.kind,'resolved');assert.equal(navigation.range.revision,current.result.sourceRevisions[navigation.range.source]);

@@ -1,0 +1,1382 @@
+{
+  "schemaVersion": "1.0",
+  "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+  "sourceRevisions": {
+    "memory:/interactive.ili": "1"
+  },
+  "inputKind": "CHECKED_SCHEMA",
+  "completeness": "COMPLETE",
+  "selection": [
+    {
+      "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+      "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-1"
+    }
+  ],
+  "optionsFingerprint": "scope=SELECTED;kinds=[ASSOCIATION, CLASS, DOMAIN, DRAWING_RULE, GRAPHIC, LINE_FORM, METADATA_BASKET, METAOBJECT, STRUCTURE, VIEW];inherited=SHOW_WITH_ORIGIN;types=true;cardinalities=true;constraints=true;imports=true;labels=CANONICAL;associations=ENTITY;budget=ProjectionBudget[maxNodes=2000, maxEdges=4000, maxMembersPerNode=500];selection=[sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-1]",
+  "containers": [
+    {
+      "id": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-1",
+      "kind": "MODEL",
+      "parentId": null,
+      "label": "Interactive",
+      "canonicalName": "Interactive",
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-1"
+      },
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 35,
+          "endOffset": 46
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 29,
+          "endOffset": 525
+        }
+      }
+    },
+    {
+      "id": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "kind": "TOPIC",
+      "parentId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-1",
+      "label": "Data",
+      "canonicalName": "Interactive.Data",
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6"
+      },
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 138,
+          "endOffset": 142
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 132,
+          "endOffset": 509
+        }
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2",
+      "kind": "DOMAIN",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-1",
+      "label": "Number",
+      "canonicalName": "Interactive.Number",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2-details",
+          "kind": "DETAILS",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2-type",
+              "kind": "ATTRIBUTE",
+              "label": "declared type",
+              "typeLabel": "0..999",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 94,
+                  "endOffset": 100
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 94,
+                  "endOffset": 108
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 94,
+          "endOffset": 100
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 94,
+          "endOffset": 108
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3",
+      "kind": "DOMAIN",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-1",
+      "label": "State",
+      "canonicalName": "Interactive.State",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3-details",
+          "kind": "DETAILS",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3-type",
+              "kind": "ATTRIBUTE",
+              "label": "declared type",
+              "typeLabel": "ENUMERATION",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 109,
+                  "endOffset": 114
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 109,
+                  "endOffset": 130
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 109,
+          "endOffset": 114
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 109,
+          "endOffset": 130
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7",
+      "kind": "STRUCTURE",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "label": "Info",
+      "canonicalName": "Interactive.Data.Info",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7-attributes",
+          "kind": "ATTRIBUTES",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-8",
+              "kind": "ATTRIBUTE",
+              "label": "value",
+              "typeLabel": "TEXT*12",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-8",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 184,
+                  "endOffset": 189
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 184,
+                  "endOffset": 198
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 179,
+          "endOffset": 183
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 169,
+          "endOffset": 207
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+      "kind": "CLASS",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "label": "A",
+      "canonicalName": "Interactive.Data.A",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9-attributes",
+          "kind": "ATTRIBUTES",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10",
+              "kind": "ATTRIBUTE",
+              "label": "number",
+              "typeLabel": "Number",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 217,
+                  "endOffset": 223
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 217,
+                  "endOffset": 231
+                }
+              }
+            },
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11",
+              "kind": "ATTRIBUTE",
+              "label": "part",
+              "typeLabel": "Info",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 231,
+                  "endOffset": 235
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 231,
+                  "endOffset": 241
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 215,
+          "endOffset": 216
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 209,
+          "endOffset": 247
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+      "kind": "CLASS",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "label": "B",
+      "canonicalName": "Interactive.Data.B",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12-attributes",
+          "kind": "ATTRIBUTES",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10-in-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+              "kind": "ATTRIBUTE",
+              "label": "number",
+              "typeLabel": "Number",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+              "inherited": true,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 217,
+                  "endOffset": 223
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 217,
+                  "endOffset": 231
+                }
+              }
+            },
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11-in-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+              "kind": "ATTRIBUTE",
+              "label": "part",
+              "typeLabel": "Info",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+              "inherited": true,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 231,
+                  "endOffset": 235
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 231,
+                  "endOffset": 241
+                }
+              }
+            },
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-13",
+              "kind": "ATTRIBUTE",
+              "label": "state",
+              "typeLabel": "State",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-13",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 267,
+                  "endOffset": 272
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 267,
+                  "endOffset": 279
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 255,
+          "endOffset": 256
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 249,
+          "endOffset": 285
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-14",
+      "kind": "CLASS",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "label": "C",
+      "canonicalName": "Interactive.Data.C",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-14"
+      },
+      "compartments": [],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 293,
+          "endOffset": 294
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 287,
+          "endOffset": 301
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+      "kind": "ASSOCIATION",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "label": "Many",
+      "canonicalName": "Interactive.Data.Many",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15-attributes",
+          "kind": "ATTRIBUTES",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-19",
+              "kind": "ATTRIBUTE",
+              "label": "note",
+              "typeLabel": "TEXT*20",
+              "cardinality": null,
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-19",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 355,
+                  "endOffset": 359
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 355,
+                  "endOffset": 368
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15-roles",
+          "kind": "ROLES",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-16",
+              "kind": "ROLE",
+              "label": "one",
+              "typeLabel": null,
+              "cardinality": "{1..1}",
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-16",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 320,
+                  "endOffset": 323
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 320,
+                  "endOffset": 330
+                }
+              }
+            },
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-17",
+              "kind": "ROLE",
+              "label": "two",
+              "typeLabel": null,
+              "cardinality": "{0..*}",
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-17",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 330,
+                  "endOffset": 333
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 330,
+                  "endOffset": 343
+                }
+              }
+            },
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-18",
+              "kind": "ROLE",
+              "label": "three",
+              "typeLabel": null,
+              "cardinality": "{1..1}",
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-18",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 343,
+                  "endOffset": 348
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 343,
+                  "endOffset": 355
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 315,
+          "endOffset": 319
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 303,
+          "endOffset": 377
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20",
+      "kind": "ASSOCIATION",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "label": "Contains",
+      "canonicalName": "Interactive.Data.Contains",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20-roles",
+          "kind": "ROLES",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-21",
+              "kind": "ROLE",
+              "label": "owner",
+              "typeLabel": null,
+              "cardinality": "{1..1}",
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-21",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 400,
+                  "endOffset": 405
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 400,
+                  "endOffset": 414
+                }
+              }
+            },
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-22",
+              "kind": "ROLE",
+              "label": "items",
+              "typeLabel": null,
+              "cardinality": "{0..*}",
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-22",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 414,
+                  "endOffset": 419
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 414,
+                  "endOffset": 426
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 391,
+          "endOffset": 399
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 379,
+          "endOffset": 439
+        }
+      }
+    },
+    {
+      "id": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23",
+      "kind": "ASSOCIATION",
+      "containerId": "container-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-6",
+      "label": "Self",
+      "canonicalName": "Interactive.Data.Self",
+      "status": "RESOLVED",
+      "modifiers": [],
+      "symbol": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23"
+      },
+      "compartments": [
+        {
+          "id": "comp-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23-roles",
+          "kind": "ROLES",
+          "members": [
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-24",
+              "kind": "ROLE",
+              "label": "parent",
+              "typeLabel": null,
+              "cardinality": "{0..1}",
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-24",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 458,
+                  "endOffset": 464
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 458,
+                  "endOffset": 474
+                }
+              }
+            },
+            {
+              "id": "member-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-25",
+              "kind": "ROLE",
+              "label": "children",
+              "typeLabel": null,
+              "cardinality": "{0..*}",
+              "declaredSymbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-25",
+              "effectiveOwner": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23",
+              "inherited": false,
+              "overridden": false,
+              "anchor": {
+                "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+                "nameRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 474,
+                  "endOffset": 482
+                },
+                "declarationRange": {
+                  "source": "memory:/interactive.ili",
+                  "revision": "1",
+                  "startOffset": 474,
+                  "endOffset": 489
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 453,
+          "endOffset": 457
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 441,
+          "endOffset": 498
+        }
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10-DOMAIN_USE-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2",
+      "kind": "DOMAIN_USE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "label": "number",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 217,
+          "endOffset": 223
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 217,
+          "endOffset": 231
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11-STRUCTURE_COMPOSITION-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7",
+      "kind": "STRUCTURE_COMPOSITION",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "label": "part",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 231,
+          "endOffset": 235
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 231,
+          "endOffset": 241
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10-DOMAIN_USE-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2",
+      "kind": "DOMAIN_USE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-2",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-10"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "label": "number",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 217,
+          "endOffset": 223
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 217,
+          "endOffset": 231
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11-STRUCTURE_COMPOSITION-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7",
+      "kind": "STRUCTURE_COMPOSITION",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-7",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-11"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "label": "part",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 231,
+          "endOffset": 235
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 231,
+          "endOffset": 241
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-13-DOMAIN_USE-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3",
+      "kind": "DOMAIN_USE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-3",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-13"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "label": "state",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 267,
+          "endOffset": 272
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 267,
+          "endOffset": 279
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12-inherits-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+      "kind": "INHERITANCE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+        "memberId": null
+      },
+      "origin": null,
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "label": "extends",
+      "anchor": null
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-16-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+      "kind": "ASSOCIATION_ROLE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-16"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": "one",
+        "cardinality": {
+          "minimum": "1",
+          "maximum": {
+            "kind": "bounded",
+            "value": "1"
+          }
+        },
+        "aggregation": "NONE"
+      },
+      "label": "one",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 320,
+          "endOffset": 323
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 320,
+          "endOffset": 330
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-17-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+      "kind": "ASSOCIATION_ROLE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-17"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": "two",
+        "cardinality": {
+          "minimum": "0",
+          "maximum": {
+            "kind": "unbounded"
+          }
+        },
+        "aggregation": "NONE"
+      },
+      "label": "two",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 330,
+          "endOffset": 333
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 330,
+          "endOffset": 343
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-18-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-14",
+      "kind": "ASSOCIATION_ROLE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-15",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-14",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-18"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": "three",
+        "cardinality": {
+          "minimum": "1",
+          "maximum": {
+            "kind": "bounded",
+            "value": "1"
+          }
+        },
+        "aggregation": "NONE"
+      },
+      "label": "three",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 343,
+          "endOffset": 348
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 343,
+          "endOffset": 355
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-21-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+      "kind": "ASSOCIATION_ROLE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-21"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": "owner",
+        "cardinality": {
+          "minimum": "1",
+          "maximum": {
+            "kind": "bounded",
+            "value": "1"
+          }
+        },
+        "aggregation": "COMPOSITION"
+      },
+      "label": "owner",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 400,
+          "endOffset": 405
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 400,
+          "endOffset": 414
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-22-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+      "kind": "ASSOCIATION_ROLE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-20",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-12",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-22"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": "items",
+        "cardinality": {
+          "minimum": "0",
+          "maximum": {
+            "kind": "unbounded"
+          }
+        },
+        "aggregation": "NONE"
+      },
+      "label": "items",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 414,
+          "endOffset": 419
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 414,
+          "endOffset": 426
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-24-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+      "kind": "ASSOCIATION_ROLE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-24"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": "parent",
+        "cardinality": {
+          "minimum": "0",
+          "maximum": {
+            "kind": "bounded",
+            "value": "1"
+          }
+        },
+        "aggregation": "NONE"
+      },
+      "label": "parent",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 458,
+          "endOffset": 464
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 458,
+          "endOffset": 474
+        }
+      }
+    },
+    {
+      "id": "edge-node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-25-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+      "kind": "ASSOCIATION_ROLE",
+      "source": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-23",
+        "memberId": null
+      },
+      "target": {
+        "elementId": "node-sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-9",
+        "memberId": null
+      },
+      "origin": {
+        "snapshot": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "symbol": "sym-e77924756d91addb83682f299a34f63551b4fc22f3f901bf5e541c8df12db78f-25"
+      },
+      "sourceEnd": {
+        "roleName": null,
+        "cardinality": null,
+        "aggregation": "NONE"
+      },
+      "targetEnd": {
+        "roleName": "children",
+        "cardinality": {
+          "minimum": "0",
+          "maximum": {
+            "kind": "unbounded"
+          }
+        },
+        "aggregation": "NONE"
+      },
+      "label": "children",
+      "anchor": {
+        "snapshotId": "client-1-hsgwtgv7lbj-e0-s1/snapshot/snap-3fdc1252492d81cdfd7de3ad3a18ff98fb7f4e3f2396cd8cb1c281dbb28122cb",
+        "nameRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 474,
+          "endOffset": 482
+        },
+        "declarationRange": {
+          "source": "memory:/interactive.ili",
+          "revision": "1",
+          "startOffset": 474,
+          "endOffset": 489
+        }
+      }
+    }
+  ],
+  "notices": []
+}
