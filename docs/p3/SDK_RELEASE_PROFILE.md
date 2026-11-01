@@ -134,7 +134,7 @@ AUTO benötigt echtes stderr-TTY, nichtleeres NO_COLOR/TERM=dumb unterdrücken e
 Windows AUTO bleibt konservativ plain. Explizite Wahl übersteuert Environmentdefaults.
 Quellframes sind revisionstreu und begrenzt (3 Zeilen/160 Spalten), unsichere
 Unicodebreiten werden ohne falschen Caret angezeigt. Die SDK-Kanondaten bleiben unverändert.
-Das aktuelle Releaseprofil verlangt mindestens1230 Tests/229 Suites,46 reale
+Das aktuelle Releaseprofil verlangt mindestens1230 Tests/229 Suites,47 reale
 CLI-Fälle und erneut validierte Farb-/JSONbytes. Auf macOS werden zusätzlich6
 echte PTY-/Redirectprozesse ausgeführt. Kanallecks, falsche Exits, fehlende Resets,
 fremde SHAs und unvollständige Berichte werden aktiv abgewiesen.

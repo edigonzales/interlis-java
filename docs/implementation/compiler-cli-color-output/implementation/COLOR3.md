@@ -118,3 +118,45 @@ Nacharbeit lokal: `:interlis-compiler-cli:test compilerCliCheck
 46+6 echte Prozesse und1466 Pythonfreiheitsinputs; Guard passed/0.
 Log `color3-windows-fix-local.log`, Manifest `color3-windows-fix-guard.json`.
 Die neue Windows-/Linux-Matrix und alle finalen Pflichtgates sind erneut nötig.
+
+## Zurückgezogener Kandidat f766d41 und HTTP-Regression
+
+[CI41290110830](https://github.com/edigonzales/interlis-java/actions/runs/41290110830)
+bestand auf `f766d41bb2998ccb5bd088718cdb332c148bb845` für Linux und Windows:
+je1230 Tests/229 Suites,46 CLI-Fälle, SDK-ZIP9c48c4c28729f3881a8ca0bd21f732d29eb7f9703e0fda66cccfd01c4e5b92dc.
+Der eigene vollständige Release-/Zusatzlauf bestand nach36m13s,106 Tasks,
+347 Closures auf6 Laufzeiten,2000 Änderungen und76 reproduzierten Dateien,
+ProzessExit0/Guard passed0. Alle Belege bleiben erhalten, sind aber ausdrücklich
+keine Gesamtfreigabe dieses nachfolgend zurückgezogenen Produkts.
+
+Eine weitere eigene echte Repositoryprobe fand den fehlenden JDK-Modulroot:
+`interlis-compiler check --repository http://127.0.0.1:9/ --root Missing`
+stürzte vor fachlicher Behandlung mit `NoClassDefFoundError:
+java/net/http/HttpTimeoutException` ab. Rohlog `module-http-red.log`,
+Guard `module-http-red-guard.json`. Die neue Modulstartkonfiguration hatte
+vorhandene JDK-Standardmodule ausgeblendet. Das war eine produktive Regression,
+kein Sprach- oder Infrastrukturfehler.
+
+Der bereits gestartete unabhängige COLOR3-R1-Review wurde darum zurückgezogen
+und kontrolliert ohne Urteil/Abnahme beendet; seine eigenen laufenden Kinder
+wurden beendet. Keine PASS-Aussage dieses Reviews wird akzeptiert. Session
+ses_e69911512ffeMJBe03LpMiHMHF, originaler ProzessExit1 nach Unterbrechung;
+`build/review/compiler-cli-color/COLOR3-r1-f766d41bb299/withdrawal.json`
+enthält konkreten Befund, Originalguard und zugeordnete Prozesse. Rohsession und
+unveränderter Reviewworktree bleiben erhalten. Kein Transportroulette.
+
+Die Launcher verwenden jetzt `--add-modules ALL-MODULE-PATH,ALL-DEFAULT` und
+bewahren dadurch die Standardmodulauflösung des früheren Klassenpfadstarts.
+Der bestehende Prozesschecker enthält neu `repository-http`: ein echter lokaler
+HTTP-Server liefert Index und Modelldatei; der reale externe Produktlauncher
+muss beide abholen und die benannte Closure mit Exit0 ohne Kanalverschmutzung
+kompilieren. Die aktive Plattform-/Release-Inventarmenge verlangt jetzt47 Fälle.
+Keine zusätzliche Runtime oder produktive Bibliothek, keine Core-/Normänderung.
+
+Gezielte GREEN-Prüfung nach Fix: `compilerCliCheck :interlis-compiler-cli:test
+:interlis-compiler-cli:verificationTest releaseEvidenceCheckerTest pythonFreeCheck
+:interlis-compiler-cli:distZip -PnodeExecutable=<Node24.22.0> --no-parallel
+--max-workers=2 --console=plain`: Exit0/29s,47 CLI+6 PTY,100 CLI-/25
+Verificationtests,100 Nodechecker,1466 Sourceinputs; originaler Guard passed0
+(`color3-http-fix.log`, `color3-http-fix-guard.json`).
+Neue Commit-/CI-/FullRelease-/unabhängige C3-Gesamtabnahme ist erforderlich.

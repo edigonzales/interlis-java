@@ -53,3 +53,11 @@ Rohbelege: `build/review/compiler-cli-color/preflight/`.
 JDK25.0.3 unter `/Users/stefan/.sdkman/candidates/java/25.0.3-tem` verfügbar;
 Shell-Java21 wird nicht für die Prüfung verwendet. Node24.22.0 liegt im bestehenden
 Projektcache; Chrome, Firefox und Safari sind installiert, noch keine neuen Browsergates ausgeführt.
+
+Weiterer C3-Befund auf f766d41bb2998ccb5bd088718cdb332c148bb845: echter
+Repositoryaufruf zeigte NoClassDefFoundError für java.net.http beim Modulstart.
+Dieser Kandidat wurde zurückgezogen; der gestartete unabhängige C3-R1-Review
+wurde ohne Urteil/Abnahme kontrolliert beendet, Rohsession/Withdrawal bleiben
+erhalten. ALL-DEFAULT ergänzt die bisherigen Standardmodule; neuer aktiver
+HTTP-Prozessfall (jetzt47 CLI-Fälle) besteht lokal. Neue CI und vollständige
+Gesamtqualifikation am nächsten Kandidaten bleiben fällig.

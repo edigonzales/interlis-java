@@ -55,16 +55,16 @@ Der aktuelle Umsetzungs-/Abnahmestand steht ausschliesslich im
 [CLI-Status](../implementation/compiler-cli-modernization/STATUS.md); der neue
 Farbumfang wird separat im [COLOR-Status](../implementation/compiler-cli-color-output/STATUS.md) geführt.
 
-Das aktuelle Prozessprofil umfasst46 echte Fälle mit20 Farb-/JSON-/Kanalgegenproben;
+Das aktuelle Prozessprofil umfasst47 echte Fälle mit20 Farb-/JSON-/Kanalgegenproben;
 auf macOS kommen6 reale PTY-/Redirectfälle hinzu. Headless Windows/Linux
 behaupten kein interaktives Terminal. Die bestehenden Releaseprüfer verlangen
-1230 Tests/229 Suites sowie alle46 Fälle und erneut validierte Farbausgaben.
+1230 Tests/229 Suites sowie alle47 Fälle und erneut validierte Farbausgaben.
 Prüfung einer entpackten Distribution ausserhalb des Checkouts:
 `java -cp <verification-classpath> guru.interlis.cli.verification.CompilerCliProcesses <repo-root> <external-launcher>`.
 Das ist eine Hostprüfhilfe, kein Bestandteil der Produktdistribution.
 
 Die ausgelieferten Launcher starten dieselben unmodifizierten Runtime-JARs als
-vorhandene automatische Java-Module (`interlis.compiler.cli`, ALL-MODULE-PATH).
+vorhandene automatische Java-Module (`interlis.compiler.cli`, ALL-MODULE-PATH und ALL-DEFAULT).
 Das vermeidet die beobachtete fehlerhafte CESU-8-Pfadkodierung des JDK25-
 Klassenpfadloaders bei Supplementary-Zeichen im Installationspfad. Es gibt keine
 neuen module-info-Dateien, Bibliotheksverträge oder Runtimeabhängigkeiten; die
@@ -76,3 +76,8 @@ Das ursprüngliche Aufrufverzeichnis wird über die private bestehende Unicode-
 Launcherbrücke übernommen; relative Modell-/Konfigurations-/Ausgabepfade bleiben
 caller-relativ. Verzeichniswechsel und Rückkehr gelten nur im gestarteten Batch-
 Prozess; der fachliche CLI-Kontext ist weiterhin explizit injiziert.
+
+Der echte Prozessfall `repository-http` lädt Index und Modell über einen lokalen
+HTTP-Server und kompiliert sie aus der externen Installation. ALL-DEFAULT erhält
+die bisherigen JDK-Standardmodule des Klassenpfadstarts, insbesondere java.net.http;
+der Modulstart darf vorhandene Repositoryfähigkeiten nicht ausblenden.

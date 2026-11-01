@@ -12,7 +12,7 @@ public final class CompilerCliProcesses {
             "legacy-option", "invalid-option", "valid", "compile", "analyze", "diagram", "syntax",
             "semantic", "missing-file", "missing-import", "explicit-import", "multiple-models",
             "option-end", "format-utf8", "root-isolation", "foreign-warning", "relevant-warning",
-            "diagnostic-de", "diagnostic-json", "no-model-root", "invalid-language",
+            "diagnostic-de", "diagnostic-json", "no-model-root", "invalid-language", "repository-http",
             "color-auto", "color-always", "color-never", "color-no-color", "color-empty-no-color",
             "color-term-dumb", "color-always-override", "color-never-override", "color-invalid", "color-duplicate",
             "color-json-always", "color-json-never", "color-json-auto", "color-format-always", "color-format-never",
@@ -96,6 +96,7 @@ public final class CompilerCliProcesses {
             require(cases.get("diagnostic-json").stderr().isEmpty()
                     && diagnostic.get("code").getAsString().equals("ILI-SEM-0001")
                     && diagnostic.get("message").getAsString().contains("kann an dieser Stelle nicht aufgelöst werden"), "Canonical JSON or presentation missing");
+            repositoryHttp(folder, launcher, cases);
             colorCases(folder, launcher, cases);
             verifyColorCases(cases);
             var terminal = terminalCases(folder, launcher);
@@ -109,6 +110,30 @@ public final class CompilerCliProcesses {
             try (var files = Files.walk(folder)) { for (var file : files.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(file); }
         }
     }
+    /** Exercises HTTP and XML from the real module launcher, not the test JVM. */
+    private static void repositoryHttp(Path folder, Path launcher, Map<String,Result> cases) throws Exception {
+        var requests=new java.util.concurrent.atomic.AtomicInteger();
+        var server=com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1",0),0);
+        String model="INTERLIS 2.4; MODEL Remote AT \"x\" VERSION \"1\"=DOMAIN Name=TEXT*20;END Remote.";
+        String index="<TRANSFER><ModelMetadata><Name>Remote</Name><SchemaLanguage>ili2_4</SchemaLanguage>"
+                +"<File>Remote.ili</File><Version>1</Version></ModelMetadata></TRANSFER>";
+        server.createContext("/",exchange -> {
+            requests.incrementAndGet();
+            String body=exchange.getRequestURI().getPath().equals("/ilimodels.xml")?index:model;
+            byte[] bytes=body.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200,bytes.length);
+            try (var output=exchange.getResponseBody()) { output.write(bytes); }
+        });
+        server.start();
+        try {
+            var result=run(folder,List.of(launcher.toString(),"check","--repository",
+                    "http://127.0.0.1:"+server.getAddress().getPort()+"/","--root","Remote"),Duration.ofSeconds(45));
+            verify("repository-http",result,0,false);
+            require(result.stderr().isEmpty()&&requests.get()>=2,"Real launcher did not load HTTP index/model");
+            cases.put("repository-http",result);
+        } finally { server.stop(0); }
+    }
+
     private static Path copyDistribution(Path root, Path temporary) throws Exception {
         Path installed=cli(root).getParent().getParent(),target=temporary.resolve("distribution ä 😀");
         try (var files=Files.walk(installed)) {

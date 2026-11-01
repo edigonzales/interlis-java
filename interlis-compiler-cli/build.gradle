@@ -24,7 +24,7 @@ distributions.main.distributionBaseName = 'interlis-compiler'
 
 tasks.named('startScripts') {
     inputs.property('windowsUnicodeArguments', 1)
-    inputs.property('unicodeModuleLaunch', 2)
+    inputs.property('unicodeModuleLaunch', 3)
     doLast {
         // JDK 25's classpath URL encoder mishandles supplementary characters
         // in installation paths. Automatic modules resolve the same unmodified
@@ -33,7 +33,7 @@ tasks.named('startScripts') {
         if (!unix.contains('-classpath "$CLASSPATH"') || !unix.contains('        guru.interlis.cli.Main'))
             throw new GradleException('Unexpected POSIX launcher template')
         unixScript.setText(unix.replace('-classpath "$CLASSPATH"',
-                '--module-path "$APP_HOME/lib" --add-modules ALL-MODULE-PATH')
+                '--module-path "$APP_HOME/lib" --add-modules ALL-MODULE-PATH,ALL-DEFAULT')
                 .replace('        guru.interlis.cli.Main', '        --module interlis.compiler.cli/guru.interlis.cli.Main'), 'UTF-8')
         // Java 25's Windows launcher converts argv through the ANSI code page.
         // cmd.exe and System.getenv retain UTF-16; carry each shell argument
@@ -57,7 +57,7 @@ pushd "%APP_HOME%" || goto fail
 '''
         def unicodeLaunch = launch.replace('endlocal & ', '')
                 .replace('-classpath "%CLASSPATH%" guru.interlis.cli.Main %*',
-                        '-Dguru.interlis.cli.windowsArguments=true --module-path "lib" --add-modules ALL-MODULE-PATH --module interlis.compiler.cli/guru.interlis.cli.Main')
+                        '-Dguru.interlis.cli.windowsArguments=true --module-path "lib" --add-modules ALL-MODULE-PATH,ALL-DEFAULT --module interlis.compiler.cli/guru.interlis.cli.Main')
         def restoreDirectory = '''
 set "_INTERLIS_COMPILER_EXIT_CODE=%ERRORLEVEL%"
 popd
