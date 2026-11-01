@@ -12,13 +12,13 @@ def hostProfiles = [
     sdkArchiveCheck: ['SdkArchiveCheck', []],
     platformCheck: ['PlatformProcesses', []],
     conformanceEvidence: ['ConformanceEvidence', []],
-    legacyCliCheck: ['LegacyCliProcesses', []],
+    compilerCliCheck: ['CompilerCliProcesses', []],
     referenceCheck: ['ReferenceProcesses', ['profile']],
     originalViewReferenceCheck: ['ReferenceProcesses', ['originals']],
     viewReferenceCheck: ['ReferenceProcesses', ['views', hostNodeExecutable.get()]],
     unitReferenceCheck: ['ReferenceProcesses', ['units', hostNodeExecutable.get()]]
 ]
-project(':interlis-cli') {
+project(':interlis-compiler-cli') {
     plugins.withId('java') {
         sourceSets {
             verification {
@@ -26,8 +26,8 @@ project(':interlis-cli') {
                 runtimeClasspath += sourceSets.main.output
             }
             verificationTest {
-                compileClasspath += sourceSets.verification.output
-                runtimeClasspath += sourceSets.verification.output
+                compileClasspath += sourceSets.verification.output + sourceSets.main.output
+                runtimeClasspath += sourceSets.verification.output + sourceSets.main.output
             }
         }
         configurations {
@@ -56,10 +56,10 @@ project(':interlis-cli') {
                 args rootProject.projectDir.absolutePath
                 args profile[1]
                 javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
-                if (name in ['sdkProcessCheck', 'legacyCliCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn 'installDist'
+                if (name in ['sdkProcessCheck', 'compilerCliCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn 'installDist'
                 if (name == 'conformanceEvidence') dependsOn ':conformanceCheck'
                 if (name == 'sdkArchiveCheck') dependsOn ':sdkPackage'
-                if (name == 'platformCheck') dependsOn ':check', ':legacyCliCheck', ':sdkArchiveCheck', ':interlis-lsp:installDist'
+                if (name == 'platformCheck') dependsOn ':check', ':compilerCliCheck', ':sdkArchiveCheck', ':interlis-lsp:installDist'
                 if (name == 'jvmBenchmark') dependsOn 'geoCorpus'
                 if (name == 'jvmBenchmark') mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':interlis-wasm-webimage:webImageProbe'
                 if (name in ['viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':checkNodeRuntime'
@@ -78,7 +78,7 @@ hostProfiles.each { name, profile ->
     tasks.register(name) {
         group = 'verification'
         description = "Runs the Java host verification profile ${name}."
-        dependsOn ":interlis-cli:${name}"
+        dependsOn ":interlis-compiler-cli:${name}"
     }
 }
 

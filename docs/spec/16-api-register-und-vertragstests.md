@@ -155,7 +155,7 @@ Quellnavigation; die portable Suite prüft denselben Compilerkern.
 | model | `guru.interlis.source` | `SourceId`, `SourceRevision`, `SourceText`, `SourceRange`, `SourcePosition`, `LineMap`, `TextEdit` | [04](04-quelltext-syntax-und-parser.md), Editvertrag [07](07-workspace-inkrementalitaet-und-lsp.md) |
 | model | `guru.interlis.model` und fachliche Unterpackages | `SnapshotId`, `SymbolId`, `TypeId`, `ExpressionId`, `ScopeId`, `ReferenceId`, jeweilige `…Ref`, `SemanticGraph`, `CompiledSchema`, `SchemaFingerprint`, `SchemaProvenance` | [05](05-metamodell-und-typensystem.md) |
 | model | `guru.interlis.model.query` | `QueryResult<T>`, `SemanticQueries`, `TypeRelations`, typisierte Gründe und Ergebnisse | [05](05-metamodell-und-typensystem.md) |
-| model | `guru.interlis.diagnostics` | `Diagnostic`, `DiagnosticId`, `DiagnosticCode`, `DiagnosticArgument`, `RelatedLocation`, `Severity`, `Phase`, Katalogverträge | [09](09-diagnostik-logging-und-telemetrie.md) |
+| model | `guru.interlis.diagnostics` | `Diagnostic`, `DiagnosticId`, `DiagnosticCode`, `DiagnosticArgument`, `RelatedLocation`, `Severity`, `Phase`, `DiagnosticLanguage`, `DiagnosticMessage`, `DiagnosticMessageFormatter`, Katalogverträge | [09](09-diagnostik-logging-und-telemetrie.md) |
 | model | `guru.interlis.execution` | `CancellationToken`, `CancellationReason`, `OperationCancelledException`, `RunObserver`, `RunEvent`, `RunId`, `RunContext`, `RunContextFactory`, `RunLifecycle`, `FailureId`, `ClockSource` | [09](09-diagnostik-logging-und-telemetrie.md), Ergebnisverwendung [06](06-kompilierung-und-semantik.md) |
 | compiler | `guru.interlis.syntax` | `SyntaxServices`, `SyntaxService`, `ParseOptions`, `ParseMode`, `SyntaxSnapshot` und eigene Syntaxknoten | [04](04-quelltext-syntax-und-parser.md) |
 | compiler | `guru.interlis.format` | `ModelFormatters`, `ModelFormatter`, `FormatOptions`, `FormatOutcome`, `FormattingNotice` | [18](18-cli-sdk-und-kompatibilitaetsadapter.md) |
@@ -231,7 +231,7 @@ Eine Hintergrundanalyse folgt `capture` → vollständiger Engineaufruf → `acc
 
 `QueryResult<T>` hat genau die Basisvarianten `Known<T>`, `Unresolved<T>`, `Invalid<T>` und `NotAnalyzed<T>`. Legale Generic-/Deferred-Werte gehören zu den fachlichen Typen und werden nicht durch `Unresolved` ersetzt. `Known` kann einen wohldefinierten legal aufgeschobenen Typ beschreiben.
 
-`CompiledSchema.semanticGraph()` und `queries()` sind auf seine geprüfte Auswahl beschränkt. Derselbe zugrunde liegende AnalysisSnapshot kann weitere unabhängige Fehler enthalten, die diese Sicht nicht veröffentlicht. `schema.models()` und `sourceRevisions()` enthalten nur die relevante Closure samt tatsächlich benötigter Quellen. Bei Dateien mit mehreren Modellen bleibt die Quellrevision die Revision der gesamten Datei; die Schemaauswahl ist dennoch modellbezogen.
+`CompiledSchema.semanticGraph()` und `queries()` sind auf seine geprüfte Auswahl beschränkt. `AnalysisSnapshot.requestDiagnostics()` liefert den immutable kanonischen Teilbestand für die Snapshotroots/-optionen/-revisionen; Gate und Compile-CLI teilen diese Auswahl. Konstruktoren verlangen die vollständige Liste und diesen geordneten Teilbestand ausdrücklich. Fresh/Reuse, Rootwechsel, globale Auflösungsfehler, Syntaxfehler in benötigten Quellen und fremde Warnungen sind Vertragstests. Derselbe zugrunde liegende AnalysisSnapshot kann weitere unabhängige Fehler enthalten, die diese Sicht nicht veröffentlicht. `schema.models()` und `sourceRevisions()` enthalten nur die relevante Closure samt tatsächlich benötigter Quellen. Bei Dateien mit mehreren Modellen bleibt die Quellrevision die Revision der gesamten Datei; die Schemaauswahl ist dennoch modellbezogen.
 
 ## 6. Interne Klassen mit festgelegter Verantwortung
 
@@ -251,7 +251,7 @@ Die Tabelle benennt fachliche Grenzen. Sie verlangt weder eine öffentliche Klas
 
 Die in Kapitel 12 definierten `TransferPlanner`, `ValidationPlanner` und `SchemaPlanner` erhalten ausschliesslich gültige Schemas und explizite Profile/Overlays beziehungsweise bereits geprüfte Transferpläne. IO-Ausführung liegt in getrennten Sitzungen/Executoren. Die detailreichen Zukunftsverträge sind eine Architekturreserve mit Abnahme, kein Auftrag zur Anlage leerer P4/P5-Module während P0.
 
-`LegacyCompilerProfile` komponiert ein `LegacyCliProfile` und weitere Sprach-/Metamodellreferenzen. `LegacyApiProfile` bezeichnet zusätzlich den konkreten alten Java-API-/ABI-/Verbraucherumfang. Diese Profile werden nicht als austauschbare Strings ohne eigene Felder behandelt.
+`LegacyCompilerProfile` beschreibt externe Sprach-/Metamodellreferenzen. Das frühere Laufzeit-`LegacyCliProfile` entfällt mit dem Compiler-CLI-Folgeauftrag. `LegacyApiProfile` bezeichnet zusätzlich den konkreten alten Java-API-/ABI-/Verbraucherumfang. Diese Profile werden nicht als austauschbare Strings ohne eigene Felder behandelt.
 
 Eine gemeinsame Java-WASM-Bridge kann nach tatsächlicher Wiederverwendung in `interlis-wasm-bridge` liegen. Dieses Modul hängt von workspace/compiler/projection/model ab. TeaVM- und Graal-Interoptypen bleiben in den Zieladaptern. Die Bridge gehört nicht in projection, weil das eine falsche Abhängigkeit zu workspace erzeugen würde.
 
@@ -684,7 +684,7 @@ Originalbindungen; Snapshot-/Schemaidentitäten behalten ihre getrennten Rollen.
 
 ### P3-1: CLI-Schema, Konfiguration und Laufabschluss
 
-Besitzer: `interlis-cli` / `guru.interlis.cli`, Fachvertrag Kapitel 18.
+Besitzer: `interlis-compiler-cli` / `guru.interlis.cli`, Fachvertrag Kapitel 18.
 `CommandSpec(command,List<Option>,acceptsFiles)` und
 `Option(name,valueCount,repeatable)` beschreiben die geordnete Kommandoform;
 `CommandLineParser.parse(List<String>,CommandSpec)` liefert `CliParseOutcome`
@@ -706,17 +706,7 @@ defensive Kopien, Reihenfolge, Abbruch und Besitz stehen in Kapitel 18/09.
 `P3OutcomePriorityContractTest` prüfen die beobachtbaren Grenzen. Formatter-
 Präzisierung und Werterhalt: `P3FormatterPolicyContractTest`.
 
-Zusätzlich im CLI-Package: `LegacyCliProfile.ili2c569`, `LegacyExitCodePolicy`,
-`LegacyDiagnosticRenderer`, `ToolVersionRenderer` sowie der Prozessentry
-`Ili2cMain`; der Host-/Optionsvertrag steht in Kapitel 18 und im versionierten
-P3-Aufrufprofil. `OutputPlanner.plan` liefert `OutputPlan(fileTargets,writesStdout)`;
-`CliOutputWriter.write` führt eine synchrone atomare Dateiersetzung aus.
-`CliExecutionResult` ergänzt `List<Artifact> artifacts` mit
-`Artifact(ArtifactKind,URI,long byteCount)`; bisherige Vier-/Fünfparameter-
-Konstruktoren liefern eine leere Liste. Fertiggestellte Dateien bleiben auch
-bei späteren Fehlern sichtbar. `P3LegacyCliContractTest`,
-`P3AtomicOutputContractTest` und der echte `legacyCliCheck` samt Negativcanaries
-sichern diese Grenzen. Keine zweite fachliche Gateentscheidung im Adapter.
+Das CLI-Package besitzt den einzigen Prozessentry Main und die Standard-ExitCodePolicy. OutputPlanner.plan(ParsedCommand,CliEnvironment) liefert OutputPlan(fileTargets,writesStdout); CliOutputWriter.write führt eine synchrone atomare Dateiersetzung aus. CliExecutionResult ergänzt List<Artifact> artifacts mit Artifact(ArtifactKind,URI,long byteCount); fertiggestellte Dateien bleiben bei späteren Fehlern sichtbar. CompilerCliIdentityContractTest, P3AtomicOutputContractTest und compilerCliCheck sichern die Grenzen. Keine zweite fachliche Gateentscheidung im Adapter.
 `CliExecutionResult.rejectionSummary()` liefert zusätzlich
 `Optional<RejectionSummary>` für alle ursprünglichen Compiler-Gate-Gründe;
 bisherige Konstruktoren verwenden Optional.empty().

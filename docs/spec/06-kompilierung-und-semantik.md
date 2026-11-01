@@ -321,17 +321,20 @@ public final class AnalysisSnapshot {
     public Map<SourceId, SyntaxSnapshot> syntaxSnapshots();
     public Optional<SyntaxSnapshot> syntaxSnapshot(SourceId source);
     public List<Diagnostic> diagnostics();
+    public List<Diagnostic> requestDiagnostics();
     public AnalysisCoverage coverage();
     public CompilationFingerprint fingerprint();
     public AnalysisProvenance provenance();
 }
 ```
 
-Die Snapshotklasse ist unveränderlich. `diagnostics()` enthält alle kanonischen Diagnosen, auch aufgrund einer gemeinsamen Ursache in einer UI nicht angezeigte Folgefehler. Die Darstellung wird in09 projiziert; das Gate darf nicht die reduzierte sichtbare Liste verwenden.
+Die Snapshotklasse ist unveränderlich. `diagnostics()` enthält alle kanonischen Diagnosen, auch aufgrund einer gemeinsamen Ursache in einer UI nicht angezeigte Folgefehler. `requestDiagnostics()` ist der immutable, kanonisch geordnete Teilbestand derselben Werte/IDs für exakt die Roots, Optionen, Quellrevisionen und den Fingerprint dieses Snapshots. Die interne Auswahl erfolgt einmal vor dem Gate; Gate und Compileverbraucher verwenden diesen Teilbestand. Der öffentliche Konstruktor verlangt beide Listen ausdrücklich und verwirft Teilbestände, die keine geordnete Teilfolge sind. Die Darstellung wird in09 projiziert; das Gate darf keine darstellungsgefilterte Liste verwenden.
 
 `AnalysisCoverage` enthält Einträge pro benötigter Deklaration/Modell/Phase. `CoverageStatus` unterscheidet `COMPLETE`, `BLOCKED_BY_ERROR`, `NOT_IMPLEMENTED`, `NOT_REQUESTED`, `CANCELLED` und `BUDGET_EXCEEDED`. Syntax und Semantik können in unterschiedlichen Zuständen sein. Ein leerer Eintrag ist keine implizite Vollständigkeit. Für jede ausgewählte Rootclosure muss das Gate das explizite Abschlussprädikat `isCompleteFor(ClosureSelection)` prüfen können.
 
 Coverage und Diagnostik erfüllen unterschiedliche Aufgaben: Eine fehlende Implementierung bleibt auch dann blockierend, wenn der Diagnosecollector sein Ausgabelimit erreicht hat. Umgekehrt dürfen bekannte reine Warnungen einen vollständig geprüften Status besitzen. Jeder Fehler muss eine nachvollziehbare Zuordnung zu Source-/Symbol-/Globalbedingungen erhalten; unzuordenbare Eingabefehler werden konservativ als relevant behandelt.
+
+Auftragsrelevanz umfasst Roots, Imports, Übersetzungsoriginale und Overlayabhängigkeiten. Fremde semantische Fehler und Warnungen, auch in derselben Datei, bleiben ausschliesslich im Gesamtbestand. Lexer-/Parserfehler in benötigten Dateien bleiben konservativ relevant, auch wenn keine Modelldeklaration rekonstruierbar ist: explizite BySource-Roots, explizite ByName-Quellhinweise und tatsächlich aufgelöste Importquellen behalten ihre Quellzuordnung bei beschädigter oder fehlender Deklaration. Vollständig fremde defekte Dateien belasten den Auftrag nicht. Ohne Modellidentität oder Resolverzuordnung wird keine Quelle anhand ihres Dateinamens als Importziel geraten; der fehlende Import bleibt eine sichtbare Auflösungsdiagnose. Root-/Closurediagnosen und globale, nicht zuordenbare Eingabefehler bleiben erhalten. Warnungsablehnung gilt nur für relevante Warnungen. Fresh/Reuse und Rootwechsel müssen dieselbe Auswahl erzeugen; Abbruch bleibt kontrolliert.
 
 ### 4.4 `AnalysisReuse`
 

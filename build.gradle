@@ -116,7 +116,7 @@ apply from: 'gradle/host-verification.gradle'
 tasks.register('g2EvidenceTest') {
     group = 'verification'
     description = 'Checks G2 source inventory, frozen review inputs and evidence failure paths.'
-    dependsOn ':interlis-cli:evidenceTest'
+    dependsOn ':interlis-compiler-cli:evidenceTest'
 }
 tasks.named('check') { dependsOn 'g2EvidenceTest' }
 
@@ -182,8 +182,8 @@ tasks.register('performanceCheck', Exec) {
     workingDir rootProject.projectDir
     commandLine nodeExecutable.get(), 'tools/performance/check.cjs'
 }
-project(':interlis-cli') {
-    tasks.matching { it.name == 'fullCorpusJvm' }.configureEach { dependsOn 'fullCorpus'; mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':sdkProcessCheck', ':sdkPackage', ':legacyCliCheck', ':interlis-wasm-webimage:webImageProbe', ':interlis-wasm-teavm:prepareBrowserHarness' }
+project(':interlis-compiler-cli') {
+    tasks.matching { it.name == 'fullCorpusJvm' }.configureEach { dependsOn 'fullCorpus'; mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':sdkProcessCheck', ':sdkPackage', ':compilerCliCheck', ':interlis-wasm-webimage:webImageProbe', ':interlis-wasm-teavm:prepareBrowserHarness' }
     tasks.matching { it.name == 'editorPressure' }.configureEach { mustRunAfter ':fullCorpusEditorWasm' }
     tasks.matching { it.name == 'observationPressure' }.configureEach { mustRunAfter 'editorPressure' }
 }
@@ -196,11 +196,16 @@ tasks.named('browserBenchmark') { mustRunAfter 'wasmBenchmark', 'checkPortable',
 tasks.register('sdkPackage', Zip) {
     group = 'distribution'
     description = 'Builds the reproducible SDK/CLI archive (not published).'
-    dependsOn ':interlis-cli:installDist', 'sdkProcessCheck'
+    dependsOn ':interlis-compiler-cli:installDist', 'sdkProcessCheck'
+    inputs.property('compilerLauncherPermissions', '0755-v1')
     archiveFileName = "interlis-java-sdk-${project.version}.zip"
     destinationDirectory = layout.buildDirectory.dir('releases')
-    from(project(':interlis-cli').layout.buildDirectory.dir('install/interlis-cli')) {
+    from(project(':interlis-compiler-cli').layout.buildDirectory.dir('install/interlis-compiler')) {
         into 'cli'
+        eachFile { details ->
+            if (details.name in ['interlis-compiler', 'interlis-compiler.bat'])
+                details.permissions { unix('rwxr-xr-x') }
+        }
     }
     from(rootProject.file('examples/sdk')) {
         into 'examples/sdk'
@@ -240,7 +245,7 @@ tasks.register('releaseEvidenceCheck', Exec) {
     commandLine nodeExecutable.get(), 'tools/release/evidence.cjs'
 }
 tasks.named('releaseCheckP3') { dependsOn 'releaseEvidenceCheck' }
-project(':interlis-cli') {
+project(':interlis-compiler-cli') {
     tasks.matching { it.name == 'fullCorpusJvm' }.configureEach {
         mustRunAfter ':sdkReproducibilityCheck', ':platformCheck', ':releaseEvidenceCheckerTest', ':conformanceEvidence'
     }

@@ -2,14 +2,13 @@
 
 ## 1. Ziel
 
-CLI und SDK sind dünne Zugänge zu derselben Engine. Die CLI besitzt keine zweite Sprachprüfung. Der SDK-Aufrufer muss keine Dateien erzeugen, um Strings zu analysieren. Vertraute Toolnamen bleiben möglich, während neue Java-Pakete einen sauberen dauerhaften Namensraum erhalten.
+CLI und SDK sind dünne Zugänge zu derselben Engine. Die CLI besitzt keine zweite Sprachprüfung. Der SDK-Aufrufer muss keine Dateien erzeugen, um Strings zu analysieren. Das Compilerprogramm heisst `interlis-compiler`, das Gradle-Modul `interlis-compiler-cli`; die Bibliothek bleibt `interlis-compiler`.
 
-`ili2c` ist das erste CLI-Profil. Spätere `ilivalidator`-/`ili2pg`-/`ili2gpkg`-Profile verwenden dieselben Grundverträge für Konfiguration, Diagnostik und Laufabschluss, mit ihren eigenen fachlichen Diensten. Eine bisherige Option darf nicht still ignoriert werden. Optionen ausserhalb des jeweils freigegebenen Umfangs ergeben einen deutlichen Fehler.
+Der Folgeauftrag [Compiler-CLI](../implementation/compiler-cli-modernization/EXECUTION_PLAN.md) ersetzt die frühere ili2c-Bedienkompatibilität. Es gibt keine alten Launcher, Aliase, automatische Profilerkennung oder Legacyartefakte. Der echte ili2c bleibt ausschliesslich externer Sprach-/Metamodell-Testreferenzcompiler. Spätere Fachwerkzeuge erhalten eigene CLI-Module.
 
 ## 2. CLI-Klassen und Signaturen
 
-Paket `guru.interlis.cli`. Das erste ili2c-Prüfprofil verwendet ebenfalls dieses
-Package; ein zusätzliches Unterpackage ist für den aktuellen Umfang nicht nötig.
+Paket `guru.interlis.cli`. Das Modul verwendet den einzigen Prozesseinstieg `Main`.
 
 Die folgenden Signaturauszüge zeigen Rollen ohne Bodies; die konkreten
 immutable Ergebnistypen und additiven Konstruktoren stehen im P3-1-Abschnitt.
@@ -30,8 +29,7 @@ public final class ExitCodePolicy {
 }
 
 public final class OutputPlanner {
-    public OutputPlan plan(ParsedCommand command, CliEnvironment environment,
-                           Optional<LegacyCliProfile> profile);
+    public OutputPlan plan(ParsedCommand command, CliEnvironment environment);
 }
 ```
 
@@ -39,27 +37,29 @@ Diese Signaturen sind normative Rollenverträge. Implementierungen sind final, s
 
 | Klasse | Zentrale Methoden | Verantwortung |
 |---|---|---|
-| `Ili2cMain` | `public static void main(String[] args)` | nur Umgebung/Abbruchsignal aufbauen, Anwendung aufrufen, Flush/Prozessende |
+| `Main` | `public static void main(String[] args)` | nur Umgebung/Abbruchsignal aufbauen, Anwendung aufrufen, Flush/Prozessende |
 | `DefaultCompilerCli` | `run(...)` | Eingabe auflösen, Closure vorbereiten, Engine aufrufen, Ergebnisse rendern/exportieren |
 | `DefaultCommandLineParser` | `parse(...)` | Optionen/Argumente gemäss CommandSpec parsen, noch keine IO/Modellanalyse |
 | `CommandSpec` | Optionsdefinitionen, Positionsargumente, Konfliktregeln, Hilfetextordnung | versioniertes Werkzeugprofil |
 | `CliEnvironment` | Arbeitsverzeichnis, stdin/stdout/stderr, immutable Environmentwerte, CompilerServices (Uhr/RunObserver/RunContextFactory) | vom Host übergebene Ressourcen; keine globalen Ersatzstreams |
 | `ConfigurationLoader` | `load(ParsedCommand, CliEnvironment, CancellationToken)` | Konfigurationsdateien lesen, Präzedenz und Herkunft offenlegen |
-| `Ili2cInvocationPlanner` (intern), `DefaultCompilerCli` | `prepare` beziehungsweise Kommandoplanung | explizite Root-/Quellen-/Resolver-/Outputplanung |
+| `DefaultCompilerCli` | `prepare` beziehungsweise Kommandoplanung | explizite Root-/Quellen-/Resolver-/Outputplanung |
 | `CliOutputWriter`; Diagnose-/Versionsrenderer | `write(Path,byte[],Optional<byte[]>,CancellationToken)`; `render`/`write` | atomare Dateien; getrennte Text-/JSON-Kanäle und Reihenfolge; gemeinsamer letzter Flush in der CLI |
 | `CliOutcomeMapper` | `classify(CompilationOutcome)` | Ergebnisvariante und RejectionSummary zu CliTermination abbilden; Compilererfolg ist noch kein Ausgabeerfolg |
-| `LegacyExitCodePolicy` | `exitCode(...)` | aus Referenzprofil abgeleitete Zuordnung, keine geratenen Legacywerte |
-| `ToolVersionRenderer` | `render(VersionManifest, LegacyCliProfile)` | Werkzeugversion, optionaler erweiterter Build-/Capabilitynachweis |
 
-`CliParseOutcome` unterscheidet `ParsedCommand`, `HelpRequested`, `VersionRequested` und `InvalidCommandLine`. Eine Hilfe-/Versionsanforderung benötigt weder Modellserver noch Compilerinitialisierung, sofern das Referenzprofil dies nicht anders verlangt. Kompatibilitätsdetails werden empirisch erfasst.
+`CliParseOutcome` unterscheidet `ParsedCommand`, `HelpRequested`, `VersionRequested` und `InvalidCommandLine`. Eine Hilfe-/Versionsanforderung benötigt weder Modellserver noch Compilerinitialisierung. Globale `--help`/`-h` und `--version` sind harmlose Standardaufrufe. Fehlende/unbekannte Unterbefehle ergeben Exit 2 mit einem Beispiel `interlis-compiler check <File.ili>`, vor Host-IO.
 
-`CliExecutionResult` enthält mindestens `CliTermination`, konkreten Exitcode, optionalen RunId, strukturierte Diagnosen und Artefaktinformationen. `CliTermination` unterscheidet `SUCCESS`, `SOURCE_REJECTED`, `USAGE_ERROR`, `OPERATIONAL_FAILURE`, `INCOMPLETE_ANALYSIS`, `INPUT_UNRESOLVED`, `WARNINGS_REJECTED`, `CANCELLED`, `INTERNAL_FAILURE`. Diese internen Status sind keine Behauptung bestimmter bisheriger numerischer Exitcodes. `CliOutcomeMapper.classify` verwendet die vom CompilationGate gelieferte RejectionSummary. ENVIRONMENT_FAILURE ergibt OPERATIONAL_FAILURE, INCOMPLETE_SUPPORT ergibt INCOMPLETE_ANALYSIS, MISSING_INPUT oder AMBIGUOUS_INPUT ergibt INPUT_UNRESOLVED, SOURCE_ERRORS ergibt SOURCE_REJECTED, eine alleinige WARNINGS_REJECTED-Ablehnung ergibt den gleichnamigen CLI-Status. Bei mehreren Gründen gilt diese Reihenfolge als Standardpriorität; alle Gründe bleiben im strukturierten Ergebnis erhalten. Ein Legacyprofil kann seine belegte Exitcodezuordnung darüberlegen. Der Adapter implementiert keine zweite Root-/Coverage-/Warnungsprüfung. Die endgültige SUCCESS-Einstufung erfolgt erst nach der vollständigen Ausgabe beziehungsweise Formatierung und deren erfolgreichem Flush. Ein Fehler in dieser Abschlussphase ergibt OPERATIONAL_FAILURE und nennt gegebenenfalls bereits entstandene Teilartefakte.
+`CliExecutionResult` enthält mindestens `CliTermination`, konkreten Exitcode, optionalen RunId, strukturierte Diagnosen und Artefaktinformationen. `CliTermination` unterscheidet `SUCCESS`, `SOURCE_REJECTED`, `USAGE_ERROR`, `OPERATIONAL_FAILURE`, `INCOMPLETE_ANALYSIS`, `INPUT_UNRESOLVED`, `WARNINGS_REJECTED`, `CANCELLED`, `INTERNAL_FAILURE`. Diese internen Status sind keine Behauptung bestimmter bisheriger numerischer Exitcodes. `CliOutcomeMapper.classify` verwendet die vom CompilationGate gelieferte RejectionSummary. ENVIRONMENT_FAILURE ergibt OPERATIONAL_FAILURE, INCOMPLETE_SUPPORT ergibt INCOMPLETE_ANALYSIS, MISSING_INPUT oder AMBIGUOUS_INPUT ergibt INPUT_UNRESOLVED, SOURCE_ERRORS ergibt SOURCE_REJECTED, eine alleinige WARNINGS_REJECTED-Ablehnung ergibt den gleichnamigen CLI-Status. Bei mehreren Gründen gilt diese Reihenfolge als Standardpriorität; alle Gründe bleiben im strukturierten Ergebnis erhalten. Der Adapter implementiert keine zweite Root-/Coverage-/Warnungsprüfung. Die endgültige SUCCESS-Einstufung erfolgt erst nach der vollständigen Ausgabe beziehungsweise Formatierung und deren erfolgreichem Flush. Ein Fehler in dieser Abschlussphase ergibt OPERATIONAL_FAILURE und nennt gegebenenfalls bereits entstandene Teilartefakte.
+
+Für `check`, `compile`, `analyze`, `diagram` und `format` gilt `--diagnostic-language de|en`, Default `en` unabhängig vom Host. Ungültige Werte sind Bedienfehler vor IO. ConsoleDiagnosticRenderer erhält die Sprache explizit und verwendet den reinen Formatter aus Kapitel09; sein Komfortaufruf verwendet EN. `check`/`compile` und der Compile-Schritt von `diagram` verwenden `requestDiagnostics()`; `analyze` behält die vollständige Sicht. Diagramm-/Formatausgaben bleiben auf stdout, gewöhnliche Diagnosen auf stderr. Bei `--json` bleibt stdout ein einzelnes JSON-Ergebnis ohne Fremdtext.
+
+CLI-JSON erhält additive Präsentationsfelder `message`/optional `hint`, strukturierte `relatedLocations` (Range, Key, Argumente, gerenderte Message) sowie vorhandene `causeId`/`dependsOn`. Die bestehenden Felder `id`, `code`, `severity`, `phase`, `messageKey`, `arguments`, `range` samt bisheriger Zahlenkodierung behalten ihre Bedeutung. Nur Präsentation ändert sich zwischen DE/EN. LSP-/WASM-Protokolle werden dadurch nicht umbenannt oder auf die CLI-Sicht reduziert.
 
 ## 3. Methodenverträge
 
 ### 3.1 CliApplication.run
 
-**Vorbedingungen:** Argumente und Umgebung sind nullfrei; Streams sind offen; Profile sind geladen oder reproduzierbar ladbar. **Wirkung:** Darf über explizite Hostdienste Dateien/Repositories lesen und gewünschte Artefakte schreiben. **Nachbedingungen:** Liefert genau einen Abschlussstatus; strukturierter Laufstatus, Textmeldung und Exitcode stimmen überein. Die Methode ruft kein `System.exit` auf. **Besitz:** Sie schliesst keine vom Aufrufer bereitgestellten Standardstreams. Eigene Dateien/Responses werden geschlossen. **Abbruch:** laufende Beschaffung/Analyse/Ausgabe wird kontrolliert beendet; ein nur teilweise geschriebenes Artefakt wird nicht als vollständige Ausgabe angekündigt.
+**Vorbedingungen:** Argumente und Umgebung sind nullfrei; Streams sind offen; Das Standardschema ist bekannt. **Wirkung:** Darf über explizite Hostdienste Dateien/Repositories lesen und gewünschte Artefakte schreiben. **Nachbedingungen:** Liefert genau einen Abschlussstatus; strukturierter Laufstatus, Textmeldung und Exitcode stimmen überein. Die Methode ruft kein `System.exit` auf. **Besitz:** Sie schliesst keine vom Aufrufer bereitgestellten Standardstreams. Eigene Dateien/Responses werden geschlossen. **Abbruch:** laufende Beschaffung/Analyse/Ausgabe wird kontrolliert beendet; ein nur teilweise geschriebenes Artefakt wird nicht als vollständige Ausgabe angekündigt.
 
 Die CLI erzeugt über ihre injizierte `RunContextFactory` einen Elternkontext für den gesamten angenommenen Aufruf. Vor der Engineausführung erzeugt sie `createChild(parent)` und verwendet `compile(request, reuse, child, token)`. Nur die Engine startet und beendet diesen Compilerkindlauf. Beschaffung und Ausgabe gehören zum Elternlauf oder erhalten bei Bedarf eigene klar zugeordnete Kinder. Der Elternlauf endet erst nach der verbindlichen Ausgabe und deren Flush; ein zuvor erfolgreicher Compilerkindlauf darf den späteren Ausgabefehler nicht verdecken. Hilfe und Version benötigen keinen künstlichen Compilerkindlauf. Kontextweitergabe erfolgt explizit gemäss Kapitel 09.
 
@@ -71,37 +71,27 @@ Der Parser mutiert weder Argumentliste noch Umgebung. Er prüft unbekannte Optio
 
 ### 3.3 ConfigurationLoader.load
 
-Der neue explizite Standard ist CLI-Argument vor expliziter Konfigurationsdatei vor Profildefault. Bestehende abweichende Präzedenz gehört in das Legacyprofil. Environmentvariablen sind nur wirksam, wenn sie dokumentiert sind; zufällig gesetzte globale Proxy-/Localevariablen dürfen die Compilersemantik nicht ändern. Jede aufgelöste Einstellung besitzt eine Herkunft, damit ein Report erklären kann, warum sie aktiv war. Geheimnisse werden als vertrauliche Werte behandelt und nicht in Klartext serialisiert.
+Der neue explizite Standard ist CLI-Argument vor expliziter Konfigurationsdatei vor Profildefault. Environmentvariablen sind nur wirksam, wenn sie dokumentiert sind; zufällig gesetzte globale Proxy-/Localevariablen dürfen die Compilersemantik nicht ändern. Jede aufgelöste Einstellung besitzt eine Herkunft, damit ein Report erklären kann, warum sie aktiv war. Geheimnisse werden als vertrauliche Werte behandelt und nicht in Klartext serialisiert.
 
 ### 3.4 OutputPlanner.plan
 
 Der Planner trennt Fachartefakt, fachliche Diagnostik und Betriebsereignisse. Er erkennt kollidierende Dateipfade und unvereinbare stdout-Nutzung vor dem Schreiben. Ein Fehler darf nicht ein bereits vorhandenes Nutzerartefakt mit einer leeren Datei ersetzen. Soweit das Ausgabeformat atomar erzeugbar ist, wird zunächst eine temporäre Datei im Zielverzeichnis geschrieben und anschliessend ersetzt; Ausnahmen für Streaming werden im konkreten Ausgabevertrag dokumentiert.
 
-## 4. Legacyprofil als prüfbare Eingabe
+## 4. Standardaufruf und Lieferung
 
-`LegacyCliProfile` enthält Werkzeugname, Referenzversion/Hash, Optionsschema, Defaultwerte, Konfigurationspräzedenz, ExitCodePolicy, Streamzuordnung, Meldungskatalogversion, Format-/Whitespaceanforderungen und genehmigte Abweichungen. Es referenziert die in Kapitel 13 erfassten Fallresultate.
+Unterbefehle: check, compile, analyze, diagram, format, help, version, capabilities. Ohne Rootauswahl sind explizite Dateien Roots; mit --root sind zusätzliche Dateien verfügbare Abhängigkeiten. Es gibt keine implizite Nachbarschaftssuche; lokale Importdateien werden ausdrücklich angegeben oder über ein indexiertes Repository aufgelöst. -- beendet Optionen, die Shellargumente werden nicht erneut gequotet.
 
-Der Agent inventarisiert mindestens:
+Die Installation liegt unter interlis-compiler-cli/build/install/interlis-compiler, das SDK enthält cli/bin/interlis-compiler und die Windowsvariante .bat. Das CLI-JAR heisst interlis-compiler-cli-<version>.jar, die Compilerbibliothek interlis-compiler-<version>.jar. Keine Testhilfen oder Referenzcompiler werden mitgeliefert.
 
-- Hilfe, Version, leere Invocation und unbekannte Option;
-- gültige und fehlerhafte einzelne Datei;
-- mehrere Dateien und mehrere Modelle pro Datei;
-- Modellnamenauswahl und Modellverzeichnisse/Repositories;
-- Warnungen, stille/ausführliche Modi und Fehlerlimits;
-- Formatierungsoptionen und der `format`-Befehl;
-- nicht lesbare Quelle, fehlender Import und unbeschreibbares Ausgabeziel;
-- Abbruch und internes Scheitern soweit kontrolliert reproduzierbar;
-- Leerzeichen, Umlaute und plattformtypische Pfade.
-
-Die bisherige Mainklasse und ihre Konfiguration sind eine Referenz für diesen Vertrag: [ili2c Main](https://github.com/claeis/ili2c/blob/master/src/main/java/ch/interlis/ili2c/Main.java). Ihre globale interne Organisation wird nicht übernommen.
+Standard-Exits: 0 Erfolg, 1 fachliche/operative Ablehnung, 2 Bedien-/Konfigurationsfehler, 3 interner Fehler, 4 Abbruch. check/compile halten stdout leer, Diagnosen gehen auf stderr; --json liefert genau ein JSON-Dokument auf stdout. format/diagram behalten ihre Fachausgaben.
 
 ## 5. Neue strukturierte Optionen
 
-Strukturierte Ausgabe ist eine Erweiterung, deren Namen im CLI-Schema festzulegen sind. Vorgeschlagen sind getrennte Optionen für Diagnoseformat (`legacy`, `json`) und Betriebslogformat (`text`, `json`). Ihre exakten Namen dürfen nicht mit bestehenden Optionen kollidieren und müssen in Hilfe/Tests erscheinen.
+Strukturierte Ausgabe ist eine Erweiterung, deren Namen im CLI-Schema festzulegen sind. Vorgeschlagen sind getrennte Optionen für Diagnoseformat (`text`, `json`) und Betriebslogformat (`text`, `json`). Ihre exakten Namen dürfen nicht mit bestehenden Optionen kollidieren und müssen in Hilfe/Tests erscheinen.
 
 JSON-Diagnostik und JSON-Logs besitzen jeweils ein dokumentiertes Schema. Falls beide denselben Stream verwenden sollen, müssen alle Zeilen einen eindeutigen Ereignistyp tragen und dieselbe NDJSON-Rahmung verwenden. Andernfalls verlangt der OutputPlan getrennte Senken. Formatierte Quellausgaben dürfen nicht mit Laufereignissen vermischt werden. Bei LSP bleiben die Regeln von Kapitel 07 massgeblich; CLI-Logging darf dessen stdout-Protokoll nicht verschmutzen.
 
-Meldungsähnlichkeit wird über einen profilabhängigen Renderer erreicht. Diagnosecode und fachliche Ursache werden nicht aus einem Textvergleich abgeleitet. Zusätzliche Spalten-/Bereichsinformationen können strukturiert verfügbar sein, selbst wenn die Legacydarstellung nur Datei und Zeile ausgibt.
+Textdarstellung verwendet kanonische Diagnosedaten. Diagnosecode und fachliche Ursache werden nicht aus einem Textvergleich abgeleitet. Zusätzliche Spalten-/Bereichsinformationen können strukturiert verfügbar sein, selbst wenn die Legacydarstellung nur Datei und Zeile ausgibt.
 
 ## 6. Java-SDK
 
@@ -140,7 +130,7 @@ Die Formatierung MUSS:
 Die CLI bietet:
 
 ```text
-interlis-cli format [--check] [--write] [--indent N] [--line-ending lf|crlf] <files...>
+interlis-compiler format [--check] [--write] [--indent N] [--line-ending lf|crlf] <files...>
 ```
 
 Ohne Ausgabemodus geht das Ergebnis nach stdout. `--write` schreibt atomar in die
@@ -162,7 +152,7 @@ bleibt ohne diesen Adapter nutzbar.
 |---|---|---|---|
 | CLI-001 | CLI und SDK MÜSSEN dieselbe CompilerEngine verwenden. | P1 | Fachlich identische normalisierte Resultate. |
 | CLI-002 | Nur der Prozesseinstieg DARF System.exit verwenden; die Anwendung MUSS als Bibliothek testbar sein. | P1 | In-Process-Tests fangen Resultate und Streams ohne JVM-Ende auf. |
-| CLI-003 | Bestehende Optionen MÜSSEN erfasst und entweder unterstützt oder explizit abgelehnt werden. | P3 | Referenzmatrix; kein stilles Ignorieren. |
+| CLI-003 | Die Standardkommandos und Optionen MÜSSEN explizit geparst werden; alte/unbekannte Aufrufe werden vor Host-IO abgelehnt. | P3 | Standardprozessmatrix; Exit 2 ohne Compilerstart. |
 | CLI-004 | Exitcodes, Streams und Meldungen MÜSSEN zum freigegebenen Profil passen. | P3 | Prozessvergleich auf zugesagten Plattformen. |
 | CLI-005 | Konfigurationspräzedenz MUSS eindeutig und erklärbar sein. | P1/P3 | Konfliktfälle und Herkunftsreport. |
 | CLI-006 | Fachartefakte, Diagnostik und Betriebslogs MÜSSEN eindeutig getrennt bzw. gerahmt sein. | P1 | Formatierte Quellausgaben und Diagnostik bleiben trennbar; NDJSON ohne Fremdtext. |
@@ -282,7 +272,7 @@ bei erfolgreicher Ersetzung erhalten. Symbolische Ausgabeziele werden abgelehnt.
 Mehrfach genannte identische Formatquellen sind Nutzungsfehler. Atomarität gilt
 je Datei, nicht als Dateisystemtransaktion über mehrere Dateien.
 
-`OutputPlanner.plan(ParsedCommand,CliEnvironment,Optional<LegacyCliProfile>)`
+`OutputPlanner.plan(ParsedCommand,CliEnvironment)`
 liefert einen immutable `OutputPlan(fileTargets,writesStdout)` und prüft
 Ausgabemodus, doppelte Formatquellen und offensichtliche Quell-/Lockkollisionen
 vor dem Schreiben. Pfade sind absolute normalisierte Hostpfade in Eingabereihenfolge.
@@ -299,19 +289,4 @@ Dateien aufgeführt; eine atomare Mehrdateitransaktion wird nicht behauptet.
 Compiler-Gate-Ablehnung zusätzlich zum priorisierten CLI-Status, auch wenn ein
 späterer Hostausgabefehler den endgültigen Status bestimmt.
 
-COMPAT-001–003: Das explizite `LegacyCliProfile.ili2c569()` hat die Kennung
-`ili2c-check/5.6.9-v1`; Version und SHA-256 des externen Referenzartefakts stehen
-im [aktuellen Aufrufprofil](../p3/CLI_PROFILE.md). `Ili2cMain`, der Launcher
-`bin/ili2c`/`ili2c.bat` und `compat/ili2c.jar` verwenden diese Variante derselben
-CLI-/Compilerpipeline. `LegacyExitCodePolicy` bildet Erfolg auf 0 und jeden
-Fehler auf 1 ab. `ToolVersionRenderer` trennt eigene Identität und
-Referenzprofil. `LegacyDiagnosticRenderer` rendert kanonische Diagnostik auf
-stderr mit Error/Warning/Info; er rekonstruiert keine Sprachregeln.
-Quiet/Warnungsfilter betreffen ausschliesslich Text, Trace beobachtet echte
-Laufereignisse. Lokale Modellverzeichnisse werden begrenzt inventarisiert;
-Header/Imports/Auswahl bleiben beim gemeinsamen Resolver. HTTP-Verzeichnisse
-delegieren an den Repositoryadapter. Generatoren und Repositoryadministration
-bleiben ausdrücklich ausserhalb P3 und werden vor Host-IO abgelehnt.
-Die Referenzprozesse und die ausgelieferten Ersatzprozesse werden getrennt
-ausgeführt; dokumentierte Ergebnis-/Textunterschiede sind kein Anspruch auf
-bytegleiche Ausgabe oder uneingeschränkte ili2c-Kompatibilität.
+COMPAT-001–003: Sprach-/Metamodellreferenzen und freigegebene Normprofile bleiben erhalten. Das aktuelle Standardbedienprofil steht in [CLI_PROFILE.md](../p3/CLI_PROFILE.md); die frühere ili2c-Bedienparität ist durch den ausdrücklich beauftragten CLI-Folgeplan aufgehoben. CompilerCliIdentityContractTest und compilerCliCheck sichern den neuen Entry und die migrierten Pfad-/Stream-/Fehlerverträge.

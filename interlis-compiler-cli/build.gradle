@@ -1,0 +1,67 @@
+plugins {
+    id 'application'
+}
+apply from: rootProject.file('gradle/java-conventions.gradle')
+
+dependencies {
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-repository')
+    implementation project(':interlis-projection')
+    implementation project(':interlis-model')
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testImplementation libs.gson
+    testRuntimeOnly libs.junit.platform.launcher
+}
+
+application {
+    mainClass = 'guru.interlis.cli.Main'
+    applicationName = 'interlis-compiler'
+}
+
+distributions.main.distributionBaseName = 'interlis-compiler'
+
+tasks.named('startScripts') {
+    inputs.property('windowsUnicodeArguments', 1)
+    doLast {
+        // Java 25's Windows launcher converts argv through the ANSI code page.
+        // cmd.exe and System.getenv retain UTF-16; carry each shell argument
+        // separately, without re-parsing, CALL expansion or a second runtime.
+        def script = windowsScript.getText('UTF-8')
+        def launch = script.readLines().find { it.startsWith('endlocal & "%JAVA_EXE%"') }
+        if (launch == null || !launch.contains('guru.interlis.cli.Main %*')) {
+            throw new GradleException('Unexpected Windows launcher template')
+        }
+        def bridge = '''setlocal DisableDelayedExpansion
+set "_INTERLIS_COMPILER_ARG_COUNT=0"
+:collectCompilerArguments
+if [%1]==[] goto executeCompilerArguments
+set "_INTERLIS_COMPILER_ARG_%_INTERLIS_COMPILER_ARG_COUNT%=%~1"
+set /a _INTERLIS_COMPILER_ARG_COUNT+=1 >NUL
+shift
+goto collectCompilerArguments
+:executeCompilerArguments
+'''
+        def unicodeLaunch = launch.replace('endlocal & ', '')
+                .replace('guru.interlis.cli.Main %*', '-Dguru.interlis.cli.windowsArguments=true guru.interlis.cli.Main')
+        windowsScript.setText(script.replace(launch, bridge.replace('\n', '\r\n') + unicodeLaunch), 'UTF-8')
+    }
+}
+
+tasks.named('test') {
+    systemProperty 'repo.root', rootProject.projectDir.absolutePath
+    inputs.dir(rootProject.file('testdata/conformance/b1-b3-acceptance'))
+            .withPropertyName('pinnedOriginalViewFixtures').withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(rootProject.file('interlis-wasm-teavm/stabilization-contract.cjs'))
+            .withPropertyName('portableOriginalViewFixtures').withPathSensitivity(PathSensitivity.RELATIVE)
+}
+
+tasks.register('conformanceAssessment', JavaExec) {
+    group = 'verification'
+    description = 'Checks only project-specific normative exceptions against fresh external suite reports.'
+    dependsOn 'testClasses', ':runConformanceSuite'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'guru.interlis.cli.conformance.NormativeConformance'
+    args rootProject.projectDir.absolutePath
+}

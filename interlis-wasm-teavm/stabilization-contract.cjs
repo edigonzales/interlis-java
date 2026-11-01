@@ -31,6 +31,44 @@ async function verifyStabilization(api) {
     }
   };
   const verify = (text, expected) => verifySources([{sourceId: 'memory:/stabilization.ili', text}], expected);
+  // CLI2: gate selection remains portable while the IDE protocol retains all diagnostics.
+  let requestDiagnosticCases = 0;
+  for (const version of ['2.3', '2.4']) {
+    const model = (name, body) => 'MODEL ' + name + ' AT "x" VERSION "1"=' + body + 'END ' + name + '.';
+    const good = model('Good', '');
+    const bad = model('Bad', 'TOPIC T=CLASS C=value:Missing;END C;END T;');
+    const wrap = body => '!! 🦊\r\nINTERLIS ' + version + ';\r\n' + body;
+    const sourceId = 'memory:/cli2-ä 🦊.ili';
+    await verifySources([{sourceId, text: wrap(good + bad)}], 'succeeded', ['Good'], async (sessionId, first) => {
+      if (!first.diagnostics.some(d => d.code === 'ILI-SEM-0001')) throw new Error('CLI2 full IDE diagnostics lost');
+      const compile = modelName => call('compile', sessionId, {expectedWorkspaceRevision:'1', roots:[{kind:'byName',modelName}]});
+      if ((await compile('Bad')).outcome !== 'rejected' || (await compile('Good')).outcome !== 'succeeded') throw new Error('CLI2 stale root selection');
+    }); requestDiagnosticCases++;
+    await verifySources([{sourceId, text: wrap(good + model('Other', 'TOPIC T(ABSTRACT,ABSTRACT)=END T;'))}], 'succeeded', ['Good'], async (sessionId) => {
+      const config = await call('setConfiguration', sessionId, {expectedWorkspaceRevision:'1',warningPolicy:'REJECT_WARNINGS'});
+      const compile = modelName => call('compile', sessionId, {expectedWorkspaceRevision:config.workspaceRevision,roots:[{kind:'byName',modelName}]});
+      const clean = await compile('Good'), warning = await compile('Other');
+      if (clean.outcome !== 'succeeded' || !clean.diagnostics.some(d => d.severity === 'WARNING') || warning.outcome !== 'rejected' || !warning.rejection.reasons.includes('WARNINGS_REJECTED')) throw new Error('CLI2 warning scope ' + JSON.stringify({clean,warning}));
+    }); requestDiagnosticCases++;
+    await verifySources([{sourceId, text:wrap(model('F','IMPORTS Bad;'))}, {sourceId:'memory:/bad.ili',text:wrap(bad)}], 'rejected', ['F'], async (sessionId, compiled) => {
+      if (!compiled.diagnostics.some(d => d.code === 'ILI-SEM-0001' && d.range?.source === 'memory:/bad.ili')) throw new Error('CLI2 imported cause lost');
+    }); requestDiagnosticCases++;
+    await verifySources([{sourceId,text:wrap(good)},{sourceId:'memory:/broken.ili',text:wrap(bad)+' GARBAGE'}], 'succeeded', ['Good']); requestDiagnosticCases++;
+    await verifySources([{sourceId,text:wrap(model('F','TOPIC Office=CLASS Office=END Office;END Office;'))}], 'rejected', ['F'], async (sessionId, compiled) => {
+      if (!compiled.diagnostics.some(d => d.code === 'ILI-SEM-0010' && d.arguments.some(a => a.name === 'rule' && a.value.endsWith('/SCOPE_OUTER_TYPE_NAME')) && d.range.revision === '1')) throw new Error('CLI2 namespace identity lost');
+    }); requestDiagnosticCases++;
+  }
+  // A requested source remains relevant when recovery cannot build any model.
+  for (const version of ['2.3', '2.4']) {
+    const {sessionId} = await call('openSession');
+    try {
+      const sourceId = 'memory:/no-model-ä.ili';
+      const updated = await call('updateSource', sessionId, {sourceId, expectation:{kind:'absent'}, change:{kind:'replace',text:'INTERLIS '+version+';\r\nGARBAGE\r\n'}});
+      const compiled = await call('compile', sessionId, {expectedWorkspaceRevision:updated.workspaceRevision,roots:[{kind:'bySource',source:sourceId}]});
+      if (compiled.outcome !== 'rejected' || !compiled.diagnostics.some(d=>d.code==='ILI-SYN-0004') || !compiled.rejection.diagnosticIds.length) throw new Error('CLI2 lost requested source syntax '+JSON.stringify(compiled));
+    } finally { await call('closeSession', sessionId); }
+    requestDiagnosticCases++;
+  }
   // L4-1: duplicate-safe declaration continuity and the newly closed role rules.
   let phase4Cases=0;
   for(const version of ['2.3','2.4']) {
@@ -2174,7 +2212,7 @@ FUNCTION f(value:BOOLEAN):BOOLEAN // External explanation //;TOPIC T=CLASS C=MAN
     await verifySources([{sourceId: 'memory:/a3-order.ili', text: orderText.replace('DOMAIN B1=BOOLEAN; DOMAIN B2=TEXT;', 'DOMAIN B1=TEXT; DOMAIN B2=BOOLEAN;')}], 'succeeded', ['F']);
     a3CounterChecks += 2;
   }
-  return phase4Cases + a3CompleteCases + resolutionPolicyCases + semanticOverlayCases + phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
+  return requestDiagnosticCases + phase4Cases + a3CompleteCases + resolutionPolicyCases + semanticOverlayCases + phase2ClosureCases + viewFoundationCases + setConditionContextCases + dependentFunctionCases + inheritanceFoundationCases + numericSubdivisionCases + foundationCases + legacyMetadataCases + nestedCommentCases + a3CounterChecks + e4ConstraintNameCases.length + 1 + e2ScaledBoundaryCases.length + 2 + e1UnqualifiedNameCases.length + 2 + e5GeometryContextCases.length + e2NamedCollectionCases.length + 2 + e1OidIdentityCases.length + 2 + e5NumericBudgetCases.length + e5BoundTranslationCases.length + e5SourceMetadataCases.length + 2 + e1LexicalProfileCases.length + e2NumericAbstractionCases.length + e2FormattedRelationCases.length + e4UndefinedCases.length + e4FunctionContextCases.length + 2 + e4EnumOperatorCases.length + 2 + e2ExtensionCases.length + e3StructureCases.length + e2TextCases.length + e2TypeCases.length + e1ProfileCases.length + headerCases.length + e1FunctionMetadataCount + predefinedBindingCases + signatureCases + geometryCases + translatedImportCases + temporalCases + originalViewFixtures.length + numericUnitCases + graphicCases + metadataCases + lineFormCases + contextCases + parameterCases + viewCases + unitCases + importedDomainCases + mandatoryCases + dependencyCases + noOidReferenceCases + oidFollowupCases + formatOidCases + valueFamilyCases + constraintPathCases + qualifiedPathCases + roleInheritanceCases + functions.length + domains.length + (paths.length + scopes.length + objects.length + roleSets.length + 2) * 2 + 1;
 }
 if (typeof module !== 'undefined') module.exports = verifyStabilization;
 else globalThis.verifyInterlisStabilization = verifyStabilization;

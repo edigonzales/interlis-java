@@ -1,5 +1,7 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+CLI2 konkretisiert DIAG-001–009, SEM-017/019, API-Verträge und CLI-001/006 durch die gemeinsame `requestDiagnostics()`-Auswahl (Kapitel06/16), den reinen DE-/EN-Formatter (Kapitel09) und explizite CLI-Sprach-/JSON-Verträge (Kapitel18). Multi-Source-/Multi-Modell-, Import-/Translation-/Overlay-, Fresh/Reuse-, Office-Original-/Kontroll- und Portablegegenproben prüfen unveränderte Sprachentscheidungen. Dies ist eine Vertragszuordnung; der operative Stand steht in `docs/implementation/compiler-cli-modernization/STATUS.md`.
+
 P3-2 konkretisiert die vorhandenen INC-018/019/022 und LSP-001–016 durch
 die öffentlichen Gegenproben aus Kapitel 13 §7 und die Host-/Queryverträge
 in Kapitel 07 §5–6. Kapitel 05 §3.3 und das API-Register nennen den gemeinsamen
@@ -75,7 +77,7 @@ Die Kapitel 00 bis 18 sind die 19 Fach- und Steuerungsdokumente. Zusammen mit RE
 | WASM soll Architektur früh beeinflussen | Keine Hostabhängigkeiten im Kern; explizite Daten-/Session-/Handle-/Abbruchverträge und exakte Wire-Zahlen | [02](02-architektur-und-modulgrenzen.md), [09](09-diagnostik-logging-und-telemetrie.md), [10](10-webassembly-und-portabilitaet.md) | Gleichheits-, Unicode-, Zahlen-, Lebensdauer- und Worker-Neustarttests ab G1 |
 | Vorhandene Compilertestsuite nutzen | Gepinnte Suite, bewusste Auswahl des 2.3/2.4-Umfangs, getrennte PASS/XFAIL/ERROR-Behandlung, zusätzliche semantische Goldens | [13](13-tests-kompatibilitaet-und-qualitaet.md), [15](15-entscheidungen-risiken-und-quellen.md) | Referenzfälle in WP-01; vollständige Norm-/Feature-/Suitebilanz in G2 |
 | ilic-fork, Downstreamprojekte und GeoWerkstatt auswerten | Herkunfts- und Quellenregister mit konkreten übernommenen Architekturideen und Grenzen | [15](15-entscheidungen-risiken-und-quellen.md), [07](07-workspace-inkrementalitaet-und-lsp.md), [11](11-visualisierung-und-projektionen.md), [12](12-transfer-validierung-und-datenbanken.md) | Entscheidungen sind mit Quellen und eigenen Abnahmen verbunden; fremde Architektur wird nicht ungeprüft kopiert |
-| Geeignete Repo-, Paket- und Toolnamen | Arbeitsname interlis-java, Group und Packages guru.interlis; vertraute CLI-Namen als kompatible Profile | [01](01-zielbild-und-anforderungen.md), [02](02-architektur-und-modulgrenzen.md), [03](03-build-und-repository.md), [18](18-cli-sdk-und-kompatibilitaetsadapter.md) | Konsistente Artefakte, Imports, Distributionen und SDK-Beispiele |
+| Geeignete Repo-, Paket- und Toolnamen | Arbeitsname interlis-java, Group und Packages guru.interlis; interlis-compiler als eigenes Standard-CLI, weitere Werkzeuge nach expliziten Profilen | [01](01-zielbild-und-anforderungen.md), [02](02-architektur-und-modulgrenzen.md), [03](03-build-und-repository.md), [18](18-cli-sdk-und-kompatibilitaetsadapter.md) | Konsistente Artefakte, Imports, Distributionen und SDK-Beispiele |
 | Gradle bevorzugen und Build einfach halten | Ein Groovy-Multiprojektbuild mit Wrapper, wenigen Konventionen und tatsächlich benötigten Modulen | [03](03-build-und-repository.md), [14](14-implementierungsplan-und-arbeitspakete.md) | Frischer Checkout und einfache Lifecycle-Tasks; kein aktiver paralleler Maven-/Ant-Build |
 | Tiefgehende Spezifikation für einen Coding-Agenten bis zu Methoden/Klassen | Öffentliche Fabriken und Signaturen, interne Verantwortungen, Dateninvarianten, Vor-/Nachbedingungen, Zustands- und Fehlerverträge | [04](04-quelltext-syntax-und-parser.md) bis [12](12-transfer-validierung-und-datenbanken.md), [16](16-api-register-und-vertragstests.md), [18](18-cli-sdk-und-kompatibilitaetsadapter.md) | Kompilierende SDK-Vertragstests und fachliche Positiv-/Negativfälle; Fortschritt nach Anforderungs-IDs |
 
@@ -167,7 +169,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [GOAL-008](01-zielbild-und-anforderungen.md) | P1 | Diagnose- und Eventvertragstests, Legacy-/JSON-Darstellungen. |
 | [GOAL-009](01-zielbild-und-anforderungen.md) | P4/P5 | Gemeinsame Modellfingerprints und Plan-Goldens. |
 | [GOAL-010](01-zielbild-und-anforderungen.md) | P5 | Alte/neue Werkzeuge lesen und verändern Datenbanken in beiden Richtungen. |
-| [GOAL-011](01-zielbild-und-anforderungen.md) | P3/P5 | Gepinnte Referenzläufe und genehmigte Abweichungen. |
+| [GOAL-011](01-zielbild-und-anforderungen.md) | P3/P5 | Standardprozessmatrix für das Compiler-CLI; gepinnte Referenzläufe für weitere ausdrücklich freigegebene Werkzeuge. |
 | [GOAL-012](01-zielbild-und-anforderungen.md) | P0/P2 | Testreports unterscheiden Akzeptanz, Semantik und bekannte Abweichungen. |
 
 ### NFR – Nichtfunktionale Anforderungen
@@ -408,7 +410,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [LOG-002](09-diagnostik-logging-und-telemetrie.md) | P1 | Ereignisautomat einschliesslich Exception-, Coverage- und Abbruchpfaden. |
 | [LOG-003](09-diagnostik-logging-und-telemetrie.md) | P1 | Testobserver zählt Abschlussversuche, einschliesslich Observerfehlern. |
 | [LOG-004](09-diagnostik-logging-und-telemetrie.md) | P1 | Werfender Observer verändert das Compile-Ergebnis nicht. |
-| [LOG-005](09-diagnostik-logging-und-telemetrie.md) | P3 | Gepinnte CLI-Fixtures mit getrennt erfasstem stdout, stderr und Exitcode. |
+| [LOG-005](09-diagnostik-logging-und-telemetrie.md) | P3 | Standard-CLI-Prozesse mit getrennt erfasstem stdout, stderr und Exitcode. |
 | [LOG-006](09-diagnostik-logging-und-telemetrie.md) | P1 | LSP-Test mit parallelen Diagnosen und Betriebsereignissen. |
 | [LOG-007](09-diagnostik-logging-und-telemetrie.md) | P1 | Schema- und Reihenfolgetests. |
 | [LOG-008](09-diagnostik-logging-und-telemetrie.md) | P1 | Resolver- und JDBC-Tests mit markierten Testgeheimnissen. |
@@ -533,7 +535,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | ID | Phase | Abnahmehinweis |
 |---|---|---|
 | [COMPAT-001](13-tests-kompatibilitaet-und-qualitaet.md) | P0 | Benannte Profile und Matrix; kein pauschaler Kompatibilitätsclaim. |
-| [COMPAT-002](13-tests-kompatibilitaet-und-qualitaet.md) | P3 | Getrennte stdout-/stderr-/Exitcode-Fixtures. |
+| [COMPAT-002](13-tests-kompatibilitaet-und-qualitaet.md) | P3 | Getrennte stdout-/stderr-/Exitcode-Fixtures des freigegebenen Werkzeugprofils. |
 | [COMPAT-003](13-tests-kompatibilitaet-und-qualitaet.md) | P2 | Dokumentierte Entscheidung: Regression, bewusste Normkorrektur oder offener Fall. |
 | [COMPAT-004](13-tests-kompatibilitaet-und-qualitaet.md) | zurückgestellt (nicht P3/P4) | Eigener Legacy-Adapterauftrag; gepinnte Verbraucher erforderlich. |
 | [COMPAT-005](13-tests-kompatibilitaet-und-qualitaet.md) | P5 | Alt→Neu und Neu→Alt pro unterstütztem DB-Profil. |
@@ -561,7 +563,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 |---|---|---|
 | [CLI-001](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1 | Fachlich identische normalisierte Resultate. |
 | [CLI-002](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1 | In-Process-Tests fangen Resultate und Streams ohne JVM-Ende auf. |
-| [CLI-003](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Referenzmatrix; kein stilles Ignorieren. |
+| [CLI-003](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Standardprozessmatrix; Exit 2 ohne Compilerstart. |
 | [CLI-004](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Prozessvergleich auf zugesagten Plattformen. |
 | [CLI-005](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1/P3 | Konfliktfälle und Herkunftsreport. |
 | [CLI-006](18-cli-sdk-und-kompatibilitaetsadapter.md) | P1 | Formatierte Quellausgaben und Diagnostik bleiben trennbar; NDJSON ohne Fremdtext. |

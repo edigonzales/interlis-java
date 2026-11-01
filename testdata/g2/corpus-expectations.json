@@ -55,7 +55,23 @@
           "mimeType",
           "extension"
         ]
-      }
+      },
+      "cliRelatedLocations": [
+        {
+          "range": {
+            "startOffset": 1135,
+            "endOffset": 1145
+          },
+          "messageKey": "diagnostic.related.conflictingDeclaration",
+          "arguments": [
+            {
+              "name": "name",
+              "kind": "IDENTIFIER",
+              "value": "FileFormat"
+            }
+          ]
+        }
+      ]
     },
     {
       "file": "AWJF/SO_AWJF_Gesuchsteller_20210202.ili",
@@ -108,7 +124,23 @@
           "Abstufung_50_100",
           "Gesuchsnummer"
         ]
-      }
+      },
+      "cliRelatedLocations": [
+        {
+          "range": {
+            "startOffset": 635,
+            "endOffset": 648
+          },
+          "messageKey": "diagnostic.related.conflictingDeclaration",
+          "arguments": [
+            {
+              "name": "name",
+              "kind": "IDENTIFIER",
+              "value": "Gesuchsteller"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

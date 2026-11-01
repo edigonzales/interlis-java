@@ -81,7 +81,7 @@ dependencyResolutionManagement {
 
 rootProject.name = 'interlis-java'
 include('interlis-model', 'interlis-compiler',
-        'interlis-cli', 'interlis-wasm-teavm')
+        'interlis-compiler-cli', 'interlis-wasm-teavm')
 ```
 
 Weitere Module werden mit ihrem ersten ausführbaren Abschnitt aufgenommen. Abhängigkeiten auf noch nicht angelegte Projekte werden nicht auskommentiert als dauernde Vorlage behalten.
@@ -153,7 +153,7 @@ Wenn das integrierte Plugin mit wenig deklarativer Konfiguration sauber isolierb
 | Kommando/Task | Vertrag |
 |---|---|
 | `./gradlew check` | Alle vorhandenen Module kompilieren; schnelle fachliche, Vertrags- und Architekturtests ausführen. Keine Browserinstallation, keine fremden Live-Repositories. |
-| `./gradlew :interlis-cli:installDist` | JVM-Distribution mit Startskripten und benötigten Bibliotheken erstellen. |
+| `./gradlew :interlis-compiler-cli:installDist` | JVM-Distribution mit Startskripten und benötigten Bibliotheken erstellen. |
 | `./gradlew :interlis-compiler:conformanceTest` | Gepinnte 2.3/2.4-Suite und ihren Ergebniskatalog ausführen; Vorbedingungen/Fetched-Korpus explizit. |
 | `./gradlew :interlis-compiler:semanticGoldenTest` | Semantische Referenzprojektionen und Legacyvergleich prüfen. |
 | `./gradlew :interlis-workspace:incrementalTest` | Editiersequenzen, Invalidierung, Lebensdauer und Fresh-vs-Reuse-Gleichheit prüfen. |
@@ -249,7 +249,7 @@ Die Architekturregeln können zunächst mit kleinen gezielten Tests geprüft wer
 
 ## 9. Auslieferung
 
-Die erste nutzbare CLI-Auslieferung ist eine `application`-Distribution mit `lib/` und Startskripten. Ein Fat-JAR wird erst ergänzt, wenn ein freigegebener Aufruf wie `java -jar ili2c.jar` es verlangt. Normale Bibliotheks-JARs bleiben unverschattet. Die konkrete Legacy-Mainclass und Dateibenennung werden über das CLI-Kompatibilitätsprofil getestet.
+Die erste nutzbare CLI-Auslieferung ist eine `application`-Distribution mit `lib/` und Startskripten. Ein CLI-Fat-JAR und ili2c-Kompatibilitätsartefakte gehören nicht zur Lieferung. Normale Bibliotheks-JARs bleiben unverschattet. Die Hauptklasse ist guru.interlis.cli.Main; applicationName und distributionBaseName sind explizit interlis-compiler. Das CLI-JAR bleibt eindeutig interlis-compiler-cli-<version>.jar.
 
 WASM-Auslieferungen enthalten einen versionierten JS-Lader, das Wasm-Artefakt, eine Protokollversion und einen Ressourcen-/Buildmanifest. Das Builddatum ist Betriebsmetadatum, kein semantischer Modellfingerprint. Veröffentlichungen verwenden feste Versionsnummern und nachvollziehbare Releaseprofile. Eine Maven-kompatible Publikation ist mit Gradle möglich und verpflichtet Anwender nicht zur Verwendung von Maven.
 

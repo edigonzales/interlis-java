@@ -40,7 +40,7 @@ Das neue Metamodell ersetzt nicht alle alten Java-Klassen binär. Eine solche Ko
 | GOAL-008 | Strukturierte Diagnostik und Laufereignisse MÜSSEN ab dem ersten öffentlichen Lauf verfügbar sein. | P1 | Diagnose- und Eventvertragstests, Legacy-/JSON-Darstellungen. |
 | GOAL-009 | Die späteren Transfer-/Validator-/DB-Module MÜSSEN dieselbe fachliche Modellinterpretation verwenden. | P4/P5 | Gemeinsame Modellfingerprints und Plan-Goldens. |
 | GOAL-010 | Der DB-Ersatz MUSS bestehende Abbildungsinformationen respektieren und gegenseitige Weiterverwendung ermöglichen. | P5 | Alte/neue Werkzeuge lesen und verändern Datenbanken in beiden Richtungen. |
-| GOAL-011 | Bekannte CLI-Namen, Optionen, Ausgaben und Exitcodes MÜSSEN pro freigegebenem Legacy-Profil geprüft werden. | P3/P5 | Gepinnte Referenzläufe und genehmigte Abweichungen. |
+| GOAL-011 | CLI-Namen, Optionen, Ausgaben und Exitcodes MÜSSEN zum freigegebenen Werkzeugprofil passen; das Compiler-CLI verwendet ausschliesslich den neuen Standardvertrag. | P3/P5 | Standardprozessmatrix für das Compiler-CLI; gepinnte Referenzläufe für weitere ausdrücklich freigegebene Werkzeuge. |
 | GOAL-012 | Die externe Compilersuite MUSS übernommen und mit semantischen, Editor- und Verbrauchertests ergänzt werden. | P0/P2 | Testreports unterscheiden Akzeptanz, Semantik und bekannte Abweichungen. |
 
 ## 5. Nichtfunktionale Anforderungen

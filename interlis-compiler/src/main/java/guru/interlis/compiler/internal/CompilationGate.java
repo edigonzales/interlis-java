@@ -42,18 +42,7 @@ final class CompilationGate {
         RootSelection roots = output.roots();
         Set<RejectionReason> reasons = new LinkedHashSet<>(roots.reasons());
         reasons.addAll(closure.reasons());
-        List<Diagnostic> relevant = new ArrayList<>();
-        Set<DiagnosticId> relevantIds = new LinkedHashSet<>(roots.diagnostics());
-        relevantIds.addAll(closure.diagnostics());
-        for (Diagnostic diagnostic : analysis.diagnostics()) {
-            boolean inClosure = Set.of("ILI-SEM-0011","ILI-RES-0005","ILI-RES-0006","ILI-RES-0007").contains(diagnostic.code().value()) || diagnostic.primaryRange()
-                    .map(r -> diagnostic.phase() == Phase.LEXING || diagnostic.phase() == Phase.PARSING
-                            ? closure.sources().contains(r.source()) : closure.contains(r))
-                    .orElse(relevantIds.contains(diagnostic.id()));
-            if (inClosure) {
-                relevant.add(diagnostic);
-            }
-        }
+        List<Diagnostic> relevant = analysis.requestDiagnostics();
         for (Diagnostic diagnostic : relevant) {
             if (diagnostic.severity() == Severity.WARNING
                     && request.options().warningPolicy() == WarningPolicy.REJECT_WARNINGS) {
