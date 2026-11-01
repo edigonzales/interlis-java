@@ -14,7 +14,7 @@ import java.util.Set;
  * adapter before they enter the compiler.
  */
 public final class DiagnosticCatalog {
-    public static final String VERSION = "interlis-diagnostics/v1";
+    public static final String VERSION = "interlis-diagnostics/v2";
     private final Map<DiagnosticCode, DiagnosticDefinition> definitions;
 
     /**
@@ -143,15 +143,23 @@ public final class DiagnosticCatalog {
         list.add(def("ILI-RES-0001", "requested or imported model is missing", Severity.ERROR,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.missing",
                 DiagnosticDefinition.PositionRule.OPTIONAL,
-                arg("model", ArgumentKind.IDENTIFIER)));
+                arg("model", ArgumentKind.IDENTIFIER), arg("detail", ArgumentKind.TEXT)));
         list.add(def("ILI-RES-0002", "ambiguous model resolution", Severity.ERROR,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.ambiguous",
                 DiagnosticDefinition.PositionRule.OPTIONAL,
-                arg("model", ArgumentKind.IDENTIFIER), arg("candidates", ArgumentKind.IDENTIFIER_LIST)));
+                arg("model", ArgumentKind.IDENTIFIER), arg("candidates", ArgumentKind.IDENTIFIER_LIST), arg("detail", ArgumentKind.TEXT)));
         list.add(def("ILI-RES-0003", "source could not be provided", Severity.ERROR,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.source",
                 DiagnosticDefinition.PositionRule.OPTIONAL,
-                arg("source", ArgumentKind.TEXT), arg("reason", ArgumentKind.TEXT)));
+                arg("source", ArgumentKind.TEXT), arg("reason", ArgumentKind.TEXT), arg("detail", ArgumentKind.TEXT)));
+        list.add(def("ILI-RES-0008", "repository selection adjustment", Severity.WARNING,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.adjustment",
+                DiagnosticDefinition.PositionRule.OPTIONAL, arg("model", ArgumentKind.IDENTIFIER),
+                arg("repository", ArgumentKind.TEXT), arg("reason", ArgumentKind.TEXT), arg("detail", ArgumentKind.TEXT)));
+        list.add(def("ILI-RES-0009", "repository identity or selection rejected", Severity.ERROR,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.rejected",
+                DiagnosticDefinition.PositionRule.OPTIONAL, arg("model", ArgumentKind.IDENTIFIER),
+                arg("reason", ArgumentKind.TEXT), arg("detail", ArgumentKind.TEXT)));
         list.add(def("ILI-RES-0004", "resolved model identity does not match the source content", Severity.ERROR,
                 Set.of(Phase.SOURCE_RESOLUTION, Phase.BINDING), "diagnostic.resolution.identity",
                 DiagnosticDefinition.PositionRule.OPTIONAL,

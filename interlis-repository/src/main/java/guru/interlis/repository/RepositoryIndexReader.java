@@ -37,16 +37,20 @@ public final class RepositoryIndexReader {
         Objects.requireNonNull(base, "base");
         Document document = parse(payload.content());
         List<RepositoryModelMetadata> models = new ArrayList<>();
+        boolean indexProfile = false;
         NodeList all = document.getElementsByTagName("*");
         for (int i = 0; i < all.getLength(); i++) {
             Node node = all.item(i);
+            if (node instanceof Element element && (localName(element).equals("RepositoryIndex")
+                    || localName(element).equals("IliRepository09.RepositoryIndex")
+                    || localName(element).equals("IliRepository20.RepositoryIndex"))) indexProfile = true;
             if (node instanceof Element element
                     && (MODEL_METADATA.equals(localName(element))
                     || localName(element).endsWith("." + MODEL_METADATA))) {
                 models.add(readModel(element, base));
             }
         }
-        if (models.isEmpty()) {
+        if (models.isEmpty() && !indexProfile) {
             throw new RepositoryIndexException(RepositoryIndexException.Reason.MISSING_METADATA,
                     "repository index contains no ModelMetadata entries", null);
         }
@@ -65,7 +69,7 @@ public final class RepositoryIndexReader {
         URI location = resolve(base, file);
         return new RepositoryModelMetadata(name, schemaLanguage, location, version,
                 Optional.ofNullable(text(element, "precursorVersion")),
-                Optional.ofNullable(text(element, "md5")));
+                Optional.ofNullable(text(element, "md5")), Boolean.parseBoolean(text(element, "browseOnly")));
     }
 
     private static URI resolve(RepositoryBase base, String file) {

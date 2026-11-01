@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.compiler.RequestDiagnosticsContractTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:27:59.800Z" hostname="Monterrico.local" time="0.094">
+  <properties/>
+  <testcase name="translationAndOverlayOriginalErrorsBelongToTheRequest()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.014"/>
+  <testcase name="rootAndRevisionSwitchesWithReuseMatchFreshAndLeavePublishedSelectionsUntouched()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.023"/>
+  <testcase name="requestedSourcesKeepSyntaxErrorsWhenNoModelCanBeRecovered()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.005"/>
+  <testcase name="requiredFileSyntaxErrorsStayVisibleEvenOutsideTheSelectedModelRange()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.007"/>
+  <testcase name="unrelatedSemanticErrorsStayCanonicalButAreNotRequestDiagnostics()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.013"/>
+  <testcase name="namespaceConflictsCarryTheActualRevisionBoundDeclaration()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.011"/>
+  <testcase name="unlocatedInputFailuresAreConservativeGlobals()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.003"/>
+  <testcase name="foreignParserWarningsCannotRejectTheSelectedModel()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.003"/>
+  <testcase name="importsAndMissingOrAmbiguousRootsRemainVisible()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.009"/>
+  <testcase name="aResolvedImportKeepsItsRequiredSyntaxSourceEvenWhenThePromisedModelIsLost()" classname="guru.interlis.compiler.RequestDiagnosticsContractTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

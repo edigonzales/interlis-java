@@ -162,3 +162,12 @@ tasks.register('uiProjectionTest', Exec) {
     workingDir = projectDir
     commandLine nodeExecutable.get(), '--test', 'ui-projection.test.cjs'
 }
+
+// Narrow portability check for revision-bound missing-import causes; no corpus or benchmark run.
+tasks.register('repositoryDiagnosticCheck', Exec) {
+    timeout = java.time.Duration.ofSeconds(60)
+    group = 'verification'
+    dependsOn ':checkNodeRuntime', 'generateJavaScript', 'buildWasmGC'
+    workingDir projectDir
+    commandLine nodeExecutable.get(), '--experimental-wasm-exnref', 'repository-diagnostic-contract.cjs'
+}

@@ -377,3 +377,33 @@ Das CLI übergibt ausdrücklich `verbose=false`, solange das Flag fehlt.
 Abnahmen: `SemanticRepositoryCommandsTest`, `VerboseDiagnosticsContractTest`,
 die bestehenden Repository-/Diagnose-/Farbverträge sowie `compilerCliCheck`,
 `sdkProcessCheck` und `sdkArchiveCheck` mit getrennten Streams.
+
+
+## Repositoryauflösung und Diagnoseprovenienz
+
+CLI-001–007 / RES-001–009/011 / LOG-002/003/005/008: Die gemeinsame Vorbereitung
+von `check`, `compile`, `analyze` und `diagram` verwendet das Standardhostprofil
+aus Kapitel 08 §12. Ohne `--repository` wird kein Server ergänzt.
+Auflösungsfehler werden über dieselben Text-/Farb-/Sprachrenderer wie
+Compilerdiagnosen ausgegeben; eine nackte Enum-Zeile ersetzt keine Diagnose.
+Fehlende Imports verweisen auf ihre tatsächliche Quellstelle. Exit 1 und die
+internen Kategorien INPUT_UNRESOLVED/OPERATIONAL_FAILURE bleiben erhalten.
+
+`CliExecutionResult` ergänzt `Optional<ResolutionLock> resolutionLock` und
+`List<RepositorySearchStep> repositorySteps`. Alle bisherigen Konstruktoren
+bleiben erhalten und verwenden leere Werte. Erfolgreiche Beschaffung liefert
+den Lock auch dann, wenn das anschliessende Compiler-Gate ablehnt. Fehlerhafte
+Beschaffung liefert die bis dahin bekannten Schritte und Diagnosen.
+
+Diagnose-JSON der drei Befehle mit `--json` ergänzt bei Repositoryverarbeitung
+`resolution` mit geordneten `steps` und ausgewählten `models` (Name, rohe
+Version, sichere Quelle und SHA-256). `--verbose` verändert diese Daten nicht;
+es ergänzt Textframes, Hinweise und bei erfolgreicher Beschaffung den Suchweg.
+`diagram --format json` bleibt ein Diagrammartefaktformat und führt keine
+zusätzliche Option `--json` ein. Warnungen erreichen die vorhandene
+Warnungspolitik; `analyze` führt weiterhin kein Compilegate aus.
+
+Lockausgaben dürfen weder explizite/nachgeladene Quellen noch verwendete oder
+als nicht verfügbar beobachtete Repositorymetadaten überschreiben.
+Abnahmen: `RepositoryDiagnosticsContractTest`, bestehende Repository-/Verbose-
+/Farbtests und die gezielten Referenz-/CLI-Prozesse.

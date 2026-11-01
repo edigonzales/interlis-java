@@ -4,6 +4,8 @@ import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.CompilerEngines;
 import guru.interlis.compiler.ModelSelector;
 import guru.interlis.diagnostics.Diagnostic;
+import guru.interlis.diagnostics.DiagnosticPresentation;
+import guru.interlis.diagnostics.DiagnosticDisplayPolicy;
 import guru.interlis.diagnostics.DiagnosticLanguage;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
@@ -92,7 +94,7 @@ public final class DefaultCompilerCli implements CliApplication {
         lifecycle.finish(invocation.completion(outcome));
         return new CliExecutionResult(outcome.exitCode(), outcome.termination(), outcome.diagnostics(),
                 outcome.output(), Optional.of(invocation.context.runId()), invocation.artifacts,
-                Optional.ofNullable(invocation.rejection));
+                Optional.ofNullable(invocation.rejection),Optional.ofNullable(invocation.resolutionLock),invocation.repositorySteps);
     }
 
     private CliExecutionResult execute(List<String> arguments, CliEnvironment environment,
@@ -263,6 +265,7 @@ public final class DefaultCompilerCli implements CliApplication {
         Loaded loaded = load(parsed.files(), environment, token);
         try (Workspace workspace = workspace(loaded, environment, warningPolicy)) {
             List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
+            invocation.rootCount = roots.size();
             PreparedRepositoryUpdate update = null;
             if (!parsed.repositories().isEmpty()) {
                 var sources = new ArrayList<RepositorySource>();
@@ -301,6 +304,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 switch (outcome) {
                     case RepositoryResolutionOutcome.Prepared prepared -> {
                         update = prepared.update();
+                        invocation.resolutionLock=update.lock(); invocation.repositorySteps=update.lock().steps();
                         try { update.apply(workspace); }
                         catch (guru.interlis.workspace.UpdateRejectedException conflict) {
                             if (conflict.code() != guru.interlis.workspace.UpdateRejectionCode.VERSION_CONFLICT) throw conflict;
@@ -310,13 +314,12 @@ public final class DefaultCompilerCli implements CliApplication {
                     case RepositoryResolutionOutcome.Cancelled cancelled -> throw new OperationCancelledException(cancelled.reason());
                     case RepositoryResolutionOutcome.Stale ignored -> { return result(CliTermination.INCOMPLETE_ANALYSIS, List.of(), "workspace changed during resolution"); }
                     case RepositoryResolutionOutcome.Rejected rejected -> {
+                        invocation.repositorySteps=rejected.steps();
                         var problem = rejected.problems().getFirst();
-                        String reason = problem.reason() + problem.loadReason().map(value -> "/" + value).orElse("");
-                        String output = "resolution rejected: " + reason;
-                        print(parsed.json(), environment, List.of(), output, loaded.sources(), invocation);
-                        if (!parsed.json()) environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(output));
+                        String output = "resolution rejected";
+                        print(parsed.json(), environment, rejected.diagnostics(), output, rejected.sources(), invocation);
                         return result(problem.reason() == RepositoryProblem.Reason.LOAD_FAILURE || problem.reason() == RepositoryProblem.Reason.INDEX_FAILURE
-                                ? CliTermination.OPERATIONAL_FAILURE : CliTermination.INPUT_UNRESOLVED, List.of(), output);
+                                ? CliTermination.OPERATIONAL_FAILURE : CliTermination.INPUT_UNRESOLVED, rejected.diagnostics(), output);
                     }
                 }
             }
@@ -370,6 +373,10 @@ public final class DefaultCompilerCli implements CliApplication {
                 .map(id -> java.net.URI.create(id.value())).filter(uri -> "file".equalsIgnoreCase(uri.getScheme()))
                 .map(Path::of).anyMatch(source -> OutputPlanner.sameFile(source, target)))
             throw new CliUsageException("lock output collides with a resolved model source");
+        if (java.util.stream.Stream.concat(update.lock().indexes().keySet().stream(),update.lock().unavailable().keySet().stream()).map(id -> java.net.URI.create(id.value()))
+                .filter(uri -> "file".equalsIgnoreCase(uri.getScheme())).map(Path::of)
+                .anyMatch(source -> OutputPlanner.sameFile(source,target)))
+            throw new CliUsageException("lock output collides with repository metadata");
         byte[] bytes = new ResolutionLockCodec().encode(update.lock()).getBytes(StandardCharsets.UTF_8);
         fileWriter.write(target, bytes, Optional.empty(), token);
         invocation.artifacts.add(new CliExecutionResult.Artifact(CliExecutionResult.ArtifactKind.RESOLUTION_LOCK,
@@ -613,10 +620,13 @@ public final class DefaultCompilerCli implements CliApplication {
                               Map<SourceId, SourceText> sources, Invocation invocation) {
         if (json) {
             environment.out().println("{\"status\":\"" + JsonDiagnosticWriter.escape(summary)
-                    + "\",\"diagnostics\":" + new JsonDiagnosticWriter().write(diagnostics, invocation.language) + "}");
+                    + "\",\"diagnostics\":" + new JsonDiagnosticWriter().write(diagnostics, invocation.language)
+                    + new RepositoryReportWriter().json(invocation.resolutionLock,invocation.repositorySteps) + "}");
         } else {
+            if (invocation.command.has("--verbose") && diagnostics.stream().noneMatch(d -> d.severity() == guru.interlis.diagnostics.Severity.ERROR))
+                new RepositoryReportWriter().text(invocation.repositorySteps,invocation.language).forEach(environment.err()::println);
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
-            for (Diagnostic diagnostic : diagnostics) {
+            for (Diagnostic diagnostic : new DiagnosticPresentation().project(diagnostics, new DiagnosticDisplayPolicy(true, Integer.MAX_VALUE)).visibleDiagnostics()) {
                 environment.err().println(renderer.render(diagnostic, sources, invocation.language, new RenderOptions(invocation.ansiEnabled, 1, 1, 160, invocation.command.has("--verbose"))));
             }
         }
@@ -656,6 +666,8 @@ public final class DefaultCompilerCli implements CliApplication {
         boolean schemaProduced;
         boolean analysisComplete;
         final List<CliExecutionResult.Artifact> artifacts = new ArrayList<>();
+        ResolutionLock resolutionLock;
+        List<RepositorySearchStep> repositorySteps=List.of();
         ParsedCommand command;
         DiagnosticLanguage language = DiagnosticLanguage.EN;
         int rootCount;

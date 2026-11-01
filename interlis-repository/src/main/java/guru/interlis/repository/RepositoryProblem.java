@@ -7,8 +7,13 @@ import java.util.Optional;
 
 /** Structured host rejection, distinct from compiler diagnostics and missing language support. */
 public record RepositoryProblem(Reason reason, String modelName, List<SourceId> candidates,
-                                Optional<SourceLoadException.Reason> loadReason) {
+                                Optional<SourceLoadException.Reason> loadReason, Optional<SourceId> source,
+                                List<RepositoryModelMetadata> candidateModels) {
+    public RepositoryProblem(Reason reason,String modelName,List<SourceId> candidates,Optional<SourceLoadException.Reason> loadReason) {
+        this(reason,modelName,candidates,loadReason,Optional.empty(),List.of());
+    }
     public RepositoryProblem {
+        source=Objects.requireNonNull(source,"source"); candidateModels=List.copyOf(candidateModels);
         Objects.requireNonNull(reason, "reason"); Objects.requireNonNull(modelName, "modelName");
         candidates = List.copyOf(Objects.requireNonNull(candidates, "candidates"));
         loadReason = Objects.requireNonNull(loadReason, "loadReason");

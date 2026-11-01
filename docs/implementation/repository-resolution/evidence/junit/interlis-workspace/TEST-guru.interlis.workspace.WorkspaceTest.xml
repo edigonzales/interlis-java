@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.workspace.WorkspaceTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:36:26.728Z" hostname="Monterrico.local" time="0.292">
+  <properties/>
+  <testcase name="compileFixAndIncrementalEquality()" classname="guru.interlis.workspace.WorkspaceTest" time="0.093"/>
+  <testcase name="missingTranslationOriginalCanBeAddedWithoutEditingTheTranslation()" classname="guru.interlis.workspace.WorkspaceTest" time="0.014"/>
+  <testcase name="staleDetachedAnalysisIsNotCommitted()" classname="guru.interlis.workspace.WorkspaceTest" time="0.004"/>
+  <testcase name="translatedViewIncludesOriginalImportsAndSurvivesEdits()" classname="guru.interlis.workspace.WorkspaceTest" time="0.132"/>
+  <testcase name="ambiguousImportIsReported()" classname="guru.interlis.workspace.WorkspaceTest" time="0.006"/>
+  <testcase name="syntaxIsSharedWithResolverAndBoundedAfterAcceptance()" classname="guru.interlis.workspace.WorkspaceTest" time="0.016"/>
+  <testcase name="missingImportAppearsLaterWithoutEdit()" classname="guru.interlis.workspace.WorkspaceTest" time="0.014"/>
+  <testcase name="batchConflictLeavesWorkspaceUnchanged()" classname="guru.interlis.workspace.WorkspaceTest" time="0.003"/>
+  <testcase name="failedBatchPreservesDeletedSourceRevision()" classname="guru.interlis.workspace.WorkspaceTest" time="0.008"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

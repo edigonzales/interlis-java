@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.compiler.ImportedTranslationContractTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:27:58.037Z" hostname="Monterrico.local" time="0.638">
+  <properties/>
+  <testcase name="renamedImportsExposeTheBoundCorrespondencesAndViewTargets()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.11"/>
+  <testcase name="translationCyclesHaveNoCanonicalIdentity()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.002"/>
+  <testcase name="pinnedEnumOriginalsExposeEveryDeclaredEnumCorrespondence()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.02"/>
+  <testcase name="equalTypedWrongImportedTargetsRemainErrors()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.033"/>
+  <testcase name="unusedLanguageVariantsDoNotChangeUntranslatedImports()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.097"/>
+  <testcase name="theDeclaredOriginalVersionSelectsItsIdentityWithoutALatestFallback()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.012"/>
+  <testcase name="pinnedOriginalFindingRetainsTheImportedViewAndAttributeTargets()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.007"/>
+  <testcase name="editsRebuildImportMappingsAndMatchFreshResults()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.261"/>
+  <testcase name="importPairingPreservesQualificationWithoutDependingOnDeclarationOrder()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.018"/>
+  <testcase name="transitiveImportsRetainTheirOwnCorrespondences()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.037"/>
+  <testcase name="conflictingTransitiveChoicesAreRejectedInsteadOfOverwritingAMapping()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.02"/>
+  <testcase name="theSameTranslatedNameInDifferentImportsKeepsItsBoundMeaning()" classname="guru.interlis.compiler.ImportedTranslationContractTest" time="0.009"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

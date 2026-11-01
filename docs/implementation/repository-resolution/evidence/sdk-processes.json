@@ -1,0 +1,116 @@
+{
+  "artifacts": {
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "86460db600ab375a07bccd2c1996d7dbe21942e6ac0ddbffd57707ab1dec2c4c",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-compiler-cli-0.2.0-SNAPSHOT.jar": "6be87758f4557ead456b1bf13798dadca44c530bcf5c2dc639aa3ba86d07aba5",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-model-0.2.0-SNAPSHOT.jar": "775352c393ab0d529bc8ab8e3c4bd49c88a7c76dd8f7639b3c2d0431ebd5c455",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "46fc3a6ad1e35c19e1999c5df09251915fd6631e9c09f19bda9e2ac65b0ade41",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "2fe6ff403cace71819f39d1f7c77f69b44d827d1cab4d24511c95ce5eb3de103",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "e9efee37214c38e1292fd26d3f802c2ada1e25bf0abdb7a77b015ef8724085ad"
+  },
+  "status": "passed",
+  "schemaVersion": "1.0",
+  "cli": "interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+  "commands": [
+    {
+      "stdoutLines": 9,
+      "arguments": [
+        "version"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "69ece74faec57bb83d72034d1c9cc98f2e748fc80d1a7c8d4dee9e2087b42afb",
+      "stderrLines": 0
+    },
+    {
+      "stdoutLines": 1,
+      "arguments": [
+        "version",
+        "--json"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "399c5d2aff647a33de4a5a029f90b441f847e34e6a0be16c461aa8f3ffbc109c",
+      "stderrLines": 0
+    },
+    {
+      "stdoutLines": 1,
+      "arguments": [
+        "capabilities"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "6946533cbbb779d8ea0a427c789ac5c9e4c70f9bf500b2db5c05e71e9340ee4a",
+      "stderrLines": 0
+    },
+    {
+      "stdoutLines": 0,
+      "arguments": [
+        "check",
+        "/Users/stefan/sources/interlis-java/testdata/models/base24.ili",
+        "/Users/stefan/sources/interlis-java/testdata/models/survey24.ili"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrLines": 0
+    },
+    {
+      "stdoutLines": 0,
+      "arguments": [
+        "check",
+        "/Users/stefan/sources/interlis-java/testdata/models/broken24.ili"
+      ],
+      "exitCode": 1,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrLines": 5
+    },
+    {
+      "stdoutLines": 0,
+      "arguments": [
+        "format",
+        "--check",
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis-sdk-5505754953875412586/model.ili"
+      ],
+      "exitCode": 1,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrLines": 1
+    },
+    {
+      "stdoutLines": 8,
+      "arguments": [
+        "format",
+        "--indent",
+        "4",
+        "--line-ending",
+        "lf",
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis-sdk-5505754953875412586/model.ili"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "b5c0908d18aa51ca5f37cb28f4ec75e09d41bdfbd20d723e95ee40e1c6202fb8",
+      "stderrLines": 0
+    },
+    {
+      "stdoutLines": 0,
+      "arguments": [
+        "format",
+        "--write",
+        "--indent",
+        "4",
+        "--line-ending",
+        "lf",
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis-sdk-5505754953875412586/model.ili"
+      ],
+      "exitCode": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrLines": 0
+    },
+    {
+      "stdoutLines": 0,
+      "arguments": [
+        "check",
+        "--no-such-option",
+        "/Users/stefan/sources/interlis-java/testdata/models/base24.ili"
+      ],
+      "exitCode": 2,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrLines": 6
+    }
+  ]
+}

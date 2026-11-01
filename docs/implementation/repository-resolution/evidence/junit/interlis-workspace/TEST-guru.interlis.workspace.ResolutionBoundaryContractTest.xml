@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.workspace.ResolutionBoundaryContractTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:36:26.552Z" hostname="Monterrico.local" time="0.16">
+  <properties/>
+  <testcase name="selectedOriginalIdentityIsPreservedAcrossOverlayAndSourceTranslations()" classname="guru.interlis.workspace.ResolutionBoundaryContractTest" time="0.076"/>
+  <testcase name="resolutionBudgetControlsHeaderAndCandidateScans()" classname="guru.interlis.workspace.ResolutionBoundaryContractTest" time="0.005"/>
+  <testcase name="exactVersionSourcePriorityAndRootSelectionUseOnePurePolicy()" classname="guru.interlis.workspace.ResolutionBoundaryContractTest" time="0.019"/>
+  <testcase name="atomicConfigurationAndSourcesBothRemainUnchangedAfterAnyRejectedMember()" classname="guru.interlis.workspace.ResolutionBoundaryContractTest" time="0.003"/>
+  <testcase name="analysisWithOtherRootSelectionCannotBeAcceptedIntoACapture()" classname="guru.interlis.workspace.ResolutionBoundaryContractTest" time="0.023"/>
+  <testcase name="missingNamedRootHasANegativeDependencyAndPendingFetch()" classname="guru.interlis.workspace.ResolutionBoundaryContractTest" time="0.009"/>
+  <testcase name="selectionChangesAlterCaptureIdentityWithoutSourceOrOverlayEdits()" classname="guru.interlis.workspace.ResolutionBoundaryContractTest" time="0.015"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

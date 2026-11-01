@@ -1,0 +1,74 @@
+Starting a Gradle Daemon, 1 busy Daemon could not be reused, use --status for details
+> Task :interlis-compiler:generateTestGrammarSource NO-SOURCE
+> Task :interlis-workspace:processResources NO-SOURCE
+> Task :interlis-wasm-teavm:copyWasmGCRuntime UP-TO-DATE
+> Task :interlis-projection:processResources UP-TO-DATE
+> Task :interlis-wasm-bridge:processResources UP-TO-DATE
+> Task :interlis-wasm-teavm:processResources NO-SOURCE
+> Task :interlis-compiler:generateGrammarSource UP-TO-DATE
+> Task :interlis-wasm-teavm:prepareOrderedTeaVmSource UP-TO-DATE
+> Task :interlis-compiler:processResources UP-TO-DATE
+> Task :interlis-wasm-teavm:compileOrderedTeaVm UP-TO-DATE
+> Task :interlis-wasm-teavm:orderedTeaVmCore UP-TO-DATE
+> Task :interlis-wasm-teavm:processTeavmResources NO-SOURCE
+> Task :interlis-wasm-teavm:emscriptenStubWasmGC SKIPPED
+> Task :interlis-wasm-teavm:emscriptenWasmGC SKIPPED
+> Task :interlis-model:compileJava UP-TO-DATE
+> Task :interlis-model:processResources NO-SOURCE
+> Task :interlis-model:classes UP-TO-DATE
+> Task :interlis-model:jar UP-TO-DATE
+> Task :interlis-compiler:compileJava UP-TO-DATE
+> Task :interlis-compiler:classes UP-TO-DATE
+> Task :interlis-compiler:jar UP-TO-DATE
+> Task :interlis-projection:compileJava UP-TO-DATE
+> Task :interlis-projection:classes UP-TO-DATE
+> Task :interlis-workspace:compileJava UP-TO-DATE
+> Task :interlis-workspace:classes UP-TO-DATE
+> Task :interlis-projection:jar UP-TO-DATE
+> Task :interlis-workspace:jar UP-TO-DATE
+> Task :interlis-wasm-bridge:compileJava UP-TO-DATE
+> Task :interlis-wasm-bridge:classes UP-TO-DATE
+> Task :interlis-wasm-bridge:jar UP-TO-DATE
+
+> Task :interlis-wasm-teavm:compileJava
+warning: Supported source version 'RELEASE_11' from annotation processor 'org.gradle.api.internal.tasks.compile.processing.TimeTrackingProcessor' less than -source '25'
+/Users/stefan/sources/interlis-java/interlis-wasm-teavm/src/main/java/guru/interlis/wasm/teavm/TeaVmEntryPoint.java:14: warning: [dangling-doc-comments] documentation comment is not attached to any declaration
+    /**
+    ^
+2 warnings
+
+> Task :interlis-wasm-teavm:classes
+> Task :interlis-wasm-teavm:compileTeavmJava NO-SOURCE
+> Task :interlis-wasm-teavm:teavmClasses UP-TO-DATE
+> Task :interlis-wasm-teavm:generateWasmGC
+> Task :interlis-wasm-teavm:disasmWasmGC SKIPPED
+> Task :interlis-wasm-teavm:buildWasmGC
+> Task :interlis-wasm-teavm:generateJavaScript
+
+> Task :interlis-wasm-teavm:repositoryDiagnosticCheck
+repository-diagnostic PASS: JS and WasmGC diagnostics and causes agree
+
+> Task :interlis-wasm-teavm:repositoryDiagnosticCheck FAILED
+
+[Incubating] Problems report is available at: file:///Users/stefan/sources/interlis-java/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':interlis-wasm-teavm:repositoryDiagnosticCheck' (registered in build file 'interlis-wasm-teavm/build.gradle').
+> Process 'command 'node'' finished with non-zero exit value 143 (this value may indicate that the process was terminated with the SIGTERM signal)
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.8.1/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 8m 8s
+22 actionable tasks: 4 executed, 18 up-to-date

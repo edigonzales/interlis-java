@@ -4042,10 +4042,22 @@ final class GraphBuilder {
     }
 
     DiagnosticId unresolved(guru.interlis.syntax.NameSyntax name) {
-        return collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0001"),
+        var draft = DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0001"),
                         Severity.ERROR, Phase.BINDING, "diagnostic.semantics.unresolved")
                 .at(name.range())
-                .argument(new DiagnosticArgument.IdentifierArgument("name", name.text())));
+                .argument(new DiagnosticArgument.IdentifierArgument("name", name.text()));
+        // Only qualified references to an actually failed import are dependent.
+        // An unrelated unresolved name in the same file remains independently visible.
+        if (name.segments().size() > 1) {
+            String qualifier = name.segments().getFirst().text();
+            closure.models().stream().filter(m -> m.sourceId().equals(name.range().source())
+                    && m.syntax().range().startOffset() <= name.range().startOffset()
+                    && m.syntax().range().endOffset() >= name.range().endOffset())
+                    .flatMap(m -> m.syntax().imports().stream()).filter(i -> i.modelName().equals(qualifier))
+                    .map(i -> collector.importFailure(i.range())).flatMap(Optional::stream).findFirst()
+                    .ifPresent(id -> { draft.cause(id); draft.dependsOn(id); });
+        }
+        return collector.emit(draft);
     }
 
     private TypeId errorType(SourceId source, SourceRange range, String feature) {

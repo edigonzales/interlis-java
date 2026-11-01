@@ -126,7 +126,7 @@ public final class RepositoryClient {
 
     private static String revision(RepositoryConfig config, List<ModelCandidate> candidates,
                                    List<RepositoryFailure> failures) {
-        StringBuilder canonical = new StringBuilder("repository-catalog-v2");
+        StringBuilder canonical = new StringBuilder("repository-catalog-v3");
         field(canonical, Boolean.toString(config.fetchPolicy().offline()));
         field(canonical, Integer.toString(config.fetchPolicy().maxBytes()));
         field(canonical, config.fetchPolicy().timeout().toString());
@@ -140,7 +140,7 @@ public final class RepositoryClient {
             var metadata = candidate.metadata();
             field(canonical, metadata.name()); field(canonical, metadata.version());
             field(canonical, metadata.schemaLanguage()); field(canonical, metadata.location().toString());
-            optional(canonical, metadata.precursorVersion()); optional(canonical, metadata.md5());
+            optional(canonical, metadata.precursorVersion()); optional(canonical, metadata.md5()); field(canonical, Boolean.toString(metadata.browseOnly()));
             field(canonical, candidate.repository().uri().toString());
             field(canonical, candidate.indexLocation().toString());
             field(canonical, Integer.toString(candidate.priority()));

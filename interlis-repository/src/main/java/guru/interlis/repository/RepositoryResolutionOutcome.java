@@ -10,8 +10,12 @@ public sealed interface RepositoryResolutionOutcome {
     record Prepared(PreparedRepositoryUpdate update) implements RepositoryResolutionOutcome {
         public Prepared { Objects.requireNonNull(update, "update"); }
     }
-    record Rejected(List<RepositoryProblem> problems) implements RepositoryResolutionOutcome {
+    record Rejected(List<RepositoryProblem> problems, List<guru.interlis.diagnostics.Diagnostic> diagnostics,
+                    java.util.Map<guru.interlis.source.SourceId,guru.interlis.source.SourceText> sources,
+                    List<RepositorySearchStep> steps) implements RepositoryResolutionOutcome {
+        public Rejected(List<RepositoryProblem> problems) { this(problems,List.of(),java.util.Map.of(),List.of()); }
         public Rejected {
+            diagnostics=List.copyOf(diagnostics); sources=java.util.Map.copyOf(sources); steps=List.copyOf(steps);
             problems = List.copyOf(Objects.requireNonNull(problems, "problems"));
             if (problems.isEmpty()) throw new IllegalArgumentException("empty rejection");
         }

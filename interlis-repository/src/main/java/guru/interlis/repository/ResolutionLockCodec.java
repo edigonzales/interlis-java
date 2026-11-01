@@ -9,13 +9,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLOutputFactory;
 import org.w3c.dom.Element;
 
-/** Deterministic UTF-8 XML lock format v1. No external entities, IO or implicit version upgrades. */
+/** Deterministic UTF-8 XML lock formats v1/v2. No external entities, IO or implicit version upgrades. */
 public final class ResolutionLockCodec {
     public String encode(ResolutionLock lock) {
         Objects.requireNonNull(lock, "lock");
         try {
             var out = new StringWriter(); var xml = XMLOutputFactory.newFactory().createXMLStreamWriter(out);
-            xml.writeStartDocument("UTF-8", "1.0"); xml.writeStartElement("interlis-resolution-lock"); xml.writeAttribute("version", "1");
+            xml.writeStartDocument("UTF-8", "1.0"); xml.writeStartElement("interlis-resolution-lock"); xml.writeAttribute("version", Integer.toString(lock.formatVersion()));
+            if (lock.formatVersion() == 2) xml.writeAttribute("profile", lock.selectionProfile());
             var indexes = new TreeMap<String, ContentDigest>();
             lock.indexes().forEach((id, digest) -> indexes.put(id.value(), digest));
             for (var e : indexes.entrySet()) {
@@ -24,6 +25,17 @@ public final class ResolutionLockCodec {
             for (var group : new TreeMap<>(lock.models()).values()) for (var pin : group) {
                 xml.writeEmptyElement("model"); xml.writeAttribute("name", pin.modelName()); xml.writeAttribute("version", pin.modelVersion());
                 xml.writeAttribute("source", pin.source().value()); xml.writeAttribute("sha256", pin.digest().value());
+            }
+            if (lock.formatVersion() == 2) {
+                var unavailable = new TreeMap<String,SourceLoadException.Reason>();
+                lock.unavailable().forEach((id,reason) -> unavailable.put(id.value(),reason));
+                for (var e : unavailable.entrySet()) {
+                    xml.writeEmptyElement("unavailable"); xml.writeAttribute("source",e.getKey()); xml.writeAttribute("reason",e.getValue().name());
+                }
+                for (var step : lock.steps()) {
+                    xml.writeEmptyElement("step"); xml.writeAttribute("model",step.modelName()); xml.writeAttribute("repository",step.repository().toString());
+                    xml.writeAttribute("kind",step.kind().name()); xml.writeAttribute("detail",step.detail());
+                }
             }
             xml.writeEndElement(); xml.writeEndDocument(); xml.close(); return out.toString().replace("\r", "&#xD;").replace("\n", "&#xA;").replace("\t", "&#x9;") + "\n";
         } catch (javax.xml.stream.XMLStreamException invalid) { throw new IllegalArgumentException("lock cannot be encoded", invalid); }
@@ -40,8 +52,12 @@ public final class ResolutionLockCodec {
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, ""); factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             var root = factory.newDocumentBuilder().parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8))).getDocumentElement();
-            if (!root.getTagName().equals("interlis-resolution-lock") || !root.getAttribute("version").equals("1")) throw new IllegalArgumentException("unsupported lock format");
-            attributes(root, Set.of("version"));
+            int version = Integer.parseInt(root.getAttribute("version"));
+            if (!root.getTagName().equals("interlis-resolution-lock") || (version != 1 && version != 2)) throw new IllegalArgumentException("unsupported lock format");
+            attributes(root, version == 1 ? Set.of("version") : Set.of("version","profile"));
+            String profile = version == 1 ? "explicit-v1" : root.getAttribute("profile");
+            var steps = new ArrayList<RepositorySearchStep>();
+            var unavailable = new LinkedHashMap<SourceId,SourceLoadException.Reason>();
             var indexes = new LinkedHashMap<SourceId, ContentDigest>(); var models = new LinkedHashMap<String, java.util.List<ModelPin>>();
             for (var node = root.getFirstChild(); node != null; node = node.getNextSibling()) {
                 if (!(node instanceof Element element)) {
@@ -60,10 +76,22 @@ public final class ResolutionLockCodec {
                         var pin = new ModelPin(element.getAttribute("name"), element.getAttribute("version"), new SourceId(element.getAttribute("source")), new ContentDigest("sha256", element.getAttribute("sha256")));
                         models.computeIfAbsent(pin.modelName(), ignored -> new java.util.ArrayList<>()).add(pin);
                     }
+                    case "unavailable" -> {
+                        if (version != 2) throw new IllegalArgumentException("v2 entry in v1 lock");
+                        attributes(element,Set.of("source","reason"));
+                        if (unavailable.putIfAbsent(new SourceId(element.getAttribute("source")),SourceLoadException.Reason.valueOf(element.getAttribute("reason"))) != null)
+                            throw new IllegalArgumentException("duplicate unavailable input");
+                    }
+                    case "step" -> {
+                        if (version != 2) throw new IllegalArgumentException("v2 entry in v1 lock");
+                        attributes(element,Set.of("model","repository","kind","detail"));
+                        steps.add(new RepositorySearchStep(element.getAttribute("model"),java.net.URI.create(element.getAttribute("repository")),
+                                RepositorySearchStep.Kind.valueOf(element.getAttribute("kind")),element.getAttribute("detail")));
+                    }
                     default -> throw new IllegalArgumentException("unknown lock element");
                 }
             }
-            return new ResolutionLock(models, indexes);
+            return new ResolutionLock(models, indexes, version, profile, steps, unavailable);
         } catch (IllegalArgumentException invalid) { throw invalid; }
         catch (Exception invalid) { throw new IllegalArgumentException("invalid resolution lock", invalid); }
     }

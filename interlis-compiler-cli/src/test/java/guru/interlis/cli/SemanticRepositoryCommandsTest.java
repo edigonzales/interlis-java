@@ -109,7 +109,7 @@ class SemanticRepositoryCommandsTest {
         Files.writeString(repo.resolve("ilimodels.xml"), index.replace("</TRANSFER>", entry("Base","Other.ili").replace("<Version>1", "<Version>2")+"</TRANSFER>"));
         for (String command : COMMANDS) {
             var ambiguous = run(command,"--repository",repo.toString(),"--root","Root");
-            assertEquals(CliTermination.INPUT_UNRESOLVED, ambiguous.result.termination()); assertTrue(ambiguous.result.output().contains("AMBIGUOUS")); assertTrue(ambiguous.out.isEmpty());
+            assertEquals(CliTermination.SUCCESS, ambiguous.result.termination()); assertTrue(ambiguous.err.contains("ILI-RES-0008"));
         }
         Files.writeString(repo.resolve("ilimodels.xml"), "<broken");
         for (String command : COMMANDS) {

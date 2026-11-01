@@ -180,3 +180,17 @@ Erst die realen alten/neuen Werkzeuge auf derselben Datenbank beantworten die Dr
 | zusätzliche DB-Backends und Profile | vor WP-50/54 | vorhandene Verwendungen inventarisieren, Abnahme je Profil |
 
 Diese Punkte sind technische/fachliche Nachweise mit festem Arbeitsschritt. Sie sind kein Anlass, den Beginn von P0/P1 auf eine weitere allgemeine Architekturentscheidung zu verschieben.
+
+
+## Folgeauftrag Repositoryauflösung (01.11.2026)
+
+Der ausdrücklich beauftragte Folgeabschnitt zu WP-12, WP-26 und WP-30 übernimmt
+das ili2c-5.6.9-Profil im JVM-Beschaffungshost und führt Repositorydiagnosen
+durch den gemeinsamen Diagnoseweg. Fachvertrag: Kapitel 08 §12, Kapitel 09 und
+18; API-Register 16. Lieferfolge: Referenzpins und Regressionstests,
+Repositorybesuche/Versionsketten, Diagnosen/Locks, gezielte Integrations-,
+Referenz-, Prozess- und Portablegegenproben. Kein P4-/Releaseauftrag.
+Abnahme: beide Repositoryadressen wählen GeometryCHLV95_V1 2017-12-04;
+fehlende Voraussetzungen werden verständlich und strukturiert gemeldet;
+Pins, atomare Übernahme, v1-Replay und das einzige Compiler-Gate bleiben wirksam.
+Tatsächlicher Stand und Rohbelege werden im Implementierungsbericht geführt.

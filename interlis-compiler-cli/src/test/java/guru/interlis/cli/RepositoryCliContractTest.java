@@ -40,7 +40,7 @@ class RepositoryCliContractTest {
     @Test void checkDoesNotPickLatestAndExactModelAndIndexPinsAreEnforced() throws Exception {
         Path repo=repository(true);String base=repo.toUri().toString();
         var ambiguous=run("check","--repository",base,"--root","Dep","--json");
-        assertEquals(CliTermination.INPUT_UNRESOLVED,ambiguous.result().termination());assertTrue(ambiguous.output().contains("AMBIGUOUS"));
+        assertEquals(CliTermination.SUCCESS,ambiguous.result().termination());assertTrue(ambiguous.output().contains("ILI-RES-0008"));
         String uri=repo.resolve("one.ili").toUri().toString(),sha=ContentDigest.sha256(Files.readAllBytes(repo.resolve("one.ili"))).value();
         var exact=run("check","--repository",base,"--root","Dep","--model-pin","Dep","1",uri,sha,"--json");
         assertEquals(0,exact.result().exitCode(),exact.result().output());

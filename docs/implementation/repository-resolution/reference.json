@@ -1,0 +1,24 @@
+{
+  "version": "5.6.9",
+  "commit": "bf16026e83f2377153b2e818a4f3838f0a423722",
+  "files": [
+    {
+      "file": "src/main/java/ch/interlis/ilirepository/impl/RepositoryVisitor.java",
+      "sha256": "06815a57c30cd7db5862b27e829a78ee2de304c61326a6169ee2dc6647f80b79",
+      "inspectedMasterSha256": "06815a57c30cd7db5862b27e829a78ee2de304c61326a6169ee2dc6647f80b79",
+      "identicalToInspectedMaster": true
+    },
+    {
+      "file": "src/main/java/ch/interlis/ilirepository/impl/ModelFinder.java",
+      "sha256": "ca6d20130ce6c8a4cf845419ab30e5b19a8c7ae708a09a5c18e443a06770b611",
+      "inspectedMasterSha256": "ca6d20130ce6c8a4cf845419ab30e5b19a8c7ae708a09a5c18e443a06770b611",
+      "identicalToInspectedMaster": true
+    },
+    {
+      "file": "src/main/java/ch/interlis/ilirepository/impl/RepositoryAccess.java",
+      "sha256": "601af916594ba6eead3e02dc511ace178f145eee1c5646842467e9e2b090b2e6",
+      "inspectedMasterSha256": "601af916594ba6eead3e02dc511ace178f145eee1c5646842467e9e2b090b2e6",
+      "identicalToInspectedMaster": true
+    }
+  ]
+}

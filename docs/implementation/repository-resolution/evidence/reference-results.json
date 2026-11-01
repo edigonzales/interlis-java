@@ -1,0 +1,82 @@
+{
+  "cases": [
+    {
+      "notices": 0,
+      "selected": "a",
+      "entries": [
+        "z||false",
+        "a|z|false"
+      ],
+      "referenceStdout": "RESULT=a\nNOTICES=0\n"
+    },
+    {
+      "notices": 1,
+      "selected": "1",
+      "entries": [
+        "1||false",
+        "2||false"
+      ],
+      "referenceStdout": "RESULT=1\nNOTICES=1\nNOTICE=model Dep: duplicate version without precursor; version 2 ignored\n"
+    },
+    {
+      "notices": 1,
+      "selected": "2",
+      "entries": [
+        "1||false",
+        "2|1|false",
+        "3|1|false"
+      ],
+      "referenceStdout": "RESULT=2\nNOTICES=1\nNOTICE=model Dep: duplicate version with same precursor; version 3 ignored\n"
+    },
+    {
+      "notices": 1,
+      "selected": "1",
+      "entries": [
+        "1||false",
+        "2|missing|false"
+      ],
+      "referenceStdout": "RESULT=1\nNOTICES=1\nNOTICE=model Dep: broken version chain; use version 1; others ignored\n"
+    },
+    {
+      "notices": 1,
+      "selected": "missing",
+      "entries": [
+        "1|2|false",
+        "2|1|false"
+      ],
+      "referenceStdout": "RESULT=missing\nNOTICES=1\nNOTICE=model Dep: no version without precursor; model ignored\n"
+    },
+    {
+      "notices": 0,
+      "selected": "1",
+      "entries": [
+        "1||false",
+        "2|1|true"
+      ],
+      "referenceStdout": "RESULT=1\nNOTICES=0\n"
+    },
+    {
+      "referenceStdout": "VISITS=https://a.example/,https://p.example/\n",
+      "target": "https://p.example/",
+      "visits": "https://a.example/,https://p.example/"
+    },
+    {
+      "referenceStdout": "VISITS=https://a.example/,https://p.example/,https://b.example/,https://q.example/\n",
+      "target": "https://q.example/",
+      "visits": "https://a.example/,https://p.example/,https://b.example/,https://q.example/"
+    },
+    {
+      "referenceStdout": "VISITS=https://a.example/,https://p.example/,https://b.example/,https://q.example/,https://c.example/\n",
+      "target": "https://c.example/",
+      "visits": "https://a.example/,https://p.example/,https://b.example/,https://q.example/,https://c.example/"
+    },
+    {
+      "referenceStdout": "VISITS=https://a.example/,https://p.example/,https://b.example/,https://q.example/,https://c.example/\n",
+      "target": "missing",
+      "visits": "https://a.example/,https://p.example/,https://b.example/,https://q.example/,https://c.example/"
+    }
+  ],
+  "jarSha256": "37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e",
+  "passed": true,
+  "referenceVersion": "5.6.9"
+}

@@ -127,13 +127,15 @@ class RepositoryClosureContractTest {
         }
     }
 
-    @Test void versionsNeverUseLatestAndExactPinsBindTheRealSelectedDefinition() {
+    @Test void indexOrderResolvesDuplicateStartsAndExactPinsBindTheRealSelectedDefinition() {
         String base = "https://repo.example/";
         var contents = new HashMap<>(Map.of(base + "ilimodels.xml", index(entry("Dep", "1", "one.ili"), entry("Dep", "99", "other.ili")),
                 base + "one.ili", model("Dep", "1", "DOMAIN D=TEXT*7;"), base + "other.ili", model("Dep", "99", "DOMAIN D=TEXT*99;")));
         var service = new RepositoryClosureService(loader(contents), new InMemoryContentStore());
         try (var w = workspace(model("Root", "1", "IMPORTS Dep; DOMAIN D EXTENDS Dep.D=TEXT*7;"))) {
-            assertEquals(RepositoryProblem.Reason.AMBIGUOUS, problem(service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(base)), TOKEN)).reason());
+            var automatic=prepared(service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(base)), TOKEN));
+            assertEquals("1",automatic.lock().models().get("Dep").getFirst().modelVersion());
+            assertTrue(automatic.configuration().resolutionDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0008")));
             var text = contents.get(base + "one.ili"); var pin = new ModelPin("Dep", "1", id(base + "one.ili"), ContentDigest.sha256(text.getBytes(StandardCharsets.UTF_8)));
             var update = prepared(service.resolve(w, request(w), new RepositoryResolveOptions(config(base), Map.of("Dep", pin), Map.of(), Optional.empty()), TOKEN));
             assertEquals(List.of(pin), update.lock().models().get("Dep")); update.apply(w);
@@ -145,7 +147,7 @@ class RepositoryClosureContractTest {
         }
     }
 
-    @Test void repositoryPriorityWinsWithoutHidingAmbiguityInsideTheWinningGroup() {
+    @Test void repositoryPriorityWinsAndDuplicateStartsUseIndexOrder() {
         String a="https://first.example/", b="https://second.example/";
         var contents = new HashMap<>(Map.of(a+"ilimodels.xml",index(entry("Dep","1","one.ili")), a+"one.ili",model("Dep","1","DOMAIN D=TEXT;"),
                 b+"ilimodels.xml",index(entry("Dep","99","other.ili")), b+"other.ili",model("Dep","99","DOMAIN D=TEXT;")));
@@ -157,7 +159,9 @@ class RepositoryClosureContractTest {
         }
         contents.put(a+"ilimodels.xml",index(entry("Dep","1","one.ili"),entry("Dep","2","two.ili")));
         try(var w=workspace(model("Root","1","IMPORTS Dep;"))) {
-            assertEquals(RepositoryProblem.Reason.AMBIGUOUS,problem(service.resolve(w,request(w),RepositoryResolveOptions.defaults(config),TOKEN)).reason());
+            var selected=prepared(service.resolve(w,request(w),RepositoryResolveOptions.defaults(config),TOKEN));
+            assertEquals("1",selected.lock().models().get("Dep").getFirst().modelVersion());
+            assertTrue(selected.configuration().resolutionDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0008")));
         }
     }
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.compiler.PredefinedNameBindingContractTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:27:59.442Z" hostname="Monterrico.local" time="0.161">
+  <properties/>
+  <testcase name="twoUserImportsCannotBeReplacedByTheBuiltinWhenTheirResolutionIsAmbiguous()" classname="guru.interlis.compiler.PredefinedNameBindingContractTest" time="0.005"/>
+  <testcase name="explicitFunctionNamesDisambiguateCompetingImports()" classname="guru.interlis.compiler.PredefinedNameBindingContractTest" time="0.009"/>
+  <testcase name="primitiveTypeKeywordsRemainAvailableWithoutAnImport()" classname="guru.interlis.compiler.PredefinedNameBindingContractTest" time="0.009"/>
+  <testcase name="qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis()" classname="guru.interlis.compiler.PredefinedNameBindingContractTest" time="0.137"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

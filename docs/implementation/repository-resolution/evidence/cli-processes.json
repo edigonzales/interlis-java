@@ -1,0 +1,821 @@
+{
+  "terminal": {
+    "hostDetection": "posix-fd2",
+    "realPty": true,
+    "cases": {
+      "auto-stderr-pty": {
+        "command": [
+          "/usr/bin/script",
+          "-q",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal.capture",
+          "/bin/sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal-check.sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+          "auto",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/Bad.ili",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/redirect.err"
+        ],
+        "exitCode": 0,
+        "stdout": "^D\b\b\u001b[36mfile:///var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68\u001b[0m: \u001b[31mERROR\u001b[0m [\u001b[90mILI-SEM-0001\u001b[0m] The name 'Missing' cannot be resolved at this location.\r\n",
+        "stderr": "",
+        "durationMs": 596.545458
+      },
+      "always-stderr-pty": {
+        "command": [
+          "/usr/bin/script",
+          "-q",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal.capture",
+          "/bin/sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal-check.sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+          "always",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/Bad.ili",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/redirect.err"
+        ],
+        "exitCode": 0,
+        "stdout": "^D\b\b\u001b[36mfile:///var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68\u001b[0m: \u001b[31mERROR\u001b[0m [\u001b[90mILI-SEM-0001\u001b[0m] The name 'Missing' cannot be resolved at this location.\r\n",
+        "stderr": "",
+        "durationMs": 465.135666
+      },
+      "never-stderr-pty": {
+        "command": [
+          "/usr/bin/script",
+          "-q",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal.capture",
+          "/bin/sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal-check.sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+          "never",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/Bad.ili",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/redirect.err"
+        ],
+        "exitCode": 0,
+        "stdout": "^D\b\bfile:///var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\r\n",
+        "stderr": "",
+        "durationMs": 462.990708
+      },
+      "auto-stderr-file": {
+        "command": [
+          "/usr/bin/script",
+          "-q",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal.capture",
+          "/bin/sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal-check.sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+          "auto",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/Bad.ili",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/redirect.err"
+        ],
+        "exitCode": 0,
+        "stdout": "^D\b\b",
+        "stderr": "",
+        "durationMs": 468.561917
+      },
+      "always-stderr-file": {
+        "command": [
+          "/usr/bin/script",
+          "-q",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal.capture",
+          "/bin/sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal-check.sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+          "always",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/Bad.ili",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/redirect.err"
+        ],
+        "exitCode": 0,
+        "stdout": "^D\b\b",
+        "stderr": "",
+        "durationMs": 376.286959
+      },
+      "never-stderr-file": {
+        "command": [
+          "/usr/bin/script",
+          "-q",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal.capture",
+          "/bin/sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/terminal-check.sh",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+          "never",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/Bad.ili",
+          "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/redirect.err"
+        ],
+        "exitCode": 0,
+        "stdout": "^D\b\b",
+        "stderr": "",
+        "durationMs": 381.534833
+      }
+    }
+  },
+  "launcher": "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+  "artifacts": {
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "86460db600ab375a07bccd2c1996d7dbe21942e6ac0ddbffd57707ab1dec2c4c",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-compiler-cli-0.2.0-SNAPSHOT.jar": "6be87758f4557ead456b1bf13798dadca44c530bcf5c2dc639aa3ba86d07aba5",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-model-0.2.0-SNAPSHOT.jar": "7dcade2e6a3da06dcc8206efd01171841ccf876362db3dc1449b279eb73f5d53",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "46fc3a6ad1e35c19e1999c5df09251915fd6631e9c09f19bda9e2ac65b0ade41",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "2fe6ff403cace71819f39d1f7c77f69b44d827d1cab4d24511c95ce5eb3de103",
+    "interlis-compiler-cli/build/install/interlis-compiler/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "e9efee37214c38e1292fd26d3f802c2ada1e25bf0abdb7a77b015ef8724085ad"
+  },
+  "status": "passed",
+  "cases": {
+    "help": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "--help"
+      ],
+      "exitCode": 0,
+      "stdout": "interlis-compiler 0.2.0-SNAPSHOT\nhelp\nversion [--json]\ncapabilities\ncheck [--json] [--root VALUE]... [--repository VALUE]... [--model-pin VALUE VALUE VALUE VALUE]... [--source-pin VALUE VALUE]... [--read-lock VALUE] [--write-lock VALUE] [--cache VALUE] [--config VALUE] [--warnings VALUE] [--offline] [--explain-config] [--verbose] [--diagnostic-language VALUE] [--color VALUE] [--] [files...]\ncompile [--json] [--root VALUE]... [--repository VALUE]... [--model-pin VALUE VALUE VALUE VALUE]... [--source-pin VALUE VALUE]... [--read-lock VALUE] [--write-lock VALUE] [--cache VALUE] [--config VALUE] [--warnings VALUE] [--offline] [--explain-config] [--verbose] [--diagnostic-language VALUE] [--color VALUE] [--] [files...]\nanalyze [--json] [--root VALUE]... [--repository VALUE]... [--model-pin VALUE VALUE VALUE VALUE]... [--source-pin VALUE VALUE]... [--read-lock VALUE] [--write-lock VALUE] [--cache VALUE] [--config VALUE] [--warnings VALUE] [--offline] [--explain-config] [--verbose] [--diagnostic-language VALUE] [--color VALUE] [--] [files...]\ndiagram [--root VALUE]... [--format VALUE] [--repository VALUE]... [--model-pin VALUE VALUE VALUE VALUE]... [--source-pin VALUE VALUE]... [--read-lock VALUE] [--write-lock VALUE] [--cache VALUE] [--config VALUE] [--warnings VALUE] [--offline] [--explain-config] [--verbose] [--diagnostic-language VALUE] [--color VALUE] [--] [files...]\nformat [--check] [--write] [--indent VALUE] [--line-ending VALUE] [--verbose] [--diagnostic-language VALUE] [--color VALUE] [--] [files...]\nDiagram JSON: interlis-compiler diagram --format json [options] [files...].\nDiagnostic color: --color=auto|always|never or --color MODE (default: auto).\nDiagnostic language: --diagnostic-language de|en (default: en).\nAuto colors only terminal stderr; nonempty NO_COLOR or TERM=dumb disables auto. Windows auto is plain.\nColor affects text diagnostics only; JSON and artifact outputs remain plain.\ncheck/compile/analyze/diagram share repository options; repositories require ilimodels.xml and have no implicit defaults.\nDiagnostics default to one line; --verbose adds source frames, related locations and hints.\nVerbose source frames: at most 3 lines / 160 columns; uncertain Unicode widths show UTF-16 offsets without a caret.\n",
+      "stderr": "",
+      "durationMs": 326.84925
+    },
+    "version": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "--version"
+      ],
+      "exitCode": 0,
+      "stdout": "interlis-compiler 0.2.0-SNAPSHOT\napi: 0.2\ndiagnostics: interlis-diagnostics/v2\nprotocol: interlis.compiler/1.0\nlanguage: INTERLIS 2.3, 2.4\nformat: 1.0\ndiagram: 1.0\njava: 25.0.3+9-LTS\ngrammar: antlr-4.13.2 / geostandards-f8f9723\n",
+      "stderr": "",
+      "durationMs": 117.024167
+    },
+    "bare-file": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "https://invalid.example/no-access.ili"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nunknown command: https://invalid.example/no-access.ili\n",
+      "durationMs": 210.17125
+    },
+    "empty": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nmissing command\n",
+      "durationMs": 106.115792
+    },
+    "unknown-command": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "typo",
+        "missing.ili"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nunknown command: typo\n",
+      "durationMs": 101.90125
+    },
+    "legacy-option": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--modeldir",
+        "missing",
+        "missing.ili"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nunsupported option: --modeldir\n",
+      "durationMs": 113.065916
+    },
+    "invalid-option": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--unknown",
+        "missing.ili"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nunsupported option: --unknown\n",
+      "durationMs": 136.498
+    },
+    "root-isolation": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Base",
+        "Mixed.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 602.054083
+    },
+    "foreign-warning": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Base",
+        "--warnings",
+        "reject",
+        "Warnings.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 542.391375
+    },
+    "relevant-warning": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Other",
+        "--warnings",
+        "reject",
+        "Warnings.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Warnings.ili:2:51: WARNING [ILI-SYN-0007] The property 'ABSTRACT' is repeated unnecessarily.\n",
+      "durationMs": 491.495459
+    },
+    "diagnostic-de": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--diagnostic-language",
+        "de",
+        "Bad.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: Fehler [ILI-SEM-0001] Der Name 'Missing' kann an dieser Stelle nicht aufgelöst werden.\n",
+      "durationMs": 495.042958
+    },
+    "diagnostic-json": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--json",
+        "--diagnostic-language",
+        "de",
+        "Bad.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a98616ba39e243f6bd5f25c9], requestedRoots=[BySource[source=SourceId[value=file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a98616ba39e243f6bd5f25c9\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"message\":\"Der Name 'Missing' kann an dieser Stelle nicht aufgelöst werden.\",\"range\":{\"source\":\"file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili\",\"revision\":\"1\",\"startOffset\":67,\"endOffset\":74},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+      "stderr": "",
+      "durationMs": 305.261
+    },
+    "no-model-root": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "NoModel.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/NoModel.ili:2:1: ERROR [ILI-SYN-0004] Unexpected content 'GARBAGE' follows the end of the model input.\n",
+      "durationMs": 307.378333
+    },
+    "invalid-language": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--diagnostic-language",
+        "fr",
+        "missing.ili"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\n--diagnostic-language must be de or en\n",
+      "durationMs": 147.906209
+    },
+    "valid": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Base.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 544.675916
+    },
+    "compile": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "compile",
+        "Base.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 319.708375
+    },
+    "analyze": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "analyze",
+        "Base.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 445.173875
+    },
+    "diagram": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "diagram",
+        "Base.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "classDiagram\n  class N1[\"Name\"] {\n    declared type : TEXT*20\n  }\n\n",
+      "stderr": "",
+      "durationMs": 299.766625
+    },
+    "syntax": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Syntax.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Syntax.ili:1:54: ERROR [ILI-SYN-0003] A required token is missing; expected Name.\n",
+      "durationMs": 419.97375
+    },
+    "semantic": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Bad.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n",
+      "durationMs": 454.198166
+    },
+    "compact": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Bad.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n",
+      "durationMs": 327.545209
+    },
+    "verbose": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--verbose",
+        "Bad.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n  1 | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                ^~~~~~~\n",
+      "durationMs": 361.996625
+    },
+    "missing-file": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "missing.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "Source loading failed: source not found\n",
+      "durationMs": 119.139
+    },
+    "missing-import": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Root.ili"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Root.ili:1:55: ERROR [ILI-RES-0001] The requested or imported model 'Base' could not be found.\n",
+      "durationMs": 315.96975
+    },
+    "explicit-import": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--root",
+        "Root",
+        "Root.ili",
+        "Base.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 364.521958
+    },
+    "multiple-models": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Multiple.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 328.374
+    },
+    "option-end": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--",
+        "-Gültig 😀 & [x]!.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 1728.046041
+    },
+    "format-utf8": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "format",
+        "Encoding.ili"
+      ],
+      "exitCode": 0,
+      "stdout": "INTERLIS 2.4; MODEL Base AT \"x\" VERSION \"1\" = DOMAIN Name = TEXT*20; END Base. !! Grüezi 😀\n",
+      "stderr": "",
+      "durationMs": 845.073125
+    },
+    "repository-http": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:64682/",
+        "--root",
+        "Remote"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 1345.368292
+    },
+    "repository-http-compile": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:64682/",
+        "--root",
+        "Remote"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 730.5665
+    },
+    "repository-http-analyze": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "analyze",
+        "--repository",
+        "http://127.0.0.1:64682/",
+        "--root",
+        "Remote"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "",
+      "durationMs": 721.976375
+    },
+    "repository-http-diagram": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "diagram",
+        "--repository",
+        "http://127.0.0.1:64682/",
+        "--root",
+        "Remote"
+      ],
+      "exitCode": 0,
+      "stdout": "classDiagram\n  class N1[\"Name\"] {\n    declared type : TEXT*20\n  }\n\n",
+      "stderr": "",
+      "durationMs": 787.416084
+    },
+    "color-auto": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--color=auto",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n  1 | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                ^~~~~~~\n",
+      "durationMs": 540.494083
+    },
+    "color-always": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--color",
+        "always",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "\u001b[36mfile:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68\u001b[0m: \u001b[31mERROR\u001b[0m [\u001b[90mILI-SEM-0001\u001b[0m] The name 'Missing' cannot be resolved at this location.\n  \u001b[90m1\u001b[0m | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                \u001b[31m^~~~~~~\u001b[0m\n",
+      "durationMs": 327.543667
+    },
+    "color-never": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--color=never",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n  1 | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                ^~~~~~~\n",
+      "durationMs": 440.967792
+    },
+    "color-no-color": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--diagnostic-language",
+        "de",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: Fehler [ILI-SEM-0001] Der Name 'Missing' kann an dieser Stelle nicht aufgelöst werden.\n  1 | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                ^~~~~~~\n",
+      "durationMs": 297.651583
+    },
+    "color-empty-no-color": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n  1 | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                ^~~~~~~\n",
+      "durationMs": 458.315958
+    },
+    "color-term-dumb": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n  1 | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                ^~~~~~~\n",
+      "durationMs": 415.026042
+    },
+    "color-always-override": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--color=always",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "\u001b[36mfile:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68\u001b[0m: \u001b[31mERROR\u001b[0m [\u001b[90mILI-SEM-0001\u001b[0m] The name 'Missing' cannot be resolved at this location.\n  \u001b[90m1\u001b[0m | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                \u001b[31m^~~~~~~\u001b[0m\n",
+      "durationMs": 654.804291
+    },
+    "color-never-override": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--color=never",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68: ERROR [ILI-SEM-0001] The name 'Missing' cannot be resolved at this location.\n  1 | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                ^~~~~~~\n",
+      "durationMs": 733.58925
+    },
+    "color-missing-inline": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--config",
+        "--color=always",
+        "missing.ili",
+        "--verbose"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\n--config has a missing value\n",
+      "durationMs": 146.316583
+    },
+    "color-usage-control": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--bad\u001b[2J‮",
+        "--verbose"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nunsupported option: --bad\\u001b[2J\\u202e\n",
+      "durationMs": 126.286375
+    },
+    "color-format-check-control": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "format",
+        "--check",
+        "--color=always",
+        "Control‮.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "would format: /private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/Control\\u202e.ili\n",
+      "durationMs": 300.722666
+    },
+    "color-invalid": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--color=bad",
+        "missing.ili",
+        "--verbose"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\n--color must be auto, always or never\n",
+      "durationMs": 802.613208
+    },
+    "color-duplicate": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--color=auto",
+        "--color",
+        "never",
+        "missing.ili",
+        "--verbose"
+      ],
+      "exitCode": 2,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\nduplicate option: --color\n",
+      "durationMs": 226.708417
+    },
+    "color-json-always": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--json",
+        "--color=always",
+        "--diagnostic-language",
+        "de",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a98616ba39e243f6bd5f25c9], requestedRoots=[BySource[source=SourceId[value=file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a98616ba39e243f6bd5f25c9\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"message\":\"Der Name 'Missing' kann an dieser Stelle nicht aufgelöst werden.\",\"range\":{\"source\":\"file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili\",\"revision\":\"1\",\"startOffset\":67,\"endOffset\":74},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+      "stderr": "",
+      "durationMs": 467.3545
+    },
+    "color-json-never": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--json",
+        "--color=never",
+        "--diagnostic-language",
+        "de",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a98616ba39e243f6bd5f25c9], requestedRoots=[BySource[source=SourceId[value=file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a98616ba39e243f6bd5f25c9\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"message\":\"Der Name 'Missing' kann an dieser Stelle nicht aufgelöst werden.\",\"range\":{\"source\":\"file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili\",\"revision\":\"1\",\"startOffset\":67,\"endOffset\":74},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+      "stderr": "",
+      "durationMs": 454.754125
+    },
+    "color-json-auto": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "check",
+        "--json",
+        "--color=auto",
+        "--diagnostic-language",
+        "de",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "{\"status\":\"rejected: RejectionSummary[reasons=[SOURCE_ERRORS], diagnosticIds=[diag-a98616ba39e243f6bd5f25c9], requestedRoots=[BySource[source=SourceId[value=file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili]]], unsupportedFeatureIds=[]]\",\"diagnostics\":[{\"id\":\"diag-a98616ba39e243f6bd5f25c9\",\"code\":\"ILI-SEM-0001\",\"severity\":\"ERROR\",\"phase\":\"BINDING\",\"messageKey\":\"diagnostic.semantics.unresolved\",\"message\":\"Der Name 'Missing' kann an dieser Stelle nicht aufgelöst werden.\",\"range\":{\"source\":\"file:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili\",\"revision\":\"1\",\"startOffset\":67,\"endOffset\":74},\"arguments\":[{\"name\":\"name\",\"kind\":\"IDENTIFIER\",\"value\":\"Missing\"}]}]}\n",
+      "stderr": "",
+      "durationMs": 872.616416
+    },
+    "color-format-always": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "format",
+        "--color=always",
+        "Encoding.ili",
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "stdout": "INTERLIS 2.4; MODEL Base AT \"x\" VERSION \"1\" = DOMAIN Name = TEXT*20; END Base. !! Grüezi 😀\n",
+      "stderr": "",
+      "durationMs": 384.642625
+    },
+    "color-format-never": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "format",
+        "--color=never",
+        "Encoding.ili",
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "stdout": "INTERLIS 2.4; MODEL Base AT \"x\" VERSION \"1\" = DOMAIN Name = TEXT*20; END Base. !! Grüezi 😀\n",
+      "stderr": "",
+      "durationMs": 434.515666
+    },
+    "color-diagram-always": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "diagram",
+        "--color=always",
+        "Base.ili",
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "stdout": "classDiagram\n  class N1[\"Name\"] {\n    declared type : TEXT*20\n  }\n\n",
+      "stderr": "",
+      "durationMs": 487.824292
+    },
+    "color-diagram-never": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "diagram",
+        "--color=never",
+        "Base.ili",
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "stdout": "classDiagram\n  class N1[\"Name\"] {\n    declared type : TEXT*20\n  }\n\n",
+      "stderr": "",
+      "durationMs": 683.4685
+    },
+    "color-format-error": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "format",
+        "--color=always",
+        "Syntax.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "\u001b[36mfile:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Syntax.ili:1:54\u001b[0m: \u001b[31mERROR\u001b[0m [\u001b[90mILI-SYN-0003\u001b[0m] A required token is missing; expected Name.\n  \u001b[90m1\u001b[0m | ... \"1\" = TOPIC\n    |                \u001b[31m^\u001b[0m\n",
+      "durationMs": 384.766583
+    },
+    "color-compile": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "compile",
+        "--color=always",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 1,
+      "stdout": "",
+      "stderr": "\u001b[36mfile:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68\u001b[0m: \u001b[31mERROR\u001b[0m [\u001b[90mILI-SEM-0001\u001b[0m] The name 'Missing' cannot be resolved at this location.\n  \u001b[90m1\u001b[0m | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                \u001b[31m^~~~~~~\u001b[0m\n",
+      "durationMs": 578.221917
+    },
+    "color-analyze": {
+      "command": [
+        "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis compiler ä 😀 9170773792857557045/distribution ä 😀/bin/interlis-compiler",
+        "analyze",
+        "--color=always",
+        "Bad.ili",
+        "--verbose"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": "\u001b[36mfile:///private/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis%20compiler%20%C3%A4%20%F0%9F%98%80%209170773792857557045/Bad.ili:1:68\u001b[0m: \u001b[31mERROR\u001b[0m [\u001b[90mILI-SEM-0001\u001b[0m] The name 'Missing' cannot be resolved at this location.\n  \u001b[90m1\u001b[0m | ...ASS C=value:Missing;END C;END T;END Bad.\n    |                \u001b[31m^~~~~~~\u001b[0m\n",
+      "durationMs": 434.85375
+    }
+  },
+  "profile": "compiler-cli/v1",
+  "gitCommit": "76df3815973597280845a9bb575fa399e9773ccc",
+  "sourceFingerprint": "7df9353e57256e7e6c0cf71867f0d942cb6449eb80e180b4c26465434cae5ba1"
+}

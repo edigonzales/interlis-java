@@ -16,6 +16,7 @@ import guru.interlis.source.SourceText;
 import guru.interlis.source.TextEdit;
 import guru.interlis.workspace.resolution.DefaultModelResolutionService;
 import guru.interlis.workspace.resolution.IncompleteClosure;
+import guru.interlis.workspace.resolution.ResolvedClosure;
 import guru.interlis.workspace.resolution.PreparedClosure;
 import guru.interlis.workspace.resolution.ResolutionOutcome;
 import guru.interlis.workspace.resolution.ResolutionRequest;
@@ -301,6 +302,15 @@ final class DefaultWorkspace implements Workspace {
             }
             case ResolutionOutcome.ResolutionFailed failed ->
                     throw new IllegalStateException("model resolution failed: " + failed.failureId());
+        }
+        if (!capturedConfiguration.resolutionDiagnostics().isEmpty()) {
+            var original = closure.sourceSet();
+            var diagnostics = new java.util.ArrayList<>(original.resolutionDiagnostics());
+            diagnostics.addAll(capturedConfiguration.resolutionDiagnostics());
+            var enriched = guru.interlis.compiler.SourceSet.of(original.sources(), original.imports(),
+                    diagnostics, original.fingerprint(), original.translations());
+            closure = closure.complete() ? new ResolvedClosure(enriched, closure.trace(), closure.dependencies())
+                    : new IncompleteClosure(enriched, closure.pendingFetches(), closure.trace(), closure.dependencies(), closure.negativeDependencies());
         }
         List<guru.interlis.compiler.ModelSelector> concreteRoots = request.roots().stream().map(root -> {
             if (root instanceof guru.interlis.compiler.ModelSelector.ByName name) {

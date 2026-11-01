@@ -13,10 +13,16 @@ import java.util.Optional;
  * @param version model version
  * @param precursorVersion optional predecessor version
  * @param md5 optional published content digest
+ * @param browseOnly whether the entry is excluded from automatic repository selection
  */
 public record RepositoryModelMetadata(String name, String schemaLanguage, URI location,
                                       String version, Optional<String> precursorVersion,
-                                      Optional<String> md5) {
+                                      Optional<String> md5, boolean browseOnly) {
+    /** Compatibility constructor; entries are selectable unless explicitly marked browse-only. */
+    public RepositoryModelMetadata(String name, String schemaLanguage, URI location, String version,
+            Optional<String> precursorVersion, Optional<String> md5) {
+        this(name, schemaLanguage, location, version, precursorVersion, md5, false);
+    }
     /** Creates a validated instance. */
     public RepositoryModelMetadata {
         Objects.requireNonNull(name, "name");

@@ -464,3 +464,29 @@ Browsermanifeste oberhalb einer blossen Mindestzahl sowie deklarierte
 Skip-/Fehlerangaben trotz vollständiger positiver Fallzahlen. Die Abnahme
 verlangt den Abgleich gegen die tatsächlichen vollständigen Liefer- und
 Browserdateimengen einschliesslich Hashes und Bytezahlen.
+
+
+## Gezielte Abnahme der Repositorybesuche
+
+RES-001–009/011/012, DIAG-001–009, CLI-001–007 und LOG-002/003/005/008:
+Die Folgeabnahme zu WP-12/26/30 vergleicht Besuchsfolge, vorzeitiges Suchende,
+Versionskettenauswahl und Anpassungshinweise mit dem gepinnten ili2c 5.6.9.
+`repositoryReferenceCheck` verwendet ausschliesslich den externen Testreferenzprozess;
+der neue Compiler erhält keine Produktionsabhängigkeit darauf.
+
+Originalindizes, Siteinformationen und Modellquellen unter
+`interlis-repository/src/test/resources/repository-parity/` sind mit URL,
+Originalbytezahl und SHA-256 in `pins.json` dokumentiert. Gzip verändert die
+entpackten Originalbytes nicht. Mutter- und Direktrepository müssen
+GeometryCHLV95_V1 2017-12-04 auswählen; Beschaffung und Sprachgültigkeit
+werden getrennt geprüft. Original-/Quellenpins und zwei gleichzeitig benötigte
+Originalversionen bleiben eigene Gegenfälle.
+
+Die Prozess-/Vertragstests prüfen kompakte/ausführliche DE-/EN-Diagnosen,
+Diagnose-JSON, Quellrevisionen und UTF-16-Fundstellen in nachgeladenen Quellen,
+Warnungspolitik, fehlende Teilbatches/-artefakte, Schutz von Metadatendateien,
+v1-/v2-Locks, Offline ohne Providerzugriff, Änderungen und Abbruch.
+Die gemeinsame Importursachenänderung erhält eine gezielte JS-/WasmGC-Probe
+mit `:interlis-wasm-teavm:repositoryDiagnosticCheck`; sie behauptet keinen
+Browsernachweis. Vollständige historische Korpus-/Benchmark-/Plattformabnahmen
+werden für diesen Folgeauftrag nicht pauschal wiederholt.

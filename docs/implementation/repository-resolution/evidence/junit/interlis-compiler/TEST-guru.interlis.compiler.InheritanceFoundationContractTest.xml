@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.compiler.InheritanceFoundationContractTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:27:58.675Z" hostname="Monterrico.local" time="0.053">
+  <properties/>
+  <testcase name="finalImportedClassesAndStructuresAreRejectedInBothCanonicalSourceOrders()" classname="guru.interlis.compiler.InheritanceFoundationContractTest" time="0.053"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

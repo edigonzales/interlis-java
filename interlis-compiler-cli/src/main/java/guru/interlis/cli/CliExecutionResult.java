@@ -12,9 +12,17 @@ import java.util.Optional;
 public record CliExecutionResult(int exitCode, CliTermination termination,
                                  List<Diagnostic> diagnostics, String output,
                                  Optional<RunId> runId, List<Artifact> artifacts,
-                                 Optional<RejectionSummary> rejectionSummary) {
+                                 Optional<RejectionSummary> rejectionSummary,
+                                 Optional<guru.interlis.repository.ResolutionLock> resolutionLock,
+                                 List<guru.interlis.repository.RepositorySearchStep> repositorySteps) {
+    /** Compatibility constructor without repository provenance. */
+    public CliExecutionResult(int exitCode,CliTermination termination,List<Diagnostic> diagnostics,String output,
+            Optional<RunId> runId,List<Artifact> artifacts,Optional<RejectionSummary> rejectionSummary) {
+        this(exitCode,termination,diagnostics,output,runId,artifacts,rejectionSummary,Optional.empty(),List.of());
+    }
     /** Creates a validated instance. */
     public CliExecutionResult {
+        resolutionLock=Objects.requireNonNull(resolutionLock,"resolutionLock"); repositorySteps=List.copyOf(repositorySteps);
         Objects.requireNonNull(termination, "termination");
         diagnostics = List.copyOf(Objects.requireNonNull(diagnostics, "diagnostics"));
         Objects.requireNonNull(output, "output");

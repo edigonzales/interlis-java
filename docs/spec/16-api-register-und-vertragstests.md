@@ -757,3 +757,33 @@ und Sanitierung gelten in beiden Modi. Keine Compiler-/Workspace-/Wire-API
 ändert sich. Kapitel18 definiert CLI-Defaults und gemeinsame Repositoryoptionen;
 `VerboseDiagnosticsContractTest` und `SemanticRepositoryCommandsTest` prüfen die
 öffentlichen Übergänge und bisherigen Komfortaufrufe.
+
+
+### Repositorybesuche und Diagnoseprovenienz (01.11.2026)
+
+Besitzer `interlis-repository` / `guru.interlis.repository`: `RepositorySiteReader`
+mit immutable `Site(parents,subsidiaries)`, `RepositorySearchStep` und
+`RepositoryDiagnostics`. `RepositoryModelMetadata` ergänzt `browseOnly` mit
+kompatiblem Konstruktor. `RepositoryProblem` ergänzt `source` und
+`candidateModels`; `RepositoryResolutionOutcome.Rejected` ergänzt `diagnostics`,
+`sources`, `steps`. Bisherige Konstruktoren delegieren auf leere Zusatzwerte.
+Kapitel 08 §12 definiert Reihenfolge, Nullfreiheit, Abbruch, Fehler und Quellenbesitz.
+
+`ResolutionLock` ergänzt `formatVersion`, `selectionProfile`, geordnete `steps`
+und `unavailable`. Zweiparameterkonstruktion bleibt v1; `current` erzeugt v2.
+Codec, Offline-Replay und Metadata-Pins folgen Kapitel 08. Schemafreigabe
+bleibt ausschliesslich beim Compiler-Gate.
+
+Besitzer workspace: `WorkspaceConfiguration` ergänzt globale
+`List<Diagnostic> resolutionDiagnostics`. Vierparameterkonstruktion bleibt
+verfügbar. Capture übernimmt sie in SourceSet und Fingerprint; keine IO im Kern.
+Besitzer CLI: `CliExecutionResult.resolutionLock()` und `.repositorySteps()`
+liefern die Beschaffungsprovenienz auch bei einer anschliessenden Gateablehnung.
+Alle bisherigen Konstruktoren bleiben erhalten; JSON-/Streamvertrag in Kapitel 18.
+
+Diagnosekatalog v2: additive optionale Detailargumente bei ILI-RES-0001–0003,
+neue Codes 0008/0009 mit unveränderten bisherigen Argumentbedeutungen (Kapitel 09).
+Bestehende Snapshot-, Schema- und Bridge-Wireeinstiege bleiben bestehen.
+Abnahmen: RepositorySearchContractTest, RepositoryParityIntegrationTest,
+RepositoryDiagnosticsContractTest, repositoryReferenceCheck und der gezielte
+TeaVM-Task repositoryDiagnosticCheck für Importursachen.

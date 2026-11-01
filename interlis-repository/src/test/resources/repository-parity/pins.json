@@ -1,0 +1,44 @@
+[
+  {
+    "file": "interlis-index.xml.gz",
+    "url": "https://models.interlis.ch/ilimodels.xml",
+    "sha256": "2defccf0152978dd2a5b46bc4fa95ca818bb3a66813f5fb99d89c1fb54507853",
+    "bytes": 55800
+  },
+  {
+    "file": "interlis-site.xml",
+    "url": "https://models.interlis.ch/ilisite.xml",
+    "sha256": "27845ecacfbb72c0c584ecbd99295def618f0af22cf939a6a5fbb5b2800b81ac",
+    "bytes": 1559
+  },
+  {
+    "file": "admin-index.xml.gz",
+    "url": "https://models.geo.admin.ch/ilimodels.xml",
+    "sha256": "c2ce3bfce1cc574b42791304caf5d52b64ef18a28c26c52bb8e6e3b75c740af5",
+    "bytes": 1707722
+  },
+  {
+    "file": "geometry.ili",
+    "url": "https://models.geo.admin.ch/CH/CHBase_Part1_GEOMETRY_V1.ili",
+    "sha256": "f6979b3e349ddb30601a01a6d0e03c5285add8cc63c6f3d99b72101e16a82fbd",
+    "bytes": 6531
+  },
+  {
+    "file": "admin-site.xml",
+    "url": "https://models.geo.admin.ch/ilisite.xml",
+    "sha256": "6a4b66bb3408179224c2ae3b4f2ccbbcb0643c295cc5d9e597fc1d55c2f7625e",
+    "bytes": 1201
+  },
+  {
+    "file": "Units.ili",
+    "url": "https://models.interlis.ch/refhb23/Units-20120220.ili",
+    "sha256": "45a233d3f2a681f2573965fb9ee6a98d279bdadbca94107874a22aa0c733a92d",
+    "bytes": 3226
+  },
+  {
+    "file": "CoordSys.ili",
+    "url": "https://models.interlis.ch/refhb23/CoordSys.ili",
+    "sha256": "7a7ce05144b6cc49d9f71aeca4c171cff79eaa24de8eee2de9ad5a75ddae8d7e",
+    "bytes": 6673
+  }
+]

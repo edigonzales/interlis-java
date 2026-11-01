@@ -130,10 +130,10 @@ Für das neue Standardprofil gilt:
 2. Ein expliziter Quellenhinweis bindet an diese Quelle. Ein anderes gleichnamiges Modell wird nicht still als Ersatz genommen.
 3. Eine explizite Modellversion wird exakt abgeglichen. Datums- oder Semver-Sortierung wird nicht aus dem String geraten.
 4. Explizit übergebene Quellen und konfigurierte Repositoryprioritäten werden in der dokumentierten Reihenfolge ausgewertet.
-5. Innerhalb einer gleichrangigen Auswahlgruppe bleiben mehrere unterschiedliche passende Definitionen mehrdeutig. Gleichheit wird durch geprüften Inhalt und Modellidentität entschieden, nicht nur Dateiname.
-6. Ein Legacyprofil kann die Referenzauswahlregel abbilden. Es muss seine Prioritäten und Konfliktfälle in Tests belegen.
+5. Im reinen Workspace-Resolver bleiben innerhalb einer gleichrangigen Auswahlgruppe mehrere unterschiedliche passende Definitionen mehrdeutig. Gleichheit wird durch geprüften Inhalt und Modellidentität entschieden, nicht nur Dateiname.
+6. Der JVM-Beschaffungshost verwendet standardmässig das unten beschriebene ili2c-5.6.9-Profil. Explizite Auswahlen und Version-1-Locks behalten ihre eigenen Einschränkungen.
 
-Die endgültige Rootliste und Importauswahl werden in der Laufprovenienz festgehalten. Es gibt keinen unkontrollierten automatischen „neuestes Modell“-Fallback. Eine Suchfunktion darf mehrere Versionen anzeigen; die Kompilierung muss ihre konkrete Auswahl offenlegen.
+Die endgültige Rootliste und Importauswahl werden in der Laufprovenienz festgehalten. Es gibt keinen aus Versionsstrings geratenen „neuestes Modell“-Fallback; der Host folgt der expliziten Vorgängerkette. Eine Suchfunktion darf mehrere Versionen anzeigen; die Kompilierung muss ihre konkrete Auswahl offenlegen.
 
 ## 6. JVM-Host für Dateien und HTTP
 
@@ -191,7 +191,7 @@ Ein Headercache wird durch exakten Textfingerprint, Quellrevision, Grammatik-/Pa
 
 ## 10. Konkrete Vertragstests
 
-`ResolutionContractTest` enthält mindestens: explizite Quelle schlägt gleichnamigen Serverkandidaten; Workspace-Override schlägt gespeicherten Text; zwei gleichrangige Versionen ohne Auswahl sind mehrdeutig; exakte Version wählt genau eine Definition; ein gefundener Importname mit falschem Header wird beanstandet; zwei Modelle in einer Datei teilen Textbesitz, behalten eigene Positionen; missingImport wird nach SourceUpdate aufgelöst; eine entfernte Abhängigkeit wird über die Closure invalidiert; verspäteter Download überschreibt keine Editoränderung; gleiche Texte behalten Revisionen; sourceRange mit alter Revision wird nicht verwendet.
+`ResolutionContractTest` enthält mindestens: explizite Quelle schlägt gleichnamigen Serverkandidaten; Workspace-Override schlägt gespeicherten Text; zwei gleichrangige vorhandene Workspaceversionen ohne Auswahl sind mehrdeutig; exakte Version wählt genau eine Definition; ein gefundener Importname mit falschem Header wird beanstandet; zwei Modelle in einer Datei teilen Textbesitz, behalten eigene Positionen; missingImport wird nach SourceUpdate aufgelöst; eine entfernte Abhängigkeit wird über die Closure invalidiert; verspäteter Download überschreibt keine Editoränderung; gleiche Texte behalten Revisionen; sourceRange mit alter Revision wird nicht verwendet.
 
 HTTP-Integrationstests verwenden einen lokalen kontrollierten Server. Der Test des Auswahlalgorithmus verwendet nur SourceInventory. Dadurch ist klar, ob ein Fehler aus IO, Modellbeschaffung oder Sprachbindung stammt.
 
@@ -264,7 +264,7 @@ im JVM-Hostmodul. Es nimmt einen Capture, verarbeitet Quellen in einem privaten
 Workspace mit dem gemeinsamen Parser/Resolver und lädt Indizes erst nach, wenn
 Quellen fehlen. Bereits vollständige eingefrorene Closures benötigen auch offline
 keinen Providerzugriff. Neue Texte werden erst mit dem zurückgegebenen Batch im
-Zielworkspace wirksam. Provisorische Revisionen verlassen den Zwischenstand nicht.
+Zielworkspace wirksam. Erfolgreiche Updates veröffentlichen keine provisorischen Revisionen. Ablehnungen können unveränderliche heruntergeladene Texte mit ihren privaten Quellrevisionen zur Diagnoseanzeige liefern; ursprüngliche Quellen behalten dabei ihre Originalrevision.
 
 Alle folgenden Typen liegen unter `guru.interlis.repository`; Maps/Listen sind
 defensiv kopiert, nullfrei und unveränderlich:
@@ -296,9 +296,10 @@ MODEL_NAME_UNIQUE; die Beschaffung erklärt deren Verletzung nicht zum Resolverf
 
 Der Host verifiziert tatsächliche UTF-8-Bytes, SHA-256, optional veröffentlichtes
 MD5 sowie Name/Version/Sprachfassung im geparsten Header. Indexfehler und
-Ladefehler sind getrennte Ursachen; die strikte Beschaffung fällt bei einem
-fehlgeschlagenen konfigurierten Index nicht unbemerkt auf eine niedrigere Quelle
-zurück. `RepositoryClient.discover` behält seinen separaten partiellen Suchvertrag.
+Ladefehler sind getrennte Ursachen. Das Standardprofil setzt die Suche bei
+unverfügbaren Repositorymetadaten mit einer sichtbaren Warnung fort; der alte
+strikte Vertrag gilt weiter beim Replay eines Version-1-Locks. Eine bereits
+ausgewählte Modelldatei wird bei einem Fehler nicht durch einen anderen Kandidaten ersetzt. `RepositoryClient.discover` behält seinen separaten partiellen Suchvertrag.
 Online werden verwendete Indizes und nachgeladene Modellquellen am Ende nochmals
 verglichen; Änderungen im Lesezeitfenster ergeben CHANGED_SOURCE bzw. einen
 verletzten Pin/Lock. Dies ist keine verteilte Dateisystemtransaktion. Spätere
@@ -318,7 +319,7 @@ Symlinkauflösung, Querybereinigung oder plattformfremde Pfadumschreibung.
 `FileSourceLoader` begrenzt auch den tatsächlichen Streaming-Read, nicht nur eine
 vorherige Dateigrösse. Indexauflösung vergleicht URI-Komponenten und dekodierte
 Pfade und weist auch kodierte `..`-Ausbrüche ab. `RepositoryCatalog.revision`
-(`repository-catalog-v2`) enthält längenpräfixiert alle Modellmetadaten,
+(`repository-catalog-v3`, einschliesslich `browseOnly`) enthält längenpräfixiert alle Modellmetadaten,
 Prioritäten, Indexherkünfte, Fehler und die FetchPolicy.
 
 `DirectoryContentStore(Path[,maxEntryBytes])` ist ein optionaler atomarer,
@@ -326,7 +327,7 @@ digestadressierter Cache. Fehler, übergrosse oder korrupte Einträge sind Misse
 Treffer werden erneut gegen den Digest geprüft. Die Defaultgrenze ist 16 MiB pro
 Eintrag. `InMemoryContentStore` bleibt verfügbar. `ResolutionLockCodec.encode` /
 `decode` verwendet deterministisches UTF-8-XML `interlis-resolution-lock`, Version
-1; sortierte Indizes/Modelle, keine DTD/externen Entities, keine unbekannten Felder,
+1 beziehungsweise 2; sortierte Indizes/Modelle, keine DTD/externen Entities, keine unbekannten Felder,
 doppelten vollständigen Modellidentitäten oder stillen Formatupgrades.
 Verschiedene Versionen/Quellen desselben Namens bleiben getrennte Listeneinträge,
 kanonisch nach rohem Versionsstring und SourceId sortiert; dies ist keine Latest-Auswahl. Decode begrenzt die Eingabelänge
@@ -352,3 +353,86 @@ steht in Kapitel 18. `format` benötigt nur Syntax und führt keine Beschaffung
 aus. Weder Compilerkern noch CLI besitzen implizite Defaultrepositories.
 `SemanticRepositoryCommandsTest` prüft lokale und HTTP-Closures, explizite
 Quellen, mehrere Repositories, Pins, Locks, Offlinebetrieb, Fehler und Abbruch.
+
+
+## 12. Repositorybesuche und Versionsketten im Standardhost
+
+RES-001–009/011/012: Die Beschaffung MUSS ohne Lock standardmässig dem
+Profil `ili2c-5.6.9` folgen. Referenzstand und Originalquellen mit Prüfsummen:
+[Referenzmanifest](../implementation/repository-resolution/reference.json).
+Die CLI aktiviert keine impliziten Standardrepositories.
+
+Je Modellabfrage werden zuerst sämtliche konfigurierten Repositories in ihrer
+Reihenfolge besucht. Danach folgen die Elternketten in einer FIFO-Warteschlange,
+anschliessend die Unterrepositories in einer FIFO-Warteschlange; nach einem
+Unterrepository werden zunächst dessen Elternketten abgearbeitet. Elternbesuche
+fügen keine zusätzlichen Unterrepositoryzweige hinzu. Ein besuchtes Repository
+wird pro Abfrage nur einmal verarbeitet. Der erste passende Treffer beendet die
+Suche; dessen `ilisite.xml` und spätere Repositories werden nicht mehr geladen.
+Dokumente werden innerhalb eines Beschaffungslaufs wiederverwendet. Ein leerer
+Index mit gültigem RepositoryIndex-Profil darf als Mutterrepository dienen.
+
+`RepositorySiteReader.read(IndexPayload,RepositoryBase)` liefert `Site` mit
+geordneten unveränderlichen `parents()` und `subsidiaries()`. XML-Entities und
+DTDs sind verboten. Relative Links werden an der Basis aufgelöst; HTTP(S) und
+lokale Datei-Repositories sind zulässig. Ein Remoteindex darf keine lokalen
+Dateizugriffe über Siteverknüpfungen einführen. Dateiidentitäten werden wie bei
+Modelldateien kanonisiert; HTTP und HTTPS bleiben verschiedene Identitäten.
+
+`RepositoryModelMetadata` ergänzt `boolean browseOnly`; der bisherige
+Konstruktor setzt `false`. Die Auswahl erhält die originale Indexreihenfolge.
+Für Imports gilt die Sprachfassung des importierenden Modells; bei einer
+unqualifizierten benannten Root wird zuerst 2.4, dann 2.3 gesucht.
+Nach Filtern nach Modellname und Sprachfassung werden `browseOnly`-Einträge
+ignoriert. Exakte Version-/Quellenanforderungen werden vor der Kettenreduktion
+angewendet und dürfen historische Versionen auswählen.
+Ohne solche Einschränkung wird die erste Version ohne Vorgänger gewählt und
+die Kette über `precursorVersion` verfolgt. Weitere Starts beziehungsweise
+Nachfolger desselben Vorgängers werden mit Warnung ignoriert. Eine unterbrochene
+Kette liefert die letzte erreichbare Version mit Warnung; ohne Startversion
+wird das Modell mit Warnung ignoriert. Versionsstrings werden nicht sortiert.
+
+`RepositorySearchStep(modelName,repository,kind,detail)` ist eine geordnete,
+unveränderliche, geheimnisbereinigte Entscheidung. `LOOKUP` und `SELECTED`
+bezeichnen Besuche und Auswahl; die übrigen Varianten begründen Warnungen.
+`RepositoryDiagnostics` projiziert diese Fakten gemeinsam für alle Verbraucher.
+`RepositoryProblem` ergänzt die konkrete optionale Quelle und vollständige
+Kandidatenmetadaten. `RepositoryResolutionOutcome.Rejected` ergänzt
+`diagnostics`, `sources` und `steps`; sein alter Konstruktor bleibt erhalten.
+Die Diagnosen verwenden die tatsächliche Importstelle einschliesslich UTF-16-
+Bereich und Quellrevision. Benannte Roots ohne Quellstelle bleiben global.
+
+`WorkspaceConfiguration` ergänzt eine defensiv kopierte Liste globaler
+`resolutionDiagnostics`; der bisherige Konstruktor setzt eine leere Liste.
+Sie beeinflusst den Konfigurationsfingerprint und wird beim Capture in das
+`SourceSet` übernommen. Repositorywarnungen erreichen so das einzige
+Compiler-Gate und dessen bestehende Warnungspolitik. Keine zweite
+Schemafreigabe im Host. Erfolgsbatches bleiben atomar und workspacegebunden.
+
+Neue Locks haben `formatVersion=2`, `selectionProfile=ili2c-5.6.9`, geordnete
+`steps` und eine Map `unavailable` mit konkreten Ladeursachen. `indexes` enthält
+sämtliche tatsächlich verwendeten Modell- und Siteindizes mit SHA-256.
+Die bestehenden Zweiparameterkonstruktoren erzeugen weiterhin Version-1-Locks;
+`ResolutionLock.current` erzeugt Version 2. Codec und Replay lesen beide
+Versionen ohne stilles Upgrade. Version 1 behält die explizite flache Suche.
+Version 2 friert die Suchentscheidungen und ausgewählten Quellen ein. Replay
+prüft die vollständigen eingefrorenen Metadaten gegen ihre Digests und bindet
+die ausgewählten Identitäten direkt aus diesen Indizes, ohne eine neue Suche
+oder neue Kettenentscheidung. Es akzeptiert keine zusätzlichen unbekannten
+Metadaten. Dadurch bleiben auch Locks erweiterter, bereits geladener
+Workspace-Closures in einem frischen Workspace reproduzierbar. Offline
+werden nur digestgeprüfte Cachetexte und eingefrorene Nichtverfügbarkeiten
+verwendet. Online werden gelesene Inhalte sowie beobachtete Nichtverfügbarkeiten
+am Ende erneut geprüft. Fehlende Cachebytes sind `OFFLINE`, kein stiller Miss.
+
+`maxSemanticWorkUnits`, `maxDiagnostics`, die kumulative Grenze
+`maxTotalSourceUtf16Length` und die bestehenden Fetchlimits begrenzen die
+Beschaffung. Abbruch oder Budgetüberschreitung veröffentlicht keinen Teilbatch.
+`RepositoryClient.catalog/discover` bleiben separate explizite Katalogabfragen;
+ihre rohen Kandidatenlisten sind keine automatische Kompilierauswahl.
+
+Abnahmen: `RepositorySearchContractTest`, `RepositoryParityIntegrationTest`,
+`RepositoryClosureContractTest`, `RepositoryDiagnosticsContractTest` und
+`repositoryReferenceCheck`. Historische Tests mit pauschaler Hostmehrdeutigkeit
+werden durch referenzbelegte Ketten-/Indexreihenfolgetests ersetzt; reine
+Workspace-Mehrdeutigkeit bleibt eine eigene Abnahme.

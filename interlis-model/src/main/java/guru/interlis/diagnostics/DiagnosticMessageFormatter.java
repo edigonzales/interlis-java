@@ -26,6 +26,8 @@ public final class DiagnosticMessageFormatter {
             text("resolution.overlay.missing", "The translation original '{model}' required by overlay '{overlay}' could not be found.", "Das vom Overlay '{overlay}' benötigte Übersetzungsoriginal '{model}' wurde nicht gefunden."),
             text("resolution.overlay.ambiguous", "The translation original '{model}' for overlay '{overlay}' is ambiguous. Candidates: {candidates}.", "Das Übersetzungsoriginal '{model}' für das Overlay '{overlay}' ist mehrdeutig. Kandidaten: {candidates}."),
             text("resolution.translation.identity", "The selected translation source has an inconsistent model identity: {reason}.", "Die ausgewählte Übersetzungsquelle hat eine widersprüchliche Modellidentität: {reason}."),
+            text("resolution.adjustment", "Repository '{repository}', model '{model}': {reason}.", "Repository '{repository}', Modell '{model}': {reason}."),
+            text("resolution.rejected", "Model '{model}' could not be provided: {reason}.", "Das Modell '{model}' konnte nicht bereitgestellt werden: {reason}."),
             text("semantics.unresolved", "The name '{name}' cannot be resolved at this location.", "Der Name '{name}' kann an dieser Stelle nicht aufgelöst werden."),
             text("semantics.ambiguous", "The name '{name}' is ambiguous at this location. Candidates: {candidates}.", "Der Name '{name}' ist an dieser Stelle mehrdeutig. Kandidaten: {candidates}."),
             text("semantics.duplicate", "The name '{name}' is already declared in this namespace.", "Der Name '{name}' ist in diesem Namensraum bereits deklariert."),
@@ -58,6 +60,7 @@ public final class DiagnosticMessageFormatter {
                     ? "Für diese Diagnose sind keine weiteren Angaben verfügbar."
                     : "No further explanation is available for this diagnostic.", Optional.empty());
         var values = arguments(diagnostic.arguments());
+        if (diagnostic.code().value().startsWith("ILI-RES-") && values.containsKey("reason")) values.put("reason", resolutionReason(values.get("reason"), language));
         String rule = diagnostic.arguments().stream().filter(a -> a.name().equals("rule"))
                 .filter(DiagnosticArgument.TextArgument.class::isInstance)
                 .map(DiagnosticArgument.TextArgument.class::cast).map(DiagnosticArgument.TextArgument::value)
@@ -77,7 +80,35 @@ public final class DiagnosticMessageFormatter {
                     replace(language == DiagnosticLanguage.DE ? "Der geerbte Typname '{element}' benötigt eine explizite EXTENDED-Deklaration."
                             : "The inherited type name '{element}' requires an explicit EXTENDED declaration.", values), Optional.empty());
         }
-        return new DiagnosticMessage(replace(language == DiagnosticLanguage.DE ? template.de() : template.en(), values), Optional.empty());
+        return new DiagnosticMessage(replace(language == DiagnosticLanguage.DE ? template.de() : template.en(), values),
+                Optional.ofNullable(values.get("detail")).filter(v -> !v.isEmpty()));
+    }
+
+    private static String resolutionReason(String reason, DiagnosticLanguage language) {
+        boolean de = language == DiagnosticLanguage.DE;
+        return switch (reason) {
+            case "DUPLICATE_ROOT" -> de ? "mehrere Startversionen; die erste im Index wird verwendet" : "multiple initial versions; using the first in index order";
+            case "DUPLICATE_SUCCESSOR" -> de ? "mehrere Nachfolgeversionen; die erste im Index wird verwendet" : "multiple successors; using the first in index order";
+            case "BROKEN_CHAIN" -> de ? "unterbrochene Versionskette; die letzte erreichbare Version wird verwendet" : "broken version chain; using the last reachable version";
+            case "NO_ROOT" -> de ? "keine Version ohne Vorgänger; Modell wird ignoriert" : "no version without a predecessor; ignoring model";
+            case "REPOSITORY_UNAVAILABLE" -> de ? "Modellindex nicht verfügbar; Suche wird fortgesetzt" : "model index unavailable; continuing search";
+            case "SITE_UNAVAILABLE" -> de ? "Repositoryverknüpfungen nicht verfügbar; Suche wird fortgesetzt" : "repository links unavailable; continuing search";
+            case "NOT_FOUND" -> de ? "Quelle nicht gefunden" : "source not found";
+            case "OFFLINE" -> de ? "verifizierter Inhalt ist offline nicht verfügbar" : "verified content is unavailable offline";
+            case "ACCESS_DENIED" -> de ? "Zugriff verweigert" : "access denied";
+            case "TIMEOUT" -> de ? "Zeitüberschreitung beim Laden" : "loading timed out";
+            case "IO_FAILURE" -> de ? "Ein-/Ausgabefehler beim Laden" : "input/output failure while loading";
+            case "INVALID_ENCODING" -> de ? "Quelle enthält ungültiges UTF-8" : "source contains invalid UTF-8";
+            case "TOO_LARGE" -> de ? "Quelle überschreitet die Grössenbegrenzung" : "source exceeds the size limit";
+            case "REDIRECT_LIMIT" -> de ? "zu viele HTTP-Weiterleitungen" : "too many HTTP redirects";
+            case "VERSION_MISMATCH" -> de ? "angeforderte Modellversion stimmt nicht mit den verfügbaren Quellen überein" : "requested model version does not match available sources";
+            case "INVALID_SOURCE" -> de ? "Modellkopf oder Quellinhalt ist ungültig" : "model header or source content is invalid";
+            case "INDEX_FAILURE", "INVALID_INDEX" -> de ? "Repositorymetadaten sind ungültig" : "repository metadata is invalid";
+            case "PIN_MISMATCH" -> de ? "Quelle stimmt nicht mit dem expliziten Pin überein" : "source does not match the explicit pin";
+            case "LOCK_MISMATCH" -> de ? "Quelle oder Auswahl stimmt nicht mit dem Lock überein" : "source or selection does not match the lock";
+            case "CHANGED_SOURCE" -> de ? "Quelle hat sich während der Beschaffung geändert" : "source changed during resolution";
+            default -> reason;
+        };
     }
 
     /** Formats a related-location explanation; its position is rendered by the host without IO. */

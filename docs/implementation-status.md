@@ -1,5 +1,22 @@
 # Implementierungsstatus interlis-java
 
+Abgeschlossener Repository-Folgeauftrag vom 01.11.2026: lazy Repositorybesuche
+und Versionsketten nach ili2c 5.6.9, gemeinsame strukturierte DE-/EN-Diagnosen,
+Warnungen am Compiler-Gate und v2-Locks mit v1-Kompatibilität.
+RES-001–009/011/012, DIAG-001–009, CLI-001–007 und LOG-002/003/005/008.
+Beide Screenshot-Kommandos liefern über die neu gebaute und am bisherigen Ort
+entpackte Distribution Exit0 und wählen GeometryCHLV95_V1 2017-12-04.
+158 aufbewahrte gezielte JUnit-Tests ohne Fehler/Skips, zehn Referenzgegenproben,
+55 CLI-/sechs PTY- und 16 zusätzliche finale Distributionsprozesse, neun
+SDK-Kommandos und externer Archivverbraucher bestehen. JS-/WasmGC-Gegenproben
+unter Node24.22.0 bestehen einschliesslich tatsächlichem Exit0; frühere hängende
+Node22-Versuche sind ausdrücklich keine PASS-Nachweise.
+[Umfang, Verträge, unveränderte Rohbelege und Prüfgrenzen](implementation/repository-resolution/REPORT.md).
+Keine Blocker oder offenen Schritte dieses Auftrags; keine pauschale Wiederholung
+von Korpus, Benchmarks, Browser- oder Phasenabnahmen. Anschliessender Commit
+und Push auf ausdrücklichen Nutzerauftrag; kein Release.
+
+
 Gezielte Nacharbeit vom 01.11.2026: `diagram`-Hilfe listet `--json` nicht mehr
 als nutzbare Option und empfiehlt ausdrücklich `--format json`. CLI-003/004/006,
 LOG-005. Vier ausgewählte Tests und fünf reale CLI-Prozesse bestanden; keine

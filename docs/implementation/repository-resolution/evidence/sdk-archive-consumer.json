@@ -1,0 +1,71 @@
+{
+  "consumerClasspath": "Only extracted cli/lib jars; no repository classes/test dependencies",
+  "status": "passed",
+  "versions": {
+    "tool": "interlis-compiler",
+    "version": "0.2.0-SNAPSHOT",
+    "apiVersion": "0.2",
+    "diagnosticCatalogVersion": "interlis-diagnostics/v2",
+    "protocol": "interlis.compiler/1.0",
+    "languageProfiles": "2.3, 2.4",
+    "formatVersion": "1.0",
+    "diagramSchemaVersion": "1.0"
+  },
+  "launcher": {
+    "command": [
+      "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/bin/interlis-compiler",
+      "version",
+      "--json"
+    ],
+    "exitCode": 0,
+    "stdout": "{\"tool\":\"interlis-compiler\",\"version\":\"0.2.0-SNAPSHOT\",\"apiVersion\":\"0.2\",\"diagnosticCatalogVersion\":\"interlis-diagnostics/v2\",\"protocol\":\"interlis.compiler/1.0\",\"languageProfiles\":\"2.3, 2.4\",\"formatVersion\":\"1.0\",\"diagramSchemaVersion\":\"1.0\"}\n",
+    "stderr": "",
+    "durationMs": 251.699041
+  },
+  "execute": {
+    "command": [
+      "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/java",
+      "-cp",
+      "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/consumer-classes:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/antlr4-runtime-4.13.2.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-compiler-cli-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-model-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar",
+      "SdkExample"
+    ],
+    "exitCode": 0,
+    "stdout": "SDK PASS snap-ca6702cc5434ba6f340711adc82de4ad557aa4248a6b5f14d3da13cfee0078e7 models=1\n",
+    "stderr": "",
+    "durationMs": 227.089542
+  },
+  "arch": "aarch64",
+  "os": "Mac OS X",
+  "archiveSha256": "3bf32f70b8b0cc10f366cd89240094e7533a9ab95ad04be8e550ec67c8879c56",
+  "compile": {
+    "command": [
+      "/Users/stefan/.sdkman/candidates/java/25.0.3-tem/bin/javac",
+      "--release",
+      "25",
+      "-encoding",
+      "UTF-8",
+      "-cp",
+      "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/antlr4-runtime-4.13.2.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-compiler-cli-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-model-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar:/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar",
+      "-d",
+      "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/consumer-classes",
+      "/var/folders/rp/xw19bm096bv14zzhq2ybnttm0000gn/T/interlis SDK consumer 15854298073404359014/examples/sdk/SdkExample.java"
+    ],
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": "",
+    "durationMs": 385.524041
+  },
+  "entries": {
+    "cli/bin/interlis-compiler": "f07a68e741009bea4761403225815635bafe49deb6162ae4e835f2a1f41f50fc",
+    "cli/bin/interlis-compiler.bat": "be55b4b588e6d1cfdf3e2f305df9db172aceef77db278dba26458b733524e42c",
+    "cli/lib/antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "cli/lib/interlis-compiler-0.2.0-SNAPSHOT.jar": "86460db600ab375a07bccd2c1996d7dbe21942e6ac0ddbffd57707ab1dec2c4c",
+    "cli/lib/interlis-compiler-cli-0.2.0-SNAPSHOT.jar": "6be87758f4557ead456b1bf13798dadca44c530bcf5c2dc639aa3ba86d07aba5",
+    "cli/lib/interlis-model-0.2.0-SNAPSHOT.jar": "775352c393ab0d529bc8ab8e3c4bd49c88a7c76dd8f7639b3c2d0431ebd5c455",
+    "cli/lib/interlis-projection-0.2.0-SNAPSHOT.jar": "46fc3a6ad1e35c19e1999c5df09251915fd6631e9c09f19bda9e2ac65b0ade41",
+    "cli/lib/interlis-repository-0.2.0-SNAPSHOT.jar": "2fe6ff403cace71819f39d1f7c77f69b44d827d1cab4d24511c95ce5eb3de103",
+    "cli/lib/interlis-workspace-0.2.0-SNAPSHOT.jar": "e9efee37214c38e1292fd26d3f802c2ada1e25bf0abdb7a77b015ef8724085ad",
+    "examples/sdk/SdkExample.java": "47ecb4e0eda4360d793762dcfbde4a43a98a6bb85a5d215204897b153e2e360b",
+    "version/version-manifest.json": "694e2a5f07e52e85d674f510b848da60ad17e9a49fec3c9809b024d090618e0f"
+  }
+}

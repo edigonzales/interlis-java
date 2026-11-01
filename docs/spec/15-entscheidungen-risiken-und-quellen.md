@@ -171,3 +171,25 @@ ist weiterhin kein Normbeleg. Die übrigen klaren Unterteilungsregeln werden
 auch dann geprüft, wenn ili2c dieselben ungültigen Modelle akzeptiert.
 Suitepins und alle 18 Zusatzerwartungen bleiben erhalten. API-Register 16
 und Index 17 führen weiterhin die bestehenden Typen und Anforderungs-IDs.
+
+
+## Repositoryprofil: Nutzerentscheidung vom 01.11.2026
+
+Für die JVM-Modellbeschaffung gilt standardmässig ili2c-Parität bei
+Repositorybesuchen und Versionsketten. Dies ersetzt die frühere pauschale
+Hostmehrdeutigkeit historischer gleichnamiger Repositoryversionen. Die
+Workspaceauswahl vorhandener Quellen und ihre echte Mehrdeutigkeit bleiben
+erhalten. Auf Nachfrage wurden ausdrücklich auch die Sonderfälle beschädigter
+Versionsketten freigegeben: erste Start-/Nachfolgeversion nach Indexreihenfolge,
+letzte erreichbare Version bei Unterbrechung und keine Auswahl ohne Start;
+Anpassungen müssen sichtbar erklärt werden.
+
+Referenz: ili2c 5.6.9, Commit `bf16026e83f2377153b2e818a4f3838f0a423722`.
+Originalquellen und SHA-256 stehen im
+[Referenzmanifest](../implementation/repository-resolution/reference.json).
+Die drei zuvor untersuchten Upstreamdateien stimmen bytegleich mit diesem
+Referenzstand überein. Die Laufzeitreferenz bleibt ausschliesslich Testwerkzeug.
+Kapitel 08 dokumentiert die bewusst erhaltenen Hostgrenzen: nur 2.3/2.4,
+explizite Pins/Locks, Ressourcenlimits und keine von Remote-Sites eingeführten
+lokalen Dateizugriffe. Version-1-Locks behalten ihren Auswahlvertrag;
+neue Beschaffungen schreiben Version 2.

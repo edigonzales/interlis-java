@@ -25,7 +25,8 @@ class DiagnosticMessageFormatterTest {
                 case IDENTIFIER_LIST -> new DiagnosticArgument.IdentifierListArgument(a.name(), List.of("value_" + a.name(), "🦊"));
             }).toList();
             for (var language : DiagnosticLanguage.values()) {
-                var text = formatter.format(diagnostic(definition, arguments), language).text();
+                var message = formatter.format(diagnostic(definition, arguments), language);
+                var text = message.text() + message.hint().orElse("");
                 assertFalse(text.contains("?"), definition.code() + text);
                 assertFalse(text.contains("diagnostic."), text); assertFalse(text.contains("{"), text);
                 assertFalse(text.contains("No further explanation") || text.contains("keine weiteren Angaben"), definition.code().toString());
@@ -69,4 +70,10 @@ class DiagnosticMessageFormatterTest {
         assertTrue(formatter.format(d, DiagnosticLanguage.DE).hint().isPresent());
         assertTrue(d.arguments().toString().contains("SCOPE_OUTER_TYPE_NAME"));
     }
+    @Test void repositoryReasonLocalizationDoesNotRewriteSemanticReasonArguments() {
+        var numeric = DiagnosticCatalog.initial().require(new DiagnosticCode("ILI-SEM-0007"));
+        var message = formatter.format(diagnostic(numeric,List.of(new DiagnosticArgument.TextArgument("reason","TIMEOUT"))),DiagnosticLanguage.DE);
+        assertTrue(message.text().contains("TIMEOUT"));
+    }
+
 }

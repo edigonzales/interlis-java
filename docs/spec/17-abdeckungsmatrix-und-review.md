@@ -912,3 +912,15 @@ prüft vier semantische Befehle; VerboseDiagnosticsContractTest prüft fünf
 Diagnosebefehle und RenderOptions-Kompatibilität. compilerCliCheck ergänzt echte
 HTTP-Prozesse für alle vier Verbraucher und Kompakt-/Verbose-Gegenproben.
 Die bestehenden COLOR-Quellframefälle verwenden ausdrücklich `--verbose`.
+
+
+Repositoryfolgeauftrag vom 01.11.2026: RES-001–009/011/012 und die bestehenden
+DIAG-001–009, CLI-001–007 sowie LOG-002/003/005/008 werden durch Kapitel 08 §12,
+09 und 18 konkretisiert. `RepositorySearchContractTest` prüft Besuche und
+Versionsketten, `RepositoryParityIntegrationTest` die Originalfixtures und
+Lock-/Gategrenzen, `RepositoryDiagnosticsContractTest` die gemeinsame Darstellung.
+`repositoryReferenceCheck` vergleicht unabhängig mit ili2c 5.6.9;
+`repositoryDiagnosticCheck` prüft nur die gemeinsame Importursachenprojektion
+auf JS/WasmGC. Die reine Workspace-Mehrdeutigkeit und historische Phasenabnahmen
+bleiben getrennt. Operativer Nachweis:
+[Implementierungsbericht](../implementation/repository-resolution/REPORT.md).

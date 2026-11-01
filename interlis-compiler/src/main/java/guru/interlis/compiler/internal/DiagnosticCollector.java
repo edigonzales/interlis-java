@@ -60,6 +60,13 @@ public final class DiagnosticCollector {
         return id;
     }
 
+    /** Finds the emitted import failure at an exact revision-bound import site. */
+    Optional<DiagnosticId> importFailure(guru.interlis.source.SourceRange site) {
+        return diagnostics.values().stream().filter(d -> d.code().value().equals("ILI-RES-0001")
+                || d.code().value().equals("ILI-RES-0002") || d.code().value().equals("ILI-RES-0003"))
+                .filter(d -> d.primaryRange().filter(site::equals).isPresent()).map(Diagnostic::id).findFirst();
+    }
+
     public Map<DiagnosticId, DiagnosticId> importAll(List<Diagnostic> imported) {
         Objects.requireNonNull(imported, "imported");
         Map<DiagnosticId, DiagnosticId> mapping = new LinkedHashMap<>();

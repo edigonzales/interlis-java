@@ -13,6 +13,7 @@ def hostProfiles = [
     platformCheck: ['PlatformProcesses', []],
     conformanceEvidence: ['ConformanceEvidence', []],
     compilerCliCheck: ['CompilerCliProcesses', []],
+    repositoryReferenceCheck: ['RepositoryReferenceCheck', []],
     referenceCheck: ['ReferenceProcesses', ['profile']],
     originalViewReferenceCheck: ['ReferenceProcesses', ['originals']],
     viewReferenceCheck: ['ReferenceProcesses', ['views', hostNodeExecutable.get()]],

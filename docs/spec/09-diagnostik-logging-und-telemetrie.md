@@ -447,3 +447,30 @@ und Formatierung verwenden false und erfinden keinen Compilerkindlauf oder
 Schemaerfolg. CLI-Eltern-/Kindbezug und endgültiger Flushabschluss werden im
 Hostvertrag aus Kapitel 18 geprüft. Dies ist Betriebsmetadatenkorrektheit und
 keine zweite fachliche Gateentscheidung.
+
+
+## Repositorydiagnosen im gemeinsamen Diagnoseweg
+
+DIAG-001–009 / LOG-002/003/005/008: Katalog `interlis-diagnostics/v2` ergänzt
+`ILI-RES-0008` (Warnung bei Repositoryanpassungen) und `ILI-RES-0009`
+(Ablehnung wegen Versions-/Identitäts-/Pin-/Lockkonflikten). Codes 0001–0003
+behalten ihre Argumentbedeutung und erlauben zusätzlich ein optionales
+`TextArgument(detail)` für sichere ausführliche Suchinformationen.
+0008 besitzt `model:IDENTIFIER` sowie `repository`, `reason`, `detail:TEXT`;
+0009 besitzt `model:IDENTIFIER` sowie `reason`, `detail:TEXT`.
+Die Werte sind Daten; DE-/EN-Texte und Hinweise erzeugt allein der gemeinsame
+Formatter. Fehlende Modelle, Mehrdeutigkeit und Ladefehler verwenden weiterhin
+0001, 0002 und 0003. Modellversionen und Kandidatenquellen bleiben im
+Repositoryergebnis strukturiert zugänglich.
+
+Repositoryablehnungen sind strukturierte Hostresultate, keine behaupteten
+Compiler-Gate-Resultate. Kein Compilerstart und kein Erfolgsschema bei
+unvollständiger Beschaffung. Anpassungswarnungen einer vollständigen Beschaffung
+werden dagegen als globale SourceSet-Diagnosen vom Compiler-Gate bewertet.
+Alle angenommenen CLI-Läufe erhalten weiterhin genau einen Hostabschluss.
+
+Qualifizierte Namensfehler, deren Modellqualifikator einem tatsächlich
+fehlgeschlagenen Import im selben Modell entspricht, erhalten dessen
+`causeId` und `dependsOn`. Textdarstellung unterdrückt diese abhängigen
+Fehler über `DiagnosticPresentation`; die vollständige Liste und JSON behalten
+sie. Unabhängige Namen werden nicht aufgrund eines fehlenden Imports verdeckt.
