@@ -313,3 +313,30 @@ AUTO konservativ farbfrei; ALWAYS ist unabhängig von Hostdetektion verfügbar.
 und schliesst jeden Bereich mit Reset. Alte Renderer-Overloads bleiben plain;
 ein expliziter boolescher Stilparameter ermöglicht die reine Farbprojektion.
 Abnahme: ColorOutputContractTest und reale CLI-/PTY-/Redirectprozesse.
+
+## COLOR2: sichere Quellframes
+
+C2-01–11: `ConsoleDiagnosticRenderer.render(diagnostic,sources,language,RenderOptions)`
+erweitert die bestehende reine Darstellung. Die bisherigen Overloads bleiben
+verfügbar und standardmässig ohne ANSI. `RenderOptions(ansiEnabled,
+contextLinesBefore,contextLinesAfter,maxVisibleColumns)` ist immutable und
+nullfrei; vor/nach müssen nichtnegativ sein und zusammen höchstens2 ergeben,
+Breite24..160 einschliesslich Framegutter. Defaults1/1/160. Ungültige Grenzen
+werfen IllegalArgumentException vor Rendering. Keine impliziten Hostabfragen.
+
+Der interne `DiagnosticSnippetRenderer` liest ausschliesslich übergebene
+SourceTexte; nur gleiche ID/Revision und gültige UTF-16-Grenzen ergeben Frames.
+Die Verarbeitung ist linear, der zusätzliche Speicher und die Ausgabe je Frame
+sind begrenzt. Höchstens3 Quellzeilen, lange Zeilen zeigen ein Fenster um die
+Spanne mit ASCII-Ellipsen. Tabs werden deterministisch auf Viererspalten expandiert;
+Kontrollen/Bidi werden vor Styling durch safeText druckbar escaped, einzelne
+Surrogate ebenfalls. Printable Unicode bleibt sichtbar. Wo seine Displaybreite
+vor/in der Spanne unsicher ist, wird kein exakter Caret behauptet, sondern
+`[UTF-16 ...; marker omitted]` angezeigt. ASCII-/escaped-Spannen verwenden ^/~;
+leere Bereiche einen Caret, mehrzeilige Bereiche nur den ersten Abschnitt und
+einen begrenzten Fortsetzungshinweis. Headerpositionen bleiben immer UTF-16.
+Severity, Orte, Codes, Zeilennummern, Marker und Hintlabel verwenden die feste
+SGR-Palette mit Reset je Bereich. Prosa, Diagnosereihenfolge, RelatedLocations,
+Hints und JSONdaten bleiben fachlich identisch. JSON erhält nie RenderOptions.
+Abnahme: DiagnosticSnippetRendererTest, ColorOutputContractTest, bestehende
+Office-/Root-/Sprach-/UTF-8-Verträge und echte Launcher-Gegenproben.

@@ -739,3 +739,8 @@ beziehungsweise der explizite Hostdetektor; Verträge und kompatible
 CliEnvironment-Konstruktoren stehen in Kapitel18, nicht im Compilerkern.
 ColorOutputContractTest prüft Parser, Policykombinationen, UTF-8, Reset,
 JSON-Parität und unveränderte Capabilityweitergabe.
+
+COLOR2: `RenderOptions` gehört ebenfalls zum CLI-Modul, Package
+`guru.interlis.cli`; der reine ConsoleDiagnosticRenderer-Overload und seine
+kompatiblen Vorgänger stehen in Kapitel18. DiagnosticSnippetRenderer bleibt
+intern und erzeugt ausschliesslich revisionstreue, begrenzte Präsentation.

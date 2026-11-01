@@ -899,3 +899,7 @@ COLOR1 ordnet C1-01–08 den bestehenden CLI-003/004/006, COMPAT-002 und LOG-005
 zu: strikte Optionsgrammatik, run-lokale Farbentscheidung und getrennte Kanäle.
 Fachvertrag Kapitel18, Tests ColorOutputContractTest und reale Prozessproben;
 operativer Stand unter `docs/implementation/compiler-cli-color-output/STATUS.md`.
+
+COLOR2 konkretisiert C2-01–11 / DIAG-001–003/006/009 und CLI-004/006 über
+revisionstreue sichere Quellframes und bytegleiche ANSI-/Plainprojektion.
+Keine Sprach-, Snapshot-, LSP- oder Bridgeänderung; Abnahmen in Kapitel18.

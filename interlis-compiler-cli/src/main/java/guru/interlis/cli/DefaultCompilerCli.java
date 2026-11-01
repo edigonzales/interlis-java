@@ -448,7 +448,7 @@ public final class DefaultCompilerCli implements CliApplication {
             if (outcome instanceof FormatOutcome.Rejected rejected) {
                 ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
                 for (Diagnostic diagnostic : rejected.diagnostics()) {
-                    environment.err().println(renderer.render(diagnostic, sources, invocation.language, invocation.ansiEnabled));
+                    environment.err().println(renderer.render(diagnostic, sources, invocation.language, RenderOptions.defaults(invocation.ansiEnabled)));
                 }
                 return result(CliTermination.SOURCE_REJECTED, rejected.diagnostics(),
                         "format rejected");
@@ -645,7 +645,7 @@ public final class DefaultCompilerCli implements CliApplication {
         } else {
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
             for (Diagnostic diagnostic : diagnostics) {
-                environment.err().println(renderer.render(diagnostic, sources, invocation.language, invocation.ansiEnabled));
+                environment.err().println(renderer.render(diagnostic, sources, invocation.language, RenderOptions.defaults(invocation.ansiEnabled)));
             }
         }
     }

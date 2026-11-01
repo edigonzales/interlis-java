@@ -2,7 +2,8 @@
 
 Aktiver Folgeauftrag seit 01.11.2026: farbige CLI-Textdiagnosen, COLOR1–3.
 [Operativer COLOR-Status](implementation/compiler-cli-color-output/STATUS.md).
-COLOR1 implementiert und lokal geprüft; unabhängiger Review noch ausstehend.
+COLOR1 unabhängig PASS auf `792811e2bb1b7186c3eecc4a1a4f3930469a1c19`.
+COLOR2 implementiert und lokal geprüft; unabhängiger Review noch ausstehend.
 Frühere CLI-/G2-/P3-Abnahmen bezeichnen weiterhin ihre historischen Produktstände.
 
 **Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss

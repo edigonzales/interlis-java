@@ -21,8 +21,8 @@
     "docs/spec/13-tests-kompatibilitaet-und-qualitaet.md": "9659433c545308c60e6f2c662e9f33797ebcdaebcd7f0c30f793f0a74e7e1ca3",
     "docs/spec/14-implementierungsplan-und-arbeitspakete.md": "9464b79393185e13084d3153bc79d0ed45b5937aab83ed578509ec28af2eec36",
     "docs/spec/15-entscheidungen-risiken-und-quellen.md": "efcbbaefffed904317c1d4779a5fc6e296a1c1615c783a0dbf3b6383525009a3",
-    "docs/spec/16-api-register-und-vertragstests.md": "cd857a91073e9d0cae29723c8d0cc0f1168753ccccf1d91013b78679b516842c",
-    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "a17095b243f6dfc4942c8c466622d450520cece0ecdc50af9b945246473417c6",
+    "docs/spec/16-api-register-und-vertragstests.md": "ceb66412930f5aa1db3249a8bf72581b1c9c778902164f2592caec718ebf6f1b",
+    "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md": "be5952067e383d36d66fb3a58401db40490b953f6775663f9cf415599052ed57",
     "interlis-compiler/src/main/java/guru/interlis/compiler/internal/BuiltinFunctions.java": "3682eb65941137215978a8b13b8c661536122280acd4459b6641892c362551c3"
   },
   "grammars": [
