@@ -21,11 +21,21 @@ public final class Main {
         var application = new DefaultCompilerCli();
         var arguments = Boolean.getBoolean("guru.interlis.cli.windowsArguments")
                 ? windowsArguments() : java.util.List.of(args);
-        CliExecutionResult result = application.run(arguments, CliEnvironment.system(),
+        CliExecutionResult result = application.run(arguments, hostEnvironment(),
                 CancellationToken.none());
         if (result.exitCode() != 0) {
             System.exit(result.exitCode());
         }
+    }
+
+    /** Keeps caller-relative paths while the Windows launcher resolves modules locally. */
+    private static CliEnvironment hostEnvironment() {
+        var current = CliEnvironment.system();
+        if (!Boolean.getBoolean("guru.interlis.cli.windowsArguments")) return current;
+        String caller = System.getenv("_INTERLIS_COMPILER_WORKING_DIRECTORY");
+        if (caller == null) return current; // Existing programmatic bridge callers remain compatible.
+        return new CliEnvironment(java.nio.file.Path.of(caller),current.in(),current.out(),current.err(),
+                current.environment(),current.services(),current.terminalCapabilities());
     }
 
     /** Reads the Windows launcher's ordered Unicode arguments, including empty values. */

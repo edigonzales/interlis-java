@@ -24,13 +24,23 @@ distributions.main.distributionBaseName = 'interlis-compiler'
 
 tasks.named('startScripts') {
     inputs.property('windowsUnicodeArguments', 1)
+    inputs.property('unicodeModuleLaunch', 3)
     doLast {
+        // JDK 25's classpath URL encoder mishandles supplementary characters
+        // in installation paths. Automatic modules resolve the same unmodified
+        // runtime JARs through URI-safe paths; no module descriptors are added.
+        def unix = unixScript.getText('UTF-8')
+        if (!unix.contains('-classpath "$CLASSPATH"') || !unix.contains('        guru.interlis.cli.Main'))
+            throw new GradleException('Unexpected POSIX launcher template')
+        unixScript.setText(unix.replace('-classpath "$CLASSPATH"',
+                '--module-path "$APP_HOME/lib" --add-modules ALL-MODULE-PATH,ALL-DEFAULT')
+                .replace('        guru.interlis.cli.Main', '        --module interlis.compiler.cli/guru.interlis.cli.Main'), 'UTF-8')
         // Java 25's Windows launcher converts argv through the ANSI code page.
         // cmd.exe and System.getenv retain UTF-16; carry each shell argument
         // separately, without re-parsing, CALL expansion or a second runtime.
         def script = windowsScript.getText('UTF-8')
         def launch = script.readLines().find { it.startsWith('endlocal & "%JAVA_EXE%"') }
-        if (launch == null || !launch.contains('guru.interlis.cli.Main %*')) {
+        if (launch == null || !launch.contains('-classpath "%CLASSPATH%" guru.interlis.cli.Main %*')) {
             throw new GradleException('Unexpected Windows launcher template')
         }
         def bridge = '''setlocal DisableDelayedExpansion
@@ -42,10 +52,19 @@ set /a _INTERLIS_COMPILER_ARG_COUNT+=1 >NUL
 shift
 goto collectCompilerArguments
 :executeCompilerArguments
+set "_INTERLIS_COMPILER_WORKING_DIRECTORY=%CD%"
+pushd "%APP_HOME%" || goto fail
 '''
         def unicodeLaunch = launch.replace('endlocal & ', '')
-                .replace('guru.interlis.cli.Main %*', '-Dguru.interlis.cli.windowsArguments=true guru.interlis.cli.Main')
-        windowsScript.setText(script.replace(launch, bridge.replace('\n', '\r\n') + unicodeLaunch), 'UTF-8')
+                .replace('-classpath "%CLASSPATH%" guru.interlis.cli.Main %*',
+                        '-Dguru.interlis.cli.windowsArguments=true --module-path "lib" --add-modules ALL-MODULE-PATH,ALL-DEFAULT --module interlis.compiler.cli/guru.interlis.cli.Main')
+        def restoreDirectory = '''
+set "_INTERLIS_COMPILER_EXIT_CODE=%ERRORLEVEL%"
+popd
+cmd /c exit /b %_INTERLIS_COMPILER_EXIT_CODE%
+'''
+        windowsScript.setText(script.replace(launch, bridge.replace('\n', '\r\n') + unicodeLaunch
+                + restoreDirectory.replace('\n', '\r\n')), 'UTF-8')
     }
 }
 

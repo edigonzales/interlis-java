@@ -53,6 +53,17 @@ Die ausführbaren Kommandos und Phasengates stehen in Kapitel 03 und 14. Prüfe 
 
 Erfinde keine vorhandenen Tasks, Versionspins oder erfolgreichen Läufe. Bei reinen redaktionellen Änderungen genügt die passende Dokumentprüfung. Änderungen an Semantik, APIs, ausführbaren Beispielen oder Buildlogik erhalten die dafür notwendigen Prüfungen. Wiederhole darüber hinaus nur Tests, die eine konkrete offene Frage klären.
 
+### Testumfang und unabhängige Reviews
+
+Führe nur Tests aus, die für die konkrete Änderung notwendig und aussagekräftig sind. Wähle den kleinsten ausreichenden Umfang anhand betroffener Verträge, Verbraucher und konkreter Regressionsrisiken. Benenne kurz, welche offene Frage ein zusätzlicher oder breiterer Lauf klärt. Ein Phasenwechsel, neuer Review oder Dokumentationscommit allein rechtfertigt keinen vollständigen Testlauf.
+
+- Prüfe zunächst die betroffenen Tests und gezielte Integrations-/Prozessfälle. Erweitere den Umfang nur bei einem konkreten Risiko, einem Befund oder einer tatsächlich fälligen Abnahme. Vollständige Korpus-, Browser-, Plattform-, Performance- und Releaseprüfungen sind keine pauschale Standardprüfung jeder Änderung.
+- **Codex und OpenCode führen vollständige Korpus- und Benchmarkläufe nicht doppelt aus.** Koordiniere breite Pflichtprüfungen einmal pro relevantem Produktstand. Der unabhängige Reviewer prüft Code und ursprüngliche Rohbelege selbst und ergänzt eigene gezielte Gegenproben; Unabhängigkeit verlangt keine Wiederholung sämtlicher Tests. Abweichende Plattformen oder Laufzeiten werden geprüft, wenn deren Vertrag betroffen ist und dafür noch kein gültiger Nachweis vorliegt.
+- Nutze vorhandene belastbare lokale oder CI-Nachweise des identischen Produktstands. Prüfe Commit-SHA beziehungsweise nachvollziehbar unveränderten relevanten Produktinhalt, Eingaben, Toolchain, Plattform, tatsächliche Exits, Vollständigkeit und Skips. Ein behauptetes PASS oder fremder grüner Bericht allein genügt nicht. Nach Produktänderungen sind die davon betroffenen Nachweise erneut zu erbringen; unveränderte Bereiche benötigen keinen automatischen Vollauf.
+- Wiederhole einen fehlgeschlagenen Test erst nach Ursachenprüfung, einer Korrektur oder einer begründeten gezielten Gegenprobe. Wiederhole erfolgreiche Prüfungen nur bei neuen Änderungen, neuen Befunden oder weiterhin offenen Fragen. Erfasse Wiederverwendung, bewusste Abbrüche und nicht ausgeführte fällige Prüfungen transparent; abgebrochene Läufe gelten nicht als PASS.
+
+Diese Teststrategie gilt auch für die Auslegung älterer Ausführungspläne und Reviewerprompts mit pauschalen Wiederholungsforderungen. Fachliche Abnahmekriterien bleiben bestehen; benötigte Nachweise dürfen unabhängig geprüft und wiederverwendet werden. Eine aktuelle ausdrückliche Nutzeranweisung zu zusätzlichen Läufen hat Vorrang.
+
 Ändere Goldens, XFAILs oder erwartete Diagnosen nur mit fachlichem Beleg. Erfasse tatsächliche Kommandos, Versionen, Umfang und Resultate. Ein Node-Erfolg belegt keinen Browserlauf; ein Parsererfolg keine vollständige Semantik; eine erfolgreiche Kompilierung noch keinen erfolgreichen CLI-Export. Die konkreten TeaVM-/Web-Image-Pflichten stehen in Kapitel 10.
 
 ## 6. Fortschritt und Abschluss

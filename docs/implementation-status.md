@@ -1,6 +1,51 @@
 # Implementierungsstatus interlis-java
 
-**Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
+Gezielte Nacharbeit vom 01.11.2026: `diagram`-Hilfe listet `--json` nicht mehr
+als nutzbare Option und empfiehlt ausdrücklich `--format json`. CLI-003/004/006,
+LOG-005. Vier ausgewählte Tests und fünf reale CLI-Prozesse bestanden; keine
+vollständigen Testläufe wiederholt. [Nachweis und Reviewabgrenzung](implementation/compiler-cli-repository-verbose.md).
+
+
+Unabhängiger Repository-/Verbose-Folgereview vom 01.11.2026: **OpenCode PASS**
+für alle10 Kriterien am sauberen separaten Snapshot
+`da3c1239f384a42b1b4f5d48ed11cbd03a7fe98e`. Bestehende Rohbelege und
+Quell-/Artefakthashes unabhängig geprüft; vier gezielte Gegenprobengruppen,
+keine vollständigen Testwiederholungen. ProzessExit0 und Guard passed/Exit0,
+keine Blocker. [Unveränderter Bericht](implementation/reviews/compiler-cli-repository-verbose-review.md).
+Der Arbeitsbranch blieb unverändert; Snapshot und Abschlussaudit sind im
+[Umsetzungsbericht](implementation/compiler-cli-repository-verbose.md) zugeordnet.
+
+Abgeschlossener Folgeauftrag vom 01.11.2026: Repository-Unterstützung für
+`analyze`/`diagram`, gemeinsame Hostvorbereitung der vier semantischen Befehle
+und kompakte Textdiagnosen mit optionalem `--verbose` bei fünf Befehlen.
+CLI-001–007, RES-001/004/007–009/011, DIAG-001–003/006/009 und LOG-002/003/005.
+Gezielt verifiziert auf macOS arm64 / Temurin25.0.3: 178 JUnit-Tests ohne
+Fehler/Skips,55 CLI- und6 PTY-/Redirectfälle,9 SDK-Kommandos und externer
+SDK-Archivverbraucher. Frischer Wrapperlauf: alle32 Tasks ausgeführt,Exit0.
+[Umsetzung, Verträge und Prüfgrenzen](implementation/compiler-cli-repository-verbose.md).
+Keine Blocker oder offenen Schritte aus diesem Auftrag; historische Abnahmen
+bleiben erhalten. Gemeinsamer Commit auf Nutzerauftrag einschliesslich der
+anschliessenden Hilfekorrektur und des unveränderten Reviewberichts; dafür keine
+erneuten Testläufe, kein Push/Release.
+
+
+Abgeschlossener Folgeauftrag vom 01.11.2026: farbige CLI-Textdiagnosen, COLOR1–3.
+[Operativer COLOR-Status](implementation/compiler-cli-color-output/STATUS.md).
+COLOR1 unabhängig PASS auf `792811e2bb1b7186c3eecc4a1a4f3930469a1c19`.
+COLOR2 unabhängig PASS auf `7524356c9689654ce7a4ffc95f523af937b906b9`.
+COLOR3 kumulativ unabhängig PASS,alle29 Kriterien auf
+`65a1571b3de14550d4bf596a9e4481861f9c843a`.
+OpenCode2.0.28/DeepSeek direkt, finaler ProzessExit0/Guard passed0, sauberer
+exakter Worktree.1232 JUnit/229 Suites,50 CLI+6 PTY,9 SDK,3 Plattformen,
+347 Closures/6 Laufzeiten/2000 Änderungen/0 semantische Abweichungen und76
+reproduzierbare Dateien belegt. [Unveränderter COLOR3-Review](implementation/compiler-cli-color-output/reviews/COLOR3-r3-65a1571b3de1-PASS.md).
+Auf aktuelle Nutzerweisung redundanten unabhängigen Vollauf beendet; vollständige
+Rohdaten desselben SHAs unabhängig geprüft und eigene gezielte Gegenproben
+ausgeführt. Keine offenen Pflichtnachweise oder Blocker. Künftige Testauswahl
+folgt betroffenen Verträgen und konkreten Risiken; keine pauschale Verdopplung.
+Frühere CLI-/G2-/P3-Abnahmen bezeichnen weiterhin ihre historischen Produktstände.
+
+**Historischer abgeschlossener Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
 [Ausführungsplan](implementation/compiler-cli-modernization/EXECUTION_PLAN.md).
 Operativer Stand und unabhängige Folgeabnahmen: [CLI-Status](implementation/compiler-cli-modernization/STATUS.md).
 CLI1–CLI3 sind vollständig implementiert und unabhängig mit PASS abgeschlossen,
@@ -1275,3 +1320,5 @@ Infrastruktur. Normabweichungen einzeln begründen, Goldens und XFAILs nicht zur
 Herstellung grüner Gates lockern. Den grossen GraphBuilder entlang tatsächlich
 bearbeiteter Verantwortungen vereinfachen. Offene Abschnitte bleiben offen,
 bis ihre Abnahme vorliegt.
+
+COLOR3-Nacharbeit: Kandidat2d1c914 nach echten Inline-Options-/Kontrollpfad-Gegenproben zurückgezogen; kein Gesamt-PASS. Aktuelle Pflichtmenge1232 JUnit/229 Suites/50 reale CLI-Prozesse; neue Gesamtqualifikation erforderlich. Details im COLOR-STATUS.

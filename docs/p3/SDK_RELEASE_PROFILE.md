@@ -112,11 +112,11 @@ den geprüften Produktcommit benennen; er etikettiert dessen Rohbelege nicht um.
 ## Compiler-CLI-Folgeprofil CLI3
 
 Die unabhängigen Folge-PASS von CLI1/CLI2 ersetzen keine neue kumulative
-Produktabnahme. Das aktuelle CLI-Prozessprofil umfasst26 namentlich geprüfte
+Produktabnahme. Das historische CLI3-Prozessprofil umfasst26 namentlich geprüfte
 reale Aufrufe, einschliesslich Root-/Warnungsisolation, DE-/JSON-Diagnosen,
 Syntaxfehlern ohne rekonstruierbares Modell und Sprachbedienfehlern. Die JVM-
 Untergrenze1217 Tests/227 XML-Suites stammt aus dem tatsächlich ausgeführten
-CLI2-R2-Gate; die Plattform-/Releaseprüfer verlangen diesen Umfang und alle
+CLI2-R2-Gate; die damaligen Plattform-/Releaseprüfer verlangten diesen Umfang und alle
 26 Fälle. Vorhandene grössere tatsächliche Umfänge bleiben erhalten.
 
 Für check/compile/diagram gilt die gemeinsame Request-Diagnostik, analyze
@@ -125,3 +125,17 @@ Default EN; nur Präsentation ändert sich. Das SDK bleibt das gleiche lokale
 Paketformat mit `cli/bin/interlis-compiler`/`.bat`, ohne Legacylauncher oder
 Referenzcompiler. Der weitere Status und alle unveränderten Folge-Reviews
 stehen ausschliesslich im oben verlinkten CLI-Status.
+
+## Farbprofil COLOR3
+
+Die aktuelle CLI akzeptiert --color=auto|always|never beziehungsweise --color MODE
+für Textdiagnosen; JSON und Dateien bleiben ohne zusätzliche ANSI-Sequenzen.
+AUTO benötigt echtes stderr-TTY, nichtleeres NO_COLOR/TERM=dumb unterdrücken es;
+Windows AUTO bleibt konservativ plain. Explizite Wahl übersteuert Environmentdefaults.
+Quellframes sind revisionstreu und begrenzt (3 Zeilen/160 Spalten), unsichere
+Unicodebreiten werden ohne falschen Caret angezeigt. Die SDK-Kanondaten bleiben unverändert.
+Das aktuelle Releaseprofil verlangt mindestens1232 Tests/229 Suites,50 reale
+CLI-Fälle und erneut validierte Farb-/JSONbytes. Auf macOS werden zusätzlich6
+echte PTY-/Redirectprozesse ausgeführt. Kanallecks, falsche Exits, fehlende Resets,
+fremde SHAs und unvollständige Berichte werden aktiv abgewiesen.
+[Operativer COLOR-Status](../implementation/compiler-cli-color-output/STATUS.md).

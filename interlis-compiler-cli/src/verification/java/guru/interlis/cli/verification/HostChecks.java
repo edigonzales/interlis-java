@@ -42,17 +42,32 @@ final class HostChecks {
         pin(target,expected);
     }
     static Result run(Path root, List<String> command, Duration timeout) throws Exception {
+        return run(root, command, timeout, Map.of());
+    }
+    static Result run(Path root, List<String> command, Duration timeout, Map<String,String> environment) throws Exception {
         Path directory=Files.createTempDirectory("interlis-process-");
         Path stdout=directory.resolve("stdout"),stderr=directory.resolve("stderr");
         Process process=null;
         try {
             long started=System.nanoTime();
-            process=new ProcessBuilder(command).directory(root.toFile()).redirectOutput(stdout.toFile()).redirectError(stderr.toFile()).start();
+            var builder=new ProcessBuilder(command).directory(root.toFile()).redirectOutput(stdout.toFile()).redirectError(stderr.toFile());
+            builder.environment().putAll(environment);
+            if (System.getProperty("os.name").equals("Mac OS X") && command.getFirst().equals("/usr/bin/script"))
+                builder.redirectInput(new File("/dev/null"));
+            process=builder.start();
             if(!process.waitFor(timeout.toMillis(),TimeUnit.MILLISECONDS)) throw new IOException("Process timeout: "+command);
-            return new Result(List.copyOf(command),process.exitValue(),Files.readString(stdout),Files.readString(stderr),(System.nanoTime()-started)/1_000_000.0);
+            return new Result(List.copyOf(command),process.exitValue(),strictUtf8(stdout,command),strictUtf8(stderr,command),(System.nanoTime()-started)/1_000_000.0);
         } finally {
             if(process!=null && process.isAlive()) {process.descendants().forEach(ProcessHandle::destroyForcibly);process.destroyForcibly();process.waitFor();}
             Files.deleteIfExists(stdout);Files.deleteIfExists(stderr);Files.deleteIfExists(directory);
+        }
+    }
+    private static String strictUtf8(Path file, List<String> command) throws IOException {
+        try { return Files.readString(file); }
+        catch (java.nio.charset.CharacterCodingException failure) {
+            byte[] bytes=Files.readAllBytes(file);
+            throw new IOException("Non-UTF-8 process output from "+command+"; first bytes="
+                    +HexFormat.of().formatHex(Arrays.copyOf(bytes,Math.min(bytes.length,4096))),failure);
         }
     }
     static Result cli(Path root, List<String> arguments) throws Exception {

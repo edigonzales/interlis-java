@@ -341,3 +341,14 @@ Ausführbare Verträge: `ResolutionBoundaryContractTest`,
 und Herkunftsassertions sowie Fresh/Reuse. Originalmodelle und Originalindizes
 liegen mit SHA-256 in `interlis-repository/src/test/resources/closures/`;
 der grosse unveränderte geo.admin.ch-Index ist verlustfrei gzip-komprimiert.
+
+
+## CLI-Verbraucher der Repository-Closure
+
+RES-001/004/007–009/011: `check`, `compile`, `analyze` und `diagram` beschaffen
+benannte Roots und transitive Imports über dieselbe explizite Hostvorbereitung
+mit RepositoryClosureService. Der CLI-Options-/Konfigurations- und Lockvertrag
+steht in Kapitel 18. `format` benötigt nur Syntax und führt keine Beschaffung
+aus. Weder Compilerkern noch CLI besitzen implizite Defaultrepositories.
+`SemanticRepositoryCommandsTest` prüft lokale und HTTP-Closures, explizite
+Quellen, mehrere Repositories, Pins, Locks, Offlinebetrieb, Fehler und Abbruch.

@@ -22,21 +22,40 @@ public final class ConsoleDiagnosticRenderer {
      */
     public String render(Diagnostic diagnostic, Map<SourceId, SourceText> sources,
                          DiagnosticLanguage language) {
+        return render(diagnostic, sources, language, false);
+    }
+
+    /** Explicit pure style projection; legacy overloads remain plain. */
+    public String render(Diagnostic diagnostic, Map<SourceId, SourceText> sources,
+                         DiagnosticLanguage language, boolean ansiEnabled) {
+        return render(diagnostic, sources, language, RenderOptions.defaults(ansiEnabled));
+    }
+
+    /** Renders safe diagnostic fields; verbose options add a bounded frame, related locations and hints. */
+    public String render(Diagnostic diagnostic, Map<SourceId, SourceText> sources,
+                         DiagnosticLanguage language, RenderOptions options) {
+        Objects.requireNonNull(options, "options");
+        boolean ansiEnabled = options.ansiEnabled();
+        var styler = new AnsiStyler();
         Objects.requireNonNull(diagnostic, "diagnostic"); Objects.requireNonNull(sources, "sources");
         Objects.requireNonNull(language, "language");
         var formatter = new DiagnosticMessageFormatter();
         var message = formatter.format(diagnostic, language);
         var out = new StringBuilder();
-        diagnostic.primaryRange().ifPresent(range -> out.append(location(range, sources)).append(": "));
-        out.append(severity(diagnostic.severity(), language)).append(" [")
-                .append(diagnostic.code().value()).append("] ").append(message.text());
+        diagnostic.primaryRange().ifPresent(range -> out.append(styler.style(AnsiStyler.Role.LOCATION, location(range, sources), ansiEnabled)).append(": "));
+        out.append(styler.style(AnsiStyler.Role.valueOf(diagnostic.severity().name()),
+                severity(diagnostic.severity(), language), ansiEnabled)).append(" [")
+                .append(styler.style(AnsiStyler.Role.CODE, diagnostic.code().value(), ansiEnabled)).append("] ").append(message.text());
+        if (!options.verbose()) return out.toString();
+        new DiagnosticSnippetRenderer().renderPrimary(diagnostic, sources, options, styler)
+                .ifPresent(frame -> out.append('\n').append(frame));
         for (var related : diagnostic.relatedLocations()) {
             out.append('\n').append("  ").append(language == DiagnosticLanguage.DE ? "Verwandte Stelle: " : "Related location: ")
-                    .append(location(related.range(), sources)).append(": ")
+                    .append(styler.style(AnsiStyler.Role.LOCATION, location(related.range(), sources), ansiEnabled)).append(": ")
                     .append(formatter.formatRelated(related, language));
         }
         message.hint().ifPresent(hint -> out.append('\n').append("  ")
-                .append(language == DiagnosticLanguage.DE ? "Hinweis: " : "Hint: ").append(hint));
+                .append(styler.style(AnsiStyler.Role.HINT, language == DiagnosticLanguage.DE ? "Hinweis: " : "Hint: ", ansiEnabled)).append(hint));
         return out.toString();
     }
 

@@ -174,7 +174,7 @@ Ein späteres Java-Native-Image, Node-Addon, C-ABI oder Python-Binding kann dies
 
 ## L3-2: explizite Repositoryoptionen des neuen Standardprofils
 
-`check` und `compile` akzeptieren zusätzlich:
+`check`, `compile`, `analyze` und `diagram` akzeptieren zusätzlich:
 
 - `--repository DIR_OR_URI` mehrfach, in Prioritätsreihenfolge; Index jeweils
   `ilimodels.xml`. Lokale Verzeichnisse werden gegen das CliEnvironment aufgelöst.
@@ -182,14 +182,18 @@ Ein späteres Java-Native-Image, Node-Addon, C-ABI oder Python-Binding kann dies
 - `--model-pin NAME VERSION SOURCE SHA256` und `--source-pin SOURCE SHA256`;
   doppelte Schlüssel oder ungültige Digests sind Nutzungsfehler.
 - `--read-lock FILE`, `--write-lock FILE`: striktes XML-v1 aus `ResolutionLockCodec`.
-  Ein neuer Lock wird erst nach erfolgreicher Kompilierung atomar geschrieben.
+  Ein neuer Lock wird atomar geschrieben: bei `check`/`compile` nach erfolgreicher
+  Kompilierung, bei `diagram` nach erfolgreicher Projektion, bei `analyze` nach
+  abgeschlossener Analyse der erfolgreich aufgelösten Closure, auch mit fachlichen
+  Diagnosen. Ein Lock bescheinigt die Quellenauswahl, keine semantische Gültigkeit.
   Quelle-/Index-/Modellkollisionen werden ohne Überschreiben abgewiesen.
 - `--cache DIR`: expliziter persistenter digestverifizierter ContentStore.
   Ohne Option bleibt der Cache pro Aufruf im Speicher.
 - `--offline`: fehlende Repositorymaterialien nur aus verifiziertem Cache mit
   Pin/Lock; vollständige Workspace-Closures brauchen keinen Provider.
 
-Repositoryoptionen setzen `--repository` voraus; andere Befehle lehnen sie ab.
+Repositoryoptionen setzen `--repository` voraus; `format`, `help`, `version` und
+`capabilities` lehnen sie ab. Es gibt keine impliziten Defaultrepositories.
 Die bestehenden Optionen und bisherige Quelldateiaufrufe bleiben erhalten. Dies
 sind neue Standardoptionen, keine Behauptung bereits qualifizierter ili2c-
 Legacyalias-Kompatibilität. Die CLI delegiert Beschaffung vollständig an
@@ -197,8 +201,9 @@ Legacyalias-Kompatibilität. Die CLI delegiert Beschaffung vollständig an
 
 Fehlende/mehrdeutige/falsch gepinnte Auswahl ergibt INPUT_UNRESOLVED;
 Index-/Ladefehler ergeben OPERATIONAL_FAILURE mit separat sichtbarer Ursache,
-Abbruch CANCELLED und veraltete Eingaben INCOMPLETE_ANALYSIS. Sprachfehler und
-Compilerergebnisse werden weiterhin allein über CompilationOutcome abgebildet.
+Abbruch CANCELLED und veraltete Eingaben INCOMPLETE_ANALYSIS. Bei `check`,
+`compile` und `diagram` werden Sprachfehler und Compilerergebnisse weiterhin allein
+über CompilationOutcome abgebildet; `analyze` liefert seine Analysediagnostik.
 `--json` enthält bei Hostablehnung den konkreten typisierten Grund im Status;
 Diagnosen werden nicht durch erfundene Quellpositionen ersetzt. Fehler beim
 Locklesen/-schreiben erzeugen keinen erfolgreichen Gesamtstatus.
@@ -220,8 +225,11 @@ prüft unbekannte/doppelte Optionen, fehlende Werte und `--` und liefert
 `ParsedCommand` hält die Optionsvorkommen tief kopiert und in Eingabereihenfolge;
 Dateiargumente werden nicht erneut shell-gequotet oder geladen. `help` wird aus
 diesem selben Schema erzeugt.
+Die für den erklärenden Bedienfehler erkannte Option `diagram --json` wird
+in der Hilfe ausgelassen; diese empfiehlt ausdrücklich `diagram --format json`.
+Der Fehlaufruf behält Exit2 und den Hinweis auf das unterstützte Ausgabeformat.
 
-Für das neue Standardprofil von `check`/`compile` lädt `ConfigurationLoader`
+Für das neue Standardprofil von `check`/`compile`/`analyze`/`diagram` lädt `ConfigurationLoader`
 ausschliesslich `--config FILE`: UTF-8-Java-Properties, höchstens 1 MiB, bekannte
 Schlüssel `root`, `repository`, `cache`, `read-lock`, `write-lock`, `offline`,
 `warnings`. Doppelte/ unbekannte Schlüssel und leere ungültige Werte sind
@@ -290,3 +298,82 @@ Compiler-Gate-Ablehnung zusätzlich zum priorisierten CLI-Status, auch wenn ein
 späterer Hostausgabefehler den endgültigen Status bestimmt.
 
 COMPAT-001–003: Sprach-/Metamodellreferenzen und freigegebene Normprofile bleiben erhalten. Das aktuelle Standardbedienprofil steht in [CLI_PROFILE.md](../p3/CLI_PROFILE.md); die frühere ili2c-Bedienparität ist durch den ausdrücklich beauftragten CLI-Folgeplan aufgehoben. CompilerCliIdentityContractTest und compilerCliCheck sichern den neuen Entry und die migrierten Pfad-/Stream-/Fehlerverträge.
+
+## COLOR1: explizite Farbpolitik der Textdiagnosen
+
+C1-01–08 / CLI-003/004/006: Die fünf Diagnosebefehle akzeptieren zusätzlich
+`--color=auto|always|never` sowie `--color MODE`, einmalig und exakt kleingeschrieben.
+Ungültige Werte werden vor Host-IO abgewiesen. Nur diese Option erlaubt `=`;
+`--` beendet weiterhin alle Optionen. Help/Version/Capabilities bleiben farbfrei.
+`ColorPolicy` im CLI-Modul wertet nullfreie immutable Eingaben ohne IO aus:
+Maschinenoutput und NEVER bleiben plain, ALWAYS übersteuert Environmentdefaults;
+AUTO benötigt sichere stderr-Fähigkeit, leeres/fehlendes NO_COLOR und TERM ungleich
+dumb (case-insensitive). Keine Änderung kanonischer Diagnosen oder Exits.
+
+`CliEnvironment` ergänzt `TerminalCapabilities terminalCapabilities` als nullfreien
+immutable Recordwert. Die bisherigen fünf/sechs Parameterkonstruktoren bleiben
+quellkompatibel und setzen unbekannte stderr-Fähigkeit auf false. Der Host prüft
+auf POSIX direkt den geerbten FD2 mit dem festen `/bin/test -t 2`, ohne Shell oder
+Modellargumente; Fehler, Timeout, Unterbrechung und andere Hosts ergeben false.
+Das Ergebnis bleibt beim Kopieren der Laufumgebung erhalten. Auf Windows ist
+AUTO konservativ farbfrei; ALWAYS ist unabhängig von Hostdetektion verfügbar.
+`AnsiStyler` erzeugt nur feste SGR-Sequenzen nach bestehender safeText-Sanitierung
+und schliesst jeden Bereich mit Reset. Alte Renderer-Overloads bleiben plain;
+ein expliziter boolescher Stilparameter ermöglicht die reine Farbprojektion.
+Abnahme: ColorOutputContractTest und reale CLI-/PTY-/Redirectprozesse.
+
+## COLOR2: sichere Quellframes
+
+C2-01–11: `ConsoleDiagnosticRenderer.render(diagnostic,sources,language,RenderOptions)`
+erweitert die bestehende reine Darstellung. Die bisherigen Overloads bleiben
+verfügbar und standardmässig ohne ANSI. `RenderOptions(ansiEnabled,
+contextLinesBefore,contextLinesAfter,maxVisibleColumns,verbose)` ist immutable und
+nullfrei; vor/nach müssen nichtnegativ sein und zusammen höchstens2 ergeben,
+Breite24..160 einschliesslich Framegutter. Defaults1/1/160. Ungültige Grenzen
+werfen IllegalArgumentException vor Rendering. Keine impliziten Hostabfragen.
+
+Der interne `DiagnosticSnippetRenderer` liest ausschliesslich übergebene
+SourceTexte; nur gleiche ID/Revision und gültige UTF-16-Grenzen ergeben Frames.
+Die Verarbeitung ist linear, der zusätzliche Speicher und die Ausgabe je Frame
+sind begrenzt. Höchstens3 Quellzeilen, lange Zeilen zeigen ein Fenster um die
+Spanne mit ASCII-Ellipsen. Tabs werden deterministisch auf Viererspalten expandiert;
+Kontrollen/Bidi werden vor Styling durch safeText druckbar escaped, einzelne
+Surrogate ebenfalls. Printable Unicode bleibt sichtbar. Wo seine Displaybreite
+vor/in der Spanne unsicher ist, wird kein exakter Caret behauptet, sondern
+`[UTF-16 ...; marker omitted]` angezeigt. ASCII-/escaped-Spannen verwenden ^/~;
+leere Bereiche einen Caret, mehrzeilige Bereiche nur den ersten Abschnitt und
+einen begrenzten Fortsetzungshinweis. Headerpositionen bleiben immer UTF-16.
+Severity, Orte, Codes, Zeilennummern, Marker und Hintlabel verwenden die feste
+SGR-Palette mit Reset je Bereich. Prosa, Diagnosereihenfolge, RelatedLocations,
+Hints und JSONdaten bleiben fachlich identisch. JSON erhält nie RenderOptions.
+Hints und verwandte Stellen werden in der Textausgabe nur mit `--verbose` angezeigt.
+Abnahme: DiagnosticSnippetRendererTest, ColorOutputContractTest, bestehende
+Office-/Root-/Sprach-/UTF-8-Verträge und echte Launcher-Gegenproben.
+
+
+## Repository- und Ausführlichkeitsintegration
+
+CLI-001–007, RES-001/004/007–009/011, DIAG-001–003/006/009 und LOG-002/003/005:
+Alle vier semantischen Befehle nutzen dieselbe CLI-interne Vorbereitung mit
+Konfigurationspräzedenz, Rootauswahl, RepositoryClosureService und atomarer
+Workspaceübernahme. `analyze` bleibt Analyse ohne zusätzliches Compilegate;
+`diagram` verlangt unverändert ein erfolgreiches CompiledSchema. Die Diagnose-
+Präsentation erhält aktuelle Texte einschliesslich aller nachgeladenen Quellen.
+`--warnings reject` konfiguriert dieselbe Compilerpolicy; `analyze` führt kein Gate
+zur Warnungsablehnung aus. `--explain-config` führt keine Modellverarbeitung aus.
+
+Die fünf Diagnosebefehle akzeptieren einmalig `--verbose` ohne Wert. Ohne Flag
+MUSS die Textausgabe pro Diagnose auf Fundstelle, Schweregrad, Code und Meldung
+beschränkt bleiben. Mit Flag werden die bisherigen Quellframes, verwandten
+Fundstellen und Hinweise ergänzt. Farbe, Sprache, Reihenfolge, strukturierte
+Diagnosen, Exitcodes und Fachartefakte bleiben unabhängig davon. JSON bleibt
+vollständig; das Flag aktiviert keine weiteren Betriebslogs und keinen neuen
+Properties-Schlüssel.
+
+`RenderOptions.verbose()` steuert nur diese reine Projektion. Der bisherige
+Vierparameterkonstruktor, `defaults(boolean)` und Renderer-Komfortoverloads
+behalten die ausführliche Darstellung und bestehende Nullfreiheits-/Grenzregeln.
+Das CLI übergibt ausdrücklich `verbose=false`, solange das Flag fehlt.
+Abnahmen: `SemanticRepositoryCommandsTest`, `VerboseDiagnosticsContractTest`,
+die bestehenden Repository-/Diagnose-/Farbverträge sowie `compilerCliCheck`,
+`sdkProcessCheck` und `sdkArchiveCheck` mit getrennten Streams.

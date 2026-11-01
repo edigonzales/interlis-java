@@ -17,7 +17,6 @@ import guru.interlis.format.FormatOptions;
 import guru.interlis.format.FormatOutcome;
 import guru.interlis.format.ModelFormatter;
 import guru.interlis.format.ModelFormatters;
-import guru.interlis.model.CompiledSchema;
 import guru.interlis.model.VersionManifest;
 import guru.interlis.projection.DiagramDocument;
 import guru.interlis.projection.DiagramInput;
@@ -76,7 +75,7 @@ public final class DefaultCompilerCli implements CliApplication {
         var invocation = new Invocation(services.runContexts().createRoot());
         var observed = services;
         var effective = new CliEnvironment(environment.workingDirectory(), environment.in(), environment.out(),
-                environment.err(), environment.environment(), observed);
+                environment.err(), environment.environment(), observed, environment.terminalCapabilities());
         var lifecycle = RunLifecycle.create(invocation.context, observed.observer(), services.clock());
         lifecycle.start(new RunEvent.RunMetadata("cli", List.of("2.3", "2.4"), 0,
                 "cli-standard/v1"));
@@ -112,6 +111,13 @@ public final class DefaultCompilerCli implements CliApplication {
             if (!command.equals(arguments.getFirst())) arguments = List.of(command);
             if (java.util.Set.of("check", "compile", "analyze", "diagram", "format").contains(command)) {
                 invocation.command = parseCommand(arguments);
+                ColorMode colorMode = switch (invocation.command.value("--color").orElse("auto")) {
+                    case "always" -> ColorMode.ALWAYS;
+                    case "never" -> ColorMode.NEVER;
+                    default -> ColorMode.AUTO;
+                };
+                invocation.ansiEnabled = new ColorPolicy().useAnsi(colorMode, environment.terminalCapabilities(),
+                        environment.environment(), invocation.command.has("--json"));
                 invocation.language = switch (invocation.command.value("--diagnostic-language").orElse("en")) {
                     case "en" -> DiagnosticLanguage.EN;
                     case "de" -> DiagnosticLanguage.DE;
@@ -123,9 +129,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 case "version" -> version(arguments, environment);
                 case "capabilities" -> arguments.size() == 1 ? capabilities(environment)
                         : usage(environment, "capabilities accepts no arguments");
-                case "check", "compile" -> compile(arguments, environment, token, invocation);
-                case "analyze" -> analyze(arguments, environment, token, invocation);
-                case "diagram" -> diagram(arguments, environment, token, invocation);
+                case "check", "compile", "analyze", "diagram" -> semantic(environment, token, invocation);
                 case "format" -> format(arguments, environment, token, invocation);
                 default -> usage(environment, "unknown command: " + command);
             };
@@ -141,14 +145,14 @@ public final class DefaultCompilerCli implements CliApplication {
                 default -> invocation.language == DiagnosticLanguage.DE ? "Quelle konnte nicht gelesen werden" : "source could not be read";
             };
             String message = invocation.language == DiagnosticLanguage.DE ? "Laden fehlgeschlagen: " + reason : "Source loading failed: " + reason;
-            environment.err().println(message);
+            environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
             return result(CliTermination.OPERATIONAL_FAILURE, List.of(), message);
         } catch (CliUsageException usage) {
             return usage(environment, usage.getMessage());
         } catch (RuntimeException failure) {
             invocation.failureId = new FailureId("cli-" + java.util.UUID.randomUUID());
             String message = "internal failure: " + invocation.failureId.value();
-            environment.err().println(message);
+            environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
             return result(CliTermination.INTERNAL_FAILURE, List.of(), message);
         }
     }
@@ -161,6 +165,8 @@ public final class DefaultCompilerCli implements CliApplication {
             var specification = CommandSpec.standard(command);
             help.append(command);
             for (var option : specification.options()) {
+                // Recognized only to give invalid diagram invocations the --format json hint.
+                if (command.equals("diagram") && option.name().equals("--json")) continue;
                 help.append(" [").append(option.name());
                 for (int count = 0; count < option.valueCount(); count++) help.append(" VALUE");
                 help.append(option.repeatable() ? "]..." : "]");
@@ -168,7 +174,14 @@ public final class DefaultCompilerCli implements CliApplication {
             if (specification.acceptsFiles()) help.append(" [--] [files...]");
             help.append('\n');
         }
+        help.append("Diagram JSON: interlis-compiler diagram --format json [options] [files...].\n");
+        help.append("Diagnostic color: --color=auto|always|never or --color MODE (default: auto).\n");
         help.append("Diagnostic language: --diagnostic-language de|en (default: en).\n");
+        help.append("Auto colors only terminal stderr; nonempty NO_COLOR or TERM=dumb disables auto. Windows auto is plain.\n");
+        help.append("Color affects text diagnostics only; JSON and artifact outputs remain plain.\n");
+        help.append("check/compile/analyze/diagram share repository options; repositories require ilimodels.xml and have no implicit defaults.\n");
+        help.append("Diagnostics default to one line; --verbose adds source frames, related locations and hints.\n");
+        help.append("Verbose source frames: at most 3 lines / 160 columns; uncertain Unicode widths show UTF-16 offsets without a caret.\n");
         environment.out().print(help);
         return result(CliTermination.SUCCESS, List.of(), help.toString());
     }
@@ -225,7 +238,7 @@ public final class DefaultCompilerCli implements CliApplication {
         return result(CliTermination.SUCCESS, List.of(), output);
     }
 
-    private CliExecutionResult compile(List<String> args, CliEnvironment environment,
+    private CliExecutionResult semantic(CliEnvironment environment,
                                        CancellationToken token, Invocation invocation) {
         ParsedCommand supplied = invocation.command;
         var loader = new ConfigurationLoader();
@@ -236,6 +249,9 @@ public final class DefaultCompilerCli implements CliApplication {
             default -> throw new CliUsageException("--warnings must be allow or reject");
         };
         ParsedArguments parsed = parseFiles(configuration.command());
+        boolean diagram = supplied.command().equals("diagram");
+        if (diagram && parsed.json())
+            return usage(environment, "--json is not supported by diagram; use --format json");
         new OutputPlanner().plan(configuration.command(), environment);
         if (supplied.has("--explain-config")) {
             String explanation = loader.explain(configuration);
@@ -283,7 +299,14 @@ public final class DefaultCompilerCli implements CliApplication {
                         .resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
                                 new RepositoryResolveOptions(config, parsed.modelPins(), parsed.sourcePins(), lock), token);
                 switch (outcome) {
-                    case RepositoryResolutionOutcome.Prepared prepared -> { update = prepared.update(); update.apply(workspace); }
+                    case RepositoryResolutionOutcome.Prepared prepared -> {
+                        update = prepared.update();
+                        try { update.apply(workspace); }
+                        catch (guru.interlis.workspace.UpdateRejectedException conflict) {
+                            if (conflict.code() != guru.interlis.workspace.UpdateRejectionCode.VERSION_CONFLICT) throw conflict;
+                            return result(CliTermination.INCOMPLETE_ANALYSIS, List.of(), "workspace changed during resolution");
+                        }
+                    }
                     case RepositoryResolutionOutcome.Cancelled cancelled -> throw new OperationCancelledException(cancelled.reason());
                     case RepositoryResolutionOutcome.Stale ignored -> { return result(CliTermination.INCOMPLETE_ANALYSIS, List.of(), "workspace changed during resolution"); }
                     case RepositoryResolutionOutcome.Rejected rejected -> {
@@ -291,40 +314,72 @@ public final class DefaultCompilerCli implements CliApplication {
                         String reason = problem.reason() + problem.loadReason().map(value -> "/" + value).orElse("");
                         String output = "resolution rejected: " + reason;
                         print(parsed.json(), environment, List.of(), output, loaded.sources(), invocation);
-                        if (!parsed.json()) environment.err().println(output);
+                        if (!parsed.json()) environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(output));
                         return result(problem.reason() == RepositoryProblem.Reason.LOAD_FAILURE || problem.reason() == RepositoryProblem.Reason.INDEX_FAILURE
                                 ? CliTermination.OPERATIONAL_FAILURE : CliTermination.INPUT_UNRESOLVED, List.of(), output);
                     }
                 }
             }
             invocation.rootCount = roots.size();
+            if (supplied.command().equals("analyze")) {
+                var analysis = workspace.analyze(new AnalysisRequest(workspace.currentRevision(), roots),
+                        environment.services().runContexts().createChild(invocation.context), token);
+                invocation.analysisComplete = !analysis.coverage().entries().isEmpty()
+                        && analysis.coverage().incompleteEntries().isEmpty();
+                writeLock(parsed, update, workspace, environment, token, invocation);
+                print(parsed.json(), environment, analysis.diagnostics(), "analyzed", texts(workspace), invocation);
+                return result(CliTermination.SUCCESS, analysis.diagnostics(), "analyzed");
+            }
             CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(workspace.currentRevision(), roots),
                     environment.services().runContexts().createChild(invocation.context), token);
             invocation.compiled(outcome);
-            if (outcome instanceof CompilationOutcome.Succeeded && update != null && parsed.writeLock().isPresent()) {
-                Path target = hostPath(parsed.writeLock().orElseThrow(), environment);
-                if (workspace.state().sourceRevisions().keySet().stream()
-                        .map(id -> java.net.URI.create(id.value())).filter(uri -> "file".equalsIgnoreCase(uri.getScheme()))
-                        .map(Path::of).anyMatch(source -> OutputPlanner.sameFile(source, target)))
-                    throw new CliUsageException("lock output collides with a resolved model source");
-                try {
-                    byte[] bytes = new ResolutionLockCodec().encode(update.lock()).getBytes(StandardCharsets.UTF_8);
-                    fileWriter.write(target, bytes, Optional.empty(), token);
-                    invocation.artifacts.add(new CliExecutionResult.Artifact(CliExecutionResult.ArtifactKind.RESOLUTION_LOCK,
-                            target.toUri(), bytes.length));
-                } catch (java.io.IOException unavailable) {
-                    environment.err().println("lock could not be written");
-                    return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be written");
-                }
-            }
-            CliTermination termination = new CliOutcomeMapper().classify(outcome);
             List<Diagnostic> diagnostics = diagnostics(outcome);
-            var texts = new LinkedHashMap<SourceId, SourceText>();
-            workspace.state().sourceRevisions().keySet().forEach(id -> workspace.source(id).ifPresent(text -> texts.put(id, text)));
-            String output = summary(outcome);
-            print(parsed.json(), environment, diagnostics, output, texts, invocation);
-            return result(termination, diagnostics, output);
+            String output = diagram ? "diagram requires a checked schema" : summary(outcome);
+            if (outcome instanceof CompilationOutcome.Succeeded succeeded) {
+                if (diagram) {
+                    var projection = DiagramProjectors.create().project(new DiagramInput.FromSchema(succeeded.schema()),
+                            DiagramOptions.defaults(new DiagramSelection(List.of(succeeded.schema().rootModels().getFirst()))), token);
+                    if (projection instanceof DiagramProjectionOutcome.Rejected rejected)
+                        return result(CliTermination.OPERATIONAL_FAILURE, List.of(), rejected.reasons().toString());
+                    DiagramDocument document = ((DiagramProjectionOutcome.Produced) projection).document();
+                    output = switch (parsed.format()) {
+                        case "mermaid" -> new MermaidRenderer().render(document);
+                        case "plantuml" -> new PlantUmlRenderer().render(document);
+                        case "json" -> new DiagramJsonCodec().encode(document);
+                        default -> throw new IllegalArgumentException("unknown format: " + parsed.format());
+                    };
+                }
+                writeLock(parsed, update, workspace, environment, token, invocation);
+            }
+            print(parsed.json(), environment, diagnostics, output, texts(workspace), invocation);
+            if (diagram && outcome instanceof CompilationOutcome.Succeeded) environment.out().println(output);
+            return result(new CliOutcomeMapper().classify(outcome), diagnostics, output);
+        } catch (java.io.IOException unavailable) {
+            environment.err().println("lock could not be written");
+            return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be written");
         }
+    }
+
+    /** A lock records resolved source identities; it is not a semantic validity certificate. */
+    private void writeLock(ParsedArguments parsed, PreparedRepositoryUpdate update, Workspace workspace,
+                           CliEnvironment environment, CancellationToken token, Invocation invocation)
+            throws java.io.IOException {
+        if (update == null || parsed.writeLock().isEmpty()) return;
+        Path target = hostPath(parsed.writeLock().orElseThrow(), environment);
+        if (workspace.state().sourceRevisions().keySet().stream()
+                .map(id -> java.net.URI.create(id.value())).filter(uri -> "file".equalsIgnoreCase(uri.getScheme()))
+                .map(Path::of).anyMatch(source -> OutputPlanner.sameFile(source, target)))
+            throw new CliUsageException("lock output collides with a resolved model source");
+        byte[] bytes = new ResolutionLockCodec().encode(update.lock()).getBytes(StandardCharsets.UTF_8);
+        fileWriter.write(target, bytes, Optional.empty(), token);
+        invocation.artifacts.add(new CliExecutionResult.Artifact(CliExecutionResult.ArtifactKind.RESOLUTION_LOCK,
+                target.toUri(), bytes.length));
+    }
+
+    private static Map<SourceId, SourceText> texts(Workspace workspace) {
+        var texts = new LinkedHashMap<SourceId, SourceText>();
+        workspace.state().sourceRevisions().keySet().forEach(id -> workspace.source(id).ifPresent(text -> texts.put(id, text)));
+        return texts;
     }
 
     private static Path hostPath(String value, CliEnvironment environment) {
@@ -338,73 +393,6 @@ public final class DefaultCompilerCli implements CliApplication {
                     ? Path.of(uri).toAbsolutePath().normalize().toUri().toString() : uri.toString();
         } catch (IllegalArgumentException ignored) { /* a local path may contain spaces */ }
         return hostPath(value, environment).toUri().toString();
-    }
-
-    private CliExecutionResult analyze(List<String> args, CliEnvironment environment,
-                                       CancellationToken token, Invocation invocation) {
-        ParsedArguments parsed = parseFiles(invocation.command);
-        if (parsed.files().isEmpty()) {
-            return usage(environment, "no source files");
-        }
-        Loaded loaded = load(parsed.files(), environment, token);
-        try (Workspace workspace = workspace(loaded, environment)) {
-            invocation.rootCount = roots(parsed.roots(), loaded.sources()).size();
-            var analysis = workspace.analyze(new AnalysisRequest(workspace.currentRevision(),
-                    roots(parsed.roots(), loaded.sources())),
-                    environment.services().runContexts().createChild(invocation.context), token);
-            invocation.analysisComplete = !analysis.coverage().entries().isEmpty()
-                    && analysis.coverage().incompleteEntries().isEmpty();
-            print(parsed.json(), environment, analysis.diagnostics(), "analyzed", loaded.sources(), invocation);
-            return result(CliTermination.SUCCESS, analysis.diagnostics(), "analyzed");
-        }
-    }
-
-    private CliExecutionResult diagram(List<String> args, CliEnvironment environment,
-                                       CancellationToken token, Invocation invocation) {
-        ParsedArguments parsed = parseFiles(invocation.command);
-        if (parsed.files().isEmpty()) {
-            return usage(environment, "no source files");
-        }
-        if (parsed.json()) {
-            return usage(environment, "--json is not supported by diagram; use --format json");
-        }
-        Loaded loaded = load(parsed.files(), environment, token);
-        try (Workspace workspace = workspace(loaded, environment)) {
-        List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
-        invocation.rootCount = roots.size();
-        CompilationOutcome outcome = workspace.compile(new WorkspaceCompileRequest(
-                workspace.currentRevision(), roots),
-                environment.services().runContexts().createChild(invocation.context), token);
-        invocation.compiled(outcome);
-        if (!(outcome instanceof CompilationOutcome.Succeeded succeeded)) {
-            List<Diagnostic> diagnostics = diagnostics(outcome);
-            print(false, environment, diagnostics, "diagram requires a checked schema",
-                    loaded.sources(), invocation);
-            return result(new CliOutcomeMapper().classify(outcome), diagnostics,
-                    "diagram requires a checked schema");
-        }
-        List<Diagnostic> requestDiagnostics = succeeded.analysis().requestDiagnostics();
-        print(false, environment, requestDiagnostics, "ok", loaded.sources(), invocation);
-        CompiledSchema schema = succeeded.schema();
-        DiagramSelection selection = new DiagramSelection(
-                List.of(schema.rootModels().getFirst()));
-        DiagramOptions options = DiagramOptions.defaults(selection);
-        DiagramProjectionOutcome projection = DiagramProjectors.create()
-                .project(new DiagramInput.FromSchema(schema), options, token);
-        if (projection instanceof DiagramProjectionOutcome.Rejected rejected) {
-            return result(CliTermination.OPERATIONAL_FAILURE, List.of(),
-                    rejected.reasons().toString());
-        }
-        DiagramDocument document = ((DiagramProjectionOutcome.Produced) projection).document();
-        String text = switch (parsed.format()) {
-            case "mermaid" -> new MermaidRenderer().render(document);
-            case "plantuml" -> new PlantUmlRenderer().render(document);
-            case "json" -> new DiagramJsonCodec().encode(document);
-            default -> throw new IllegalArgumentException("unknown format: " + parsed.format());
-        };
-        environment.out().println(text);
-        return result(CliTermination.SUCCESS, requestDiagnostics, text);
-        }
     }
 
     private CliExecutionResult format(List<String> args, CliEnvironment environment,
@@ -440,7 +428,7 @@ public final class DefaultCompilerCli implements CliApplication {
             if (outcome instanceof FormatOutcome.Rejected rejected) {
                 ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
                 for (Diagnostic diagnostic : rejected.diagnostics()) {
-                    environment.err().println(renderer.render(diagnostic, sources, invocation.language));
+                    environment.err().println(renderer.render(diagnostic, sources, invocation.language, new RenderOptions(invocation.ansiEnabled, 1, 1, 160, invocation.command.has("--verbose"))));
                 }
                 return result(CliTermination.SOURCE_REJECTED, rejected.diagnostics(),
                         "format rejected");
@@ -455,7 +443,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 String message = invocation.language == DiagnosticLanguage.DE && notice.code().equals("VALUE_LINE_ENDING_PRESERVED")
                         ? "Zeilenenden in einem werttragenden Literal oder Metawert bleiben zur Werterhaltung unverändert."
                         : guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(notice.message());
-                environment.err().println(notice.code() + ": " + message);
+                environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(notice.code()) + ": " + message);
             }
             outputs.add(new FormatOutput(input, formatted.text()));
         }
@@ -464,7 +452,7 @@ public final class DefaultCompilerCli implements CliApplication {
                     .filter(output -> !output.text().equals(output.input().source().text()))
                     .map(output -> output.input().file().toString()).toList();
             if (!changed.isEmpty()) {
-                changed.forEach(path -> environment.err().println("would format: " + path));
+                changed.forEach(path -> environment.err().println("would format: " + guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(path)));
                 return result(CliTermination.FORMAT_CHECK_FAILED, List.of(),
                         String.join("\n", changed));
             }
@@ -482,7 +470,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 }
             } catch (java.io.IOException failure) {
                 String message = "format write failed: " + failure.getMessage();
-                environment.err().println(message);
+                environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
                 return result(CliTermination.OPERATIONAL_FAILURE, List.of(), message);
             }
             return result(CliTermination.SUCCESS, List.of(), "");
@@ -533,10 +521,6 @@ public final class DefaultCompilerCli implements CliApplication {
     private record FormatOutput(FormatInput input, String text) {
     }
 
-    private static Workspace workspace(Loaded loaded, CliEnvironment environment) {
-        return workspace(loaded, environment, guru.interlis.compiler.WarningPolicy.ALLOW_WARNINGS);
-    }
-
     private static Workspace workspace(Loaded loaded, CliEnvironment environment,
                                        guru.interlis.compiler.WarningPolicy warningPolicy) {
         var defaults = WorkspaceConfiguration.defaults();
@@ -552,10 +536,6 @@ public final class DefaultCompilerCli implements CliApplication {
                     new SourceChange.Replace(source.text())));
         }
         return workspace;
-    }
-
-    private static ParsedArguments parseFiles(List<String> args, boolean allowFormat) {
-        return parseFiles(parseCommand(args));
     }
 
     private static ParsedArguments parseFiles(ParsedCommand command) {
@@ -637,7 +617,7 @@ public final class DefaultCompilerCli implements CliApplication {
         } else {
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
             for (Diagnostic diagnostic : diagnostics) {
-                environment.err().println(renderer.render(diagnostic, sources, invocation.language));
+                environment.err().println(renderer.render(diagnostic, sources, invocation.language, new RenderOptions(invocation.ansiEnabled, 1, 1, 160, invocation.command.has("--verbose"))));
             }
         }
     }
@@ -645,10 +625,11 @@ public final class DefaultCompilerCli implements CliApplication {
     private CliExecutionResult usage(CliEnvironment environment, String message) {
         environment.err().println("usage: interlis-compiler "
                 + "<version|capabilities|check|compile|analyze|diagram|format> [options] [files]");
-        environment.err().println("check/compile: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
+        environment.err().println("check/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
         environment.err().println("               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]");
+        environment.err().println("Text diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]");
         environment.err().println("Example: interlis-compiler check <File.ili>");
-        environment.err().println(message);
+        environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
         return result(CliTermination.USAGE_ERROR, List.of(), message);
     }
 
@@ -671,6 +652,7 @@ public final class DefaultCompilerCli implements CliApplication {
     /** Mutable only for one invocation; never retained on the reusable CLI instance. */
     private static final class Invocation {
         final RunContext context;
+        boolean ansiEnabled;
         boolean schemaProduced;
         boolean analysisComplete;
         final List<CliExecutionResult.Artifact> artifacts = new ArrayList<>();

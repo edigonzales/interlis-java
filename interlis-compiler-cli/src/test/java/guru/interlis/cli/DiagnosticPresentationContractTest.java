@@ -57,7 +57,7 @@ class DiagnosticPresentationContractTest {
         var original = Path.of(System.getProperty("repo.root"), "testdata/cli-modernization/original/SO_AGI_DataCatalog_Base_20260529.ili");
         var bytes = Files.readAllBytes(original);
         assertEquals("fbb1bccc0e84795284f9fb1a3c0be9e6db516c3c4b8ae43ad2f856cf70948431", HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
-        var en = run("check", original.toString()); var de = run("check", "--diagnostic-language", "de", original.toString());
+        var en = run("check", "--verbose", original.toString()); var de = run("check", "--verbose", "--diagnostic-language", "de", original.toString());
         assertEquals(1, en.result.exitCode()); assertEquals(en.result.diagnostics(), de.result.diagnostics());
         assertTrue(en.err.contains("conflicts with a name in the enclosing namespace"), en.err);
         assertTrue(de.err.contains("kollidiert")); assertTrue(de.err.contains("Hinweis:"));

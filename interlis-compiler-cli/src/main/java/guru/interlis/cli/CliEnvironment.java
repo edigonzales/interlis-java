@@ -10,7 +10,7 @@ import java.util.Objects;
 /** Explicit CLI environment; no global streams inside the application object. */
 public record CliEnvironment(Path workingDirectory, InputStream in, PrintStream out,
                              PrintStream err, Map<String, String> environment,
-                             CompilerServices services) {
+                             CompilerServices services, TerminalCapabilities terminalCapabilities) {
     /** Creates a validated instance. */
     public CliEnvironment {
         Objects.requireNonNull(workingDirectory, "workingDirectory");
@@ -19,6 +19,13 @@ public record CliEnvironment(Path workingDirectory, InputStream in, PrintStream 
         Objects.requireNonNull(err, "err");
         environment = Map.copyOf(Objects.requireNonNull(environment, "environment"));
         Objects.requireNonNull(services, "services");
+        Objects.requireNonNull(terminalCapabilities, "terminalCapabilities");
+    }
+
+    /** Existing callers with supplied streams default to unknown/noninteractive stderr. */
+    public CliEnvironment(Path workingDirectory, InputStream in, PrintStream out,
+                          PrintStream err, Map<String, String> environment, CompilerServices services) {
+        this(workingDirectory, in, out, err, environment, services, new TerminalCapabilities(false));
     }
 
     /** Uses isolated default compiler services; supplied streams remain caller-owned. */
@@ -39,6 +46,7 @@ public record CliEnvironment(Path workingDirectory, InputStream in, PrintStream 
         // host streams; no global stream replacement or locale mutation is needed.
         return new CliEnvironment(Path.of("").toAbsolutePath(), System.in,
                 new PrintStream(System.out, true, java.nio.charset.StandardCharsets.UTF_8),
-                new PrintStream(System.err, true, java.nio.charset.StandardCharsets.UTF_8), System.getenv());
+                new PrintStream(System.err, true, java.nio.charset.StandardCharsets.UTF_8), System.getenv(),
+                CompilerServices.defaults(), TerminalCapabilities.system());
     }
 }

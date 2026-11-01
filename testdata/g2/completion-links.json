@@ -5580,7 +5580,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "cd857a91073e9d0cae29723c8d0cc0f1168753ccccf1d91013b78679b516842c"
+          "sha256": "ceb66412930f5aa1db3249a8bf72581b1c9c778902164f2592caec718ebf6f1b"
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
@@ -5637,7 +5637,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "cd857a91073e9d0cae29723c8d0cc0f1168753ccccf1d91013b78679b516842c"
+          "sha256": "ceb66412930f5aa1db3249a8bf72581b1c9c778902164f2592caec718ebf6f1b"
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
@@ -5645,7 +5645,7 @@
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "f4fe0d2c311542f37d48817b0fbcd8c77b918256558685579b153e4b0efdf1dc"
+          "sha256": "9fc12bd6da338b39d2cb5e904d3b5378269f3e7fd753eded9a06f42b2ab3fa28"
         }
       ],
       "resolution": "Synchron gepflegte Fachverträge/Register/Verbraucher und echte PublicSdk-/Bridge-Konstruktion; kein synthetisches Dokument-Golden."

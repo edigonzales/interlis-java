@@ -732,3 +732,28 @@ Laufdiensten; der bisherige Konstruktor bleibt mit Standarddiensten verfügbar.
 `P3CompletionProtocolTest`, `P3PresentationConfigurationTest`,
 `LspErrorContractTest`, `LspProtocolCancellationTest` und der echte
 `LspProcessTest` prüfen positive und negative öffentliche Pfade.
+
+COLOR1 (CLI-Modul, `guru.interlis.cli`): `ColorMode`, `ColorPolicy`,
+`TerminalCapabilities` und `AnsiStyler` sind reine run-lokale Präsentationswerte
+beziehungsweise der explizite Hostdetektor; Verträge und kompatible
+CliEnvironment-Konstruktoren stehen in Kapitel18, nicht im Compilerkern.
+ColorOutputContractTest prüft Parser, Policykombinationen, UTF-8, Reset,
+JSON-Parität und unveränderte Capabilityweitergabe.
+
+COLOR2: `RenderOptions` gehört ebenfalls zum CLI-Modul, Package
+`guru.interlis.cli`; der reine ConsoleDiagnosticRenderer-Overload und seine
+kompatiblen Vorgänger stehen in Kapitel18. DiagnosticSnippetRenderer bleibt
+intern und erzeugt ausschliesslich revisionstreue, begrenzte Präsentation.
+
+
+CLI-Repository-/Verbose-Ergänzung (Besitzer unverändert CLI-Modul /
+`guru.interlis.cli`): `RenderOptions` ergänzt als fünfte Komponente
+`boolean verbose`; der bisherige Vierparameterkonstruktor und
+`defaults(boolean)` setzen `verbose=true`. Die Overloads von
+ConsoleDiagnosticRenderer bleiben erhalten. `verbose=false` erzeugt nur die
+Diagnosekopfzeile; `true` ergänzt begrenzte revisionstreue Frames, verwandte
+Stellen und Hinweise. Werte bleiben immutable, nullfrei und rein; Grenzprüfung
+und Sanitierung gelten in beiden Modi. Keine Compiler-/Workspace-/Wire-API
+ändert sich. Kapitel18 definiert CLI-Defaults und gemeinsame Repositoryoptionen;
+`VerboseDiagnosticsContractTest` und `SemanticRepositoryCommandsTest` prüfen die
+öffentlichen Übergänge und bisherigen Komfortaufrufe.
