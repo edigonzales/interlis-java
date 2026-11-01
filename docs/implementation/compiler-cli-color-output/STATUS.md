@@ -33,7 +33,11 @@ den tatsächlich nachgewiesenen JDK25-Klassenpfadfehler; SDK-JARs bleiben unver�
 Fällig: exakt SHA-verknüpfte Linux-/Windows-CI, vollständiger releaseCheckP3
 mit allen Browser-/Safari-/Web-Image-/Korpus-/SDK-/Reproduzierbarkeitsgates und
 unabhängiger kumulativer COLOR3-Review. Kein Gesamt-PASS.
-Ein Push/Workflowstart ist gemäss Auftrag erst nach gesonderter Nutzerfreigabe erlaubt.
+Nutzerfreigabe für Branchpush und bestehenden Plattformworkflow ist erteilt.
+Erste Matrix auf6fd9d794f7cd836db79efa02d56369a679b05483: Linux PASS, Windows
+FAIL beim nativen Start aus Unicode-Installationspfad (CI41289594757).
+Windows-Verzeichnis-/Modulpfadübergabe nachgearbeitet, lokal100+25 Tests und46+6
+Prozesse bestanden; neuer Kandidat und neue Plattformmatrix erforderlich.
 
 COLOR1-Berichtspräzisierungen aus dem unveränderten Reviewerbericht:
 AUTO benötigt nur interaktives stderr, stdout darf umgeleitet sein. Die

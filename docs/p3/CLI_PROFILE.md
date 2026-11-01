@@ -70,3 +70,9 @@ Klassenpfadloaders bei Supplementary-Zeichen im Installationspfad. Es gibt keine
 neuen module-info-Dateien, Bibliotheksverträge oder Runtimeabhängigkeiten; die
 SDK-JARs bleiben unverändert auch auf dem Klassenpfad verwendbar. Die bestehende
 Windows-Unicode-Argumentbrücke bleibt erhalten.
+Der Windows-Launcher übergibt den Modulpfad relativ zur Installation, damit die
+native Java-Argumentkonvertierung keinen Unicode-Installationspfad beschädigt.
+Das ursprüngliche Aufrufverzeichnis wird über die private bestehende Unicode-
+Launcherbrücke übernommen; relative Modell-/Konfigurations-/Ausgabepfade bleiben
+caller-relativ. Verzeichniswechsel und Rückkehr gelten nur im gestarteten Batch-
+Prozess; der fachliche CLI-Kontext ist weiterhin explizit injiziert.

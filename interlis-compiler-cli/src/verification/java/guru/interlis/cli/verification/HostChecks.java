@@ -56,10 +56,18 @@ final class HostChecks {
                 builder.redirectInput(new File("/dev/null"));
             process=builder.start();
             if(!process.waitFor(timeout.toMillis(),TimeUnit.MILLISECONDS)) throw new IOException("Process timeout: "+command);
-            return new Result(List.copyOf(command),process.exitValue(),Files.readString(stdout),Files.readString(stderr),(System.nanoTime()-started)/1_000_000.0);
+            return new Result(List.copyOf(command),process.exitValue(),strictUtf8(stdout,command),strictUtf8(stderr,command),(System.nanoTime()-started)/1_000_000.0);
         } finally {
             if(process!=null && process.isAlive()) {process.descendants().forEach(ProcessHandle::destroyForcibly);process.destroyForcibly();process.waitFor();}
             Files.deleteIfExists(stdout);Files.deleteIfExists(stderr);Files.deleteIfExists(directory);
+        }
+    }
+    private static String strictUtf8(Path file, List<String> command) throws IOException {
+        try { return Files.readString(file); }
+        catch (java.nio.charset.CharacterCodingException failure) {
+            byte[] bytes=Files.readAllBytes(file);
+            throw new IOException("Non-UTF-8 process output from "+command+"; first bytes="
+                    +HexFormat.of().formatHex(Arrays.copyOf(bytes,Math.min(bytes.length,4096))),failure);
         }
     }
     static Result cli(Path root, List<String> arguments) throws Exception {

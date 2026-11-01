@@ -84,3 +84,37 @@ Freigabe; kein Push/Merge/Release wurde vorgenommen.
 
 Der erste weitere Schritt ist der saubere Kandidatencommit. Dessen SHA wird
 anschliessend extern dokumentiert, nicht als Selbstreferenz in diesem Bericht.
+
+## Nacharbeit nach erster realer Plattformmatrix
+
+Gesonderte Nutzerfreigabe zum Branchpush und Start des bestehenden Workflows
+wurde erteilt. Kandidat `6fd9d794f7cd836db79efa02d56369a679b05483` wurde gepusht;
+[CI41289594757](https://github.com/edigonzales/interlis-java/actions/runs/41289594757):
+Linux erfolgreich, Windows beim ersten externen Unicode-Installationsprozess
+fehlgeschlagen (MalformedInputException im strengen UTF-8-Leser, kein PASS).
+Eigener lokaler Plattform-/SDK-/Conformance-/Checkerlauf auf6fd9d79 bestand
+Exit0/3m16s,1230 Tests; er ist kein Nachweis des nachgearbeiteten Produkts.
+Rohlogs und das fehlgeschlagene Windowsartefakt bleiben unter
+`build/review/compiler-cli-color/windows-6fd9d79-*` erhalten.
+
+Der Windows-Modulpfad wird nun als ASCII-relatives `lib` innerhalb der
+Installation übergeben. Die private Unicode-Launcherbrücke bewahrt das
+ursprüngliche Arbeitsverzeichnis; Main übergibt es explizit an CliEnvironment,
+ohne globale user.dir-/Locale-/Streamänderung. Exitcode und Verzeichnisstack
+werden nach dem Java-Prozess erhalten/zurückgeführt. Relative Modell-, Config-
+und Ausgabeziele bleiben im ursprünglichen Aufrufverzeichnis. Bestehende
+Bridgeaufrufer ohne neuen Verzeichniswert behalten ihr bisheriges Verhalten.
+Der Native-Encodingfall verwendet jetzt den echten Launcher mit festen
+JAVA_OPTS statt direkter Java-Argumente in einem Unicode-Installationspfad.
+
+HostChecks bleibt streng UTF-8; bei einem erneuten nativen Startfehler werden
+begrenzt die Rohbytes als Hex diagnostiziert, statt den entscheidenden
+Fehlertext durch einen Decoderstacktrace zu verlieren oder still zu ersetzen.
+
+Nacharbeit lokal: `:interlis-compiler-cli:test compilerCliCheck
+:interlis-compiler-cli:verificationTest pythonFreeCheck
+:interlis-compiler-cli:distZip -PnodeExecutable=<Node24.22.0> --no-parallel
+--max-workers=2 --console=plain`, Exit0/25s,100 CLI-/25 Verificationtests,
+46+6 echte Prozesse und1466 Pythonfreiheitsinputs; Guard passed/0.
+Log `color3-windows-fix-local.log`, Manifest `color3-windows-fix-guard.json`.
+Die neue Windows-/Linux-Matrix und alle finalen Pflichtgates sind erneut nötig.

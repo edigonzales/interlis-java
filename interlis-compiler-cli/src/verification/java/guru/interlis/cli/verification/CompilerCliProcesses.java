@@ -79,10 +79,8 @@ public final class CompilerCliProcesses {
                 var result = run(folder, command, Duration.ofSeconds(45));
                 verify(fixture.name(), result, fixture.exit(), fixture.stdout()); cases.put(fixture.name(), result);
             }
-            Path lib = launcher.getParent().getParent().resolve("lib");
-            var encoding = run(folder, List.of(java().toString(), "-Dstdout.encoding=windows-1252",
-                    "-Dstderr.encoding=windows-1252", "--module-path", lib.toString(),
-                    "--add-modules", "ALL-MODULE-PATH", "--module", "interlis.compiler.cli/guru.interlis.cli.Main", "format", "Encoding.ili"), Duration.ofSeconds(45));
+            var encoding = run(folder, List.of(launcher.toString(),"format","Encoding.ili"),
+                    Duration.ofSeconds(45),Map.of("JAVA_OPTS","-Dstdout.encoding=windows-1252 -Dstderr.encoding=windows-1252"));
             verify("format-utf8", encoding, 0, true);
             require(encoding.stdout().contains("Grüezi 😀") && encoding.stderr().isEmpty(), "Native encoding leaked into UTF-8 streams");
             cases.put("format-utf8", encoding);

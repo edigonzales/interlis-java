@@ -24,7 +24,7 @@ distributions.main.distributionBaseName = 'interlis-compiler'
 
 tasks.named('startScripts') {
     inputs.property('windowsUnicodeArguments', 1)
-    inputs.property('unicodeModuleLaunch', 1)
+    inputs.property('unicodeModuleLaunch', 2)
     doLast {
         // JDK 25's classpath URL encoder mishandles supplementary characters
         // in installation paths. Automatic modules resolve the same unmodified
@@ -52,11 +52,19 @@ set /a _INTERLIS_COMPILER_ARG_COUNT+=1 >NUL
 shift
 goto collectCompilerArguments
 :executeCompilerArguments
+set "_INTERLIS_COMPILER_WORKING_DIRECTORY=%CD%"
+pushd "%APP_HOME%" || goto fail
 '''
         def unicodeLaunch = launch.replace('endlocal & ', '')
                 .replace('-classpath "%CLASSPATH%" guru.interlis.cli.Main %*',
-                        '-Dguru.interlis.cli.windowsArguments=true --module-path "%APP_HOME%\\lib" --add-modules ALL-MODULE-PATH --module interlis.compiler.cli/guru.interlis.cli.Main')
-        windowsScript.setText(script.replace(launch, bridge.replace('\n', '\r\n') + unicodeLaunch), 'UTF-8')
+                        '-Dguru.interlis.cli.windowsArguments=true --module-path "lib" --add-modules ALL-MODULE-PATH --module interlis.compiler.cli/guru.interlis.cli.Main')
+        def restoreDirectory = '''
+set "_INTERLIS_COMPILER_EXIT_CODE=%ERRORLEVEL%"
+popd
+cmd /c exit /b %_INTERLIS_COMPILER_EXIT_CODE%
+'''
+        windowsScript.setText(script.replace(launch, bridge.replace('\n', '\r\n') + unicodeLaunch
+                + restoreDirectory.replace('\n', '\r\n')), 'UTF-8')
     }
 }
 
