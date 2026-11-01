@@ -60,7 +60,7 @@ class RepositoryCliContractTest {
     @Test void malformedRepositoryOptionsAndLockAreUsageErrors() throws Exception {
         assertEquals(CliTermination.USAGE_ERROR,run("check","--model-pin","Dep").result().termination());
         assertEquals(CliTermination.USAGE_ERROR,run("check","--offline","--root","Dep").result().termination());
-        assertEquals(CliTermination.USAGE_ERROR,run("analyze","--repository",directory.toString()).result().termination());
+        assertEquals(CliTermination.USAGE_ERROR,run("format","--repository",directory.toString()).result().termination());
         var repo=repository(false);Files.writeString(directory.resolve("invalid.xml"),"<invalid/>");
         assertEquals(CliTermination.USAGE_ERROR,run("check","--repository",repo.toString(),"--root","Dep","--read-lock","invalid.xml").result().termination());
     }

@@ -31,7 +31,7 @@ public final class ConsoleDiagnosticRenderer {
         return render(diagnostic, sources, language, RenderOptions.defaults(ansiEnabled));
     }
 
-    /** Renders a bounded source frame and safe, independently styled diagnostic fields. */
+    /** Renders safe diagnostic fields; verbose options add a bounded frame, related locations and hints. */
     public String render(Diagnostic diagnostic, Map<SourceId, SourceText> sources,
                          DiagnosticLanguage language, RenderOptions options) {
         Objects.requireNonNull(options, "options");
@@ -46,6 +46,7 @@ public final class ConsoleDiagnosticRenderer {
         out.append(styler.style(AnsiStyler.Role.valueOf(diagnostic.severity().name()),
                 severity(diagnostic.severity(), language), ansiEnabled)).append(" [")
                 .append(styler.style(AnsiStyler.Role.CODE, diagnostic.code().value(), ansiEnabled)).append("] ").append(message.text());
+        if (!options.verbose()) return out.toString();
         new DiagnosticSnippetRenderer().renderPrimary(diagnostic, sources, options, styler)
                 .ifPresent(frame -> out.append('\n').append(frame));
         for (var related : diagnostic.relatedLocations()) {

@@ -38,20 +38,19 @@ public record CommandSpec(String command, List<Option> options, boolean acceptsF
                 options.add(new Option("--json", 0, false));
                 options.add(new Option("--root", 1, true));
                 if (command.equals("diagram")) options.add(new Option("--format", 1, false));
-                if (command.equals("check") || command.equals("compile")) {
-                    options.add(new Option("--repository", 1, true));
-                    options.add(new Option("--model-pin", 4, true));
-                    options.add(new Option("--source-pin", 2, true));
-                    for (String name : List.of("--read-lock", "--write-lock", "--cache", "--config", "--warnings"))
-                        options.add(new Option(name, 1, false));
-                    options.add(new Option("--offline", 0, false));
-                    options.add(new Option("--explain-config", 0, false));
-                }
+                options.add(new Option("--repository", 1, true));
+                options.add(new Option("--model-pin", 4, true));
+                options.add(new Option("--source-pin", 2, true));
+                for (String name : List.of("--read-lock", "--write-lock", "--cache", "--config", "--warnings"))
+                    options.add(new Option(name, 1, false));
+                options.add(new Option("--offline", 0, false));
+                options.add(new Option("--explain-config", 0, false));
                 yield true;
             }
             default -> throw new IllegalArgumentException("unknown command: " + command);
         };
         if (files) {
+            options.add(new Option("--verbose", 0, false));
             options.add(new Option("--diagnostic-language", 1, false));
             options.add(new Option("--color", 1, false));
         }

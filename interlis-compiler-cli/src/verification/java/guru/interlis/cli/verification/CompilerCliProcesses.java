@@ -13,6 +13,7 @@ public final class CompilerCliProcesses {
             "semantic", "missing-file", "missing-import", "explicit-import", "multiple-models",
             "option-end", "format-utf8", "root-isolation", "foreign-warning", "relevant-warning",
             "diagnostic-de", "diagnostic-json", "no-model-root", "invalid-language", "repository-http",
+            "repository-http-compile", "repository-http-analyze", "repository-http-diagram", "compact", "verbose",
             "color-auto", "color-always", "color-never", "color-no-color", "color-empty-no-color",
             "color-term-dumb", "color-always-override", "color-never-override", "color-invalid", "color-duplicate", "color-missing-inline", "color-usage-control", "color-format-check-control",
             "color-json-always", "color-json-never", "color-json-auto", "color-format-always", "color-format-never",
@@ -70,6 +71,8 @@ public final class CompilerCliProcesses {
                     new Fixture("diagram", List.of("diagram", "Base.ili"), 0, true),
                     new Fixture("syntax", List.of("check", "Syntax.ili"), 1, false),
                     new Fixture("semantic", List.of("check", "Bad.ili"), 1, false),
+                    new Fixture("compact", List.of("check", "Bad.ili"), 1, false),
+                    new Fixture("verbose", List.of("check", "--verbose", "Bad.ili"), 1, false),
                     new Fixture("missing-file", List.of("check", "missing.ili"), 1, false),
                     new Fixture("missing-import", List.of("check", "Root.ili"), 1, false),
                     new Fixture("explicit-import", List.of("check", "--root", "Root", "Root.ili", "Base.ili"), 0, false),
@@ -97,6 +100,9 @@ public final class CompilerCliProcesses {
             require(cases.get("diagnostic-json").stderr().isEmpty()
                     && diagnostic.get("code").getAsString().equals("ILI-SEM-0001")
                     && diagnostic.get("message").getAsString().contains("kann an dieser Stelle nicht aufgelöst werden"), "Canonical JSON or presentation missing");
+            String compact = cases.get("compact").stderr(), verbose = cases.get("verbose").stderr();
+            require(compact.lines().count() == 1 && !compact.contains(" | "), "Compact diagnostic contains details");
+            require(verbose.contains(" | ") && verbose.startsWith(compact.stripTrailing()+"\n"), "Verbose diagnostic lost header/frame");
             repositoryHttp(folder, launcher, cases);
             colorCases(folder, launcher, cases);
             verifyColorCases(cases);
@@ -127,11 +133,15 @@ public final class CompilerCliProcesses {
         });
         server.start();
         try {
-            var result=run(folder,List.of(launcher.toString(),"check","--repository",
-                    "http://127.0.0.1:"+server.getAddress().getPort()+"/","--root","Remote"),Duration.ofSeconds(45));
-            verify("repository-http",result,0,false);
-            require(result.stderr().isEmpty()&&requests.get()>=2,"Real launcher did not load HTTP index/model");
-            cases.put("repository-http",result);
+            for (String command : List.of("check", "compile", "analyze", "diagram")) {
+                var result=run(folder,List.of(launcher.toString(),command,"--repository",
+                        "http://127.0.0.1:"+server.getAddress().getPort()+"/","--root","Remote"),Duration.ofSeconds(45));
+                String key=command.equals("check") ? "repository-http" : "repository-http-"+command;
+                verify(key,result,0,command.equals("diagram"));
+                require(result.stderr().isEmpty()&&requests.get()>=2,"Real launcher did not load HTTP index/model");
+                if (command.equals("diagram")) require(result.stdout().contains("classDiagram"), "Missing repository diagram");
+                cases.put(key,result);
+            }
         } finally { server.stop(0); }
     }
 
@@ -176,7 +186,7 @@ public final class CompilerCliProcesses {
                 new ColorCase("color-compile",List.of("compile","--color=always","Bad.ili"),standard,1,false),
                 new ColorCase("color-analyze",List.of("analyze","--color=always","Bad.ili"),standard,0,false));
         for (var fixture : fixtures) {
-            var command = new ArrayList<String>(); command.add(launcher.toString()); command.addAll(fixture.args());
+            var command = new ArrayList<String>(); command.add(launcher.toString()); command.addAll(fixture.args()); command.add("--verbose");
             var result = run(folder, command, Duration.ofSeconds(45), fixture.environment());
             verify(fixture.name(),result,fixture.exit(),fixture.stdout()); cases.put(fixture.name(),result);
         }

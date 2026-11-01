@@ -903,3 +903,12 @@ operativer Stand unter `docs/implementation/compiler-cli-color-output/STATUS.md`
 COLOR2 konkretisiert C2-01–11 / DIAG-001–003/006/009 und CLI-004/006 über
 revisionstreue sichere Quellframes und bytegleiche ANSI-/Plainprojektion.
 Keine Sprach-, Snapshot-, LSP- oder Bridgeänderung; Abnahmen in Kapitel18.
+
+
+Repository-/Verbose-Integration ordnet CLI-001–007, RES-001/004/007–009/011,
+DIAG-001–003/006/009 und LOG-002/003/005 der gemeinsamen Hostvorbereitung und
+expliziten Textausführlichkeit aus Kapitel08/18 zu. SemanticRepositoryCommandsTest
+prüft vier semantische Befehle; VerboseDiagnosticsContractTest prüft fünf
+Diagnosebefehle und RenderOptions-Kompatibilität. compilerCliCheck ergänzt echte
+HTTP-Prozesse für alle vier Verbraucher und Kompakt-/Verbose-Gegenproben.
+Die bestehenden COLOR-Quellframefälle verwenden ausdrücklich `--verbose`.

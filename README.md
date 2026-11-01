@@ -86,10 +86,13 @@ deaktiviert AUTO. Explizites ALWAYS übersteuert diese Defaults, NEVER unterdrü
 Farbe. Unter Windows bleibt AUTO konservativ farbfrei. JSON, format-/diagram-
 stdout und Dateien erhalten keine zusätzlichen ANSI-Sequenzen.
 
-Textdiagnosen zeigen bis zu drei revisionstreue Quellzeilen mit maximal160
+Textdiagnosen zeigen standardmässig nur Fundstelle, Schweregrad, Code und Meldung.
+`--verbose` ergänzt Quellausschnitte, verwandte Fundstellen und Hinweise bei
+`check`, `compile`, `analyze`, `diagram` und `format`. JSON bleibt vollständig.
+Ausführliche Diagnosen zeigen bis zu drei revisionstreue Quellzeilen mit maximal160
 sichtbaren Spalten. Unsichere Unicodebreiten erhalten einen UTF-16-Hinweis statt
 eines ungenauen Carets; Steuerzeichen werden druckbar escaped. Beispiel:
-`interlis-compiler check --color=always --diagnostic-language de Modell.ili`.
+`interlis-compiler check --verbose --color=always --diagnostic-language de Modell.ili`.
 Mit `--root` prüfen `check`/`compile` nur die gewählten Modelle samt benötigten
 Abhängigkeiten; zusätzliche Dateien bleiben verfügbare Eingaben. `analyze` zeigt
 weiterhin den vollständigen Analysestand. Lokale Importdateien ausdrücklich
@@ -102,6 +105,26 @@ interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler chec
 ./gradlew sdkPackage
 # Nach dem Entpacken: cli/bin/interlis-compiler (Windows: interlis-compiler.bat).
 ```
+
+`check`, `compile`, `analyze` und `diagram` unterstützen denselben expliziten
+Repository-Optionssatz: `--repository DIR_OR_URI` (mehrfach), `--model-pin`,
+`--source-pin`, `--cache`, `--offline`, `--read-lock`, `--write-lock`, `--config`,
+`--explain-config` und `--warnings allow|reject`. Repositoryoptionen benötigen
+`--repository`; jedes Repository benötigt `ilimodels.xml`. Es gibt keine
+Defaultrepositories. `format` benötigt und akzeptiert keine Repositories.
+Zum Beispiel (Modellname und Repository entsprechend ersetzen):
+
+```sh
+interlis-compiler diagram --repository https://models.interlis.ch/ \
+  --root MeinModell --verbose --format mermaid
+```
+
+`--root` funktioniert auch ohne lokale Quelldatei. `--config FILE` lädt explizite
+UTF-8-Properties, etwa `repository=https://models.interlis.ch/`; CLI-Werte haben
+Vorrang. `--verbose` ist ausschliesslich eine CLI-Präsentationsoption.
+Ein Lock beschreibt die aufgelösten Quellen: `check`/`compile` schreiben ihn nach
+erfolgreicher Kompilierung, `diagram` nach erfolgreicher Projektion und `analyze`
+nach abgeschlossener Analyse, auch wenn diese fachliche Diagnosen enthält.
 
 Die Compilerbibliothek bleibt `interlis-compiler`; Modul und CLI-JAR heissen
 `interlis-compiler-cli`. Alte Programme, Optionsprofile und Aliase entfallen.

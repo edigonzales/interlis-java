@@ -2,11 +2,19 @@ package guru.interlis.cli;
 
 /**
  * Pure text diagnostic presentation limits, in visible terminal columns.
- * Includes at most three source lines; published options are immutable and null-free.
+ * Verbose presentation includes frames, related locations and hints; compact
+ * presentation includes only the diagnostic header. Frames include at most three
+ * source lines; published options are immutable and null-free.
  * Limits include the frame gutter. No host or terminal state is consulted.
  */
 public record RenderOptions(boolean ansiEnabled, int contextLinesBefore,
-                            int contextLinesAfter, int maxVisibleColumns) {
+                            int contextLinesAfter, int maxVisibleColumns, boolean verbose) {
+    /** Retains the detailed presentation of existing library callers. */
+    public RenderOptions(boolean ansiEnabled, int contextLinesBefore,
+                         int contextLinesAfter, int maxVisibleColumns) {
+        this(ansiEnabled, contextLinesBefore, contextLinesAfter, maxVisibleColumns, true);
+    }
+
     /** Rejects negative context, more than three total lines, or widths outside 24..160. */
     public RenderOptions {
         if (contextLinesBefore < 0 || contextLinesAfter < 0
@@ -16,7 +24,7 @@ public record RenderOptions(boolean ansiEnabled, int contextLinesBefore,
             throw new IllegalArgumentException("invalid diagnostic render limits");
     }
 
-    /** One line before/after, 160 columns, explicit color choice. */
+    /** Detailed presentation, one line before/after, 160 columns, explicit color choice. */
     public static RenderOptions defaults(boolean ansiEnabled) {
         return new RenderOptions(ansiEnabled, 1, 1, 160);
     }

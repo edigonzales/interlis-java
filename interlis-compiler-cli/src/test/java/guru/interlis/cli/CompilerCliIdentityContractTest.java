@@ -51,6 +51,14 @@ class CompilerCliIdentityContractTest {
         var result = run(arg); assertEquals(0, result.result.exitCode(), result.err);
         assertTrue(result.out.contains("interlis-compiler")); assertTrue(result.err.isEmpty());
         assertFalse(result.out.contains("ili2c")); assertNoCompiler(result.events);
+        if (List.of("help", "-h", "--help").contains(arg)) {
+            String diagram = result.out.lines().filter(line -> line.startsWith("diagram ")).findFirst().orElseThrow();
+            assertFalse(diagram.contains("--json"), diagram);
+            assertTrue(diagram.contains("--format VALUE"), diagram);
+            assertTrue(result.out.contains("interlis-compiler diagram --format json"));
+            for (String command : List.of("check", "compile", "analyze"))
+                assertTrue(result.out.lines().anyMatch(line -> line.startsWith(command + " ") && line.contains("--json")));
+        }
     }
     private void usage(String... args) {
         var result = run(args); assertEquals(2, result.result.exitCode(), result.err);

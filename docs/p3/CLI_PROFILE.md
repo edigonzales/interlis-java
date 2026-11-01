@@ -22,6 +22,9 @@ Exit 0 Erfolg, 1 fachliche/operative Ablehnung, 2 Bedien-/Konfigurationsfehler,
 abgelehnt. Hilfe/Version gehen nach stdout. `check`/`compile`: Diagnosen stderr,
 Erfolg stdout leer; `--json` liefert ein JSON-Dokument auf stdout.
 `format`/`diagram` behalten ihre Fachausgaben; Hoststreams sind UTF-8.
+Die `diagram`-Hilfe empfiehlt `--format json`; `--json` wird dort nicht als
+nutzbare Option aufgelistet. Ein entsprechender Fehlaufruf verweist weiterhin
+mit Exit2 auf `--format json`.
 
 `--diagnostic-language de|en` gilt bei `check`, `compile`, `analyze`, `diagram`,
 `format`, Default EN unabhängig vom Host. Ungültige Werte ergeben Exit2 vor IO.
@@ -37,7 +40,9 @@ Werte ergeben Exit2 vor Modell-/Repository-IO. AUTO ist Default und prüft auf
 POSIX den tatsächlichen stderr-FD2, niemals stdout. Unbekannte Fähigkeit oder
 Windows: plain. Nichtleeres NO_COLOR und TERM=dumb (case-insensitive) unterdrücken
 AUTO; explizites ALWAYS/NEVER hat Vorrang. JSON und Fachartefakte bleiben plain.
-Textdiagnosen zeigen maximal3 Quellzeilen/160 Displayspalten aus der exakten
+Textdiagnosen zeigen standardmässig nur ihre Kopfzeile. `--verbose` ergänzt
+Quellframes, verwandte Stellen und Hinweise bei allen fünf Diagnosebefehlen.
+Ausführliche Textdiagnosen zeigen maximal3 Quellzeilen/160 Displayspalten aus der exakten
 übergebenen Revision; Kontrollen werden escaped, unsichere Unicodebreiten
 explizit ohne exakten Caret dargestellt. Bibliotheksrenderer bleiben per Default
 farbfrei, CliEnvironment ist für bestehende Konstruktoraufrufe kompatibel.
@@ -55,7 +60,7 @@ Der aktuelle Umsetzungs-/Abnahmestand steht ausschliesslich im
 [CLI-Status](../implementation/compiler-cli-modernization/STATUS.md); der neue
 Farbumfang wird separat im [COLOR-Status](../implementation/compiler-cli-color-output/STATUS.md) geführt.
 
-Das aktuelle Prozessprofil umfasst50 echte Fälle mit23 Farb-/JSON-/Kanalgegenproben;
+Das aktuelle Prozessprofil umfasst55 echte Fälle mit23 Farb-/JSON-/Kanalgegenproben;
 auf macOS kommen6 reale PTY-/Redirectfälle hinzu. Headless Windows/Linux
 behaupten kein interaktives Terminal. Die bestehenden Releaseprüfer verlangen
 1232 Tests/229 Suites sowie alle50 Fälle und erneut validierte Farbausgaben.
@@ -81,3 +86,17 @@ Der echte Prozessfall `repository-http` lädt Index und Modell über einen lokal
 HTTP-Server und kompiliert sie aus der externen Installation. ALL-DEFAULT erhält
 die bisherigen JDK-Standardmodule des Klassenpfadstarts, insbesondere java.net.http;
 der Modulstart darf vorhandene Repositoryfähigkeiten nicht ausblenden.
+
+
+`check`, `compile`, `analyze` und `diagram` unterstützen denselben Repository-
+Optionssatz (`--repository`, Pins, Cache, Offline, Locks, Konfiguration und
+Warnungspolicy) gemäss Kapitel18. `--root MODEL` ist auch ohne Datei zulässig;
+kein Defaultrepository. CLI-Werte überschreiben Konfigurationswerte.
+`format` benötigt ausschliesslich Syntax und lehnt Repositoryoptionen ab.
+`analyze` behält die volle Diagnostik ohne Compilegate. Locks bescheinigen nur
+Quellenauswahl: Ausgabe nach erfolgreicher Kompilierung, erfolgreicher
+Diagrammprojektion beziehungsweise abgeschlossener Analyse. JSON bleibt mit
+und ohne `--verbose` vollständig; das Flag ändert nur die Textdiagnosen.
+Die Fälle `repository-http-compile`, `repository-http-analyze` und
+`repository-http-diagram` ergänzen `repository-http`; `compact` und `verbose`
+prüfen die beiden Darstellungen aus der gebauten Distribution.

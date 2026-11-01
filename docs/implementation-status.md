@@ -1,5 +1,34 @@
 # Implementierungsstatus interlis-java
 
+Gezielte Nacharbeit vom 01.11.2026: `diagram`-Hilfe listet `--json` nicht mehr
+als nutzbare Option und empfiehlt ausdrücklich `--format json`. CLI-003/004/006,
+LOG-005. Vier ausgewählte Tests und fünf reale CLI-Prozesse bestanden; keine
+vollständigen Testläufe wiederholt. [Nachweis und Reviewabgrenzung](implementation/compiler-cli-repository-verbose.md).
+
+
+Unabhängiger Repository-/Verbose-Folgereview vom 01.11.2026: **OpenCode PASS**
+für alle10 Kriterien am sauberen separaten Snapshot
+`da3c1239f384a42b1b4f5d48ed11cbd03a7fe98e`. Bestehende Rohbelege und
+Quell-/Artefakthashes unabhängig geprüft; vier gezielte Gegenprobengruppen,
+keine vollständigen Testwiederholungen. ProzessExit0 und Guard passed/Exit0,
+keine Blocker. [Unveränderter Bericht](implementation/reviews/compiler-cli-repository-verbose-review.md).
+Der Arbeitsbranch blieb unverändert; Snapshot und Abschlussaudit sind im
+[Umsetzungsbericht](implementation/compiler-cli-repository-verbose.md) zugeordnet.
+
+Abgeschlossener Folgeauftrag vom 01.11.2026: Repository-Unterstützung für
+`analyze`/`diagram`, gemeinsame Hostvorbereitung der vier semantischen Befehle
+und kompakte Textdiagnosen mit optionalem `--verbose` bei fünf Befehlen.
+CLI-001–007, RES-001/004/007–009/011, DIAG-001–003/006/009 und LOG-002/003/005.
+Gezielt verifiziert auf macOS arm64 / Temurin25.0.3: 178 JUnit-Tests ohne
+Fehler/Skips,55 CLI- und6 PTY-/Redirectfälle,9 SDK-Kommandos und externer
+SDK-Archivverbraucher. Frischer Wrapperlauf: alle32 Tasks ausgeführt,Exit0.
+[Umsetzung, Verträge und Prüfgrenzen](implementation/compiler-cli-repository-verbose.md).
+Keine Blocker oder offenen Schritte aus diesem Auftrag; historische Abnahmen
+bleiben erhalten. Gemeinsamer Commit auf Nutzerauftrag einschliesslich der
+anschliessenden Hilfekorrektur und des unveränderten Reviewberichts; dafür keine
+erneuten Testläufe, kein Push/Release.
+
+
 Abgeschlossener Folgeauftrag vom 01.11.2026: farbige CLI-Textdiagnosen, COLOR1–3.
 [Operativer COLOR-Status](implementation/compiler-cli-color-output/STATUS.md).
 COLOR1 unabhängig PASS auf `792811e2bb1b7186c3eecc4a1a4f3930469a1c19`.
