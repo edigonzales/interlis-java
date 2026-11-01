@@ -220,6 +220,10 @@ final class InterlisWorkspaceService implements WorkspaceService {
         return LspFutures.map(documents.compileWorkspace(),InterlisWorkspaceService::summary,documents::operation);
     }
 
+    static CompileReport report(CompilationOutcome outcome) {
+        var fields=summary(outcome);return new CompileReport((String)fields.get("outcome"),List.of(),fields);
+    }
+
     private static Map<String, Object> summary(CompilationOutcome outcome) {
         Map<String, Object> summary = new LinkedHashMap<>();
         if (outcome instanceof CompilationOutcome.Succeeded succeeded) {

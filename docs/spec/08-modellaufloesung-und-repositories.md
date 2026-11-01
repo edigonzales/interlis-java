@@ -504,3 +504,24 @@ Offlinezugriffe. Alle Zeit-/Grössen-/Abbruchverträge gelten weiterhin.
 Abnahmen: `RepositoryCacheContractTest`, `DefaultRepositoryCacheTest` sowie die
 bestehenden Closure-, Lock-, HTTP- und CLI-Vertragstests. Die CLI-Bedienbeispiele
 stehen in Kapitel 18 und README.
+
+## 14. Eingefrorene Vorbereitung für den LSP-Host
+
+`RepositoryClosureService.resolveCaptured(Workspace owner, WorkspaceCapture initial,
+WorkspaceConfiguration configuration, RepositoryResolveOptions options,
+CancellationToken token)` ist der additive Hintergrundpfad. Alle Argumente sind
+nullfrei. Capture und Konfiguration werden gemeinsam auf der Ownerqueue erfasst;
+der Aufrufer muss sie derselben Workspaceinstanz zuordnen. Die Methode liest oder
+mutiert `owner` nicht, sondern bindet nur das resultierende bedingte Update daran.
+Sie verwendet exakt die bisherige Such-/Cache-/Digest-/Locklogik. Zwischenzeitliche
+Änderungen können daher erst beim Apply erkannt werden: `Prepared` bedeutet
+vollständig vorbereitet, nicht weiterhin aktuell. `PreparedRepositoryUpdate.apply`
+bleibt der einzige atomare Commit mit Revision und vollem Konfigurationsfingerprint.
+Der bisherige synchrone `resolve`-Einstieg bleibt erhalten und prüft zusätzlich
+nach der Vorbereitung die aktuelle WorkspaceRevision.
+
+Die begrenzte LSP-IO-Queue verarbeitet diese Werte ausserhalb der Ownerqueue.
+Supersedierung und Shutdown brechen den Token ab; veraltete Ergebnisse werden
+vor Apply/Veröffentlichung verworfen. `CapturedRepositoryResolutionTest` prüft
+auch, dass der Hintergrundpfad keine einzige Live-Owner-Methode aufruft und ein
+Dirtyupdate während blockierter Beschaffung den gesamten Apply zurückweist.

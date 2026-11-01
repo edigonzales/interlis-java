@@ -202,3 +202,11 @@ CLI-Default ~/.interlis-cache und --no-cache einführen, Offline ohne Lock im
 bestehenden Suchpfad ermöglichen. Kapitel 08 §13 / 18 und die gezielte Abnahme
 in Kapitel 13 sind verbindlich. Keine Änderung an Modellwahl oder Lockformaten;
 keine neue LSP-Remoteauflösung, automatische Bereinigung oder ili2c-Cachesharing.
+
+WP-31-/WP-26-Verbraucherfolgeauftrag VS-Code-V1: der LSP bindet die bestehende
+Repositorysuche und den Standardcache über eingefrorene Captures und bedingten
+Ownercommit an. Diagnoseprosa/RelatedInformation, semantische Outline,
+Readonly-Quellhandles und expliziter Rootcompile gehören zu diesem Abschnitt.
+Gezielte Abnahme nach Kapitel13; der verbindliche sequenzielle V0–V5-Plan und
+die unabhängigen Produktpaar-Gates liegen im Extensionrepo. Diese Ergänzung
+behauptet keine erfolgte V1-Abnahme und erteilt keinen separaten Releaseauftrag.

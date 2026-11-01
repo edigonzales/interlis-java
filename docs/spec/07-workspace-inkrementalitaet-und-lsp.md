@@ -610,3 +610,41 @@ Resolveridentität einschliesslich Auswahlpolicy. `acceptAnalysis` prüft zusät
 Analyse. Gleiche Texte/Revisionen/Optionen mit anderer Root-/Import-/Originalbindung
 sind damit kein zulässiger Ersatz. Cacheänderungen bleiben semantisch neutral;
 veraltete Captures werden weiterhin über WorkspaceRevision abgewiesen.
+
+## 9. Editorhost: Diagnoseprosa, Repositoryquellen und Rootcompile
+
+`InterlisLanguageServerApi extends LanguageServer` exportiert `interlis/compile`
+und `interlis/source` mittels LSP4J-JsonRequest über den realen stdio-Launcher.
+`experimental.interlis.protocolVersion=1`, `compile=true`, `sourceContent=true`
+werden ausgehandelt; Diagramm-/semantische Schreibfähigkeiten sind dabei false.
+
+`CompileModelParams(mode,textDocument,modelName,modelVersion)` hat die Modi
+`current` und `workspace`. Current verlangt ein offenes editierbares Dokument
+mit genauer LSP-Version; Workspace akzeptiert keine versteckte Dokumentauswahl.
+Ohne explizite Auswahl liefert ein Mehrmodell-Dokument `selectionRequired` mit
+geordneten `CompileReport.ModelChoice(modelName,modelVersion)`. Das kompiliert
+noch nicht. BySource erhält Syntaxfehler; eine konkrete Auswahl benutzt ByName
+mit Sourcehint. CompileReport enthält Outcome, immutable Auswahl und die
+Gatezusammenfassung. Der aktuelle Dokumentstand wird vor dem Capture nochmals
+geprüft; Generation-/Workspaceänderungen verhindern die Rückgabe eines alten
+Erfolgs. Abbruch wird bis zum aktiven Host-/Compilerlauf weitergegeben.
+
+`SourceContentParams(handle,expectedRevision)` akzeptiert ausschliesslich
+sessionbezogene serverseitig ausgegebene Handles und exakte dezimale
+SourceRevision-Strings. `SourceContent(uri,sourceRevision,text,readonly,origin,
+digest,digestAlgorithm)` gibt den unveränderlichen Text mit seinem SHA-256/UTF-16BE
+zurück. Das ist kein Originalbyte-Digest. Der Inhalt entspricht den
+Navigationsbereichen derselben Revision; beliebige Datei-/HTTP-URIs werden
+abgewiesen. Die begrenzte Registry behält Herkunft unabhängig von didOpen.
+Rename, Formatting und CodeActions schreiben keine Repositoryquelle.
+
+Diagnosesprache `diagnosticLanguage` ist auto/de/en; auto verwendet die
+Initialisierungs-Locale, mit EN-Fallback. Die zusätzliche strikte Hostkonfiguration
+enthält geordnete repositories, offline, den expliziten absoluten cacheDirectory,
+modelPins, sourcePins und optionales resolutionLock-XML. Leere Cache-/Lockstrings
+deaktivieren Persistenz beziehungsweise Replay. Host- und Compilerkonfiguration
+werden vor Übernahme gemeinsam validiert; ungültige Änderungen erhalten beide
+bisherigen Stände. UI-/Launcherfelder gehören nicht in diesen Decoder.
+`RepositoryEditorTest` prüft echte transitive Quellen, frische Serverinstanzen,
+Offline ohne HTTP, Revalidierung, Dirty-Overrides, Rootauswahl, lokalisierte
+RelatedInformation, hierarchische Outline und Readonly nach didOpen.

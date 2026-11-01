@@ -121,6 +121,34 @@ class LspProcessTest {
         }
     }
 
+    @Test void customCompileAndReadonlySourceUseTheRealStdioLauncher() throws Exception {
+        Path repository=java.nio.file.Files.createTempDirectory("interlis-lsp-wire-repository-");
+        java.nio.file.Files.writeString(repository.resolve("Dep.ili"),RepositoryEditorTest.DEP);
+        java.nio.file.Files.writeString(repository.resolve("Base.ili"),RepositoryEditorTest.BASE);
+        String index="<TRANSFER>";
+        for(String name:List.of("Dep","Base")) index+="<ModelMetadata><Name>"+name+"</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>"+name+".ili</File></ModelMetadata>";
+        java.nio.file.Files.writeString(repository.resolve("ilimodels.xml"),index+"</TRANSFER>");
+        var process=new ProcessBuilder(Path.of(System.getProperty("java.home"),"bin","java").toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main").start();
+        try(var input=process.getOutputStream();var output=new BufferedInputStream(process.getInputStream())) {
+            var gson=new Gson();
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",1,"method","initialize","params",Map.of("capabilities",Map.of(),"initializationOptions",Map.of("repositories",List.of(repository.toUri().toString()))))));
+            String initialized=readResponse(output,1);assertTrue(initialized.contains("sourceContent"),initialized);
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","method","textDocument/didOpen","params",Map.of("textDocument",Map.of("uri",RepositoryEditorTest.URI,"version",11,"languageId","interlis","text",RepositoryEditorTest.ROOT)))));
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",2,"method","interlis/compile","params",Map.of("mode","current","textDocument",Map.of("uri",RepositoryEditorTest.URI,"version",11)))));
+            String compiled=readResponse(output,2);assertTrue(compiled.contains("succeeded"),compiled);
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",3,"method","textDocument/definition","params",Map.of("textDocument",Map.of("uri",RepositoryEditorTest.URI),"position",Map.of("line",3,"character",RepositoryEditorTest.ROOT.split("\n")[3].indexOf("Value"))))));
+            String target=com.google.gson.JsonParser.parseString(readResponse(output,3)).getAsJsonObject().getAsJsonArray("result").get(0).getAsJsonObject().get("uri").getAsString();
+            assertTrue(target.startsWith("interlis-source:/"));
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",4,"method","interlis/source","params",Map.of("handle",target,"expectedRevision",java.net.URI.create(target).getQuery()))));
+            var content=com.google.gson.JsonParser.parseString(readResponse(output,4)).getAsJsonObject().getAsJsonObject("result");
+            assertEquals(RepositoryEditorTest.DEP,content.get("text").getAsString());assertTrue(content.get("readonly").getAsBoolean());
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",5,"method","interlis/source","params",Map.of("handle",repository.resolve("Dep.ili").toUri().toString(),"expectedRevision","1"))));
+            assertTrue(readResponse(output,5).contains("-32602"));
+            send(input,"{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"shutdown\"}");assertTrue(readResponse(output,6).contains("result"));
+            send(input,"{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}");assertTrue(process.waitFor(10,TimeUnit.SECONDS));assertEquals(0,process.exitValue());
+        } finally { if(process.isAlive())process.destroyForcibly(); }
+    }
+
     @Test void exitWithoutShutdownTerminatesWithFailureWhileInputRemainsOpen() throws Exception {
         var java=Path.of(System.getProperty("java.home"),"bin","java");
         var process=new ProcessBuilder(java.toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main").start();

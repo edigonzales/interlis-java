@@ -46,7 +46,27 @@ public final class RepositoryClosureService {
                                                RepositoryResolveOptions options, CancellationToken token) {
         Objects.requireNonNull(workspace, "workspace"); Objects.requireNonNull(request, "request");
         Objects.requireNonNull(options, "options"); Objects.requireNonNull(token, "token");
-        var expected = request.expectedWorkspaceRevision();
+        try {
+            var configuration=workspace.configuration();
+            var capture=workspace.capture(request,token);
+            var outcome=resolveCaptured(workspace,capture,configuration,options,token);
+            return workspace.currentRevision().equals(capture.workspaceRevision())?outcome:stale(workspace,capture.workspaceRevision());
+        } catch(OperationCancelledException cancelled) { return new RepositoryResolutionOutcome.Cancelled(cancelled.reason()); }
+    }
+
+    /**
+     * Resolves an owner-captured immutable input outside the owner's queue. The
+     * owner parameter is retained solely to bind the conditional update; this
+     * method never calls it. Apply must run on the owner's queue and rejects any
+     * intervening source/configuration change atomically. Caller must capture
+     * configuration and capture in the same serialized owner action.
+     */
+    public RepositoryResolutionOutcome resolveCaptured(Workspace workspace, WorkspaceCapture initial,
+            WorkspaceConfiguration originalConfig, RepositoryResolveOptions options, CancellationToken token) {
+        Objects.requireNonNull(workspace, "workspace"); Objects.requireNonNull(initial, "initial");
+        Objects.requireNonNull(originalConfig, "originalConfig");
+        Objects.requireNonNull(options, "options"); Objects.requireNonNull(token, "token");
+        var expected = initial.workspaceRevision();
         var failureSources = new LinkedHashMap<SourceId,SourceText>();
         var originalSources = new LinkedHashMap<SourceId,SourceText>();
         var failureSites = new ArrayList<ImportSite>();
@@ -56,11 +76,8 @@ public final class RepositoryClosureService {
         SourceId failureSource = null;
         try {
             token.throwIfCancellationRequested();
-            var originalConfig = workspace.configuration();
-            var initial = workspace.capture(request, token);
             failureSources.putAll(initial.request().sources().sources());
             originalSources.putAll(failureSources);
-            if (!workspace.currentRevision().equals(expected)) return stale(workspace, expected);
             var selections = new LinkedHashMap<>(originalConfig.resolutionPolicy().modelSelections());
             var ranks = new LinkedHashMap<>(originalConfig.resolutionPolicy().sourcePriorities());
             var pins = new LinkedHashMap<>(options.modelPins());
@@ -103,10 +120,9 @@ public final class RepositoryClosureService {
                 long steps = 0;
                 while (true) {
                     token.throwIfCancellationRequested();
-                    if (!workspace.currentRevision().equals(expected)) return stale(workspace, expected);
                     if (++steps > originalConfig.compilerOptions().budget().maxSemanticWorkUnits())
                         throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
-                    var capture = staging.capture(new AnalysisRequest(staging.currentRevision(), request.roots()), token);
+                    var capture = staging.capture(new AnalysisRequest(staging.currentRevision(), initial.request().roots()), token);
                     failureSources.clear(); failureSources.putAll(capture.request().sources().sources()); failureSources.putAll(originalSources);
                     failureSteps.clear(); failureSteps.addAll(options.lock().filter(l -> l.formatVersion()==2).map(ResolutionLock::steps).orElse(search.steps()));
                     if (capture.resolution().complete()) {
@@ -130,7 +146,6 @@ public final class RepositoryClosureService {
                         recordSelected(capture, ranks.keySet(), pins, options.sourcePins(), options.lock(), selectedPins);
                         verified.verifyUnchanged();
                         verified.verifyUnavailable(options.lock().filter(l -> l.formatVersion()==2).map(ResolutionLock::unavailable).orElse(search.unavailable()));
-                        if (!workspace.currentRevision().equals(expected)) return stale(workspace, expected);
                         trace.addAll(capture.resolution().trace().decisions());
                         var previousLock = originalConfig.resolverCatalog().entries().get("repository-lock");
                         var previous = previousLock == null ? null : new ResolutionLockCodec().decode(previousLock);
@@ -273,7 +288,7 @@ public final class RepositoryClosureService {
                             } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
                         });
                         staging.update(update(id, loaded.text()));
-                        var checked = staging.capture(new AnalysisRequest(staging.currentRevision(), request.roots()), token);
+                        var checked = staging.capture(new AnalysisRequest(staging.currentRevision(), initial.request().roots()), token);
                         var syntax = checked.reuse().previousSyntax().get(id);
                         failureSources.putAll(checked.request().sources().sources());failureSources.putAll(originalSources);
                         failureDiagnostics.addAll(syntax.diagnostics());
@@ -298,24 +313,23 @@ public final class RepositoryClosureService {
         } catch (OperationCancelledException cancelled) {
             return new RepositoryResolutionOutcome.Cancelled(cancelled.reason());
         } catch (UpdateRejectedException stale) {
-            if (!workspace.currentRevision().equals(expected)) return stale(workspace, expected);
             throw stale;
         } catch (RepositorySearch.AmbiguousSelection ambiguous) {
             var problem=new RepositoryProblem(RepositoryProblem.Reason.AMBIGUOUS,ambiguous.model,
                     ambiguous.candidates.stream().map(m->new SourceId(m.location().toString())).toList(),Optional.empty(),Optional.empty(),ambiguous.candidates);
-            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,workspace.configuration().compilerOptions().budget().maxDiagnostics());
+            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,originalConfig.compilerOptions().budget().maxDiagnostics());
         } catch (RepositoryIndexException failure) {
             var problem=new RepositoryProblem(RepositoryProblem.Reason.INDEX_FAILURE,failureModel,List.of(),Optional.empty());
-            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,workspace.configuration().compilerOptions().budget().maxDiagnostics());
+            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,originalConfig.compilerOptions().budget().maxDiagnostics());
         } catch (SourceLoadException failure) {
             var problem=new RepositoryProblem(RepositoryProblem.Reason.LOAD_FAILURE,failureModel,List.of(),Optional.of(failure.reason()),Optional.ofNullable(failureSource),List.of());
-            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,workspace.configuration().compilerOptions().budget().maxDiagnostics());
+            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,originalConfig.compilerOptions().budget().maxDiagnostics());
         } catch (Rejection rejected) {
             var problem = rejected.problem;
             if(problem.modelName().isEmpty()) problem=new RepositoryProblem(problem.reason(),failureModel,problem.candidates(),problem.loadReason(),problem.source(),problem.candidateModels());
             if(problem.source().isEmpty() && failureSource != null)
                 problem=new RepositoryProblem(problem.reason(),problem.modelName(),problem.candidates(),problem.loadReason(),Optional.of(failureSource),problem.candidateModels());
-            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,workspace.configuration().compilerOptions().budget().maxDiagnostics());
+            return rejected(problem,failureSites,failureSteps,failureSources,failureDiagnostics,originalConfig.compilerOptions().budget().maxDiagnostics());
         }
     }
 

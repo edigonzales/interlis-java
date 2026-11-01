@@ -1351,3 +1351,14 @@ bearbeiteter Verantwortungen vereinfachen. Offene Abschnitte bleiben offen,
 bis ihre Abnahme vorliegt.
 
 COLOR3-Nacharbeit: Kandidat2d1c914 nach echten Inline-Options-/Kontrollpfad-Gegenproben zurückgezogen; kein Gesamt-PASS. Aktuelle Pflichtmenge1232 JUnit/229 Suites/50 reale CLI-Prozesse; neue Gesamtqualifikation erforderlich. Details im COLOR-STATUS.
+
+## VS-Code-Editorhost V1 – in Arbeit, noch nicht unabhängig abgenommen
+
+Separater Nutzerauftrag im Extensionrepo `interlis-vscode`; dessen
+`docs/implementation/vscode-extension/STATUS.md` besitzt den operativen Stand.
+Isolierter Corezweig übernimmt die gepushte Repositoryarbeit bis `cf585ec1…`.
+Additive eingefrorene Repositoryvorbereitung, begrenzte LSP-IO, readonly
+Quellhandles, zentrale Diagnoseprosa/RelatedInformation, semantische Outline und
+explizites Rootcompile sind in Umsetzung. Kleine LSP-/Repositoryvertragsläufe
+werden gezielt ausgeführt; installierte GUI und unabhängiges V1-PASS bleiben
+vor der Phasenfreigabe erforderlich. Keine neue Compilersemantik, keine Publikation.

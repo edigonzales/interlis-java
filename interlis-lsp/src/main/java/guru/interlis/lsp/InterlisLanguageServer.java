@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 /** Minimal protocol-conformant LSP server at stdio; no second language logic. */
-public final class InterlisLanguageServer implements LanguageServer, LanguageClientAware {
+public final class InterlisLanguageServer implements InterlisLanguageServerApi, LanguageClientAware {
     private final Workspace workspace;
     private final InterlisTextDocumentService textDocuments;
     private final InterlisWorkspaceService workspaceService;
@@ -72,6 +72,7 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
                 org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,"initialize parameters are required"));
         if(shutdown || !initializeStarted.compareAndSet(false,true)) return CompletableFuture.failedFuture(LspFailures.error(
                 org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidRequest,"initialize may run only once"));
+        textDocuments.locale(params.getLocale());
         try { if(params.getInitializationOptions()!=null) textDocuments.initializeConfiguration(params.getInitializationOptions()); }
         catch(RuntimeException invalid) { return CompletableFuture.failedFuture(LspFailures.response(invalid,textDocuments::operation)); }
         var client=params.getCapabilities();
@@ -104,10 +105,14 @@ public final class InterlisLanguageServer implements LanguageServer, LanguageCli
                 new SemanticTokensLegend(InterlisTextDocumentService.TOKEN_TYPES, List.of()), true, false));
         capabilities.setFoldingRangeProvider(true);
         capabilities.setPositionEncoding("utf-16");
+        capabilities.setExperimental(java.util.Map.of("interlis",java.util.Map.of("protocolVersion",1,"sourceContent",true,"compile",true,"diagram",false,"semanticEditing",false)));
         var result=new InitializeResult(capabilities);
         result.setServerInfo(new org.eclipse.lsp4j.ServerInfo("interlis-java",guru.interlis.model.VersionManifest.current().toolVersion()));
         return LspFutures.map(workspaceService.initializeProject(folders),ignored -> { ready=true; return result; },textDocuments::operation);
     }
+
+    @Override public CompletableFuture<CompileReport> compileModel(CompileModelParams params) { return textDocuments.compileModel(params); }
+    @Override public CompletableFuture<SourceContent> sourceContent(SourceContentParams params) { return textDocuments.sourceContent(params); }
 
     @Override
     public CompletableFuture<Object> shutdown() {

@@ -819,3 +819,14 @@ mit der gemeinsamen monotonen Sequenz. Andere Zustände werden abgewiesen;
 Beobachterfehler bleiben isoliert. Kein neues Ereignis-/Wireformat.
 Abnahmen: RepositoryCacheContractTest, DefaultRepositoryCacheTest,
 RunLifecycleCacheTest und bestehende Repository-/CLI-Verbrauchertests.
+
+### LSP-Editorhost und eingefrorene Repositoryvorbereitung
+
+Repository besitzt den additiven `RepositoryClosureService.resolveCaptured`-Einstieg
+nach Kapitel08 §14. Bestehende synchrone Verbraucher bleiben erhalten;
+`CapturedRepositoryResolutionTest` prüft Ownergrenze und bedingten Commit.
+LSP besitzt `InterlisLanguageServerApi`, `CompileModelParams`, `CompileReport`,
+`SourceContentParams` und `SourceContent`. Kapitel07 beschreibt den transport-
+und revisionsgebundenen Vertrag. Sie enthalten keine Compilerzertifikate;
+Readonly-Handles autorisieren keine frei wählbare Beschaffung. `LspProcessTest`
+prüft beide neuen Methoden durch den tatsächlich gestarteten stdio-Launcher.

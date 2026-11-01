@@ -506,3 +506,13 @@ Homeinjektion, CLI-Präzedenz, Disk-Effekte und RunContext-Sequenzen.
 RunLifecycleCacheTest sichert Zustandsgrenzen und Beobachterisolation.
 Bestehende Closure-/Lock-/Such-/HTTP-/CLI-Verträge werden gezielt ergänzt;
 dieser Hostauftrag allein verlangt keine Korpus-, Benchmark- oder Browserwiederholung.
+
+### Editorhost des VS-Code-Folgeauftrags
+
+Die gezielte V1-Abnahme erweitert die LSP-Vertragssuite um RepositoryEditorTest
+und den echten stdio-Pfad für `interlis/compile`/`interlis/source` in LspProcessTest.
+CapturedRepositoryResolutionTest prüft die neue additive Repository-API gegen
+einen threadprüfenden Owner und einen während IO geänderten Eingabestand.
+Vorhandene Synchronisations-, Scheduling-, Pfad- und Closed-Rename-Tests bleiben
+Pflicht. Installierte GUIaktionen werden separat im Extensionrepo gemäss
+vscode-extension/GUI_TEST_MATRIX erfasst; Java-APItests ersetzen sie nicht.
