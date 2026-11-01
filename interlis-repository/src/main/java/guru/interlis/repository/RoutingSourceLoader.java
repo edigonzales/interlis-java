@@ -23,4 +23,9 @@ public final class RoutingSourceLoader implements SourceLoader {
         }
         return files.load(locator, policy, token);
     }
+    @Override public LoadedSource loadCached(SourceLocator locator, FetchPolicy policy, CancellationToken token) {
+        String location=Objects.requireNonNull(locator).location();
+        if(location.startsWith("https:") || location.startsWith("http:"))return http.loadCached(locator,policy,token);
+        return SourceLoader.super.loadCached(locator,policy,token);
+    }
 }

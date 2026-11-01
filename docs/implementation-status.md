@@ -1,5 +1,17 @@
 # Implementierungsstatus interlis-java
 
+Abgeschlossener Cache-Folgeauftrag vom 01.11.2026 (WP-26): RES-013 und
+RES-001/004/007–011. Standard ~/.interlis-cache, URL-/HTTP-Metadaten,
+ETag/Last-Modified-Revalidierung, --no-cache, Offline ohne Lock mit explizitem
+sicherem Offlineport und unveränderten Pins/Locks/Abschlussprüfungen.
+101 unterschiedliche JUnit-Fälle in 19 Suites ohne Fehler/Skips und 15 reale
+CLI-Prozesse gezielt nachgewiesen; finale Headergegenprobe und Wiederverwendung
+unveränderter Nachweise sind getrennt dokumentiert. Keine offenen Pflichtprüfungen
+oder Blocker dieses Auftrags; keine Korpus-/Benchmark-/Browserwiederholung,
+Commit und Push anschliessend auf ausdrücklichen Nutzerauftrag; kein Release.
+[Umsetzung, Beispiele, Rohbelege und Grenzen](implementation/repository-cache/REPORT.md).
+
+
 Abgeschlossener Repository-Folgeauftrag vom 01.11.2026: lazy Repositorybesuche
 und Versionsketten nach ili2c 5.6.9, gemeinsame strukturierte DE-/EN-Diagnosen,
 Warnungen am Compiler-Gate und v2-Locks mit v1-Kompatibilität.

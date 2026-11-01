@@ -193,3 +193,15 @@ Kapitel 08 dokumentiert die bewusst erhaltenen Hostgrenzen: nur 2.3/2.4,
 explizite Pins/Locks, Ressourcenlimits und keine von Remote-Sites eingeführten
 lokalen Dateizugriffe. Version-1-Locks behalten ihren Auswahlvertrag;
 neue Beschaffungen schreiben Version 2.
+
+
+### Repositorycache: Inhaltsidentität und Herkunft getrennt (01.11.2026)
+
+Auf ausdrücklichen Nutzerauftrag wird der SHA-256-Inhaltscache beibehalten und um
+einen versionierten URL-Index ergänzt. Standard ist ~/.interlis-cache; gemeinsame
+Nutzung mit ili2c ist kein Ziel. Online wird jeder Beschaffungslauf revalidiert,
+offline ist der letzte lokale Stand auch ohne Lock zulässig. Pins/Locks bleiben
+exakt; kein stiller Rückfall bei Netzfehlern. Ohne Validatoren bleibt eine volle
+Übertragung notwendig. Alte Inhalte werden für Lockreplay nicht automatisch
+entfernt; unbegrenztes Wachstum bleibt eine bewusst spätere Wartungsfunktion.
+Dies ist eine neue Produktentscheidung, keine Behauptung identischen ili2c-Verhaltens.

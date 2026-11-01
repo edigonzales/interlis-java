@@ -787,3 +787,35 @@ Bestehende Snapshot-, Schema- und Bridge-Wireeinstiege bleiben bestehen.
 Abnahmen: RepositorySearchContractTest, RepositoryParityIntegrationTest,
 RepositoryDiagnosticsContractTest, repositoryReferenceCheck und der gezielte
 TeaVM-Task repositoryDiagnosticCheck für Importursachen.
+
+
+### Standardmässiger Repositorycache (RES-013)
+
+Besitzer `interlis-repository` / `guru.interlis.repository`:
+`RepositoryCacheConfiguration(Optional<Path>)` mit `defaults(home)`, `at(path)`
+und `disabled()`; `RepositoryCacheMetadata(source,responseSource,digest,etag,
+lastModified)`; `RepositoryCacheEvent`; `HostRepositories.create(workingDirectory,
+configuration,Consumer<RepositoryCacheEvent>)` und `Access(loader,contentStore,
+observer)` mit `closureService()`. Der additive Dreiparameterkonstruktor von
+RepositoryClosureService nimmt denselben Beobachtungskanal entgegen.
+`SourceLoader.loadCached(SourceLocator,FetchPolicy,CancellationToken)` ist eine
+additive Defaultmethode: bestehende funktionale Implementierungen bleiben
+kompatibel und werden damit offline nicht aufgerufen. HTTP-/Routingcachehosts
+implementieren den expliziten Offlineport. Nullfreiheit, defensive Werte,
+Lebensdauer, Reihenfolge, HTTP-/Offlinefehler,
+Abbruch und die internen Metadaten stehen vollständig in Kapitel 08 §13.
+`RepositoryDiagnostics.cacheUnavailable()` liefert die operative Warnung aus
+bestehendem Diagnosevokabular. Bisherige explizite APIs bleiben verwendbar.
+
+Besitzer CLI: `CliEnvironment` ergänzt als letzte Komponente `Path homeDirectory`;
+alle bisherigen Konstruktoren bleiben erhalten (isoliertes Home aus dem
+Arbeitsverzeichnis), `system()` liest JVM-user.home. CommandSpec und
+ConfigurationLoader ergänzen `--no-cache`/`no-cache`; Standard, Präzedenz und
+Konfigurationsnachweis stehen in Kapitel 18.
+
+Besitzer model/execution: `RunLifecycle.cacheLookup(String cache,boolean hit,
+String reason)` emittiert im Zustand RUNNING ein vorhandenes CacheLookup-Ereignis
+mit der gemeinsamen monotonen Sequenz. Andere Zustände werden abgewiesen;
+Beobachterfehler bleiben isoliert. Kein neues Ereignis-/Wireformat.
+Abnahmen: RepositoryCacheContractTest, DefaultRepositoryCacheTest,
+RunLifecycleCacheTest und bestehende Repository-/CLI-Verbrauchertests.

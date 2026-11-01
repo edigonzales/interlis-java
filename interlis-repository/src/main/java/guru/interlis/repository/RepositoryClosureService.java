@@ -21,8 +21,14 @@ import java.util.*;
 public final class RepositoryClosureService {
     private final SourceLoader loader;
     private final ContentStore store;
+    private final java.util.function.Consumer<RepositoryCacheEvent> cacheObserver;
 
     public RepositoryClosureService(SourceLoader loader, ContentStore store) {
+        this(loader,store,event -> { });
+    }
+    /** Observations are invocation-local and contain no source identifiers or credentials. */
+    public RepositoryClosureService(SourceLoader loader, ContentStore store, java.util.function.Consumer<RepositoryCacheEvent> cacheObserver) {
+        this.cacheObserver = Objects.requireNonNull(cacheObserver);
         this.loader = Objects.requireNonNull(loader, "loader");
         this.store = Objects.requireNonNull(store, "store");
     }
@@ -229,7 +235,11 @@ public final class RepositoryClosureService {
                         if (matching.isEmpty()) {
                             if (!legacy && search.hasIndexFailures()) reject(RepositoryProblem.Reason.INDEX_FAILURE,query.modelName());
                             var unavailable = search.unavailable().values().stream().filter(r -> r != SourceLoadException.Reason.NOT_FOUND).findFirst();
-                            if (!legacy && unavailable.isPresent()) throw new SourceLoadException(unavailable.orElseThrow(),"repository metadata unavailable",null);
+                            if (!legacy && unavailable.isPresent()) {
+                                var missing = search.unavailable().entrySet().stream().filter(e -> e.getValue()==unavailable.orElseThrow()).findFirst().orElseThrow();
+                                throw new Rejection(new RepositoryProblem(RepositoryProblem.Reason.LOAD_FAILURE,query.modelName(),List.of(),
+                                        Optional.of(missing.getValue()),Optional.of(missing.getKey()),List.of()));
+                            }
                             boolean otherVersions = !legacy ? search.hasOtherVersion(query) : catalog.candidates().stream().anyMatch(c -> c.metadata().name().equals(query.modelName())
                                     && query.sourceHint().filter(id -> !id.value().equals(c.metadata().location().toString())).isEmpty());
                             reject(otherVersions ? RepositoryProblem.Reason.VERSION_MISMATCH : RepositoryProblem.Reason.NOT_FOUND, query.modelName());
@@ -408,24 +418,28 @@ public final class RepositoryClosureService {
                 if(!listed) reject(RepositoryProblem.Reason.LOCK_MISMATCH, "");
             }
             LoadedSource result;
-            try {
-                if (policy.offline()) {
-                    if (expected == null) throw new SourceLoadException(SourceLoadException.Reason.OFFLINE, "offline source has no digest", null);
-                    var cached = store.lookup(expected).orElseThrow(() -> new SourceLoadException(SourceLoadException.Reason.OFFLINE, "verified content unavailable offline", null));
-                    byte[] bytes = cached.bytes();
-                    if (!expected.matches(bytes)) reject(RepositoryProblem.Reason.PIN_MISMATCH, "");
-                    if (bytes.length > policy.maxBytes()) throw new SourceLoadException(SourceLoadException.Reason.TOO_LARGE, "cached source exceeds byte limit", null);
-                    String text;
-                    try { text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
-                            .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString(); }
-                    catch (java.nio.charset.CharacterCodingException invalid) { throw new SourceLoadException(SourceLoadException.Reason.INVALID_ENCODING, "invalid cached UTF-8", invalid); }
-                    result = new LoadedSource(id, text, expected.value(), "verified-cache");
-                } else result = loader.load(locator, policy, token);
-            } catch (SourceLoadException failure) {
-                if (policy.offline()) throw new Rejection(new RepositoryProblem(RepositoryProblem.Reason.LOAD_FAILURE,
-                        "",List.of(),Optional.of(failure.reason()),Optional.of(id),List.of()));
-                throw failure;
-            }
+            if (policy.offline()) {
+                if (expected == null) {
+                    result = loader.loadCached(locator, policy, token);
+                } else {
+                    try {
+                        var hit = store.lookup(expected);
+                        try { cacheObserver.accept(hit.isPresent()?RepositoryCacheEvent.OFFLINE_HIT:RepositoryCacheEvent.OFFLINE_MISS); } catch(RuntimeException ignoredObserver) { /* observation only */ }
+                        var cached = hit.orElseThrow(() -> new SourceLoadException(SourceLoadException.Reason.OFFLINE, "verified content unavailable offline", null));
+                        byte[] bytes = cached.bytes();
+                        if (!expected.matches(bytes)) reject(RepositoryProblem.Reason.PIN_MISMATCH, "");
+                        if (bytes.length > policy.maxBytes()) throw new SourceLoadException(SourceLoadException.Reason.TOO_LARGE, "cached source exceeds byte limit", null);
+                        String text;
+                        try { text = StandardCharsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
+                                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes)).toString(); }
+                        catch (java.nio.charset.CharacterCodingException invalid) { throw new SourceLoadException(SourceLoadException.Reason.INVALID_ENCODING, "invalid cached UTF-8", invalid); }
+                        result = new LoadedSource(id, text, expected.value(), "verified-cache");
+                    } catch(SourceLoadException failure) {
+                        throw new Rejection(new RepositoryProblem(RepositoryProblem.Reason.LOAD_FAILURE,"",List.of(),
+                                Optional.of(failure.reason()),Optional.of(id),List.of()));
+                    }
+                }
+            } else result = loader.load(locator, policy, token);
             token.throwIfCancellationRequested();
             byte[] bytes = result.text().getBytes(StandardCharsets.UTF_8);
             var digest = ContentDigest.sha256(bytes);
@@ -438,7 +452,7 @@ public final class RepositoryClosureService {
             }
             var previous = seen.putIfAbsent(id, result);
             if (previous != null && !previous.byteSha256().equals(result.byteSha256())) reject(RepositoryProblem.Reason.CHANGED_SOURCE, "");
-            store.put(new VerifiedContent(id, digest, bytes));
+            if (!result.origin().equals("http-no-store")) store.put(new VerifiedContent(id, digest, bytes));
             return result;
         }
         void verifyUnavailable(Map<SourceId,SourceLoadException.Reason> unavailable) {

@@ -474,3 +474,14 @@ fehlgeschlagenen Import im selben Modell entspricht, erhalten dessen
 `causeId` und `dependsOn`. Textdarstellung unterdrückt diese abhängigen
 Fehler über `DiagnosticPresentation`; die vollständige Liste und JSON behalten
 sie. Unabhängige Namen werden nicht aufgrund eines fehlenden Imports verdeckt.
+
+
+Repositorycache (RES-013): Der explizite Hostcallback aus Kapitel 08 meldet nur
+getypte Statuswerte, niemals URLs, Header, Pfade oder Antwortinhalte.
+`RunLifecycle.cacheLookup(cache,hit,reason)` verwendet im laufenden CLI-Elternlauf
+die vorhandene CacheLookup-Variante mit dessen Kontext und Sequenz. DOWNLOAD,
+NOT_MODIFIED, OFFLINE_HIT/MISS, CACHE_MISS und WRITE_UNAVAILABLE bleiben erklärbar.
+Ein Schreibfehler rendert einmal pro Hostzugriff eine operative ILI-RES-0008 mit
+reason CACHE_WRITE_UNAVAILABLE auf stderr; sie ersetzt keine Quelle und
+verändert keine Compiler-Gateentscheidung. Die kanonischen Suchwarnungen bleiben
+weiterhin am Gate wirksam. Observerfehler ändern kein Ladeergebnis.

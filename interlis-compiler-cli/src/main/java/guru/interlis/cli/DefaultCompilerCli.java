@@ -77,8 +77,9 @@ public final class DefaultCompilerCli implements CliApplication {
         var invocation = new Invocation(services.runContexts().createRoot());
         var observed = services;
         var effective = new CliEnvironment(environment.workingDirectory(), environment.in(), environment.out(),
-                environment.err(), environment.environment(), observed, environment.terminalCapabilities());
+                environment.err(), environment.environment(), observed, environment.terminalCapabilities(), environment.homeDirectory());
         var lifecycle = RunLifecycle.create(invocation.context, observed.observer(), services.clock());
+        invocation.lifecycle = lifecycle;
         lifecycle.start(new RunEvent.RunMetadata("cli", List.of("2.3", "2.4"), 0,
                 "cli-standard/v1"));
         CliExecutionResult outcome = execute(arguments, effective, token, invocation);
@@ -296,9 +297,16 @@ public final class DefaultCompilerCli implements CliApplication {
                     } catch (java.io.IOException unavailable) { return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be read"); }
                     catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid resolution lock"); }
                 }
-                var contentStore = parsed.cache().<ContentStore>map(path -> new DirectoryContentStore(hostPath(path, environment)))
-                        .orElseGet(InMemoryContentStore::new);
-                var outcome = new RepositoryClosureService(new RoutingSourceLoader(environment.workingDirectory()), contentStore)
+                var cacheConfiguration = parsed.cache().map(path -> RepositoryCacheConfiguration.at(hostPath(path, environment)))
+                        .orElseGet(RepositoryCacheConfiguration::disabled);
+                var access = HostRepositories.create(environment.workingDirectory(), cacheConfiguration, event -> {
+                    invocation.lifecycle.cacheLookup("repository", event==RepositoryCacheEvent.NOT_MODIFIED || event==RepositoryCacheEvent.OFFLINE_HIT,event.name());
+                    if(event==RepositoryCacheEvent.WRITE_UNAVAILABLE) {
+                        var warning=RepositoryDiagnostics.cacheUnavailable();
+                        environment.err().println(new ConsoleDiagnosticRenderer().render(warning,Map.of(),invocation.language,invocation.ansiEnabled));
+                    }
+                });
+                var outcome = access.closureService()
                         .resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
                                 new RepositoryResolveOptions(config, parsed.modelPins(), parsed.sourcePins(), lock), token);
                 switch (outcome) {
@@ -565,7 +573,7 @@ public final class DefaultCompilerCli implements CliApplication {
             } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid source pin"); }
         }
         boolean hostOptions = command.has("--repository") || command.has("--offline")
-                || command.has("--read-lock") || command.has("--write-lock") || command.has("--cache")
+                || command.has("--read-lock") || command.has("--write-lock")
                 || !modelPins.isEmpty() || !sourcePins.isEmpty();
         if (hostOptions && !command.has("--repository")) throw new CliUsageException("repository options require --repository");
         return new ParsedArguments(command.files(), command.values("--root"), command.has("--json"),
@@ -636,7 +644,7 @@ public final class DefaultCompilerCli implements CliApplication {
         environment.err().println("usage: interlis-compiler "
                 + "<version|capabilities|check|compile|analyze|diagram|format> [options] [files]");
         environment.err().println("check/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
-        environment.err().println("               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR] [--offline]");
+        environment.err().println("               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]");
         environment.err().println("Text diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]");
         environment.err().println("Example: interlis-compiler check <File.ili>");
         environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
@@ -662,6 +670,7 @@ public final class DefaultCompilerCli implements CliApplication {
     /** Mutable only for one invocation; never retained on the reusable CLI instance. */
     private static final class Invocation {
         final RunContext context;
+        RunLifecycle lifecycle;
         boolean ansiEnabled;
         boolean schemaProduced;
         boolean analysisComplete;

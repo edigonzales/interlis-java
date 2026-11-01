@@ -19,6 +19,13 @@ public final class RepositoryDiagnostics {
         }
         return List.copyOf(result.values());
     }
+    /** Operational cache warning; it does not change source semantics or certify a schema. */
+    public static Diagnostic cacheUnavailable() {
+        return diagnostic("ILI-RES-0008","diagnostic.resolution.adjustment",Severity.WARNING,Optional.empty(),List.of(
+                new DiagnosticArgument.IdentifierArgument("model",""),new DiagnosticArgument.TextArgument("repository","cache"),
+                new DiagnosticArgument.TextArgument("reason","CACHE_WRITE_UNAVAILABLE"),
+                new DiagnosticArgument.TextArgument("detail","Persistent cache is unavailable; downloaded inputs remain usable for this run.")));
+    }
     public static List<Diagnostic> rejection(RepositoryProblem problem,List<ImportSite> sites,List<RepositorySearchStep> steps) {
         String detail=String.join("; ",steps.stream().map(s->s.kind()+" "+s.repository()+" "+s.detail()).toList());
         if (problem.source().isPresent()) detail += "; " + RepositorySearchStep.safeUri(problem.source().orElseThrow().value());

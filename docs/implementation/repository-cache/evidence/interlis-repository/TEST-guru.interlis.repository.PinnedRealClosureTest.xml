@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.PinnedRealClosureTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-01T16:20:27.130Z" hostname="Monterrico.local" time="0.963">
+  <properties/>
+  <testcase name="officialIli24MultiModelThreeLevelClosureRetainsStructuresConstraintsAndTargets()" classname="guru.interlis.repository.PinnedRealClosureTest" time="0.847"/>
+  <testcase name="officialIli23RoadsClosureRetainsImportedBaseEffectiveMembersAndEnumOrder()" classname="guru.interlis.repository.PinnedRealClosureTest" time="0.115"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

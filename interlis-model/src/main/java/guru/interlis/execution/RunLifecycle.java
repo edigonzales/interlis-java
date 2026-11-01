@@ -116,6 +116,13 @@ public final class RunLifecycle {
         emit(header -> new RunEvent.Finished(header, completion));
     }
 
+    /** Emits a cache observation in this running lifecycle, sharing its monotonic sequence. */
+    public void cacheLookup(String cache, boolean hit, String reason) {
+        Objects.requireNonNull(cache); Objects.requireNonNull(reason);
+        if(state!=State.RUNNING)throw new IllegalStateException("run is not running");
+        emit(header -> new RunEvent.CacheLookup(header,cache,hit,reason));
+    }
+
     private void emit(java.util.function.Function<RunEvent.RunEventHeader, RunEvent> eventFactory) {
         RunEvent.RunEventHeader header = new RunEvent.RunEventHeader(
                 context.runId(), context.parentRunId(), ++sequence, 1,

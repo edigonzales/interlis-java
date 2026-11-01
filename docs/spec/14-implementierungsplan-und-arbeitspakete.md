@@ -194,3 +194,11 @@ Abnahme: beide Repositoryadressen wählen GeometryCHLV95_V1 2017-12-04;
 fehlende Voraussetzungen werden verständlich und strukturiert gemeldet;
 Pins, atomare Übernahme, v1-Replay und das einzige Compiler-Gate bleiben wirksam.
 Tatsächlicher Stand und Rohbelege werden im Implementierungsbericht geführt.
+
+
+WP-26-Folgeauftrag Standardcache (01.11.2026, RES-013 sowie RES-001/004/007–011):
+Inhaltscache erhalten, Herkunftsmetadaten und HTTP-Revalidierung ergänzen,
+CLI-Default ~/.interlis-cache und --no-cache einführen, Offline ohne Lock im
+bestehenden Suchpfad ermöglichen. Kapitel 08 §13 / 18 und die gezielte Abnahme
+in Kapitel 13 sind verbindlich. Keine Änderung an Modellwahl oder Lockformaten;
+keine neue LSP-Remoteauflösung, automatische Bereinigung oder ili2c-Cachesharing.

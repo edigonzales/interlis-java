@@ -23,7 +23,7 @@ public final class ConfigurationLoader {
 
     /**
      * Loads only an explicitly named file, relative to the injected working
-     * directory. No environment variables or home-directory files are implicit.
+     * directory. The injected home determines the default cache; no configuration files are implicit.
      * Duplicate/unknown keys and invalid values are usage errors. File IO and
      * decoding errors retain the repository loader's typed host failure.
      */
@@ -32,6 +32,8 @@ public final class ConfigurationLoader {
         Objects.requireNonNull(command, "command");
         Objects.requireNonNull(environment, "environment");
         Objects.requireNonNull(cancellation, "cancellation");
+        if(command.has("--cache") && command.has("--no-cache"))
+            throw new CliUsageException("--cache and --no-cache are mutually exclusive");
         var options = new LinkedHashMap<String, List<List<String>>>();
         var origins = new TreeMap<String, Origin>();
         options.put("--warnings", List.of(List.of("allow")));
@@ -51,13 +53,13 @@ public final class ConfigurationLoader {
             catch (IOException impossible) { throw new IllegalStateException(impossible); }
             catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid configuration encoding"); }
             for (String key : new TreeSet<>(properties.stringPropertyNames())) {
-                if (!Set.of("root", "repository", "cache", "read-lock", "write-lock", "offline", "warnings").contains(key))
+                if (!Set.of("root", "repository", "cache", "read-lock", "write-lock", "offline", "no-cache", "warnings").contains(key))
                     throw new CliUsageException("unsupported configuration key: " + key);
                 String value = properties.getProperty(key);
-                if (key.equals("offline")) {
+                if (key.equals("offline") || key.equals("no-cache")) {
                     if (!value.equals("true") && !value.equals("false"))
-                        throw new CliUsageException("offline must be true or false");
-                    if (value.equals("true")) options.put("--offline", List.of(List.of()));
+                        throw new CliUsageException(key + " must be true or false");
+                    if (value.equals("true")) options.put("--" + key, List.of(List.of()));
                 } else {
                     if (value.isBlank()) throw new CliUsageException("empty configuration value: " + key);
                     options.put("--" + key, List.of(List.of(value)));
@@ -65,12 +67,28 @@ public final class ConfigurationLoader {
                 origins.put("--" + key, Origin.CONFIGURATION_FILE);
             }
         });
+        if(command.has("--cache")) { options.remove("--no-cache"); origins.remove("--no-cache"); }
+        if(command.has("--no-cache")) { options.remove("--cache"); origins.remove("--cache"); }
         command.options().forEach((name, values) -> {
             if (!name.equals("--config") && !name.equals("--explain-config")) {
                 options.put(name, values);
                 origins.put(name, Origin.CLI);
             }
         });
+        if(options.containsKey("--cache") && options.containsKey("--no-cache"))
+            throw new CliUsageException("cache and no-cache are mutually exclusive");
+        if(!options.containsKey("--no-cache")) {
+            if(!options.containsKey("--cache")) {
+                options.put("--cache",List.of(List.of(RepositoryCacheConfiguration.defaults(environment.homeDirectory()).directory().orElseThrow().toString())));
+                origins.put("--cache",Origin.PROFILE_DEFAULT);
+            } else {
+                String value=options.get("--cache").getFirst().getFirst();
+                try {
+                    Path path=value.startsWith("file:")?Path.of(java.net.URI.create(value)):Path.of(value);
+                    options.put("--cache",List.of(List.of(environment.workingDirectory().resolve(path).toAbsolutePath().normalize().toString())));
+                } catch(IllegalArgumentException invalid) { throw new CliUsageException("invalid cache directory"); }
+            }
+        }
         return new ResolvedConfiguration(new ParsedCommand(command.command(), options, command.files()), origins);
     }
 
@@ -86,7 +104,7 @@ public final class ConfigurationLoader {
                     .append(entry.getValue()).append("\",\"values\":[");
             var occurrences = configuration.command().occurrences(entry.getKey());
             var values = occurrences.stream().flatMap(Collection::stream).toList();
-            if (entry.getKey().equals("--offline")) values = List.of(Boolean.toString(configuration.command().has("--offline")));
+            if (entry.getKey().equals("--offline") || entry.getKey().equals("--no-cache")) values = List.of(Boolean.toString(configuration.command().has(entry.getKey())));
             for (int index = 0; index < values.size(); index++) {
                 if (index > 0) output.append(',');
                 output.append('"').append(JsonDiagnosticWriter.escape(safeValue(values.get(index)))).append('"');

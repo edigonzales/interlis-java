@@ -1,0 +1,31 @@
+{
+  "markdown_files_checked": 11,
+  "relative_links": "PASS",
+  "code_fences": "PASS",
+  "RES-013_source_and_index": "PASS",
+  "junit": {
+    "interlis-model": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 1
+    },
+    "interlis-repository": {
+      "tests": 63,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 12
+    },
+    "interlis-compiler-cli": {
+      "tests": 36,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "suites": 6
+    }
+  },
+  "cli_processes": 15,
+  "result": "PASS"
+}

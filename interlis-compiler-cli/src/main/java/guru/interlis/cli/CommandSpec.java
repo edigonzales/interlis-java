@@ -44,6 +44,7 @@ public record CommandSpec(String command, List<Option> options, boolean acceptsF
                 for (String name : List.of("--read-lock", "--write-lock", "--cache", "--config", "--warnings"))
                     options.add(new Option(name, 1, false));
                 options.add(new Option("--offline", 0, false));
+                options.add(new Option("--no-cache", 0, false));
                 options.add(new Option("--explain-config", 0, false));
                 yield true;
             }

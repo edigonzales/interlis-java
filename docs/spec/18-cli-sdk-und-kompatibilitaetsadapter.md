@@ -187,12 +187,16 @@ Ein späteres Java-Native-Image, Node-Addon, C-ABI oder Python-Binding kann dies
   abgeschlossener Analyse der erfolgreich aufgelösten Closure, auch mit fachlichen
   Diagnosen. Ein Lock bescheinigt die Quellenauswahl, keine semantische Gültigkeit.
   Quelle-/Index-/Modellkollisionen werden ohne Überschreiben abgewiesen.
-- `--cache DIR`: expliziter persistenter digestverifizierter ContentStore.
-  Ohne Option bleibt der Cache pro Aufruf im Speicher.
-- `--offline`: fehlende Repositorymaterialien nur aus verifiziertem Cache mit
-  Pin/Lock; vollständige Workspace-Closures brauchen keinen Provider.
+- Standardcache: `~/.interlis-cache`, erst bei tatsächlicher Beschaffung angelegt.
+  `--cache DIR` ersetzt den Pfad; `--no-cache` deaktiviert persistente Zugriffe.
+  Beide Optionen zusammen sind ein Nutzungsfehler. Cacheeinstellungen sind auch
+  ohne Repositorykonfiguration zulässig; sie verursachen allein keine IO.
+- `--offline`: fehlende Repositorymaterialien nur aus verifiziertem Cache.
+  Ohne Lock gilt der letzte gecachte Repositorystand; Pins/Locks binden exakt.
+  Vollständige Workspace-Closures brauchen keinen Provider. Online wird bei jedem
+  Lauf revalidiert; Netzfehler aktivieren keinen stillen Offlinefallback.
 
-Repositoryoptionen setzen `--repository` voraus; `format`, `help`, `version` und
+Repositoryoptionen ausser Cacheeinstellungen setzen `--repository` voraus; `format`, `help`, `version` und
 `capabilities` lehnen sie ab. Es gibt keine impliziten Defaultrepositories.
 Die bestehenden Optionen und bisherige Quelldateiaufrufe bleiben erhalten. Dies
 sind neue Standardoptionen, keine Behauptung bereits qualifizierter ili2c-
@@ -231,14 +235,19 @@ Der Fehlaufruf behält Exit2 und den Hinweis auf das unterstützte Ausgabeformat
 
 Für das neue Standardprofil von `check`/`compile`/`analyze`/`diagram` lädt `ConfigurationLoader`
 ausschliesslich `--config FILE`: UTF-8-Java-Properties, höchstens 1 MiB, bekannte
-Schlüssel `root`, `repository`, `cache`, `read-lock`, `write-lock`, `offline`,
+Schlüssel `root`, `repository`, `cache`, `no-cache`, `read-lock`, `write-lock`, `offline`,
 `warnings`. Doppelte/ unbekannte Schlüssel und leere ungültige Werte sind
 Nutzungsfehler. Pro Dateischlüssel gibt es einen Wert; wiederholte CLI-Optionen
 bleiben entsprechend ihrem Schema möglich. CLI ersetzt den ganzen Dateiwert
 vor Profildefault. Relative Pfade beziehen sich auf das injizierte
 Arbeitsverzeichnis. Es gibt keine impliziten Home-Dateien oder Environmentwerte.
 `warnings=allow|reject` beziehungsweise `--warnings allow|reject` werden an die
-bestehende Compiler-WarningPolicy übergeben. `offline=true|false` ist exakt.
+bestehende Compiler-WarningPolicy übergeben. `offline=true|false` und
+`no-cache=true|false` sind exakt. CLI-`--cache` ersetzt auch dateibasiertes
+`no-cache=true`; CLI-`--no-cache` ersetzt einen dateibasierten Cachepfad.
+Wirksame widersprüchliche Cacheeinstellungen werden abgewiesen. Cachepfade werden
+im Konfigurationsnachweis absolut dargestellt; ausgeschalteter Cache hat keinen
+wirksamen Cachepfad.
 Java-Properties-Escapes gelten auch für Windows-Pfade. `--explain-config` liefert
 statt einer Kompilierung deterministisches JSON mit wirksamen Werten und Herkunft
 CLI/CONFIGURATION_FILE/PROFILE_DEFAULT; URI-Zugangsdaten und Queries werden
@@ -407,3 +416,36 @@ Lockausgaben dürfen weder explizite/nachgeladene Quellen noch verwendete oder
 als nicht verfügbar beobachtete Repositorymetadaten überschreiben.
 Abnahmen: `RepositoryDiagnosticsContractTest`, bestehende Repository-/Verbose-
 /Farbtests und die gezielten Referenz-/CLI-Prozesse.
+
+
+### Standardcache: Hostumgebung und Beispiele
+
+`CliEnvironment` ergänzt `Path homeDirectory` als letzte Komponente.
+`system()` belegt sie mit dem JVM-`user.home`; eingebettete Hosts können einen
+expliziten Homepfad injizieren. Alle bisherigen Konstruktoren bleiben erhalten
+und verwenden ihr explizites Arbeitsverzeichnis als isoliertes Home. Bei der
+Weitergabe der Umgebung bleibt dieser Pfad erhalten. Es werden keine impliziten
+Konfigurationsdateien aus dem Home gelesen.
+
+Die folgenden Beispiele sind durch `DefaultRepositoryCacheTest` mit einem
+lokalen HTTP-Repository und importierendem `Projekt.ili` abgesichert. Die
+Beispiel-URL ist ein Platzhalter für das konfigurierte Repository:
+
+```sh
+# Erster Download in ~/.interlis-cache; spätere Online-Läufe prüfen Aktualität.
+interlis-compiler check Projekt.ili --repository https://models.example.org/
+# Letzten vollständig vorhandenen lokalen Stand ohne Netz verwenden.
+interlis-compiler check Projekt.ili --repository https://models.example.org/ --offline
+# Exakte Abhängigkeiten festhalten und später wiedergeben.
+interlis-compiler check Projekt.ili --repository https://models.example.org/ --write-lock projekt.lock
+interlis-compiler compile Projekt.ili --repository https://models.example.org/ --read-lock projekt.lock --offline
+# Alternative Ablage oder keine persistente Speicherung.
+interlis-compiler check Projekt.ili --repository https://models.example.org/ --cache /tmp/interlis-test-cache
+interlis-compiler check Projekt.ili --repository https://models.example.org/ --no-cache
+```
+
+Ein Offlineaufruf mit leerem oder unvollständigem Cache scheitert mit konkreter
+Quelle und Ursache OFFLINE. Ohne Validatoren kann ein Server trotz vorhandener
+Cachebytes volle Übertragung benötigen. Ein Lockfile friert keine ungepinnten
+lokalen Projekttexte ein. Unveränderte Inhalte bleiben bei 304 lokal; spätere
+Inhalte derselben URL verdrängen die für ältere Locks gespeicherten Bytes nicht.

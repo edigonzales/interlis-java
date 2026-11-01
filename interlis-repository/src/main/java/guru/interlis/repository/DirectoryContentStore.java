@@ -13,8 +13,13 @@ import java.util.*;
 public final class DirectoryContentStore implements ContentStore {
     private final Path directory;
     private final int maxEntryBytes;
+    private final Runnable writeFailure;
     public DirectoryContentStore(Path directory) { this(directory, 16_777_216); }
     public DirectoryContentStore(Path directory, int maxEntryBytes) {
+        this(directory, maxEntryBytes, () -> { });
+    }
+    DirectoryContentStore(Path directory, int maxEntryBytes, Runnable writeFailure) {
+        this.writeFailure = Objects.requireNonNull(writeFailure);
         this.directory = Objects.requireNonNull(directory, "directory").toAbsolutePath().normalize();
         if (maxEntryBytes <= 0 || maxEntryBytes == Integer.MAX_VALUE) throw new IllegalArgumentException("cache limit must be positive");
         this.maxEntryBytes = maxEntryBytes;
@@ -41,7 +46,7 @@ public final class DirectoryContentStore implements ContentStore {
             try { Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING); }
             catch (AtomicMoveNotSupportedException fallback) { Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING); }
         } catch (IOException unavailable) {
-            // Cache availability never changes the correctness of an online load.
+            writeFailure.run();
         } finally {
             if (temporary != null) try { Files.deleteIfExists(temporary); } catch (IOException ignored) { /* optional cache */ }
         }

@@ -15,4 +15,19 @@ public interface SourceLoader {
      * @throws guru.interlis.execution.OperationCancelledException if cancelled
      */
     LoadedSource load(SourceLocator locator, FetchPolicy policy, CancellationToken token);
+    /**
+     * Loads only previously cached material, never a network or live source.
+     * The default rejects the operation without invoking load, preserving the
+     * offline safety of existing functional implementations. Cache-capable hosts
+     * override this method; limits, decoding and cancellation still apply.
+     *
+     * @throws IllegalArgumentException if policy is not offline
+     * @throws SourceLoadException with OFFLINE when no verified entry is available
+     */
+    default LoadedSource loadCached(SourceLocator locator, FetchPolicy policy, CancellationToken token) {
+        java.util.Objects.requireNonNull(locator); java.util.Objects.requireNonNull(policy); java.util.Objects.requireNonNull(token);
+        token.throwIfCancellationRequested();
+        if(!policy.offline())throw new IllegalArgumentException("cached loading requires offline policy");
+        throw new SourceLoadException(SourceLoadException.Reason.OFFLINE,"verified content unavailable offline",null);
+    }
 }

@@ -108,8 +108,8 @@ interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler chec
 
 `check`, `compile`, `analyze` und `diagram` unterstützen denselben expliziten
 Repository-Optionssatz: `--repository DIR_OR_URI` (mehrfach), `--model-pin`,
-`--source-pin`, `--cache`, `--offline`, `--read-lock`, `--write-lock`, `--config`,
-`--explain-config` und `--warnings allow|reject`. Repositoryoptionen benötigen
+`--source-pin`, `--cache`, `--no-cache`, `--offline`, `--read-lock`, `--write-lock`, `--config`,
+`--explain-config` und `--warnings allow|reject`. Repositoryoptionen ausser Cacheeinstellungen benötigen
 `--repository`; jedes Repository benötigt `ilimodels.xml`. Es gibt keine
 Defaultrepositories. `format` benötigt und akzeptiert keine Repositories.
 Zum Beispiel (Modellname und Repository entsprechend ersetzen):
@@ -148,3 +148,14 @@ Historische P3-/G3-Abnahmen bleiben auf ihren bezeichneten Produktcommits gülti
 der aktuelle Compiler-CLI-Folgeauftrag wird separat im verlinkten Status geführt.
 Weitere Stackmodule und Lieferabschnitte folgen dem Spezifikationsplan.
 Es wurden keine Releases veröffentlicht und keine Produktionsmigrationen ausgeführt.
+
+
+Repositorydownloads werden standardmässig unter `~/.interlis-cache` gespeichert.
+Online prüft jeder Beschaffungslauf die Aktualität (ETag/Last-Modified); ohne
+Validatoren ist ein erneuter Download nötig. `--cache DIR` ändert den Pfad,
+`--no-cache` deaktiviert persistente Zugriffe. `--offline` verwendet den letzten
+vollständig vorhandenen lokalen Repositorystand auch ohne Lockfile. Für exakt
+festgelegte Abhängigkeiten `--write-lock projekt.lock` und später
+`--read-lock projekt.lock --offline` verwenden. Netzfehler aktivieren keinen
+stillen Offlinefallback. Cache und Lockfile ersetzen keine aktuellen lokalen
+Projekttexte. [Verhalten und Beispiele](docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md#standardcache-hostumgebung-und-beispiele).

@@ -490,3 +490,19 @@ Die gemeinsame Importursachenänderung erhält eine gezielte JS-/WasmGC-Probe
 mit `:interlis-wasm-teavm:repositoryDiagnosticCheck`; sie behauptet keinen
 Browsernachweis. Vollständige historische Korpus-/Benchmark-/Plattformabnahmen
 werden für diesen Folgeauftrag nicht pauschal wiederholt.
+
+
+### Gezielte Abnahme des Standardcaches
+
+RES-013 ergänzt WP-26: RepositoryCacheContractTest prüft tatsächliche HTTP-Anfragen
+und Antwortübertragungen für Erstdownload, 304, Änderungen, Last-Modified,
+fehlende Validatoren und Redirects. Offline ohne Lock und Lockreplay dürfen
+keinen HTTP-Aufruf ausführen. Fehlende optionale Metadaten, benötigte fehlende
+Modelle, korrupte/ungültige Metadaten, beschädigte Inhalte, Cacheabschaltung,
+Schreibfehler, konkurrierende Instanzen, no-store und Limits sind Gegenfälle.
+Der Abschlussvergleich muss weiterhin Änderungen innerhalb einer Beschaffung
+ablehnen. DefaultRepositoryCacheTest prüft importierende lokale Roots,
+Homeinjektion, CLI-Präzedenz, Disk-Effekte und RunContext-Sequenzen.
+RunLifecycleCacheTest sichert Zustandsgrenzen und Beobachterisolation.
+Bestehende Closure-/Lock-/Such-/HTTP-/CLI-Verträge werden gezielt ergänzt;
+dieser Hostauftrag allein verlangt keine Korpus-, Benchmark- oder Browserwiederholung.

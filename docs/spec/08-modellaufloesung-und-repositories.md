@@ -188,6 +188,7 @@ Ein Headercache wird durch exakten Textfingerprint, Quellrevision, Grammatik-/Pa
 | RES-010 | Byte- und Textfingerprints MÜSSEN sauber getrennt und korrekt berechnet werden. | P1 | UTF-8/UTF-16/CRLF-/BOM-Provenienztests. |
 | RES-011 | Repositoryindex-Leser MÜSSEN echte Indexfixtures und Referenzprofile unterstützen. | P2 | Gepinnte eigene/offizielle Indexdateien; keine ad-hoc HTML-Suche als Compilerresolver. |
 | RES-012 | Zyklen und grosse Closures MÜSSEN terminieren oder am definierten Budget enden. | P1 | Kreisimport, Doppelimport und Modellzahlgrenze mit deterministischem Resultat. |
+| RES-013 | Der JVM-CLI-Host MUSS standardmässig einen persistenten Repositorycache verwenden, online dessen Aktualität prüfen und explizit offline auch ohne Lockfile aus dem lokalen Repositorystand auflösen können. | P2 | Erstdownload/304/Änderung, Abschaltung, Offline ohne Netz, Lockreplay und korrupte/parallel geschriebene Einträge. |
 
 ## 10. Konkrete Vertragstests
 
@@ -306,9 +307,12 @@ verletzten Pin/Lock. Dies ist keine verteilte Dateisystemtransaktion. Spätere
 Workspaceänderungen werden zusätzlich beim Apply erkannt. IO und Parserarbeit
 liegen ausserhalb des Monitors des Zielworkspaces.
 
-Offline lädt der Host ausschliesslich digestverifizierte Cacheinhalte für
-fehlende Quellen/Indizes mit bekanntem Pin/Lock. Ohne solchen Treffer ist die
-Ladeursache OFFLINE. Der Loader wird dabei nicht aufgerufen. Workspaceinputs und
+Offline lädt der Host ausschliesslich digestverifizierte Cacheinhalte. Bekannte
+Pins/Locks haben Vorrang vor Herkunftsmetadaten; für diesen Pfad wird der Loader
+nicht aufgerufen. Ohne Pin/Lock darf der explizite Cachehost den letzten lokal
+gespeicherten URL-Stand verwenden; ein uncached Loader lehnt dies ab. Ohne
+erforderlichen Treffer ist die Ladeursache OFFLINE. Kein Offlinepfad führt HTTP
+aus. Workspaceinputs und
 Cachehits erhalten weiterhin getrennte Text-/Byteidentitäten. Lokale Roots sind
 separate Eingaben, ausser sie wurden ausdrücklich gepinnt. Ein Lock friert keine
 ungepinnten Editoränderungen ein.
@@ -436,3 +440,67 @@ Abnahmen: `RepositorySearchContractTest`, `RepositoryParityIntegrationTest`,
 `repositoryReferenceCheck`. Historische Tests mit pauschaler Hostmehrdeutigkeit
 werden durch referenzbelegte Ketten-/Indexreihenfolgetests ersetzt; reine
 Workspace-Mehrdeutigkeit bleibt eine eigene Abnahme.
+
+
+## 13. Standardcache und HTTP-Revalidierung (RES-013)
+
+`HostRepositories.create(workingDirectory, RepositoryCacheConfiguration, observer)`
+ist die explizite JVM-Komposition. `Access.loader()`, `contentStore()` und
+`closureService()` teilen Inhaltscache und den lauflokalen Beobachtungskanal.
+`RepositoryCacheConfiguration.defaults(home)` wählt `home/.interlis-cache`,
+`at(path)` eine alternative Ablage und `disabled()` ausschliesslich Speicher.
+Alle Werte sind nullfrei und immutable; Pfade sind absolut normalisiert.
+Die Konstruktion erzeugt keine Dateien. Es gibt keinen globalen Cache oder Lauf.
+`SourceLoader.loadCached(locator,offlinePolicy,token)` ist der explizite sichere
+Offlineport: die Defaultmethode lehnt ohne Aufruf von `load` ab. Dadurch bleiben
+bestehende funktionale eigene Loader offline frei von impliziten Hostzugriffen.
+Nur cachefähige HTTP-Hosts überschreiben diesen Port; RoutingSourceLoader reicht
+HTTP(S) entsprechend weiter. Ein nicht-offline FetchPolicy ist ein API-Fehler.
+Die bisherigen expliziten Loader-/Store-/Closurekonstruktoren bleiben verfügbar;
+insbesondere aktiviert `new HttpSourceLoader()` keine persistente Speicherung.
+
+Bestehende SHA-256-Dateien bleiben direkt im Cacheverzeichnis. Der interne
+`metadata-v1/<SHA-256 der UTF-8-Quell-URL>.xml`-Index ordnet die vollständige
+SourceId dem Inhaltsdigest zu. `RepositoryCacheMetadata(source,responseSource,
+digest,etag,lastModified)` ist ein nullfreier immutable Wert mit optionalen,
+begrenzten HTTP-Validatoren; `responseSource` bezeichnet deren Redirectziel.
+Queryparameter werden für die Cacheidentität nicht entfernt. Metadaten sind auf
+64 KiB begrenzt, strikt versioniert, ohne DTD/externe Entities und werden erst
+nach erfolgreicher Inhaltsspeicherung atomar veröffentlicht. Fehler sind Misses.
+Alte Digestdateien benötigen keine Migration; ohne Metadaten bleiben sie über
+Pins/Locks erreichbar. Es erfolgt keine automatische Bereinigung.
+
+Online erfolgt bei jeder Beschaffung und bei der bestehenden Abschlussprüfung
+wirklich ein HTTP-GET: mit ETag bevorzugt `If-None-Match`, sonst mit
+`If-Modified-Since`. Validatoren werden nur an das zugehörige Redirectziel
+übergeben. 304 verwendet erneut digestgeprüfte Inhalte, 200 dekodiert und prüft
+neue Bytes. Fehlen gültige Bytes zu einer 304-Antwort, folgt genau ein
+unbedingter Wiederholungsversuch. Ohne Validatoren wird vollständig geladen.
+Nicht unterstützte `Vary`-Profile und `Cache-Control: no-store` werden nicht
+persistiert; Teilantworten werden nicht als vollständige Quellen akzeptiert.
+Der Herkunftseintrag wird bei 404 oder nicht speicherbaren Antworten entfernt.
+`LoadedSource.origin` verwendet `http-no-store` für nicht persistierbare Antworten;
+auch die nachgelagerte Closurebeschaffung darf diese Bytes nicht persistieren.
+Es gibt keinen automatischen Rückfall auf alte Inhalte bei Netzfehlern.
+
+Offline ohne Lock wird derselbe konfigurierte Repositorysuchpfad auf den zuletzt
+gecachten Dokumenten ausgeführt; kein globales Scannen alter Modelle. Fehlende
+optionale Metadaten bleiben sichtbare Suchausfälle, erforderliche fehlende
+Dokumente ergeben OFFLINE mit Quellidentität. Pins/Locks lesen dagegen ihren
+exakten Digest unabhängig von einer inzwischen neueren URL-Zuordnung. Die
+bestehenden Regeln für lokale Eingaben, Lockformate, MD5/Headerprüfung,
+Workspaceupdates und Abschlussvergleiche bleiben erhalten.
+
+`RepositoryCacheEvent` meldet DOWNLOAD, NOT_MODIFIED, OFFLINE_HIT, OFFLINE_MISS,
+CACHE_MISS und WRITE_UNAVAILABLE ohne URLs/Validatoren. Der Callback ist am
+Hostzugriff gebunden, Beobachterfehler beeinflussen kein Ladeergebnis. Fehler beim
+persistenten Schreiben werden einmal pro Hostzugriff gemeldet; erfolgreich
+heruntergeladene Bytes bleiben nutzbar. Die CLI projiziert diese Ereignisse über
+RunLifecycle in den bestehenden RunContext und rendert einmalig eine strukturierte
+operative Cachewarnung auf stderr; diese Warnung verändert keine Sprach-/Gateentscheidung.
+Ein zusätzlicher Closurekonstruktor mit Consumer beobachtet auch digestgebundene
+Offlinezugriffe. Alle Zeit-/Grössen-/Abbruchverträge gelten weiterhin.
+
+Abnahmen: `RepositoryCacheContractTest`, `DefaultRepositoryCacheTest` sowie die
+bestehenden Closure-, Lock-, HTTP- und CLI-Vertragstests. Die CLI-Bedienbeispiele
+stehen in Kapitel 18 und README.

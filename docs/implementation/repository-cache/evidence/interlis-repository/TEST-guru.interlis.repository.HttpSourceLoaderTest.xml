@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.HttpSourceLoaderTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-01T16:20:26.795Z" hostname="Monterrico.local" time="0.335">
+  <properties/>
+  <testcase name="rejectsOversizeChunkedResponseBeforeServerFinishes()" classname="guru.interlis.repository.HttpSourceLoaderTest" time="0.175"/>
+  <testcase name="mapsTimeout()" classname="guru.interlis.repository.HttpSourceLoaderTest" time="0.056"/>
+  <testcase name="mapsAccessEncodingSizeAndOffline()" classname="guru.interlis.repository.HttpSourceLoaderTest" time="0.03"/>
+  <testcase name="loadsUtf8AndFollowsRedirect()" classname="guru.interlis.repository.HttpSourceLoaderTest" time="0.013"/>
+  <testcase name="cancelsWhileWaitingForBodyBytes()" classname="guru.interlis.repository.HttpSourceLoaderTest" time="0.059"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
