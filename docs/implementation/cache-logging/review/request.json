@@ -1,0 +1,28 @@
+{
+  "baseSha": "59141fa88a642d2c8201970f978fd7befe288f26",
+  "candidateSha": "27a3bfa42e55d63b165ec5d78ec1df896290dbe4",
+  "reviewWorktree": "/Users/stefan/sources/interlis-java/build/review/cache-logging/r1/worktree",
+  "reviewDirectory": "/Users/stefan/sources/interlis-java/build/review/cache-logging/r1/output",
+  "scratchDirectory": "/Users/stefan/sources/interlis-java/build/review/cache-logging/r1/worktree/build/reviewer",
+  "implementationReport": "docs/implementation/cache-logging/REPORT.md",
+  "plan": "docs/implementation/cache-logging/EXECUTION_PLAN.md",
+  "criteria": [
+    "CL-01",
+    "CL-02",
+    "CL-03",
+    "CL-04",
+    "CL-05",
+    "CL-06",
+    "CL-07",
+    "CL-08"
+  ],
+  "manifest": "docs/implementation/cache-logging/evidence/manifest.json",
+  "distribution": "/Users/stefan/sources/interlis-java/build/review/cache-logging/r1/worktree/build/reviewer/distribution",
+  "provider": {
+    "id": "deepseek",
+    "model": "deepseek-flash",
+    "version": "DeepSeek-V4.1-Flash-1017",
+    "api": "https://api.deepseek.com"
+  },
+  "constraints": "Read-only product/test files; no delegation, credentials, Gradle, Python, broad suites, corpus, benchmarks, browser or release gates. Audit raw evidence and add focused own counterprobes."
+}

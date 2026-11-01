@@ -1,0 +1,17 @@
+{
+  "name": "optional-site",
+  "args": [
+    "check",
+    "--repository",
+    "http://127.0.0.1:54111/",
+    "--root",
+    "Absent",
+    "--offline",
+    "--verbose"
+  ],
+  "exit": 1,
+  "signal": null,
+  "stdout": "",
+  "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:54111/ilimodels.xml': content used from cache offline.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:54111/ilisite.xml': source unavailable in offline cache.\nWARNING [ILI-RES-0008] Repository 'http://127.0.0.1:54111/', model 'Absent': repository links unavailable; continuing search.\n  Hint: OFFLINE\nERROR [ILI-RES-0001] The requested or imported model 'Absent' could not be found.\n  Hint: LOOKUP http://127.0.0.1:54111/ INTERLIS 2.4/2.3; SITE_UNAVAILABLE http://127.0.0.1:54111/ OFFLINE\n",
+  "http": []
+}

@@ -88,7 +88,24 @@ Releasevollprüfungen wiederholt; sie sind für diesen Präsentationsauftrag nic
 
 ## Reviewstatus
 
-Unabhängiger Review noch ausstehend; deshalb CL-08 noch offen.
+Unabhängiger Review **PASS** für Kandidat
+`27a3bfa42e55d63b165ec5d78ec1df896290dbe4`; CL-01–08 abgeschlossen,
+keine offenen Muss-Findings. [Unveränderter Bericht](review/review.md),
+[Urteil](review/verdict.json), [äussere Prozess-/Modellbindung](review/run-manifest.json).
+OpenCode 2.0.28 im separaten sauberen Checkout, tatsächlicher ProzessExit 0,
+Guard passed/Exit 0. Der finale bereinigte Sessionexport belegt ausschliesslich
+deepseek/deepseek-flash; keine Delegation oder Modellwechsel. Direkter API-Host
+und Versionszuordnung entsprechen dem unten beschriebenen Preflight.
+
+Der Reviewer hat 622 Produkt-/Builddateien, 14 Testquellen und sieben JARs
+gegen die Originalmanifeste sowie alle 69 JUnit-Fälle/14 Suites und 29
+Distributionsprozesse auditiert. Eigene Gegenproben: 22 reale CLI-Fälle,
+SanitizeProbe mit 26 und LoaderProbe mit 14 Prüfungen, erfolgreich.
+[Unveränderte Gegenproben und Resultate](review/probes/),
+[tatsächliche Probeprozesse](review/probe-processes.json).
+Ein rein historischer Hinweis auf Katalog v2 wurde als nicht blockierende
+redaktionelle Beobachtung eingeordnet; die aktuelle normative Version ist v3.
+
 Die Bereitschaftsprobe über OpenCode2.0.28/DeepSeek direkt ist mit tatsächlichem
 Exit0 und Guard passed beendet. Sessionmodell deepseek/deepseek-flash;
 effektiver DeepSeek-Endpunkt api.deepseek.com ohne abweichenden Konfigurations-
@@ -99,6 +116,10 @@ ordnet deepseek-flash DeepSeek-V4.1-Flash-1017 zu.
 [Guard](evidence/preflight/guard.json),
 [bereinigter Sessionexport](evidence/preflight/session.json).
 
-Der nächste Schritt ist die unabhängige Prüfung des Kandidatencommits im
-separaten sauberen Checkout mit Rohbelegaudit und gezielten eigenen Gegenproben.
-Kein Push oder Release im Umfang dieses Auftrags.
+Das Distributionsarchiv wurde abschliessend mit `:interlis-compiler-cli:distZip`
+erfolgreich aktualisiert und im bisherigen Distributionsverzeichnis entpackt;
+alle enthaltenen Bibliotheken sind bytegleich zum geprüften installDist.
+[Buildlog](evidence/distribution-final.log), [Archivbindung](evidence/distribution.json).
+Nach dem Kandidaten ändern sich ausschliesslich Abschlussnachweise und Status;
+keine weitere Produktkorrektur war erforderlich. Keine offenen Pflichtprüfungen
+oder Blocker dieses Auftrags. Kein Push oder Release im Umfang dieses Auftrags.

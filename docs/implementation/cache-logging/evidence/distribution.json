@@ -1,0 +1,13 @@
+{
+  "candidateSha": "27a3bfa42e55d63b165ec5d78ec1df896290dbe4",
+  "command": [
+    "./gradlew",
+    ":interlis-compiler-cli:distZip",
+    "--console",
+    "plain"
+  ],
+  "exitCode": 0,
+  "zip": "interlis-compiler-cli/build/distributions/interlis-compiler-0.2.0-SNAPSHOT.zip",
+  "sha256": "9ce0dff37239638c092adf18d5acfcd5b04419e67ab9789491024cc037662c49",
+  "librariesIdenticalToTestedInstallDist": true
+}

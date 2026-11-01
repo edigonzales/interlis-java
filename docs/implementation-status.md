@@ -1,10 +1,16 @@
 # Implementierungsstatus interlis-java
 
-Cachemeldungen pro Quelle (WP-26/30, CL-01–08) in Umsetzung auf 59141fa:
+Cachemeldungen pro Quelle (WP-26/30, CL-01–08) abgeschlossen auf Basis 59141fa:
 Beobachtungs-API und gemeinsame INFO-Darstellung implementiert und gezielt
 verifiziert: 69 JUnit-Fälle/14 Suites ohne Fehler/Skips, 29 reale
 Distributionsprozesse und schmale JS-/WasmGC-Gegenprobe unter Node24.22.0.
-Unabhängiger OpenCode-/DeepSeek-1017-Review steht noch aus.
+Unabhängiger OpenCode-2.0.28-/DeepSeek-1017-Review über die direkte API **PASS**
+auf Kandidat `27a3bfa42e55d63b165ec5d78ec1df896290dbe4`, ohne offene
+Muss-Findings; eigener Rohbelegaudit und 22 CLI-/40 Java-Gegenprüfungen.
+Tatsächlicher ProzessExit 0, Guard passed/Exit 0, sauberer Reviewcheckout und
+belegtes Sessionmodell. Distribution aktualisiert; danach nur Abschlussnachweise
+und Status geändert. Keine offenen Pflichtprüfungen oder Blocker dieses Auftrags.
+Kein Push oder Release.
 [Plan und Abnahmekriterien](implementation/cache-logging/EXECUTION_PLAN.md),
 [Umsetzung und Rohbelege](implementation/cache-logging/REPORT.md).
 

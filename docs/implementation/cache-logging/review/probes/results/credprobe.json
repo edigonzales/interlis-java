@@ -1,0 +1,23 @@
+{
+  "exit": 0,
+  "stdout": "",
+  "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53933/ilimodels.xml': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53933/Basis.ili': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53933/ilimodels.xml': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53933/Basis.ili': source downloaded.\nModel lookup: Basis @ http://127.0.0.1:53933/\nModel selected: Basis 1 http://127.0.0.1:53933/Basis.ili\n",
+  "requests": [
+    {
+      "path": "/ilimodels.xml",
+      "status": 200
+    },
+    {
+      "path": "/Basis.ili",
+      "status": 200
+    },
+    {
+      "path": "/ilimodels.xml",
+      "status": 200
+    },
+    {
+      "path": "/Basis.ili",
+      "status": 200
+    }
+  ]
+}
