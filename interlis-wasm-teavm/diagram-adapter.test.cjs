@@ -47,11 +47,14 @@ test('actual snapshot identity changes preserve only exact current declarations'
  const initial='INTERLIS 2.4;MODEL LayoutKeyCase AT "x" VERSION "1"=TOPIC T=CLASS BeforeNode=END BeforeNode;CLASS UnchangedNode=END UnchangedNode;END T;END LayoutKeyCase.';
  const changed=initial.replace('CLASS BeforeNode=END BeforeNode;','CLASS ReplacementNode=END ReplacementNode;');
  try{const session=await client.openSession({sources:[{sourceId:'memory:/identity.ili',text:initial}]});
- const project=async()=>{const result=await client.compile(session,{expectedWorkspaceRevision:client.state(session).workspaceRevision,roots:[{kind:'byName',modelName:'LayoutKeyCase'}]});assert.equal(result.outcome,'succeeded');return client.diagram(session,{schemaId:result.schemaId});};
+ const project=async(target=session)=>{const result=await client.compile(target,{expectedWorkspaceRevision:client.state(target).workspaceRevision,roots:[{kind:'byName',modelName:'LayoutKeyCase'}]});assert.equal(result.outcome,'succeeded');return client.diagram(target,{schemaId:result.schemaId});};
  const before=await project(),first=before.nodes.find(node=>node.label==='BeforeNode'),second=before.nodes.find(node=>node.label==='UnchangedNode');
  await client.updateSource(session,{sourceId:'memory:/identity.ili',expectation:{kind:'at',revision:client.state(session).sourceRevisions['memory:/identity.ili']},change:{kind:'replace',text:changed}});
- const after=await project(),replacement=after.nodes.find(node=>node.label==='ReplacementNode'),currentSecond=after.nodes.find(node=>node.label==='UnchangedNode');assert.notEqual(before.snapshotId,after.snapshotId);assert.notEqual(second.id,currentSecond.id,'Counterprobe requires real changed snapshot-local IDs');
+ const after=await project(),replacement=after.nodes.find(node=>node.label==='ReplacementNode'),currentSecond=after.nodes.find(node=>node.label==='UnchangedNode');assert.notEqual(before.snapshotId,after.snapshotId);assert.notEqual(first.id,replacement.id,'Renamed declaration must receive its own identity');
  const geometry=adapter.reconcileGeometry(before,after,{positions:{[first.id]:{x:10,y:20},[second.id]:{x:300,y:400},[replacement.id]:{x:10,y:20}},routes:{}});
  assert.equal(geometry.positions[replacement.id],undefined,'Reassigned opaque ID inherited a different declaration position');assert.deepEqual(geometry.positions[currentSecond.id],{x:300,y:400});
+ const fresh=await client.openSession({sources:[{sourceId:'memory:/identity.ili',text:changed}]}),freshDocument=await project(fresh),freshSecond=freshDocument.nodes.find(node=>node.label==='UnchangedNode');
+ assert.notEqual(freshSecond.id,second.id,'Fresh compilation fixture must exercise different opaque IDs');
+ const freshGeometry=adapter.reconcileGeometry(before,freshDocument,{positions:{[second.id]:{x:300,y:400}},routes:{}});assert.deepEqual(freshGeometry.positions[freshSecond.id],{x:300,y:400});
  }finally{await client.dispose();}
 });
