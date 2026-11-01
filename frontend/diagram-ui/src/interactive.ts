@@ -12,6 +12,7 @@ import {adapt,legacyProjection,type DiagramView} from './adapter';
 import {defaultDiagramSettings,type DiagramSettings,type LayoutDiagram} from './layout';
 import type {DiagramDocumentDto,DiagramEdgeDto,DiagramNodeDto,DiagramContainerDto} from './types';
 import {ElkLayoutService,type LayoutServicePort} from './elk-layout-service';
+import {reconcileGeometry} from './identity';
 import {presentation,endLabel} from './presentation';
 
 export const defaultInteractiveSettings:DiagramSettings=Object.freeze({...defaultDiagramSettings,attributeMode:'OWN_AND_INHERITED'});
@@ -157,7 +158,7 @@ class ObservedCommandStack extends CommandStack {
  override update(model:SModelRootImpl,cause?:Action):void {this.observe(model);super.update(model,cause);}
 }
 function collectState(root:SModelRootImpl):DiagramViewState {
- const state:DiagramViewState={positions:{},routes:{}};
+ const state:DiagramViewState={positions:Object.create(null),routes:Object.create(null)};
  for(const element of root.index.all()){
   if(element instanceof InterlisNode)state.positions[element.id]={...element.position};
   if(element instanceof InterlisEdge)state.routes[element.id]=element.routingPoints.map(point=>({...point}));
@@ -249,9 +250,13 @@ export class DiagramCanvas {
    const layout=await this.worker.layout(projection,settings);if(this.closed||mark!==this.generation)return false;
    for(const node of layout.nodes)if(![node.x,node.y,node.width,node.height].every(Number.isFinite)||node.width<=0||node.height<=0)throw new Error('Invalid layout bounds');
    for(const edge of layout.edges)if(!edge.points.every(point=>Number.isFinite(point.x)&&Number.isFinite(point.y)))throw new Error('Invalid edge geometry');
-   const first=!this.document;this.document=document;this.view=view;
-   const model=build(document,layout,this.state,settings,mark);
-   if(first)await this.source.setModel(model);else await this.source.updateModel(model);
+   const first=!this.document;const reconciled=reconcileGeometry(this.document,document,this.state);
+   const model=build(document,layout,reconciled,settings,mark);
+   if(!first&&this.root instanceof InterlisGraph)Object.assign(model,{zoom:this.root.zoom,scroll:{...this.root.scroll}});
+   this.document=document;this.view=view;
+   // Native UpdateModelCommand is undoable. A source/projection response must be a
+   // history barrier: only layout commands on the current immutable document may undo.
+   await this.source.setModel(model);
    if(this.closed||mark!==this.generation)return false;
    if(first){await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));if(this.closed||mark!==this.generation)return false;await this.fit();}
    this.setStatus(document.completeness==='COMPLETE'?'FRESH':'PARTIAL',document.completeness==='COMPLETE'?'Diagram is current':document.completeness==='LIMITED'?'Limited diagram — narrow the selection or increase the explicit projection budget':'Partial diagram — check Problems');

@@ -42,3 +42,16 @@ test('pinned upstream actually produces layout, SVG, and Sprotty from the compil
 }));
 
 test('actual portable compact associations preserve self parallel role ends origin and n-ary data',()=>fixture((doc,sources)=>{const view=adapter.adapt(doc,sources),binary=doc.edges.filter(edge=>edge.kind==='ASSOCIATION');assert.equal(binary.length,3);const self=binary.find(edge=>edge.label==='Self');assert.deepEqual(self.source,self.target);assert.equal(self.sourceEnd.roleName,'parent');assert.equal(self.targetEnd.roleName,'children');assert.equal(view.associations.get(self.origin.snapshot+'\0'+self.origin.symbol).length,1);assert.ok(adapter.elementsForSymbol(view,self.origin).includes(self.id));const nav=adapter.resolveNavigation(view,self.id,doc.snapshotId,sources);assert.equal(SOURCE.slice(nav.range.startOffset,nav.range.endOffset),'Self');const owns=binary.find(edge=>edge.label==='Owns'),parallel=binary.find(edge=>edge.label==='Parallel');assert.deepEqual(owns.source,parallel.source);assert.deepEqual(owns.target,parallel.target);assert.equal(owns.sourceEnd.aggregation,'COMPOSITION');assert.equal(owns.targetEnd.aggregation,'NONE');assert.ok(doc.nodes.some(node=>node.label==='Link'&&node.compartments.some(c=>c.members.some(m=>m.label==='note'))));},{schemaVersion:'1.0',associationPresentation:'COMPACT_BINARY'}));
+test('actual snapshot identity changes preserve only exact current declarations',async()=>{
+ const client=new CompilerClient({workerFactory:()=>new Port()});
+ const initial='INTERLIS 2.4;MODEL LayoutKeyCase AT "x" VERSION "1"=TOPIC T=CLASS BeforeNode=END BeforeNode;CLASS UnchangedNode=END UnchangedNode;END T;END LayoutKeyCase.';
+ const changed=initial.replace('CLASS BeforeNode=END BeforeNode;','CLASS ReplacementNode=END ReplacementNode;');
+ try{const session=await client.openSession({sources:[{sourceId:'memory:/identity.ili',text:initial}]});
+ const project=async()=>{const result=await client.compile(session,{expectedWorkspaceRevision:client.state(session).workspaceRevision,roots:[{kind:'byName',modelName:'LayoutKeyCase'}]});assert.equal(result.outcome,'succeeded');return client.diagram(session,{schemaId:result.schemaId});};
+ const before=await project(),first=before.nodes.find(node=>node.label==='BeforeNode'),second=before.nodes.find(node=>node.label==='UnchangedNode');
+ await client.updateSource(session,{sourceId:'memory:/identity.ili',expectation:{kind:'at',revision:client.state(session).sourceRevisions['memory:/identity.ili']},change:{kind:'replace',text:changed}});
+ const after=await project(),replacement=after.nodes.find(node=>node.label==='ReplacementNode'),currentSecond=after.nodes.find(node=>node.label==='Second');assert.notEqual(before.snapshotId,after.snapshotId);assert.notEqual(second.id,currentSecond.id,'Counterprobe requires real changed snapshot-local IDs');
+ const geometry=adapter.reconcileGeometry(before,after,{positions:{[first.id]:{x:10,y:20},[second.id]:{x:300,y:400},[replacement.id]:{x:10,y:20}},routes:{}});
+ assert.equal(geometry.positions[replacement.id],undefined,'Reassigned opaque ID inherited a different declaration position');assert.deepEqual(geometry.positions[currentSecond.id],{x:300,y:400});
+ }finally{await client.dispose();}
+});

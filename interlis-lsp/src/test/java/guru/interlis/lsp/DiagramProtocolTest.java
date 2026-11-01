@@ -63,6 +63,8 @@ class DiagramProtocolTest {
         var server=server();try {
             open(server,URI,1,SOURCE);var response=diagram(server,URI,1,null);
             failure(ResponseErrorCode.InvalidParams,()->diagram(server,URI,1,"{\"schemaVersion\":\"1.0\",\"zoom\":2}"));
+            failure(ResponseErrorCode.InvalidParams,()->server.diagram(new DiagramRequest(1,"blank-symbol",new VersionedTextDocumentIdentifier(URI,1),List.of(" "),null)).get());
+            failure(ResponseErrorCode.InvalidParams,()->diagram(server,URI,1,"{\"schemaVersion\":\"1.0\",\"translationModel\":{\"snapshot\":\"\",\"symbol\":\"\"}}"));
             failure(ResponseErrorCode.InvalidParams,()->diagram(server,URI,1,"{\"schemaVersion\":\"1.0\",\"budget\":{\"maxNodes\":501}}"));
             failure(ResponseErrorCode.InvalidParams,()->diagram(server,URI,1,"{\"schemaVersion\":\"1.0\",\"neighbourhoodDepth\":1.5}"));
             failure(ResponseErrorCode.ContentModified,()->server.diagramNavigate(new DiagramNavigationParams(1,"different-server",response.diagramId(),response.snapshotId(),new VersionedTextDocumentIdentifier(URI,1),response.document().nodes().getFirst().id())).get());

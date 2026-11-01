@@ -865,3 +865,10 @@ publizierte Projektionsbuilder; veröffentlichte DiagramDocument-Werte bleiben
 immutable. Parser, Binder und SemanticGraph werden weder geändert noch erneut
 interpretiert. JVM-/LSP-/portable Vertragstests und beide neutralen Consumer
 verwenden dieselbe Information. DiagramDocument1.0 bleibt strukturell unverändert.
+
+`frontend/diagram-ui/reconcileGeometry` ist der reine Besitzer des eindeutigen
+Presentationkey-Abgleichs aus Kapitel11. Eingaben sind unveränderte alte/neue
+DiagramDocument1.0-Werte und separater Viewzustand; Ergebnis enthält ausschliesslich
+neu zugeordnete Positionen/Routen. Es leitet keine Symbole/Quellbereiche ab und
+benutzt keine fuzzy Namens-/Offsetheuristik. Der echte portable Enginevertrag
+prüft IDs, die nach einem Deklarationsaustausch nicht dieselbe Klasse bezeichnen.

@@ -374,3 +374,25 @@ bewahren beide Endlabels und Diamanten. Die portable Capability kündigt beide
 implementierten Darstellungen an. CompactAssociationProjectionTest,
 DiagramProtocolTest und der tatsächliche portable Adaptervertrag prüfen diese
 Daten gemeinsam mit n-ären/attributtragenden Entitäten.
+
+Der neutrale Reconciler verwendet IDs ausschliesslich innerhalb desselben
+Snapshots als Identität. Bei einem neuen Snapshot entsteht ein exakter
+Presentationkey aus dem vom Core gelieferten Quell-URI, Kind und canonicalName;
+Offsets und ähnliche Labels werden nicht abgeglichen. Mehrdeutige oder
+quelllose Keys verlieren ihren Zustand. Kanten verlangen zusätzlich eindeutige
+Endpunktkeys, Quellbezug und identische Endmetadaten; nicht eindeutig zuordenbare
+Memberendpunkte werden verworfen. Ein umbenanntes/ersetztes Element erbt deshalb
+keine Geometrie allein aufgrund einer wiederverwendeten Symbol-ID. Die Keys
+gehören nur zum Viewzustand und autorisieren niemals Navigation oder Sprach-
+operationen. Server-/Rootwechsel verwirft die Sitzung samt Commandhistory.
+Der portable Vertrag prüft tatsächliche Vorher-/Nachher-Projektionen der Engine
+mit einer ausgetauschten Deklaration und einer unveränderten Nachbarklasse.
+
+Jede neue Projektionsantwort bildet eine Barriere für die native Sprotty-
+Modellhistorie. Eindeutig zugeordnete Geometrie und der Viewport werden übernommen,
+aber Undo darf keinen alten Quell-/Projektionsgraphen wiederherstellen.
+Selektion/Drag/Route im aktuellen Graphen verwenden weiterhin echte Commands.
+Die DOMaktualisierung bleibt ein VNodepatch; eine Selektionsänderung fordert keine
+neue Analyse oder Projektion an. Core-IDs enthalten im aktuellen Indexer auch
+Revision/Fingerprint und wechseln tatsächlich bei einer Quelldeklarationsänderung;
+sie sind deshalb ausdrücklich kein sitzungsübergreifender Presentationkey.

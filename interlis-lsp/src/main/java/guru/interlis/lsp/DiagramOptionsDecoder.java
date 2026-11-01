@@ -29,7 +29,7 @@ final class DiagramOptionsDecoder {
             budget=new ProjectionBudget(integer(b,"maxNodes",500,1,500),integer(b,"maxEdges",1000,1,1000),integer(b,"maxMembersPerNode",200,1,200));}
         Optional<SymbolRef> translation=Optional.empty();
         if(value.has("translationModel")) {var ref=object(value,"translationModel");keys(ref,"snapshot","symbol");
-            translation=Optional.of(new SymbolRef(new SnapshotId(text(ref,"snapshot","")),new SymbolId(text(ref,"symbol",""))));}
+            translation=Optional.of(new SymbolRef(new SnapshotId(identity(ref,"snapshot")),new SymbolId(identity(ref,"symbol"))));}
         var depth=value.has("neighbourhoodDepth")?OptionalInt.of(integer(value,"neighbourhoodDepth",0,0,32)):OptionalInt.empty();
         return new DiagramOptions(selection,enumeration(value,"scope",DiagramScope.class,defaults.scope()),kinds,
                 enumeration(value,"inheritedMembers",InheritedMembers.class,defaults.inheritedMembers()),
@@ -41,6 +41,7 @@ final class DiagramOptionsDecoder {
     private static JsonObject object(JsonObject value,String name) {if(!value.get(name).isJsonObject())throw invalid(name+" must be an object");return value.getAsJsonObject(name);}
     private static void keys(JsonObject value,String...allowed) {if(!Set.of(allowed).containsAll(value.keySet()))throw invalid("unknown diagram option");}
     private static String text(JsonObject value,String name,String fallback) {if(!value.has(name))return fallback;var item=value.get(name);if(!item.isJsonPrimitive()||!item.getAsJsonPrimitive().isString())throw invalid(name+" must be text");return item.getAsString();}
+    private static String identity(JsonObject value,String name) {String text=text(value,name,"");if(text.isBlank()||text.length()>4096)throw invalid("translation identity is missing or too long");return text;}
     private static boolean bool(JsonObject value,String name,boolean fallback) {if(!value.has(name))return fallback;var item=value.get(name);if(!item.isJsonPrimitive()||!item.getAsJsonPrimitive().isBoolean())throw invalid(name+" must be boolean");return item.getAsBoolean();}
     private static int integer(JsonObject value,String name,int fallback,int min,int max) {
         if(!value.has(name))return fallback;var item=value.get(name);

@@ -194,3 +194,5 @@ export class SprottyDiagramAdapter {
   readonly defaultDiagramSettings=defaultDiagramSettings;
 }
 export const diagramAdapter=Object.freeze(new SprottyDiagramAdapter());
+
+export {reconcileGeometry} from './identity';

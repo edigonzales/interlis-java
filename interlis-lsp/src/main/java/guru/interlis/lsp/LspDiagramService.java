@@ -24,7 +24,7 @@ final class LspDiagramService {
                     && model.nameRange().map(range->range.source().equals(context.source())).orElse(false))selected.add(new SymbolRef(context.analysis().snapshotId(),model.id()));
         } else {
             if(request.symbolIds().size()>500||new HashSet<>(request.symbolIds()).size()!=request.symbolIds().size())throw LspFailures.error(ResponseErrorCode.InvalidParams,"invalid diagram selection");
-            for(String id:request.symbolIds()) {if(id==null||id.length()>4096)throw LspFailures.error(ResponseErrorCode.InvalidParams,"invalid diagram symbol identity");selected.add(new SymbolRef(context.analysis().snapshotId(),new SymbolId(id)));}
+            for(String id:request.symbolIds()) {if(id==null||id.isBlank()||id.length()>4096)throw LspFailures.error(ResponseErrorCode.InvalidParams,"invalid diagram symbol identity");selected.add(new SymbolRef(context.analysis().snapshotId(),new SymbolId(id)));}
         }
         if(selected.isEmpty())throw LspFailures.error(ResponseErrorCode.RequestFailed,"No model declaration is available in this source");
         var options=DiagramOptionsDecoder.decode(request.options(),new DiagramSelection(selected));

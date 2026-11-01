@@ -1405,3 +1405,11 @@ behält n-äre/attributtragende/komplexe Entitäten. Beide Endmetadaten und
 Assoziationsanker bleiben kanonisch; Textconsumer und portable Capability sind
 angepasst. Neue JVM-/LSP-/Bridge-Verträge bestanden; frischer portabler und
 installierter Nachweis für diesen Stand ist noch fällig. Keine neue Sprachregel.
+
+V2 Viewzustand: Eindeutige exakte Präsentationsschlüssel über Core-Quell-URI,
+Kind/canonicalName ersetzen die Annahme stabiler Snapshot-IDs. Mehrdeutige Keys
+und verwaiste Fremdeinträge werden verworfen. Eine Projektionsantwort setzt die
+native Modellhistory zurück; aktuelle Layoutcommands können keinen alten
+Semantikgraphen per Undo zurückbringen. Native Rendererprüfung inklusive
+Projektionsrefresh/Undo-Barriere bestanden. Die portable Vorher-/Nachher-
+Gegenprobe und installierte V2-Abnahme folgen; kein V2-PASS vorweggenommen.
