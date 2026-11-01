@@ -17,12 +17,15 @@ final class RepositoryHostCoordinator implements AutoCloseable {
     private final java.util.Set<CompletableFuture<?>> pending=ConcurrentHashMap.newKeySet();
     private RepositorySettings settings=RepositorySettings.defaults();
     private HostRepositories.Access access;
+    private CoalescingSourceLoader loader;
     RepositoryHostCoordinator(Consumer<String> operations) { this.operations=operations; reconfigure(settings); }
     void reconfigure(RepositorySettings value) {
+        if(loader!=null)loader.cancelPending(CancellationReason.SUPERSEDED);
         settings=value;
         access=HostRepositories.create(Path.of(System.getProperty("user.dir")),value.cache(),event -> {
             if(event==RepositoryCacheEvent.WRITE_UNAVAILABLE) operations.accept("Repository cache is unavailable; downloaded sources remain usable for this session.");
         });
+        loader=new CoalescingSourceLoader(access.loader());
     }
     boolean needsResolution(WorkspaceCapture capture) {
         return !capture.resolution().complete() || !settings.options().modelPins().isEmpty()
@@ -32,7 +35,7 @@ final class RepositoryHostCoordinator implements AutoCloseable {
             WorkspaceConfiguration configuration,CancellationToken token) {
         var result=new CompletableFuture<RepositoryResolutionOutcome>();
         pending.add(result);result.whenComplete((value,failure) -> pending.remove(result));
-        var service=access.closureService();var options=settings.options();
+        var service=new RepositoryClosureService(loader,access.contentStore(),access.observer());var options=settings.options();
         CancellationToken bounded=new CancellationToken() {
             public boolean isCancellationRequested() { return closed.get() || result.isCancelled() || token.isCancellationRequested(); }
             public CancellationReason reason() { return closed.get()?CancellationReason.HOST_SHUTDOWN:token.reason(); }
@@ -44,5 +47,5 @@ final class RepositoryHostCoordinator implements AutoCloseable {
                 org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.RequestFailed,"repository queue is full or closed")); }
         return result;
     }
-    @Override public void close() { closed.set(true);pending.forEach(f -> f.cancel(false));pending.clear();io.shutdownNow(); }
+    @Override public void close() { closed.set(true);loader.cancelPending(CancellationReason.HOST_SHUTDOWN);pending.forEach(f -> f.cancel(false));pending.clear();io.shutdownNow(); }
 }

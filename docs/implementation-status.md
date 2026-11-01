@@ -1362,3 +1362,12 @@ Quellhandles, zentrale Diagnoseprosa/RelatedInformation, semantische Outline und
 explizites Rootcompile sind in Umsetzung. Kleine LSP-/Repositoryvertragsläufe
 werden gezielt ausgeführt; installierte GUI und unabhängiges V1-PASS bleiben
 vor der Phasenfreigabe erforderlich. Keine neue Compilersemantik, keine Publikation.
+
+V1-Nacharbeit: Gleichzeitige identische Hostreads teilen ein unveränderliches
+Resultat; individuelle Captures und atomare Updates bleiben getrennt. Ein
+abgebrochener Aufrufer bricht aktive Mitnutzer nicht ab. Allein abgebrochene,
+fehlgeschlagene und abgeschlossene Reads werden nicht als Sitzungscache behalten;
+Offline verwendet ausschliesslich den expliziten Cacheport. Konfigurationswechsel
+und Shutdown lösen wartende Reads mit typisiertem Abbruch. LSP65 inklusive fünf
+gezielter Parallelitäts-/Lebensdauertests bestanden (0 Fehler/Skips); Rohbelege
+unter `interlis-vscode-evidence/qualification/V1-coalescing` ausserhalb des Repos.
