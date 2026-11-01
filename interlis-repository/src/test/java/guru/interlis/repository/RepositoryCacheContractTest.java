@@ -94,7 +94,7 @@ class RepositoryCacheContractTest {
             }
         });
         for(String path:List.of("redirect","modified","plain")) { load(host(),base+path,ONLINE);load(host(),base+path,ONLINE); }
-        assertEquals(Arrays.asList(null,"Wed, 21 Oct 2015 07:28:00 GMT"),modifiedHeaders);
+        assertEquals(Arrays.asList(null,null),modifiedHeaders,"Last-Modified does not prove byte identity and must not cause conditional reuse");
         assertEquals("target",load(host(),base+"redirect",OFFLINE).text());
         for(String path:List.of("no-store","vary")) {
             load(host(),base+path,ONLINE);assertFalse(Files.exists(metadata(base+path)));

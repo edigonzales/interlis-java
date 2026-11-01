@@ -55,19 +55,19 @@ public final class HttpSourceLoader implements SourceLoader {
         }
         URI uri = URI.create(locator.location());
         try {
-            // A vanished/corrupt body behind a 304 gets exactly one unconditional retry.
+            // Missing byte identity proof or a vanished/corrupt 304 body gets one unconditional retry.
             for (int attempt=0;attempt<2;attempt++) {
                 URI current = uri;
                 HttpResponse<byte[]> response = null;
                 boolean reusable = true;
+                String requestedEtag = null;
                 for (int redirects=0;redirects<=MAX_REDIRECTS;redirects++) {
                     token.throwIfCancellationRequested();
                     var request = HttpRequest.newBuilder(current).timeout(policy.timeout()).GET();
-                    if(attempt==0 && cached.isPresent() && cached.orElseThrow().responseSource().value().equals(current.toString())) {
-                        var entry = cached.orElseThrow();
-                        if(entry.etag().isPresent()) request.header("If-None-Match",entry.etag().orElseThrow());
-                        else if(entry.lastModified().isPresent()) request.header("If-Modified-Since",entry.lastModified().orElseThrow());
-                    }
+                    String requestLocation=current.toString();
+                    requestedEtag = attempt==0 ? cached.filter(m -> m.responseSource().value().equals(requestLocation))
+                            .flatMap(RepositoryCacheMetadata::etag).filter(HttpSourceLoader::isStrongEtag).orElse(null) : null;
+                    if(requestedEtag!=null) request.header("If-None-Match",requestedEtag);
                     response=receive(request.build(),policy,token);
                     reusable &= reusable(response);
                     if(response.statusCode()==304 || response.statusCode()/100!=3)break;
@@ -81,7 +81,7 @@ public final class HttpSourceLoader implements SourceLoader {
                 }
                 token.throwIfCancellationRequested();
                 if(response.statusCode()==304) {
-                    if(attempt==0 && cached.isPresent() && cached.orElseThrow().responseSource().value().equals(current.toString())) {
+                    if(requestedEtag!=null && requestedEtag.equals(entityTag(response).orElse(null)) && cached.isPresent()) {
                         var content=store.lookup(cached.orElseThrow().digest());
                         if(content.isPresent()) {
                             var loaded=decode(id,content.orElseThrow().bytes(),policy,reusable?"verified-cache":"http-no-store");
@@ -90,7 +90,7 @@ public final class HttpSourceLoader implements SourceLoader {
                                 else {
                                     var old=cached.orElseThrow();
                                     metadata.put(new RepositoryCacheMetadata(id,old.responseSource(),old.digest(),
-                                            validator(response,"ETag").or(old::etag),validator(response,"Last-Modified").or(old::lastModified)));
+                                            entityTag(response).or(old::etag),validator(response,"Last-Modified").or(old::lastModified)));
                                 }
                             }
                             observer.accept(RepositoryCacheEvent.NOT_MODIFIED);
@@ -116,7 +116,7 @@ public final class HttpSourceLoader implements SourceLoader {
                         store.put(new VerifiedContent(id,digest,bytes));
                         // Do not publish metadata pointing at a failed write.
                         if(store.lookup(digest).isPresent()) metadata.put(new RepositoryCacheMetadata(id,new SourceId(current.toString()),digest,
-                                validator(response,"ETag"),validator(response,"Last-Modified")));
+                                entityTag(response),validator(response,"Last-Modified")));
                     } else metadata.remove(id);
                 }
                 observer.accept(RepositoryCacheEvent.DOWNLOAD);
@@ -131,6 +131,16 @@ public final class HttpSourceLoader implements SourceLoader {
         } catch (IOException e) {
             throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"source request failed",e);
         }
+    }
+
+    /** Only a strong entity tag can certify the original bytes used by pins and closure checks. */
+    private static boolean isStrongEtag(String value) {
+        if(value.length()<2 || value.charAt(0)!='"' || value.charAt(value.length()-1)!='"')return false;
+        return value.substring(1,value.length()-1).chars().allMatch(c -> c>=33 && c!=34 && c!=127 && c<=255);
+    }
+
+    private static Optional<String> entityTag(HttpResponse<?> response) {
+        return response.headers().allValues("ETag").size()==1?validator(response,"ETag"):Optional.empty();
     }
 
     private static Optional<String> validator(HttpResponse<?> response, String name) {

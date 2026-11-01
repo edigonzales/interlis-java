@@ -1,0 +1,101 @@
+{
+  "candidateSha": "cf585ec1ea2270bafed4083a8ebfa2e68de05133",
+  "reviewHeadSha": "cf585ec1ea2270bafed4083a8ebfa2e68de05133",
+  "verdict": "FAIL",
+  "reviewer": {
+    "tool": "opencode",
+    "provider": "deepseek",
+    "model": "deepseek/deepseek-flash",
+    "apiHost": "api.deepseek.com"
+  },
+  "criteria": [
+    {
+      "id": "CACHE-01",
+      "status": "fulfilled",
+      "evidence": "CliEnvironment adds injectable homeDirectory and keeps all previous constructors; system() uses user.home. --cache/--no-cache, mutual overrides, conflict exit 2, --explain-config, lazy disk effects and pure local runs were inspected and exercised against the final distribution. Fresh-home explain created no home; --no-cache created no home; custom relative cache wrote only to the custom directory."
+    },
+    {
+      "id": "CACHE-02",
+      "status": "fulfilled",
+      "evidence": "DirectoryContentStore remains digest-addressed with existing SHA-256 files. DirectoryMetadataStore uses metadata-v1/<sha256(URL)>.xml, version 1, 64 KiB limit, DTD/entity rejection and attribute/child whitelists. Content is stored before metadata is atomically published; old content is retained. Manifest, source and JAR hashes all match."
+    },
+    {
+      "id": "CACHE-03",
+      "status": "fulfilled",
+      "evidence": "ETag is preferred over Last-Modified; 304 uses digest-verified bytes; a missing body triggers exactly one unconditional retry; no validator means a full download; the final closure comparison re-reads sources. Final-distribution probes observed 4 requests/0 bodies on 304 revalidation, ETag-only conditional headers when both validators existed, If-Modified-Since when only Last-Modified existed, and refresh after a source change."
+    },
+    {
+      "id": "CACHE-04",
+      "status": "violated",
+      "evidence": "Offline without lock used the same configured search path with zero HTTP and required index/model misses named their source. However, when a cached ilimodels.xml does not contain the requested model and the optional ilisite.xml is not cached, the closure promotes the optional site's OFFLINE reason to a required-source LOAD_FAILURE naming ilisite.xml (ILI-RES-0003). The same online request reports ILI-RES-0001 NOT_FOUND. Reproduced by build/reviewer/counterprobes/optional-site/run.cjs (finding F1)."
+    },
+    {
+      "id": "CACHE-05",
+      "status": "fulfilled",
+      "evidence": "After the URL pointed at newer content, offline replay with the old lock returned the old bytes with zero HTTP; the same old lock online produced exit 1 and a lock mismatch. Pins, MD5, language and model selection remain in the closure path. The F1 defect is a diagnostic classification issue, not a semantic schema acceptance."
+    },
+    {
+      "id": "CACHE-06",
+      "status": "fulfilled",
+      "evidence": "no-store and unsupported Vary profiles produced no metadata and no content; subsequent offline requests failed without HTTP. Redirects, 401/403/404/other statuses, size, timeout and cancellation remain covered by code and existing tests; the final-distribution probe confirmed no-store/Vary disk effects."
+    },
+    {
+      "id": "CACHE-07",
+      "status": "violated",
+      "evidence": "Corrupt metadata (DOCTYPE/external DTD, invalid validator values) are misses and are repaired online; 304 without a body is retried unconditionally; missing cached files fail offline. But the missing optional ilisite.xml is misclassified as a required-source failure (finding F1), so the error classification part of this criterion is not fulfilled, even though the corruption/304 subcases are."
+    },
+    {
+      "id": "CACHE-08",
+      "status": "fulfilled",
+      "evidence": "A blocked cache path still allowed a successful online load and produced exactly one CACHE_WRITE_UNAVAILABLE warning per host access. --no-cache and no-store produced no persistent entries. Content and metadata are published atomically; old locked content remains available."
+    },
+    {
+      "id": "CACHE-09",
+      "status": "fulfilled",
+      "evidence": "RunLifecycle.cacheLookup emits typed CacheLookup events with the existing RunContext and monotonic sequence; observer failures are isolated. Events contain no URLs, headers, paths or credentials. The write warning is an operational stderr warning and does not enter the compiler gate decision. No architecture violation was found."
+    },
+    {
+      "id": "CACHE-10",
+      "status": "fulfilled",
+      "evidence": "Original JUnit XMLs total 101 tests in 19 suites with zero failures/errors/skips. The 10+5 CLI cases have matching expected/actual exits. 288 production/build-input hashes, 19 test-source hashes and 7 final JAR hashes verified OK. Own counterprobes were executed. Specs, API register and README are consistent among themselves; the implementation deviation from chapter 08 section 13 is finding F1. Caveat: the tests miss the F1 optional-site path, and REPORT.md:103 says 'am finalen Produkt' for five validator processes that predate the final diagnostic-only correction; the later report paragraph and JAR hashes qualify this."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "severity": "P2",
+      "file": "interlis-repository/src/main/java/guru/interlis/repository/RepositoryClosureService.java",
+      "line": 237,
+      "summary": "Offline without lock misclassifies a missing optional ilisite.xml as a required source failure. RepositorySearch.site records the optional site's OFFLINE reason in the same unavailable map used for required indexes/models (RepositorySearch.java:136-139), and RepositoryClosureService.java:237-241 promotes any non-NOT_FOUND entry to LOAD_FAILURE with that source. A model absent from the cached index therefore yields ILI-RES-0003 naming ilisite.xml instead of ILI-RES-0001 NOT_FOUND; the same online request yields ILI-RES-0001. This violates CACHE-04 (optional metadata may be missing) and CACHE-07 (error classification), and changes CLI termination from INPUT_UNRESOLVED to OPERATIONAL_FAILURE.",
+      "reproduction": "cd /Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree && node build/reviewer/counterprobes/optional-site/run.cjs. Observed offline-missing-model: CLI exit 1, WARNING ILI-RES-0008 'repository links unavailable; continuing search', then ERROR ILI-RES-0003 'The source .../ilisite.xml could not be provided: verified content is unavailable offline.' Observed online-missing-model: CLI exit 1, ERROR ILI-RES-0001 'The requested or imported model Absent could not be found.'"
+    }
+  ],
+  "counterprobes": [
+    {
+      "name": "final-distribution-contract-probes",
+      "command": "cd /Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree && node build/reviewer/counterprobes/final-probes/run.cjs",
+      "exitCode": 0,
+      "evidence": "61 checks, 0 failures. Covered default cache, injected home, first download, 304 revalidation, offline without/with lock (0 HTTP), --no-cache, custom cache, --explain-config, ETag preference, Last-Modified fallback, no-store, Vary, malicious metadata with external DTD (offline miss, no DTD fetch), lock precedence after URL change, cache conflict exit 2, and config precedence. The seven distribution JAR hashes match product-manifest.json."
+    },
+    {
+      "name": "optional-site-offline-classification",
+      "command": "cd /Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree && node build/reviewer/counterprobes/optional-site/run.cjs",
+      "exitCode": 0,
+      "evidence": "Script exit 0. Warm online cache exit 0; has index metadata, no site metadata. Offline missing model: CLI exit 1, 0 HTTP, ILI-RES-0003 naming ilisite.xml. Online missing model: CLI exit 1, ILI-RES-0001. Reproduces finding F1."
+    },
+    {
+      "name": "write-failure-warning",
+      "command": "JAVA_OPTS=\"-Duser.home=$PWD/build/reviewer/counterprobes/final-probes/writefail/home\" build/reviewer/distribution/bin/interlis-compiler check build/reviewer/counterprobes/final-probes/writefail/work/Projekt.ili --repository \"$PWD/build/reviewer/counterprobes/final-probes/writefail/work/\" --cache \"$PWD/build/reviewer/counterprobes/final-probes/writefail/work/blocked\"",
+      "exitCode": 0,
+      "evidence": "CLI exit 0; exactly one CACHE_WRITE_UNAVAILABLE warning on stderr; the downloaded input remained usable; no path or credential leaked."
+    },
+    {
+      "name": "evidence-hash-audit",
+      "command": "shasum -a 256 -c build/reviewer/counterprobes/evidence-audit/production.sha256 && shasum -a 256 -c build/reviewer/counterprobes/evidence-audit/tests.sha256 && shasum -a 256 -c build/reviewer/counterprobes/evidence-audit/jars.sha256",
+      "exitCode": 0,
+      "evidence": "288 production/build-input files OK, 19 test sources OK, 7 final distribution JARs OK. JUnit XMLs independently total 101 tests in 19 suites with 0 failures/errors/skips; CLI evidence has 10+5 cases with matching exits."
+    }
+  ],
+  "missingRequiredEvidence": [],
+  "reportPath": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/output/review.md"
+}

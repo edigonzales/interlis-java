@@ -79,6 +79,15 @@ class DefaultRepositoryCacheTest {
         success(run("check","Local.ili"));success(run("check","Local.ili","--repository",base));assertFalse(Files.exists(home()));
     }
 
+    @Test void anOptionalOfflineSiteMissPreservesMissingModelClassification() throws Exception {
+        String base=repository();success(run("check","Projekt.ili","--repository",base));
+        int before=requests.get();
+        var result=run("check","--root","Absent","--repository",base,"--offline","--json");
+        assertEquals(CliTermination.INPUT_UNRESOLVED,result.result.termination(),result.out+result.err);
+        assertEquals(before,requests.get());assertTrue(result.out.contains("ILI-RES-0001"));assertFalse(result.out.contains("ILI-RES-0003"));
+        assertTrue(result.result.repositorySteps().stream().anyMatch(s -> s.kind()==RepositorySearchStep.Kind.SITE_UNAVAILABLE));
+    }
+
     @Test void configurationPrecedenceExplainsEffectivePathAndRejectsConflicts() throws Exception {
         var defaults=run("check","--explain-config");success(defaults);
         var settings=JsonParser.parseString(defaults.out).getAsJsonObject().getAsJsonObject("settings");

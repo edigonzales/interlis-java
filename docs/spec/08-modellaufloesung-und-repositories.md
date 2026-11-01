@@ -471,11 +471,19 @@ Alte Digestdateien benötigen keine Migration; ohne Metadaten bleiben sie über
 Pins/Locks erreichbar. Es erfolgt keine automatische Bereinigung.
 
 Online erfolgt bei jeder Beschaffung und bei der bestehenden Abschlussprüfung
-wirklich ein HTTP-GET: mit ETag bevorzugt `If-None-Match`, sonst mit
-`If-Modified-Since`. Validatoren werden nur an das zugehörige Redirectziel
-übergeben. 304 verwendet erneut digestgeprüfte Inhalte, 200 dekodiert und prüft
-neue Bytes. Fehlen gültige Bytes zu einer 304-Antwort, folgt genau ein
-unbedingter Wiederholungsversuch. Ohne Validatoren wird vollständig geladen.
+wirklich ein HTTP-GET. Nur ein syntaktisch gültiger starker ETag darf als
+`If-None-Match` an das zugehörige Redirectziel übergeben werden. Eine 304-Antwort
+MUSS denselben starken ETag als genau einen ETag-Feldwert bestätigen, bevor
+erneut digestgeprüfte Cachebytes verwendet werden. Fehlender, schwacher,
+abweichender oder mehrdeutiger ETag sowie fehlende gültige Cachebytes lösen
+genau einen unbedingten Wiederholungsversuch aus; eine weitere unbrauchbare 304
+ist ein Ladefehler. 200 dekodiert und prüft die tatsächlich empfangenen Bytes.
+Schwache ETags und Last-Modified allein garantieren keine Bytegleichheit und
+führen deshalb zu vollständiger Übertragung, auch bei Pin-/Lock- und
+Abschlussprüfungen. Last-Modified bleibt als kompatible Herkunftsmetadaten
+les-/schreibbar, löst aber keinen If-Modified-Since-Request aus.
+Dies erhält die bytegenauen Verträge auch bei semantisch äquivalenten
+Darstellungen oder Änderungen innerhalb einer Last-Modified-Sekunde.
 Nicht unterstützte `Vary`-Profile und `Cache-Control: no-store` werden nicht
 persistiert; Teilantworten werden nicht als vollständige Quellen akzeptiert.
 Der Herkunftseintrag wird bei 404 oder nicht speicherbaren Antworten entfernt.
@@ -485,8 +493,13 @@ Es gibt keinen automatischen Rückfall auf alte Inhalte bei Netzfehlern.
 
 Offline ohne Lock wird derselbe konfigurierte Repositorysuchpfad auf den zuletzt
 gecachten Dokumenten ausgeführt; kein globales Scannen alter Modelle. Fehlende
-optionale Metadaten bleiben sichtbare Suchausfälle, erforderliche fehlende
-Dokumente ergeben OFFLINE mit Quellidentität. Pins/Locks lesen dagegen ihren
+optionale Metadaten bleiben sichtbare Suchausfälle. Nicht verfügbare oder
+fehlerhafte ilisite.xml-Dokumente bleiben Warnungen; sie dürfen allein keine
+LOAD_FAILURE-/INDEX_FAILURE-Ablehnung erzeugen. Fehlt das Modell in den
+verfügbaren Indizes, bleibt NOT_FOUND beziehungsweise VERSION_MISMATCH erhalten.
+Erforderliche fehlende Indizes und Modellquellen ergeben OFFLINE mit
+Quellidentität. Alle Ausfälle, auch optionale Site-Ausfälle, bleiben in der
+unavailable-Provenienz für Locks und die Online-Abschlussprüfung erhalten. Pins/Locks lesen dagegen ihren
 exakten Digest unabhängig von einer inzwischen neueren URL-Zuordnung. Die
 bestehenden Regeln für lokale Eingaben, Lockformate, MD5/Headerprüfung,
 Workspaceupdates und Abschlussvergleiche bleiben erhalten.
@@ -504,3 +517,12 @@ Offlinezugriffe. Alle Zeit-/Grössen-/Abbruchverträge gelten weiterhin.
 Abnahmen: `RepositoryCacheContractTest`, `DefaultRepositoryCacheTest` sowie die
 bestehenden Closure-, Lock-, HTTP- und CLI-Vertragstests. Die CLI-Bedienbeispiele
 stehen in Kapitel 18 und README.
+
+
+Korrekturabnahmen der beiden P2-Funde: RepositoryCacheRegressionTest und die
+Offline-CLI-Gegenprobe in DefaultRepositoryCacheTest. HTTP-Semantik siehe
+[RFC 9110 §13.1.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-13.1.2)
+(schwacher If-None-Match-Vergleich) und
+[§8.8.2.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.2.2)
+(Last-Modified-Stärke). Die strengere Wiederverwendung ist eine Folgerung aus
+den bytegenauen Projektverträgen, keine allgemeine HTTP-Cachepflicht.

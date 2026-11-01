@@ -21,6 +21,7 @@ final class RepositorySearch {
     private final Map<URI,Optional<RepositoryIndex>> indexes=new LinkedHashMap<>();
     private final Map<URI,RepositorySiteReader.Site> sites=new LinkedHashMap<>();
     private final Map<SourceId,SourceLoadException.Reason> unavailable=new LinkedHashMap<>();
+    private final Set<SourceId> indexSources=new LinkedHashSet<>();
     private final List<RepositorySearchStep> steps=new ArrayList<>();
     private final Map<URI,Integer> ranks=new LinkedHashMap<>();
     RepositorySearch(SourceLoader loader,RepositoryConfig config,CancellationToken token,long limit) {
@@ -31,6 +32,12 @@ final class RepositorySearch {
     }
     List<RepositorySearchStep> steps() { return List.copyOf(steps); }
     Map<SourceId,SourceLoadException.Reason> unavailable() { return Collections.unmodifiableMap(new LinkedHashMap<>(unavailable)); }
+    /** Required index failures only; optional sites remain in provenance and warnings. */
+    Map<SourceId,SourceLoadException.Reason> unavailableIndexes() {
+        var result=new LinkedHashMap<SourceId,SourceLoadException.Reason>();
+        unavailable.forEach((source,reason) -> { if(indexSources.contains(source))result.put(source,reason); });
+        return Collections.unmodifiableMap(result);
+    }
     boolean hasIndexFailures() { return indexFailures; }
     boolean hasOtherVersion(ModelSelector.ByName query) {
         return indexes.values().stream().flatMap(Optional::stream).flatMap(i->i.models().stream()).anyMatch(m->m.name().equals(query.modelName()) && query.modelVersion().filter(v -> !v.equals(m.version())).isPresent()
@@ -122,6 +129,7 @@ final class RepositorySearch {
     private Optional<RepositoryIndex> index(URI uri,String model) {
         return indexes.computeIfAbsent(uri,key->{
             var locator=config.sources().stream().filter(s->base(s.base().uri()).equals(uri)).map(RepositorySource::indexLocator).findFirst().orElse(new SourceLocator(SourceUris.canonicalFile(uri.resolve("ilimodels.xml").toString())));
+            indexSources.add(new SourceId(locator.location()));
             try { var loaded=loader.load(locator,config.fetchPolicy(),token);return Optional.of(new RepositoryIndexReader().read(new IndexPayload(loaded.text()),new RepositoryBase(uri))); }
             catch(SourceLoadException failure) { unavailable.put(new SourceId(locator.location()),failure.reason());note(model,uri,REPOSITORY_UNAVAILABLE,failure.reason().name()); }
             catch(RepositoryIndexException failure) { indexFailures=true;note(model,uri,REPOSITORY_UNAVAILABLE,"INVALID_INDEX"); }
@@ -135,7 +143,7 @@ final class RepositorySearch {
             catch(SourceLoadException failure) {
                 unavailable.put(new SourceId(locator.location()),failure.reason());
                 if(failure.reason()!=SourceLoadException.Reason.NOT_FOUND)note(model,uri,SITE_UNAVAILABLE,failure.reason().name());
-            } catch(RepositoryIndexException failure) { indexFailures=true;note(model,uri,SITE_UNAVAILABLE,"INVALID_INDEX"); }
+            } catch(RepositoryIndexException failure) { note(model,uri,SITE_UNAVAILABLE,"INVALID_INDEX"); }
             return new RepositorySiteReader.Site(List.of(),List.of());
         });
     }

@@ -819,3 +819,12 @@ mit der gemeinsamen monotonen Sequenz. Andere Zustände werden abgewiesen;
 Beobachterfehler bleiben isoliert. Kein neues Ereignis-/Wireformat.
 Abnahmen: RepositoryCacheContractTest, DefaultRepositoryCacheTest,
 RunLifecycleCacheTest und bestehende Repository-/CLI-Verbrauchertests.
+
+
+P2-Nacharbeit RES-013 ändert keine öffentliche Signatur und kein Format:
+HttpSourceLoader akzeptiert 304 nur für identisch bestätigte starke ETags;
+Last-Modified bleibt kompatible Herkunftsmetadaten ohne konditionale Freigabe.
+RepositorySearch trennt intern erforderliche Indexausfälle von optionalen
+Site-Ausfällen, ohne deren Lock-/Abschlussprovenienz zu verlieren. Fachvertrag
+Kapitel 08 §13, Abnahmen RepositoryCacheRegressionTest,
+RepositoryCacheContractTest und DefaultRepositoryCacheTest.

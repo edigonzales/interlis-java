@@ -1,0 +1,322 @@
+{
+  "candidateSha": "cf585ec1ea2270bafed4083a8ebfa2e68de05133",
+  "baseSha": "fd07e194f14c8ee46debe930871a6c18fb72242d",
+  "distributionJars": {
+    "interlis-repository-0.2.0-SNAPSHOT.jar": "e8f490a5df37518a71d5db35820d36edd3821ff2e922d7f7421510e429a572f9",
+    "interlis-compiler-cli-0.2.0-SNAPSHOT.jar": "b9baaea235d4fba34d8226d9d83e09b13fffc8333a9f79a953699fa95a5f2e79"
+  },
+  "scenarios": {
+    "scenarios/weak/a.ili": "4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b",
+    "scenarios/weak/b.ili": "84e44d568a357ca02cd23db1a1f90c7cff72be0fcb383fdf3d1577880e40b8b3",
+    "scenarios/lm/a.ili": "4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b",
+    "scenarios/lm/b.ili": "812137280c2fe01868dba7bbc8244f12e842254a66bb9738b29c81bece93d534",
+    "scenarios/index.xml": "6c63784b44e5950bf74367c57140523e3edd75818e6c2ede51535fb99a4b43ad"
+  },
+  "runs": {
+    "run-weak": {
+      "directory": "run-weak",
+      "mode": "weak-window",
+      "scenario": "scenarios/weak",
+      "port": 50826,
+      "base": "http://127.0.0.1:50826/",
+      "httpLog": "run-weak/http.jsonl",
+      "requests": 10,
+      "status200": 4,
+      "status304": 6,
+      "bodyResponses": 4,
+      "modelBodies": [
+        {
+          "variant": "A",
+          "sha256": "4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b",
+          "bytes": 72
+        },
+        {
+          "variant": "B",
+          "sha256": "84e44d568a357ca02cd23db1a1f90c7cff72be0fcb383fdf3d1577880e40b8b3",
+          "bytes": 116
+        }
+      ],
+      "conditionalModelRequests": [
+        {
+          "status": 304,
+          "ifNoneMatch": "W/\"dep-logical-1\"",
+          "ifModifiedSince": null,
+          "variant": "B"
+        },
+        {
+          "status": 304,
+          "ifNoneMatch": "W/\"dep-logical-1\"",
+          "ifModifiedSince": null,
+          "variant": "B"
+        },
+        {
+          "status": 304,
+          "ifNoneMatch": "W/\"dep-logical-1\"",
+          "ifModifiedSince": null,
+          "variant": "B"
+        }
+      ],
+      "commands": [
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50826/ --cache run-weak/cache --write-lock run-weak/lock.xml --json",
+          "exitCode": 0
+        },
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50826/ --cache run-weak/cache --read-lock run-weak/lock.xml --json",
+          "exitCode": 0
+        },
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50826/ --no-cache --read-lock run-weak/lock.xml --json",
+          "exitCode": 1
+        }
+      ],
+      "files": [
+        {
+          "file": "run-weak/err1.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-weak/err2.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-weak/err3.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-weak/lock.xml",
+          "sha256": "8ae6658aeed93ecd43ee12f471371bac7c310769bb2c6cb6d017623b3258663b"
+        },
+        {
+          "file": "run-weak/out1.json",
+          "sha256": "b4e8805adba18c8078e39040b30e1a8176dd26f2407600135e2905dffc44e6b9"
+        },
+        {
+          "file": "run-weak/out2.json",
+          "sha256": "b4e8805adba18c8078e39040b30e1a8176dd26f2407600135e2905dffc44e6b9"
+        },
+        {
+          "file": "run-weak/out3.json",
+          "sha256": "bf11db4ac802a719bd716922f8abef1f95450319c3eb6ec4db1a9b19fcf77abc"
+        }
+      ]
+    },
+    "run-weak-nocache": {
+      "directory": "run-weak-nocache",
+      "mode": "weak-window",
+      "scenario": "scenarios/weak",
+      "port": 50832,
+      "base": "http://127.0.0.1:50832/",
+      "httpLog": "run-weak-nocache/http.jsonl",
+      "requests": 4,
+      "status200": 4,
+      "status304": 0,
+      "bodyResponses": 4,
+      "modelBodies": [
+        {
+          "variant": "A",
+          "sha256": "4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b",
+          "bytes": 72
+        },
+        {
+          "variant": "B",
+          "sha256": "84e44d568a357ca02cd23db1a1f90c7cff72be0fcb383fdf3d1577880e40b8b3",
+          "bytes": 116
+        }
+      ],
+      "conditionalModelRequests": [],
+      "commands": [
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50832/ --no-cache --write-lock run-weak-nocache/lock.xml --json",
+          "exitCode": 1
+        }
+      ],
+      "files": [
+        {
+          "file": "run-weak-nocache/err1.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-weak-nocache/out1.json",
+          "sha256": "99710c9da71c94f848a2f95b115311b2dc8a7c6a9dd7e15026daa6166e222057"
+        }
+      ]
+    },
+    "run-lm": {
+      "directory": "run-lm",
+      "mode": "lm-window",
+      "scenario": "scenarios/lm",
+      "port": 50835,
+      "base": "http://127.0.0.1:50835/",
+      "httpLog": "run-lm/http.jsonl",
+      "requests": 10,
+      "status200": 4,
+      "status304": 6,
+      "bodyResponses": 4,
+      "modelBodies": [
+        {
+          "variant": "A",
+          "sha256": "4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b",
+          "bytes": 72
+        },
+        {
+          "variant": "B",
+          "sha256": "812137280c2fe01868dba7bbc8244f12e842254a66bb9738b29c81bece93d534",
+          "bytes": 87
+        }
+      ],
+      "conditionalModelRequests": [
+        {
+          "status": 304,
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Sun, 01 Nov 2026 16:43:26 GMT",
+          "variant": "B"
+        },
+        {
+          "status": 304,
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Sun, 01 Nov 2026 16:43:26 GMT",
+          "variant": "B"
+        },
+        {
+          "status": 304,
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Sun, 01 Nov 2026 16:43:26 GMT",
+          "variant": "B"
+        }
+      ],
+      "commands": [
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50835/ --cache run-lm/cache --write-lock run-lm/lock.xml --json",
+          "exitCode": 0
+        },
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50835/ --cache run-lm/cache --read-lock run-lm/lock.xml --json",
+          "exitCode": 0
+        },
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50835/ --no-cache --read-lock run-lm/lock.xml --json",
+          "exitCode": 1
+        }
+      ],
+      "files": [
+        {
+          "file": "run-lm/err1.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-lm/err2.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-lm/err3.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-lm/lock.xml",
+          "sha256": "c71feaba7c6ea6e6f46d6edb29fa65feb1696fc7610618d1ee49fea90c17fed9"
+        },
+        {
+          "file": "run-lm/out1.json",
+          "sha256": "b31d6059928ce9dece381a6ad1df35724e7c2ab62f5eec0e82883feec1e00b7a"
+        },
+        {
+          "file": "run-lm/out2.json",
+          "sha256": "b31d6059928ce9dece381a6ad1df35724e7c2ab62f5eec0e82883feec1e00b7a"
+        },
+        {
+          "file": "run-lm/out3.json",
+          "sha256": "f1f31eaa7d43344a6f8a80c40243a728f77afa9edf3caf194ff1e69f160eccb1"
+        }
+      ]
+    },
+    "run-lm-nocache": {
+      "directory": "run-lm-nocache",
+      "mode": "lm-window",
+      "scenario": "scenarios/lm",
+      "port": 50842,
+      "base": "http://127.0.0.1:50842/",
+      "httpLog": "run-lm-nocache/http.jsonl",
+      "requests": 4,
+      "status200": 4,
+      "status304": 0,
+      "bodyResponses": 4,
+      "modelBodies": [
+        {
+          "variant": "A",
+          "sha256": "4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b",
+          "bytes": 72
+        },
+        {
+          "variant": "B",
+          "sha256": "812137280c2fe01868dba7bbc8244f12e842254a66bb9738b29c81bece93d534",
+          "bytes": 87
+        }
+      ],
+      "conditionalModelRequests": [],
+      "commands": [
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50842/ --no-cache --write-lock run-lm-nocache/lock.xml --json",
+          "exitCode": 1
+        }
+      ],
+      "files": [
+        {
+          "file": "run-lm-nocache/err1.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "run-lm-nocache/out1.json",
+          "sha256": "13f1b6f0b5ee9e52edf8649b84ca4370ebe76968ea035d083ebab3b5d11422a9"
+        }
+      ]
+    },
+    "smoke": {
+      "directory": "smoke",
+      "mode": "weak-window",
+      "scenario": "scenarios/weak",
+      "port": 50820,
+      "base": "http://127.0.0.1:50820/",
+      "httpLog": "smoke/http.jsonl",
+      "requests": 4,
+      "status200": 2,
+      "status304": 2,
+      "bodyResponses": 2,
+      "modelBodies": [
+        {
+          "variant": "A",
+          "sha256": "4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b",
+          "bytes": 72
+        }
+      ],
+      "conditionalModelRequests": [
+        {
+          "status": 304,
+          "ifNoneMatch": "W/\"dep-logical-1\"",
+          "ifModifiedSince": null,
+          "variant": "B"
+        }
+      ],
+      "commands": [
+        {
+          "command": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/distribution/bin/interlis-compiler check --root Dep --repository http://127.0.0.1:50820/ --cache smoke/cache --write-lock smoke/lock.xml --json",
+          "exitCode": 0
+        }
+      ],
+      "files": [
+        {
+          "file": "smoke/err1.txt",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "file": "smoke/lock.xml",
+          "sha256": "1b1d7e6a7ed07a7f7b23e270f0b048f0a8eab6ee41f0b191a66b89909a24f336"
+        },
+        {
+          "file": "smoke/out1.json",
+          "sha256": "455c6de99e9514262152f337c09fec807be9db9bf850479e7b4ed70e52f94f4b"
+        }
+      ]
+    }
+  }
+}

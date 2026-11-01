@@ -234,9 +234,9 @@ public final class RepositoryClosureService {
                         }
                         if (matching.isEmpty()) {
                             if (!legacy && search.hasIndexFailures()) reject(RepositoryProblem.Reason.INDEX_FAILURE,query.modelName());
-                            var unavailable = search.unavailable().values().stream().filter(r -> r != SourceLoadException.Reason.NOT_FOUND).findFirst();
+                            var unavailable = search.unavailableIndexes().values().stream().filter(r -> r != SourceLoadException.Reason.NOT_FOUND).findFirst();
                             if (!legacy && unavailable.isPresent()) {
-                                var missing = search.unavailable().entrySet().stream().filter(e -> e.getValue()==unavailable.orElseThrow()).findFirst().orElseThrow();
+                                var missing = search.unavailableIndexes().entrySet().stream().filter(e -> e.getValue()==unavailable.orElseThrow()).findFirst().orElseThrow();
                                 throw new Rejection(new RepositoryProblem(RepositoryProblem.Reason.LOAD_FAILURE,query.modelName(),List.of(),
                                         Optional.of(missing.getValue()),Optional.of(missing.getKey()),List.of()));
                             }

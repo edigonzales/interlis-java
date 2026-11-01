@@ -202,3 +202,11 @@ CLI-Default ~/.interlis-cache und --no-cache einführen, Offline ohne Lock im
 bestehenden Suchpfad ermöglichen. Kapitel 08 §13 / 18 und die gezielte Abnahme
 in Kapitel 13 sind verbindlich. Keine Änderung an Modellwahl oder Lockformaten;
 keine neue LSP-Remoteauflösung, automatische Bereinigung oder ili2c-Cachesharing.
+
+
+WP-26-Nacharbeit der zwei P2-Cachebefunde (RES-004/008–010/013): Nur identisch
+bestätigte starke ETags erlauben die bytegenaue 304-Wiederverwendung; schwache
+Validatoren laden vollständig. Optionale Site-Ausfälle bleiben Warnung und
+Provenienz, erforderliche Indexausfälle bleiben getrennte Fehler. Gezielte
+RED-/GREEN-Regressionsfälle und unabhängiger OpenCode/DeepSeek-1017-Review
+via direkter API schliessen diese Nacharbeit ab; keine pauschalen Vollgates.

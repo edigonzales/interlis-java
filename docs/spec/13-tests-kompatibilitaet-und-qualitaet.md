@@ -506,3 +506,16 @@ Homeinjektion, CLI-Präzedenz, Disk-Effekte und RunContext-Sequenzen.
 RunLifecycleCacheTest sichert Zustandsgrenzen und Beobachterisolation.
 Bestehende Closure-/Lock-/Such-/HTTP-/CLI-Verträge werden gezielt ergänzt;
 dieser Hostauftrag allein verlangt keine Korpus-, Benchmark- oder Browserwiederholung.
+
+
+P2-Cachekorrekturen: RepositoryCacheRegressionTest MUSS schwache ETags mit
+Kommentar-/Byteänderung und Last-Modified mit semantischer Änderung innerhalb
+einer logischen Sekunde abdecken: CHANGED_SOURCE während der Beschaffung,
+LOCK_MISMATCH/PIN_MISMATCH online, exakte alte Bytes weiterhin offline.
+304 ohne identische starke Bestätigung wird unbedingt nachgeladen. Cachetreffer
+mit starkem ETag bleiben durch RepositoryCacheContractTest abgesichert.
+Optionale fehlende/fehlerhafte Sites müssen warnen und bei fehlendem Modell
+NOT_FOUND erhalten; ein wirklich fehlender Index bleibt LOAD_FAILURE/OFFLINE.
+Die CLI-Gegenprobe prüft INPUT_UNRESOLVED und null HTTP. Vorherige FAIL-Berichte
+bleiben unverändert; nach dem Fix gezielte Rohbelege und unabhängigen
+OpenCode-/DeepSeek-Folgereview am eingefrorenen Produktinhalt ergänzen.

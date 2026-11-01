@@ -1,0 +1,11 @@
+{"event":"listening","port":50826,"mode":"weak-window","scenarioDir":"scenarios/weak"}
+{"path":"/ilimodels.xml","status":200,"ifNoneMatch":null,"ifModifiedSince":null,"bodySent":148,"variant":"index","sha256":"6c63784b44e5950bf74367c57140523e3edd75818e6c2ede51535fb99a4b43ad","etag":"\"idx-v1\"","lastModified":null,"switchedAfter":false}
+{"path":"/Dep.ili","status":200,"ifNoneMatch":null,"ifModifiedSince":null,"bodySent":72,"variant":"A","sha256":"4579d2317136de116ddc45cb7ca4d2e1b7b37c5efdee29e1b240ca6b17d5c04b","etag":"W/\"dep-logical-1\"","lastModified":null,"switchedAfter":true}
+{"path":"/ilimodels.xml","status":304,"ifNoneMatch":"\"idx-v1\"","ifModifiedSince":null,"bodySent":0,"variant":"index","sha256":null,"etag":"\"idx-v1\"","lastModified":null,"switchedAfter":true}
+{"path":"/Dep.ili","status":304,"ifNoneMatch":"W/\"dep-logical-1\"","ifModifiedSince":null,"bodySent":0,"variant":"B","sha256":null,"etag":"W/\"dep-logical-1\"","lastModified":null,"switchedAfter":true}
+{"path":"/ilimodels.xml","status":304,"ifNoneMatch":"\"idx-v1\"","ifModifiedSince":null,"bodySent":0,"variant":"index","sha256":null,"etag":"\"idx-v1\"","lastModified":null,"switchedAfter":true}
+{"path":"/Dep.ili","status":304,"ifNoneMatch":"W/\"dep-logical-1\"","ifModifiedSince":null,"bodySent":0,"variant":"B","sha256":null,"etag":"W/\"dep-logical-1\"","lastModified":null,"switchedAfter":true}
+{"path":"/ilimodels.xml","status":304,"ifNoneMatch":"\"idx-v1\"","ifModifiedSince":null,"bodySent":0,"variant":"index","sha256":null,"etag":"\"idx-v1\"","lastModified":null,"switchedAfter":true}
+{"path":"/Dep.ili","status":304,"ifNoneMatch":"W/\"dep-logical-1\"","ifModifiedSince":null,"bodySent":0,"variant":"B","sha256":null,"etag":"W/\"dep-logical-1\"","lastModified":null,"switchedAfter":true}
+{"path":"/ilimodels.xml","status":200,"ifNoneMatch":null,"ifModifiedSince":null,"bodySent":148,"variant":"index","sha256":"6c63784b44e5950bf74367c57140523e3edd75818e6c2ede51535fb99a4b43ad","etag":"\"idx-v1\"","lastModified":null,"switchedAfter":true}
+{"path":"/Dep.ili","status":200,"ifNoneMatch":null,"ifModifiedSince":null,"bodySent":116,"variant":"B","sha256":"84e44d568a357ca02cd23db1a1f90c7cff72be0fcb383fdf3d1577880e40b8b3","etag":"W/\"dep-logical-1\"","lastModified":null,"switchedAfter":true}

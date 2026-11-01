@@ -151,8 +151,10 @@ Es wurden keine Releases veröffentlicht und keine Produktionsmigrationen ausgef
 
 
 Repositorydownloads werden standardmässig unter `~/.interlis-cache` gespeichert.
-Online prüft jeder Beschaffungslauf die Aktualität (ETag/Last-Modified); ohne
-Validatoren ist ein erneuter Download nötig. `--cache DIR` ändert den Pfad,
+Online prüft jeder Beschaffungslauf die Aktualität. Nur ein in der 304-Antwort
+identisch bestätigter starker ETag erlaubt die Wiederverwendung vorhandener
+Bytes. Bei schwachen ETags, Last-Modified allein oder fehlenden Validatoren
+wird erneut vollständig geladen, um exakte Pins und Locks zu prüfen. `--cache DIR` ändert den Pfad,
 `--no-cache` deaktiviert persistente Zugriffe. `--offline` verwendet den letzten
 vollständig vorhandenen lokalen Repositorystand auch ohne Lockfile. Für exakt
 festgelegte Abhängigkeiten `--write-lock projekt.lock` und später

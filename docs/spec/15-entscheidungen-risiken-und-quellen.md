@@ -205,3 +205,12 @@ exakt; kein stiller Rückfall bei Netzfehlern. Ohne Validatoren bleibt eine voll
 Übertragung notwendig. Alte Inhalte werden für Lockreplay nicht automatisch
 entfernt; unbegrenztes Wachstum bleibt eine bewusst spätere Wartungsfunktion.
 Dies ist eine neue Produktentscheidung, keine Behauptung identischen ili2c-Verhaltens.
+
+
+P2-Nacharbeit Standardcache: Die ursprüngliche Last-Modified-Fallbackregel aus
+dem Plan genügt dem bytegenauen Quellenvertrag nicht. Ein 304 darf daher nur
+bei identisch bestätigtem starkem ETag Cachebytes freigeben. Schwache ETags und
+Last-Modified allein bewirken volle Übertragung; zusätzliche Bandbreite wird
+zugunsten gleicher Ergebnisse bei frischer und wiederverwendender Beschaffung
+akzeptiert. Kein neues Lockformat und keine Abschwächung der Pin-/Quellenprüfung.
+Die frühere Entscheidung und FAIL-Rohbelege behalten ihren historischen Stand.

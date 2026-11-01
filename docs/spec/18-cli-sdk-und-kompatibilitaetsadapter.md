@@ -447,5 +447,7 @@ interlis-compiler check Projekt.ili --repository https://models.example.org/ --n
 Ein Offlineaufruf mit leerem oder unvollständigem Cache scheitert mit konkreter
 Quelle und Ursache OFFLINE. Ohne Validatoren kann ein Server trotz vorhandener
 Cachebytes volle Übertragung benötigen. Ein Lockfile friert keine ungepinnten
-lokalen Projekttexte ein. Unveränderte Inhalte bleiben bei 304 lokal; spätere
+lokalen Projekttexte ein. Unveränderte Inhalte bleiben bei 304 nur mit identisch
+bestätigtem starkem ETag lokal. Schwache ETags oder Last-Modified allein erfordern
+für die bytegenauen Prüfungen volle Downloads (Kapitel 08 §13); spätere
 Inhalte derselben URL verdrängen die für ältere Locks gespeicherten Bytes nicht.

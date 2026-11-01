@@ -1,0 +1,161 @@
+{
+  "sha256": {
+    "A": "c9d7a67a9b8fad53411634b070a446dae5a2803b72d6953b10c7dd44de6d5a19",
+    "B": "95f5183d6497968beea34988f53693eb91399b3ef0256ec1e482bbb783fa1532",
+    "basis": "c223fc4a16e38a25161c324e6efb3b57f024c5402d52ebbe743b7c5cae6ebc7e",
+    "indexDep": "53296ca7e3c4d2613df341c0cbdf599d69edc7fc443589785e8daa8c519e0329",
+    "indexBasis": "d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467"
+  },
+  "serverTotals": {
+    "requests": 39,
+    "bodies": 19
+  },
+  "summary": {
+    "optionalSite": {
+      "warm": {
+        "exitCode": 0,
+        "status": "ok",
+        "codes": [],
+        "http": {
+          "requests": 4,
+          "bodies": 2
+        }
+      },
+      "offline": {
+        "exitCode": 1,
+        "status": "resolution rejected",
+        "codes": [
+          "ILI-RES-0008",
+          "ILI-RES-0001"
+        ],
+        "http": {
+          "requests": 0,
+          "bodies": 0
+        }
+      },
+      "required": {
+        "exitCode": 1,
+        "status": "resolution rejected",
+        "codes": [
+          "ILI-RES-0008",
+          "ILI-RES-0008",
+          "ILI-RES-0003"
+        ],
+        "http": {
+          "requests": 0,
+          "bodies": 0
+        }
+      }
+    },
+    "weakChange": {
+      "run": {
+        "exitCode": 1,
+        "status": "resolution rejected",
+        "codes": [
+          "ILI-RES-0009"
+        ],
+        "http": {
+          "requests": 4,
+          "bodies": 3
+        }
+      },
+      "lockExists": false
+    },
+    "weakLock": {
+      "first": {
+        "exitCode": 0,
+        "status": "ok",
+        "codes": [],
+        "http": {
+          "requests": 4,
+          "bodies": 3
+        }
+      },
+      "mismatch": {
+        "exitCode": 1,
+        "status": "resolution rejected",
+        "codes": [
+          "ILI-RES-0009"
+        ],
+        "http": {
+          "requests": 2,
+          "bodies": 1
+        }
+      },
+      "pinMismatch": {
+        "exitCode": 1,
+        "status": "resolution rejected",
+        "codes": [
+          "ILI-RES-0009"
+        ],
+        "http": {
+          "requests": 2,
+          "bodies": 1
+        }
+      },
+      "offline": {
+        "exitCode": 0,
+        "status": "ok",
+        "codes": [],
+        "http": {
+          "requests": 0,
+          "bodies": 0
+        }
+      },
+      "networkDeltaOffline": 0,
+      "lockExists": true
+    },
+    "lmChange": {
+      "run": {
+        "exitCode": 1,
+        "status": "resolution rejected",
+        "codes": [
+          "ILI-RES-0009"
+        ],
+        "http": {
+          "requests": 4,
+          "bodies": 3
+        }
+      },
+      "lockExists": false
+    },
+    "strong": {
+      "first": {
+        "exitCode": 0,
+        "status": "ok",
+        "codes": [],
+        "http": {
+          "requests": 4,
+          "bodies": 2
+        }
+      },
+      "hit": {
+        "exitCode": 0,
+        "status": "ok",
+        "codes": [],
+        "http": {
+          "requests": 4,
+          "bodies": 0
+        }
+      },
+      "mismatch304": {
+        "exitCode": 0,
+        "status": "ok",
+        "codes": [],
+        "http": {
+          "requests": 6,
+          "bodies": 2
+        }
+      },
+      "transition": {
+        "exitCode": 0,
+        "status": "ok",
+        "codes": [],
+        "http": {
+          "requests": 5,
+          "bodies": 2
+        }
+      }
+    }
+  }
+}

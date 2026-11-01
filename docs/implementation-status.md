@@ -1,5 +1,31 @@
 # Implementierungsstatus interlis-java
 
+P2-Cachekorrektur vom 01.11.2026 (WP-26, RES-004/008–010/013): Beide Befunde
+implementiert; sieben neue Regressionstests vor Korrektur RED, danach gezielt
+68 Tests in zehn Suites ohne Fehler/Skips GREEN. Starke identisch bestätigte
+ETags für bytegenaue 304-Wiederverwendung; optionale Site-Ausfälle bleiben
+Warnung/Provenienz und werden nicht als erforderlicher Index klassifiziert.
+Unabhängige OpenCode-2.0.28-/DeepSeek-1017-Nachprüfung via direkter API **PASS**
+auf isoliertem Snapshot `4040da3c8f7fb359ba340dbff4a2985c4add2025`: alle fünf
+Kriterien erfüllt, beide P2-Befunde behoben, keine neuen Findings. ProzessExit 0,
+Guard passed/Exit 0, sauberer Reviewworktree. Produkt/Testinhalt unverändert
+zum geprüften Manifest; nur Abschlussnachweise/Status nachgetragen. Keine offenen
+Pflichtprüfungen oder Blocker dieses Auftrags. Commit und Push anschliessend auf
+ausdrücklichen Nutzerauftrag; kein Release.
+[Umsetzung und Rohbelege](implementation/repository-cache/fixes/REPORT.md).
+
+
+Unabhängiger Cache-Folgereview vom 01.11.2026 auf
+`cf585ec1ea2270bafed4083a8ebfa2e68de05133`: **OpenCode/DeepSeek 1017 FAIL**.
+Zwei reproduzierte P2-Befunde: schwache HTTP-Validatoren können bytegenaue
+Lock-/Abschlussprüfungen umgehen; ein fehlendes optionales ilisite.xml wird
+bei erfolgloser Offlineauflösung als erforderliche Quelle fehlklassifiziert.
+Vorhandene Rohbelege unabhängig auditiert und eigene gezielte Gegenproben
+ausgeführt; beide Reviewerprozesse Exit 0/Guard passed, fachliches Urteil FAIL.
+Produkt unverändert, keine Korrektur/Commit/Push in diesem Reviewauftrag.
+[Unveränderte Reviewerberichte, Reproduktionen und nächster Schritt](implementation/repository-cache/reviews/cf585ec/REVIEW.md).
+
+
 Abgeschlossener Cache-Folgeauftrag vom 01.11.2026 (WP-26): RES-013 und
 RES-001/004/007–011. Standard ~/.interlis-cache, URL-/HTTP-Metadaten,
 ETag/Last-Modified-Revalidierung, --no-cache, Offline ohne Lock mit explizitem

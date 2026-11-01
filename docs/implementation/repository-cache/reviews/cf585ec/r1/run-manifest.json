@@ -1,0 +1,30 @@
+{
+  "candidateSha": "cf585ec1ea2270bafed4083a8ebfa2e68de05133",
+  "verdict": "FAIL",
+  "sessionId": "ses_e680e980bffefzeu8HyV4e4y5B",
+  "sessionModels": [
+    {
+      "id": "deepseek-flash",
+      "providerID": "deepseek",
+      "variant": "default"
+    }
+  ],
+  "processExit": 0,
+  "guardStatus": "passed",
+  "reviewWorktreeStatus": "",
+  "reviewWorktreeHead": "cf585ec1ea2270bafed4083a8ebfa2e68de05133",
+  "rawTranscript": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/opencode.jsonl",
+  "sessionExport": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/session-sanitized.json",
+  "copiedFilesSha256": {
+    "counterprobes/final-probes/results.json": "5daaa33506d9a49240687d2d5c7cfd9775eb53e507f989f97336b29292ab1a43",
+    "counterprobes/final-probes/run.cjs": "0c199261281f575690d0839f2d2be64d4f090890d27a0b63c05741ad47bdd28b",
+    "counterprobes/optional-site/results.json": "c18f2774f13e5815de8d6d62175ea7666e6d38658b76e3023324dd6a1cfc5153",
+    "counterprobes/optional-site/run.cjs": "e10d5dace672508fc87d5b7d01d086d940b737229ffa9b516dc0fb42edb77527",
+    "guard.json": "494e088f7f470dbfe3f3189aec2dad10d6be5b9eed7263ebd0b1119881276e5f",
+    "process-result.json": "5f61fdd6d3f3aebadae386af936bdfc88a830813860c7922daaa7d8137472416",
+    "provider.json": "9ce688e778d8f57badcc0e29434050c4779a06fc3b2ac33588de9117aea225cd",
+    "request.json": "434e1d55d1a1a63a134f478de4d9410370535b2ee94cf43cc0f55b58e39b6073",
+    "review.md": "cde9b5cd3332adc1dc1e4b9eedcf63b8fb6672f0e00df3d0607b37262c45454a",
+    "verdict.json": "fa6e4b81021e5cdfff66e3b394cafccc9956a2520842f5501e4fa6464d1ebe28"
+  }
+}

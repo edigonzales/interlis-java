@@ -1,0 +1,65 @@
+{
+  "repository": "http://127.0.0.1:50615/repo/",
+  "cacheMetadataFiles": [
+    "228d65449611a17ad2bd00cef37f3b36a2687af8dda5504034e6f47c0e07aab6.xml",
+    "5f20a122907322fede39d2d230f3e4d6f5281a36d1acc7a1106a2c0567f01761.xml"
+  ],
+  "hasIndexMetadata": true,
+  "hasSiteMetadata": false,
+  "cases": [
+    {
+      "name": "warm-cache-online",
+      "args": [
+        "check",
+        "UsesBasis.ili",
+        "--repository",
+        "http://127.0.0.1:50615/repo/"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": "",
+      "http": {
+        "requests": 4,
+        "bodies": 4
+      }
+    },
+    {
+      "name": "offline-missing-model",
+      "args": [
+        "check",
+        "Missing.ili",
+        "--repository",
+        "http://127.0.0.1:50615/repo/",
+        "--offline"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "WARNING [ILI-RES-0008] Repository 'http://127.0.0.1:50615/repo/', model 'Absent': repository links unavailable; continuing search.\nfile:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/optional-site/work/Missing.ili:1:83: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50615/repo/ilisite.xml' could not be provided: verified content is unavailable offline.\n",
+      "http": {
+        "requests": 0,
+        "bodies": 0
+      }
+    },
+    {
+      "name": "online-missing-model",
+      "args": [
+        "check",
+        "Missing.ili",
+        "--repository",
+        "http://127.0.0.1:50615/repo/"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/optional-site/work/Missing.ili:1:83: ERROR [ILI-RES-0001] The requested or imported model 'Absent' could not be found.\n",
+      "http": {
+        "requests": 2,
+        "bodies": 1
+      }
+    }
+  ],
+  "interpretation": {
+    "expectedOffline": "Optional ilisite.xml may be absent with a visible warning; the missing model should be reported as NOT_FOUND (ILI-RES-0001), as online does.",
+    "observedOffline": "The optional ilisite.xml absence is promoted to the required-source failure ILI-RES-0003 and names ilisite.xml.",
+    "observedOnline": "The same repository and the same missing model report ILI-RES-0001, because the site 404 is ignored."
+  }
+}

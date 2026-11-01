@@ -1,0 +1,1231 @@
+{
+  "candidateSha": "cf585ec1ea2270bafed4083a8ebfa2e68de05133",
+  "distributionJars": [
+    {
+      "name": "antlr4-runtime-4.13.2.jar",
+      "sha256": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7"
+    },
+    {
+      "name": "interlis-compiler-0.2.0-SNAPSHOT.jar",
+      "sha256": "86460db600ab375a07bccd2c1996d7dbe21942e6ac0ddbffd57707ab1dec2c4c"
+    },
+    {
+      "name": "interlis-compiler-cli-0.2.0-SNAPSHOT.jar",
+      "sha256": "b9baaea235d4fba34d8226d9d83e09b13fffc8333a9f79a953699fa95a5f2e79"
+    },
+    {
+      "name": "interlis-model-0.2.0-SNAPSHOT.jar",
+      "sha256": "c28c22fc522b2411032a35fee5e6c2b59ff435332fc52d7634aaa6f44b8d3848"
+    },
+    {
+      "name": "interlis-projection-0.2.0-SNAPSHOT.jar",
+      "sha256": "46fc3a6ad1e35c19e1999c5df09251915fd6631e9c09f19bda9e2ac65b0ade41"
+    },
+    {
+      "name": "interlis-repository-0.2.0-SNAPSHOT.jar",
+      "sha256": "e8f490a5df37518a71d5db35820d36edd3821ff2e922d7f7421510e429a572f9"
+    },
+    {
+      "name": "interlis-workspace-0.2.0-SNAPSHOT.jar",
+      "sha256": "e9efee37214c38e1292fd26d3f802c2ada1e25bf0abdb7a77b015ef8724085ad"
+    }
+  ],
+  "checks": [
+    {
+      "name": "basic-first exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "basic-first two bodies",
+      "passed": true,
+      "detail": "{\"requests\":4,\"bodies\":2}"
+    },
+    {
+      "name": "default cache metadata created",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic"
+    },
+    {
+      "name": "basic-second exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "basic-second no new body",
+      "passed": true,
+      "detail": "{\"requests\":4,\"bodies\":0}"
+    },
+    {
+      "name": "basic-second sent If-None-Match everywhere",
+      "passed": true,
+      "detail": "[{\"path\":\"/basic/ilimodels.xml\",\"ifNoneMatch\":\"\\\"basic-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/basic/Basis.ili\",\"ifNoneMatch\":\"\\\"basic-v1\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-v1\\\"\",\"lastModified\":null},{\"path\":\"/basic/ilimodels.xml\",\"ifNoneMatch\":\"\\\"basic-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/basic/Basis.ili\",\"ifNoneMatch\":\"\\\"basic-v1\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-v1\\\"\",\"lastModified\":null}]"
+    },
+    {
+      "name": "basic-second never sent If-Modified-Since",
+      "passed": true,
+      "detail": "[{\"path\":\"/basic/ilimodels.xml\",\"ifNoneMatch\":\"\\\"basic-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/basic/Basis.ili\",\"ifNoneMatch\":\"\\\"basic-v1\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-v1\\\"\",\"lastModified\":null},{\"path\":\"/basic/ilimodels.xml\",\"ifNoneMatch\":\"\\\"basic-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/basic/Basis.ili\",\"ifNoneMatch\":\"\\\"basic-v1\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"basic-v1\\\"\",\"lastModified\":null}]"
+    },
+    {
+      "name": "offline without lock exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "offline without lock zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "offline with lock exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "offline with lock zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "no-cache online exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no-cache online downloaded four bodies",
+      "passed": true,
+      "detail": "{\"requests\":4,\"bodies\":4}"
+    },
+    {
+      "name": "no-cache home absent",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-nocache"
+    },
+    {
+      "name": "no-cache offline exit 1",
+      "passed": true,
+      "detail": "WARNING [ILI-RES-0008] Repository 'http://127.0.0.1:50521/basic/', model 'Basis': model index unavailable; continuing search.\nWARNING [ILI-RES-0008] Repository 'http://127.0.0.1:50521/basic/', model 'Basis': repository links unavailable; continuing search.\nfile:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/Projekt.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/basic/ilimodels.xml' could not be provided: verified content is unavailable offline.\n"
+    },
+    {
+      "name": "no-cache offline zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "explain exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "explain mentions injected home cache",
+      "passed": true,
+      "detail": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--cache\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-explain/.interlis-cache\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n"
+    },
+    {
+      "name": "explain creates no home",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-explain"
+    },
+    {
+      "name": "custom cache exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "custom cache directory used",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/custom-cache"
+    },
+    {
+      "name": "custom home absent",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-custom"
+    },
+    {
+      "name": "both-first exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "both-second exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "both-second no new body",
+      "passed": true,
+      "detail": "{\"requests\":4,\"bodies\":0}"
+    },
+    {
+      "name": "both-second sent If-None-Match",
+      "passed": true,
+      "detail": "[{\"path\":\"/both/ilimodels.xml\",\"ifNoneMatch\":\"\\\"both-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/both/Both.ili\",\"ifNoneMatch\":\"\\\"both-model\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-model\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/both/ilimodels.xml\",\"ifNoneMatch\":\"\\\"both-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/both/Both.ili\",\"ifNoneMatch\":\"\\\"both-model\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-model\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"}]"
+    },
+    {
+      "name": "both-second did not send If-Modified-Since",
+      "passed": true,
+      "detail": "[{\"path\":\"/both/ilimodels.xml\",\"ifNoneMatch\":\"\\\"both-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/both/Both.ili\",\"ifNoneMatch\":\"\\\"both-model\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-model\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/both/ilimodels.xml\",\"ifNoneMatch\":\"\\\"both-index\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-index\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/both/Both.ili\",\"ifNoneMatch\":\"\\\"both-model\\\"\",\"ifModifiedSince\":null,\"etag\":\"\\\"both-model\\\"\",\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"}]"
+    },
+    {
+      "name": "modified-first exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "modified-second exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "modified-second no new body",
+      "passed": true,
+      "detail": "{\"requests\":4,\"bodies\":0}"
+    },
+    {
+      "name": "modified-second sent If-Modified-Since",
+      "passed": true,
+      "detail": "[{\"path\":\"/modified/ilimodels.xml\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/modified/Modified.ili\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/modified/ilimodels.xml\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/modified/Modified.ili\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"}]"
+    },
+    {
+      "name": "modified-second did not send If-None-Match",
+      "passed": true,
+      "detail": "[{\"path\":\"/modified/ilimodels.xml\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/modified/Modified.ili\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/modified/ilimodels.xml\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"},{\"path\":\"/modified/Modified.ili\",\"ifNoneMatch\":null,\"ifModifiedSince\":\"Wed, 21 Oct 2015 07:28:00 GMT\",\"etag\":null,\"lastModified\":\"Wed, 21 Oct 2015 07:28:00 GMT\"}]"
+    },
+    {
+      "name": "no-store first exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "no-store model metadata absent",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-nostore/.interlis-cache/metadata-v1/de8222935611515fa206aca0a6df6c38fa2ed980143637f4c36165df0cbff998.xml"
+    },
+    {
+      "name": "no-store model content absent",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-nostore/.interlis-cache/a7ebf8175f5bc1731100939794e776d7cdb5bc05cb7ffe168bd86b13a30b5fa9"
+    },
+    {
+      "name": "no-store offline exit 1",
+      "passed": true,
+      "detail": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/NoStoreProject.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/nostore/NoStore.ili' could not be provided: verified content is unavailable offline.\n"
+    },
+    {
+      "name": "no-store offline zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "no-store offline names source and OFFLINE",
+      "passed": true,
+      "detail": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/NoStoreProject.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/nostore/NoStore.ili' could not be provided: verified content is unavailable offline.\n"
+    },
+    {
+      "name": "vary first exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "vary model metadata absent",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-vary/.interlis-cache/metadata-v1/35984b586e3f21d98b16da2871bfaaacda07366023b3aef2cd3bcb1e74b6d2f7.xml"
+    },
+    {
+      "name": "vary model content absent",
+      "passed": true,
+      "detail": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-vary/.interlis-cache/c7d8bb0a9e58e83458eb434c3c5279e6d54b76c86bf890c075ebdb55e7ae2b7c"
+    },
+    {
+      "name": "vary offline exit 1",
+      "passed": true,
+      "detail": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/VaryProject.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/vary/VaryModel.ili' could not be provided: verified content is unavailable offline.\n"
+    },
+    {
+      "name": "vary offline zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "malicious metadata offline exit 1",
+      "passed": true,
+      "detail": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/Projekt.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/basic/Basis.ili' could not be provided: verified content is unavailable offline.\n"
+    },
+    {
+      "name": "malicious metadata never fetched external DTD",
+      "passed": true,
+      "detail": "0"
+    },
+    {
+      "name": "malicious metadata zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "restored metadata offline exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "lock-first exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "lock-online after change exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "new URL content was downloaded",
+      "passed": true,
+      "detail": "{\"requests\":4,\"bodies\":1}"
+    },
+    {
+      "name": "lock offline old bytes exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "lock offline old bytes zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "lock online old bytes exit 1",
+      "passed": true,
+      "detail": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/Projekt.ili:1:76: ERROR [ILI-RES-0009] Model 'Basis' could not be provided: source or selection does not match the lock.\n"
+    },
+    {
+      "name": "lock online old bytes reports LOCK_MISMATCH",
+      "passed": true,
+      "detail": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/Projekt.ili:1:76: ERROR [ILI-RES-0009] Model 'Basis' could not be provided: source or selection does not match the lock.\n"
+    },
+    {
+      "name": "cache conflict exit 2",
+      "passed": true,
+      "detail": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\n--cache and --no-cache are mutually exclusive\n"
+    },
+    {
+      "name": "cache conflict zero HTTP",
+      "passed": true,
+      "detail": "{\"requests\":0,\"bodies\":0}"
+    },
+    {
+      "name": "config no-cache explain exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "config no-cache omits cache setting",
+      "passed": true,
+      "detail": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--no-cache\":{\"origin\":\"CONFIGURATION_FILE\",\"values\":[\"true\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n"
+    },
+    {
+      "name": "cache override explain exit 0",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "cache override shows chosen path",
+      "passed": true,
+      "detail": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--cache\":{\"origin\":\"CLI\",\"values\":[\"/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/chosen\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n"
+    },
+    {
+      "name": "cache override omits no-cache",
+      "passed": true,
+      "detail": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--cache\":{\"origin\":\"CLI\",\"values\":[\"/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/chosen\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n"
+    }
+  ],
+  "failures": [],
+  "results": [
+    {
+      "name": "basic-first-download-lock",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--write-lock",
+        "basic.lock"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 2
+      },
+      "requestLog": [
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        },
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v1\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "basic-second-online-304",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 0
+      },
+      "requestLog": [
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v1\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        },
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v1\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "basic-offline-without-lock",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--offline"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "basic-offline-with-lock",
+      "args": [
+        "compile",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--read-lock",
+        "basic.lock",
+        "--offline"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "nocache-online",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--no-cache"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-nocache",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 4
+      },
+      "requestLog": [
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        },
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "nocache-offline",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--offline",
+        "--no-cache"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-nocache",
+      "exit": 1,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "WARNING [ILI-RES-0008] Repository 'http://127.0.0.1:50521/basic/', model 'Basis': model index unavailable; continuing search.\nWARNING [ILI-RES-0008] Repository 'http://127.0.0.1:50521/basic/', model 'Basis': repository links unavailable; continuing search.\nfile:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/Projekt.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/basic/ilimodels.xml' could not be provided: verified content is unavailable offline.\n",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "explain-default-fresh-home",
+      "args": [
+        "check",
+        "--explain-config"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-explain",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--cache\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-explain/.interlis-cache\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "custom-cache-relative",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--cache",
+        "custom-cache"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-custom",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 2
+      },
+      "requestLog": [
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        },
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v1\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "both-first",
+      "args": [
+        "check",
+        "BothProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/both/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-both",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 2
+      },
+      "requestLog": [
+        {
+          "path": "/both/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"both-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/both/Both.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"both-model\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/both/ilimodels.xml",
+          "ifNoneMatch": "\"both-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"both-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/both/Both.ili",
+          "ifNoneMatch": "\"both-model\"",
+          "ifModifiedSince": null,
+          "etag": "\"both-model\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        }
+      ]
+    },
+    {
+      "name": "both-second",
+      "args": [
+        "check",
+        "BothProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/both/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-both",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 0
+      },
+      "requestLog": [
+        {
+          "path": "/both/ilimodels.xml",
+          "ifNoneMatch": "\"both-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"both-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/both/Both.ili",
+          "ifNoneMatch": "\"both-model\"",
+          "ifModifiedSince": null,
+          "etag": "\"both-model\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/both/ilimodels.xml",
+          "ifNoneMatch": "\"both-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"both-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/both/Both.ili",
+          "ifNoneMatch": "\"both-model\"",
+          "ifModifiedSince": null,
+          "etag": "\"both-model\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        }
+      ]
+    },
+    {
+      "name": "modified-first",
+      "args": [
+        "check",
+        "ModifiedProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/modified/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-modified",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 2
+      },
+      "requestLog": [
+        {
+          "path": "/modified/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/modified/Modified.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/modified/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/modified/Modified.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        }
+      ]
+    },
+    {
+      "name": "modified-second",
+      "args": [
+        "check",
+        "ModifiedProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/modified/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-modified",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 0
+      },
+      "requestLog": [
+        {
+          "path": "/modified/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/modified/Modified.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/modified/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/modified/Modified.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": "Wed, 21 Oct 2015 07:28:00 GMT",
+          "etag": null,
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        }
+      ]
+    },
+    {
+      "name": "nostore-first",
+      "args": [
+        "check",
+        "NoStoreProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/nostore/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-nostore",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 3
+      },
+      "requestLog": [
+        {
+          "path": "/nostore/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"nostore-index\"",
+          "lastModified": null
+        },
+        {
+          "path": "/nostore/NoStore.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"nostore-model\"",
+          "lastModified": null
+        },
+        {
+          "path": "/nostore/ilimodels.xml",
+          "ifNoneMatch": "\"nostore-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"nostore-index\"",
+          "lastModified": null
+        },
+        {
+          "path": "/nostore/NoStore.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"nostore-model\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "nostore-offline",
+      "args": [
+        "check",
+        "NoStoreProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/nostore/",
+        "--offline"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-nostore",
+      "exit": 1,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/NoStoreProject.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/nostore/NoStore.ili' could not be provided: verified content is unavailable offline.\n",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "vary-first",
+      "args": [
+        "check",
+        "VaryProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/vary/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-vary",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 3
+      },
+      "requestLog": [
+        {
+          "path": "/vary/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"vary-index\"",
+          "lastModified": null
+        },
+        {
+          "path": "/vary/VaryModel.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"vary-model\"",
+          "lastModified": null
+        },
+        {
+          "path": "/vary/ilimodels.xml",
+          "ifNoneMatch": "\"vary-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"vary-index\"",
+          "lastModified": null
+        },
+        {
+          "path": "/vary/VaryModel.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"vary-model\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "vary-offline",
+      "args": [
+        "check",
+        "VaryProject.ili",
+        "--repository",
+        "http://127.0.0.1:50521/vary/",
+        "--offline"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-vary",
+      "exit": 1,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/VaryProject.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/vary/VaryModel.ili' could not be provided: verified content is unavailable offline.\n",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "basic-offline-malicious-metadata",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--offline"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic",
+      "exit": 1,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/Projekt.ili:1:76: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:50521/basic/Basis.ili' could not be provided: verified content is unavailable offline.\n",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "basic-offline-restored-metadata",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--offline"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "lock-first",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--write-lock",
+        "precedence.lock"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-lock",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 2
+      },
+      "requestLog": [
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": null,
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        },
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v1\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v1\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "lock-online-after-url-change",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-lock",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 4,
+        "bodies": 1
+      },
+      "requestLog": [
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v1\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v2\"",
+          "lastModified": null
+        },
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v2\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v2\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "lock-offline-old-bytes",
+      "args": [
+        "compile",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--read-lock",
+        "precedence.lock",
+        "--offline"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-lock",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "lock-online-old-bytes",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--read-lock",
+        "precedence.lock"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-lock",
+      "exit": 1,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "file:///Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/Projekt.ili:1:76: ERROR [ILI-RES-0009] Model 'Basis' could not be provided: source or selection does not match the lock.\n",
+      "httpDelta": {
+        "requests": 2,
+        "bodies": 0
+      },
+      "requestLog": [
+        {
+          "path": "/basic/ilimodels.xml",
+          "ifNoneMatch": "\"basic-index\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-index\"",
+          "lastModified": "Wed, 21 Oct 2015 07:28:00 GMT"
+        },
+        {
+          "path": "/basic/Basis.ili",
+          "ifNoneMatch": "\"basic-v2\"",
+          "ifModifiedSince": null,
+          "etag": "\"basic-v2\"",
+          "lastModified": null
+        }
+      ]
+    },
+    {
+      "name": "cache-conflict",
+      "args": [
+        "check",
+        "Projekt.ili",
+        "--repository",
+        "http://127.0.0.1:50521/basic/",
+        "--cache",
+        "x",
+        "--no-cache"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-basic",
+      "exit": 2,
+      "signal": null,
+      "error": null,
+      "stdout": "",
+      "stderr": "usage: interlis-compiler <version|capabilities|check|compile|analyze|diagram|format> [options] [files]\ncheck/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]\n               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]\nText diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]\nExample: interlis-compiler check <File.ili>\n--cache and --no-cache are mutually exclusive\n",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "config-nocache-explain",
+      "args": [
+        "check",
+        "--config",
+        "settings.properties",
+        "--explain-config"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-config",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--no-cache\":{\"origin\":\"CONFIGURATION_FILE\",\"values\":[\"true\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    },
+    {
+      "name": "config-nocache-overridden-by-cache",
+      "args": [
+        "check",
+        "--config",
+        "settings.properties",
+        "--cache",
+        "chosen",
+        "--explain-config"
+      ],
+      "home": "/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/home-config",
+      "exit": 0,
+      "signal": null,
+      "error": null,
+      "stdout": "{\"profile\":\"cli-standard/v1\",\"settings\":{\"--cache\":{\"origin\":\"CLI\",\"values\":[\"/Users/stefan/sources/interlis-java/build/review/repository-cache/r1/worktree/build/reviewer/counterprobes/final-probes/work/chosen\"]},\"--offline\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"false\"]},\"--warnings\":{\"origin\":\"PROFILE_DEFAULT\",\"values\":[\"allow\"]}}}\n",
+      "stderr": "",
+      "httpDelta": {
+        "requests": 0,
+        "bodies": 0
+      },
+      "requestLog": []
+    }
+  ]
+}
