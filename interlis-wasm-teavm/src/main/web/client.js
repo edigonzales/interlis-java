@@ -8,6 +8,7 @@ const drafts=new Map([['memory:/browser.ili',source.value]]);
 let activeSource='memory:/browser.ili',session=null,snapshot=null,schema=null,view=null,generation=0,sequence=Promise.resolve(),activeRequest=null;
 const diagramCanvas=new DiagramCanvas(canvas,{navigate:id=>navigate(id),singleClickNavigation:true,status:(_status,message)=>{document.getElementById('diagram-status').textContent=message;}},new URL('./diagram-layout-worker.js',import.meta.url));
 const focusPicker=document.getElementById('diagram-focus'),scopePicker=document.getElementById('diagram-scope'),depthPicker=document.getElementById('diagram-depth'),languagePicker=document.getElementById('diagram-language');
+const associationPicker=document.getElementById('diagram-associations');
 
 const client=new CompilerClient({onRestored:pairs=>{
   const pair=pairs.find(p=>p.previous===session);session=pair?.current??null;invalidate(false);
@@ -67,7 +68,7 @@ function refreshDiagramOptions(document){
   if([...languagePicker.options].some(o=>o.value===previousLanguage))languagePicker.value=previousLanguage;
 }
 function selectedDiagramRequest(){
-  const options={schemaVersion:'1.0',scope:scopePicker.value};
+  const options={schemaVersion:'1.0',scope:scopePicker.value,associationPresentation:associationPicker.value};
   if(scopePicker.value==='NEIGHBOURHOOD')options.neighbourhoodDepth=Number(depthPicker.value);
   if(languagePicker.value){options.labelPolicy='TRANSLATED';options.translationModel={snapshot:snapshot,symbol:languagePicker.value};}
   return {...(schema?{schemaId:schema}:{snapshotId:snapshot}),...(focusPicker.value?{selection:[{snapshot:snapshot,symbol:focusPicker.value}]}:{}),options};
@@ -89,10 +90,11 @@ async function diagram(){
     refreshDiagramOptions(document);return drawCurrent();
   });
 }
-for(const control of [focusPicker,scopePicker,depthPicker,languagePicker])control.addEventListener('change',()=>{
-  generation++;canvas.dataset.stale='true';
+for(const control of [focusPicker,scopePicker,depthPicker,languagePicker,associationPicker])control.addEventListener('change',()=>{
+  diagramCanvas.invalidate();generation++;canvas.dataset.stale='true';
   void serial(async()=>{if(!snapshot)return;return drawCurrent();}).catch(displayError);
 });
+document.getElementById('fit-diagram').onclick=()=>diagramCanvas.fit();
 async function restartWorker(){await client.restart();return compile();}
 async function cancel(){if(!activeRequest)return 'alreadyCompleted';return client.cancel(activeRequest);}
 async function benchmark(text,modelName,expectation){

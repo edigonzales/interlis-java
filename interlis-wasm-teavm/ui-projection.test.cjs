@@ -37,6 +37,16 @@ export class DiagramCanvas extends RealCanvas {
     await page.locator('#source').fill(text+'\n!! newer source revision');const late=await page.evaluate(()=>{window.__releaseProjection();return window.__delayedProjection;});assert.equal(late.stale,true);assert.equal(await page.locator('#diagram-view').innerHTML(),before);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'true');
     const current=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(current.stale,undefined);assert.equal(await page.locator('#diagram-view').getAttribute('data-stale'),'false');const currentRoad=current.result.nodes.find(n=>n.canonicalName==='English.Data.Road');
     const navigation=await page.evaluate(id=>interlisBrowserTest.navigate(id),currentRoad.id);assert.equal(navigation.kind,'resolved');assert.equal(navigation.range.revision,current.result.sourceRevisions[navigation.range.source]);
-    assert.deepEqual(errors,[],'Browser renderer or asset errors');Object.assign(report,runtimeEvidence.finish(evidence));report.status='passed';report.observations=['actual UI translation changes labels while preserving ids/anchors','focus does not expand unrelated siblings','neighbourhood depth0/1 applied','late actual SVG/ELK layout discarded after source edit','current source navigation succeeds'];
+    await page.locator('#source').fill('INTERLIS 2.4;MODEL SelfCase AT "x" VERSION "1"=TOPIC T=OID AS INTERLIS.UUIDOID;CLASS A=END A;ASSOCIATION Self=parent--{0..1}A;children--{*}A;END Self;END T;END SelfCase.');
+    const selfDocument=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(selfDocument.stale,undefined);
+    await page.selectOption('#diagram-associations','COMPACT_BINARY');
+    await page.waitForFunction(()=>{try{const d=JSON.parse(document.getElementById('output').textContent).document;return document.getElementById('diagram-view').dataset.stale==='false'&&d.edges.some(e=>e.kind==='ASSOCIATION'&&e.source.elementId===e.target.elementId);}catch{return false;}});
+    await page.locator('#fit-diagram').click();
+    await page.waitForFunction(()=>Boolean(document.querySelector('#diagram-view svg .sprotty-edge')));
+    const compact=await page.evaluate(()=>JSON.parse(document.getElementById('output').textContent).document),self=compact.edges.find(e=>e.kind==='ASSOCIATION');
+    assert.equal(self.source.elementId,self.target.elementId);assert.equal(compact.nodes.some(n=>n.kind==='ASSOCIATION'),false);
+    const rendered=await page.locator('#diagram-view').innerText();assert.match(rendered,/parent/);assert.match(rendered,/children/);
+    const image=path.resolve(__dirname,'build',name+'-compact-self.png');await page.locator('#diagram-view').screenshot({path:image});report.compactSelfImage=image;
+    assert.deepEqual(errors,[],'Browser renderer or asset errors');Object.assign(report,runtimeEvidence.finish(evidence));report.status='passed';report.observations=['actual UI translation changes labels while preserving ids/anchors','focus does not expand unrelated siblings','neighbourhood depth0/1 applied','late actual SVG/ELK layout discarded after source edit','current source navigation succeeds','actual Wasm producer and shared renderer show compact self association with both roles'];
   }catch(error){report.error=String(error);throw error;}finally{results.push(report);await browser?.close();}
 });
