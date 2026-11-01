@@ -14,10 +14,11 @@ for(const [name,type]of [['chromium',chromium],['firefox',firefox],['webkit',web
     browser=await type.launch({headless:true});report.version=browser.version();const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(String(error)));page.on('console',message=>{if(message.type()==='error'&&!message.location().url.endsWith('/favicon.ico'))errors.push(message.text());});
     // Test-only wrapper waits after the unchanged real pinned renderer finishes.
     // The original bundle is served byte-for-byte via a query URL.
-    await page.route(/\/diagram-ui\.js$/,route=>route.fulfill({contentType:'text/javascript',body:`import {DiagramCanvas as RealCanvas,ElkLayoutService} from './diagram-ui.js?unmodified-renderer';
+    await page.route(/\/diagram-ui\.js$/,route=>route.fulfill({contentType:'text/javascript',body:`import {DiagramCanvas as RealCanvas,ElkLayoutService,defaultInteractiveSettings} from './diagram-ui.js?unmodified-renderer';
 export {diagramAdapter} from './diagram-ui.js?unmodified-renderer';
 export class DiagramCanvas extends RealCanvas {
  constructor(element,callbacks,url){const real=new ElkLayoutService(url);const delayed={layout:async(...args)=>{const result=await real.layout(...args);if(window.__holdProjection){window.__holdProjection=false;window.__layoutHeld=true;await new Promise(resolve=>window.__releaseProjection=resolve);}return result;},cancel:()=>real.cancel(),close:()=>real.close()};super(element,callbacks,url,delayed);}
+ accept(document,key,settings=defaultInteractiveSettings){return super.accept(document,key,window.__testPolyline?{...settings,edgeRouting:'POLYLINE'}:settings);}
 }`}));
     await page.goto(url);await page.waitForFunction(()=>Boolean(window.interlisBrowserTest));await page.locator('#source').fill(text);
     const initial=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(initial.stale,undefined);const doc=initial.result,model=doc.containers.find(c=>c.canonicalName==='French').symbol,road=doc.nodes.find(n=>n.canonicalName==='English.Data.Road');
@@ -52,6 +53,11 @@ export class DiagramCanvas extends RealCanvas {
     assert.equal(self.source.elementId,self.target.elementId);assert.equal(compact.nodes.some(n=>n.kind==='ASSOCIATION'),false);
     const rendered=await page.locator('#diagram-view').innerText();assert.match(rendered,/parent/);assert.match(rendered,/children/);
     const image=path.resolve(__dirname,'build',name+'-compact-self.png');await page.locator('#diagram-view').screenshot({path:image});report.compactSelfImage=image;
+    // Exercise the shared viewer's second supported route mode through its real
+    // settings API, preserving the unchanged genuine compiler/ELK response.
+    await page.evaluate(()=>{window.__testPolyline=true;return interlisBrowserTest.diagram();});
+    const polyline=await page.locator('#diagram-view .sprotty-edge path').first().evaluate(path=>{const box=path.getBBox(),start=path.getPointAtLength(0),end=path.getPointAtLength(path.getTotalLength());return {width:box.width,height:box.height,endSeparation:Math.hypot(end.x-start.x,end.y-start.y)};});assert.ok(polyline.width>15&&polyline.height>15&&polyline.endSeparation>15,'Polyline self association collapsed: '+JSON.stringify(polyline));
+    const polylineImage=path.resolve(__dirname,'build',name+'-compact-self-polyline.png');await page.locator('#diagram-view').screenshot({path:polylineImage});report.polylineSelfImage=polylineImage;
     assert.deepEqual(errors,[],'Browser renderer or asset errors');Object.assign(report,runtimeEvidence.finish(evidence));report.status='passed';report.observations=['actual UI translation changes labels while preserving ids/anchors','focus does not expand unrelated siblings','neighbourhood depth0/1 applied','late actual SVG/ELK layout discarded after source edit','current source navigation succeeds','actual Wasm producer and shared renderer show compact self association with both roles'];
   }catch(error){report.error=String(error);throw error;}finally{results.push(report);await browser?.close();}
 });
