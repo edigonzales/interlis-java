@@ -25,10 +25,24 @@ final class CorpusExpectations {
         checkPayload(result,true);
         var diagnostics=JsonParser.parseString(result.stdout()).getAsJsonObject().getAsJsonArray("diagnostics").deepCopy();
         for(var value:diagnostics) {
-            var diagnostic=value.getAsJsonObject();diagnostic.remove("id");var range=diagnostic.getAsJsonObject("range");
-            require(s(range,"source").equals(source.toUri().toString()) && s(range,"revision").equals("1"),"Wrong corpus diagnostic source/revision");
-            range.remove("source");range.remove("revision");
+            var diagnostic=value.getAsJsonObject();diagnostic.remove("id");presentation(diagnostic);diagnostic.remove("hint");
+            sourceRange(diagnostic.getAsJsonObject("range"),source);
+            if(diagnostic.has("relatedLocations")) for(var related:diagnostic.getAsJsonArray("relatedLocations")) {
+                var location=related.getAsJsonObject();presentation(location);sourceRange(location.getAsJsonObject("range"),source);
+            }
         }
-        require(diagnostics.equals(expected.getAsJsonArray("diagnostics")),"Wrong corpus diagnostic fields or multiplicity: "+diagnostics);
+        var wanted=expected.getAsJsonArray("diagnostics").deepCopy();
+        require(wanted.size()==1 && expected.getAsJsonArray("cliRelatedLocations").size()==1,"Incomplete CLI collision expectation");
+        wanted.get(0).getAsJsonObject().add("relatedLocations",expected.get("cliRelatedLocations"));
+        require(diagnostics.equals(wanted),"Wrong corpus diagnostic fields or multiplicity: "+diagnostics);
+    }
+    private static void presentation(JsonObject value) {
+        require(value.has("message") && value.get("message").isJsonPrimitive()
+                && value.getAsJsonPrimitive("message").isString() && !s(value,"message").isBlank(),"Missing readable corpus diagnostic");
+        value.remove("message");
+    }
+    private static void sourceRange(JsonObject range,Path source) {
+        require(s(range,"source").equals(source.toUri().toString()) && s(range,"revision").equals("1"),"Wrong corpus diagnostic source/revision");
+        range.remove("source");range.remove("revision");
     }
 }

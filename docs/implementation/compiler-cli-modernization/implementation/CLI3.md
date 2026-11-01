@@ -65,6 +65,46 @@ Rootliste, Erwartungen und Budgets sind unverändert. Zwei tatsächliche saubere
 Reproduzierbarkeitsbuilds ergaben76 byteidentische Lieferdateien auf a01c5f874421.
 Rohdaten einschliesslich Fehlläufen liegen unter build/review/compiler-cli/CLI3/.
 
+### Zusätzlicher Befund nach abgebrochenem Gesamtgate auf f950863433a1
+
+Windows-/Linux-CI41263468924 besteht auf f950863433a1f90713f05cd116eb4469de4ecac6:
+je1217 Tests/227 Suites ohne Fehler/Skips,26 CLI-/9 SDK-Prozesse und identisches
+SDK-ZIP b95ec7acb0692d6776ed68dc278d399e87622051dcaf4a688ea3f0b23d093ac8.
+Der Windows-Prozess mit `-Gültig 😀 & [x]!.ili` liefert Exit0 und leere Streams.
+Der tatsächliche lokale releaseCheckP3-DAG umfasst190 Tasks einschliesslich
+zusätzlich ausgewählter Referenz-/Semantikaufgaben und Modul-ZIP. Der Lauf
+endet nach33m13s/97 ausgeführten Tasks bei Safari nach211/347 Roots: WebDriver-
+HTTP-Timeout vor SO_AFU_Bodeneinheiten_20251210. Gleichzeitig meldet die macOS-
+I/ORegistry IOConsoleLocked/CGSSessionScreenIsLocked=Yes, UserIsActive=0.
+Ein Entsperren durch den Nutzer ist angefragt; keine Authentifizierung oder
+globale Systemeinstellung wird umgangen. Der vorhandene zeitlich unbegrenzte
+Display-/System-Wachhalter hat keine dauerhafte UserIsActive-Assertion;
+der nächste Lauf erhält eine auf den Testprozess begrenzte explizite Dauer.
+Timeouts, Modellliste und Budgets bleiben unverändert. Alle347 JVM-/Node-/
+Chromium-/Firefox-/WebKit-Roots sowie die funktionalen Safari-/Browser-/
+Web-Image-Profile und zwei saubere Reproduzierbarkeitsbuilds76 Dateien bestanden.
+Zehn echte externe SDK- und vier Modul-ZIP-Prozesse sowie sieben manipulierte
+Inventare und vier tatsächliche beschädigte SDK-ZIPs bestanden anschliessend.
+
+Der zusätzlich gestartete ältere13-Modell-JVM-Benchmark deckt einen noch
+veralteten kanonischen JSON-Vergleich auf: CorpusExpectations behandelte die
+vereinbarte CLI2-Präsentation und RelatedLocations als unerwartete Felder.
+Die Korrektur trennt Prosa vom strikten Maschinenvergleich und prüft weiterhin
+jedes Maschinenfeld, Anzahl, URI und Revision, nun auch die verwandte Stelle.
+Fachlicher Beleg CLI2-08/09: Im bytegepinnten Metadata-Original benennt STRUCTURE
+FileFormat das UTF-16-Intervall[1135,1145); im Gesuchsteller-Original benennt
+TOPIC Gesuchsteller[635,648). Die neuen CLI-spezifischen Erwartungen binden diese
+wirklichen Deklarationen. Entfernt man nur cliRelatedLocations, ist das gesamte
+bisherige Erwartungsdokument strukturell identisch (Gegenbeleg
+CLI3/corpus-canonical-preservation.json). Negativausgänge, Original-/Kontrollpins,
+Primärbereiche, Argumente und Normentscheidung bleiben unverändert; Browser-
+und Bridge-Erwartungen verwenden weiter die unveränderten diagnostics-Arrays.
+Die bestehenden Vertragstests prüfen jetzt tatsächliches CLI-JSON aus beiden
+Originalen und15 Mutationen statt nur ein aus der Erwartung erzeugtes Payload.
+Das verificationTest-Source-Set erhält dafür explizit auch den Main-Output.
+Dieser Fix erzeugt einen neuen Kandidaten mit neu fälliger exakter CI und
+vollständigem abschliessendem Gate; die alten Erfolge werden nicht umetikettiert.
+
 ## Plattformwege und noch offene Pflichten
 
 Der vorhandene GitHub-Workflow p3-platforms.yml ist erreichbar; bestehende

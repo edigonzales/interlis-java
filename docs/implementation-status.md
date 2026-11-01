@@ -3,7 +3,7 @@
 **Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
 [Ausführungsplan](implementation/compiler-cli-modernization/EXECUTION_PLAN.md).
 Operativer Stand und unabhängige Folgeabnahmen: [CLI-Status](implementation/compiler-cli-modernization/STATUS.md).
-Frühere G2-/P3-Abnahmen bleiben auf ihren bezeichneten Ständen gültig. CLI1 und CLI2 besitzen unabhängigen PASS; CLI2-R2 amdfd442c4a90d schliesst F1/F2 und belegt1217 JVM-Tests sowie JS-/WasmGC-Verträge. CLI3 läuft als kumulative Produktabnahme; sie ist noch offen.
+Frühere G2-/P3-Abnahmen bleiben auf ihren bezeichneten Ständen gültig. CLI1 und CLI2 besitzen unabhängigen PASS; CLI2-R2 amdfd442c4a90d schliesst F1/F2 und belegt1217 JVM-Tests sowie JS-/WasmGC-Verträge. CLI3 läuft als kumulative Produktabnahme; sie ist noch offen. Windows-/Linux-CI auf f950863433a1 besteht nach Windows-Unicode-Launcherfix. Das lokale Gesamtgate scheitert während Safari bei gesperrtem Mac; Entsperren ist angefragt. Eine danach entdeckte alte13-Modell-Benchmarkprüfung wird an den vereinbarten CLI2-JSON-Vertrag angepasst, ohne Sprach-/Normausgänge zu ändern; dafür sind ein neuer Kandidat und neue exakte Nachweise fällig.
 
 Der aktuelle operative G2-Stand wird ausschliesslich in [docs/g2/STATUS.md](g2/STATUS.md)
 geführt; massgeblich ist [docs/g2/EXECUTION_PLAN.md](g2/EXECUTION_PLAN.md).

@@ -26,8 +26,8 @@ project(':interlis-compiler-cli') {
                 runtimeClasspath += sourceSets.main.output
             }
             verificationTest {
-                compileClasspath += sourceSets.verification.output
-                runtimeClasspath += sourceSets.verification.output
+                compileClasspath += sourceSets.verification.output + sourceSets.main.output
+                runtimeClasspath += sourceSets.verification.output + sourceSets.main.output
             }
         }
         configurations {
