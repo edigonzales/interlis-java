@@ -925,3 +925,12 @@ Lock-/Gategrenzen, `RepositoryDiagnosticsContractTest` die gemeinsame Darstellun
 auf JS/WasmGC. Die reine Workspace-Mehrdeutigkeit und historische Phasenabnahmen
 bleiben getrennt. Operativer Nachweis:
 [Implementierungsbericht](../implementation/repository-resolution/REPORT.md).
+
+
+Cachemeldungs-Folgeauftrag: RES-013, DIAG-002/003/006, LOG-002/003/005/008
+und CLI-001–007 werden durch Kapitel 08 §14 und die zugehörigen Ergänzungen
+in 09/16/18 konkretisiert. RepositoryCacheObservationTest,
+RepositoryCacheRendererTest und VerboseRepositoryCacheTest prüfen
+Quellenbezug, gemeinsame Darstellung und unveränderte Fachentscheidungen.
+Die jüngste Cachekorrektur bleibt eine eigene Regression. Kriterien und
+Reviewpflicht: [CL-01–08](../implementation/cache-logging/EXECUTION_PLAN.md).

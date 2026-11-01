@@ -376,8 +376,8 @@ MUSS die Textausgabe pro Diagnose auf Fundstelle, Schweregrad, Code und Meldung
 beschränkt bleiben. Mit Flag werden die bisherigen Quellframes, verwandten
 Fundstellen und Hinweise ergänzt. Farbe, Sprache, Reihenfolge, strukturierte
 Diagnosen, Exitcodes und Fachartefakte bleiben unabhängig davon. JSON bleibt
-vollständig; das Flag aktiviert keine weiteren Betriebslogs und keinen neuen
-Properties-Schlüssel.
+vollständig. Zusätzlich gelten die unten beschriebenen quellenbezogenen
+Cacheinformationen; es entsteht kein neuer Properties-Schlüssel.
 
 `RenderOptions.verbose()` steuert nur diese reine Projektion. Der bisherige
 Vierparameterkonstruktor, `defaults(boolean)` und Renderer-Komfortoverloads
@@ -451,3 +451,18 @@ lokalen Projekttexte ein. Unveränderte Inhalte bleiben bei 304 nur mit identisc
 bestätigtem starkem ETag lokal. Schwache ETags oder Last-Modified allein erfordern
 für die bytegenauen Prüfungen volle Downloads (Kapitel 08 §13); spätere
 Inhalte derselben URL verdrängen die für ältere Locks gespeicherten Bytes nicht.
+
+
+## Quellenbezogene Cacheinformationen bei Verbose
+
+CLI-003/004/006 / LOG-005/008: Die vier semantischen Befehle zeigen bei
+`--verbose` jeden beobachteten Cachezugriff mit sicherer Quelle als
+INFO/Information [ILI-RES-0010] auf stderr. Sprache und Farbpolicy sind dieselben
+wie bei anderen Meldungen. Ohne Verbose sowie bei Diagnose-JSON erscheinen
+keine zusätzlichen Cachetextmeldungen; JSON-Daten und Schema bleiben unverändert.
+DOWNLOAD behauptet nur einen Download; NOT_MODIFIED nur einen bestätigten
+starken 304-Treffer; OFFLINE_HIT/OFFLINE_MISS benennen den Offlinecache.
+CACHE_MISS meldet neutral, dass der Cache nicht verwendet werden konnte.
+Die bestehende globale Schreibwarnung wird nicht als Info dupliziert.
+Betriebsinformationen beeinflussen keine Diagnoselisten, Warnungsablehnung
+oder Exits. Ein zweiter Zugriff in der Abschlussprüfung bleibt sichtbar.

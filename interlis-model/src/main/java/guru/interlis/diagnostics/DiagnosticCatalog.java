@@ -14,7 +14,7 @@ import java.util.Set;
  * adapter before they enter the compiler.
  */
 public final class DiagnosticCatalog {
-    public static final String VERSION = "interlis-diagnostics/v2";
+    public static final String VERSION = "interlis-diagnostics/v3";
     private final Map<DiagnosticCode, DiagnosticDefinition> definitions;
 
     /**
@@ -152,6 +152,10 @@ public final class DiagnosticCatalog {
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.source",
                 DiagnosticDefinition.PositionRule.OPTIONAL,
                 arg("source", ArgumentKind.TEXT), arg("reason", ArgumentKind.TEXT), arg("detail", ArgumentKind.TEXT)));
+        list.add(def("ILI-RES-0010", "operational cache access information", Severity.INFO,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.cache",
+                DiagnosticDefinition.PositionRule.FORBIDDEN,
+                arg("event", ArgumentKind.TEXT), arg("source", ArgumentKind.TEXT)));
         list.add(def("ILI-RES-0008", "repository selection adjustment", Severity.WARNING,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.adjustment",
                 DiagnosticDefinition.PositionRule.OPTIONAL, arg("model", ArgumentKind.IDENTIFIER),

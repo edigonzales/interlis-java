@@ -21,14 +21,22 @@ import java.util.*;
 public final class RepositoryClosureService {
     private final SourceLoader loader;
     private final ContentStore store;
-    private final java.util.function.Consumer<RepositoryCacheEvent> cacheObserver;
+    private final CacheObservations cacheObserver;
 
     public RepositoryClosureService(SourceLoader loader, ContentStore store) {
         this(loader,store,event -> { });
     }
     /** Observations are invocation-local and contain no source identifiers or credentials. */
     public RepositoryClosureService(SourceLoader loader, ContentStore store, java.util.function.Consumer<RepositoryCacheEvent> cacheObserver) {
-        this.cacheObserver = Objects.requireNonNull(cacheObserver);
+        this(loader,store,CacheObservations.legacy(cacheObserver));
+    }
+    /** Detailed observations are sanitized, invocation-local and isolated from source semantics. */
+    public static RepositoryClosureService observed(SourceLoader loader, ContentStore store,
+            java.util.function.Consumer<RepositoryCacheObservation> observer) {
+        return new RepositoryClosureService(loader,store,CacheObservations.detailed(observer));
+    }
+    private RepositoryClosureService(SourceLoader loader,ContentStore store,CacheObservations cacheObserver) {
+        this.cacheObserver = cacheObserver;
         this.loader = Objects.requireNonNull(loader, "loader");
         this.store = Objects.requireNonNull(store, "store");
     }
@@ -424,7 +432,7 @@ public final class RepositoryClosureService {
                 } else {
                     try {
                         var hit = store.lookup(expected);
-                        try { cacheObserver.accept(hit.isPresent()?RepositoryCacheEvent.OFFLINE_HIT:RepositoryCacheEvent.OFFLINE_MISS); } catch(RuntimeException ignoredObserver) { /* observation only */ }
+                        cacheObserver.publish(hit.isPresent()?RepositoryCacheEvent.OFFLINE_HIT:RepositoryCacheEvent.OFFLINE_MISS,id);
                         var cached = hit.orElseThrow(() -> new SourceLoadException(SourceLoadException.Reason.OFFLINE, "verified content unavailable offline", null));
                         byte[] bytes = cached.bytes();
                         if (!expected.matches(bytes)) reject(RepositoryProblem.Reason.PIN_MISMATCH, "");

@@ -526,3 +526,19 @@ Offline-CLI-Gegenprobe in DefaultRepositoryCacheTest. HTTP-Semantik siehe
 [§8.8.2.2](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.2.2)
 (Last-Modified-Stärke). Die strengere Wiederverwendung ist eine Folgerung aus
 den bytegenauen Projektverträgen, keine allgemeine HTTP-Cachepflicht.
+
+
+## 14. Quellenbezogene Cachebeobachtung
+
+RES-013 / LOG-005/008: `RepositoryCacheObservation(RepositoryCacheEvent event,
+Optional<String> safeSource)` gehört zum JVM-Repositorymodul. Beide Komponenten
+sind nullfrei und immutable. Die Anzeigeadresse entfernt Benutzerinformationen,
+Query und Fragment vor Veröffentlichung; sie ist keine Loader- oder
+Cacheidentität. Globale Schreibprobleme dürfen ohne Quelle beobachtet werden.
+`HostRepositories.createObserved` und `RepositoryClosureService.observed` nehmen
+einen detaillierten Observer entgegen. Alte Enum-Callbacks/Konstruktoren und
+der Dreiparameterkonstruktor von Access bleiben über Adapter erhalten.
+Jeder tatsächliche Zugriff veröffentlicht sein Ereignis einmal je angeschlossener
+Schnittstelle. Observerfehler ändern die Beschaffung nicht; kein globaler Zustand.
+HTTP- und beide Offlinepfade liefern die angefragte Quelle, einschliesslich
+Abschlussprüfungen. Starke ETags, optionale Sites, Pins und Locks bleiben unverändert.

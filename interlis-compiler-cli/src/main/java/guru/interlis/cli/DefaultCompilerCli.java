@@ -183,7 +183,7 @@ public final class DefaultCompilerCli implements CliApplication {
         help.append("Auto colors only terminal stderr; nonempty NO_COLOR or TERM=dumb disables auto. Windows auto is plain.\n");
         help.append("Color affects text diagnostics only; JSON and artifact outputs remain plain.\n");
         help.append("check/compile/analyze/diagram share repository options; repositories require ilimodels.xml and have no implicit defaults.\n");
-        help.append("Diagnostics default to one line; --verbose adds source frames, related locations and hints.\n");
+        help.append("Diagnostics default to one line; --verbose adds source frames, related locations, hints and repository cache access messages.\n");
         help.append("Verbose source frames: at most 3 lines / 160 columns; uncertain Unicode widths show UTF-16 offsets without a caret.\n");
         environment.out().print(help);
         return result(CliTermination.SUCCESS, List.of(), help.toString());
@@ -299,8 +299,13 @@ public final class DefaultCompilerCli implements CliApplication {
                 }
                 var cacheConfiguration = parsed.cache().map(path -> RepositoryCacheConfiguration.at(hostPath(path, environment)))
                         .orElseGet(RepositoryCacheConfiguration::disabled);
-                var access = HostRepositories.create(environment.workingDirectory(), cacheConfiguration, event -> {
+                var access = HostRepositories.createObserved(environment.workingDirectory(), cacheConfiguration, observation -> {
+                    var event=observation.event();
                     invocation.lifecycle.cacheLookup("repository", event==RepositoryCacheEvent.NOT_MODIFIED || event==RepositoryCacheEvent.OFFLINE_HIT,event.name());
+                    if (invocation.command.has("--verbose") && !parsed.json()) {
+                        new RepositoryCacheRenderer().render(observation,invocation.language,invocation.ansiEnabled)
+                                .ifPresent(environment.err()::println);
+                    }
                     if(event==RepositoryCacheEvent.WRITE_UNAVAILABLE) {
                         var warning=RepositoryDiagnostics.cacheUnavailable();
                         environment.err().println(new ConsoleDiagnosticRenderer().render(warning,Map.of(),invocation.language,invocation.ansiEnabled));

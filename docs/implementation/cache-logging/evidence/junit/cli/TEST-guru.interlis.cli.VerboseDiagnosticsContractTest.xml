@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.VerboseDiagnosticsContractTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-01T17:53:13.025Z" hostname="Monterrico.local" time="0.174">
+  <properties/>
+  <testcase name="allDiagnosticCommandsDefaultToHeaderAndVerboseRestoresDetails()" classname="guru.interlis.cli.VerboseDiagnosticsContractTest" time="0.127"/>
+  <testcase name="jsonAndArtifactsAreIdenticalAndInvalidFlagsFailBeforeIo()" classname="guru.interlis.cli.VerboseDiagnosticsContractTest" time="0.045"/>
+  <testcase name="everySeverityHasTheSameHeaderInBothModesAndLegacyRenderersRemainDetailed()" classname="guru.interlis.cli.VerboseDiagnosticsContractTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

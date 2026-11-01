@@ -1,0 +1,76 @@
+{
+  "gitCommit": "59141fa88a642d2c8201970f978fd7befe288f26",
+  "dirty": true,
+  "sourceFingerprint": "4c99e154cbd2415e0c0f3f032401582c81dabed3070f90d3b09245fa9e737362",
+  "artifacts": {
+    "interlis-wasm-teavm/build/generated/teavm/js/interlis-compiler.js": "9fc733e5858961203adb3d8761a4ca67bc46c10272f3ce694b1aeab1eacd9099",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm": "5b8a3d99aa1093930f27abb12ed918eee496d85d5312867087660174b0c9fed6",
+    "interlis-wasm-teavm/build/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js": "4fa1e0e0d686cc6e0a0d111e606cb876f7168bd695d9e3d639e7d5684453089b"
+  },
+  "node": "v24.22.0",
+  "status": "passed",
+  "cases": 2,
+  "diagnostics": [
+    {
+      "id": "diag-794a3d2d3913e195693b462d",
+      "code": "ILI-RES-0001",
+      "severity": "ERROR",
+      "phase": "SOURCE_RESOLUTION",
+      "messageKey": "diagnostic.resolution.missing",
+      "range": {
+        "source": "memory:/root.ili",
+        "revision": "1",
+        "startOffset": 62,
+        "endOffset": 69
+      },
+      "arguments": [
+        {
+          "name": "model",
+          "kind": "IDENTIFIER",
+          "value": "Missing"
+        }
+      ]
+    },
+    {
+      "id": "diag-dcad70e494524ab525d8f0ee",
+      "code": "ILI-SEM-0001",
+      "severity": "ERROR",
+      "phase": "BINDING",
+      "messageKey": "diagnostic.semantics.unresolved",
+      "range": {
+        "source": "memory:/root.ili",
+        "revision": "1",
+        "startOffset": 85,
+        "endOffset": 98
+      },
+      "arguments": [
+        {
+          "name": "name",
+          "kind": "IDENTIFIER",
+          "value": "Missing.Point"
+        }
+      ],
+      "causeId": "diag-794a3d2d3913e195693b462d"
+    },
+    {
+      "id": "diag-8402f61819cc8186623398b5",
+      "code": "ILI-SEM-0001",
+      "severity": "ERROR",
+      "phase": "BINDING",
+      "messageKey": "diagnostic.semantics.unresolved",
+      "range": {
+        "source": "memory:/root.ili",
+        "revision": "1",
+        "startOffset": 102,
+        "endOffset": 107
+      },
+      "arguments": [
+        {
+          "name": "name",
+          "kind": "IDENTIFIER",
+          "value": "Other"
+        }
+      ]
+    }
+  ]
+}

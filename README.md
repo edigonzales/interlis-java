@@ -150,6 +150,11 @@ Weitere Stackmodule und Lieferabschnitte folgen dem Spezifikationsplan.
 Es wurden keine Releases veröffentlicht und keine Produktionsmigrationen ausgeführt.
 
 
+Mit `--verbose` zeigen Repositoryzugriffe zusätzlich Informationsmeldungen pro
+Quelle: Download, bestätigte Cacheverwendung (HTTP 304) oder Offlinecache.
+Sie verwenden denselben DE-/EN-/Farbstil wie andere Meldungen und erscheinen
+auf stderr. Diagnose-JSON und Compilerentscheidungen bleiben davon unabhängig.
+
 Repositorydownloads werden standardmässig unter `~/.interlis-cache` gespeichert.
 Online prüft jeder Beschaffungslauf die Aktualität. Nur ein in der 304-Antwort
 identisch bestätigter starker ETag erlaubt die Wiederverwendung vorhandener

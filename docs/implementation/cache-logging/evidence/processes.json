@@ -1,0 +1,1038 @@
+{
+  "passed": true,
+  "node": "v24.22.0",
+  "javaHome": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem",
+  "launcher": "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+  "cases": [
+    {
+      "name": "cold",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--write-lock",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/lock.xml"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "hot-check",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--warnings",
+        "reject"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "de-check",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--diagnostic-language",
+        "de"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "Information [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nModellsuche: Basis @ http://127.0.0.1:53504/\nModellauswahl: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "compact-check",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "json-check",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--json"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:53504/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:53504/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "json-verbose-check",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--json",
+        "--verbose"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:53504/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:53504/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "hot-compile",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--warnings",
+        "reject"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "de-compile",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--diagnostic-language",
+        "de"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "Information [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nModellsuche: Basis @ http://127.0.0.1:53504/\nModellauswahl: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "compact-compile",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "json-compile",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--json"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:53504/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:53504/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "json-verbose-compile",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--json",
+        "--verbose"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "{\"status\":\"ok\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:53504/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:53504/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "hot-analyze",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "analyze",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--warnings",
+        "reject"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "de-analyze",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "analyze",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--diagnostic-language",
+        "de"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "Information [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nModellsuche: Basis @ http://127.0.0.1:53504/\nModellauswahl: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "compact-analyze",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "analyze",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "json-analyze",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "analyze",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--json"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "{\"status\":\"analyzed\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:53504/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:53504/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "json-verbose-analyze",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "analyze",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--json",
+        "--verbose"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "{\"status\":\"analyzed\",\"diagnostics\":[],\"resolution\":{\"steps\":[{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"LOOKUP\",\"detail\":\"INTERLIS 2.4\"},{\"model\":\"Basis\",\"repository\":\"http://127.0.0.1:53504/\",\"kind\":\"SELECTED\",\"detail\":\"1 http://127.0.0.1:53504/Basis.ili\"}],\"models\":[{\"name\":\"Basis\",\"version\":\"1\",\"source\":\"http://127.0.0.1:53504/Basis.ili\",\"sha256\":\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\"}]}}\n",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "hot-diagram",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "diagram",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--warnings",
+        "reject"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "classDiagram\n\n",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "de-diagram",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "diagram",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--diagnostic-language",
+        "de"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "classDiagram\n\n",
+      "stderr": "Information [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/ilimodels.xml': Inhalt aus Cache verwendet (HTTP 304).\nInformation [ILI-RES-0010] Cachezugriff für Quelle 'http://127.0.0.1:53504/Basis.ili': Inhalt aus Cache verwendet (HTTP 304).\nModellsuche: Basis @ http://127.0.0.1:53504/\nModellauswahl: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "compact-diagram",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "diagram",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "classDiagram\n\n",
+      "stderr": "",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "offline-false",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--offline"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache offline.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache offline.\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": []
+    },
+    {
+      "name": "offline-true",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "compile",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--offline",
+        "--read-lock",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/lock.xml"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache offline.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache offline.\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": []
+    },
+    {
+      "name": "optional-site",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "--root",
+        "Absent",
+        "--offline",
+        "--verbose"
+      ],
+      "exit": 1,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache offline.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilisite.xml': source unavailable in offline cache.\nWARNING [ILI-RES-0008] Repository 'http://127.0.0.1:53504/', model 'Absent': repository links unavailable; continuing search.\n  Hint: OFFLINE\nERROR [ILI-RES-0001] The requested or imported model 'Absent' could not be found.\n  Hint: LOOKUP http://127.0.0.1:53504/ INTERLIS 2.4/2.3; SITE_UNAVAILABLE http://127.0.0.1:53504/ OFFLINE\n",
+      "http": []
+    },
+    {
+      "name": "unconfirmed-304",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': cache could not be used.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': cache could not be used.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': source downloaded.\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "confirmed": false
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "confirmed": false
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 200,
+          "condition": null
+        }
+      ]
+    },
+    {
+      "name": "second-304",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose"
+      ],
+      "exit": 1,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': cache could not be used.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': cache could not be used.\nfile:///Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili:1:58: ERROR [ILI-RES-0003] The source 'http://127.0.0.1:53504/Basis.ili' could not be provided: input/output failure while loading.\n  1 | ...\" = IMPORTS Basis; END Projekt.\n    |                ^~~~~\n  Hint: LOOKUP http://127.0.0.1:53504/ INTERLIS 2.4; SELECTED http://127.0.0.1:53504/ 1 http://127.0.0.1:53504/Basis.ili; http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "confirmed": false
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "confirmed": false
+        }
+      ]
+    },
+    {
+      "name": "no-cache",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--no-cache",
+        "--verbose"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': source downloaded.\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 200,
+          "condition": null
+        }
+      ]
+    },
+    {
+      "name": "no-store",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--cache",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/private-cache",
+        "--verbose"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': source downloaded.\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': source downloaded.\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 200,
+          "condition": null
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 200,
+          "condition": null
+        }
+      ]
+    },
+    {
+      "name": "color-always",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--color",
+        "always"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "\u001b[36mINFO\u001b[0m [\u001b[90mILI-RES-0010\u001b[0m] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\n\u001b[36mINFO\u001b[0m [\u001b[90mILI-RES-0010\u001b[0m] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\n\u001b[36mINFO\u001b[0m [\u001b[90mILI-RES-0010\u001b[0m] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\n\u001b[36mINFO\u001b[0m [\u001b[90mILI-RES-0010\u001b[0m] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "color-never",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "check",
+        "--repository",
+        "http://127.0.0.1:53504/",
+        "/Users/stefan/sources/interlis-java/build/cache-logging/processes/run-VWpovr/Projekt.ili",
+        "--verbose",
+        "--color",
+        "never"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "",
+      "stderr": "INFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/ilimodels.xml': content used from cache (HTTP 304).\nINFO [ILI-RES-0010] Cache access for source 'http://127.0.0.1:53504/Basis.ili': content used from cache (HTTP 304).\nModel lookup: Basis @ http://127.0.0.1:53504/\nModel selected: Basis 1 http://127.0.0.1:53504/Basis.ili\n",
+      "http": [
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        },
+        {
+          "path": "/ilimodels.xml",
+          "status": 304,
+          "condition": "\"d8bc8d521d94e1e50a9e4c4d4b0e327e1d89cd6480e0b094232f2abe663f7467\""
+        },
+        {
+          "path": "/Basis.ili",
+          "status": 304,
+          "condition": "\"8524fe4b4806826560d26dc6f210bc5afbe50083ed9dfad80c775caebc5a17c3\""
+        }
+      ]
+    },
+    {
+      "name": "version",
+      "command": [
+        "/Users/stefan/sources/interlis-java/interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler",
+        "version",
+        "--json"
+      ],
+      "exit": 0,
+      "signal": null,
+      "stdout": "{\"tool\":\"interlis-compiler\",\"version\":\"0.2.0-SNAPSHOT\",\"apiVersion\":\"0.2\",\"diagnosticCatalogVersion\":\"interlis-diagnostics/v3\",\"protocol\":\"interlis.compiler/1.0\",\"languageProfiles\":\"2.3, 2.4\",\"formatVersion\":\"1.0\",\"diagramSchemaVersion\":\"1.0\"}\n",
+      "stderr": "",
+      "http": []
+    }
+  ],
+  "jars": {
+    "antlr4-runtime-4.13.2.jar": "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7",
+    "interlis-compiler-0.2.0-SNAPSHOT.jar": "86460db600ab375a07bccd2c1996d7dbe21942e6ac0ddbffd57707ab1dec2c4c",
+    "interlis-compiler-cli-0.2.0-SNAPSHOT.jar": "bca7168a5c679100b711c966db5063ac95669b4107234cea90ca0ca52eebaa5d",
+    "interlis-model-0.2.0-SNAPSHOT.jar": "8443f74b6ae1f0a187aa4c919d9fb4f0a03b65271e28142c0bb948b15b40a755",
+    "interlis-projection-0.2.0-SNAPSHOT.jar": "46fc3a6ad1e35c19e1999c5df09251915fd6631e9c09f19bda9e2ac65b0ade41",
+    "interlis-repository-0.2.0-SNAPSHOT.jar": "75c01abcd6cb42fe1375d0a9e3b3da308afde08bed5b0ec766df4d3de17eafc2",
+    "interlis-workspace-0.2.0-SNAPSHOT.jar": "e9efee37214c38e1292fd26d3f802c2ada1e25bf0abdb7a77b015ef8724085ad"
+  }
+}

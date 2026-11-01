@@ -1,5 +1,14 @@
 # Implementierungsstatus interlis-java
 
+Cachemeldungen pro Quelle (WP-26/30, CL-01–08) in Umsetzung auf 59141fa:
+Beobachtungs-API und gemeinsame INFO-Darstellung implementiert und gezielt
+verifiziert: 69 JUnit-Fälle/14 Suites ohne Fehler/Skips, 29 reale
+Distributionsprozesse und schmale JS-/WasmGC-Gegenprobe unter Node24.22.0.
+Unabhängiger OpenCode-/DeepSeek-1017-Review steht noch aus.
+[Plan und Abnahmekriterien](implementation/cache-logging/EXECUTION_PLAN.md),
+[Umsetzung und Rohbelege](implementation/cache-logging/REPORT.md).
+
+
 P2-Cachekorrektur vom 01.11.2026 (WP-26, RES-004/008–010/013): Beide Befunde
 implementiert; sieben neue Regressionstests vor Korrektur RED, danach gezielt
 68 Tests in zehn Suites ohne Fehler/Skips GREEN. Starke identisch bestätigte

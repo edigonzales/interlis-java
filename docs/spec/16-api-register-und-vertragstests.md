@@ -828,3 +828,17 @@ RepositorySearch trennt intern erforderliche Indexausfälle von optionalen
 Site-Ausfällen, ohne deren Lock-/Abschlussprovenienz zu verlieren. Fachvertrag
 Kapitel 08 §13, Abnahmen RepositoryCacheRegressionTest,
 RepositoryCacheContractTest und DefaultRepositoryCacheTest.
+
+
+### Cachemeldungen pro Quelle
+
+Repository / `guru.interlis.repository`: `RepositoryCacheObservation(event,
+Optional<String> safeSource)`, `HostRepositories.createObserved(Path,
+RepositoryCacheConfiguration,Consumer<RepositoryCacheObservation>)`,
+`RepositoryClosureService.observed(SourceLoader,ContentStore,Consumer<RepositoryCacheObservation>)`.
+Access ergänzt den detaillierten Beobachter; sein bisheriger Konstruktor und
+die bisherigen Enum-Callbacks bleiben erhalten. Werte, Sanitierung und
+Observerfehlervertrag folgen Kapitel 08 §14. Keine doppelte Ereigniszustellung.
+CLI / `guru.interlis.cli`: `RepositoryCacheRenderer` projiziert die
+Beobachtungen nur zur Darstellung über ConsoleDiagnosticRenderer.
+Katalog v3 und ILI-RES-0010 folgen Kapitel 09; Ausgabe folgt Kapitel 18.

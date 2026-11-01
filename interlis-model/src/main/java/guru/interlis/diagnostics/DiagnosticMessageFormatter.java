@@ -26,6 +26,7 @@ public final class DiagnosticMessageFormatter {
             text("resolution.overlay.missing", "The translation original '{model}' required by overlay '{overlay}' could not be found.", "Das vom Overlay '{overlay}' benötigte Übersetzungsoriginal '{model}' wurde nicht gefunden."),
             text("resolution.overlay.ambiguous", "The translation original '{model}' for overlay '{overlay}' is ambiguous. Candidates: {candidates}.", "Das Übersetzungsoriginal '{model}' für das Overlay '{overlay}' ist mehrdeutig. Kandidaten: {candidates}."),
             text("resolution.translation.identity", "The selected translation source has an inconsistent model identity: {reason}.", "Die ausgewählte Übersetzungsquelle hat eine widersprüchliche Modellidentität: {reason}."),
+            text("resolution.cache", "Cache access for source '{source}': {event}.", "Cachezugriff für Quelle '{source}': {event}."),
             text("resolution.adjustment", "Repository '{repository}', model '{model}': {reason}.", "Repository '{repository}', Modell '{model}': {reason}."),
             text("resolution.rejected", "Model '{model}' could not be provided: {reason}.", "Das Modell '{model}' konnte nicht bereitgestellt werden: {reason}."),
             text("semantics.unresolved", "The name '{name}' cannot be resolved at this location.", "Der Name '{name}' kann an dieser Stelle nicht aufgelöst werden."),
@@ -60,6 +61,8 @@ public final class DiagnosticMessageFormatter {
                     ? "Für diese Diagnose sind keine weiteren Angaben verfügbar."
                     : "No further explanation is available for this diagnostic.", Optional.empty());
         var values = arguments(diagnostic.arguments());
+        if (diagnostic.code().value().equals("ILI-RES-0010") && values.containsKey("event"))
+            values.put("event", cacheEvent(values.get("event"), language));
         if (diagnostic.code().value().startsWith("ILI-RES-") && values.containsKey("reason")) values.put("reason", resolutionReason(values.get("reason"), language));
         String rule = diagnostic.arguments().stream().filter(a -> a.name().equals("rule"))
                 .filter(DiagnosticArgument.TextArgument.class::isInstance)
@@ -82,6 +85,18 @@ public final class DiagnosticMessageFormatter {
         }
         return new DiagnosticMessage(replace(language == DiagnosticLanguage.DE ? template.de() : template.en(), values),
                 Optional.ofNullable(values.get("detail")).filter(v -> !v.isEmpty()));
+    }
+
+    private static String cacheEvent(String event, DiagnosticLanguage language) {
+        boolean de = language == DiagnosticLanguage.DE;
+        return switch (event) {
+            case "NOT_MODIFIED" -> de ? "Inhalt aus Cache verwendet (HTTP 304)" : "content used from cache (HTTP 304)";
+            case "OFFLINE_HIT" -> de ? "Inhalt offline aus Cache verwendet" : "content used from cache offline";
+            case "DOWNLOAD" -> de ? "Quelle heruntergeladen" : "source downloaded";
+            case "CACHE_MISS" -> de ? "Cache konnte nicht verwendet werden" : "cache could not be used";
+            case "OFFLINE_MISS" -> de ? "Quelle im Offlinecache nicht verfügbar" : "source unavailable in offline cache";
+            default -> event;
+        };
     }
 
     private static String resolutionReason(String reason, DiagnosticLanguage language) {

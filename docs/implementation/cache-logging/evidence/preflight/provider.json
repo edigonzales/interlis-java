@@ -1,0 +1,58 @@
+{
+  "provider": "deepseek",
+  "api": "https://api.deepseek.com",
+  "model": {
+    "id": "deepseek-flash",
+    "name": "DeepSeek V4.1 Flash",
+    "description": "DeepSeek V4.1 Flash model for reasoning and agentic coding",
+    "family": "deepseek-flash",
+    "attachment": true,
+    "reasoning": true,
+    "reasoning_options": [
+      {
+        "type": "toggle"
+      },
+      {
+        "type": "effort",
+        "values": [
+          "low",
+          "high",
+          "max"
+        ]
+      }
+    ],
+    "tool_call": true,
+    "interleaved": {
+      "field": "reasoning_content"
+    },
+    "structured_output": true,
+    "temperature": true,
+    "knowledge": "2025-05",
+    "release_date": "2026-09-10",
+    "last_updated": "2026-09-10",
+    "modalities": {
+      "input": [
+        "text",
+        "image"
+      ],
+      "output": [
+        "text"
+      ]
+    },
+    "open_weights": true,
+    "limit": {
+      "context": 1000000,
+      "output": 393216
+    },
+    "cost": {
+      "input": 0.15,
+      "output": 0.6,
+      "reasoning": 0.6,
+      "cache_read": 0.003
+    },
+    "canonical_model_id": "deepseek/deepseek-v4.1-flash"
+  },
+  "verifiedMapping": "DeepSeek-V4.1-Flash-1017",
+  "officialMapping": "https://api-docs.deepseek.com/quick_start/pricing/",
+  "openCodeVersion": "opencode v2.0.28"
+}

@@ -210,3 +210,14 @@ Validatoren laden vollständig. Optionale Site-Ausfälle bleiben Warnung und
 Provenienz, erforderliche Indexausfälle bleiben getrennte Fehler. Gezielte
 RED-/GREEN-Regressionsfälle und unabhängiger OpenCode/DeepSeek-1017-Review
 via direkter API schliessen diese Nacharbeit ab; keine pauschalen Vollgates.
+
+
+## Folgeauftrag Cachemeldungen pro Quelle
+
+Gezielter WP-26/30-Folgeauftrag auf dem korrigierten Cacheprodukt 59141fa.
+Lieferfolge: Quellenbeobachtung, gemeinsamer INFO-Renderer, gezielte
+Host-/CLI-/Katalog-/Portableprüfungen, unabhängiger OpenCode-/DeepSeek-1017-
+Review auf festem Kandidatencommit. Kriterien CL-01–08 stehen im
+[Ausführungsplan](../implementation/cache-logging/EXECUTION_PLAN.md).
+Kein neuer Cachealgorithmus; starke bestätigte ETags und optionale Sites
+bleiben erhalten. Abschluss verlangt tatsächliches Review-PASS.

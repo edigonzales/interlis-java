@@ -20,12 +20,18 @@ public final class HttpSourceLoader implements SourceLoader {
     private final HttpClient client;
     private final ContentStore store;
     private final DirectoryMetadataStore metadata;
-    private final Consumer<RepositoryCacheEvent> observer;
+    private final CacheObservations observer;
 
     /** Explicit uncached loader; existing callers retain their host policy. */
     public HttpSourceLoader() { this(new InMemoryContentStore(), null, event -> { }); }
 
     HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, Consumer<RepositoryCacheEvent> observer) {
+        this(store,metadata,CacheObservations.legacy(observer));
+    }
+    static HttpSourceLoader observed(ContentStore store, DirectoryMetadataStore metadata, Consumer<RepositoryCacheObservation> observer) {
+        return new HttpSourceLoader(store,metadata,CacheObservations.detailed(observer));
+    }
+    private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer) {
         this.client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
         this.store = store; this.metadata = metadata; this.observer = observer;
     }
@@ -46,11 +52,11 @@ public final class HttpSourceLoader implements SourceLoader {
         if (policy.offline()) {
             var content = cached.flatMap(m -> store.lookup(m.digest()));
             if (content.isEmpty()) {
-                observer.accept(RepositoryCacheEvent.OFFLINE_MISS);
+                observer.publish(RepositoryCacheEvent.OFFLINE_MISS,id);
                 throw new SourceLoadException(SourceLoadException.Reason.OFFLINE, "verified content unavailable offline", null);
             }
             var loaded = decode(id,content.orElseThrow().bytes(),policy,"verified-cache");
-            observer.accept(RepositoryCacheEvent.OFFLINE_HIT);
+            observer.publish(RepositoryCacheEvent.OFFLINE_HIT,id);
             return loaded;
         }
         URI uri = URI.create(locator.location());
@@ -93,11 +99,11 @@ public final class HttpSourceLoader implements SourceLoader {
                                             entityTag(response).or(old::etag),validator(response,"Last-Modified").or(old::lastModified)));
                                 }
                             }
-                            observer.accept(RepositoryCacheEvent.NOT_MODIFIED);
+                            observer.publish(RepositoryCacheEvent.NOT_MODIFIED,id);
                             return loaded;
                         }
                     }
-                    observer.accept(RepositoryCacheEvent.CACHE_MISS);
+                    observer.publish(RepositoryCacheEvent.CACHE_MISS,id);
                     continue;
                 }
                 if(response.statusCode()==404) {
@@ -119,7 +125,7 @@ public final class HttpSourceLoader implements SourceLoader {
                                 entityTag(response),validator(response,"Last-Modified")));
                     } else metadata.remove(id);
                 }
-                observer.accept(RepositoryCacheEvent.DOWNLOAD);
+                observer.publish(RepositoryCacheEvent.DOWNLOAD,id);
                 return loaded;
             }
             throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"unexpected conditional response without content",null);

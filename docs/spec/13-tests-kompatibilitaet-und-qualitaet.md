@@ -519,3 +519,19 @@ NOT_FOUND erhalten; ein wirklich fehlender Index bleibt LOAD_FAILURE/OFFLINE.
 Die CLI-Gegenprobe prüft INPUT_UNRESOLVED und null HTTP. Vorherige FAIL-Berichte
 bleiben unverändert; nach dem Fix gezielte Rohbelege und unabhängigen
 OpenCode-/DeepSeek-Folgereview am eingefrorenen Produktinhalt ergänzen.
+
+
+## Gezielte Cachemeldungsabnahme
+
+RES-013, DIAG-002/003/006, LOG-002/003/005/008, CLI-001–007: Beobachtungen
+werden auf Quelle, Bereinigung, einmalige Legacy-/Detailzustellung und
+Observerfehler geprüft. Cache-/Retrytests prüfen tatsächliche HTTP-Requests
+statt aus Meldungstexten eine Cachefunktion abzuleiten. Die sieben
+RepositoryCacheRegressionTest-Fälle schützen die zuletzt korrigierten
+starken ETags und optionalen Sites. CLI-Tests und reale Prozesse vergleichen
+alle vier Befehle, kompakte/ausführliche DE-/EN-Meldungen, JSON, Farben und
+unveränderte Ergebnisse. Katalog v3 erhält die zentralen Katalog-/Formatter-/
+Versionsprüfungen; die schmale portable Probe prüft weiterhin Wireversion und
+Fähigkeiten sowie das Fehlen von Hostcacheinfos in Compilerdiagnosen.
+Der unabhängige OpenCode-/DeepSeek-1017-Review auditiert Rohbelege und ergänzt
+eigene gezielte Gegenproben, keine pauschalen Korpus-/Benchmarkwiederholungen.

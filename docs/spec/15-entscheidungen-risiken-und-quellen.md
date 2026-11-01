@@ -214,3 +214,14 @@ Last-Modified allein bewirken volle Übertragung; zusätzliche Bandbreite wird
 zugunsten gleicher Ergebnisse bei frischer und wiederverwendender Beschaffung
 akzeptiert. Kein neues Lockformat und keine Abschwächung der Pin-/Quellenprüfung.
 Die frühere Entscheidung und FAIL-Rohbelege behalten ihren historischen Stand.
+
+
+## Cachebeobachtung und gemeinsame Präsentation (01.11.2026)
+
+Auf ausdrücklichen Nutzerauftrag erhalten Cachezugriffe denselben
+Meldungsstil wie Compilerdiagnosen, bleiben intern jedoch reine
+Betriebsbeobachtungen. Detaillierte sichere Quellenbeobachtung ist eine
+additive JVM-Host-API; bestehende Enum-Callbacks bleiben kompatibel.
+ILI-RES-0010 und Katalog v3 dienen nur der gemeinsamen Präsentation, nicht
+Gate, Snapshot, Warnungspolitik oder einer neuen JSON-Ausgabe.
+Die zuletzt korrigierte starke ETag-/optionale Site-Politik ist unverändert.

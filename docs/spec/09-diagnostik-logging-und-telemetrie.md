@@ -485,3 +485,19 @@ Ein Schreibfehler rendert einmal pro Hostzugriff eine operative ILI-RES-0008 mit
 reason CACHE_WRITE_UNAVAILABLE auf stderr; sie ersetzt keine Quelle und
 verändert keine Compiler-Gateentscheidung. Die kanonischen Suchwarnungen bleiben
 weiterhin am Gate wirksam. Observerfehler ändern kein Ladeergebnis.
+
+
+## Cacheinformationen im gemeinsamen Meldungsstil
+
+DIAG-002/003/006 / LOG-005/008: Katalog `interlis-diagnostics/v3` ergänzt
+`ILI-RES-0010`, Schwere INFO, Phase SOURCE_RESOLUTION, ohne Quellposition,
+messageKey `diagnostic.resolution.cache`, Argumente `event:TEXT` und
+`source:TEXT`. Der zentrale Formatter lokalisiert die Ereignisse. Es werden
+keine HTTP-Header oder Validatorwerte dargestellt.
+Diese Werte dienen ausschliesslich der Hostpräsentation: kein Eintrag in
+SourceSet, AnalysisSnapshot, Compilerdiagnoseliste, Gate oder Warnungspolitik.
+ConsoleDiagnosticRenderer stellt sie mit vorhandener Sprache, Palette und
+Sanitierung dar. Wiederholte echte Zugriffe werden nicht zusammengefasst.
+CACHE_MISS bedeutet fehlende sichere Wiederverwendbarkeit, auch bei
+unbestätigter 304; die Meldung verspricht keinen weiteren Retry.
+WRITE_UNAVAILABLE behält seine bestehende einmalige Warnung.
