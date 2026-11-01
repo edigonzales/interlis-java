@@ -290,3 +290,26 @@ Compiler-Gate-Ablehnung zusätzlich zum priorisierten CLI-Status, auch wenn ein
 späterer Hostausgabefehler den endgültigen Status bestimmt.
 
 COMPAT-001–003: Sprach-/Metamodellreferenzen und freigegebene Normprofile bleiben erhalten. Das aktuelle Standardbedienprofil steht in [CLI_PROFILE.md](../p3/CLI_PROFILE.md); die frühere ili2c-Bedienparität ist durch den ausdrücklich beauftragten CLI-Folgeplan aufgehoben. CompilerCliIdentityContractTest und compilerCliCheck sichern den neuen Entry und die migrierten Pfad-/Stream-/Fehlerverträge.
+
+## COLOR1: explizite Farbpolitik der Textdiagnosen
+
+C1-01–08 / CLI-003/004/006: Die fünf Diagnosebefehle akzeptieren zusätzlich
+`--color=auto|always|never` sowie `--color MODE`, einmalig und exakt kleingeschrieben.
+Ungültige Werte werden vor Host-IO abgewiesen. Nur diese Option erlaubt `=`;
+`--` beendet weiterhin alle Optionen. Help/Version/Capabilities bleiben farbfrei.
+`ColorPolicy` im CLI-Modul wertet nullfreie immutable Eingaben ohne IO aus:
+Maschinenoutput und NEVER bleiben plain, ALWAYS übersteuert Environmentdefaults;
+AUTO benötigt sichere stderr-Fähigkeit, leeres/fehlendes NO_COLOR und TERM ungleich
+dumb (case-insensitive). Keine Änderung kanonischer Diagnosen oder Exits.
+
+`CliEnvironment` ergänzt `TerminalCapabilities terminalCapabilities` als nullfreien
+immutable Recordwert. Die bisherigen fünf/sechs Parameterkonstruktoren bleiben
+quellkompatibel und setzen unbekannte stderr-Fähigkeit auf false. Der Host prüft
+auf POSIX direkt den geerbten FD2 mit dem festen `/bin/test -t 2`, ohne Shell oder
+Modellargumente; Fehler, Timeout, Unterbrechung und andere Hosts ergeben false.
+Das Ergebnis bleibt beim Kopieren der Laufumgebung erhalten. Auf Windows ist
+AUTO konservativ farbfrei; ALWAYS ist unabhängig von Hostdetektion verfügbar.
+`AnsiStyler` erzeugt nur feste SGR-Sequenzen nach bestehender safeText-Sanitierung
+und schliesst jeden Bereich mit Reset. Alte Renderer-Overloads bleiben plain;
+ein expliziter boolescher Stilparameter ermöglicht die reine Farbprojektion.
+Abnahme: ColorOutputContractTest und reale CLI-/PTY-/Redirectprozesse.

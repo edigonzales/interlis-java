@@ -894,3 +894,8 @@ einem Hinweis; gewöhnliche Kommentarzeilenenden werden normalisiert.
 Hostausgaben, keine zusätzliche Compilersemantik. Abnahme: CLI-/Formatter-
 Vertragstests, echte Referenz-/Ersatzprozesse und Plattformprüfung gemäss
 Kapitel 03/13/14. Der operative Nachweisstand steht in `docs/p3/STATUS.md`.
+
+COLOR1 ordnet C1-01–08 den bestehenden CLI-003/004/006, COMPAT-002 und LOG-005
+zu: strikte Optionsgrammatik, run-lokale Farbentscheidung und getrennte Kanäle.
+Fachvertrag Kapitel18, Tests ColorOutputContractTest und reale Prozessproben;
+operativer Stand unter `docs/implementation/compiler-cli-color-output/STATUS.md`.

@@ -76,7 +76,7 @@ public final class DefaultCompilerCli implements CliApplication {
         var invocation = new Invocation(services.runContexts().createRoot());
         var observed = services;
         var effective = new CliEnvironment(environment.workingDirectory(), environment.in(), environment.out(),
-                environment.err(), environment.environment(), observed);
+                environment.err(), environment.environment(), observed, environment.terminalCapabilities());
         var lifecycle = RunLifecycle.create(invocation.context, observed.observer(), services.clock());
         lifecycle.start(new RunEvent.RunMetadata("cli", List.of("2.3", "2.4"), 0,
                 "cli-standard/v1"));
@@ -112,6 +112,13 @@ public final class DefaultCompilerCli implements CliApplication {
             if (!command.equals(arguments.getFirst())) arguments = List.of(command);
             if (java.util.Set.of("check", "compile", "analyze", "diagram", "format").contains(command)) {
                 invocation.command = parseCommand(arguments);
+                ColorMode colorMode = switch (invocation.command.value("--color").orElse("auto")) {
+                    case "always" -> ColorMode.ALWAYS;
+                    case "never" -> ColorMode.NEVER;
+                    default -> ColorMode.AUTO;
+                };
+                invocation.ansiEnabled = new ColorPolicy().useAnsi(colorMode, environment.terminalCapabilities(),
+                        environment.environment(), invocation.command.has("--json"));
                 invocation.language = switch (invocation.command.value("--diagnostic-language").orElse("en")) {
                     case "en" -> DiagnosticLanguage.EN;
                     case "de" -> DiagnosticLanguage.DE;
@@ -168,6 +175,7 @@ public final class DefaultCompilerCli implements CliApplication {
             if (specification.acceptsFiles()) help.append(" [--] [files...]");
             help.append('\n');
         }
+        help.append("Diagnostic color: --color=auto|always|never or --color MODE (default: auto).\n");
         help.append("Diagnostic language: --diagnostic-language de|en (default: en).\n");
         environment.out().print(help);
         return result(CliTermination.SUCCESS, List.of(), help.toString());
@@ -440,7 +448,7 @@ public final class DefaultCompilerCli implements CliApplication {
             if (outcome instanceof FormatOutcome.Rejected rejected) {
                 ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
                 for (Diagnostic diagnostic : rejected.diagnostics()) {
-                    environment.err().println(renderer.render(diagnostic, sources, invocation.language));
+                    environment.err().println(renderer.render(diagnostic, sources, invocation.language, invocation.ansiEnabled));
                 }
                 return result(CliTermination.SOURCE_REJECTED, rejected.diagnostics(),
                         "format rejected");
@@ -637,7 +645,7 @@ public final class DefaultCompilerCli implements CliApplication {
         } else {
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
             for (Diagnostic diagnostic : diagnostics) {
-                environment.err().println(renderer.render(diagnostic, sources, invocation.language));
+                environment.err().println(renderer.render(diagnostic, sources, invocation.language, invocation.ansiEnabled));
             }
         }
     }
@@ -671,6 +679,7 @@ public final class DefaultCompilerCli implements CliApplication {
     /** Mutable only for one invocation; never retained on the reusable CLI instance. */
     private static final class Invocation {
         final RunContext context;
+        boolean ansiEnabled;
         boolean schemaProduced;
         boolean analysisComplete;
         final List<CliExecutionResult.Artifact> artifacts = new ArrayList<>();

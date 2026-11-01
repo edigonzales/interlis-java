@@ -22,13 +22,20 @@ public final class ConsoleDiagnosticRenderer {
      */
     public String render(Diagnostic diagnostic, Map<SourceId, SourceText> sources,
                          DiagnosticLanguage language) {
+        return render(diagnostic, sources, language, false);
+    }
+
+    /** Explicit pure style projection; legacy overloads remain plain. */
+    public String render(Diagnostic diagnostic, Map<SourceId, SourceText> sources,
+                         DiagnosticLanguage language, boolean ansiEnabled) {
         Objects.requireNonNull(diagnostic, "diagnostic"); Objects.requireNonNull(sources, "sources");
         Objects.requireNonNull(language, "language");
         var formatter = new DiagnosticMessageFormatter();
         var message = formatter.format(diagnostic, language);
         var out = new StringBuilder();
         diagnostic.primaryRange().ifPresent(range -> out.append(location(range, sources)).append(": "));
-        out.append(severity(diagnostic.severity(), language)).append(" [")
+        out.append(new AnsiStyler().style(AnsiStyler.Role.valueOf(diagnostic.severity().name()),
+                severity(diagnostic.severity(), language), ansiEnabled)).append(" [")
                 .append(diagnostic.code().value()).append("] ").append(message.text());
         for (var related : diagnostic.relatedLocations()) {
             out.append('\n').append("  ").append(language == DiagnosticLanguage.DE ? "Verwandte Stelle: " : "Related location: ")

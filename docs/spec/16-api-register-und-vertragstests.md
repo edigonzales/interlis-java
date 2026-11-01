@@ -732,3 +732,10 @@ Laufdiensten; der bisherige Konstruktor bleibt mit Standarddiensten verfügbar.
 `P3CompletionProtocolTest`, `P3PresentationConfigurationTest`,
 `LspErrorContractTest`, `LspProtocolCancellationTest` und der echte
 `LspProcessTest` prüfen positive und negative öffentliche Pfade.
+
+COLOR1 (CLI-Modul, `guru.interlis.cli`): `ColorMode`, `ColorPolicy`,
+`TerminalCapabilities` und `AnsiStyler` sind reine run-lokale Präsentationswerte
+beziehungsweise der explizite Hostdetektor; Verträge und kompatible
+CliEnvironment-Konstruktoren stehen in Kapitel18, nicht im Compilerkern.
+ColorOutputContractTest prüft Parser, Policykombinationen, UTF-8, Reset,
+JSON-Parität und unveränderte Capabilityweitergabe.

@@ -18,19 +18,24 @@ public final class DefaultCommandLineParser implements CommandLineParser {
             String arg = args.get(index);
             if (!fileMode && arg.equals("--")) { fileMode = true; continue; }
             if (!fileMode && arg.startsWith("-")) {
+                String inlineColor = null;
+                if (arg.startsWith("--color=")) { inlineColor = arg.substring(8); arg = "--color"; }
                 var option = definitions.get(arg);
                 if (option == null) return new CliParseOutcome.InvalidCommandLine("unsupported option: " + arg);
                 if (!option.repeatable() && options.containsKey(arg))
                     return new CliParseOutcome.InvalidCommandLine("duplicate option: " + arg);
-                if (index + option.valueCount() >= args.size())
+                if (inlineColor == null && index + option.valueCount() >= args.size())
                     return new CliParseOutcome.InvalidCommandLine(arg + " needs " + option.valueCount() + " value(s)");
                 var values = new ArrayList<String>();
-                for (int count = 0; count < option.valueCount(); count++) {
+                if (inlineColor != null) values.add(inlineColor);
+                for (int count = 0; inlineColor == null && count < option.valueCount(); count++) {
                     String value = args.get(++index);
                     if (value.equals("--") || definitions.containsKey(value))
                         return new CliParseOutcome.InvalidCommandLine(arg + " has a missing value");
                     values.add(value);
                 }
+                if (arg.equals("--color") && !Set.of("auto", "always", "never").contains(values.getFirst()))
+                    return new CliParseOutcome.InvalidCommandLine("--color must be auto, always or never");
                 options.computeIfAbsent(arg, ignored -> new ArrayList<>()).add(values);
             } else {
                 if (!specification.acceptsFiles())

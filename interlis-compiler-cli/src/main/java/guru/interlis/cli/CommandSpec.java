@@ -51,7 +51,10 @@ public record CommandSpec(String command, List<Option> options, boolean acceptsF
             }
             default -> throw new IllegalArgumentException("unknown command: " + command);
         };
-        if (files) options.add(new Option("--diagnostic-language", 1, false));
+        if (files) {
+            options.add(new Option("--diagnostic-language", 1, false));
+            options.add(new Option("--color", 1, false));
+        }
         return new CommandSpec(command, options, files);
     }
 }

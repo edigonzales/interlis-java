@@ -1,5 +1,10 @@
 # Implementierungsstatus interlis-java
 
+Aktiver Folgeauftrag seit 01.11.2026: farbige CLI-Textdiagnosen, COLOR1–3.
+[Operativer COLOR-Status](implementation/compiler-cli-color-output/STATUS.md).
+COLOR1 implementiert und lokal geprüft; unabhängiger Review noch ausstehend.
+Frühere CLI-/G2-/P3-Abnahmen bezeichnen weiterhin ihre historischen Produktstände.
+
 **Aktueller Folgeauftrag Compiler-CLI:** CLI1–CLI3 gemäss
 [Ausführungsplan](implementation/compiler-cli-modernization/EXECUTION_PLAN.md).
 Operativer Stand und unabhängige Folgeabnahmen: [CLI-Status](implementation/compiler-cli-modernization/STATUS.md).
