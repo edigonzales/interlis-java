@@ -32,7 +32,7 @@ public final class CompilerCliProcesses {
             String imported = "MODEL Root AT \"x\" VERSION \"1\" = IMPORTS Base; DOMAIN Name EXTENDS Base.Name = TEXT*10; END Root.";
             Files.writeString(folder.resolve("Base.ili"), base);
             Files.writeString(folder.resolve("Root.ili"), "INTERLIS 2.4; " + imported);
-            Files.writeString(folder.resolve("-Gültig 😀.ili"), base);
+            Files.writeString(folder.resolve("-Gültig 😀 & [x]!.ili"), base);
             Files.writeString(folder.resolve("Multiple.ili"), base + "\n" + imported);
             String bad = "MODEL Bad AT \"x\" VERSION \"1\" = TOPIC T=CLASS C=value:Missing;END C;END T;END Bad.";
             Files.writeString(folder.resolve("Bad.ili"), "INTERLIS 2.4; " + bad);
@@ -67,7 +67,7 @@ public final class CompilerCliProcesses {
                     new Fixture("missing-import", List.of("check", "Root.ili"), 1, false),
                     new Fixture("explicit-import", List.of("check", "--root", "Root", "Root.ili", "Base.ili"), 0, false),
                     new Fixture("multiple-models", List.of("check", "Multiple.ili"), 0, false),
-                    new Fixture("option-end", List.of("check", "--", "-Gültig 😀.ili"), 0, false));
+                    new Fixture("option-end", List.of("check", "--", "-Gültig 😀 & [x]!.ili"), 0, false));
             for (var fixture : fixtures) {
                 var command = new ArrayList<String>(); command.add(cli(root).toString()); command.addAll(fixture.args());
                 var result = run(folder, command, Duration.ofSeconds(45));

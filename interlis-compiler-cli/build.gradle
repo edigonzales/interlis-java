@@ -36,7 +36,7 @@ tasks.named('startScripts') {
         def bridge = '''setlocal DisableDelayedExpansion
 set "_INTERLIS_COMPILER_ARG_COUNT=0"
 :collectCompilerArguments
-if "%1"=="" goto executeCompilerArguments
+if [%1]==[] goto executeCompilerArguments
 set "_INTERLIS_COMPILER_ARG_%_INTERLIS_COMPILER_ARG_COUNT%=%~1"
 set /a _INTERLIS_COMPILER_ARG_COUNT+=1 >NUL
 shift
