@@ -16,6 +16,15 @@ public interface SourceLoader {
      */
     LoadedSource load(SourceLocator locator, FetchPolicy policy, CancellationToken token);
     /**
+     * Loads with a null-free cache request. Existing functional loaders may ignore
+     * this optimization. Cache-capable hosts preserve limits, cancellation and
+     * offline safety. No cache decision belongs to the compiler core.
+     */
+    default LoadedSource load(SourceLocator locator, FetchPolicy policy, RepositoryCacheRequest request, CancellationToken token) {
+        java.util.Objects.requireNonNull(request, "request");
+        return load(locator, policy, token);
+    }
+    /**
      * Loads only previously cached material, never a network or live source.
      * The default rejects the operation without invoking load, preserving the
      * offline safety of existing functional implementations. Cache-capable hosts

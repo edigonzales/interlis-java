@@ -16,8 +16,12 @@ public final class RoutingSourceLoader implements SourceLoader {
         this.http = Objects.requireNonNull(http, "http");
     }
     @Override public LoadedSource load(SourceLocator locator, FetchPolicy policy, CancellationToken token) {
+        return load(locator, policy, RepositoryCacheRequest.unconditional(), token);
+    }
+    @Override public LoadedSource load(SourceLocator locator, FetchPolicy policy, RepositoryCacheRequest request, CancellationToken token) {
+        Objects.requireNonNull(request, "request");
         String location = locator.location();
-        if (location.startsWith("https:") || location.startsWith("http:")) return http.load(locator, policy, token);
+        if (location.startsWith("https:") || location.startsWith("http:")) return http.load(locator, policy, request, token);
         if (location.matches("[a-zA-Z][a-zA-Z0-9+.-]*:.*") && !location.startsWith("file:")) {
             throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "unsupported source scheme", null);
         }

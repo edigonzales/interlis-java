@@ -84,14 +84,14 @@ class HttpNetworkPolicyTest {
         assertEquals("x", load(direct(), base, policy(500, null)).text());
     }
 
-    @Test void redirectsAndConditionalRetryReceiveNewTotalBudgets() throws Exception {
+    @Test void redirectsReceiveNewTotalBudgets() throws Exception {
         var requests = new AtomicInteger();
         String base = server(exchange -> {
             pause(180);
             int number = requests.incrementAndGet();
             if (number == 1) {
                 exchange.getResponseHeaders().set("Location", "/next"); exchange.sendResponseHeaders(302, -1);
-            } else if (number == 2) exchange.sendResponseHeaders(304, -1);
+            } else if (number == 2) { exchange.getResponseHeaders().set("Location", "/final"); exchange.sendResponseHeaders(302, -1); }
             else { exchange.sendResponseHeaders(200, 1); exchange.getResponseBody().write('x'); }
             exchange.close();
         });

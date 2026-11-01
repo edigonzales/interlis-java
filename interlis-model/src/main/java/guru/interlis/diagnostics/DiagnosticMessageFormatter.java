@@ -93,6 +93,7 @@ public final class DiagnosticMessageFormatter {
     private static String cacheEvent(String event, DiagnosticLanguage language) {
         boolean de = language == DiagnosticLanguage.DE;
         return switch (event) {
+            case "FRESH_HIT" -> de ? "lokalen Cache innerhalb der Gültigkeitsfrist verwendet" : "content used from fresh cache";
             case "NOT_MODIFIED" -> de ? "Inhalt aus Cache verwendet (HTTP 304)" : "content used from cache (HTTP 304)";
             case "OFFLINE_HIT" -> de ? "Inhalt offline aus Cache verwendet" : "content used from cache offline";
             case "DOWNLOAD" -> de ? "Quelle heruntergeladen" : "source downloaded";

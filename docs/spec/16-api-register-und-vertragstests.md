@@ -791,6 +791,10 @@ TeaVM-Task repositoryDiagnosticCheck für Importursachen.
 
 ### Standardmässiger Repositorycache (RES-013)
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 Besitzer `interlis-repository` / `guru.interlis.repository`:
 `RepositoryCacheConfiguration(Optional<Path>)` mit `defaults(home)`, `at(path)`
 und `disabled()`; `RepositoryCacheMetadata(source,responseSource,digest,etag,
@@ -832,6 +836,10 @@ RepositoryCacheContractTest und DefaultRepositoryCacheTest.
 
 ### Cachemeldungen pro Quelle
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 Repository / `guru.interlis.repository`: `RepositoryCacheObservation(event,
 Optional<String> safeSource)`, `HostRepositories.createObserved(Path,
 RepositoryCacheConfiguration,Consumer<RepositoryCacheObservation>)`,
@@ -857,6 +865,10 @@ SDK-Kompilierung, HttpNetworkPolicyTest und RepositoryNetworkConfigurationTest.
 
 ### Chronologische Repositorybeobachtung (WP-26/30)
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 Besitzer repository / guru.interlis.repository: RepositoryResolutionObservation
 mit SearchStep(RepositorySearchStep step) und VerificationStarted().
 RepositoryClosureService.resolve(Workspace,AnalysisRequest,RepositoryResolveOptions,
@@ -868,3 +880,14 @@ ConsoleDiagnosticRenderer, ohne IO oder Modellwahl. Katalog v4, Codes0011–0013
 und feste Schweregradpräfixe folgen Kapitel09/18. Vertragstests:
 RepositoryResolutionObservationTest, RepositoryLogOrderTest,
 ConsoleSeverityFormatTest, HttpIdentityCacheTest sowie bestehende Cachefälle.
+
+### Cachefolgeauftrag nach ili2c
+
+Repository / guru.interlis.repository: RepositoryCacheRequest(maxAge,expectedMd5),
+metadata()/model(md5)/unconditional(); SourceLoader.load(locator,policy,request,token)
+als additive Defaultmethode. RepositoryCacheMetadata(source,responseSource,digest,
+downloadedAt) migriert die bisherige Validator-API. Clock-Injektion erfolgt über
+HostRepositories.createObserved mit zusätzlichem java.time.Clock-Parameter.
+FRESH_HIT ergänzt RepositoryCacheEvent; alte304-/Abschlusskennungen bleiben
+reserviert. Null-/Wert-/Frist-/Fehler-/Besitzverträge Kapitel08 §17, Präsentation09/18.
+Abnahme: Ili2cCachePolicyTest und angepasste Cache-/CLI-/SDK-Vertragstests.

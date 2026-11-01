@@ -300,7 +300,7 @@ public final class DefaultCompilerCli implements CliApplication {
                         .orElseGet(RepositoryCacheConfiguration::disabled);
                 var access = HostRepositories.createObserved(environment.workingDirectory(), cacheConfiguration, observation -> {
                     var event=observation.event();
-                    invocation.lifecycle.cacheLookup("repository", event==RepositoryCacheEvent.NOT_MODIFIED || event==RepositoryCacheEvent.OFFLINE_HIT,event.name());
+                    invocation.lifecycle.cacheLookup("repository", event==RepositoryCacheEvent.FRESH_HIT || event==RepositoryCacheEvent.NOT_MODIFIED || event==RepositoryCacheEvent.OFFLINE_HIT,event.name());
                     if (invocation.command.has("--verbose") && !parsed.json()) {
                         new RepositoryCacheRenderer().render(observation,invocation.language,invocation.ansiEnabled)
                                 .ifPresent(environment.err()::println);

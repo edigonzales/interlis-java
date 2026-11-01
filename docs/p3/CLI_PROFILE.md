@@ -102,8 +102,10 @@ Die Fälle `repository-http-compile`, `repository-http-analyze` und
 prüfen die beiden Darstellungen aus der gebauten Distribution.
 
 Repositoryfortschritt wird bei `--verbose` unmittelbar in Ereignisreihenfolge
-angezeigt, mit Ankündigung vor tatsächlicher Online-Abschlussprüfung. Alle
+angezeigt. Eine zweite Online-Abschlussprüfung entfällt. Alle
 Diagnose-/Repositorykopfzeilen verwenden `SEVERITY [CODE] [Position: ]Text`;
 INFO/WARNING/ERROR/HINT sind sprachunabhängig, Texte DE/EN. Suchschritte
 werden im Text nicht nachträglich wiederholt; JSON-/Lockprovenienz bleibt
-erhalten. HTTP verwendet identity und unterstützt damit Vary:Accept-Encoding.
+erhalten. HTTP verwendet identity; der Anwendungscache verwendet24h/7Tage
+und optionale Index-MD5 statt ETags/304. Vary sperrt diese lokale Verwendung
+nicht; no-store bleibt ausgeschlossen. Massgeblich ist Kapitel08 §17.

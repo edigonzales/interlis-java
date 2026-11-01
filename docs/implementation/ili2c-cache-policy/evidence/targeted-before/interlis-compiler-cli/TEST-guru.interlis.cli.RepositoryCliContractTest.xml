@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.RepositoryCliContractTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-01T19:46:37.333Z" hostname="Monterrico.local" time="0.065">
+  <properties/>
+  <testcase name="checkDoesNotPickLatestAndExactModelAndIndexPinsAreEnforced()" classname="guru.interlis.cli.RepositoryCliContractTest" time="0.037"/>
+  <testcase name="lockOutputCannotOverwriteExplicitOrResolvedModelSourcesOrIndices()" classname="guru.interlis.cli.RepositoryCliContractTest" time="0.007"/>
+  <testcase name="checkDiscoversNamedRootWritesLockAndReplaysOfflineAcrossCliInstances()" classname="guru.interlis.cli.RepositoryCliContractTest" time="0.016"/>
+  <testcase name="malformedRepositoryOptionsAndLockAreUsageErrors()" classname="guru.interlis.cli.RepositoryCliContractTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

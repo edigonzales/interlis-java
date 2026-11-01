@@ -37,8 +37,7 @@ class RepositoryResolutionObservationTest {
             var revision = w.currentRevision();
             var update = prepared(service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(BASE)),
                     current -> order.add(event(current)), TOKEN));
-            assertEquals(List.of("LOOKUP", "LOAD " + BASE + "ilimodels.xml", "SELECTED", "LOAD " + BASE + "dep.ili",
-                    "VERIFY", "LOAD " + BASE + "ilimodels.xml", "LOAD " + BASE + "dep.ili"), order);
+            assertEquals(List.of("LOOKUP", "LOAD " + BASE + "ilimodels.xml", "SELECTED", "LOAD " + BASE + "dep.ili"), order);
             assertEquals(List.of(RepositorySearchStep.Kind.LOOKUP, RepositorySearchStep.Kind.SELECTED),
                     update.lock().steps().stream().map(RepositorySearchStep::kind).toList());
             assertEquals(revision, w.currentRevision());
@@ -56,7 +55,7 @@ class RepositoryResolutionObservationTest {
             assertEquals(lock, prepared(service.resolve(w, request(w), RepositoryResolveOptions.defaults(config(BASE)),
                     current -> { calls.incrementAndGet(); throw new IllegalStateException("observer"); }, TOKEN)).lock());
         }
-        assertEquals(3, calls.get());
+        assertEquals(2, calls.get());
     }
 
     @Test void cancellationFromObserverRemainsCancellationAndNeverReturnsPartialPreparation() {
@@ -73,7 +72,7 @@ class RepositoryResolutionObservationTest {
         }
     }
 
-    @Test void verificationStillDetectsSourceChangesAndLeavesWorkspaceUntouched() {
+    @Test void noCompletionEventOrReReadAndWorkspaceRemainsUntouched() {
         var events = new ArrayList<String>(); var service = service(uri -> { });
         try (var w = workspace(model("Root", "1", "IMPORTS Dep;"))) {
             var revision = w.currentRevision();
@@ -82,8 +81,8 @@ class RepositoryResolutionObservationTest {
                 if (current instanceof RepositoryResolutionObservation.VerificationStarted)
                     contents.put(BASE + "dep.ili", contents.get(BASE + "dep.ili") + "\n!! changed bytes");
             }, TOKEN);
-            assertEquals(RepositoryProblem.Reason.CHANGED_SOURCE, problem(result).reason());
-            assertEquals(List.of("LOOKUP", "SELECTED", "VERIFY"), events);
+            assertInstanceOf(RepositoryResolutionOutcome.Prepared.class, result);
+            assertEquals(List.of("LOOKUP", "SELECTED"), events);
             assertEquals(revision, w.currentRevision());
         }
     }
@@ -116,7 +115,7 @@ class RepositoryResolutionObservationTest {
                 }
                 return events;
             }));
-            for (var task : tasks) assertEquals(List.of("LOOKUP", "SELECTED", "VERIFY"), task.get(10, TimeUnit.SECONDS));
+            for (var task : tasks) assertEquals(List.of("LOOKUP", "SELECTED"), task.get(10, TimeUnit.SECONDS));
         }
     }
 }

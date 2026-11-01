@@ -38,13 +38,22 @@ public final class HostRepositories {
     /** Captures the proxy selector once; no global network settings are changed. */
     public static Access createObserved(Path workingDirectory, RepositoryCacheConfiguration configuration,
                                         Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy) {
-        Objects.requireNonNull(workingDirectory); Objects.requireNonNull(configuration); Objects.requireNonNull(proxy);
+        return createObserved(workingDirectory, configuration, observer, proxy, java.time.Clock.systemUTC());
+    }
+    /**
+     * Uses an explicit non-null wall clock for persistent download ages. Clock reads
+     * do not renew entries; construction still performs no IO. All existing host
+     * isolation and observer-failure conditions apply.
+     */
+    public static Access createObserved(Path workingDirectory, RepositoryCacheConfiguration configuration,
+            Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy, java.time.Clock clock) {
+        Objects.requireNonNull(workingDirectory); Objects.requireNonNull(configuration); Objects.requireNonNull(proxy); Objects.requireNonNull(clock);
         var safe = CacheObservations.detailed(observer);
         var warned = new AtomicBoolean();
         Runnable unavailable = () -> { if(warned.compareAndSet(false,true))safe.accept(RepositoryCacheObservation.global(RepositoryCacheEvent.WRITE_UNAVAILABLE)); };
         ContentStore store=configuration.directory().<ContentStore>map(p -> new DirectoryContentStore(p,16_777_216,unavailable)).orElseGet(InMemoryContentStore::new);
         var metadata=configuration.directory().map(p -> new DirectoryMetadataStore(p,unavailable)).orElse(null);
-        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),HttpSourceLoader.observed(store,metadata,safe,proxy)),
+        return new Access(new RoutingSourceLoader(new FileSourceLoader(workingDirectory),HttpSourceLoader.observed(store,metadata,safe,proxy,clock)),
                 store,event -> safe.accept(RepositoryCacheObservation.global(event)),safe);
     }
 }

@@ -61,7 +61,7 @@ public final class RepositoryClient {
             URI indexLocation = URI.create(source.indexLocator().location());
             try {
                 LoadedSource loaded = loader.load(source.indexLocator(),
-                        config.fetchPolicy(), token);
+                        config.fetchPolicy(), RepositoryCacheRequest.metadata(), token);
                 RepositoryIndex index = indexReader.read(new IndexPayload(loaded.text()),
                         source.base());
                 for (RepositoryModelMetadata metadata : index.models()) {
@@ -100,7 +100,7 @@ public final class RepositoryClient {
                             List<ModelCandidate> candidates, List<RepositoryFailure> failures,
                             FetchPolicy fetchPolicy, CancellationToken token) {
         try {
-            LoadedSource loaded = loader.load(source.indexLocator(), fetchPolicy, token);
+            LoadedSource loaded = loader.load(source.indexLocator(), fetchPolicy, RepositoryCacheRequest.metadata(), token);
             RepositoryIndex index = indexReader.read(new IndexPayload(loaded.text()),
                     source.base());
             for (RepositoryModelMetadata metadata : index.models()) {

@@ -137,7 +137,7 @@ final class RepositorySearch {
         return indexes.computeIfAbsent(uri,key->{
             var locator=config.sources().stream().filter(s->base(s.base().uri()).equals(uri)).map(RepositorySource::indexLocator).findFirst().orElse(new SourceLocator(SourceUris.canonicalFile(uri.resolve("ilimodels.xml").toString())));
             indexSources.add(new SourceId(locator.location()));
-            try { var loaded=loader.load(locator,config.fetchPolicy(),token);return Optional.of(new RepositoryIndexReader().read(new IndexPayload(loaded.text()),new RepositoryBase(uri))); }
+            try { var loaded=loader.load(locator,config.fetchPolicy(),RepositoryCacheRequest.metadata(),token);return Optional.of(new RepositoryIndexReader().read(new IndexPayload(loaded.text()),new RepositoryBase(uri))); }
             catch(SourceLoadException failure) { unavailable.put(new SourceId(locator.location()),failure.reason());note(model,uri,REPOSITORY_UNAVAILABLE,failure.reason().name()); }
             catch(RepositoryIndexException failure) { indexFailures=true;note(model,uri,REPOSITORY_UNAVAILABLE,"INVALID_INDEX"); }
             return Optional.empty();
@@ -146,7 +146,7 @@ final class RepositorySearch {
     private RepositorySiteReader.Site site(URI uri,String model) {
         return sites.computeIfAbsent(uri,key->{
             var locator=new SourceLocator(SourceUris.canonicalFile(uri.resolve("ilisite.xml").toString()));
-            try { var loaded=loader.load(locator,config.fetchPolicy(),token);return new RepositorySiteReader().read(new IndexPayload(loaded.text()),new RepositoryBase(uri)); }
+            try { var loaded=loader.load(locator,config.fetchPolicy(),RepositoryCacheRequest.metadata(),token);return new RepositorySiteReader().read(new IndexPayload(loaded.text()),new RepositoryBase(uri)); }
             catch(SourceLoadException failure) {
                 unavailable.put(new SourceId(locator.location()),failure.reason());
                 if(failure.reason()!=SourceLoadException.Reason.NOT_FOUND)note(model,uri,SITE_UNAVAILABLE,failure.reason().name());

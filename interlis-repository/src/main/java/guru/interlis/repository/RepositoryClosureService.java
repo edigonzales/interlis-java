@@ -45,9 +45,8 @@ public final class RepositoryClosureService {
      * Prepares one requested closure. Does not mutate workspace sources,
      * configuration or accepted analysis. Loaded bytes, identities, actual parsed
      * headers and published MD5 (when supplied) must agree. Unqualified remote
-     * versions follow the ili2c predecessor chain; exact identities override it. Online inputs are reread
-     * once at the end to detect changes during discovery; this is an optimistic read
-     * window, not a remote filesystem transaction. Later workspace edits reject
+     * versions follow the ili2c predecessor chain; exact identities override it. Online cache reuse follows explicit age and index-MD5 rules;
+     * no remote completion reread is performed. Later workspace edits reject
      * application of the entire batch. Cancellation never returns a partial batch.
      */
     public RepositoryResolutionOutcome resolve(Workspace workspace, AnalysisRequest request,
@@ -56,8 +55,8 @@ public final class RepositoryClosureService {
     }
 
     /**
-     * Prepares the same closure while observing current search decisions and the
-     * beginning of actual online completion verification. All inputs are non-null.
+     * Prepares the same closure while observing current search decisions. Reserved
+     * completion observations are not emitted by the age/MD5 policy. All inputs are non-null.
      * The observer belongs to this invocation, is called synchronously in occurrence
      * order and is never retained after return. RuntimeExceptions from observation
      * are ignored; cancellation remains controlled by {@code token}. Concurrent
@@ -157,13 +156,6 @@ public final class RepositoryClosureService {
                                     new ResolverCatalog(entries), originalConfig.cacheLimits(),warnings.stream().distinct().toList());
                         }
                         recordSelected(capture, ranks.keySet(), pins, options.sourcePins(), options.lock(), selectedPins);
-                        var unavailable = options.lock().filter(l -> l.formatVersion()==2).map(ResolutionLock::unavailable).orElse(search.unavailable());
-                        if (!options.repositories().fetchPolicy().offline() && (!verified.seen.isEmpty() || !unavailable.isEmpty())) {
-                            token.throwIfCancellationRequested();
-                            safeObserver.accept(new RepositoryResolutionObservation.VerificationStarted());
-                        }
-                        verified.verifyUnchanged();
-                        verified.verifyUnavailable(unavailable);
                         if (!workspace.currentRevision().equals(expected)) return stale(workspace, expected);
                         trace.addAll(capture.resolution().trace().decisions());
                         var previousLock = originalConfig.resolverCatalog().entries().get("repository-lock");
@@ -298,7 +290,7 @@ public final class RepositoryClosureService {
                             reject(RepositoryProblem.Reason.INVALID_SOURCE, query.modelName());
                         }
                         failureSource = id;
-                        var loaded = verified.load(new SourceLocator(id.value()), options.repositories().fetchPolicy(), token);
+                        var loaded = verified.load(new SourceLocator(id.value()), options.repositories().fetchPolicy(), RepositoryCacheRequest.model(metadata.md5()), token);
                         metadata.md5().ifPresent(md5 -> {
                             try {
                                 String actual = java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("MD5")
@@ -441,6 +433,10 @@ public final class RepositoryClosureService {
             this.pins = Map.copyOf(pins); this.lock = lock; this.policy = policy; this.token = token;this.maxTotalText=maxTotalText;
         }
         @Override public LoadedSource load(SourceLocator locator, FetchPolicy ignored, CancellationToken ignoredToken) {
+            return load(locator, policy, RepositoryCacheRequest.metadata(), token);
+        }
+        @Override public LoadedSource load(SourceLocator locator, FetchPolicy ignored, RepositoryCacheRequest request, CancellationToken ignoredToken) {
+            Objects.requireNonNull(request, "request");
             token.throwIfCancellationRequested();
             var id = new SourceId(locator.location());
             ContentDigest expected = pins.get(id);
@@ -473,7 +469,7 @@ public final class RepositoryClosureService {
                                 Optional.of(failure.reason()),Optional.of(id),List.of()));
                     }
                 }
-            } else result = loader.load(locator, policy, token);
+            } else result = loader.load(locator, policy, request, token);
             token.throwIfCancellationRequested();
             byte[] bytes = result.text().getBytes(StandardCharsets.UTF_8);
             var digest = ContentDigest.sha256(bytes);
@@ -488,21 +484,6 @@ public final class RepositoryClosureService {
             if (previous != null && !previous.byteSha256().equals(result.byteSha256())) reject(RepositoryProblem.Reason.CHANGED_SOURCE, "");
             if (!result.origin().equals("http-no-store")) store.put(new VerifiedContent(id, digest, bytes));
             return result;
-        }
-        void verifyUnavailable(Map<SourceId,SourceLoadException.Reason> unavailable) {
-            if (policy.offline()) return;
-            for (var entry : unavailable.entrySet()) {
-                token.throwIfCancellationRequested();
-                try {
-                    loader.load(new SourceLocator(entry.getKey().value()),policy,token);
-                    reject(RepositoryProblem.Reason.CHANGED_SOURCE, "");
-                } catch (SourceLoadException failure) {
-                    if (failure.reason() != entry.getValue()) reject(RepositoryProblem.Reason.CHANGED_SOURCE, "");
-                }
-            }
-        }
-        void verifyUnchanged() {
-            if (!policy.offline()) for (var id : List.copyOf(seen.keySet())) load(new SourceLocator(id.value()), policy, token);
         }
     }
 }

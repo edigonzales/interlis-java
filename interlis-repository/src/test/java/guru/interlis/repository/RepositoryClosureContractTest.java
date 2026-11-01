@@ -111,7 +111,7 @@ class RepositoryClosureContractTest {
         try (var w = workspace(model("Root", "1", "IMPORTS Middle; DOMAIN D EXTENDS Middle.D=TEXT*7;"))) {
             var update = prepared(new RepositoryClosureService(new RoutingSourceLoader(directory), cache)
                     .resolve(w, request(w), RepositoryResolveOptions.defaults(config(base)), TOKEN));
-            lock = update.lock(); update.apply(w); compile(w, "Root"); assertEquals(6, calls.get());
+            lock = update.lock(); update.apply(w); compile(w, "Root"); assertEquals(3, calls.get());
         } finally { server.stop(0); }
         var offline = new RepositoryConfig(List.of(source(base)), new FetchPolicy(true, 100_000, Duration.ofSeconds(1), Duration.ofSeconds(1), java.util.Optional.of(Duration.ofSeconds(1))));
         try (var w = workspace(model("Root", "1", "IMPORTS Middle; DOMAIN D EXTENDS Middle.D=TEXT*7;"))) {
@@ -182,7 +182,7 @@ class RepositoryClosureContractTest {
         }
     }
 
-    @Test void sourceChangesDuringResolutionAndStaleBatchesNeverOverwriteEditors() {
+    @Test void noFinalRereadAndStaleBatchesNeverOverwriteEditors() {
         String base="https://repo.example/"; var contents=closure(base); var reads=new AtomicInteger();
         var unstable=(SourceLoader)(l,p,t)-> {
             var text=contents.get(l.location());
@@ -190,8 +190,9 @@ class RepositoryClosureContractTest {
             return loaded(l.location(),text);
         };
         try(var w=workspace(model("Root","1","IMPORTS Middle;"))) {
-            assertEquals(RepositoryProblem.Reason.CHANGED_SOURCE,problem(new RepositoryClosureService(unstable,new InMemoryContentStore())
-                    .resolve(w,request(w),RepositoryResolveOptions.defaults(config(base)),TOKEN)).reason());
+            prepared(new RepositoryClosureService(unstable,new InMemoryContentStore())
+                    .resolve(w,request(w),RepositoryResolveOptions.defaults(config(base)),TOKEN));
+            assertEquals(1,reads.get(),"no completion reread");
             assertEquals(1,w.state().sourceRevisions().size());
             var service=new RepositoryClosureService(loader(contents),new InMemoryContentStore());
             var update=prepared(service.resolve(w,request(w),RepositoryResolveOptions.defaults(config(base)),TOKEN));

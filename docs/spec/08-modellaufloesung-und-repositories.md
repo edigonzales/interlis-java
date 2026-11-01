@@ -188,7 +188,7 @@ Ein Headercache wird durch exakten Textfingerprint, Quellrevision, Grammatik-/Pa
 | RES-010 | Byte- und Textfingerprints MÜSSEN sauber getrennt und korrekt berechnet werden. | P1 | UTF-8/UTF-16/CRLF-/BOM-Provenienztests. |
 | RES-011 | Repositoryindex-Leser MÜSSEN echte Indexfixtures und Referenzprofile unterstützen. | P2 | Gepinnte eigene/offizielle Indexdateien; keine ad-hoc HTML-Suche als Compilerresolver. |
 | RES-012 | Zyklen und grosse Closures MÜSSEN terminieren oder am definierten Budget enden. | P1 | Kreisimport, Doppelimport und Modellzahlgrenze mit deterministischem Resultat. |
-| RES-013 | Der JVM-CLI-Host MUSS standardmässig einen persistenten Repositorycache verwenden, online dessen Aktualität prüfen und explizit offline auch ohne Lockfile aus dem lokalen Repositorystand auflösen können. | P2 | Erstdownload/304/Änderung, Abschaltung, Offline ohne Netz, Lockreplay und korrupte/parallel geschriebene Einträge. |
+| RES-013 | Der JVM-CLI-Host MUSS standardmässig einen persistenten Repositorycache verwenden, online gemäss §17 Cachefristen und veröffentlichte Modell-MD5 vor einer Beschaffung prüfen und explizit offline auch ohne Lockfile aus dem lokalen Repositorystand auflösen können. | P2 | Erstdownload, 24h-/7Tage-Fristen, MD5 vor Download, Abschaltung, Offline ohne Netz, Lockreplay und korrupte/parallel geschriebene Einträge. |
 
 ## 10. Konkrete Vertragstests
 
@@ -301,11 +301,12 @@ Ladefehler sind getrennte Ursachen. Das Standardprofil setzt die Suche bei
 unverfügbaren Repositorymetadaten mit einer sichtbaren Warnung fort; der alte
 strikte Vertrag gilt weiter beim Replay eines Version-1-Locks. Eine bereits
 ausgewählte Modelldatei wird bei einem Fehler nicht durch einen anderen Kandidaten ersetzt. `RepositoryClient.discover` behält seinen separaten partiellen Suchvertrag.
-Online werden verwendete Indizes und nachgeladene Modellquellen am Ende nochmals
-verglichen; Änderungen im Lesezeitfenster ergeben CHANGED_SOURCE bzw. einen
-verletzten Pin/Lock. Dies ist keine verteilte Dateisystemtransaktion. Spätere
-Workspaceänderungen werden zusätzlich beim Apply erkannt. IO und Parserarbeit
-liegen ausserhalb des Monitors des Zielworkspaces.
+Online richtet sich die Wiederverwendung nach Cachealter und optionaler
+Index-MD5 gemäss §17; eine zweite Online-Abschlussprüfung entfällt. Liefert die
+normale Beschaffung widersprüchliche Bytes derselben Quelle, bleiben
+CHANGED_SOURCE bzw. verletzte Pins/Locks Fehler. Spätere Workspaceänderungen
+werden beim Apply erkannt. IO und Parserarbeit liegen ausserhalb des Monitors
+des Zielworkspaces.
 
 Offline lädt der Host ausschliesslich digestverifizierte Cacheinhalte. Bekannte
 Pins/Locks haben Vorrang vor Herkunftsmetadaten; für diesen Pfad wird der Loader
@@ -444,6 +445,10 @@ Workspace-Mehrdeutigkeit bleibt eine eigene Abnahme.
 
 ## 13. Standardcache und HTTP-Revalidierung (RES-013)
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 `HostRepositories.create(workingDirectory, RepositoryCacheConfiguration, observer)`
 ist die explizite JVM-Komposition. `Access.loader()`, `contentStore()` und
 `closureService()` teilen Inhaltscache und den lauflokalen Beobachtungskanal.
@@ -540,8 +545,9 @@ einen detaillierten Observer entgegen. Alte Enum-Callbacks/Konstruktoren und
 der Dreiparameterkonstruktor von Access bleiben über Adapter erhalten.
 Jeder tatsächliche Zugriff veröffentlicht sein Ereignis einmal je angeschlossener
 Schnittstelle. Observerfehler ändern die Beschaffung nicht; kein globaler Zustand.
-HTTP- und beide Offlinepfade liefern die angefragte Quelle, einschliesslich
-Abschlussprüfungen. Starke ETags, optionale Sites, Pins und Locks bleiben unverändert.
+HTTP- und beide Offlinepfade liefern bei jedem tatsächlichen Zugriff die
+angefragte Quelle. Zusätzliche Online-Abschlussprüfungen und ETags entfallen
+gemäss §17; optionale Sites, Pins und Locks bleiben erhalten.
 
 ## 15. HTTP-Netzwerkpolicy (RES-009, ARCH-005)
 
@@ -607,6 +613,10 @@ Abnahmen: HttpRedirectFailureTest, MalformedRepositoryRedirectTest sowie
 
 ## 16. Chronologische Beobachtung und feste HTTP-Darstellung
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 WP-26/30, RES-009/013, LOG-004/005/008: RepositoryResolutionObservation im
 Repositorymodul ist ein geschlossener unveränderlicher Typ mit SearchStep
 (RepositorySearchStep step, nullfrei) und VerificationStarted(). Die additive
@@ -633,3 +643,40 @@ Dies konkretisiert die bisher nicht unterstützten Vary-Profile in §13;
 kein allgemeiner Varianten- oder Kompressionscache. Grundlage:
 [RFC9110 §12.5.3](https://www.rfc-editor.org/rfc/rfc9110.html#section-12.5.3),
 [RFC9111 §4.1](https://www.rfc-editor.org/rfc/rfc9111.html#section-4.1).
+
+## 17. Cache nach ili2c: MD5 und Fristen (massgeblicher Folgevertrag)
+
+WP-26/30, RES-009/013, CLI-004/006, LOG-005/008: Auf ausdrücklichen
+Nutzerentscheid ersetzt dieser Abschnitt die ETag-/304- und Abschlussprüfungs-
+Verträge aus §13/16. Metadaten haben24h, Modelldateien7Tage Cachefrist ab dem
+letzten vollständigen erfolgreichen Download je URL; Treffer verlängern sie
+nicht. Genau an der Grenze bleibt ein Eintrag gültig, zukünftige Zeitpunkte
+sind online unzuverlässig. Innerhalb der Frist wird vor Modellbeschaffung
+die vorhandene Datei digestgeprüft und gegen die optionale Index-MD5 verglichen.
+Fehlende/defekte/abgelaufene oder MD5-abweichende Inhalte werden vollständig
+geladen. Ohne MD5 entscheidet die Frist. Nach Download bleibt die veröffentlichte
+MD5 verbindlich; SHA256/Pins/Locks werden zusätzlich geprüft. Keine bedingten
+Header/ETags/Last-Modified, keine304-Wiederverwendung, kein zweiter Onlineabruf
+geladener oder zuvor nicht verfügbarer Quellen, auch nicht mit Lock.
+Onlinefehler bleiben Fehler, nur --offline verwendet alte verifizierte Inhalte.
+
+RepositoryCacheRequest(Duration maxAge,Optional<String> expectedMd5) ist immutable
+und nullfrei, Dauer nichtnegativ;0 bedeutet unbedingt laden. Fabriken metadata()
+(24h), model(md5)(7Tage) und unconditional(). Neue SourceLoader.load-Überladung
+mit Request vor CancellationToken; Default delegiert auf den bisherigen
+abstrakten Einstieg. Routing-/HTTP-/verifizierender Loader reichen den Request
+weiter, alle Repositoryverbraucher wählen Fristen explizit, ohne URL-Heuristik.
+HTTP ohne Request lädt online unbedingt. Uhr ist explizit injizierbar.
+RepositoryCacheMetadata(source,responseSource,digest,downloadedAt) ersetzt
+Validatoren durch Instant downloadedAt; EPOCH kennzeichnet unbekanntes Alter.
+metadata-v2 speichert atomar je URL, Inhaltsdateien/Lockformate bleiben erhalten.
+V1 ist nur offline als Herkunftszuordnung nutzbar; online erfolgt einmaliger
+Neudownload und v2-Veröffentlichung. Defekte v2-Einträge fallen nicht auf v1 zurück.
+Keine Inhaltsbereinigung. Vary entscheidet nicht über den Anwendungscache;
+no-store bleibt ausgeschlossen, identity und Content-Coding-Prüfung bleiben.
+FRESH_HIT bezeichnet lokale Onlineverwendung, ohne304-Behauptung. NOT_MODIFIED,
+VerificationStarted und ILI-RES-0013 bleiben reserviert, werden nicht emittiert.
+Atomare Workspace-Revisionsprüfung und Gate bleiben erhalten; bereits während
+der normalen Beschaffung erkannte widersprüchliche Inhalte bleiben Fehler.
+Referenz: ili2c5.6.9, bf16026e83f2377153b2e818a4f3838f0a423722,
+RepositoryAccess#getLocalFileLocation und IliManager#createConfig.

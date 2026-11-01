@@ -1,5 +1,31 @@
 # Implementierungsstatus interlis-java
 
+Unabhängiger OpenCodev2.0.28-/DeepSeek-Flash-Review des ili2c-Cachefolgeauftrags
+abgeschlossen: CACHE-01–06 PASS auf c9fdd30,13 eigene Java-/16 Launcher-
+Gegenproben. Ein redaktioneller Befund N-1 hier behoben; Folgereview auf
+c92669b PASS mit null offenen Befunden und nachgewiesen identischen Produkt-/
+Test-/Helferbäumen. Beide Prozesse Exit0, Guard passed/Exit0, saubere Checkouts,
+tatsächliches Modell deepseek/deepseek-flash. Originalabnahme139JUnit/26Suites,
+SDK9/CLI22/Public4 bleibt gültig. Keine offenen Pflichtprüfungen/Blocker.
+Commit und Push anschliessend ausdrücklich beauftragt; kein Release.
+[Abschluss und Originalreviewbelege](implementation/ili2c-cache-policy/REPORT.md#unabhängiger-opencode-deepseek-flash-review).
+
+
+Cache auf ili2c-Fristen/MD5 umgestellt (WP-26/30; RES-009/013, CLI-004/006,
+LOG-005/008):24h Metadaten/7Tage Modelle, lokale MD5 vor Download,
+keine ETags oder zweite Onlineprüfung. Additive CacheRequest-/Clock-API,
+Metadatenv2 mit Downloadzeitpunkt und V1-Offlinekompatibilität; Pins/Locks,
+SHA-256, atomare Übernahme und Gate bleiben erhalten. FRESH_HIT ersetzt
+304-Meldungen im aktuellen Ablauf. Gezielte Abnahme:139 unterschiedliche
+JUnit-Fälle/26 Suites ohne Fehler/Skips, neun SDK-Prozesskommandos und22
+kontrollierte CLI-Fälle bestehen. Vier öffentliche Screenshot-Prozesse Exit0;
+beide warmen Läufe null Downloads, sechs lokale Treffer. Alte Testorakel
+fachlich angepasst, Zwischenfehler und Rohbelege vollständig erhalten.
+Distribution am bisherigen entpackten Aufrufpfad aktualisiert. Keine offenen
+Pflichtprüfungen/Blocker dieses Auftrags. Kein Commit, Push oder Release.
+[Bericht, API-Migration und Nachweise](implementation/ili2c-cache-policy/REPORT.md).
+
+
 Chronologische CLI-/Cachekorrektur abgeschlossen (WP-26/30; RES-009/013,
 CLI-004/006, DIAG-002/003/006, LOG-004/005/008): feste Schweregradpräfixe zuerst,
 aktuelle Suchereignisse, angekündigte Abschlussprüfung und sichere

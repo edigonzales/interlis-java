@@ -26,10 +26,10 @@ class RepositoryCacheObservationTest {
         var events=new ArrayList<RepositoryCacheObservation>();var access=host(events);
         fixture.load(access,url,ONLINE);fixture.load(access,url,ONLINE);int requests=fixture.requests.get();fixture.load(access,url,OFFLINE);
         assertEquals(requests,fixture.requests.get());
-        assertEquals(List.of(RepositoryCacheEvent.DOWNLOAD,RepositoryCacheEvent.NOT_MODIFIED,RepositoryCacheEvent.OFFLINE_HIT),kinds(events));
+        assertEquals(List.of(RepositoryCacheEvent.DOWNLOAD,RepositoryCacheEvent.FRESH_HIT,RepositoryCacheEvent.OFFLINE_HIT),kinds(events));
         for(var event:events)assertEquals(url.substring(0,url.indexOf('?')),event.safeSource().orElseThrow());
         var legacy=new ArrayList<RepositoryCacheEvent>();fixture.load(fixture.host(legacy),url,ONLINE);
-        assertEquals(List.of(RepositoryCacheEvent.NOT_MODIFIED),legacy);
+        assertEquals(List.of(RepositoryCacheEvent.FRESH_HIT),legacy);
     }
     @Test void corruptBytesGiveMissThenDownloadAndNeverAFalseHit() throws Exception {
         String url=fixture.serve(e -> fixture.send(e,"original","\"one\""))+"model.ili";
@@ -38,18 +38,20 @@ class RepositoryCacheObservationTest {
         assertThrows(SourceLoadException.class,()->fixture.load(access,url,OFFLINE));
         fixture.load(access,url,ONLINE);
         assertEquals(List.of(RepositoryCacheEvent.OFFLINE_MISS,RepositoryCacheEvent.CACHE_MISS,RepositoryCacheEvent.DOWNLOAD),kinds(events));
-        assertEquals(3,fixture.requests.get());
+        assertEquals(2,fixture.requests.get());
     }
-    @Test void unconfirmedAndSecond304DoNotClaimAHitOrInventAnExtraDownload() throws Exception {
-        var invalid=new AtomicBoolean();var always304=new AtomicBoolean();
+    @Test void freshCacheNeverContactsServerAndUnsolicited304NeverClaimsAHit() throws Exception {
+        var always304=new AtomicBoolean();
         String url=fixture.serve(e -> {
-            if(always304.get() || invalid.get() && e.getRequestHeaders().containsKey("If-None-Match")) {e.sendResponseHeaders(304,-1);e.close();}
+            if(always304.get()) {e.sendResponseHeaders(304,-1);e.close();}
             else fixture.send(e,"text","\"one\"");
         })+"model.ili";
-        var events=new ArrayList<RepositoryCacheObservation>();var access=host(events);fixture.load(access,url,ONLINE);events.clear();invalid.set(true);
-        fixture.load(access,url,ONLINE);assertEquals(List.of(RepositoryCacheEvent.CACHE_MISS,RepositoryCacheEvent.DOWNLOAD),kinds(events));
-        events.clear();always304.set(true);int before=fixture.requests.get();assertThrows(SourceLoadException.class,()->fixture.load(access,url,ONLINE));
-        assertEquals(2,fixture.requests.get()-before);assertEquals(List.of(RepositoryCacheEvent.CACHE_MISS,RepositoryCacheEvent.CACHE_MISS),kinds(events));
+        var events=new ArrayList<RepositoryCacheObservation>();var access=host(events);
+        fixture.load(access,url,ONLINE);events.clear();always304.set(true);
+        fixture.load(access,url,ONLINE);assertEquals(List.of(RepositoryCacheEvent.FRESH_HIT),kinds(events));
+        events.clear();int before=fixture.requests.get();
+        assertThrows(SourceLoadException.class,()->access.loader().load(new SourceLocator(url),ONLINE,TOKEN));
+        assertEquals(before+1,fixture.requests.get());assertTrue(events.isEmpty());
     }
     @Test void observationAndLegacyObserverFailuresDoNotChangeLoadingAndNoStoreDoesNotClaimPersistence() throws Exception {
         String url=fixture.serve(e -> {e.getResponseHeaders().set("Cache-Control","no-store");fixture.send(e,"text","\"one\"");})+"model.ili";

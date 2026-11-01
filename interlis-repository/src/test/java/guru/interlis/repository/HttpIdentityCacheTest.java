@@ -26,15 +26,15 @@ class HttpIdentityCacheTest {
         fixture.load(fixture.host(), url, ONLINE);
         var events = new ArrayList<RepositoryCacheEvent>();
         assertEquals("original", fixture.load(fixture.host(events), url, ONLINE).text());
-        assertEquals(List.of(RepositoryCacheEvent.NOT_MODIFIED), events);
-        assertEquals(List.of("identity", "identity"), encodings);
+        assertEquals(List.of(RepositoryCacheEvent.FRESH_HIT), events);
+        assertEquals(List.of("identity"), encodings);
         assertEquals(1, fixture.bodies.get());
         int requests = fixture.requests.get();
         assertEquals("original", fixture.load(fixture.host(), url, OFFLINE).text());
         assertEquals(requests, fixture.requests.get());
     }
 
-    @Test void unsupportedVariantsWildcardAndNoStoreRemainUncached() throws Exception {
+    @Test void variantsDoNotBlockApplicationCacheAndNoStoreRemainsUncached() throws Exception {
         String base = fixture.serve(e -> {
             e.getResponseHeaders().set("Vary", switch (e.getRequestURI().getPath()) {
                 case "/mixed" -> "Accept-Encoding, Accept-Language";
@@ -46,12 +46,14 @@ class HttpIdentityCacheTest {
         });
         for (String path : List.of("mixed", "wildcard", "private")) {
             fixture.load(fixture.host(), base + path, ONLINE);
-            assertFalse(Files.exists(fixture.metadata(base + path)));
-            assertThrows(SourceLoadException.class, () -> fixture.load(fixture.host(), base + path, OFFLINE));
+            if (path.equals("private")) {
+                assertFalse(Files.exists(fixture.metadata(base + path)));
+                assertThrows(SourceLoadException.class, () -> fixture.load(fixture.host(), base + path, OFFLINE));
+            } else assertEquals("variant", fixture.load(fixture.host(), base + path, OFFLINE).text());
         }
     }
 
-    @Test void unexpectedCodingsOn200And304FailBeforePublishingOrUsingBytes() throws Exception {
+    @Test void unexpectedCodingsOnUnconditional200FailBeforePublishingBytes() throws Exception {
         var coding = new AtomicReference<String>();
         String url = fixture.serve(e -> {
             if (coding.get() != null) e.getResponseHeaders().set("Content-Encoding", coding.get());
@@ -67,12 +69,12 @@ class HttpIdentityCacheTest {
         byte[] metadata = Files.readAllBytes(fixture.metadata(url));
         coding.set("gzip");
         assertEquals(SourceLoadException.Reason.IO_FAILURE,
-                assertThrows(SourceLoadException.class, () -> fixture.load(fixture.host(), url, ONLINE)).reason());
+                assertThrows(SourceLoadException.class, () -> fixture.host().loader().load(new SourceLocator(url), ONLINE, TOKEN)).reason());
         assertArrayEquals(metadata, Files.readAllBytes(fixture.metadata(url)));
         assertEquals(original.byteSha256(), fixture.load(fixture.host(), url, OFFLINE).byteSha256());
     }
 
-    @Test void redirectsAndUnconditionalRetriesAlwaysRequestIdentity() throws Exception {
+    @Test void redirectsAndUnconditionalLoadsAlwaysRequestIdentity() throws Exception {
         var encodings = new ArrayList<String>();
         var invalid304 = new AtomicBoolean();
         String base = fixture.serve(e -> {
@@ -87,8 +89,8 @@ class HttpIdentityCacheTest {
         });
         fixture.load(fixture.host(), base + "redirect", ONLINE);
         invalid304.set(true);
-        fixture.load(fixture.host(), base + "redirect", ONLINE);
-        assertEquals(6, encodings.size());
+        fixture.host().loader().load(new SourceLocator(base + "redirect"), ONLINE, TOKEN);
+        assertEquals(4, encodings.size());
         assertTrue(encodings.stream().allMatch("identity"::equals), encodings.toString());
         assertEquals(2, fixture.bodies.get());
     }

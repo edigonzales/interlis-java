@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.MalformedRepositoryRedirectTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-01T19:46:37.285Z" hostname="Monterrico.local" time="0.046">
+  <properties/>
+  <testcase name="malformedRedirectsRemainOperationalFailuresForAllRepositoryCommands()" classname="guru.interlis.cli.MalformedRepositoryRedirectTest" time="0.046"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

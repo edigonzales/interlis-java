@@ -1,0 +1,51 @@
+> Task :interlis-workspace:processResources NO-SOURCE
+> Task :interlis-compiler-cli:processResources NO-SOURCE
+> Task :interlis-repository:processResources NO-SOURCE
+> Task :interlis-compiler-cli:processTestResources NO-SOURCE
+> Task :interlis-projection:processResources UP-TO-DATE
+> Task :interlis-compiler:generateGrammarSource UP-TO-DATE
+> Task :interlis-compiler:processResources UP-TO-DATE
+> Task :interlis-model:compileJava
+> Task :interlis-model:processResources NO-SOURCE
+> Task :interlis-model:classes
+> Task :interlis-compiler:compileJava UP-TO-DATE
+> Task :interlis-compiler:classes UP-TO-DATE
+> Task :interlis-compiler:jar UP-TO-DATE
+> Task :interlis-projection:compileJava UP-TO-DATE
+> Task :interlis-workspace:compileJava UP-TO-DATE
+> Task :interlis-workspace:classes UP-TO-DATE
+> Task :interlis-projection:classes UP-TO-DATE
+> Task :interlis-projection:jar UP-TO-DATE
+> Task :interlis-workspace:jar UP-TO-DATE
+> Task :interlis-model:jar
+
+> Task :interlis-repository:compileJava FAILED
+/Users/stefan/sources/interlis-java/interlis-repository/src/main/java/guru/interlis/repository/RepositoryClient.java:44: error: method readSource in class RepositoryClient cannot be applied to given types;
+            readSource(source, priority, indexLocation, candidates, failures, config.fetchPolicy(), RepositoryCacheRequest.metadata(), token);
+            ^
+  required: RepositorySource,int,URI,List<ModelCandidate>,List<RepositoryFailure>,FetchPolicy,CancellationToken
+  found:    RepositorySource,int,URI,List<ModelCandidate>,List<RepositoryFailure>,FetchPolicy,RepositoryCacheRequest,CancellationToken
+  reason: actual and formal argument lists differ in length
+1 error
+
+[Incubating] Problems report is available at: file:///Users/stefan/sources/interlis-java/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':interlis-repository:compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
+> Compilation failed; see the compiler output below.
+  /Users/stefan/sources/interlis-java/interlis-repository/src/main/java/guru/interlis/repository/RepositoryClient.java:44: error: method readSource in class RepositoryClient cannot be applied to given types;
+              readSource(source, priority, indexLocation, candidates, failures, config.fetchPolicy(), RepositoryCacheRequest.metadata(), token);
+              ^
+    required: RepositorySource,int,URI,List<ModelCandidate>,List<RepositoryFailure>,FetchPolicy,CancellationToken
+    found:    RepositorySource,int,URI,List<ModelCandidate>,List<RepositoryFailure>,FetchPolicy,RepositoryCacheRequest,CancellationToken
+    reason: actual and formal argument lists differ in length
+  1 error
+
+* Try:
+> Check your code and dependencies to fix the compilation error(s)
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 793ms
+12 actionable tasks: 3 executed, 9 up-to-date

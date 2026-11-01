@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.diagnostics.DiagnosticCatalogTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-01T19:46:36.347Z" hostname="Monterrico.local" time="0.048">
+  <properties/>
+  <testcase name="initialCatalogIsStableAndUnique()" classname="guru.interlis.diagnostics.DiagnosticCatalogTest" time="0.033"/>
+  <testcase name="duplicateCodeIsRejected()" classname="guru.interlis.diagnostics.DiagnosticCatalogTest" time="0.001"/>
+  <testcase name="operationalRepositoryDefinitionsAreVersionedGlobalInfoOnly()" classname="guru.interlis.diagnostics.DiagnosticCatalogTest" time="0.001"/>
+  <testcase name="validationRejectsWrongPhaseAndUnknownArgument()" classname="guru.interlis.diagnostics.DiagnosticCatalogTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

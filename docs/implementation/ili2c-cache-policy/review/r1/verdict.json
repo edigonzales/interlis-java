@@ -1,0 +1,195 @@
+{
+  "review": "ili2c MD5/TTL cache migration",
+  "candidateSha": "c9fdd30a4c2f142f6dd5e16576333424b6e10349",
+  "baseSha": "6f4017c7ab90cb678c79f547b759c3661578726a",
+  "treeSha": "1dd5a1f09e652397cdc5423915f6be837c21703b",
+  "reviewWorktree": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r1/worktree",
+  "reviewDirectory": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r1/output",
+  "reviewedAt": "2026-11-01T20:30:00Z",
+  "environment": {
+    "java": "Temurin 25.0.3",
+    "node": "v24.22.0",
+    "platform": "macOS 15.8.1 arm64"
+  },
+  "verdict": "PASS",
+  "overall": "PASS",
+  "mustFixCount": 0,
+  "criteria": {
+    "CACHE-01": {
+      "verdict": "PASS",
+      "summary": "Metadata 24h / model 7d, inclusive boundary, per-URL last full download, no renewal on hit, future/EPOCH never fresh, zero/generic always fetch, local SHA-256 plus optional index MD5.",
+      "evidence": [
+        "RepositoryCacheRequest.java:1-23",
+        "HttpSourceLoader.java:92-105,147-156,168-173",
+        "RepositorySearch.java:140,149",
+        "RepositoryClient.java:64,103",
+        "LockedRepositoryCatalog.java:17",
+        "RepositoryClosureService.java:293",
+        "own probes 01,02,03,09,13",
+        "targeted Ili2cCachePolicyTest 10/10"
+      ]
+    },
+    "CACHE-02": {
+      "verdict": "PASS",
+      "summary": "Typed request propagated through routing, HTTP, verified loader, search, client and lock catalogue; additive default preserves functional loaders; post-download MD5, SHA-256 pins/locks, cancellation and workspace revision gate intact.",
+      "evidence": [
+        "SourceLoader.java:18-26",
+        "RoutingSourceLoader.java:19-27",
+        "HttpSourceLoader.java:71-77",
+        "RepositorySearch.java:140,149",
+        "RepositoryClient.java:64,103",
+        "LockedRepositoryCatalog.java:17",
+        "RepositoryClosureService.java:91,134,159,293-300,327,436-486",
+        "HostRepositories.java:48-58",
+        "own probes 11,12 and CLI lock/post-MD5 cases"
+      ]
+    },
+    "CACHE-03": {
+      "verdict": "PASS",
+      "summary": "Strict atomic metadata-v2, offline-only v1 fallback, no fallback from corrupt v2, no-store/404 remove both associations, content files retained, concurrent/partial writes handled, per-host clock.",
+      "evidence": [
+        "DirectoryMetadataStore.java:22,29-57,59-78",
+        "HttpSourceLoader.java:138-154",
+        "HostRepositories.java:48-58",
+        "own probes 04,06,07,08,10 and CLI v1/corrupt-v2/no-store cases"
+      ]
+    },
+    "CACHE-04": {
+      "verdict": "PASS",
+      "summary": "No ETag/Last-Modified persistence or conditional requests, unsolicited 304 is IO_FAILURE without retry, no second online verification, identity/coding/no-store/limits/redirect/proxy/timeouts intact, online failure never silently uses stale cache.",
+      "evidence": [
+        "HttpSourceLoader.java:114-145,146,180-293",
+        "candidate diff removes verifyUnchanged/verifyUnavailable",
+        "own probe 05 and all CLI probes assert no conditional headers / no 304",
+        "targeted HttpIdentityCacheTest, HttpSourceLoaderTest, HttpRedirectFailureTest"
+      ]
+    },
+    "CACHE-05": {
+      "verdict": "PASS",
+      "summary": "Truthful chronological FRESH_HIT INFO, hit metric, reserved legacy codes not emitted, JSON/results/warnings/exits preserved, all four CLI commands warm without network.",
+      "evidence": [
+        "RepositoryCacheEvent.java:5",
+        "DiagnosticMessageFormatter.java:96",
+        "DefaultCompilerCli.java:303",
+        "own CLI warm case (0011,0010,0012,0010; no 304/0013; zero HTTP)",
+        "targeted RepositoryLogOrderTest, VerboseRepositoryCacheTest, DefaultRepositoryCacheTest, Ili2cCacheCliTest"
+      ]
+    },
+    "CACHE-06": {
+      "verdict": "PASS",
+      "summary": "Original XML/logs and intermediate failures audited; 26 suites / 139 unique final passing cases via reused suites plus corrected closure rerun; SDK 9, CLI 22, public 4; manifest binds 401 inputs and supplied runtime JARs.",
+      "evidence": [
+        "targeted: 26 suites / 139 tests / 0 failures / 0 errors / 0 skips",
+        "targeted-before: 139 tests / 1 failure (closure 6-vs-3)",
+        "closure-rerun: 15 tests / 0 failures",
+        "red: 1 test / 1 failure (4-vs-2)",
+        "consumers-before: 6 tests / 1 failure (3-vs-2)",
+        "processes.json: 22 passed; sdk-processes.json: 9 passed; public.json: 4 exit 0",
+        "manifest inputs 401/401 match; 7/7 supplied runtime JAR hashes match"
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "N-1",
+      "severity": "low",
+      "blocking": false,
+      "title": "Stale supersession text in older spec paragraphs",
+      "file": "docs/spec/08-modellaufloesung-und-repositories.md",
+      "line": "304-306",
+      "related": [
+        "docs/spec/08-modellaufloesung-und-repositories.md:191",
+        "docs/spec/17-abdeckungsmatrix-und-review.md:385"
+      ],
+      "summary": "Section 12 still describes an end-of-run online re-read that yields CHANGED_SOURCE, and the RES-013 requirement/acceptance and matrix rows still mention 304. Chapter 08 section 17 is explicitly authoritative and the implementation matches it; this is editorial drift, not a migration regression.",
+      "reproducer": "grep -n \"nochmals verglichen\\|starke 304-Bestätigung\\|Erstdownload/304\" docs/spec/08-modellaufloesung-und-repositories.md docs/spec/17-abdeckungsmatrix-und-review.md",
+      "recommendation": "Add the same one-line supersession note to section 12 and update the RES-013 summary/acceptance wording to chapter 08 section 17."
+    }
+  ],
+  "counterprobes": {
+    "java": {
+      "command": "\"$JAVA_HOME/bin/javac\" -cp 'build/reviewer/distribution/lib/*' -d build/reviewer/probes/classes build/reviewer/probes/CacheProbe.java && \"$JAVA_HOME/bin/java\" -cp 'build/reviewer/distribution/lib/*:build/reviewer/probes/classes' probe.CacheProbe build/reviewer/probes/run-java",
+      "exitCode": 0,
+      "passed": 13,
+      "cases": [
+        "inclusive-boundary/no-renewal/future/epoch",
+        "md5-before-download/order",
+        "generic/zero-always-fetch/no-conditional-headers",
+        "404-invalidates-v1-and-v2/keeps-content",
+        "unsolicited-304-io-failure-no-retry",
+        "concurrency-atomic-metadata/content",
+        "v1-offline-only/republish/no-corrupt-v2-fallback",
+        "no-store-cannot-resurrect-v1",
+        "explicit-clock-ownership",
+        "write-failure-warns-once",
+        "request-immutable/null-free/factories",
+        "cancellation-typed/no-request",
+        "corrupt-local-content-refresh"
+      ]
+    },
+    "cli": {
+      "command": "node build/reviewer/probes/launcher-probe.cjs",
+      "exitCode": 0,
+      "passed": 16,
+      "launcher": "build/reviewer/distribution/bin/interlis-compiler",
+      "cases": [
+        "cold",
+        "warm",
+        "future-timestamp",
+        "changed-md5",
+        "post-md5-cold",
+        "post-md5-mismatch",
+        "v1-offline",
+        "corrupt-v2-offline",
+        "lock-cold",
+        "lock-offline",
+        "lock-warm-online",
+        "lock-changed-model",
+        "lock2-cold",
+        "lock-changed-index",
+        "no-store-1",
+        "no-store-2"
+      ]
+    }
+  },
+  "evidenceAudit": {
+    "manifest": {
+      "inputsChecked": 401,
+      "inputsMismatch": 0,
+      "runtimeJarsChecked": 7,
+      "runtimeJarsMismatch": 0,
+      "distZipPresentInReviewWorktree": false,
+      "note": "The original distZip path is not present in the review worktree; the supplied runtime distribution JARs were re-hashed and match the manifest and processes.json."
+    },
+    "junit": {
+      "targeted": {"suites": 26, "tests": 139, "failures": 0, "errors": 0, "skipped": 0},
+      "targetedBefore": {"suites": 26, "tests": 139, "failures": 1, "errors": 0, "skipped": 0},
+      "closureRerun": {"suites": 1, "tests": 15, "failures": 0, "errors": 0, "skipped": 0},
+      "red": {"suites": 1, "tests": 1, "failures": 1, "errors": 0, "skipped": 0},
+      "consumersBefore": {"suites": 1, "tests": 6, "failures": 1, "errors": 0, "skipped": 0}
+    },
+    "processes": {
+      "cli": {"cases": 22, "passed": true},
+      "cliBefore": {"cases": 21, "passed": false, "reason": "expected first oracle failure at changed-model-md5"},
+      "sdk": {"commands": 9, "status": "passed"},
+      "public": {"cases": 4, "allExitZero": true, "sourceSha256Matched": true}
+    }
+  },
+  "commands": [
+    {"command": "git rev-parse HEAD HEAD^{tree}", "exitCode": 0, "result": "c9fdd30... / 1dd5a1f..."},
+    {"command": "git status --porcelain", "exitCode": 0, "result": "empty"},
+    {"command": "./build/reviewer/distribution/bin/interlis-compiler version", "exitCode": 0, "result": "0.2.0-SNAPSHOT, diagnostics v4"},
+    {"command": "javac ... CacheProbe.java", "exitCode": 0, "result": "compiled"},
+    {"command": "java ... probe.CacheProbe", "exitCode": 0, "result": "CACHE_PROBE_PASS 13"},
+    {"command": "node ... launcher-probe.cjs", "exitCode": 0, "result": "LAUNCHER_PROBE_PASS 16"},
+    {"command": "manifest hash audit (Node)", "exitCode": 0, "result": "401/401 inputs, 7/7 JARs"},
+    {"command": "JUnit XML aggregation (Node)", "exitCode": 0, "result": "139/26 targeted, 139/1 before, 15/0 rerun"}
+  ],
+  "notRun": [
+    "Gradle test suites (reused original XML/log evidence; constraints forbid Gradle)",
+    "full corpus",
+    "benchmarks",
+    "browser/platform matrix",
+    "release checks"
+  ]
+}

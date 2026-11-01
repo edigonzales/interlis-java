@@ -25,8 +25,8 @@ class VerboseRepositoryCacheTest {
             var compact=fixture.run(command,"Projekt.ili","--repository",base);fixture.success(compact);assertEquals(0,infos(compact.err()));
             fixture.events.clear();var verbose=fixture.run(command,"Projekt.ili","--repository",base,"--verbose","--warnings","reject");fixture.success(verbose);
             assertTrue(verbose.err().contains("INFO [ILI-RES-0010]"));assertTrue(verbose.err().contains(base+"Basis.ili"));assertTrue(verbose.err().contains(base+"ilimodels.xml"));
-            assertTrue(verbose.err().contains("content used from cache (HTTP 304)"));
-            assertEquals(fixture.events.stream().filter(e->e instanceof RunEvent.CacheLookup).count(),infos(verbose.err()));assertEquals(4,infos(verbose.err()));
+            assertTrue(verbose.err().contains("content used from fresh cache"));
+            assertEquals(fixture.events.stream().filter(e->e instanceof RunEvent.CacheLookup).count(),infos(verbose.err()));assertEquals(2,infos(verbose.err()));
             assertEquals(compact.result().diagnostics(),verbose.result().diagnostics());assertTrue(verbose.result().diagnostics().stream().noneMatch(d -> List.of("ILI-RES-0010","ILI-RES-0011","ILI-RES-0012","ILI-RES-0013").contains(d.code().value())));
             assertEquals(compact.result().artifacts(),verbose.result().artifacts());
             var de=fixture.run(command,"Projekt.ili","--repository",base,"--verbose","--diagnostic-language","de");fixture.success(de);assertTrue(de.err().contains("INFO [ILI-RES-0010]"));
@@ -59,11 +59,11 @@ class VerboseRepositoryCacheTest {
     @Test void disabledCacheDownloadsDoNotClaimHitsAndWriteWarningIsNotDuplicatedAsInfo() throws Exception {
         String base=fixture.repository();
         var disabled=fixture.run("check","Projekt.ili","--repository",base,"--no-cache","--verbose");fixture.success(disabled);
-        assertEquals(4,infos(disabled.err()));assertTrue(disabled.err().contains("source downloaded"));assertFalse(disabled.err().contains("content used from cache"));
+        assertEquals(2,infos(disabled.err()));assertTrue(disabled.err().contains("source downloaded"));assertFalse(disabled.err().contains("content used from cache"));
         Files.writeString(directory.resolve("blocked"),"file");fixture.events.clear();
         var unavailable=fixture.run("check","Projekt.ili","--repository",base,"--cache","blocked","--verbose");fixture.success(unavailable);
         assertEquals(1,fixture.events.stream().filter(e->e instanceof RunEvent.CacheLookup c&&c.reason().equals("WRITE_UNAVAILABLE")).count());
-        assertEquals(1,unavailable.err().lines().filter(s->s.startsWith("WARNING [ILI-RES-0008]")).count());assertEquals(4,infos(unavailable.err()));
+        assertEquals(1,unavailable.err().lines().filter(s->s.startsWith("WARNING [ILI-RES-0008]")).count());assertEquals(2,infos(unavailable.err()));
     }
     @Test void commonColorPolicyControlsInfoOutputWithAutoAlwaysAndNever() throws Exception {
         String base=fixture.repository();

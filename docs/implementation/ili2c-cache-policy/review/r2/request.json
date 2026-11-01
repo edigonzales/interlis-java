@@ -1,0 +1,18 @@
+{
+  "baseSha": "c9fdd30a4c2f142f6dd5e16576333424b6e10349",
+  "candidateSha": "c92669b9a6b6e08ea6881fbaae8a22a9ebda05b3",
+  "treeSha": "f41750968283b5c760ee05c04e7bb33c67b6b0d6",
+  "reviewWorktree": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r2/worktree",
+  "reviewDirectory": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r2/output",
+  "priorReviewDirectory": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r1/output",
+  "priorVerdict": "PASS; one low documentation finding N-1",
+  "changedFiles": [
+    "docs/spec/08-modellaufloesung-und-repositories.md",
+    "docs/spec/17-abdeckungsmatrix-und-review.md"
+  ],
+  "provider": {
+    "id": "deepseek",
+    "model": "deepseek-flash",
+    "api": "https://api.deepseek.com"
+  }
+}

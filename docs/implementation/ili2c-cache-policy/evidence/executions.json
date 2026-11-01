@@ -1,0 +1,208 @@
+[
+  {
+    "name": "red",
+    "command": [
+      "./gradlew",
+      ":interlis-compiler-cli:test",
+      "--tests",
+      "*Ili2cCacheCliTest",
+      "--console=plain"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 1,
+    "log": "red.log"
+  },
+  {
+    "name": "initial-green",
+    "command": [
+      "./gradlew",
+      ":interlis-compiler-cli:test",
+      "--tests",
+      "*Ili2cCacheCliTest",
+      "--console=plain"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 1,
+    "log": "initial-green.log"
+  },
+  {
+    "name": "initial-green-r2",
+    "command": [
+      "./gradlew",
+      ":interlis-compiler-cli:test",
+      "--tests",
+      "*Ili2cCacheCliTest",
+      "--console=plain"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 0,
+    "log": "initial-green-r2.log"
+  },
+  {
+    "name": "core",
+    "command": [
+      "./gradlew",
+      ":interlis-repository:test",
+      "--tests",
+      "*Ili2cCachePolicyTest",
+      "--tests",
+      "*RepositoryCacheContractTest",
+      "--tests",
+      "*RepositoryCacheRegressionTest",
+      ":interlis-compiler-cli:test",
+      "--tests",
+      "*Ili2cCacheCliTest",
+      "--continue",
+      "--console=plain"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 0,
+    "log": "core.log"
+  },
+  {
+    "name": "consumers",
+    "command": [
+      "./gradlew",
+      ":interlis-repository:test",
+      "--tests",
+      "*RepositoryCacheObservationTest",
+      "--tests",
+      "*HttpIdentityCacheTest",
+      "--tests",
+      "*RepositoryResolutionObservationTest",
+      ":interlis-compiler-cli:test",
+      "--tests",
+      "*DefaultRepositoryCacheTest",
+      "--tests",
+      "*VerboseRepositoryCacheTest",
+      "--tests",
+      "*RepositoryLogOrderTest",
+      "--continue",
+      "--console=plain"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 1,
+    "log": "consumers.log"
+  },
+  {
+    "name": "targeted",
+    "command": [
+      "./gradlew",
+      ":interlis-repository:test",
+      "--tests",
+      "*Ili2cCachePolicyTest",
+      "--tests",
+      "*RepositoryCache*Test",
+      "--tests",
+      "*HttpIdentityCacheTest",
+      "--tests",
+      "*RepositoryResolutionObservationTest",
+      "--tests",
+      "*RepositoryClosureContractTest",
+      "--tests",
+      "*ResolutionLockContractTest",
+      "--tests",
+      "*RepositoryClientTest",
+      "--tests",
+      "*RepositorySearchContractTest",
+      "--tests",
+      "*HttpSourceLoaderTest",
+      "--tests",
+      "*HttpNetworkPolicyTest",
+      "--tests",
+      "*HttpRedirectFailureTest",
+      ":interlis-compiler-cli:test",
+      "--tests",
+      "*Ili2cCacheCliTest",
+      "--tests",
+      "*DefaultRepositoryCacheTest",
+      "--tests",
+      "*VerboseRepositoryCacheTest",
+      "--tests",
+      "*RepositoryLogOrderTest",
+      "--tests",
+      "*RepositoryCacheRendererTest",
+      "--tests",
+      "*SemanticRepositoryCommandsTest",
+      "--tests",
+      "*RepositoryCliContractTest",
+      "--tests",
+      "*RepositoryDiagnosticsContractTest",
+      "--tests",
+      "*RepositoryNetworkConfigurationTest",
+      "--tests",
+      "*MalformedRepositoryRedirectTest",
+      ":interlis-model:test",
+      "--tests",
+      "*DiagnosticCatalogTest",
+      "--tests",
+      "*DiagnosticMessageFormatterTest",
+      "--tests",
+      "*RunLifecycleCacheTest",
+      "--continue",
+      "--console=plain"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 1,
+    "log": "targeted.log"
+  },
+  {
+    "name": "closure-sdk-distribution",
+    "command": [
+      "./gradlew",
+      ":interlis-repository:test",
+      "--tests",
+      "*RepositoryClosureContractTest",
+      ":interlis-compiler-cli:installDist",
+      ":interlis-compiler-cli:distZip",
+      "sdkProcessCheck",
+      "--console=plain"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 0,
+    "log": "closure-sdk-distribution.log"
+  },
+  {
+    "name": "processes",
+    "command": [
+      "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+      "tools/verification/ili2c-cache-policy-processes.cjs"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 1,
+    "log": "processes.log"
+  },
+  {
+    "name": "processes-r2",
+    "command": [
+      "/Users/stefan/.cache/interlis-java/runtime/node-v24.22.0-darwin-arm64/bin/node",
+      "tools/verification/ili2c-cache-policy-processes.cjs"
+    ],
+    "environment": {
+      "JAVA_HOME": "/Users/stefan/.sdkman/candidates/java/25.0.3-tem"
+    },
+    "exitCode": 0,
+    "log": "processes-r2.log"
+  },
+  {
+    "name": "public",
+    "commandDetails": "public.json",
+    "exitCode": 0
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "interlis-model": {
+    "suites": 3,
+    "tests": 11,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "interlis-repository": {
+    "suites": 13,
+    "tests": 90,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "interlis-compiler-cli": {
+    "suites": 10,
+    "tests": 38,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

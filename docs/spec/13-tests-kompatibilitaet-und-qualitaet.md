@@ -569,3 +569,16 @@ repositoryDiagnosticCheck prüft schmal JS/WasmGC und das Fehlen aller
 operativen Repositorycodes in Compilerdiagnosen. Reale Launcher prüfen
 Streams/Exits/Artefakte. Kein pauschaler Korpus-/Benchmark-/Browser-/Releasevollauf.
 Nachweise: [Bericht](../implementation/cli-log-order-cache/REPORT.md).
+
+### Abnahme ili2c-Cachefristen
+
+WP-26/30, RES-009/013, CLI-004/006, LOG-005/008: kontrollierte Uhr prüft
+24h/7Tage einschliesslich Grenzgleichheit, Zukunft, Treffer ohne Verlängerung
+und Instanzwechsel. MD5 fehlt/passt/weicht ab, korrupte Bytes/Metadaten,
+V1-Offline/V2-Migration, Pins/Locks, kein Onlinefallback, no-cache/no-store,
+Redirects/Abbruch und Parallelzugriffe werden gezielt geprüft. HTTP-Zählung
+beweist fehlende bedingte Header und fehlende Abschlussrunde. Frühere ETag-/
+304-/Abschlussregressionen werden fachlich auf Kapitel08 §17 umgestellt,
+historische Originalbelege bleiben unverändert. Reale CLI-Prozesse prüfen alle
+vier Befehle und öffentliche Quellen ergänzend; keine breiten Vollgates.
+[Umsetzung und Nachweise](../implementation/ili2c-cache-policy/REPORT.md).

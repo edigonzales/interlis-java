@@ -239,3 +239,10 @@ Aufrufbeobachtung, gemeinsames Format, sichere Vary:Accept-Encoding-Unterstützu
 gezielte JUnit-/Portable-/Launcherabnahme und Rohbelege. Modellwahl, Pins/Locks
 und Abschlussprüfung bleiben erhalten; kein Releaseauftrag.
 [Plan und operativer Nachweis](../implementation/cli-log-order-cache/REPORT.md).
+
+### WP-26/30: Cache nach ili2c
+
+RES-009/013, CLI-004/006, LOG-005/008: MD5 vor Download,24h/7Tage,
+keine ETags und zweite Onlineprüfung, V2-Metadaten/V1-Offline, gemeinsame
+Loader-API und gezielte Abnahme gemäss Kapitel08 §17/13.
+[Operativer Nachweis](../implementation/ili2c-cache-policy/REPORT.md). Kein Commit/Push/Releaseauftrag.

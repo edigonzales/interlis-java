@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.DefaultRepositoryCacheTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-01T19:46:36.593Z" hostname="Monterrico.local" time="0.66">
+  <properties/>
+  <testcase name="unwritableCacheWarnsOnceWithoutFailingAndSecretsNeverReachObservations()" classname="guru.interlis.cli.DefaultRepositoryCacheTest" time="0.475"/>
+  <testcase name="configurationPrecedenceExplainsEffectivePathAndRejectsConflicts()" classname="guru.interlis.cli.DefaultRepositoryCacheTest" time="0.013"/>
+  <testcase name="anOptionalOfflineSiteMissPreservesMissingModelClassification()" classname="guru.interlis.cli.DefaultRepositoryCacheTest" time="0.038"/>
+  <testcase name="customCacheNoCacheAndLocalOnlyRunsHaveThePromisedDiskEffects()" classname="guru.interlis.cli.DefaultRepositoryCacheTest" time="0.06"/>
+  <testcase name="defaultCacheServesImportsOfflineWithAndWithoutLockAndEmitsCorrelatedEvents()" classname="guru.interlis.cli.DefaultRepositoryCacheTest" time="0.063"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -489,6 +489,10 @@ weiterhin am Gate wirksam. Observerfehler ändern kein Ladeergebnis.
 
 ## Cacheinformationen im gemeinsamen Meldungsstil
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 DIAG-002/003/006 / LOG-005/008: Der seit v3 eingeführte, in
 `interlis-diagnostics/v4` erhaltene Katalogeintrag ist
 `ILI-RES-0010`, Schwere INFO, Phase SOURCE_RESOLUTION, ohne Quellposition,
@@ -505,6 +509,10 @@ WRITE_UNAVAILABLE behält seine bestehende einmalige Warnung.
 
 ## Chronologische Repositorypräsentation (Katalog v4)
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 DIAG-002/003/006, LOG-004/005/008: interlis-diagnostics/v4 ergänzt drei
 positionslose INFO-Definitionen, Phase SOURCE_RESOLUTION:
 ILI-RES-0011 / diagnostic.resolution.lookup mit model:IDENTIFIER, repository:TEXT;
@@ -516,3 +524,12 @@ Der zentrale Formatter liefert DE-/EN-Texte; der ConsoleDiagnosticRenderer
 verwendet sprachunabhängig INFO/WARNING/ERROR/HINT am Anfang der Kopfzeile,
 gefolgt von Code, optionaler Quellposition und Text. Sanitierung, Farben und
 revisionstreue eingerückte Frames/Ergänzungen bleiben erhalten.
+
+## Cachefolgeauftrag: Fristen statt304
+
+LOG-005/008, CLI-004/006: FRESH_HIT ergänzt die Ereignisargumente von
+ILI-RES-0010 für lokale Onlineverwendung innerhalb der Frist. Der zentrale
+Formatter liefert DE/EN ohne304-/Netzbehauptung. NOT_MODIFIED und0013 bleiben
+reserviert; neue Hosts erzeugen keine304- oder Abschlussprüfungsereignisse.
+RunContext zählt FRESH_HIT als Treffer. Bestehende Diagnosen/Exits/Gate bleiben
+unverändert; Katalogv4 erhält keine neuen Codes. Kapitel08 §17 ist massgeblich.

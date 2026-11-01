@@ -1,0 +1,128 @@
+{
+  "review": "ili2c cache policy N-1 documentation follow-up",
+  "baseSha": "c9fdd30a4c2f142f6dd5e16576333424b6e10349",
+  "candidateSha": "c92669b9a6b6e08ea6881fbaae8a22a9ebda05b3",
+  "treeSha": "f41750968283b5c760ee05c04e7bb33c67b6b0d6",
+  "priorCandidateSha": "c9fdd30a4c2f142f6dd5e16576333424b6e10349",
+  "priorTreeSha": "1dd5a1f09e652397cdc5423915f6be837c21703b",
+  "reviewWorktree": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r2/worktree",
+  "reviewDirectory": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r2/output",
+  "priorReviewDirectory": "/Users/stefan/sources/interlis-java/build/review/ili2c-cache-policy/r1/output",
+  "reviewedAt": "2026-11-01T20:32:17Z",
+  "verdict": "PASS",
+  "overall": "PASS",
+  "n1Resolved": true,
+  "mustFixCount": 0,
+  "openFindingCount": 0,
+  "scope": "Documentation-only follow-up to the prior PASS candidate; product/test/helper trees identical.",
+  "changeContainment": {
+    "changedFiles": [
+      "docs/spec/08-modellaufloesung-und-repositories.md",
+      "docs/spec/17-abdeckungsmatrix-und-review.md"
+    ],
+    "changedFileCount": 2,
+    "nonDocumentChanges": false,
+    "candidateParent": "c9fdd30a4c2f142f6dd5e16576333424b6e10349",
+    "candidateCommit": "Review snapshot: resolve obsolete cache specification wording",
+    "worktreeClean": true,
+    "identicalTrees": {
+      "interlis-compiler": "0e68e7410120eb902869d8a18bfa1ee8e8c7ef39",
+      "interlis-compiler-cli": "88f011ed63a3ae88b694a5153e191b32eac356dc",
+      "interlis-lsp": "01db854ec529245c3c2419eede3eb9bbfc71d655",
+      "interlis-model": "effb58b55c37a2c80df215559aee22de0a6bc4b1",
+      "interlis-projection": "de579d3fe757d53318d2c8dbc0f1c357b1f64e71",
+      "interlis-repository": "8b904b0b7a74ef3d3aef58e6fd77fcc7a71b47aa",
+      "interlis-wasm-bridge": "fc7c41f1e5b23f796b2f170c9847ad95f7672d96",
+      "interlis-wasm-teavm": "539549f989d1912596c32c18fc3d352d592972da",
+      "interlis-wasm-webimage": "f83aea1fe2f448ef99f44bdb1e2dde72c92d2802",
+      "interlis-workspace": "ac5f01f3860c60a035bc79709ba85b50091dfd26",
+      "tools": "61e98e204944992aaeafcd2d04ea27c1c19db8d7",
+      "testdata": "87ea15159c7bd3999c06d72821dfd4e2d88b00e7",
+      "examples": "c7d55e8399bcd1bb4ca352fd8abda0bf3f3c94f2",
+      "gradle": "bc27942ea6d5f8a02447444ca807a8b4142603b9",
+      "docs/implementation": "0b9128e1ebaecf83579d05ae9d0eff2839d4cd80"
+    },
+    "alsoIdenticalTopLevel": [
+      "build.gradle",
+      "settings.gradle",
+      "gradle.properties",
+      "gradlew",
+      "gradlew.bat",
+      "README.md",
+      "AGENTS.md",
+      "LICENSE",
+      ".gitignore",
+      ".github"
+    ]
+  },
+  "n1Resolution": {
+    "id": "N-1",
+    "status": "resolved",
+    "findings": [
+      {
+        "location": "docs/spec/08-modellaufloesung-und-repositories.md:191",
+        "priorIssue": "RES-013 requirement/acceptance row still mentioned generic online freshness and Erstdownload/304/Änderung.",
+        "correction": "Requirement now names chapter08 §17 cache ages and model MD5 before retrieval; acceptance names first download, 24h/7-day TTLs, MD5 before download, disablement, offline, lock replay and corrupt/parallel entries. ID and P2 scope unchanged."
+      },
+      {
+        "location": "docs/spec/08-modellaufloesung-und-repositories.md:304-309",
+        "priorIssue": "Older closure paragraph still demanded end-of-run online re-check and CHANGED_SOURCE on late changes.",
+        "correction": "Reuse now follows cache age and optional index MD5 per §17; second online completion check removed. Contradictory bytes during normal retrieval remain CHANGED_SOURCE/pin/lock errors."
+      },
+      {
+        "location": "docs/spec/08-modellaufloesung-und-repositories.md:547-550",
+        "priorIssue": "Observation text claimed strong ETags and completion accesses.",
+        "correction": "Now states additional online completion checks and ETags are gone per §17 while optional sites, pins and locks remain."
+      },
+      {
+        "location": "docs/spec/17-abdeckungsmatrix-und-review.md:385",
+        "priorIssue": "RES-013 matrix summary still mentioned strong 304 confirmation.",
+        "correction": "Now references chapter08 §17, 24h/7-day TTLs, MD5 before download, no ETags/second online check, and the current Ili2cCachePolicyTest, RepositoryCacheContractTest and DefaultRepositoryCacheTest."
+      }
+    ],
+    "actualAcceptanceRow": "docs/spec/08-modellaufloesung-und-repositories.md:191",
+    "chapter09AcceptanceRow": false,
+    "requirementIdsUnchanged": true,
+    "requirementIdChecks": {
+      "chapter08Rows": {"base": 13, "candidate": 13},
+      "chapter17UniqueIds": {"base": 290, "candidate": 290}
+    },
+    "historicalSections": "Chapter 08 sections 13 and 16 retain historical ETag/304/completion/validator text under explicit supersession notes pointing to §17; intentionally preserved, not a finding."
+  },
+  "reusedEvidence": {
+    "priorVerdict": "PASS",
+    "priorCriteria": "CACHE-01..06 all PASS, 0 must-fix findings, 1 low documentation observation N-1",
+    "priorWorktree": {"head": "c9fdd30a4c2f142f6dd5e16576333424b6e10349", "tree": "1dd5a1f09e652397cdc5423915f6be837c21703b", "clean": true},
+    "counterprobes": {
+      "java": {"passed": 13, "log": "build/reviewer/probes/java-probe.log", "summary": "CACHE_PROBE_PASS 13"},
+      "launcher": {"passed": 16, "log": "build/reviewer/probes/launcher-probe.log", "summary": "LAUNCHER_PROBE_PASS 16"}
+    },
+    "basis": "Product/test/helper tree hashes are identical between the prior candidate and this candidate; no counterprobe rerun was needed or performed."
+  },
+  "documentChecks": [
+    {"command": "git rev-parse HEAD HEAD^{tree}", "exitCode": 0, "result": "c92669b... / f417509..."},
+    {"command": "git log -1 --format=%H%n%P && git show --stat --summary HEAD", "exitCode": 0, "result": "parent c9fdd30...; only two spec files changed"},
+    {"command": "git status --porcelain", "exitCode": 0, "result": "empty (clean worktree)"},
+    {"command": "git diff --name-only c9fdd30... c92669b...", "exitCode": 0, "result": "exactly the two documented spec files"},
+    {"command": "git diff --name-status c9fdd30... c92669b... -- . ':(exclude)<both changed files>'", "exitCode": 0, "result": "no non-document changes"},
+    {"command": "subtree git rev-parse <sha>:<path> comparison", "exitCode": 0, "result": "all production/test/helper trees SAME"},
+    {"command": "grep -n \"nochmals verglichen\\|starke 304-Bestätigung\\|Erstdownload/304\" <both files>", "exitCode": 1, "result": "no matches (prior N-1 reproducer clean)"},
+    {"command": "requirement-ID set diff chapter 08", "exitCode": 0, "result": "no ID changes"},
+    {"command": "requirement-ID set diff chapter 17", "exitCode": 0, "result": "no ID changes"},
+    {"command": "git diff --check c9fdd30... c92669b...", "exitCode": 0, "result": "no whitespace errors"},
+    {"command": "check named test files exist", "exitCode": 0, "result": "all three present"},
+    {"command": "grep -n '^## 17\\.' docs/spec/08-modellaufloesung-und-repositories.md", "exitCode": 0, "result": "authoritative section 17 exists"}
+  ],
+  "findings": [],
+  "notRun": [
+    "Gradle test suites",
+    "own product counterprobes",
+    "full corpus",
+    "benchmarks",
+    "browser/platform matrix",
+    "release checks",
+    "Python",
+    "delegation",
+    "credentials"
+  ]
+}

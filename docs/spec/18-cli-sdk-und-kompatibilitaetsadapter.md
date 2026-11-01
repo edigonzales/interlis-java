@@ -420,6 +420,10 @@ Abnahmen: `RepositoryDiagnosticsContractTest`, bestehende Repository-/Verbose-
 
 ### Standardcache: Hostumgebung und Beispiele
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 `CliEnvironment` ergänzt `Path homeDirectory` als letzte Komponente.
 `system()` belegt sie mit dem JVM-`user.home`; eingebettete Hosts können einen
 expliziten Homepfad injizieren. Alle bisherigen Konstruktoren bleiben erhalten
@@ -454,6 +458,10 @@ Inhalte derselben URL verdrängen die für ältere Locks gespeicherten Bytes nic
 
 
 ## Quellenbezogene Cacheinformationen bei Verbose
+
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
 
 CLI-003/004/006 / LOG-005/008: Die vier semantischen Befehle zeigen bei
 `--verbose` jeden beobachteten Cachezugriff mit sicherer Quelle als
@@ -497,6 +505,10 @@ der bisherige Konstruktor und timeout() werden entfernt.
 
 ## Chronologische und einheitliche Meldungen
 
+Die nachfolgenden ETag-/304-/Abschlussprüfungs- und Validator-API-Angaben
+sind durch den Cachefolgeauftrag nach ili2c (Kapitel08 §17 und die Ergänzung
+am Kapitelende) ersetzt. Andere Verträge bleiben erhalten.
+
 CLI-004/006, LOG-005/008: Alle Diagnose- und Repositorykopfzeilen verwenden
 SCHWEREGRAD [CODE] optionale-Quellposition: Meldung. INFO/WARNING/ERROR/HINT
 bleiben auch bei deutscher Meldungssprache Englisch; Texte und ergänzende
@@ -511,3 +523,13 @@ Alle Betriebsinfos bleiben auf stderr und bei --json unterdrückt; fachliche
 Artefakte, Diagnoselisten, Warnungspolitik und Exits behalten ihre Bedeutung.
 Vary:Accept-Encoding verhindert wegen des festen identity-Abrufs keine sichere
 304-Wiederverwendung mehr; Kapitel08 §16 und Kapitel09 definieren die Verträge.
+
+## Cachefolgeauftrag: ili2c-Fristen und MD5
+
+Kapitel08 §17 ersetzt die bisher beschriebenen ETag-/304- und Onlineabschluss-
+prüfungen. Metadaten24h, Modelldateien7Tage; innerhalb der Frist bei passender
+optionaler MD5 lokal ohne Netz. --verbose zeigt FRESH_HIT, keine Abschlussrunde.
+--offline liest weiterhin alte verifizierte Inhalte; Onlinefehler aktivieren
+keinen Rückfall. --no-cache, Farben, DE/EN, Reihenfolge, JSON und Gate bleiben.
+Die Metadata-SDK-API migriert auf downloadedAt statt HTTP-Validatoren;
+SourceLoader bleibt durch additive Request-Überladung funktional kompatibel.

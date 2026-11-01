@@ -53,7 +53,7 @@ class DefaultRepositoryCacheTest {
 
     @Test void defaultCacheServesImportsOfflineWithAndWithoutLockAndEmitsCorrelatedEvents() throws Exception {
         String base=repository();success(run("check","Projekt.ili","--repository",base,"--write-lock","projekt.lock"));
-        assertTrue(Files.isDirectory(home().resolve(".interlis-cache/metadata-v1")));assertEquals(2,bodies.get());
+        assertTrue(Files.isDirectory(home().resolve(".interlis-cache/metadata-v2")));assertEquals(2,bodies.get());
         success(run("check","Projekt.ili","--repository",base));assertEquals(2,bodies.get());
         int before=requests.get();server.stop(0);server=null;
         for(var extra:List.of(List.of("--offline"),List.of("--offline","--read-lock","projekt.lock"))) {
@@ -61,7 +61,7 @@ class DefaultRepositoryCacheTest {
         }
         assertEquals(before,requests.get());
         var observed=events.stream().filter(e->e instanceof RunEvent.CacheLookup).map(e->(RunEvent.CacheLookup)e).toList();
-        assertTrue(observed.stream().anyMatch(e->e.reason().equals("NOT_MODIFIED")));
+        assertTrue(observed.stream().anyMatch(e->e.reason().equals("FRESH_HIT")));
         assertTrue(observed.stream().anyMatch(e->e.reason().equals("OFFLINE_HIT")));
         for(var context:events.stream().map(e->e.header().runId()).distinct().toList()) {
             var run=events.stream().filter(e->e.header().runId().equals(context)).toList();
@@ -72,8 +72,8 @@ class DefaultRepositoryCacheTest {
 
     @Test void customCacheNoCacheAndLocalOnlyRunsHaveThePromisedDiskEffects() throws Exception {
         String base=repository();success(run("check","Projekt.ili","--repository",base,"--cache","alternate"));
-        assertTrue(Files.isDirectory(directory.resolve("alternate/metadata-v1")));assertFalse(Files.exists(home()));
-        int before=bodies.get();success(run("check","Projekt.ili","--repository",base,"--no-cache"));assertEquals(before+4,bodies.get());
+        assertTrue(Files.isDirectory(directory.resolve("alternate/metadata-v2")));assertFalse(Files.exists(home()));
+        int before=bodies.get();success(run("check","Projekt.ili","--repository",base,"--no-cache"));assertEquals(before+2,bodies.get());
         assertFalse(Files.exists(home()));
         assertEquals(CliTermination.OPERATIONAL_FAILURE,run("check","Projekt.ili","--repository",base,"--offline","--no-cache").result.termination());
         Files.writeString(directory.resolve("Local.ili"),"INTERLIS 2.4; MODEL Local AT \"https://example.org\" VERSION \"1\" = END Local.");

@@ -150,30 +150,29 @@ Weitere Stackmodule und Lieferabschnitte folgen dem Spezifikationsplan.
 Es wurden keine Releases veröffentlicht und keine Produktionsmigrationen ausgeführt.
 
 
-Mit `--verbose` zeigen Repositoryzugriffe zusätzlich Informationsmeldungen pro
-Quelle: Download, bestätigte Cacheverwendung (HTTP 304) oder Offlinecache.
-Modellsuche, Auswahl und Cachezugriffe erscheinen unmittelbar in ihrer
-tatsächlichen Reihenfolge auf stderr. Vor der zweiten Quellenprüfung erscheint
-eine Abschlussankündigung. Alle Kopfzeilen beginnen mit `INFO`, `WARNING`,
-`ERROR` oder `HINT`, gefolgt von `[Code]`, optionaler Quellposition und Text.
-Die Präfixe bleiben auch bei deutscher Meldungssprache Englisch; Texte und
-Farben folgen der gemeinsamen Sprach-/Farbpolicy. Diagnose-JSON und
-Compilerentscheidungen bleiben davon unabhängig.
+Mit `--verbose` erscheinen Modellsuche, Auswahl und Cachezugriffe unmittelbar
+in ihrer tatsächlichen Reihenfolge auf stderr. Die Meldungen unterscheiden Download,
+lokale Verwendung innerhalb der Cachefrist und Offlinecache. Alle Kopfzeilen
+beginnen mit `INFO`, `WARNING`, `ERROR` oder `HINT`, gefolgt von `[Code]`, optionaler
+Quellposition und Text. Präfixe bleiben Englisch, Texte folgen DE/EN und Farben
+der gemeinsamen Policy. Diagnose-JSON und Compilerentscheidungen bleiben unabhängig.
 
-Repositorydownloads werden standardmässig unter `~/.interlis-cache` gespeichert.
-Online prüft jeder Beschaffungslauf die Aktualität. Nur ein in der 304-Antwort
-identisch bestätigter starker ETag erlaubt die Wiederverwendung vorhandener
-Bytes. HTTP-Abrufe fordern mit `Accept-Encoding: identity` eine unkomprimierte
-Darstellung an; `Vary: Accept-Encoding` erlaubt damit sichere Cachetreffer.
-Andere Variantenfelder und `no-store` werden nicht wiederverwendet.
-Bei schwachen ETags, Last-Modified allein oder fehlenden Validatoren
-wird erneut vollständig geladen, um exakte Pins und Locks zu prüfen. `--cache DIR` ändert den Pfad,
-`--no-cache` deaktiviert persistente Zugriffe. `--offline` verwendet den letzten
-vollständig vorhandenen lokalen Repositorystand auch ohne Lockfile. Für exakt
-festgelegte Abhängigkeiten `--write-lock projekt.lock` und später
-`--read-lock projekt.lock --offline` verwenden. Netzfehler aktivieren keinen
-stillen Offlinefallback. Cache und Lockfile ersetzen keine aktuellen lokalen
-Projekttexte. [Verhalten und Beispiele](docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md#standardcache-hostumgebung-und-beispiele).
+Repositorydownloads liegen standardmässig unter `~/.interlis-cache`.
+Repositorymetadaten werden bis 24 Stunden, Modelldateien bis sieben Tage nach
+dem letzten vollständigen Download lokal verwendet. Vor Modellwiederverwendung
+wird die lokale MD5 mit der optionalen MD5 aus `ilimodels.xml` verglichen.
+Fehlende, beschädigte, abgelaufene oder MD5-abweichende Inhalte werden neu geladen;
+ohne MD5 entscheidet das Cachealter. Treffer verlängern die Fristen nicht.
+ETags und eine zweite Online-Abschlussrunde entfallen. SHA-256 schützt weiterhin
+Cacheintegrität und Pins/Locks. `Accept-Encoding: identity` bleibt fest;
+`Vary` sperrt diesen Anwendungscache nicht, `no-store` wird weiterhin respektiert.
+`--cache DIR` ändert den Pfad, `--no-cache` deaktiviert persistente Zugriffe.
+`--offline` verwendet alte verifizierte Inhalte auch ohne Lockfile, ohne Netz.
+Alte v1-Zuordnungen bleiben offline lesbar; online erfolgt die Umstellung auf
+v2 beim nächsten Download. Für exakte Abhängigkeiten `--write-lock projekt.lock`
+und später `--read-lock projekt.lock --offline` verwenden. Netzfehler aktivieren
+keinen stillen Offlinefallback. Lokale Projekttexte werden durch den Cache oder
+Lock nicht eingefroren. [Vertrag](docs/spec/08-modellaufloesung-und-repositories.md#17-cache-nach-ili2c-md5-und-fristen-massgeblicher-folgevertrag).
 
 ### HTTP-Timeouts und Proxy
 

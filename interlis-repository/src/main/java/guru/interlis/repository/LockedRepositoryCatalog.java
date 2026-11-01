@@ -14,7 +14,7 @@ final class LockedRepositoryCatalog {
         int priority=0;
         for(var input:lock.indexes().keySet().stream().sorted(Comparator.comparing(SourceId::value)).toList()) {
             token.throwIfCancellationRequested();
-            var loaded=loader.load(new SourceLocator(input.value()),config.fetchPolicy(),token);
+            var loaded=loader.load(new SourceLocator(input.value()),config.fetchPolicy(),RepositoryCacheRequest.metadata(),token);
             URI location=URI.create(input.value());
             var base=config.sources().stream().filter(s->s.indexLocator().location().equals(input.value())).map(RepositorySource::base)
                     .findFirst().orElse(new RepositoryBase(location.resolve(".")));

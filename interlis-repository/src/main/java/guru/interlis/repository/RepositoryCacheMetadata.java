@@ -1,25 +1,18 @@
 package guru.interlis.repository;
 
 import guru.interlis.source.SourceId;
+import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
- * Immutable URL-to-content association. responseSource scopes validators to the final
- * redirect target; source retains the original identity including query parameters.
- * Validators are opaque HTTP header values, never public diagnostic text.
+ * Immutable, null-free URL association and final redirect provenance. downloadedAt
+ * is the last successful full download; EPOCH denotes unknown legacy age, never
+ * fresh online. HTTP validators are neither stored nor used.
  */
 public record RepositoryCacheMetadata(SourceId source, SourceId responseSource, ContentDigest digest,
-                                      Optional<String> etag, Optional<String> lastModified) {
+                                      Instant downloadedAt) {
     public RepositoryCacheMetadata {
         Objects.requireNonNull(source, "source"); Objects.requireNonNull(responseSource, "responseSource");
-        Objects.requireNonNull(digest, "digest");
-        etag = header(etag); lastModified = header(lastModified);
-    }
-    private static Optional<String> header(Optional<String> value) {
-        Objects.requireNonNull(value, "header");
-        if (value.filter(v -> v.length() > 8192 || v.chars().anyMatch(c -> c < 32 || c == 127 || c > 255)).isPresent())
-            throw new IllegalArgumentException("invalid cache validator");
-        return value;
+        Objects.requireNonNull(digest, "digest"); Objects.requireNonNull(downloadedAt, "downloadedAt");
     }
 }

@@ -382,7 +382,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [RES-010](08-modellaufloesung-und-repositories.md) | P1 | UTF-8/UTF-16/CRLF-/BOM-Provenienztests. |
 | [RES-011](08-modellaufloesung-und-repositories.md) | P2 | Gepinnte eigene/offizielle Indexdateien; keine ad-hoc HTML-Suche als Compilerresolver. |
 | [RES-012](08-modellaufloesung-und-repositories.md) | P1 | Kreisimport, Doppelimport und Modellzahlgrenze mit deterministischem Resultat. |
-| [RES-013](08-modellaufloesung-und-repositories.md) | P2 | Standardcache, starke 304-Bestätigung, Änderungen trotz schwacher Validatoren, Abschaltung, Offline ohne Lock/Netz und optionale Sites; RepositoryCacheRegressionTest, RepositoryCacheContractTest und DefaultRepositoryCacheTest. |
+| [RES-013](08-modellaufloesung-und-repositories.md) | P2 | Standardcache nach Kapitel08 §17: 24h-/7Tage-Fristen, MD5 vor Download, keine ETags oder zweite Onlineprüfung, Abschaltung, Offline ohne Lock/Netz und optionale Sites; Ili2cCachePolicyTest, RepositoryCacheContractTest und DefaultRepositoryCacheTest. |
 
 ### DIAG – Fachliche Diagnostik
 
@@ -953,3 +953,11 @@ RepositoryResolutionObservationTest, Katalog-/Formatter- und reale Launcherfäll
 Die schmale repositoryDiagnosticCheck-Probe prüft JS/WasmGC ohne operative
 Repositoryinfos in Compilerdiagnosen. Fachverträge Kapitel08 §16, Kapitel09/18;
 [Nachweise](../implementation/cli-log-order-cache/REPORT.md), kein neues Phasengate.
+
+### ili2c-Cachefolgeauftrag
+
+WP-26/30: RES-009/013, CLI-004/006, LOG-005/008 erhalten Ili2cCachePolicyTest,
+angepasste Cache-/Lock-/Beobachtungs-/CLI-Verträge und reale Launcherfälle.
+Massgeblich Kapitel08 §17,09/18; Abnahme13 und API16.
+[Nachweise](../implementation/ili2c-cache-policy/REPORT.md). Frühere ETag-/
+Abschlussprüfungsbelege bleiben historisch, keine neue Gesamtphasenabnahme.

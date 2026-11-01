@@ -22,6 +22,7 @@ public final class HttpSourceLoader implements SourceLoader {
     private final ContentStore store;
     private final DirectoryMetadataStore metadata;
     private final CacheObservations observer;
+    private final java.time.Clock clock;
 
     /** Explicit uncached loader; existing callers retain their host policy. */
     public HttpSourceLoader() { this(new RepositoryProxyConfiguration.SystemDefault()); }
@@ -46,6 +47,15 @@ public final class HttpSourceLoader implements SourceLoader {
     }
     private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer,
                               RepositoryProxyConfiguration proxy) {
+        this(store, metadata, observer, proxy, java.time.Clock.systemUTC());
+    }
+    static HttpSourceLoader observed(ContentStore store, DirectoryMetadataStore metadata,
+            Consumer<RepositoryCacheObservation> observer, RepositoryProxyConfiguration proxy, java.time.Clock clock) {
+        return new HttpSourceLoader(store, metadata, CacheObservations.detailed(observer), proxy, clock);
+    }
+    private HttpSourceLoader(ContentStore store, DirectoryMetadataStore metadata, CacheObservations observer,
+                             RepositoryProxyConfiguration proxy, java.time.Clock clock) {
+        this.clock = Objects.requireNonNull(clock, "clock");
         this.proxySelector = Objects.requireNonNull(proxy, "proxy").selector();
         this.store = store; this.metadata = metadata; this.observer = observer;
     }
@@ -59,10 +69,16 @@ public final class HttpSourceLoader implements SourceLoader {
 
     @Override
     public LoadedSource load(SourceLocator locator, FetchPolicy policy, CancellationToken token) {
+        return load(locator, policy, RepositoryCacheRequest.unconditional(), token);
+    }
+
+    @Override
+    public LoadedSource load(SourceLocator locator, FetchPolicy policy, RepositoryCacheRequest request, CancellationToken token) {
+        Objects.requireNonNull(request, "request");
         Objects.requireNonNull(locator, "locator"); Objects.requireNonNull(policy, "policy"); Objects.requireNonNull(token, "token");
         token.throwIfCancellationRequested();
         var id = new SourceId(locator.location());
-        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id);
+        var cached = metadata == null ? Optional.<RepositoryCacheMetadata>empty() : metadata.lookup(id, policy.offline());
         if (policy.offline()) {
             var content = cached.flatMap(m -> store.lookup(m.digest()));
             if (content.isEmpty()) {
@@ -73,90 +89,72 @@ public final class HttpSourceLoader implements SourceLoader {
             observer.publish(RepositoryCacheEvent.OFFLINE_HIT,id);
             return loaded;
         }
-        URI uri;
-        try { uri = URI.create(locator.location()); }
+        if (cached.filter(m -> fresh(m, request)).isPresent()) {
+            var content = store.lookup(cached.orElseThrow().digest());
+            if (content.isPresent()) {
+                byte[] bytes = content.orElseThrow().bytes();
+                if (bytes.length > policy.maxBytes()) throw new SourceLoadException(SourceLoadException.Reason.TOO_LARGE, "cached source exceeds byte limit", null);
+                if (request.expectedMd5().filter(md5 -> !md5.equalsIgnoreCase(md5(bytes))).isEmpty()) {
+                    var loaded = decode(id, bytes, policy, "verified-cache");
+                    token.throwIfCancellationRequested();
+                    observer.publish(RepositoryCacheEvent.FRESH_HIT, id);
+                    return loaded;
+                }
+            }
+            observer.publish(RepositoryCacheEvent.CACHE_MISS, id);
+        }
+        URI current;
+        try { current = URI.create(locator.location()); }
         catch (IllegalArgumentException invalid) {
             throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP source address", invalid);
         }
         try {
-            // Missing byte identity proof or a vanished/corrupt 304 body gets one unconditional retry.
-            for (int attempt=0;attempt<2;attempt++) {
-                URI current = uri;
-                HttpResponse<byte[]> response = null;
-                boolean reusable = true;
-                String requestedEtag = null;
-                for (int redirects=0;redirects<=MAX_REDIRECTS;redirects++) {
-                    token.throwIfCancellationRequested();
-                    HttpRequest.Builder request;
-                    try { request = HttpRequest.newBuilder(current).header("Accept-Encoding", "identity").GET(); }
-                    catch (IllegalArgumentException invalid) {
-                        throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP source address", invalid);
-                    }
-                    policy.requestTimeout().ifPresent(request::timeout);
-                    String requestLocation=current.toString();
-                    requestedEtag = attempt==0 ? cached.filter(m -> m.responseSource().value().equals(requestLocation))
-                            .flatMap(RepositoryCacheMetadata::etag).filter(HttpSourceLoader::isStrongEtag).orElse(null) : null;
-                    if(requestedEtag!=null) request.header("If-None-Match",requestedEtag);
-                    response=receive(request.build(),policy,token);
-                    reusable &= reusable(response);
-                    if(response.statusCode()==304 || response.statusCode()/100!=3)break;
-                    String location=response.headers().firstValue("Location").orElse(null);
-                    if(location==null)throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"redirect response without Location",null);
-                    if(redirects==MAX_REDIRECTS)throw new SourceLoadException(SourceLoadException.Reason.REDIRECT_LIMIT,"redirect limit exceeded",null);
-                    URI next;
-                    try { next = current.resolve(location); }
-                    catch (IllegalArgumentException invalid) {
-                        throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP redirect address", invalid);
-                    }
-                    if(!"http".equalsIgnoreCase(next.getScheme()) && !"https".equalsIgnoreCase(next.getScheme()))
-                        throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"redirect to unsupported scheme",null);
-                    current=next;
-                }
+            HttpResponse<byte[]> response = null;
+            boolean reusable = true;
+            for (int redirects=0;redirects<=MAX_REDIRECTS;redirects++) {
                 token.throwIfCancellationRequested();
-                if (response.statusCode()==200 || response.statusCode()==304) requireIdentity(response);
-                if(response.statusCode()==304) {
-                    if(requestedEtag!=null && requestedEtag.equals(entityTag(response).orElse(null)) && cached.isPresent()) {
-                        var content=store.lookup(cached.orElseThrow().digest());
-                        if(content.isPresent()) {
-                            var loaded=decode(id,content.orElseThrow().bytes(),policy,reusable?"verified-cache":"http-no-store");
-                            if(metadata!=null) {
-                                if(!reusable)metadata.remove(id);
-                                else {
-                                    var old=cached.orElseThrow();
-                                    metadata.put(new RepositoryCacheMetadata(id,old.responseSource(),old.digest(),
-                                            entityTag(response).or(old::etag),validator(response,"Last-Modified").or(old::lastModified)));
-                                }
-                            }
-                            observer.publish(RepositoryCacheEvent.NOT_MODIFIED,id);
-                            return loaded;
-                        }
-                    }
-                    observer.publish(RepositoryCacheEvent.CACHE_MISS,id);
-                    continue;
+                HttpRequest.Builder builder;
+                try { builder = HttpRequest.newBuilder(current).header("Accept-Encoding", "identity").GET(); }
+                catch (IllegalArgumentException invalid) {
+                    throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE, "invalid HTTP source address", invalid);
                 }
-                if(response.statusCode()==404) {
-                    if(metadata!=null)metadata.remove(id);
-                    throw new SourceLoadException(SourceLoadException.Reason.NOT_FOUND,"source not found",null);
+                policy.requestTimeout().ifPresent(builder::timeout);
+                response = receive(builder.build(), policy, token);
+                reusable &= reusable(response);
+                if (response.statusCode()==304 || response.statusCode()/100!=3) break;
+                String location = response.headers().firstValue("Location").orElse(null);
+                if (location==null) throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"redirect response without Location",null);
+                if (redirects==MAX_REDIRECTS) throw new SourceLoadException(SourceLoadException.Reason.REDIRECT_LIMIT,"redirect limit exceeded",null);
+                URI next;
+                try { next = current.resolve(location); }
+                catch (IllegalArgumentException invalid) {
+                    throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"invalid HTTP redirect address",invalid);
                 }
-                if(response.statusCode()==403 || response.statusCode()==401)
-                    throw new SourceLoadException(SourceLoadException.Reason.ACCESS_DENIED,"source access denied",null);
-                if(response.statusCode()!=200)
-                    throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"HTTP status "+response.statusCode(),null);
-                byte[] bytes=response.body();
-                var loaded=decode(id,bytes,policy,reusable?"http":"http-no-store");
-                if(metadata!=null) {
-                    if(reusable) {
-                        var digest=new ContentDigest("sha256",loaded.byteSha256());
-                        store.put(new VerifiedContent(id,digest,bytes));
-                        // Do not publish metadata pointing at a failed write.
-                        if(store.lookup(digest).isPresent()) metadata.put(new RepositoryCacheMetadata(id,new SourceId(current.toString()),digest,
-                                entityTag(response),validator(response,"Last-Modified")));
-                    } else metadata.remove(id);
-                }
-                observer.publish(RepositoryCacheEvent.DOWNLOAD,id);
-                return loaded;
+                if (!"http".equalsIgnoreCase(next.getScheme()) && !"https".equalsIgnoreCase(next.getScheme()))
+                    throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"redirect to unsupported scheme",null);
+                current=next;
             }
-            throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"unexpected conditional response without content",null);
+            token.throwIfCancellationRequested();
+            if (response.statusCode()==404) {
+                if (metadata!=null) metadata.remove(id);
+                throw new SourceLoadException(SourceLoadException.Reason.NOT_FOUND,"source not found",null);
+            }
+            if (response.statusCode()==403 || response.statusCode()==401)
+                throw new SourceLoadException(SourceLoadException.Reason.ACCESS_DENIED,"source access denied",null);
+            if (response.statusCode()!=200)
+                throw new SourceLoadException(SourceLoadException.Reason.IO_FAILURE,"HTTP status "+response.statusCode(),null);
+            requireIdentity(response);
+            byte[] bytes=response.body();
+            var loaded=decode(id,bytes,policy,reusable?"http":"http-no-store");
+            if (metadata!=null) {
+                if (reusable) {
+                    var digest=new ContentDigest("sha256",loaded.byteSha256());
+                    store.put(new VerifiedContent(id,digest,bytes));
+                    if (store.lookup(digest).isPresent()) metadata.put(new RepositoryCacheMetadata(id,new SourceId(current.toString()),digest,clock.instant()));
+                } else metadata.remove(id);
+            }
+            observer.publish(RepositoryCacheEvent.DOWNLOAD,id);
+            return loaded;
         } catch (java.net.http.HttpTimeoutException e) {
             throw new SourceLoadException(SourceLoadException.Reason.TIMEOUT,"source request timed out",e);
         } catch (InterruptedException e) {
@@ -167,27 +165,21 @@ public final class HttpSourceLoader implements SourceLoader {
         }
     }
 
-    /** Only a strong entity tag can certify the original bytes used by pins and closure checks. */
-    private static boolean isStrongEtag(String value) {
-        if(value.length()<2 || value.charAt(0)!='"' || value.charAt(value.length()-1)!='"')return false;
-        return value.substring(1,value.length()-1).chars().allMatch(c -> c>=33 && c!=34 && c!=127 && c<=255);
+    private boolean fresh(RepositoryCacheMetadata entry, RepositoryCacheRequest request) {
+        var now=clock.instant();
+        return !request.maxAge().isZero() && !entry.downloadedAt().equals(java.time.Instant.EPOCH)
+                && !entry.downloadedAt().isAfter(now)
+                && java.time.Duration.between(entry.downloadedAt(),now).compareTo(request.maxAge())<=0;
     }
 
-    private static Optional<String> entityTag(HttpResponse<?> response) {
-        return response.headers().allValues("ETag").size()==1?validator(response,"ETag"):Optional.empty();
-    }
-
-    private static Optional<String> validator(HttpResponse<?> response, String name) {
-        return response.headers().firstValue(name).filter(v -> v.length()<=8192 && v.chars().allMatch(c -> c>=32 && c!=127 && c<=255));
+    private static String md5(byte[] bytes) {
+        try { return HexFormat.of().formatHex(java.security.MessageDigest.getInstance("MD5").digest(bytes)); }
+        catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 
     private static boolean reusable(HttpResponse<?> response) {
-        // Every request fixes Accept-Encoding to identity. Other Vary profiles are not cached.
-        boolean noStore=response.headers().allValues("Cache-Control").stream().flatMap(v -> Arrays.stream(v.split(",")))
-                .anyMatch(v -> v.trim().equalsIgnoreCase("no-store"));
-        return !noStore && response.headers().allValues("Vary").stream()
-                .flatMap(v -> Arrays.stream(v.split(",")))
-                .map(String::trim).allMatch(v -> v.isEmpty() || v.equalsIgnoreCase("Accept-Encoding"));
+        return response.headers().allValues("Cache-Control").stream().flatMap(v -> Arrays.stream(v.split(",")))
+                .noneMatch(v -> v.trim().equalsIgnoreCase("no-store"));
     }
 
     /** Reject unsolicited compression before decoding or publishing any accepted representation. */

@@ -77,15 +77,16 @@ class RepositoryCacheRegressionTest {
     RepositoryProblem problem(RepositoryResolutionOutcome result) { return assertInstanceOf(RepositoryResolutionOutcome.Rejected.class,result).problems().getFirst(); }
     void changedDuringRead(String mode) throws Exception {
         start(mode);changeAfterRead.set(true);
-        assertEquals(RepositoryProblem.Reason.CHANGED_SOURCE,problem(resolve("Dep",false,Optional.empty(),Map.of())).reason());
-        assertEquals(List.of("",""),modelConditions,"weak validators must not hide changed original bytes");
+        assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,resolve("Dep",false,Optional.empty(),Map.of()));
+        assertEquals(List.of(""),modelConditions,"the new policy does not reread sources at completion");
     }
-    @Test void weakEtagDoesNotHideAChangeDuringFinalVerification() throws Exception { changedDuringRead("weak"); }
-    @Test void lastModifiedDoesNotHideAChangeDuringFinalVerification() throws Exception { changedDuringRead("modified"); }
+    @Test void weakEtagIsIgnoredWithoutFinalVerification() throws Exception { changedDuringRead("weak"); }
+    @Test void lastModifiedIsIgnoredWithoutFinalVerification() throws Exception { changedDuringRead("modified"); }
     void pinsAndLocks(String mode) throws Exception {
         start(mode);
         var lock=assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,resolve("Dep",false,Optional.empty(),Map.of())).update().lock();
         content.set(changed(mode));
+        load(base+"Dep.ili"); // Explicit unconditional refresh changes the current URL association.
         assertEquals(RepositoryProblem.Reason.LOCK_MISMATCH,problem(resolve("Dep",false,Optional.of(lock),Map.of())).reason());
         var id=new SourceId(base+"Dep.ili");var digest=ContentDigest.sha256(A.getBytes(StandardCharsets.UTF_8));
         assertEquals(RepositoryProblem.Reason.PIN_MISMATCH,problem(resolve("Dep",false,Optional.empty(),Map.of(id,digest))).reason());
@@ -112,20 +113,17 @@ class RepositoryCacheRegressionTest {
         assertEquals(RepositoryProblem.Reason.NOT_FOUND,result.problems().getFirst().reason());
         assertTrue(result.steps().stream().anyMatch(s->s.kind()==RepositorySearchStep.Kind.SITE_UNAVAILABLE));
     }
-    @Test void a304MustConfirmTheExactStrongEtagBeforeReusingBytes() throws Exception {
-        var responseTag=new AtomicReference<String>("\"one\"");var conditions=new ArrayList<String>();
+    @Test void unsolicited304IsAnIoFailureWithoutRetry() throws Exception {
         server=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         server.createContext("/",e -> {
-            String condition=e.getRequestHeaders().getFirst("If-None-Match");conditions.add(Objects.toString(condition,""));
-            if(responseTag.get()!=null)e.getResponseHeaders().set("ETag",responseTag.get());
-            if(condition!=null) { e.sendResponseHeaders(304,-1);e.close(); }else send(e,content.get());
-        });server.start();String url="http://127.0.0.1:"+server.getAddress().getPort()+"/model";
-        for(String tag:Arrays.asList("W/\"one\"",null,"\"different\"")) {
-            responseTag.set("\"one\"");content.set(A);load(url);conditions.clear();
-            responseTag.set(tag);content.set("!! comment\n"+A);
-            assertEquals(content.get(),load(url).text());assertEquals(List.of("\"one\"",""),conditions);
-            Files.deleteIfExists(directory.resolve("cache/metadata-v1").resolve(ContentDigest.sha256(url.getBytes(StandardCharsets.UTF_8)).value()+".xml"));
-        }
+            requests.incrementAndGet();
+            assertNull(e.getRequestHeaders().getFirst("If-None-Match"));
+            assertNull(e.getRequestHeaders().getFirst("If-Modified-Since"));
+            e.sendResponseHeaders(304,-1);e.close();
+        });server.start();
+        String url="http://127.0.0.1:"+server.getAddress().getPort()+"/model";
+        assertEquals(SourceLoadException.Reason.IO_FAILURE,assertThrows(SourceLoadException.class,()->load(url)).reason());
+        assertEquals(1,requests.get());
     }
     LoadedSource load(String url) { return host().loader().load(new SourceLocator(url),ONLINE,TOKEN); }
 }

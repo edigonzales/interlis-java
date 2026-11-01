@@ -14,6 +14,6 @@ public sealed interface RepositoryResolutionObservation {
         public SearchStep { Objects.requireNonNull(step, "step"); }
     }
 
-    /** Emitted once before a nonempty online completion check, never for an offline invocation. */
+    /** Reserved for API compatibility; the age/MD5 cache policy never emits this event. */
     record VerificationStarted() implements RepositoryResolutionObservation { }
 }

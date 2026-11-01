@@ -41,39 +41,39 @@ class RepositoryCacheContractTest {
     HostRepositories.Access host(List<RepositoryCacheEvent> events) {
         return HostRepositories.create(directory,RepositoryCacheConfiguration.at(directory.resolve("cache")),events::add);
     }
-    LoadedSource load(HostRepositories.Access access,String url,FetchPolicy policy) { return access.loader().load(new SourceLocator(url),policy,TOKEN); }
-    Path metadata(String url) { return directory.resolve("cache/metadata-v1/"+ContentDigest.sha256(url.getBytes(StandardCharsets.UTF_8)).value()+".xml"); }
+    LoadedSource load(HostRepositories.Access access,String url,FetchPolicy policy) { return access.loader().load(new SourceLocator(url),policy,RepositoryCacheRequest.metadata(),TOKEN); }
+    Path metadata(String url) { return directory.resolve("cache/metadata-v2/"+ContentDigest.sha256(url.getBytes(StandardCharsets.UTF_8)).value()+".xml"); }
 
     @Test void persistsRevalidatesAcrossInstancesAndOfflineNeverConnects() throws Exception {
         var text=new AtomicReference<>("INTERLIS 2.4;\r\n!! ä");var etag=new AtomicReference<>("\"one\"");
         String url=serve(e -> send(e,text.get(),etag.get()))+"file.ili?key=secret";
         var first=load(host(),url,ONLINE);assertEquals(1,bodies.get());
         var events=new ArrayList<RepositoryCacheEvent>();assertEquals(first.text(),load(host(events),url,ONLINE).text());
-        assertEquals(2,requests.get());assertEquals(1,bodies.get());assertTrue(events.contains(RepositoryCacheEvent.NOT_MODIFIED));
-        text.set("new content");etag.set("\"two\"");load(host(),url,ONLINE);assertEquals(2,bodies.get());
+        assertEquals(1,requests.get());assertEquals(1,bodies.get());assertTrue(events.contains(RepositoryCacheEvent.FRESH_HIT));
+        text.set("new content");etag.set("\"two\"");host().loader().load(new SourceLocator(url),ONLINE,TOKEN);assertEquals(2,bodies.get());
         assertTrue(host().contentStore().lookup(new ContentDigest("sha256",first.byteSha256())).isPresent());
         int before=requests.get();assertEquals("new content",load(host(),url,OFFLINE).text());assertEquals(before,requests.get());
         server.stop(0);server=null;
         assertEquals("new content",load(host(),url,OFFLINE).text());
-        assertThrows(SourceLoadException.class,()->load(host(),url,ONLINE));
+        assertThrows(SourceLoadException.class,()->host().loader().load(new SourceLocator(url),ONLINE,TOKEN));
         assertEquals(SourceLoadException.Reason.OFFLINE,assertThrows(SourceLoadException.class,()->load(host(),url+"different",OFFLINE)).reason());
     }
 
-    @Test void corruptBody304RetriesUnconditionallyAndCorruptMetadataIsAMiss() throws Exception {
+    @Test void corruptBodyDownloadsUnconditionallyAndCorruptMetadataIsAMiss() throws Exception {
         String url=serve(e -> send(e,"original","\"one\""))+"file";
         var first=load(host(),url,ONLINE);
         Path body=directory.resolve("cache").resolve(first.byteSha256());Files.writeString(body,"corrupt");
         assertEquals(SourceLoadException.Reason.OFFLINE,assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE)).reason());
         assertEquals("original",load(host(),url,ONLINE).text());
-        assertEquals(List.of("","\"one\"",""),conditions);assertEquals(2,bodies.get());
+        assertEquals(List.of("",""),conditions);assertEquals(2,bodies.get());
         Files.writeString(metadata(url),"<!DOCTYPE x [<!ENTITY e SYSTEM 'file:///private/unknown'>]><interlis-cache>&e;</interlis-cache>");
         assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE));
         assertEquals("original",load(host(),url,ONLINE).text());assertEquals("",conditions.getLast());
         String xml=Files.readString(metadata(url));
-        Files.writeString(metadata(url),xml.replace("etag=\"&quot;one&quot;\"","etag=\"&#256;\""));
+        Files.writeString(metadata(url),xml.replace("downloaded-at=\"", "unknown=\""));
         assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE));
         assertEquals("original",load(host(),url,ONLINE).text());assertEquals("",conditions.getLast());
-        Files.writeString(metadata(url),xml.replace("version=\"1\"","version=\"99\""));
+        Files.writeString(metadata(url),xml.replace("version=\"2\"","version=\"99\""));
         assertThrows(SourceLoadException.class,()->load(host(),url,OFFLINE));
     }
 
@@ -94,9 +94,11 @@ class RepositoryCacheContractTest {
             }
         });
         for(String path:List.of("redirect","modified","plain")) { load(host(),base+path,ONLINE);load(host(),base+path,ONLINE); }
-        assertEquals(Arrays.asList(null,null),modifiedHeaders,"Last-Modified does not prove byte identity and must not cause conditional reuse");
+        assertEquals(Arrays.asList((String)null),modifiedHeaders,"Last-Modified does not prove byte identity and must not cause conditional reuse");
         assertEquals("target",load(host(),base+"redirect",OFFLINE).text());
-        for(String path:List.of("no-store","vary")) {
+        assertEquals("variant",load(host(),base+"vary",ONLINE).text());
+        assertTrue(Files.exists(metadata(base+"vary")));
+        for(String path:List.of("no-store")) {
             load(host(),base+path,ONLINE);assertFalse(Files.exists(metadata(base+path)));
             assertThrows(SourceLoadException.class,()->load(host(),base+path,OFFLINE));
         }
@@ -149,6 +151,7 @@ class RepositoryCacheContractTest {
         assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,resolve(host(),List.of(base),true,Optional.empty()));assertEquals(before,requests.get());
         assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,resolve(host(),List.of(base+"uncached/",base),true,Optional.empty()));assertEquals(before,requests.get());
         content.set(model("Dep","DOMAIN D=TEXT;"));
+        host().loader().load(new SourceLocator(base+"Dep.ili"),ONLINE,TOKEN);
         assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,resolve(host(),List.of(base),false,Optional.empty()));
         var replay=assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,resolve(host(),List.of(base),true,Optional.of(first.update().lock())));
         assertEquals(first.update().lock(),replay.update().lock());
@@ -186,7 +189,7 @@ class RepositoryCacheContractTest {
         assertEquals(0,calls.get());
     }
 
-    @Test void conditionalFinalCheckDetectsChangesAndNoStoreIsNotPersistedByClosure() throws Exception {
+    @Test void noFinalCheckAndNoStoreStillInvalidatesCache() throws Exception {
         var depReads=new AtomicInteger();var noStore=new AtomicBoolean();
         String base=serve(e -> {
             if(e.getRequestURI().getPath().endsWith("ilimodels.xml"))send(e,index("Dep"),"\"idx\"");
@@ -196,8 +199,8 @@ class RepositoryCacheContractTest {
                 send(e,model("Dep",read==1?"":"DOMAIN D=TEXT;"),"\""+read+"\"");
             }
         });
-        var changed=assertInstanceOf(RepositoryResolutionOutcome.Rejected.class,resolve(host(),List.of(base),false,Optional.empty()));
-        assertEquals(RepositoryProblem.Reason.CHANGED_SOURCE,changed.problems().getFirst().reason());
-        noStore.set(true);load(host(),base+"Dep.ili",ONLINE);assertFalse(Files.exists(metadata(base+"Dep.ili")));
+        assertInstanceOf(RepositoryResolutionOutcome.Prepared.class,resolve(host(),List.of(base),false,Optional.empty()));
+        assertEquals(1,depReads.get(),"there is no second online check");
+        noStore.set(true);host().loader().load(new SourceLocator(base+"Dep.ili"),ONLINE,TOKEN);assertFalse(Files.exists(metadata(base+"Dep.ili")));
     }
 }
