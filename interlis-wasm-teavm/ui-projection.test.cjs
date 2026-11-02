@@ -15,10 +15,10 @@ for(const [name,type]of [['chromium',chromium],['firefox',firefox],['webkit',web
     // Test-only wrapper waits after the unchanged real pinned renderer finishes.
     // The original bundle is served byte-for-byte via a query URL.
     await page.route(/\/diagram-ui\.js$/,route=>route.fulfill({contentType:'text/javascript',body:`import {DiagramCanvas as RealCanvas,ElkLayoutService,defaultInteractiveSettings} from './diagram-ui.js?unmodified-renderer';
-export {diagramAdapter} from './diagram-ui.js?unmodified-renderer';
+export {diagramAdapter,mountDiagramControls} from './diagram-ui.js?unmodified-renderer';
 export class DiagramCanvas extends RealCanvas {
  constructor(element,callbacks,url){const real=new ElkLayoutService(url);const delayed={layout:async(...args)=>{const result=await real.layout(...args);if(window.__holdProjection){window.__holdProjection=false;window.__layoutHeld=true;await new Promise(resolve=>window.__releaseProjection=resolve);}return result;},cancel:()=>real.cancel(),close:()=>real.close()};super(element,callbacks,url,delayed);}
- accept(document,key,settings=defaultInteractiveSettings){return super.accept(document,key,window.__testPolyline?{...settings,edgeRouting:'POLYLINE'}:settings);}
+ accept(document,key,settings=defaultInteractiveSettings,local=false){return super.accept(document,key,window.__testPolyline?{...settings,edgeRouting:'POLYLINE'}:settings,local);}
 }`}));
     await page.goto(url);await page.waitForFunction(()=>Boolean(window.interlisBrowserTest));await page.locator('#source').fill(text);
     const initial=await page.evaluate(()=>interlisBrowserTest.diagram());assert.equal(initial.stale,undefined);const doc=initial.result,model=doc.containers.find(c=>c.canonicalName==='French').symbol,road=doc.nodes.find(n=>n.canonicalName==='English.Data.Road');

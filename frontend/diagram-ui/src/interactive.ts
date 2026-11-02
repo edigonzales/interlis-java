@@ -19,7 +19,7 @@ import {saveViewState,restoreViewState,validateViewSettings,type SavedViewState}
 import {curvePath,curveSamples,crossingGaps,svgId,paintedBounds,displayText} from './geometry';
 import {exportSvg,exportPng,type ExportScope,type SvgArtifact} from './export';
 
-export const defaultInteractiveSettings:DiagramSettings=Object.freeze({...defaultDiagramSettings,attributeMode:'OWN_AND_INHERITED'});
+export const defaultInteractiveSettings:DiagramSettings=Object.freeze({...defaultDiagramSettings});
 export type DiagramStatus='EMPTY'|'LOADING'|'FRESH'|'PARTIAL'|'STALE'|'ERROR';
 export interface DiagramViewState {positions:Record<string,Point>;routes:Record<string,Point[]>;}
 interface HistoryFrame {geometry:DiagramViewState;pins:string[];manualNodes:string[];manualRoutes:string[];}
@@ -331,7 +331,7 @@ export class DiagramCanvas {
   const zoom=Math.max(.08,Math.min(1,(width-60)/bounds.width,(height-60)/bounds.height));
   await this.dispatcher.dispatch(SetViewportAction.create('interlis-diagram',{zoom,scroll:{x:bounds.x+bounds.width/2-width/(2*zoom),y:bounds.y+bounds.height/2-height/(2*zoom)}},{animate:false}));
  }
- async select(ids:string[]):Promise<void> {await this.dispatcher.dispatch(SelectAction.create({selectedElementsIDs:ids,deselectedElementsIDs:this.selectedIds().filter(id=>!ids.includes(id))}));}
+ async select(ids:string[]):Promise<void> {const wanted=new Set(ids),elements=this.root?[...this.root.index.all()]:[];const selected=elements.filter(e=>wanted.has(e instanceof InterlisMember?e.elementId:e.id)).map(e=>e.id),deselected=elements.filter(e=>(e instanceof InterlisNode||e instanceof InterlisEdge||e instanceof InterlisMember)&&e.selected&&!selected.includes(e.id)).map(e=>e.id);await this.dispatcher.dispatch(SelectAction.create({selectedElementsIDs:selected,deselectedElementsIDs:deselected}));}
  async undo():Promise<void> {const state=this.history.pop();if(state){this.future.push(this.frame());this.applyFrame(state);this.trimHistory();await this.repaint();}}
  async redo():Promise<void> {const state=this.future.pop();if(state){this.history.push(this.frame());this.applyFrame(state);this.trimHistory();await this.repaint();}}
  private async repaint():Promise<void> {if(this.document)await this.accept(this.document,this.sessionKey,this.settings,true);}

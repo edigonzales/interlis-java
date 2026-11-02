@@ -1441,3 +1441,11 @@ History ist auf40 Frames/8MB begrenzt und nimmt Pin-/Manuellmarkierungen mit.
 Versteckte Geometrie bleibt auch bei Settle erhalten. Der Source/Root-Host erhält
 seine unabhängige installierte Prüfung im Extensionrepo; dieses Zwischencommit
 ist keine V3-Abnahme (`phases/V3/history-r2`: sieben Fälle, Exit0/Guardpassed).
+
+V3 Browserconsumer: Der erste Lauf scheiterte am bisherigen Testwrapper, der den
+neuen gemeinsamen Controlexport noch nicht weiterleitete. Wrapper korrigiert,
+unveränderte echte Render-/ELKbytes bleiben Grundlage. Erneuter tatsächlicher Lauf:
+Chromium/Firefox/WebKit3/3 und portabler Browserclient18/18, keine Testskips,
+GradleExit0/Guardpassed (`phases/V3/consumer-r2`). OWN ist nun der dokumentierte
+Initialmodus; Host-/Panelcontrols können ihn ausdrücklich ändern. Die öffentliche
+Source-Auswahl adressiert auch gerenderte Memberzeilen über ihre Original-ID.
