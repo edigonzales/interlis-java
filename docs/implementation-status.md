@@ -1476,8 +1476,14 @@ aktuellen Antwort. Acht UItests bestanden (`phases/V3/freshness-r1`, Exit0/Guard
 
 Extension-Folgeauftrag, V4 in Arbeit: reine Compiler-Editorpläne und ein eigenes
 `interlis-documentation`-Modul sowie versionierter Java-LSP-Exporttransport.
-Dokumentprojektion5, Editorhilfe3/Completion6 und Export-LSP2 sind gezielt grün;
-installierte GUI29–35, vollständige betroffene Regression und unabhängiger V4-Review
-stehen noch aus. Dies ist kein Abschluss oder V5-PASS. Der verbindliche laufende
+Frische Qualifikation am 02.11.2026: 66 gezielte Compiler-Tests (Editorhilfe,
+Completion, Recovery, Versionen, Ownership, Rename, Formatter und fachliche
+Sentinels), acht Dokumentations-, 74 LSP- und 24 Bridge-Tests, jeweils ohne
+Fehler/Skips. Extension Build/Abhängigkeitsinventur, zehn Unit-Tests und echter
+Paket-stdio-Test ebenfalls grün. Ein vollständiger installierter GUI29–35-Lauf
+bestand7/7 (`authoring/2026-11-02T10-43-57-328Z`). Die visuelle Prüfung fand
+einen überlaufenden Snapshot in schmaler HTML-Vorschau; globaler sicherer
+Wortumbruch ist ergänzt und wird erneut geprüft. UML-/Editorregression, finale
+Artefaktidentität und unabhängiger V4-Review stehen noch aus. Dies ist kein Abschluss oder V5-PASS. Der verbindliche laufende
 Auftragsstatus liegt im separaten `interlis-vscode`-Repo unter
 `docs/implementation/vscode-extension/STATUS.md`; V3 ist dort unabhängig akzeptiert.

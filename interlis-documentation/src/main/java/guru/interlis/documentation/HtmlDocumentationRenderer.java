@@ -12,7 +12,7 @@ public final class HtmlDocumentationRenderer {
                                 + " 'none'; style-src 'unsafe-inline'\"><title>"
                                 + x(DocumentationLabels.get(d.options(), "catalog"))
                                 + "</title><style>body{font:16px"
-                                + " system-ui;margin:2em;color:#202020;background:#fff}table{border-collapse:collapse;width:100%;table-layout:fixed}td,th{border:1px"
+                                + " system-ui;margin:2em;color:#202020;background:#fff;overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;table-layout:fixed}td,th{border:1px"
                                 + " solid"
                                 + " #777;padding:.4em;overflow-wrap:anywhere;text-align:left}h2{break-before:auto}.abstract{font-style:italic}p,td{white-space:pre-wrap}</style></head><body><h1>"
                                 + x(DocumentationLabels.get(d.options(), "catalog"))
