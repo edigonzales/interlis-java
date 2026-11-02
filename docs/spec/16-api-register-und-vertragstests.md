@@ -885,3 +885,13 @@ Werten oder überschrittenen Grenzen. Ergebnisse sind getrennte kopierte Werte;
 keine Quelle wird verändert. Kapitel11 definiert Abgleich, Speichergrenzen und
 Inline-Enumherkunft. Abnahmen: `frontend/diagram-ui/test/view-state.test.cjs` und
 `DiagramProjectionTest.inlineEnumerationValuesHaveOriginalAnchorsAndInheritedOwners`.
+
+`interlis-lsp` besitzt additiv `DiagramSelectionParams` und
+`DiagramSelectionResult` (bewusst anderer Name als projection/DiagramSelection).
+`InterlisLanguageServerApi.diagramSelect` / `interlis/diagramSelect` delegiert an
+die begrenzte Queryausführung, prüft die publizierte Registry und verwendet
+`LanguageQueries.symbolAt`. Kapitel07 regelt Versionen, readonly Handle, Reihenfolge
+und leere/fehlerhafte Ergebnisse. Die eigenen TypeScript-Hosttypen stehen zusammen
+mit den bestehenden Diagrammtypen in `editor-protocol.ts`. Abnahmen:
+DiagramProtocolTest (Deklaration, Verwendung, readonly, CRLF/Emoji, Stale) und der
+echte LspProcessTest (Capability und tatsächlicher JSON-RPC-Request/Response).

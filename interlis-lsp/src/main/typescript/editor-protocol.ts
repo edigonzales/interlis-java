@@ -7,3 +7,5 @@ export interface DiagramResponse {protocolVersion:1;serverInstanceId:string;requ
 export interface AnalysisReady {protocolVersion:1;serverInstanceId:string;workspaceRevision:string;snapshotId:string;documentVersions:Record<string,number>;}
 export interface DiagramNavigationParams {protocolVersion:1;serverInstanceId:string;diagramId:string;snapshotId:string;textDocument:VersionedDocument;elementId:string;}
 export interface DiagramNavigation {serverInstanceId:string;snapshotId:string;uri:string;range:{start:{line:number;character:number};end:{line:number;character:number}};readonly:boolean;}
+export interface DiagramSelectionParams {protocolVersion:1;serverInstanceId:string;diagramId:string;snapshotId:string;textDocument:VersionedDocument;sourceDocument:VersionedDocument;position:{line:number;character:number};}
+export interface DiagramSelectionResult {protocolVersion:1;serverInstanceId:string;diagramId:string;snapshotId:string;rootUri:string;documentVersion:number;sourceUri:string;sourceVersion:number;elementIds:string[];symbolIds:string[];}

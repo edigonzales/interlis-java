@@ -43,6 +43,7 @@ class LspProcessTest {
             assertTrue(initialize.contains("\"capabilities\""), initialize);
             assertTrue(initialize.contains("\"textDocumentSync\""), initialize);
             assertTrue(initialize.contains("interlis.diagram"), initialize);
+            assertTrue(initialize.contains("\"diagramSelection\":true"), initialize);
 
             String uri = "memory:/lsp-process.ili";
             String model = """
@@ -82,6 +83,8 @@ class LspProcessTest {
             var navigation=Map.of("protocolVersion",1,"serverInstanceId",wire.get("serverInstanceId").getAsString(),"diagramId",wire.get("diagramId").getAsString(),"snapshotId",wire.get("snapshotId").getAsString(),"textDocument",Map.of("uri",uri,"version",1),"elementId",building.get("id").getAsString());
             send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",21,"method","interlis/diagramNavigate","params",navigation)));
             var location=com.google.gson.JsonParser.parseString(readResponse(output,21)).getAsJsonObject().getAsJsonObject("result");assertEquals(uri,location.get("uri").getAsString());assertEquals(3,location.getAsJsonObject("range").getAsJsonObject("start").get("line").getAsInt());
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",23,"method","interlis/diagramSelect","params",Map.of("protocolVersion",1,"serverInstanceId",wire.get("serverInstanceId").getAsString(),"diagramId",wire.get("diagramId").getAsString(),"snapshotId",wire.get("snapshotId").getAsString(),"textDocument",Map.of("uri",uri,"version",1),"sourceDocument",Map.of("uri",uri,"version",1),"position",location.getAsJsonObject("range").getAsJsonObject("start")))));
+            var selection=com.google.gson.JsonParser.parseString(readResponse(output,23)).getAsJsonObject().getAsJsonObject("result");assertEquals(wire.get("snapshotId").getAsString(),selection.get("snapshotId").getAsString());assertTrue(StreamSupport.stream(selection.getAsJsonArray("elementIds").spliterator(),false).anyMatch(id->id.getAsString().equals(building.get("id").getAsString())));
             send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",22,"method","interlis/diagram","params",Map.of("protocolVersion",1,"requestId","bad-version","textDocument",Map.of("uri",uri,"version",0)))));
             assertTrue(readResponse(output,22).contains("-32801"),"Old client versions must fail over the real launcher");
 

@@ -1087,6 +1087,23 @@ final class InterlisTextDocumentService implements TextDocumentService {
         });
     }
 
+    CompletableFuture<DiagramSelectionResult> diagramSelect(DiagramSelectionParams params) {
+        if(params==null||params.textDocument()==null||params.textDocument().getVersion()==null
+                ||params.sourceDocument()==null||params.sourceDocument().getVersion()==null||params.position()==null)
+            return failed(ResponseErrorCode.InvalidParams,"diagram selection requires exact root/source versions and a position");
+        var captured=copyParams(params,DiagramSelectionParams.class);
+        return requestReady((view,token)-> {
+            var root=requireState(view,new Position(0,0),captured.textDocument());
+            var source=requireState(view,captured.position(),captured.sourceDocument());
+            if(root.lspVersion!=captured.textDocument().getVersion()||source.lspVersion!=captured.sourceDocument().getVersion())
+                return failed(ResponseErrorCode.ContentModified,"source selection document version changed");
+            var selected=queries.symbolAt(source.analysis,cursor(source,captured.position()),token);
+            SymbolRef symbol=selected instanceof QueryResult.Known<SymbolRef> known?known.value():null;
+            token.throwIfCancellationRequested();
+            return CompletableFuture.completedFuture(diagrams.selection(captured,diagramContext(view,root,captured.textDocument().getUri()),symbol));
+        });
+    }
+
     private static Map<String,Integer> documentVersions(HostView view) {
         var result=new LinkedHashMap<String,Integer>();view.documents().forEach((uri,state)->result.put(uri,state.lspVersion));return Map.copyOf(result);
     }

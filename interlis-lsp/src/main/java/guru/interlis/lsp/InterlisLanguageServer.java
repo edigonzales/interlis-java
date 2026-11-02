@@ -106,7 +106,7 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
                 new SemanticTokensLegend(InterlisTextDocumentService.TOKEN_TYPES, List.of()), true, false));
         capabilities.setFoldingRangeProvider(true);
         capabilities.setPositionEncoding("utf-16");
-        capabilities.setExperimental(java.util.Map.of("interlis",java.util.Map.of("protocolVersion",1,"sourceContent",true,"compile",true,"diagram",true,"diagramProtocolVersion",1,"diagramDocumentVersion","1.0","serverInstanceId",textDocuments.serverInstanceId(),"semanticEditing",false)));
+        capabilities.setExperimental(java.util.Map.of("interlis",java.util.Map.of("protocolVersion",1,"sourceContent",true,"compile",true,"diagram",true,"diagramProtocolVersion",1,"diagramDocumentVersion","1.0","serverInstanceId",textDocuments.serverInstanceId(),"semanticEditing",false,"diagramSelection",true)));
         var result=new InitializeResult(capabilities);
         result.setServerInfo(new org.eclipse.lsp4j.ServerInfo("interlis-java",guru.interlis.model.VersionManifest.current().toolVersion()));
         return LspFutures.map(workspaceService.initializeProject(folders),ignored -> { ready=true; return result; },textDocuments::operation);
@@ -116,6 +116,7 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
     @Override public CompletableFuture<SourceContent> sourceContent(SourceContentParams params) { return textDocuments.sourceContent(params); }
     @Override public CompletableFuture<DiagramResponse> diagram(DiagramRequest params) { return textDocuments.diagramRequest(params); }
     @Override public CompletableFuture<DiagramNavigation> diagramNavigate(DiagramNavigationParams params) { return textDocuments.diagramNavigate(params); }
+    @Override public CompletableFuture<DiagramSelectionResult> diagramSelect(DiagramSelectionParams params) { return textDocuments.diagramSelect(params); }
 
     @Override
     public CompletableFuture<Object> shutdown() {

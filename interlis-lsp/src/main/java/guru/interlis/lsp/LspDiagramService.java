@@ -45,13 +45,32 @@ final class LspDiagramService {
     SourceAnchor navigation(DiagramNavigationParams request,Context current) {
         if(request.protocolVersion()!=1||request.diagramId()==null||request.diagramId().length()>128||request.elementId()==null||request.elementId().length()>4096)
             throw LspFailures.error(ResponseErrorCode.InvalidParams,"invalid diagram navigation identity");
-        Published previous;synchronized(published) {previous=published.get(request.diagramId());}
-        if(previous==null||!instance.equals(request.serverInstanceId())||!previous.response().snapshotId().equals(request.snapshotId())
-                ||!current.analysis().snapshotId().value().equals(request.snapshotId())||!previous.response().rootUri().equals(current.uri())
-                ||previous.response().documentVersion()!=current.version()||!previous.response().workspaceRevision().equals(current.workspaceRevision()))
-            throw LspFailures.error(ResponseErrorCode.ContentModified,"Diagram source or server changed; refresh before navigating");
+        var previous=verify(request.protocolVersion(),request.serverInstanceId(),request.diagramId(),request.snapshotId(),current);
         var anchor=previous.anchors().get(request.elementId());if(anchor==null)throw LspFailures.error(ResponseErrorCode.RequestFailed,"Diagram element has no source anchor");
         return anchor;
+    }
+    private Published verify(int protocol,String server,String diagram,String snapshot,Context current) {
+        if(protocol!=1||diagram==null||diagram.isBlank()||diagram.length()>128||snapshot==null||snapshot.length()>128)
+            throw LspFailures.error(ResponseErrorCode.InvalidParams,"invalid diagram selection identity");
+        Published previous;synchronized(published) {previous=published.get(diagram);}
+        if(previous==null||!instance.equals(server)||!previous.response().snapshotId().equals(snapshot)
+                ||!current.analysis().snapshotId().value().equals(snapshot)||!previous.response().rootUri().equals(current.uri())
+                ||previous.response().documentVersion()!=current.version()||!previous.response().workspaceRevision().equals(current.workspaceRevision()))
+            throw LspFailures.error(ResponseErrorCode.ContentModified,"Diagram source or server changed; refresh before navigating");
+        return previous;
+    }
+    DiagramSelectionResult selection(DiagramSelectionParams request,Context current,SymbolRef selected) {
+        var previous=verify(request.protocolVersion(),request.serverInstanceId(),request.diagramId(),request.snapshotId(),current);
+        var ids=new LinkedHashSet<String>();
+        if(selected!=null) {
+            if(!selected.snapshot().value().equals(request.snapshotId()))throw LspFailures.error(ResponseErrorCode.ContentModified,"Source selection snapshot changed");
+            var document=previous.response().document();
+            document.containers().forEach(c->{if(c.symbol().filter(selected::equals).isPresent())ids.add(c.id());});
+            document.nodes().forEach(n->{if(n.symbol().filter(selected::equals).isPresent())ids.add(n.id());n.compartments().forEach(c->c.members().forEach(m->{if(m.declaredSymbol().equals(selected.symbol()))ids.add(m.id());}));});
+            document.edges().forEach(e->{if(e.origin().filter(selected::equals).isPresent())ids.add(e.id());});
+        }
+        return new DiagramSelectionResult(1,instance,request.diagramId(),request.snapshotId(),current.uri(),current.version(),
+                request.sourceDocument().getUri(),request.sourceDocument().getVersion(),List.copyOf(ids),selected==null?List.of():List.of(selected.symbol().value()));
     }
     void close() {synchronized(published) {published.clear();}}
 }

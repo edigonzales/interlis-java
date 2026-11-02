@@ -31,6 +31,23 @@ class DiagramProtocolTest {
     private void failure(ResponseErrorCode expected,Callable<?> action) {
         var failed=assertThrows(ExecutionException.class,()->action.call());assertEquals(expected.getValue(),assertInstanceOf(ResponseErrorException.class,failed.getCause()).getResponseError().getCode());
     }
+    @Test void sourceSelectionUsesJavaSymbolsForDeclarationsUsesAndCurrentVersions() throws Exception {
+        var server=server();try {
+            open(server,URI,3,SOURCE);var response=diagram(server,URI,3,null);
+            var building=response.document().nodes().stream().filter(n->n.label().equals("Building")).findFirst().orElseThrow();
+            var count=building.compartments().stream().flatMap(c->c.members().stream()).filter(m->m.label().equals("count")).findFirst().orElseThrow();
+            var root=new VersionedTextDocumentIdentifier(URI,3);
+            var member=server.diagramSelect(new DiagramSelectionParams(1,response.serverInstanceId(),response.diagramId(),response.snapshotId(),root,root,new Position(6,2))).get();
+            assertTrue(member.elementIds().contains(count.id()));assertEquals(List.of(count.declaredSymbol().value()),member.symbolIds());
+            var number=response.document().nodes().stream().filter(n->n.label().equals("Number")).findFirst().orElseThrow();
+            var use=server.diagramSelect(new DiagramSelectionParams(1,response.serverInstanceId(),response.diagramId(),response.snapshotId(),root,root,new Position(6,8))).get();
+            assertTrue(use.elementIds().contains(number.id()));assertEquals(List.of(number.symbol().orElseThrow().symbol().value()),use.symbolIds());
+            var empty=server.diagramSelect(new DiagramSelectionParams(1,response.serverInstanceId(),response.diagramId(),response.snapshotId(),root,root,new Position(0,2))).get();assertTrue(empty.elementIds().isEmpty());assertTrue(empty.symbolIds().isEmpty());
+            failure(ResponseErrorCode.ContentModified,()->server.diagramSelect(new DiagramSelectionParams(1,response.serverInstanceId(),response.diagramId(),response.snapshotId(),root,new VersionedTextDocumentIdentifier(URI,2),new Position(6,2))).get());
+            failure(ResponseErrorCode.ContentModified,()->server.diagramSelect(new DiagramSelectionParams(1,"old-server",response.diagramId(),response.snapshotId(),root,root,new Position(6,2))).get());
+            failure(ResponseErrorCode.InvalidParams,()->server.diagramSelect(new DiagramSelectionParams(1,response.serverInstanceId(),response.diagramId(),response.snapshotId(),root,root,new Position(0,11))).get());
+        }finally{server.shutdown().get(5,TimeUnit.SECONDS);}
+    }
     @Test void typedDiagramUsesOnlyExplicitRootAndNavigatesMembersWithCrlfRevisionGuards() throws Exception {
         var server=server();try {
             open(server,"untitled:Other.ili",1,SOURCE.replace("Diagram","Other").replace("Building","Foreign"));open(server,URI,3,SOURCE);
@@ -85,6 +102,8 @@ class DiagramProtocolTest {
             var current=diagram(server,URI,1,"{\"schemaVersion\":\"1.0\",\"scope\":\"WITH_DEPENDENCIES\"}");
             var currentImported=current.document().nodes().stream().filter(node->node.canonicalName().equals("Dep.Value")).findFirst().orElseThrow();
             var opened=server.diagramNavigate(navigation(current,1,currentImported.id())).get();assertTrue(opened.readonly());assertEquals(target.uri(),opened.uri());
+            var selected=server.diagramSelect(new DiagramSelectionParams(1,current.serverInstanceId(),current.diagramId(),current.snapshotId(),new VersionedTextDocumentIdentifier(URI,1),new VersionedTextDocumentIdentifier(opened.uri(),1),opened.range().getStart())).get();
+            assertTrue(selected.elementIds().contains(currentImported.id()));assertEquals(opened.uri(),selected.sourceUri());
         } finally {server.shutdown().get(5,TimeUnit.SECONDS);fixture.stopHttp();}
     }
 }
