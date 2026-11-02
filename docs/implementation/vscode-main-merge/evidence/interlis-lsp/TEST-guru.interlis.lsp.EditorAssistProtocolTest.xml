@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.lsp.EditorAssistProtocolTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:03:35.435Z" hostname="Monterrico.local" time="0.013">
+  <properties/>
+  <testcase name="negotiatedPathHasExactCaretAndRejectsOldVersionsWithoutDoubleInsertion()" classname="guru.interlis.lsp.EditorAssistProtocolTest" time="0.011"/>
+  <testcase name="unnegotiatedClientKeepsStandardFormattingAndCannotInvokeCustomPath()" classname="guru.interlis.lsp.EditorAssistProtocolTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.conformance.NormativeConformanceContractTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:55.660Z" hostname="Monterrico.local" time="0.096">
+  <properties/>
+  <testcase name="staleOrForgedSummaryFails()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.015"/>
+  <testcase name="xpassAndErrorStayFailures()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.004"/>
+  <testcase name="nonstandardRunnerExitCannotBeHidden()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.003"/>
+  <testcase name="changedArgumentRangeRevisionSourceOrMultiplicityBlocksException()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.007"/>
+  <testcase name="sourceOrderCommandAndLanguageCannotChange()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.003"/>
+  <testcase name="acceptedOriginalCannotOmitOrUnpinNegativeControl()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.003"/>
+  <testcase name="cancelledFailedAndIncompleteSupportCannotBeWaived()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.002"/>
+  <testcase name="missingDuplicateAndUnknownResultIdsFail()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.001"/>
+  <testcase name="missingAndOldReportsCannotEarnSuccess()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.003"/>
+  <testcase name="approvedCompatibilityKeepsRawPassAndRunsAllPinnedControls()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.006"/>
+  <testcase name="rawPassCannotWaiveApprovalOrNegativeControl()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.004"/>
+  <testcase name="acceptedOriginalRequiresExactNegativeControl()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.003"/>
+  <testcase name="unknownExceptionInFullRunCannotBeIgnored()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.001"/>
+  <testcase name="warningsSyntaxAndImplementationDiagnosticsCannotBeWaived()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.002"/>
+  <testcase name="changedSuiteOrDuplicateExceptionFails()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.001"/>
+  <testcase name="acceptedOriginalCannotHideXpassOrUnknownExpectation()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.002"/>
+  <testcase name="acceptedOriginalCannotHideWarningsWrongControlsOrFailure()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.003"/>
+  <testcase name="processExitStderrMalformedJsonAndTimeoutFail()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.005"/>
+  <testcase name="interlis1ProfileXfailRemainsSeparateFromNormativeExceptions()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.002"/>
+  <testcase name="failedMissingOrWarningPositiveControlPreventsException()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.003"/>
+  <testcase name="onlyPinnedOriginalAndCleanPositiveControlEarnException()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.005"/>
+  <testcase name="allOriginalAndPositiveHashesAreEnforced()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.004"/>
+  <testcase name="controlsOutsideRepositoryCannotBeWaived()" classname="guru.interlis.cli.conformance.NormativeConformanceContractTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

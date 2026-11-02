@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.ColorOutputContractTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:53.180Z" hostname="Monterrico.local" time="0.092">
+  <properties/>
+  <testcase name="inlineColorCannotBeConsumedAsAnotherOptionsValue()" classname="guru.interlis.cli.ColorOutputContractTest" time="0.006"/>
+  <testcase name="fixedPaletteAndResetOnly()" classname="guru.interlis.cli.ColorOutputContractTest" time="0.001"/>
+  <testcase name="bothSpellingsAndTerminatorForEveryDiagnosticCommand()" classname="guru.interlis.cli.ColorOutputContractTest" time="0.002"/>
+  <testcase name="usageAndFormatCheckEscapeUntrustedControls()" classname="guru.interlis.cli.ColorOutputContractTest" time="0.004"/>
+  <testcase name="exhaustivePolicyTable()" classname="guru.interlis.cli.ColorOutputContractTest" time="0.003"/>
+  <testcase name="invalidOptionsFailBeforeSourceOrConfigurationIo()" classname="guru.interlis.cli.ColorOutputContractTest" time="0.013"/>
+  <testcase name="capabilitySurvivesEffectiveEnvironmentAndJsonIsIdentical()" classname="guru.interlis.cli.ColorOutputContractTest" time="0.06"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

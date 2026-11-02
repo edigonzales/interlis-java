@@ -250,3 +250,31 @@ project(':interlis-compiler-cli') {
         mustRunAfter ':sdkReproducibilityCheck', ':platformCheck', ':releaseEvidenceCheckerTest', ':conformanceEvidence'
     }
 }
+
+// One neutral diagram source is consumed by the portable browser and editor artifacts.
+tasks.register('diagramUiBuild', Exec) {
+    group = 'build'
+    description = 'Builds the own neutral Sprotty/ELK viewer from its exact npm lock.'
+    workingDir rootProject.file('frontend/diagram-ui')
+    commandLine nodeExecutable.get(), 'prepare.cjs'
+    inputs.files(fileTree('frontend/diagram-ui') { exclude 'node_modules/**', 'dist/**', 'build/**', 'test/**', 'generated/**' })
+    inputs.files(rootProject.file('interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json'))
+    outputs.dir(rootProject.file('frontend/diagram-ui/dist'))
+}
+tasks.register('diagramUiPackage', Exec) {
+    group = 'build'
+    dependsOn 'diagramUiBuild'
+    workingDir rootProject.file('frontend/diagram-ui')
+    commandLine nodeExecutable.get(), 'gradle-package.cjs'
+    inputs.dir(rootProject.file('frontend/diagram-ui/dist'))
+    inputs.files(rootProject.file('frontend/diagram-ui/package.json'), rootProject.file('frontend/diagram-ui/provenance.json'))
+    outputs.dir(rootProject.file('frontend/diagram-ui/build/package'))
+}
+tasks.register('editorBundle', Exec) {
+    group = 'distribution'
+    description = 'Assembles the exact Java server, neutral diagram package, protocol types and schemas for editor hosts.'
+    dependsOn ':interlis-lsp:installDist', 'diagramUiPackage'
+    workingDir rootProject.projectDir
+    commandLine nodeExecutable.get(), 'tools/editor/bundle.cjs'
+    // The manifest records HEAD, so this small final assembly deliberately always runs.
+}

@@ -133,7 +133,7 @@ public final class BridgeCodec {
                 "diagramOptions", JsonValues.object("schemaVersion",JsonValues.string("1.0"),
                         "scopes",JsonValues.strings(List.of("SELECTED","WITH_DEPENDENCIES","NEIGHBOURHOOD")),
                         "labelPolicies",JsonValues.strings(List.of("CANONICAL","TRANSLATED")),
-                        "associationPresentations",JsonValues.strings(List.of("ENTITY"))),
+                        "associationPresentations",JsonValues.strings(List.of("ENTITY","COMPACT_BINARY"))),
                 "limits", JsonValues.object("maxSourceUtf16Length",
                         JsonValues.number(2_097_152),
                         "maxTotalSourceUtf16Length", JsonValues.string("8388608"),

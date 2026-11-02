@@ -1,5 +1,12 @@
 # Implementierungsstatus interlis-java
 
+VS-Code-Core und aktuelles main auf Nutzerauftrag zusammengeführt: neuere
+Cache-/HTTP-Verträge erhalten, LSP-CacheRequest/FetchPolicy integriert. Gezielte
+Integrationstests Repository112, CLI141, LSP76 ohne Fehler/Skips. Die ursprüngliche
+V5-Abnahme bleibt am ursprünglichen Produktpaar gebunden; kein neu behauptetes
+V5-Review des kombinierten Mergebaums.
+[Mergebericht und Originalbelege](implementation/vscode-main-merge/REPORT.md).
+
 Unabhängiger OpenCodev2.0.28-/DeepSeek-Flash-Review des ili2c-Cachefolgeauftrags
 abgeschlossen: CACHE-01–06 PASS auf c9fdd30,13 eigene Java-/16 Launcher-
 Gegenproben. Ein redaktioneller Befund N-1 hier behoben; Folgereview auf
@@ -1456,3 +1463,167 @@ bearbeiteter Verantwortungen vereinfachen. Offene Abschnitte bleiben offen,
 bis ihre Abnahme vorliegt.
 
 COLOR3-Nacharbeit: Kandidat2d1c914 nach echten Inline-Options-/Kontrollpfad-Gegenproben zurückgezogen; kein Gesamt-PASS. Aktuelle Pflichtmenge1232 JUnit/229 Suites/50 reale CLI-Prozesse; neue Gesamtqualifikation erforderlich. Details im COLOR-STATUS.
+
+## VS-Code-Editorhost V1 – in Arbeit, noch nicht unabhängig abgenommen
+
+Separater Nutzerauftrag im Extensionrepo `interlis-vscode`; dessen
+`docs/implementation/vscode-extension/STATUS.md` besitzt den operativen Stand.
+Isolierter Corezweig übernimmt die gepushte Repositoryarbeit bis `cf585ec1…`.
+Additive eingefrorene Repositoryvorbereitung, begrenzte LSP-IO, readonly
+Quellhandles, zentrale Diagnoseprosa/RelatedInformation, semantische Outline und
+explizites Rootcompile sind in Umsetzung. Kleine LSP-/Repositoryvertragsläufe
+werden gezielt ausgeführt; installierte GUI und unabhängiges V1-PASS bleiben
+vor der Phasenfreigabe erforderlich. Keine neue Compilersemantik, keine Publikation.
+
+V1-Nacharbeit: Gleichzeitige identische Hostreads teilen ein unveränderliches
+Resultat; individuelle Captures und atomare Updates bleiben getrennt. Ein
+abgebrochener Aufrufer bricht aktive Mitnutzer nicht ab. Allein abgebrochene,
+fehlgeschlagene und abgeschlossene Reads werden nicht als Sitzungscache behalten;
+Offline verwendet ausschliesslich den expliziten Cacheport. Konfigurationswechsel
+und Shutdown lösen wartende Reads mit typisiertem Abbruch. LSP65 inklusive fünf
+gezielter Parallelitäts-/Lebensdauertests bestanden (0 Fehler/Skips); Rohbelege
+unter `interlis-vscode-evidence/qualification/V1-coalescing` ausserhalb des Repos.
+
+## VS-Code V1 freigegeben; V2 in Umsetzung
+
+V1 wurde unabhängig durch OpenCode2/direct DeepSeek Flash1017 auf Core
+`3b60e6c1309a4897ad6d0e99f6d8dfd137520ca9` und Extension
+`d237d92fbe22f6fb41d7d6f3f0965c0d080e30e9` abgenommen; Originalreview und äussere
+Prüfung im Extensionrepo unter `docs/implementation/vscode-extension/reviews/V1`.
+Dies öffnet nur V2, keine spätere Phase.
+
+V2 implementiert einen eigenen neutralen Sprotty-/ELK-Baustein, migriert den
+bestehenden Browserconsumer auf dieselbe Quelle und ergänzt typisierte readonly
+Diagramm-/Navigationsrequests mit Analysebenachrichtigung. stdio-/Diagrammtests
+6/6, portable Client18/18, Diagrammadapter4/4, bestehende reale Browserconsumer
+Chromium/Firefox/WebKit3/3 und native Rendererinteraktion1/1 aktuell erfolgreich.
+Gezielte Anfangsfehler und Rohbelege stehen ausserhalb des Repos unter
+`interlis-vscode-evidence/phases/V2`. Kein Parser-/Norm-/XFAIL-Eingriff.
+Installierte Customeditor-GUI12–18 und unabhängiges V2-PASS stehen noch aus;
+V2 ist ausdrücklich nicht freigegeben. Der operative Stand bleibt im Extensionrepo.
+
+V2-GUI-Nacharbeit: Der erste wirkliche Customeditorlauf erkannte zu Recht
+fehlende explizite Nullfelder in der LSP4J-Wireantwort. DiagramWireAdapter schreibt
+nun den kanonischen Codec über einen nullerhaltenden TypeAdapter; wirklicher
+stdio-Test prüft Pflichtfelder. Aufzählungsdomänen erhalten ausserdem ihre
+kanonischen ENUM_VALUES statt bloss eines abstrakten Typnamens; keine neue
+Sprachakzeptanz. Domain-/Vererbungs-/Quell-/Budgettests und erneute installierte
+Diagrammqualifikation sind für diesen Nacharbeitsstand fällig. V2 bleibt offen.
+
+V2 weitere GUI-Nacharbeit: Der deklarierte COMPACT_BINARY-Fallback genügte nicht
+für echte Selbst-/Parallelkanten. Ein eigener reiner Projektionsschritt kompaktet
+nun ausschliesslich verlustfrei geeignete, gebundene binäre Assoziationen und
+behält n-äre/attributtragende/komplexe Entitäten. Beide Endmetadaten und
+Assoziationsanker bleiben kanonisch; Textconsumer und portable Capability sind
+angepasst. Neue JVM-/LSP-/Bridge-Verträge bestanden; frischer portabler und
+installierter Nachweis für diesen Stand ist noch fällig. Keine neue Sprachregel.
+
+V2 Viewzustand: Eindeutige exakte Präsentationsschlüssel über Core-Quell-URI,
+Kind/canonicalName ersetzen die Annahme stabiler Snapshot-IDs. Mehrdeutige Keys
+und verwaiste Fremdeinträge werden verworfen. Eine Projektionsantwort setzt die
+native Modellhistory zurück; aktuelle Layoutcommands können keinen alten
+Semantikgraphen per Undo zurückbringen. Native Rendererprüfung inklusive
+Projektionsrefresh/Undo-Barriere bestanden. Die portable Vorher-/Nachher-
+Gegenprobe und installierte V2-Abnahme folgen; kein V2-PASS vorweggenommen.
+
+## VS-Code V3 – begonnen nach unabhängig akzeptiertem V2-PASS
+
+V2-Abnahme: Core7026e7f / Extension01f3531; Originalreview und äussere Prüfung
+im Extensionrepo `docs/implementation/vscode-extension/reviews/V2/attempt-02`.
+V3-Startbasis bleibt extern unveränderlich erfasst. Erste V3-Bausteine:
+Core-Inline-Enumprojektion mit Originalankern/Vererbung, strukturelle Sichtfilter
+und begrenzter gehashter Viewzustand. Neue UI-Verträge3 und gezielter Javafall1
+bestanden unter Python-Guard (`interlis-vscode-evidence/phases/V3/foundation-r1`).
+Noch keine V3-GUI-/Export-/Phasenabnahme; V4 bleibt gesperrt.
+
+V3 Rendererzwischenstand: Sichtfilter/Pin/Settle/Reset, eigene geometrische
+Undohistory, Bézier-Splines, Viewportbedienung und aktuelle SVG/PNGserialisierung
+sind am gemeinsamen Sprottyviewer angebunden. Fünf gezielte Renderer-/Statefälle
+bestanden (`phases/V3/renderer-r3`, Guardpassed/Exit0). Ein zuvor gefundener
+Inkscapewechsel-Fehler ist mit demselben Komfortfall reproduziert und korrigiert;
+Export nutzt den aktuellen interaktiven Graphen statt den optionalen statischen
+libavoid-Pfad. Bilder und Exportpixel wurden geöffnet. Die neuen gemeinsamen
+Controls sind auch am Browserconsumer angeschlossen; dessen erneute tatsächliche
+WASMprüfung und die installierte Extension-/Host-/GUIqualifikation sind noch fällig.
+V3 ist nicht freigegeben, V4 bleibt gesperrt.
+
+V3 weitere UIprüfung: sieben neue/gezielte Fälle bestehen, inklusive HiDPI-Wheel-
+/Keyboardbedienung, XML-/PNGdecodierung und HTML-/Bidi-Labelgegenprobe. Geometrische
+History ist auf40 Frames/8MB begrenzt und nimmt Pin-/Manuellmarkierungen mit.
+Versteckte Geometrie bleibt auch bei Settle erhalten. Der Source/Root-Host erhält
+seine unabhängige installierte Prüfung im Extensionrepo; dieses Zwischencommit
+ist keine V3-Abnahme (`phases/V3/history-r2`: sieben Fälle, Exit0/Guardpassed).
+
+V3 Browserconsumer: Der erste Lauf scheiterte am bisherigen Testwrapper, der den
+neuen gemeinsamen Controlexport noch nicht weiterleitete. Wrapper korrigiert,
+unveränderte echte Render-/ELKbytes bleiben Grundlage. Erneuter tatsächlicher Lauf:
+Chromium/Firefox/WebKit3/3 und portabler Browserclient18/18, keine Testskips,
+GradleExit0/Guardpassed (`phases/V3/consumer-r2`). OWN ist nun der dokumentierte
+Initialmodus; Host-/Panelcontrols können ihn ausdrücklich ändern. Die öffentliche
+Source-Auswahl adressiert auch gerenderte Memberzeilen über ihre Original-ID.
+
+V3 installierter GUI22-Befund: In der dichten tatsächlichen WITH_DEPENDENCIES-
+Projektion bedeckte eine transparente Kantentrefferfläche den Klassentitel. Ein
+kleiner Browsergegenfall mit exakt aus der LSPantwort extrahiertem DTO reproduziert
+das fehlende Drag (topmost=interlis-edge-hit). Zeichenreihenfolge korrigiert:
+Kanten unter den Knoten, Containerrahmen transparent, damit innere Verbindungen
+sichtbar bleiben. Unverändertes echtes DTO mit Originalquellen/Hash als Regression-
+fixture archiviert. Alle acht relevanten UI-/Geometrie-/Statefälle bestehen danach
+(`phases/V3/dense-fix-r1`, Exit0/Guardpassed). Installierte Nachprüfung ist fällig;
+V3 weiterhin offen. Keine semantische Engineänderung dieser Nacharbeit.
+
+V3 weitere Exportabsicherung: Ausgeblendete Rahmen behalten ihre tatsächliche
+CSSvisibility auch im exportierten SVG; Bounds ignorieren unsichtbare Blätter.
+Eine echte Controls-/Exportassertion prüft dies. Spline-GAPSmasken verwenden die
+vollständige kubische Kontrollpunkthülle, damit keine gültigen Kurventeile am
+Maskenrechteck abgeschnitten werden. Acht Tests im Lauf export-filter-r1 bestanden;
+anschliessend wurden Labelposition/Scroll-ARIA und Reset View vervollständigt.
+
+V3 Frischeabsicherung: Lokale Filter konnten nach Hostinvalidierung bislang den
+alten Graphen wieder auf FRESH setzen. Quellfrische ist nun ein eigener Zustand;
+Filter während ausstehender Antworten werden nur vorgemerkt. Veränderte Optionen
+während ELK verwerfen das überholte Layout. Die neue Gegenprobe prüft STALE,
+keinen Layoutlauf/Export aus dem alten Graphen und Übernahme des Filters nach der
+aktuellen Antwort. Acht UItests bestanden (`phases/V3/freshness-r1`, Exit0/Guardpassed).
+
+Extension-Folgeauftrag, V4 in Arbeit: reine Compiler-Editorpläne und ein eigenes
+`interlis-documentation`-Modul sowie versionierter Java-LSP-Exporttransport.
+Frische Qualifikation am 02.11.2026: 66 gezielte Compiler-Tests (Editorhilfe,
+Completion, Recovery, Versionen, Ownership, Rename, Formatter und fachliche
+Sentinels), acht Dokumentations-, 74 LSP- und 24 Bridge-Tests, jeweils ohne
+Fehler/Skips. Extension Build/Abhängigkeitsinventur, zehn Unit-Tests und echter
+Paket-stdio-Test ebenfalls grün. Ein vollständiger installierter GUI29–35-Lauf
+bestand7/7 (`authoring/2026-11-02T10-43-57-328Z`). Die visuelle Prüfung fand
+einen überlaufenden Snapshot in schmaler HTML-Vorschau; globaler sicherer
+Wortumbruch ist ergänzt und wird erneut geprüft. UML-/Editorregression, finale
+Artefaktidentität und unabhängiger V4-Review stehen noch aus. Dies ist kein Abschluss oder V5-PASS. Der verbindliche laufende
+Auftragsstatus liegt im separaten `interlis-vscode`-Repo unter
+`docs/implementation/vscode-extension/STATUS.md`; V3 ist dort unabhängig akzeptiert.
+
+V4 unabhängiger Review attempt01: FAIL am Paar Core668caa9/Extensione38cfb7.
+Zwei Pflichtbefunde werden in derselben Phase repariert; V5 bleibt gesperrt.
+Mermaid zeigte die Basisklasse als Kind, weil die gerichtete neutrale Kante
+Child→Base als `Child <|-- Base` gerendert wurde. Der Renderer benutzt jetzt
+`Child --|> Base`; die bestehende Projektionsprüfung belegt die semantische
+Richtung und die Übereinstimmung mit PlantUML (zuerst echter RED, dann GREEN).
+
+Der GUI09-Neustartbefund ist als Serverfehler deterministisch reproduziert:
+Eine identische Konfigurationsnachricht während eines kontrolliert angehaltenen
+Repositoryloads ersetzte/cancelte den Loader mit SUPERSEDED. Die Workspace-
+Konfiguration war unverändert und plante deshalb keine neue Analyse; die
+abgebrochene aktuelle Analyse blockierte danach alle Queries. Identische
+Repositoryoptionen/Cacheeinstellungen behalten nun den Loader; reine
+Diagnosesprache ersetzt ebenfalls keine IO-Autorität. Der neue LSP-Test war
+vorher rot und ist danach grün. Die frühere Vermutung einer bloss spät
+registrierten Clientnotification erklärt diesen reproduzierten Serverfehler
+nicht; Client-/Listenerreihenfolge bleibt unverändert.
+
+Frische Reparaturqualifikation: alle75 LSP-Tests, alle22 Projektionstests und
+CLI `diagramExportUsesCheckedSchema` (1 Test), jeweils Exit0/Guardpassed.
+Ein zuerst exponierter zeitabhängiger Repositorytest stellt nun die lokale
+Basis vor dem abhängigen Modell bereit; alle bisherigen Assertions inklusive
+null HTTP bleiben unverändert. Ein zwischenzeitlich unvollständiger Bestand
+kann fachlich einen Lookup auslösen und gehört nicht zum Null-Netz-Orakel.
+Native Wiederholung folgt mit drei Offline-Restarts, frischen readonly Handles,
+null HTTP und unveränderten Zeitgrenzen sowie expliziter GUI-Export-Richtung.
+Rohbelege einschliesslich REDs unter `interlis-vscode-evidence/phases/V4`.

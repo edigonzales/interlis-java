@@ -26,6 +26,37 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiagramProjectionTest {
+    @Test void inlineEnumerationValuesHaveOriginalAnchorsAndInheritedOwners() {
+        var schema=compile("INTERLIS 2.4;MODEL DiagramModel AT \"x\" VERSION \"1\"=TOPIC T=CLASS A=flag:(first,group(child));END A;CLASS B EXTENDS A=END B;END T;END DiagramModel.");
+        var document=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),DiagramOptions.defaults(new DiagramSelection(schema.rootModels())),CancellationToken.none())).document();
+        var a=document.nodes().stream().filter(n->n.label().equals("A")).findFirst().orElseThrow();
+        var b=document.nodes().stream().filter(n->n.label().equals("B")).findFirst().orElseThrow();
+        var values=a.compartments().stream().filter(c->c.kind()==DiagramCompartment.CompartmentKind.ENUM_VALUES).findFirst().orElseThrow().members();
+        assertEquals(List.of("flag.first","flag.group","flag.group.child"),values.stream().map(DiagramMember::label).toList());
+        var inherited=b.compartments().stream().filter(c->c.kind()==DiagramCompartment.CompartmentKind.ENUM_VALUES).findFirst().orElseThrow().members();
+        for(int i=0;i<values.size();i++){assertTrue(values.get(i).anchor().isPresent());assertTrue(inherited.get(i).inherited());assertFalse(values.get(i).inherited());assertEquals(values.get(i).declaredSymbol(),inherited.get(i).declaredSymbol());assertFalse(values.get(i).id().equals(inherited.get(i).id()));assertEquals(values.get(i).anchor(),inherited.get(i).anchor());}
+        assertTrue(new DiagramValidator().validate(document).isEmpty());
+    }
+    @Test void enumDomainPathsAndSourceAnchorsSurviveProjectionWithoutRendererParsing() {
+        var schema=compile("INTERLIS 2.4;MODEL DiagramModel AT \"x\" VERSION \"1\"=DOMAIN State=(first,group(child));DOMAIN CopyState EXTENDS State=(third);END DiagramModel.");
+        var document=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),DiagramOptions.defaults(new DiagramSelection(schema.rootModels())),CancellationToken.none())).document();
+        for(String name:List.of("State","CopyState")) {
+            var node=document.nodes().stream().filter(value->value.label().equals(name)).findFirst().orElseThrow();
+            var values=node.compartments().stream().filter(value->value.kind()==DiagramCompartment.CompartmentKind.ENUM_VALUES).findFirst().orElseThrow().members();
+            assertEquals(name.equals("State")?List.of("first","group","group.child"):List.of("first","group","group.child","third"),values.stream().map(DiagramMember::label).toList());
+            for(var value:values){assertEquals(DiagramMember.MemberKind.ENUM_VALUE,value.kind());assertTrue(value.anchor().isPresent());var declared=schema.semanticGraph().symbol(value.declaredSymbol()).orElseThrow();assertInstanceOf(guru.interlis.model.EnumElementSymbol.class,declared);assertEquals(declared.nameRange(),value.anchor().map(SourceAnchor::nameRange));}
+        }
+        assertTrue(new DiagramValidator().validate(document).isEmpty());
+        var defaults=DiagramOptions.defaults(new DiagramSelection(schema.rootModels()));
+        var hidden=new DiagramOptions(defaults.selection(),defaults.scope(),defaults.visibleKinds(),InheritedMembers.HIDE,true,true,true,true,defaults.labelPolicy(),defaults.associationPresentation(),defaults.budget());
+        var own=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),hidden,CancellationToken.none())).document();
+        var copy=own.nodes().stream().filter(node->node.label().equals("CopyState")).findFirst().orElseThrow();
+        assertEquals(List.of("third"),copy.compartments().stream().filter(c->c.kind()==DiagramCompartment.CompartmentKind.ENUM_VALUES).flatMap(c->c.members().stream()).map(DiagramMember::label).toList());
+        var bounded=new DiagramOptions(defaults.selection(),defaults.scope(),defaults.visibleKinds(),defaults.inheritedMembers(),true,true,true,true,defaults.labelPolicy(),defaults.associationPresentation(),new ProjectionBudget(500,1000,1));
+        var limited=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),bounded,CancellationToken.none())).document();
+        assertEquals(ProjectionCompleteness.LIMITED,limited.completeness());assertTrue(limited.nodes().stream().allMatch(node->node.compartments().stream().mapToInt(c->c.members().size()).sum()<=1));
+
+    }
     @Test void declarationModifiersRemainAvailableToTypedRendererAdapters() {
         var schema=compile("INTERLIS 2.4;MODEL DiagramModel AT \"x\" VERSION \"1\"=TOPIC T(ABSTRACT)=CLASS A(ABSTRACT)=value:TEXT;END A;CLASS B(FINAL) EXTENDS A=END B;END T;END DiagramModel.");
         var document=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),DiagramOptions.defaults(new DiagramSelection(schema.rootModels())),CancellationToken.none())).document();
@@ -198,6 +229,12 @@ class DiagramProjectionTest {
         assertTrue(mermaid.contains("Derived"));
         String plantUml = new PlantUmlRenderer().render(document);
         assertTrue(plantUml.startsWith("@startuml"));
+        Map<String, String> names = GraphTextFormatter.safeNames(document);
+        String base = names.get(document.nodes().stream().filter(n -> n.label().equals("Base")).findFirst().orElseThrow().id());
+        String derived = names.get(document.nodes().stream().filter(n -> n.label().equals("Derived")).findFirst().orElseThrow().id());
+        assertTrue(mermaid.contains(derived + " --|> " + base) || mermaid.contains(base + " <|-- " + derived), mermaid);
+        assertFalse(mermaid.contains(derived + " <|-- " + base), "Mermaid must not make the superclass derive from its child");
+        assertTrue(plantUml.contains(base + " <|-- " + derived), plantUml);
         String json = new DiagramJsonCodec().encode(document);
         assertTrue(json.contains("\"schemaVersion\":\"1.0\""));
         assertTrue(json.contains("\"snapshotId\":"));

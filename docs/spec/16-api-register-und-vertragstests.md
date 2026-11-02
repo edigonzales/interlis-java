@@ -891,3 +891,110 @@ HostRepositories.createObserved mit zusätzlichem java.time.Clock-Parameter.
 FRESH_HIT ergänzt RepositoryCacheEvent; alte304-/Abschlusskennungen bleiben
 reserviert. Null-/Wert-/Frist-/Fehler-/Besitzverträge Kapitel08 §17, Präsentation09/18.
 Abnahme: Ili2cCachePolicyTest und angepasste Cache-/CLI-/SDK-Vertragstests.
+
+### LSP-Editorhost und eingefrorene Repositoryvorbereitung
+
+Repository besitzt den additiven `RepositoryClosureService.resolveCaptured`-Einstieg
+nach Kapitel08 §18. Bestehende synchrone Verbraucher bleiben erhalten;
+`CapturedRepositoryResolutionTest` prüft Ownergrenze und bedingten Commit.
+LSP besitzt `InterlisLanguageServerApi`, `CompileModelParams`, `CompileReport`,
+`SourceContentParams` und `SourceContent`. Kapitel07 beschreibt den transport-
+und revisionsgebundenen Vertrag. Sie enthalten keine Compilerzertifikate;
+Readonly-Handles autorisieren keine frei wählbare Beschaffung. `LspProcessTest`
+prüft beide neuen Methoden durch den tatsächlich gestarteten stdio-Launcher.
+
+### Typisierter Diagrammhost und neutraler Viewer
+
+Besitzer `interlis-lsp/guru.interlis.lsp`: `DiagramRequest`, `DiagramResponse`,
+`DiagramNavigationParams`, `DiagramNavigation`, `AnalysisReady`,
+`InterlisLanguageClientApi`. Die DTOs sind readonly Transportwerte; Listen und
+Versionsmaps der veröffentlichten Antworten werden defensiv kopiert. Der
+`DiagramResponse.document` verwendet direkt den kanonischen
+`interlis-projection/DiagramJsonCodec` über DiagramWireAdapter. Kapitel07 §9.1
+regelt Identitäten, Lebensdauer, Grenzen, Abbruch und Fehler. Abnahmen:
+DiagramProtocolTest und der echte LspProcessTest. Vorhandene Compile-/Source-
+Verträge bleiben erhalten.
+
+Besitzer `frontend/diagram-ui`: DiagramCanvas, DiagramViewState,
+ElkLayoutService/LayoutServicePort und eigene neutrale DiagramDocument-DTOs.
+Kapitel11 beschreibt die fachlich readonly Interaktion. LayoutServicePort
+transportiert echte Layoutwerte und Abbruch; ein Test darf Antworten verzögern,
+aber keine fachlichen Erfolgsantworten erfinden. Public Hosttypen liegen in
+`interlis-lsp/src/main/typescript/editor-protocol.ts` und werden mit Verweis auf
+dieselben Diagrammtypen im Editorbundle geliefert. Keine zweite ASTkopie.
+
+Additiv in `interlis-projection`: DiagramMember.MemberKind.ENUM_VALUE benutzt
+das vorhandene ENUM_VALUES-Kompartiment; Kapitel11 regelt Reihenfolge,
+Deklarations-/Quellbezug, Inherited-Option und gemeinsames Budget. Der Wireadapter
+schreibt erforderliche Nullfelder auch unter LSP4Js standardmässigem Gsonwriter.
+LspProcessTest und der paketierte Node-stdio-Test prüfen die wirkliche JSONform;
+ein reines Gsonbaum- oder Javaobjekt-Ergebnis ersetzt diese Prüfung nicht.
+
+Additiv: DiagramEdge.EdgeKind.ASSOCIATION bezeichnet eine kanonisch kompaktierte
+binäre Assoziation. Die Eligibility-, Reihenfolge-, Quell- und Budgetbedingungen
+stehen in Kapitel11. CompactAssociationProjection bearbeitet nur noch nicht
+publizierte Projektionsbuilder; veröffentlichte DiagramDocument-Werte bleiben
+immutable. Parser, Binder und SemanticGraph werden weder geändert noch erneut
+interpretiert. JVM-/LSP-/portable Vertragstests und beide neutralen Consumer
+verwenden dieselbe Information. DiagramDocument1.0 bleibt strukturell unverändert.
+
+`frontend/diagram-ui/reconcileGeometry` ist der reine Besitzer des eindeutigen
+Presentationkey-Abgleichs aus Kapitel11. Eingaben sind unveränderte alte/neue
+DiagramDocument1.0-Werte und separater Viewzustand; Ergebnis enthält ausschliesslich
+neu zugeordnete Positionen/Routen. Es leitet keine Symbole/Quellbereiche ab und
+benutzt keine fuzzy Namens-/Offsetheuristik. Der echte portable Enginevertrag
+prüft IDs, die nach einem Deklarationsaustausch nicht dieselbe Klasse bezeichnen.
+
+V3 ergänzt im neutralen Besitzer `frontend/diagram-ui` die reinen APIs
+`DiagramFilterController`, `defaultFilters`, `visibleDocument`, `importDepths`
+und `presentationKeys`; Eingaben sind unveränderte DiagramDocument1.0-DTOs und
+separate Sichtflags, Ergebnisse sind abgeleitete Views/exakte eindeutige Keys.
+`saveViewState`/`restoreViewState` sind asynchron (lokales WebCrypto SHA-256),
+verwenden ausschliesslich Geometriekeys und akzeptieren `SavedViewState.version=1`.
+`validateSavedViewState`, `validateFilters` und `validateViewSettings` sind die
+synchrone strikte Host-/UIgrenze; sie werfen bei unbekannten Feldern, ungültigen
+Werten oder überschrittenen Grenzen. Ergebnisse sind getrennte kopierte Werte;
+keine Quelle wird verändert. Kapitel11 definiert Abgleich, Speichergrenzen und
+Inline-Enumherkunft. Abnahmen: `frontend/diagram-ui/test/view-state.test.cjs` und
+`DiagramProjectionTest.inlineEnumerationValuesHaveOriginalAnchorsAndInheritedOwners`.
+
+`interlis-lsp` besitzt additiv `DiagramSelectionParams` und
+`DiagramSelectionResult` (bewusst anderer Name als projection/DiagramSelection).
+`InterlisLanguageServerApi.diagramSelect` / `interlis/diagramSelect` delegiert an
+die begrenzte Queryausführung, prüft die publizierte Registry und verwendet
+`LanguageQueries.symbolAt`. Kapitel07 regelt Versionen, readonly Handle, Reihenfolge
+und leere/fehlerhafte Ergebnisse. Die eigenen TypeScript-Hosttypen stehen zusammen
+mit den bestehenden Diagrammtypen in `editor-protocol.ts`. Abnahmen:
+DiagramProtocolTest (Deklaration, Verwendung, readonly, CRLF/Emoji, Stale) und der
+echte LspProcessTest (Capability und tatsächlicher JSON-RPC-Request/Response).
+
+V3 derselben UI: `DiagramCanvas.filter/filterAll/resetFilters/hide`,
+`configure/settle/resetLayout/pinSelected/undo/redo`, `saveState/restoreState`,
+`setViewport/zoom/pan/getViewport/getScrollBounds` sowie `exportSvg/exportPng`
+besitzen nur getrennten Viewzustand; Kapitel11 regelt Grenzen und Fehler.
+`mountDiagramControls` bindet lokale native Controls an diese API, Hostcallbacks
+besitzen semantische Projektion und Dateien. Abnahmen: echte Sprotty-Dragregression,
+Viewstate-Verträge und `comfort.test.cjs` mit echten nativen Controls, Kurven,
+XML-/PNGdecodierung, Export ohne ELK und Wiederherstellung.
+
+### Editorhilfe- und Dokumentationseinstiege
+
+| Besitzer | Kanonische Typen / Einstieg | Vertrag / Prüfungen |
+|---|---|---|
+| compiler/query | `EditorAssistanceService`, `EditorEditPlan`, `EditorIndentOptions`; `complete`, `planBlockClose`, `quickFixes` | Kapitel07; EditorAssistanceTest, EditorCompletionTest; aktuelle Syntax/Revision, konservative Bindung, keine IO |
+| documentation | `DocumentationOptions`, `DocumentationDocument`, `DocumentationProjector` | Kapitel11; DocumentationTest; geprüftes Schema, kopierte Reihenfolge, begrenzte Referenzdarstellung |
+| documentation | `MarkdownDocumentationRenderer`, `HtmlDocumentationRenderer`, `DocxDocumentationRenderer`, `GraphMlRenderer` | Kapitel11; reale escaped Text-/XML-/OOXML-Struktur, vier Labelsprachen |
+| lsp | `ExportArtifactParams`, `ExportArtifact`, `LspExportService`; `interlis/export` | Kapitel07; DocumentationProtocolTest und echter Extension-Paketstdio; Versionen, Rootschema, Größenlimit/Cancel |
+
+Öffentliche Werte sind nullfrei und immutable; fehlende optionale Wirefelder
+werden vor der Projektion geprüft/defaultiert. Renderer besitzen keinen
+Workspacezustand. Hostlebensdauer und Cancellation gehören dem bestehenden
+LSP-Scheduler. Die Quelle der Metadatenhints ist als Verhaltensreferenz im
+`MetaAttributeCatalog` dokumentiert; deren Syntax-/Typauswahl bleibt Java-eigen.
+
+`EditorAssistParams` / `EditorAssistResult` im LSP ergänzen den generischen
+Compilerplan nur um Wireversionen und LSP-Positionen. Kapitel07 regelt die
+gegenseitig ausschliessende Verhandlung mit Standard-onTypeFormatting.
+`EditorAssistProtocolTest` und der reale Paketstdio prüfen Null-/Stale-/Caret-
+Antworten und verhindern doppelte Einfügung. Der ursprüngliche installierte
+Standard-GUI-Gegenfall (Cursor am END-Ende) bleibt als negativer Beleg erhalten.

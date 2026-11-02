@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.P3CliLifecycleContractTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:54.147Z" hostname="Monterrico.local" time="0.036">
+  <properties/>
+  <testcase name="aCompilerRejectionRetainsItsTypedGateSummaryAfterAHostFlushFailure()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.005"/>
+  <testcase name="cancellationBeforeHostLoadingPreservesItsActualReason()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.003"/>
+  <testcase name="concurrentInvocationsOnOneApplicationKeepIndependentParentsAndCorrelation()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.011"/>
+  <testcase name="compilerChildAndHostParentFinishExactlyOnceInOrder()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.003"/>
+  <testcase name="diagramParentReportsItsActualRequestedRootCount()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.003"/>
+  <testcase name="compilerSuccessCannotHideFinalOutputFailure()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.004"/>
+  <testcase name="versionHasAHostRunWithoutAFictitiousCompilerChildOrSchema()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.0"/>
+  <testcase name="anAnalysisReportsCompletenessWithoutPublishingACompiledSchema()" classname="guru.interlis.cli.P3CliLifecycleContractTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

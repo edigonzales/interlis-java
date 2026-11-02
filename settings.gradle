@@ -11,4 +11,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'interlis-java'
-include('interlis-model', 'interlis-compiler', 'interlis-workspace', 'interlis-projection', 'interlis-repository', 'interlis-compiler-cli', 'interlis-lsp', 'interlis-wasm-bridge', 'interlis-wasm-teavm', 'interlis-wasm-webimage')
+include('interlis-documentation', 'interlis-model', 'interlis-compiler', 'interlis-workspace', 'interlis-projection', 'interlis-repository', 'interlis-compiler-cli', 'interlis-lsp', 'interlis-wasm-bridge', 'interlis-wasm-teavm', 'interlis-wasm-webimage')

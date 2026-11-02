@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.RepositoryCacheRegressionTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:58.553Z" hostname="Monterrico.local" time="0.092">
+  <properties/>
+  <testcase name="optionalOfflineSiteMissIsNotARequiredSourceFailure()" classname="guru.interlis.repository.RepositoryCacheRegressionTest" time="0.017"/>
+  <testcase name="unsolicited304IsAnIoFailureWithoutRetry()" classname="guru.interlis.repository.RepositoryCacheRegressionTest" time="0.004"/>
+  <testcase name="lastModifiedIsIgnoredWithoutFinalVerification()" classname="guru.interlis.repository.RepositoryCacheRegressionTest" time="0.01"/>
+  <testcase name="lastModifiedCannotHideOnlineLockOrPinMismatchButOfflineLockRetainsOldBytes()" classname="guru.interlis.repository.RepositoryCacheRegressionTest" time="0.02"/>
+  <testcase name="weakEtagIsIgnoredWithoutFinalVerification()" classname="guru.interlis.repository.RepositoryCacheRegressionTest" time="0.01"/>
+  <testcase name="malformedOptionalSiteWarnsWithoutBecomingAnIndexFailure()" classname="guru.interlis.repository.RepositoryCacheRegressionTest" time="0.009"/>
+  <testcase name="weakEtagCannotHideOnlineLockOrPinMismatchButOfflineLockRetainsOldBytes()" classname="guru.interlis.repository.RepositoryCacheRegressionTest" time="0.021"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

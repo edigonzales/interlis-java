@@ -86,7 +86,7 @@ Wird ein solcher Zustand über den gemeinsamen Verbraucher-Diagnosekanal ausgege
 | `labelPolicy` | `CANONICAL`, `TRANSLATED` | Labelauswahl ohne Identitätsänderung. |
 | `translationModel` | `Optional<SymbolRef>` | Bei TRANSLATED explizites Übersetzungsmodell desselben Snapshots mit gebundenen ModelTranslation-Korrespondenzen. |
 | `neighbourhoodDepth` | `OptionalInt`, 0..32 | Bei NEIGHBOURHOOD explizite maximale Entfernung im gebundenen Referenzgraphen. |
-| `associationPresentation` | `ENTITY`, später `COMPACT_BINARY` | Standarddarstellung jeder Assoziation als eigenständiges Element. |
+| `associationPresentation` | `ENTITY`, `COMPACT_BINARY` | Standard ENTITY; verlustfrei geeignete binäre Assoziationen können Kanten sein. |
 | `budget` | `ProjectionBudget(maxNodes,maxEdges,maxMembersPerNode)` | Ausdrückliche Begrenzung mit LIMITED-Meldung. |
 
 Eine Auswahl einzelner Elemente fügt deren Modell-/Topicrahmen hinzu, ohne
@@ -196,7 +196,7 @@ Diamanten für Aggregation/Komposition werden aus den semantischen Endinformatio
 
 ### 4.3 Weitere Beziehungen
 
-Das Beziehungsschema unterscheidet mindestens INHERITANCE, ASSOCIATION_ROLE, REFERENCE, STRUCTURE_COMPOSITION, DOMAIN_USE, VIEW_DERIVATION, MODEL_IMPORT und TRANSLATION. Kategorien können zunächst deaktiviert sein, müssen dann aber über die Projektionsfähigkeiten kenntlich werden.
+Das Beziehungsschema unterscheidet mindestens INHERITANCE, ASSOCIATION_ROLE, ASSOCIATION, REFERENCE, STRUCTURE_COMPOSITION, DOMAIN_USE, VIEW_DERIVATION, MODEL_IMPORT und TRANSLATION. Kategorien können zunächst deaktiviert sein, müssen dann aber über die Projektionsfähigkeiten kenntlich werden.
 
 Eine `REFERENCE TO`-Verwendung und eine Strukturkomposition sind unterschiedliche Beziehungen. Modellimports verbinden Rahmen, nicht zufällige Klassen im importierten Modell. Fachlich verschiedene Beziehungen zwischen denselben zwei Knoten bleiben getrennte Kanten mit eigener Identität.
 
@@ -317,3 +317,178 @@ Quellanker stammen aus dem gemeinsamen Graphen. Das Schema 1.0 und der
 TypeScript-Adapter unterstützen die vorhandenen offenen Kind-Strings.
 `DiagramProjectionTest.projectsGraphicBasisRuleSignatureAndInheritance` prüft
 die Knoten, Beziehungen und den Diagrammvalidator.
+
+### Eigener gemeinsamer interaktiver Diagrammconsumer
+
+`frontend/diagram-ui` besitzt die neutrale Darstellung für Core-Browser und
+VS-Code-Host. Es importiert ausschliesslich eigene DiagramDocument1.0-/Layout-
+DTOs, Sprotty/ELK und deklarierte Hilfsbibliotheken; keine Compiler-AST- oder
+Language-Service-Typen. Die alte aktive Vendorquelle ist entfernt. Provenienz,
+Originalhashes und MIT-/EPL-Hinweise bleiben erhalten. `diagramUiBuild` baut
+strikte Deklarationen, den echten Sprotty-Viewer, CSS, native ELKworker und
+Lizenzinventar. Der Diagrammschemavalidator wird zur Buildzeit erzeugt, sodass
+eine Webview keine Eval-Freigabe benötigt. `editorBundle` paketiert Server,
+neutralen Renderer als TGZ und entpackte Assets, Schemas und eigene Hosttypen;
+sein Manifest bindet Nutzdateien über SHA-256 und den Core-Commit.
+
+DiagramCanvas hält eingefrorene Semantik getrennt vom mutierbaren Sprotty-
+Viewmodell. Native Move-/Routing-/Selectioncommands verändern Positionen und
+innere Stützpunkte, niemals fachliche Endpunktsymbole oder Quelltext. Neuere
+Generationen, Server-/Quellenwechsel und dispose brechen alte Worker ab.
+Unveränderte Elementidentitäten behalten ihre Geometrie; neue Geschwister
+werden neben belegten Positionen platziert, Container wachsen entsprechend.
+Navigation wird als opaque Element-ID an den Host delegiert. Komposition und
+Aggregation stammen unverändert vom jeweils publizierten Diagrammende.
+
+Die erste interaktive Lieferung unterstützt STANDARD mit ORTHOGONAL/POLYLINE.
+SPLINES und Inkscape im interaktiven Viewer sind bis zur folgenden UMLlieferung
+explizit abgewiesen; vorhandene statische Adapterexporte bleiben erhalten.
+Browsercontract- und native Mausinteraktionstests prüfen dieselbe Quelle; sie
+ersetzen keine installierten VS-Code-GUItests oder spätere Exportabnahme.
+
+Aufzählungsdomänen behalten ihre effektiven Pfade in ENUM_VALUES als
+`DiagramMember.MemberKind.ENUM_VALUE`, mit Deklarationsreihenfolge, echtem
+EnumElementSymbol (sofern deklariert), ursprünglichem Quellanker und
+Inherited-Markierung. HIDE und gemeinsames Memberbudget gelten auch dafür;
+LIMITED bleibt explizit. Identitäten/Anker bleiben bei übersetzten Labels
+kanonisch. Das vorhandene Schema1.0 erlaubt offene Memberkind-Zeichenketten.
+DiagramProjectionTest prüft verschachtelte/effektive Werte, Quellen, HIDE und
+Budget. Inline-Enum-Komfort-/Filterfunktionen bleiben dem folgenden UIumfang
+zugeordnet. Der neutrale interaktive Default zeigt eigene und geerbte Member.
+
+COMPACT_BINARY wird im reinen Java-Projektor aus bereits gebundenen Symbolen
+gebildet. Genau zwei eindeutige Rollen ohne eigene Attribute/Constraints,
+Vererbungs-/Ableitungsbezüge, zusätzliche Rollenflags/Restriktionen oder besondere
+Linkkardinalität dürfen eine ASSOCIATION-Kante ersetzen. Andere eingehende
+Bezüge auf den Assoziationsknoten verhindern die Reduktion. Alle übrigen
+Assoziationen bleiben vollständige Entitäten; dies ist kein unimplementierter
+Optionsfallback und macht eine vollständige Projektion nicht PARTIAL.
+
+Die neue Kante übernimmt beide Zielendpunkte und Endmetadaten in
+Rollendeklarationsreihenfolge, mit eigener Assoziations-ID, SymbolRef und
+ursprünglichem Assoziationsanker. Selbstbeziehungen behalten denselben Knoten
+an beiden Enden, parallele Beziehungen verschiedene Kantenidentitäten. Bestehende
+Schemas1.0 erlauben den additiven Kindstring ASSOCIATION. Der neutrale Adapter
+ordnet auch kompakte Kanten ihrem Assoziationssymbol zu; bestehende Textconsumer
+bewahren beide Endlabels und Diamanten. Die portable Capability kündigt beide
+implementierten Darstellungen an. CompactAssociationProjectionTest,
+DiagramProtocolTest und der tatsächliche portable Adaptervertrag prüfen diese
+Daten gemeinsam mit n-ären/attributtragenden Entitäten.
+
+Der neutrale Reconciler verwendet IDs ausschliesslich innerhalb desselben
+Snapshots als Identität. Bei einem neuen Snapshot entsteht ein exakter
+Presentationkey aus dem vom Core gelieferten Quell-URI, Kind und canonicalName;
+Offsets und ähnliche Labels werden nicht abgeglichen. Mehrdeutige oder
+quelllose Keys verlieren ihren Zustand. Kanten verlangen zusätzlich eindeutige
+Endpunktkeys, Quellbezug und identische Endmetadaten; nicht eindeutig zuordenbare
+Memberendpunkte werden verworfen. Ein umbenanntes/ersetztes Element erbt deshalb
+keine Geometrie allein aufgrund einer wiederverwendeten Symbol-ID. Die Keys
+gehören nur zum Viewzustand und autorisieren niemals Navigation oder Sprach-
+operationen. Server-/Rootwechsel verwirft die Sitzung samt Commandhistory.
+Der portable Vertrag prüft tatsächliche Vorher-/Nachher-Projektionen der Engine
+mit einer ausgetauschten Deklaration und einer unveränderten Nachbarklasse.
+
+Jede neue Projektionsantwort bildet eine Barriere für die native Sprotty-
+Modellhistorie. Eindeutig zugeordnete Geometrie und der Viewport werden übernommen,
+aber Undo darf keinen alten Quell-/Projektionsgraphen wiederherstellen.
+Selektion/Drag/Route im aktuellen Graphen verwenden weiterhin echte Commands.
+Die DOMaktualisierung bleibt ein VNodepatch; eine Selektionsänderung fordert keine
+neue Analyse oder Projektion an. Core-IDs enthalten im aktuellen Indexer auch
+Revision/Fingerprint und wechseln tatsächlich bei einer Quelldeklarationsänderung;
+sie sind deshalb ausdrücklich kein sitzungsübergreifender Presentationkey.
+
+### V3: lokale Sichtfilter und begrenzter Viewzustand
+
+`DiagramFilterController` und `visibleDocument` besitzen ausschliesslich die
+Darstellung bereits projizierter Kategorien, Kanten und Kompartimente. Sie ändern
+keine fachliche Auswahl und lösen keine Compileranalyse aus. Importtiefen folgen
+nur expliziten `MODEL_IMPORT`-Kanten vom Core-ausgewählten Modell; Labels werden
+nicht als Namen aufgelöst. Externe Stubs müssen über verbleibende sichtbare
+Verbindungen von einem normalen Knoten erreichbar sein; leere Rahmen entfallen.
+Ausblenden löscht keine Geometrie aus dem separaten Viewzustand.
+
+`SavedViewState.version=1` enthält begrenzte Geometrie, Pin-/Manuellmarkierungen,
+Filter, Layoutsettings und Viewport. Persistente Schlüssel sind SHA-256 der
+exakten eindeutigen Presentationkeys; Quelltext, Quell-URIs mit Credentials,
+Kommentar-/Labeltexte und Snapshot-Semantik werden nicht gespeichert. Beim Laden
+werden die Hashes nur gegen eindeutige aktuelle Corekeys abgeglichen. Umbenannte,
+entfernte, mehrdeutige oder quelllose Elemente erhalten keine fremde Geometrie.
+Unbekannte Felder, nicht finite/überdimensionierte Zahlen, ungültige Settings,
+mehr als1000 Knoten-/Kantenrecords, mehr als256 Punkte pro Route oder mehr als1MB
+serialisierter Zustand werden abgewiesen. Die Hostablage besitzt zusätzlich eine
+begrenzte Anzahl Workspace-/Root-/Panelschlüssel. Viewstate ist keine Befugnis
+für Navigation oder Spracheingriffe; diese bleiben versionsgebundene Javaqueries.
+
+Inline-Enumerationen deklarierter Attribute verwenden ebenfalls `ENUM_VALUES`.
+Der Core liefert geordnete Pfade mit Attributpräfix, Original-Enum-Symbol/Anker
+und effektivem Besitzer. Geerbte Darstellungen haben eigene IDs und denselben
+ursprünglichen Anker. Domainreferenzen behalten ihre Domainknoten; der Renderer
+berechnet keine Enumsemantik aus Typtext. Das gemeinsame Memberbudget und
+`InheritedMembers.HIDE` gelten auch hier.
+
+`DiagramCanvas` integriert diese Filter in denselben echten Sprotty-Graphen.
+Sein Beobachter vereinigt sichtbare Geometrie mit ausgeblendeten Elementen;
+Snapshotwechsel gleichen auch Pin-/Manuell-/Hiddenmengen über die exakten
+Presentationkeys ab. Eigene begrenzte Viewhistory enthält nur Geometrie und
+überschreitet keine externe Projektionsantwort. `settle` erhält manuelle/pinnte
+Knoten und manuelle Routen; `resetLayout` verwirft diese explizit, aber keine Filter.
+Layout verwendet den vorhandenen ELKworker; Inkscape ist ein Exportziel und löst
+keinen zweiten Layoutrouter im interaktiven Consumer aus. SPLINES werden als
+kubische Bézierpfade gemalt; fachliche Endpunkte bleiben unverändert.
+
+`exportSvg(FULL|VISIBLE)` serialisiert die aktuelle gefilterte Sprotty-Zeichnung
+mit berechneten Styles und lokalen Referenzen. FULL verwendet gemalte Bounds
+inklusive Labels, VISIBLE den tatsächlichen Viewport. Keine neue Projektion oder
+ELKberechnung. Handles/Hitflächen/aktive Ressourcen sind ausgeschlossen. Partielle
+Sichten bleiben sichtbar markiert. Inkscape-Verbindungen verweisen auf tatsächliche
+Shapes; Splines erhalten nur statische Verweise, keine falschen Liveconnectoren.
+GAPS dekoriert geometrische Kreuzungen mit lokalen Masken, ohne Kanten zu entfernen;
+die Berechnung ist auf200000 Segmentvergleiche und64 Lücken pro Kante begrenzt.
+`exportPng` rastert genau dieses SVG lokal; maximal8192 Pixel pro Achse/32MP,
+Skalierung0.5..3. Ein währenddessen veränderter View bricht das Ergebnis ab.
+Beide Exporte begrenzen ihre Nutzlast auf16MB; der Host besitzt Save/Cancel,
+Zieldatei und abschliessendes Schreiben, nicht der Renderer.
+
+`mountDiagramControls` ist die gemeinsame lokale Bedienoberfläche für beide
+Consumer. Native Zeiger-/Tastatureingaben, ResizeObserver, begrenzter Pan und
+Viewportzoom verwenden CSSpixel; die Rasterauflösung ist explizit. Toolbarfokus
+und Quelleditorfokus dürfen von Hintergrundpatches nicht übernommen werden.
+
+Lokale Sichtaktionen dürfen einen durch den Host invalidierten Graphen nicht
+wieder als aktuell ausgeben. Der Canvas behält dafür Quellfrische getrennt von
+lokaler Layoutaktivität. Filter-/Settingsänderungen während einer ausstehenden
+Quellantwort werden für die nächste aktuelle Antwort vorgemerkt; eine während
+ELK geänderte Option verwirft deren überholtes Layout. STALE/LOADING erlaubt
+keinen Export. Auch der Host prüft Frische zusätzlich zur Generation für
+Navigation, Source-Reveal, semantischen Fokus, Persistenz und Exportdialog.
+
+### Reine Dokumentationsprojektion
+
+Das JVM-Verbrauchermodul `interlis-documentation` hängt vom neutralen Modell
+und der bestehenden Diagrammprojektion ab; der Compiler hängt nicht davon ab.
+`DocumentationProjector.project(CompiledSchema, DocumentationOptions,
+CancellationToken)` akzeptiert ausschliesslich gategeprüfte Schemas. Optionen
+besitzen Root-IDs, Labelsprache DE/FR/IT/EN, SEPARATE/INLINE/INLINE_ABSTRACT_ONLY,
+validierte Headeroverrides und höchstens20000 Einträge. Erreichen des Budgets
+führt zu Ablehnung, nicht zu einem scheinbar vollständigen Katalog.
+
+`DocumentationDocument` kopiert Abschnitte, Member, Herkunft, Typen,
+Kardinalitäten, Constraints, Dokumentation und Referenzen. Strukturen werden
+referenziert, nicht rekursiv inline expandiert. Identifikatoren/Kommentare
+werden niemals übersetzt. `MarkdownDocumentationRenderer`,
+`HtmlDocumentationRenderer` und `DocxDocumentationRenderer` rendern nur dieses
+Dokument, ohne Compiler-/Datei-/Netz-IO. Inhalte werden zielgerecht escaped;
+HTML ist inert, DOCX besitzt echte OOXML-Tabellen/Styles/Beziehungen ohne
+Fremdfonts oder externe Ressourcen. `GraphMlRenderer` liest ausschliesslich
+`DiagramDocument`; n-äre Assoziationen behalten Knoten und Rollen. Geometrie
+wird nicht erfunden. Mermaid-/PlantUML-Text benutzt die bestehenden Renderer;
+deren Textnotation ersetzt keinen interaktiven Sprottyview.
+
+Die Dokumentprojektion begrenzt zusätzlich den summierten Text auf4 Millionen
+UTF-16-Codeeinheiten, bevor Vererbung Inhalte vervielfachen kann. Renderer prüfen
+das Präsentationsbudget nach jeder Tabellenzeile; der LSP begrenzt die tatsächlich
+UTF-8-kodierte Antwort weiterhin auf8MB. Quellrevisionen und Snapshot werden in
+allen Katalogformaten ausgegeben. Vordefinierte Namen stammen aus dem kanonischen
+`PredefinedOrigin.key`, einschliesslich `INTERLIS.XMLDate` für den gebundenen
+Datumstyp. Der GraphML-Einstieg exponiert `DiagramDocument`; daher ist das
+Projektionsmodul eine öffentliche API-Abhängigkeit der Dokumentation.

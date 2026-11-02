@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.lsp.LspFeatureTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:03:35.584Z" hostname="Monterrico.local" time="0.124">
+  <properties/>
+  <testcase name="missingImportedSourceCannotPrepareRename()" classname="guru.interlis.lsp.LspFeatureTest" time="0.022"/>
+  <testcase name="renameAcrossOpenImportedSourceProducesMultiFileEdit()" classname="guru.interlis.lsp.LspFeatureTest" time="0.031"/>
+  <testcase name="renameCollisionIsRejected()" classname="guru.interlis.lsp.LspFeatureTest" time="0.006"/>
+  <testcase name="renameIsRejectedWhenSourceChangedAfterAnalysis()" classname="guru.interlis.lsp.LspFeatureTest" time="0.003"/>
+  <testcase name="advertisesOnlyImplementedP3Capabilities()" classname="guru.interlis.lsp.LspFeatureTest" time="0.002"/>
+  <testcase name="renameOfClosedImportedSourceIsRejectedAsReadOnly()" classname="guru.interlis.lsp.LspFeatureTest" time="0.011"/>
+  <testcase name="oldDocumentVersionsAreIgnoredAndClosingRestoresDiskText()" classname="guru.interlis.lsp.LspFeatureTest" time="0.014"/>
+  <testcase name="referencesRenameAndFormattingUseTheSameSnapshot()" classname="guru.interlis.lsp.LspFeatureTest" time="0.016"/>
+  <testcase name="configurationAndWatchedFilesRefreshAreAccepted()" classname="guru.interlis.lsp.LspFeatureTest" time="0.017"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

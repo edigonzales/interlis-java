@@ -40,6 +40,8 @@ public record DiagramEdge(String id, EdgeKind kind, DiagramEndpoint source,
         INHERITANCE,
         /** The {@code ASSOCIATION_ROLE} constant. */
         ASSOCIATION_ROLE,
+        /** One losslessly compacted binary association; ends retain their role metadata. */
+        ASSOCIATION,
         /** The {@code REFERENCE} constant. */
         REFERENCE,
         /** The {@code STRUCTURE_COMPOSITION} constant. */

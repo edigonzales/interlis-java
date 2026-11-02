@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.SemanticRepositoryCommandsTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:54.645Z" hostname="Monterrico.local" time="0.736">
+  <properties/>
+  <testcase name="httpDiscoveryAndOfflineReplayDoesNotContactServer()" classname="guru.interlis.cli.SemanticRepositoryCommandsTest" time="0.167"/>
+  <testcase name="malformedLocksSourcePinsAndCancellationDoNotPublishArtifacts()" classname="guru.interlis.cli.SemanticRepositoryCommandsTest" time="0.009"/>
+  <testcase name="analyzeStillReturnsDiagnosticsAndLockWithoutCertifyingSchema()" classname="guru.interlis.cli.SemanticRepositoryCommandsTest" time="0.034"/>
+  <testcase name="pinsAmbiguityMissingModelsIndicesAndLockCollisionsUseSameFailures()" classname="guru.interlis.cli.SemanticRepositoryCommandsTest" time="0.185"/>
+  <testcase name="warningPolicyAndLockWriteFailuresAreAppliedToNewCommands()" classname="guru.interlis.cli.SemanticRepositoryCommandsTest" time="0.103"/>
+  <testcase name="explicitSourcesAndMultipleRepositoriesAndConfigurationPrecedence()" classname="guru.interlis.cli.SemanticRepositoryCommandsTest" time="0.095"/>
+  <testcase name="transitiveNamedRootsLockAndOfflineReplayForEverySemanticCommand()" classname="guru.interlis.cli.SemanticRepositoryCommandsTest" time="0.14"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[Fatal Error] :1:8: XML document structures must start and end within the same entity.
+[Fatal Error] :1:8: XML document structures must start and end within the same entity.
+[Fatal Error] :1:8: XML document structures must start and end within the same entity.
+[Fatal Error] :1:8: XML document structures must start and end within the same entity.
+]]></system-err>
+</testsuite>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.Ili2cCachePolicyTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:57.484Z" hostname="Monterrico.local" time="0.205">
+  <properties/>
+  <testcase name="legacyMetadataIsOfflineOnlyAndNewDownloadsPublishV2()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.022"/>
+  <testcase name="noStoreInvalidationCannotResurrectLegacyOfflineEntry()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.011"/>
+  <testcase name="applicationCacheIgnoresVaryButHonorsNoStore()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.021"/>
+  <testcase name="metadataAndModelBoundaryAreInclusiveAndHitsDoNotRenewAge()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.026"/>
+  <testcase name="genericAndZeroAgeAlwaysDownloadAndNoValidatorsArePersisted()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.015"/>
+  <testcase name="matchingMissingAndChangedMd5DecideBeforeAnyModelRequest()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.022"/>
+  <testcase name="expiredNetworkFailureNeverFallsBackButExplicitOfflineWorks()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.012"/>
+  <testcase name="corruptAndMissingContentsAreDownloadedAndFutureTimestampNeverFresh()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.02"/>
+  <testcase name="closurePassesModelMd5BeforeDownloadAndRejectsIncorrectDownloadedModel()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.053"/>
+  <testcase name="requestValidationAndFunctionalLoaderCompatibility()" classname="guru.interlis.repository.Ili2cCachePolicyTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

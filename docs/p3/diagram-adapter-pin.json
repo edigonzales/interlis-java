@@ -66,5 +66,13 @@
   "diagramOptionsSchema": {
     "file": "interlis-wasm-bridge/src/main/resources/guru/interlis/bridge/diagram-options-1.0.schema.json",
     "sha256": "825c35756a4c00f743bdbacc0700def78b871d75f2b7c74c06a1daabbfd87b91"
+  },
+  "status": "Historical source-vendoring baseline; active renderer migrated to one own neutral source",
+  "currentRenderer": {
+    "directory": "frontend/diagram-ui",
+    "package": "@interlis/diagram-ui",
+    "version": "0.1.0",
+    "provenance": "frontend/diagram-ui/provenance.json",
+    "note": "vendoredFiles retain original historical hashes; no longer active source paths. Current source identity is Git plus editorBundle/package digests."
   }
 }

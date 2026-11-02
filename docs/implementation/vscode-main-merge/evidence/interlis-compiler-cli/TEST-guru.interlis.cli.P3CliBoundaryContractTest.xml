@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.cli.P3CliBoundaryContractTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:54.138Z" hostname="Monterrico.local" time="0.009">
+  <properties/>
+  <testcase name="capabilitiesDescribeTheCompletedLanguageWithoutInventingP3Acceptance()" classname="guru.interlis.cli.P3CliBoundaryContractTest" time="0.003"/>
+  <testcase name="unavailableSourceIsAnOperationalFailureWithAVisibleReason()" classname="guru.interlis.cli.P3CliBoundaryContractTest" time="0.001"/>
+  <testcase name="informationalCommandsRejectUnknownAndExtraArguments()" classname="guru.interlis.cli.P3CliBoundaryContractTest" time="0.001"/>
+  <testcase name="everyJsonControlCharacterIsEscapedWithoutChangingItsValue()" classname="guru.interlis.cli.P3CliBoundaryContractTest" time="0.001"/>
+  <testcase name="endOfOptionsAllowsAFileWhoseNameStartsWithAHyphen()" classname="guru.interlis.cli.P3CliBoundaryContractTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

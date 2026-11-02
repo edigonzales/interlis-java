@@ -99,6 +99,14 @@ import java.util.concurrent.atomic.AtomicReference;
 /** Thin LSP adapter over Workspace and LanguageQueries. */
 final class InterlisTextDocumentService implements TextDocumentService {
     private final Workspace workspace;
+    private final ExternalSourceRegistry externalSources=new ExternalSourceRegistry();
+    private guru.interlis.workspace.WorkspaceConfiguration userConfiguration;
+    private RepositorySettings repositorySettings=RepositorySettings.defaults();
+    private guru.interlis.diagnostics.DiagnosticLanguage localeLanguage=guru.interlis.diagnostics.DiagnosticLanguage.EN;
+    private guru.interlis.repository.RepositoryResolutionOutcome.Rejected repositoryFailure;
+    private final java.util.Set<String> publishedExternal=new java.util.HashSet<>();
+    private final LspDiagnosticMapper diagnosticMapper=new LspDiagnosticMapper();
+    private guru.interlis.diagnostics.DiagnosticLanguage diagnosticLanguage=guru.interlis.diagnostics.DiagnosticLanguage.EN;
     private final Map<String, DocumentState> documents = new LinkedHashMap<>();
     private final java.util.Set<String> unsynchronized = new java.util.HashSet<>();
     private record RejectedOpen(SourceId sourceId,int version) { }
@@ -124,6 +132,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private final java.util.concurrent.atomic.AtomicInteger waitingRequests=new java.util.concurrent.atomic.AtomicInteger();
     private final java.util.Set<CompletableFuture<?>> fileWaiters=java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final LanguageQueries queries = LanguageQueries.create();
+    private final LspDiagramService diagrams=new LspDiagramService();
+    private volatile java.util.function.Consumer<AnalysisReady> analysisReady=ignored -> { };
+    void analysisReadySink(java.util.function.Consumer<AnalysisReady> sink) {analysisReady=Objects.requireNonNull(sink);}
+    String serverInstanceId() {return diagrams.serverInstanceId();}
     private final AtomicReference<DiagnosticSink> sink = new AtomicReference<>();
     private Runnable requestGuard=() -> { };
     void requestGuard(Runnable guard) { requestGuard=Objects.requireNonNull(guard); }
@@ -131,8 +143,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     InterlisTextDocumentService(Workspace workspace, guru.interlis.compiler.CompilerEngine engine,
                                 guru.interlis.compiler.CompilerServices services) {
         this.workspace = Objects.requireNonNull(workspace, "workspace");
+        this.userConfiguration=workspace.configuration();
         scheduler = new AnalysisScheduler(workspace, engine, services, this::accepted,
                 message -> operations.accept(message));
+        scheduler.repositoryResult(this::repositoryResolved,id -> !externalSources.contains(id));
     }
 
     void sink(DiagnosticSink sink) {
@@ -147,12 +161,94 @@ final class InterlisTextDocumentService implements TextDocumentService {
         fileWaiters.forEach(result -> result.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing")));
         fileWaiters.clear();
         filesReady.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing"));
+        externalSources.close(); publishedExternal.clear();
+        diagrams.close();analysisReady=ignored -> { };
         pendingFiles.clear(); closedFiles.clear(); fileIdentities.clear(); fileKeys.clear(); documentOperations.clear(); documents.clear(); rejectedOpens.clear(); unsynchronized.clear();
     }); }
 
     CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
         return afterFiles(() -> unsynchronized.isEmpty()?scheduler.compile():failed(ResponseErrorCode.ContentModified,"full document resynchronization is required"));
+    }
+
+    CompletableFuture<CompileReport> compileModel(CompileModelParams params) {
+        if(params==null || params.mode()==null || !java.util.Set.of("current","workspace").contains(params.mode())) return failed(ResponseErrorCode.InvalidParams,"compile mode must be current or workspace");
+        if("workspace".equals(params.mode())) {
+            if(params.textDocument()!=null || params.modelName()!=null || params.modelVersion()!=null) return failed(ResponseErrorCode.InvalidParams,"workspace compile accepts no document selection");
+            return LspFutures.map(compileWorkspace(),this::compileReport,operations);
+        }
+        if(params.textDocument()==null || params.textDocument().getVersion()==null) return failed(ResponseErrorCode.InvalidParams,"current compile requires a versioned document");
+        var captured=copyParams(params,CompileModelParams.class);
+        var choosing=requestReady((view,token) -> {
+            var state=requireState(view,new Position(0,0),captured.textDocument());
+            if(state.lspVersion!=captured.textDocument().getVersion()) return failed(ResponseErrorCode.ContentModified,"compile document version changed");
+            if(!editable(view,state.sourceId)) return failed(ResponseErrorCode.RequestFailed,"compile current requires a local editable source");
+            var models=state.analysis.semanticGraph().declarationsInOrder().stream()
+                    .filter(guru.interlis.model.ModelSymbol.class::isInstance).map(guru.interlis.model.ModelSymbol.class::cast)
+                    .filter(m -> m.nameRange().map(r -> r.source().equals(state.sourceId)).orElse(false))
+                    .map(m -> new CompileReport.ModelChoice(m.name().value(),m.modelVersion())).toList();
+            if(captured.modelName()==null && models.size()>1) return CompletableFuture.completedFuture(new CompileSelection(List.of(),models));
+            List<guru.interlis.compiler.ModelSelector> roots=List.of(new guru.interlis.compiler.ModelSelector.BySource(state.sourceId));
+            if(captured.modelName()!=null) {
+                var match=models.stream().filter(m -> m.modelName().equals(captured.modelName())
+                        && (captured.modelVersion()==null || m.modelVersion().equals(captured.modelVersion()))).toList();
+                if(match.size()!=1) return failed(ResponseErrorCode.InvalidParams,"model selection is missing or ambiguous in current document");
+                roots=List.of(new guru.interlis.compiler.ModelSelector.ByName(match.getFirst().modelName(),Optional.of(match.getFirst().modelVersion()),Optional.of(state.sourceId)));
+            }
+            return CompletableFuture.completedFuture(new CompileSelection(roots,List.of()));
+        });
+        return LspFutures.compose(choosing,selection -> selection.roots().isEmpty()?CompletableFuture.completedFuture(
+                new CompileReport("selectionRequired",selection.choices(),CompileReport.Summary.empty())):
+                LspFutures.map(afterFiles(() -> scheduler.compileRoots(selection.roots(),() -> {
+                    var open=documents.get(captured.textDocument().getUri());
+                    if(open==null || open.lspVersion!=captured.textDocument().getVersion() || !unsynchronized.isEmpty()) throw LspFailures.error(ResponseErrorCode.ContentModified,"compile document version changed");
+                })),this::compileReport,operations),operations);
+    }
+    CompletableFuture<ExportArtifact> exportArtifact(ExportArtifactParams params) {
+        if(params==null||params.protocolVersion()!=1||params.textDocument()==null||params.textDocument().getVersion()==null||!LspExportService.FORMATS.contains(params.format()))return failed(ResponseErrorCode.InvalidParams,"export requires protocol 1, a format and an exact document version");
+        var p=copyParams(params,ExportArtifactParams.class);
+        try {LspExportService.options(p);}catch(RuntimeException invalid){return failed(ResponseErrorCode.InvalidParams,"invalid documentation options");}
+        var selection=requestReady((view,token)->{
+            var state=requireState(view,new Position(0,0),p.textDocument());if(state.lspVersion!=p.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"export document version changed");
+            var models=state.analysis.semanticGraph().symbols().stream().filter(guru.interlis.model.ModelSymbol.class::isInstance).map(guru.interlis.model.ModelSymbol.class::cast).filter(m->m.nameRange().map(r->r.source().equals(state.sourceId)).orElse(false)).toList();
+            if(models.size()>1&&p.modelName()==null)return failed(ResponseErrorCode.InvalidParams,"choose an explicit model for this source");
+            List<guru.interlis.compiler.ModelSelector> roots=List.of(new guru.interlis.compiler.ModelSelector.BySource(state.sourceId));
+            if(p.modelName()!=null){var matching=models.stream().filter(m->m.name().value().equals(p.modelName())&&(p.modelVersion()==null||m.modelVersion().equals(p.modelVersion()))).toList();if(matching.size()!=1)return failed(ResponseErrorCode.InvalidParams,"model selection is unavailable or ambiguous");roots=List.of(new guru.interlis.compiler.ModelSelector.ByName(p.modelName(),Optional.of(matching.getFirst().modelVersion()),Optional.of(state.sourceId)));}
+            return CompletableFuture.completedFuture(roots);
+        });
+        return LspFutures.compose(selection,roots->LspFutures.compose(afterFiles(()->scheduler.compileRoots(roots,()->{var state=documents.get(p.textDocument().getUri());if(state==null||state.lspVersion!=p.textDocument().getVersion()||!unsynchronized.isEmpty())throw LspFailures.error(ResponseErrorCode.ContentModified,"export source changed");})),outcome->{
+            if(!(outcome instanceof guru.interlis.compiler.CompilationOutcome.Succeeded success))return failed(outcome instanceof guru.interlis.compiler.CompilationOutcome.Cancelled?ResponseErrorCode.RequestCancelled:ResponseErrorCode.RequestFailed,"Documentation export requires a complete valid current model");
+            return requestReady((view,token)->{var state=requireState(view,new Position(0,0),p.textDocument());if(state.lspVersion!=p.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"export document version changed");
+                var revisions=new LinkedHashMap<String,String>();var closed=new ArrayList<ProjectSourceLoader.FileContent>();
+                for(var e:success.schema().sourceRevisions().entrySet()){var source=view.source(e.getKey()).orElse(null);if(source==null||!source.revision().equals(e.getValue()))return failed(ResponseErrorCode.ContentModified,"export dependency changed");revisions.put(view.uri(e.getKey()),Long.toString(e.getValue().value()));var file=view.closedFiles().get(e.getKey().value());if(file!=null&&view.open(e.getKey())==null)closed.add(file);}
+                var provenance=new ExportArtifact.SourceSnapshot(diagrams.serverInstanceId(),success.schema().snapshotId().value(),p.textDocument().getUri(),state.lspVersion,view.workspaceRevision(),revisions);
+                var artifact=new LspExportService().render(success.schema(),p,provenance,token);
+                return closed.isEmpty()?CompletableFuture.completedFuture(artifact):verifyFiles.apply(List.copyOf(closed),token).thenApply(ignored->artifact);
+            });
+        },operations),operations);
+    }
+
+    private CompileReport compileReport(guru.interlis.compiler.CompilationOutcome outcome) {
+        return scheduler.onOwner(() -> new LspCompileMapper().map(outcome,diagnosticLanguage,captureView()::uri));
+    }
+
+    private record CompileSelection(List<guru.interlis.compiler.ModelSelector> roots,List<CompileReport.ModelChoice> choices) { }
+
+    private boolean editorAssist;
+    void editorAssist(boolean enabled){editorAssist=enabled;}
+    CompletableFuture<EditorAssistResult> editorAssist(EditorAssistParams params){
+        if(!editorAssist)return failed(ResponseErrorCode.InvalidRequest,"editorAssist was not negotiated");
+        if(params==null||params.protocolVersion()!=1||params.textDocument()==null||params.textDocument().getVersion()==null||params.position()==null||params.options()==null)return failed(ResponseErrorCode.InvalidParams,"editorAssist requires an exact version, position and indentation options");
+        var p=copyParams(params,EditorAssistParams.class);
+        return requestReady((view,token)->{var state=requireState(view,p.position(),p.textDocument());
+            if(state.lspVersion!=p.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"editor assistance document version changed");
+            if(!editable(view,state.sourceId))return failed(ResponseErrorCode.RequestFailed,"readonly source cannot be edited");
+            var plan=new guru.interlis.compiler.query.EditorAssistanceService().planBlockClose(state.analysis,cursor(state,p.position()),new guru.interlis.compiler.query.EditorIndentOptions(p.options().getTabSize(),p.options().isInsertSpaces()),token);
+            if(plan.isEmpty())return CompletableFuture.completedFuture(null);var value=plan.orElseThrow();String text=state.source.text();
+            for(var edit:value.edits().stream().sorted(java.util.Comparator.comparingInt((guru.interlis.source.TextEdit e)->e.range().startOffset()).reversed()).toList())text=text.substring(0,edit.range().startOffset())+edit.replacement()+text.substring(edit.range().endOffset());
+            var resultSource=new SourceText(state.sourceId,state.source.revision(),text);var caret=resultSource.lineMap().positionAt(value.caretOffset());
+            return CompletableFuture.completedFuture(new EditorAssistResult(1,diagrams.serverInstanceId(),state.analysis.snapshotId().value(),p.textDocument().getUri(),state.lspVersion,value.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList(),new Position(caret.line(),caret.character())));
+        });
     }
 
     private <T> CompletableFuture<T> requestReady(java.util.function.BiFunction<HostView,CancellationToken,CompletableFuture<T>> action) {
@@ -165,17 +261,17 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private record HostView(Map<String,DocumentState> documents,Map<SourceId,SourceText> sources,
                             Map<String,ProjectSourceLoader.FileContent> closedFiles,java.util.Set<String> unsynchronized,
-                            boolean versionedEdits) {
+                            boolean versionedEdits, Map<SourceId,String> externalUris,String workspaceRevision) {
         Optional<SourceText> source(SourceId id) { return Optional.ofNullable(sources.get(id)); }
         DocumentState open(SourceId id) { return documents.values().stream().filter(state -> state.sourceId.equals(id)).findFirst().orElse(null); }
-        String uri(SourceId id) { return documents.entrySet().stream().filter(entry -> entry.getValue().sourceId.equals(id)).map(Map.Entry::getKey).findFirst()
+        String uri(SourceId id) { if(externalUris.containsKey(id)) return externalUris.get(id); return documents.entrySet().stream().filter(entry -> entry.getValue().sourceId.equals(id)).map(Map.Entry::getKey).findFirst()
                 .orElseGet(() -> closedFiles.containsKey(id.value())?closedFiles.get(id.value()).path().toUri().toString():id.value()); }
     }
 
     private HostView captureView() {
         var sources=new LinkedHashMap<SourceId,SourceText>();
         for(var id:workspace.state().sourceRevisions().keySet()) workspace.source(id).ifPresent(source -> sources.put(id,source));
-        return new HostView(Map.copyOf(documents),Map.copyOf(sources),Map.copyOf(closedFiles),java.util.Set.copyOf(unsynchronized),versionedEdits);
+        return new HostView(Map.copyOf(documents),Map.copyOf(sources),Map.copyOf(closedFiles),java.util.Set.copyOf(unsynchronized),versionedEdits,externalSources.uris(),Long.toString(workspace.currentRevision().value()));
     }
 
     private <T> CompletableFuture<T> afterFiles(java.util.function.Supplier<CompletableFuture<T>> start) {
@@ -241,7 +337,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         catch(IllegalArgumentException invalid) { return Optional.empty(); }
     }
     private String canonicalUriNow(String uri) {
-        return filePath(uri).map(path -> fileIdentities.getOrDefault(path,uri)).orElse(uri);
+        return externalSources.lookup(uri).map(e -> e.source().id().value()).orElseGet(() -> filePath(uri).map(path -> fileIdentities.getOrDefault(path,uri)).orElse(uri));
     }
     private String rememberFile(ProjectSourceLoader.FileContent file,Optional<SourceId> openAlias) {
         String uri=openAlias.map(SourceId::value).orElseGet(() -> file.fileKey().map(fileKeys::get).orElseGet(() ->
@@ -401,6 +497,14 @@ final class InterlisTextDocumentService implements TextDocumentService {
         if(documents.entrySet().stream().anyMatch(entry -> !entry.getKey().equals(uri) && entry.getValue().sourceId.equals(id) && !unsynchronized.contains(entry.getKey()))) {
             operation("Document is already open under another URI"); return;
         }
+        if(uri.startsWith("interlis-source:") && externalSources.lookup(uri).isEmpty()) {
+            operation("Unknown or expired readonly source handle; navigate again."); return;
+        }
+        if(externalSources.contains(id)) {
+            var source=workspace.source(id).orElseThrow();
+            if(externalSources.lookup(uri).filter(entry -> !entry.source().revision().equals(source.revision())).isPresent() || !source.text().equals(params.getTextDocument().getText())) { operation("Readonly source content differs; reopen through definition.");return; }
+            analyze(uri,params.getTextDocument().getVersion()); return;
+        }
         try { replaceSource(id,params.getTextDocument().getText()); }
         catch(guru.interlis.workspace.UpdateRejectedException rejected) {
             rejectDocument(uri,id,params.getTextDocument().getVersion(),rejected.code().name()); return;
@@ -447,6 +551,9 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private void didChangeNow(DidChangeTextDocumentParams params) {
         String uri=params.getTextDocument().getUri();
         var previous=documents.get(uri); var rejected=rejectedOpens.get(uri);
+        if(externalSources.lookup(uri).isPresent() || (previous!=null && externalSources.contains(previous.sourceId))) {
+            operation("Readonly repository sources cannot be changed.");return;
+        }
         int version=params.getTextDocument().getVersion();
         if(previous==null && rejected==null) return;
         if(version<=(previous!=null?previous.lspVersion:rejected.version)) return;
@@ -482,7 +589,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
         documentGeneration++;
         unsynchronized.remove(uri);
         SourceId id = closed!=null?closed.sourceId:rejected.sourceId;
-        if (filePath(uri).isPresent()) {
+        if(externalSources.contains(id)) { /* close releases editor authority, never repository provenance */ }
+        else if (filePath(uri).isPresent()) {
             reloadExternal(id.value());
         } else {
             workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
@@ -570,7 +678,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         SourceText source = view.source(state.sourceId).orElseThrow();
         int offset = offsetAt(source, params.getPosition());
         String prefix = prefixAt(source.text(), offset);
-        CompletionResult result = queries.complete(state.analysis,
+        CompletionResult result = new guru.interlis.compiler.query.EditorAssistanceService().complete(state.analysis,
                 new CompletionQuery(cursor(state, params.getPosition()),
                         new NamePrefix(prefix), 100), token);
         List<CompletionItem> items = new ArrayList<>();
@@ -580,7 +688,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
             item.setKind(completionKind(candidate));
             item.setDetail(candidate.detail());
             item.setInsertText(candidate.insertText());
+            item.setInsertTextFormat(candidate.snippet()?org.eclipse.lsp4j.InsertTextFormat.Snippet:org.eclipse.lsp4j.InsertTextFormat.PlainText);
             item.setTextEdit(Either.forLeft(new TextEdit(toLspRange(state.source, result.replacementRange()), candidate.insertText())));
+            if(candidate.snippet()) {
+                String template=candidate.label().replace(" block","");int stops=switch(template){case "MODEL"->4;case "CLASS","STRUCTURE","TOPIC"->2;case "DOMAIN","UNIT"->2;case "VIEW TOPIC"->3;default->0;};
+                item.setCommand(new Command("INTERLIS snippet interaction","interlisGuru.snippet.accept",List.of(Map.of("uri",params.getTextDocument().getUri(),"baseVersion",state.lspVersion,"headerStops",stops,"suggestAtBody",java.util.Set.of("DOMAIN","UNIT").contains(template),"suppressHeader",template.equals("MODEL")))));
+            }
             item.setSortText(String.format(java.util.Locale.ROOT, "%06d", rank++));
             items.add(item);
         }
@@ -597,6 +710,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         String uri = params.getTextDocument().getUri();
         DocumentState state = requireState(view, new Position(0, 0), params.getTextDocument());
         List<Either<org.eclipse.lsp4j.SymbolInformation, DocumentSymbol>> result = new ArrayList<>();
+        var byId=new LinkedHashMap<guru.interlis.model.SymbolId,DocumentSymbol>();
         for (Symbol symbol : state.analysis.semanticGraph().declarationsInOrder()) {
             if (symbol.origin() instanceof guru.interlis.model.Origin.DeclaredOrigin declared
                     && declared.range().source().equals(state.sourceId)
@@ -605,8 +719,14 @@ final class InterlisTextDocumentService implements TextDocumentService {
                         symbolKind(symbol),
                         toLspRange(state.source, declared.range()),
                         toLspRange(state.source, symbol.nameRange().get()));
-                result.add(Either.forRight(documentSymbol));
+                documentSymbol.setChildren(new ArrayList<>());
+                byId.put(symbol.id(),documentSymbol);
             }
+        }
+        for(Symbol symbol:state.analysis.semanticGraph().declarationsInOrder()) {
+            var item=byId.get(symbol.id()); if(item==null) continue;
+            var parent=symbol.owner().map(byId::get).orElse(null);
+            if(parent==null) result.add(Either.forRight(item)); else parent.getChildren().add(item);
         }
         return CompletableFuture.completedFuture(result);
     }
@@ -723,6 +843,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private static boolean editable(HostView view,SourceId id) {
+        if(view.externalUris().containsKey(id)) return false;
         var known=view.closedFiles().get(id.value());
         return view.open(id)!=null ? known==null || known.editable() : known!=null && known.editable();
     }
@@ -735,6 +856,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private CompletableFuture<List<? extends TextEdit>> formattingNow(HostView view, DocumentFormattingParams params, CancellationToken token) {
         DocumentState state = requireState(view, new Position(0, 0), params.getTextDocument());
+        if(!editable(view,state.sourceId)) return failed(ResponseErrorCode.RequestFailed,"readonly source cannot be formatted");
         var preferences=params.getOptions();
         if(preferences==null || preferences.getTabSize()<1 || preferences.getTabSize()>16)
             return failed(ResponseErrorCode.InvalidParams,"tabSize must be between 1 and 16");
@@ -759,31 +881,63 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private CompletableFuture<List<Either<Command, CodeAction>>> codeActionNow(HostView view, CodeActionParams params, CancellationToken token) {
         DocumentState state = requireState(view, params.getRange().getStart(), params.getTextDocument());
-        FormatOutcome outcome = ModelFormatters.create().format(state.source,
-                FormatOptions.defaults(), token);
-        if (!(outcome instanceof FormatOutcome.Formatted formatted)
-                || formatted.text().equals(state.source.text())) {
-            return CompletableFuture.completedFuture(List.of());
+        if(!editable(view,state.sourceId)) return CompletableFuture.completedFuture(List.of());
+        var result=new ArrayList<Either<Command,CodeAction>>();
+        if(view.versionedEdits())for(var plan:new guru.interlis.compiler.query.EditorAssistanceService().quickFixes(state.analysis,state.source.range(offsetAt(state.source,params.getRange().getStart()),offsetAt(state.source,params.getRange().getEnd())),token)) {
+            var action=new CodeAction(plan.title());action.setKind("quickfix");action.setIsPreferred(true);
+            var edits=plan.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList();
+            var edit=new WorkspaceEdit();edit.setChanges(null);edit.setDocumentChanges(List.of(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(view.uri(state.sourceId),state.lspVersion),edits))));action.setEdit(edit);result.add(Either.forRight(action));
         }
-        CodeAction action = new CodeAction("Format INTERLIS source");
-        action.setKind("source.format");
-        WorkspaceEdit edit = new WorkspaceEdit();
-        edit.setChanges(Map.of(view.uri(state.sourceId), List.of(new TextEdit(
-                toLspRange(state.source, state.source.range(0, state.source.length())),
-                formatted.text()))));
-        action.setEdit(edit);
-        return CompletableFuture.completedFuture(List.of(Either.forRight(action)));
+        FormatOutcome outcome=ModelFormatters.create().format(state.source,FormatOptions.defaults(),token);
+        if(outcome instanceof FormatOutcome.Formatted formatted&&!formatted.text().equals(state.source.text())) {
+            var action=new CodeAction("Format INTERLIS source");action.setKind("source.format");var edit=new WorkspaceEdit();edit.setChanges(null);
+            if(view.versionedEdits())edit.setDocumentChanges(List.of(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(view.uri(state.sourceId),state.lspVersion),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))))));
+            else edit.setChanges(Map.of(view.uri(state.sourceId),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))));action.setEdit(edit);result.add(Either.forRight(action));
+        }
+        var only=params.getContext()==null?null:params.getContext().getOnly();
+        if(only!=null&&!only.isEmpty())return CompletableFuture.completedFuture(result.stream().filter(action->action.isRight()&&only.stream().anyMatch(kind->kind.equals(action.getRight().getKind())||action.getRight().getKind().startsWith(kind+"."))).toList());
+        return CompletableFuture.completedFuture(List.copyOf(result));
+    }
+
+    @Override public CompletableFuture<List<? extends TextEdit>> onTypeFormatting(org.eclipse.lsp4j.DocumentOnTypeFormattingParams params) {
+        var p=copyParams(params,org.eclipse.lsp4j.DocumentOnTypeFormattingParams.class);
+        if(editorAssist||!"\n".equals(p.getCh()))return CompletableFuture.completedFuture(List.of());
+        return requestReady((view,token)->{var state=requireState(view,p.getPosition(),p.getTextDocument());if(!editable(view,state.sourceId))return CompletableFuture.completedFuture(List.of());
+            var plan=new guru.interlis.compiler.query.EditorAssistanceService().planBlockClose(state.analysis,cursor(state,p.getPosition()),new guru.interlis.compiler.query.EditorIndentOptions(p.getOptions().getTabSize(),p.getOptions().isInsertSpaces()),token);
+            return CompletableFuture.completedFuture(plan.map(value->value.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList()).orElse(List.of()));});
     }
 
     void configurationChanged(Object settings) {
         scheduler.onOwner(() -> {
             guru.interlis.workspace.WorkspaceConfiguration configuration;
-            try { configuration=LspConfiguration.read(settings,workspace.configuration()); }
+            RepositorySettings host;
+            try { configuration=LspConfiguration.read(settings,userConfiguration); host=RepositorySettings.read(settings,repositorySettings); }
             catch(IllegalArgumentException | ArithmeticException invalid) {
                 operation("Invalid INTERLIS configuration; previous configuration retained"); return null;
             }
-            var receipt=workspace.configure(configuration,workspace.state().revision());
-            if(receipt.changed()) { documentGeneration++; reanalyzeOpenNow(); }
+            boolean hostChanged=!host.equals(repositorySettings);
+            boolean repositoryChanged=!host.options().equals(repositorySettings.options()) || !host.cache().equals(repositorySettings.cache());
+            boolean compilerChanged=!configuration.equals(userConfiguration);
+            var current=workspace.configuration();
+            if(repositoryChanged) {
+                // An expired virtual editor must not reserve its old SourceId as
+                // an active open alias when fresh navigation opens a new handle.
+                for(var entry:List.copyOf(documents.entrySet())) if(externalSources.contains(entry.getValue().sourceId)) {
+                    documents.remove(entry.getKey());unsynchronized.remove(entry.getKey());rejectedOpens.remove(entry.getKey());
+                    var publisher=sink.get();if(publisher!=null) publisher.publish(new PublishDiagnosticsParams(entry.getKey(),List.of()));
+                }
+                for(var id:externalSources.uris().keySet()) workspace.source(id).ifPresent(source -> workspace.remove(id,source.revision()));
+                externalSources.close();
+                current=configuration;
+            } else if(compilerChanged) {
+                var ranks=new LinkedHashMap<>(current.resolutionPolicy().sourcePriorities());ranks.putAll(configuration.resolutionPolicy().sourcePriorities());
+                current=new guru.interlis.workspace.WorkspaceConfiguration(configuration.compilerOptions(),
+                        new guru.interlis.workspace.resolution.ResolutionPolicy(configuration.resolutionPolicy().preferWorkspaceSource(),configuration.resolutionPolicy().modelSelections(),ranks),
+                        current.resolverCatalog(),configuration.cacheLimits(),current.resolutionDiagnostics());
+            }
+            var receipt=workspace.configure(current,workspace.state().revision());
+            userConfiguration=configuration; applyHostSettings(host);
+            if(receipt.changed() || hostChanged) { documentGeneration++; reanalyzeOpenNow(); }
             return null;
         });
     }
@@ -791,11 +945,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
     void initializeConfiguration(Object settings) {
         scheduler.onOwner(() -> {
             guru.interlis.workspace.WorkspaceConfiguration configuration;
-            try { configuration=LspConfiguration.read(settings,workspace.configuration()); }
+            RepositorySettings host;
+            try { configuration=LspConfiguration.read(settings,userConfiguration); host=RepositorySettings.read(settings,repositorySettings); }
             catch(IllegalArgumentException | ArithmeticException invalid) {
                 throw LspFailures.error(ResponseErrorCode.InvalidParams,"invalid initial INTERLIS configuration");
             }
-            workspace.configure(configuration,workspace.currentRevision()); return null;
+            workspace.configure(configuration,workspace.currentRevision()); userConfiguration=configuration; applyHostSettings(host); return null;
         });
     }
 
@@ -957,40 +1112,58 @@ final class InterlisTextDocumentService implements TextDocumentService {
                             org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,
                             "snapshotId is stale for the requested document", null)));
         }
-        List<SymbolRef> selected = new ArrayList<>();
-        if (params.symbolIds().isEmpty()) {
-            for (guru.interlis.model.SymbolId id : state.analysis.semanticGraph().rootModels()) {
-                selected.add(new SymbolRef(state.analysis.snapshotId(), id));
-            }
-            if (selected.isEmpty()) {
-                for (guru.interlis.model.SymbolId id : state.analysis.semanticGraph().models()) {
-                    selected.add(new SymbolRef(state.analysis.snapshotId(), id));
-                }
-            }
-        } else {
-            for (String id : params.symbolIds()) {
-                selected.add(new SymbolRef(state.analysis.snapshotId(),
-                        new guru.interlis.model.SymbolId(id)));
-            }
-        }
-        if (selected.isEmpty()) {
-            return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
-                    new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
-                            org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.InvalidParams,
-                            "no diagram selection available", null)));
-        }
-        DiagramOptions options = DiagramOptions.defaults(new DiagramSelection(selected));
-        DiagramProjectionOutcome outcome = DiagramProjectors.create().project(
-                new DiagramInput.FromAnalysis(state.analysis), options,
-                token);
-        if (outcome instanceof DiagramProjectionOutcome.Rejected rejected) {
-            return CompletableFuture.failedFuture(new org.eclipse.lsp4j.jsonrpc.ResponseErrorException(
-                    new org.eclipse.lsp4j.jsonrpc.messages.ResponseError(
-                            org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.RequestFailed,
-                            rejected.reasons().toString(), null)));
-        }
-        DiagramDocument document = ((DiagramProjectionOutcome.Produced) outcome).document();
-        return CompletableFuture.completedFuture(new DiagramJsonCodec().encode(document));
+        var request=new DiagramRequest(1,"legacy-command",new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(params.uri(),state.lspVersion),params.symbolIds(),null);
+        var response=diagrams.project(request,diagramContext(view,state,params.uri()),token);
+        return CompletableFuture.completedFuture(new DiagramJsonCodec().encode(response.document()));
+    }
+
+    CompletableFuture<DiagramResponse> diagramRequest(DiagramRequest params) {
+        if(params==null||params.textDocument()==null||params.textDocument().getVersion()==null)return failed(ResponseErrorCode.InvalidParams,"diagram requires a versioned document");
+        var captured=copyParams(params,DiagramRequest.class);
+        return requestReady((view,token)-> {
+            var state=requireState(view,new Position(0,0),captured.textDocument());
+            if(state.lspVersion!=captured.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"diagram document version changed");
+            return CompletableFuture.completedFuture(diagrams.project(captured,diagramContext(view,state,captured.textDocument().getUri()),token));
+        });
+    }
+
+    CompletableFuture<DiagramNavigation> diagramNavigate(DiagramNavigationParams params) {
+        if(params==null||params.textDocument()==null||params.textDocument().getVersion()==null)return failed(ResponseErrorCode.InvalidParams,"diagram navigation requires a versioned root document");
+        var captured=copyParams(params,DiagramNavigationParams.class);
+        return requestReady((view,token)-> {
+            var state=requireState(view,new Position(0,0),captured.textDocument());
+            if(state.lspVersion!=captured.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"diagram document version changed");
+            var anchor=diagrams.navigation(captured,diagramContext(view,state,captured.textDocument().getUri()));
+            var range=anchor.nameRange();var source=view.source(range.source()).orElse(null);
+            if(source==null||!source.revision().equals(range.revision()))return failed(ResponseErrorCode.ContentModified,"diagram source revision changed");
+            var result=new DiagramNavigation(diagrams.serverInstanceId(),anchor.snapshotId().value(),view.uri(range.source()),toLspRange(source,range),!editable(view,range.source()));
+            var closed=view.closedFiles().get(range.source().value());
+            return closed!=null&&view.open(range.source())==null?verifyFiles.apply(List.of(closed),token).thenApply(ignored->result):CompletableFuture.completedFuture(result);
+        });
+    }
+
+    CompletableFuture<DiagramSelectionResult> diagramSelect(DiagramSelectionParams params) {
+        if(params==null||params.textDocument()==null||params.textDocument().getVersion()==null
+                ||params.sourceDocument()==null||params.sourceDocument().getVersion()==null||params.position()==null)
+            return failed(ResponseErrorCode.InvalidParams,"diagram selection requires exact root/source versions and a position");
+        var captured=copyParams(params,DiagramSelectionParams.class);
+        return requestReady((view,token)-> {
+            var root=requireState(view,new Position(0,0),captured.textDocument());
+            var source=requireState(view,captured.position(),captured.sourceDocument());
+            if(root.lspVersion!=captured.textDocument().getVersion()||source.lspVersion!=captured.sourceDocument().getVersion())
+                return failed(ResponseErrorCode.ContentModified,"source selection document version changed");
+            var selected=queries.symbolAt(source.analysis,cursor(source,captured.position()),token);
+            SymbolRef symbol=selected instanceof QueryResult.Known<SymbolRef> known?known.value():null;
+            token.throwIfCancellationRequested();
+            return CompletableFuture.completedFuture(diagrams.selection(captured,diagramContext(view,root,captured.textDocument().getUri()),symbol));
+        });
+    }
+
+    private static Map<String,Integer> documentVersions(HostView view) {
+        var result=new LinkedHashMap<String,Integer>();view.documents().forEach((uri,state)->result.put(uri,state.lspVersion));return Map.copyOf(result);
+    }
+    private static LspDiagramService.Context diagramContext(HostView view,DocumentState state,String uri) {
+        return new LspDiagramService.Context(state.analysis,state.sourceId,uri,state.lspVersion,view.workspaceRevision(),documentVersions(view));
     }
 
     private static DocumentState requireState(HostView view,Position position, TextDocumentIdentifier document) {
@@ -1003,6 +1176,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
             throw new ResponseErrorException(new ResponseError(ResponseErrorCode.InvalidParams,
                     "document is not available", null));
         }
+        if(uri.startsWith("interlis-source:") && !uri.equals(view.externalUris().get(state.sourceId)))
+            throw LspFailures.error(ResponseErrorCode.ContentModified,"readonly source handle expired; navigate again");
         if (view.unsynchronized().contains(view.uri(state.sourceId))) throw new ResponseErrorException(new ResponseError(
                 ResponseErrorCode.ContentModified, "full document resynchronization is required", null));
         if (view.source(state.sourceId).filter(source -> source.revision().equals(state.source.revision())).isEmpty()
@@ -1020,8 +1195,39 @@ final class InterlisTextDocumentService implements TextDocumentService {
         if(pendingFiles.isEmpty() && unsynchronized.isEmpty()) scheduler.schedule(); else scheduler.invalidate();
     }
 
+    private void applyHostSettings(RepositorySettings settings) {
+        repositorySettings=settings; scheduler.repositorySettings(settings);
+        diagnosticLanguage=switch(settings.diagnosticLanguage()) {
+            case "de" -> guru.interlis.diagnostics.DiagnosticLanguage.DE;
+            case "en" -> guru.interlis.diagnostics.DiagnosticLanguage.EN;
+            default -> localeLanguage;
+        };
+    }
+
+    private void repositoryResolved(guru.interlis.repository.RepositoryResolutionOutcome result) {
+        repositoryFailure=result instanceof guru.interlis.repository.RepositoryResolutionOutcome.Rejected rejected?rejected:null;
+        if(result instanceof guru.interlis.repository.RepositoryResolutionOutcome.Prepared prepared) {
+            for(var update:prepared.update().sources()) workspace.source(update.source()).ifPresent(source ->
+                    externalSources.register(source,workspace.configuration().compilerOptions().budget().maxTotalSourceUtf16Length()));
+        }
+    }
+
+    CompletableFuture<SourceContent> sourceContent(SourceContentParams params) {
+        try { requestGuard.run();
+            return CompletableFuture.completedFuture(scheduler.onOwner(() -> {
+                if(params==null || params.handle()==null || params.expectedRevision()==null) throw PositionMapper.invalid();
+                var entry=externalSources.read(params.handle(),params.expectedRevision());
+                return new SourceContent(entry.uri(),Long.toString(entry.source().revision().value()),entry.source().text(),true,
+                        "repository",entry.digest(),"SHA-256/UTF-16BE");
+            }));
+        } catch(RuntimeException invalid) { return CompletableFuture.failedFuture(LspFailures.response(invalid,operations)); }
+    }
+
     private void accepted(AnalysisSnapshot analysis) {
         if(!unsynchronized.isEmpty()) return;
+        publishClosedDiagnostics(analysis);
+        for(var diagnostic:analysis.diagnostics()) if(diagnostic.primaryRange().isEmpty())
+            operation(diagnosticMapper.global(diagnostic,diagnosticLanguage));
         for (String uri : List.copyOf(documents.keySet())) {
             if (unsynchronized.contains(uri)) continue;
             var previous = documents.get(uri);
@@ -1032,6 +1238,35 @@ final class InterlisTextDocumentService implements TextDocumentService {
             documents.put(uri, state);
             publish(uri,state);
         }
+        var view=captureView();
+        analysisReady.accept(new AnalysisReady(1,diagrams.serverInstanceId(),view.workspaceRevision(),analysis.snapshotId().value(),documentVersions(view)));
+    }
+
+    private void publishClosedDiagnostics(AnalysisSnapshot analysis) {
+        var current=sink.get();if(current==null) return;
+        var view=captureView();var sources=new LinkedHashMap<>(view.sources());
+        var diagnostics=new ArrayList<>(analysis.diagnostics());
+        if(repositoryFailure!=null) {
+            repositoryFailure.sources().forEach((id,source) -> {
+                sources.putIfAbsent(id,source);
+                if(!view.sources().containsKey(id)) externalSources.register(source,workspace.configuration().compilerOptions().budget().maxTotalSourceUtf16Length());
+            });
+            diagnostics.addAll(repositoryFailure.diagnostics());
+        }
+        var externalUris=externalSources.uris();
+        java.util.function.Function<SourceId,String> uri=id -> externalUris.getOrDefault(id,view.uri(id));
+        var byUri=new LinkedHashMap<String,List<org.eclipse.lsp4j.Diagnostic>>();
+        for(var d:diagnostics) {
+            if(d.primaryRange().isEmpty()) { if(repositoryFailure!=null && repositoryFailure.diagnostics().contains(d)) operation(diagnosticMapper.global(d,diagnosticLanguage));continue; }
+            var range=d.primaryRange().orElseThrow();
+            if(view.open(range.source())!=null) continue;
+            var source=sources.get(range.source());
+            if(source==null || !source.revision().equals(range.revision())) continue;
+            byUri.computeIfAbsent(uri.apply(range.source()),ignored -> new ArrayList<>()).add(diagnosticMapper.toLsp(d,sources,diagnosticLanguage,uri));
+        }
+        for(String old:publishedExternal) if(!byUri.containsKey(old)) current.publish(new PublishDiagnosticsParams(old,List.of()));
+        byUri.forEach((address,items) -> current.publish(new PublishDiagnosticsParams(address,items)));
+        publishedExternal.clear();publishedExternal.addAll(byUri.keySet());
     }
 
     private void publish(String uri,DocumentState state) {
@@ -1040,7 +1275,9 @@ final class InterlisTextDocumentService implements TextDocumentService {
             return;
         }
         List<org.eclipse.lsp4j.Diagnostic> diagnostics = new ArrayList<>();
-        for (Diagnostic diagnostic : state.analysis.diagnostics()) {
+        var displayed=new ArrayList<>(state.analysis.diagnostics());
+        if(repositoryFailure!=null) displayed.addAll(repositoryFailure.diagnostics());
+        for (Diagnostic diagnostic : displayed) {
             if (diagnostic.primaryRange().isEmpty()) {
                 continue;
             }
@@ -1048,11 +1285,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
             if (!range.source().equals(state.sourceId)) {
                 continue;
             }
-            org.eclipse.lsp4j.Diagnostic lsp = new org.eclipse.lsp4j.Diagnostic(
-                    toLspRange(state.source, range), message(diagnostic), severity(diagnostic),
-                    "interlis");
-            lsp.setCode(org.eclipse.lsp4j.jsonrpc.messages.Either.forLeft(
-                    diagnostic.code().value()));
+            var view=captureView();
+            org.eclipse.lsp4j.Diagnostic lsp=diagnosticMapper.toLsp(diagnostic,view.sources(),diagnosticLanguage,view::uri);
             diagnostics.add(lsp);
         }
         diagnostics.sort(Comparator.comparingInt((org.eclipse.lsp4j.Diagnostic d) ->
@@ -1063,21 +1297,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
         current.publish(publication);
     }
 
-    private static String message(Diagnostic diagnostic) {
-        StringBuilder text = new StringBuilder(diagnostic.messageKey());
-        for (DiagnosticArgument argument : diagnostic.arguments()) {
-            text.append(" [").append(argument.name()).append('=').append(argument).append(']');
-        }
-        return text.toString();
-    }
-
-    private static DiagnosticSeverity severity(Diagnostic diagnostic) {
-        return switch (diagnostic.severity()) {
-            case ERROR -> DiagnosticSeverity.Error;
-            case WARNING -> DiagnosticSeverity.Warning;
-            case INFO -> DiagnosticSeverity.Information;
-            case HINT -> DiagnosticSeverity.Hint;
-        };
+    void locale(String locale) {
+        scheduler.onOwner(() -> { localeLanguage=locale!=null && locale.toLowerCase(java.util.Locale.ROOT).startsWith("de")
+                ? guru.interlis.diagnostics.DiagnosticLanguage.DE : guru.interlis.diagnostics.DiagnosticLanguage.EN;
+            applyHostSettings(repositorySettings); return null; });
     }
 
     private static String materialize(SourceText base, List<TextDocumentContentChangeEvent> changes) {

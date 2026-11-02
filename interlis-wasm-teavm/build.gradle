@@ -142,6 +142,7 @@ tasks.named('prepareBrowserHarness') {
 
 // TypeScript and bundling remain inputs of the repository Gradle build.
 tasks.register('buildBrowserTools', Exec) {
+    dependsOn ':diagramUiBuild'
     group = 'build'
     description = 'Strictly checks the pinned TypeScript client and builds ESM/declarations.'
     workingDir = projectDir

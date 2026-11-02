@@ -16,7 +16,7 @@ final class LspConfiguration {
         JsonElement encoded=new Gson().toJsonTree(settings);
         JsonObject root=object(encoded);
         if(root.has("interlis")) root=object(root.get("interlis"));
-        keys(root,"warningPolicy","allowedLanguages","resolutionPolicy","cacheLimits","analysisBudget");
+        keys(root,"warningPolicy","allowedLanguages","resolutionPolicy","cacheLimits","analysisBudget","diagnosticLanguage","repositories","offline","cacheDirectory","modelPins","sourcePins","resolutionLock");
         var old=previous.compilerOptions();
         var warnings=root.has("warningPolicy")?WarningPolicy.valueOf(string(root.get("warningPolicy"))):old.warningPolicy();
         var languages=old.allowedLanguages();
@@ -71,7 +71,7 @@ final class LspConfiguration {
             limits=new CacheLimits(integer(c,"maxSyntaxEntries",limits.maxSyntaxEntries()),integer(c,"maxAnalysisEntries",limits.maxAnalysisEntries()),
                     integer(c,"maxQueryEntries",limits.maxQueryEntries()),number(c,"maxRetainedSourceUtf16Units",limits.maxRetainedSourceUtf16Units()));
         }
-        return new WorkspaceConfiguration(new CompilerOptions(old.semanticProfile(),languages,warnings,budget,old.overlays()),policy,previous.resolverCatalog(),limits);
+        return new WorkspaceConfiguration(new CompilerOptions(old.semanticProfile(),languages,warnings,budget,old.overlays()),policy,previous.resolverCatalog(),limits,previous.resolutionDiagnostics());
     }
 
     private static JsonObject object(JsonElement value) { if(value==null || !value.isJsonObject()) throw new IllegalArgumentException(); return value.getAsJsonObject(); }

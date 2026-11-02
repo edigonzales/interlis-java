@@ -1,0 +1,274 @@
+{
+  "at": "2026-11-02T20:04:08.744Z",
+  "mainBefore": "7698c42a535d1733125b87115d51ae26fd98029c",
+  "mergedBranch": "6983baf95c47a7e20dbb41a2e50500185f578c37",
+  "modules": [
+    {
+      "module": "interlis-repository",
+      "tests": 112,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "files": [
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.CapturedRepositoryResolutionTest.xml",
+          "sha256": "e134a3ec2419462db3346edd8c4a1ff6641ec408e6d3f91cde9255c441b85217"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.ContentStoreTest.xml",
+          "sha256": "09f9beb2d925bae8eb8374ce8538a2ef2f13debb92356272d78bd41b6d2d5552"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.FileSourceLoaderTest.xml",
+          "sha256": "60570bcebf905177e8b59306be843d230f167feda7dc02243ec92e4be9de92b5"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.HttpIdentityCacheTest.xml",
+          "sha256": "15e688b577e58da9ed604efb1aeae8dce5415a505ec8cd061c88d7f6fca87127"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.HttpNetworkPolicyTest.xml",
+          "sha256": "c83dd043dd31560db5bae1fd77edd1488682f442ba65d7abd56a2b41be19ec16"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.HttpRedirectFailureTest.xml",
+          "sha256": "ee83b6d090233ea5825a583b6a0db67fe6057b3eceb036c708104bb9596b6442"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.HttpSourceLoaderTest.xml",
+          "sha256": "f19d05850db516b8e601735b9b96431c23dbfbe492a40ecb156c7ba3035568c2"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.Ili2cCachePolicyTest.xml",
+          "sha256": "f8b9503afd50a0f659decfab59219a3f5c376e3dd6dd520baf1fa8c34f0f8e6b"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.PinnedRealClosureTest.xml",
+          "sha256": "daf87b8e7c1d3ad66b1607b53cd08a79a27dbb849c326db5e566ef5bf1456c3c"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryCacheContractTest.xml",
+          "sha256": "87cfb28dd698047a5bb1a4d8e31ab7fcdc71e9034b685357600a789e1ba75bf8"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryCacheObservationTest.xml",
+          "sha256": "626ac7feaa26104bf491fbb5c3160313537515a77456fd2350613f9ee4c33a61"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryCacheRegressionTest.xml",
+          "sha256": "05cd097d2b52277273a5bbf272b72681acfbcdfe32cb32900e2c3e3c14191614"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryClientTest.xml",
+          "sha256": "c353fafa9dc55da6a400dabd05f14e0a8e8ffeaef6699cc8f926fa459f278687"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryClosureContractTest.xml",
+          "sha256": "8e517c8460cbb4eff39217e958c706c40a0f7b2d235b20db048ed97a3e51de21"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryIndexReaderTest.xml",
+          "sha256": "724b0c321477bca6799abb60c43ffc838d4155ad9e3718d50dfa3fce3d653fed"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryParityIntegrationTest.xml",
+          "sha256": "07ef4968f488e3769f8fcdd16483ac8fbf124646a60772491301a74e41d5f74b"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryRefreshServiceTest.xml",
+          "sha256": "9780f990c3f213bc848605b3b0753b18c6639f372c2628d9d871cab932aa8968"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositoryResolutionObservationTest.xml",
+          "sha256": "f450d85bb8b9828f46822b011120c56c4f0f29ea610f2eb9be20da0648736608"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.RepositorySearchContractTest.xml",
+          "sha256": "5b55a0ceeb84615b119e78f7bceddc3bb09f65473900e4e5dc17d36cd6c52812"
+        },
+        {
+          "file": "evidence/interlis-repository/TEST-guru.interlis.repository.ResolutionLockContractTest.xml",
+          "sha256": "12ecac62a6f48f0d65dce0bcfa27ae87d1cc4257bb3b4e392d6bae32f0a404fa"
+        }
+      ]
+    },
+    {
+      "module": "interlis-lsp",
+      "tests": 76,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "files": [
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.CoalescingSourceLoaderTest.xml",
+          "sha256": "931aa5b64c0d4c1f76b649c739e1a9c43e53418d88f51f14d51284b56b19aa27"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.DiagramProtocolTest.xml",
+          "sha256": "20fbd5934af55f9dc0598bca19769542ab8217ba02a045d1e7dec1f635edc547"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.DocumentationProtocolTest.xml",
+          "sha256": "d145ca1fc1433d0e12c75fa79e4178a943bf6af578c06586e486fb92bf38121a"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.EditorAssistProtocolTest.xml",
+          "sha256": "8f6f2936310726c20586489f1683dda18e6d288981a850a25078b9fe16fb6d64"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.LspErrorContractTest.xml",
+          "sha256": "9665b08ea72eee7701e1fe829d62027eef8dea0466ef480da434dbb8d4bfff1e"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.LspFeatureTest.xml",
+          "sha256": "63afbfb7cc62f18434b660a6ac381a3d2e3d88b9d6eabf254e41a1032813b55c"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.LspProcessTest.xml",
+          "sha256": "15759ecd7dbf7b110f493131fa74547c4b267e456d9e5e52179cf745d5216db4"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.LspProtocolCancellationTest.xml",
+          "sha256": "ac879b056d9c844df0bdcddf6936280bdccd0ef4922e8a70193562e3ab8d5c60"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.LspServerTest.xml",
+          "sha256": "c2f6e053e0cf4729e7c12deb9bfa3d0e67047db09876b1e563fdc3252bf6b819"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.P3AnalysisSchedulingTest.xml",
+          "sha256": "2bda6a109a13cc37ea58fcbca0521466fd42a1fa3dae1b118783fd279baadcc3"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.P3CompletionProtocolTest.xml",
+          "sha256": "5a900f49306640adce24223e07b1d24d33f252753771d1432e08cf72206195f8"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.P3DocumentSynchronizationTest.xml",
+          "sha256": "7a61d7eef8c26e6f62631aa53c99a99d2397ebb20ab49c47b504d3e23115df15"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.P3PresentationConfigurationTest.xml",
+          "sha256": "5f45b930afaf84f92b3cb647c44740bac3fdea526caaabbc1aa8c4d5625d53dd"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.P3ProjectRenameTest.xml",
+          "sha256": "5672f93847573ab750589e07bdd5261c0260f229b514b5afa58b707d7c296e01"
+        },
+        {
+          "file": "evidence/interlis-lsp/TEST-guru.interlis.lsp.RepositoryEditorTest.xml",
+          "sha256": "db45b0a936c5f228ed11ecac30211110f8c4db23c4d3f679a8107cbb8829923e"
+        }
+      ]
+    },
+    {
+      "module": "interlis-compiler-cli",
+      "tests": 141,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "files": [
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.CliApplicationTest.xml",
+          "sha256": "65fef9c7c09dd28dd2177ac229fad1e14361a694b1dbba48708e01b90bc00245"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.ColorOutputContractTest.xml",
+          "sha256": "e618313bdfedaf60d135ef1d9f7127615b34a67fb5b494d94592c633233f3f4e"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.CompilerCliIdentityContractTest.xml",
+          "sha256": "00183a894da009430ac74d5a0de2db65c9b2eb141894849d4755ffce0b0e1868"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.ConsoleSeverityFormatTest.xml",
+          "sha256": "e3d2a1b9cbb4ca4dcd6dc8340cb894ca000192bc8302763994fe256000fced23"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.DefaultRepositoryCacheTest.xml",
+          "sha256": "72a03260ee30d40abb0797398f21bc253ff9105eb41d7f8df32befeccb9f23d6"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.DiagnosticPresentationContractTest.xml",
+          "sha256": "3cf7d2f43ae2b25703a8968292c8191045d8b26b77c416eaab3f09ce6f1fa54c"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.DiagnosticSnippetRendererTest.xml",
+          "sha256": "bc94cf889a78ac2042d67fcae4dddee485a76e8881db97f2b9ea0d487239bc4a"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.Ili2cCacheCliTest.xml",
+          "sha256": "a3ed9b5d1f7558f487652683bb8e6eb2716c0519c6f3579150bb53670145514a"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.MalformedRepositoryRedirectTest.xml",
+          "sha256": "c5817f995a116b5ea4b57e91bc068041eb081537141d503b21e7e30aeb880319"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.P3AtomicOutputContractTest.xml",
+          "sha256": "d2d25161a30bbc53f89dbae7f1b25c0df858180bed7217a36177a33447fc8a65"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.P3CliBoundaryContractTest.xml",
+          "sha256": "e8aba42d002116c613b39122ebafe521690bb17a1ca83cf9f4134e66c384cc52"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.P3CliLifecycleContractTest.xml",
+          "sha256": "a85f569323e1d4ef794d5dead27aa2cbb218d606b0b3a95e43292a17410657f0"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.P3ConfigurationContractTest.xml",
+          "sha256": "df377dbd4070b1e45a28713839a69e7bc0cc484994d6e79e0040f634ff14f818"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.P3OutcomePriorityContractTest.xml",
+          "sha256": "358d3e3168786994f0fc405c8c91ee3e3e341e59d51a1dc7ce9fc3d298e015d6"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.RepositoryCacheRendererTest.xml",
+          "sha256": "a8dac4a7d4afa8e5df9ba090a8650bf31621c7162e2bdfcc078dcd8e31d8b842"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.RepositoryCliContractTest.xml",
+          "sha256": "18d7af3d3d185a522e8c3e1df062011cd75911356eba933b6207430f3e3872e5"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.RepositoryDiagnosticsContractTest.xml",
+          "sha256": "f4a9180dd5ef25850730f39739de3e0615c7b542e92095d0b80730f8ae189fdc"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.RepositoryLogOrderTest.xml",
+          "sha256": "cf710da62f75ce37b3fe3bd6400ba789d712724ef836f331b5a5c9fd28a98c48"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.RepositoryNetworkConfigurationTest.xml",
+          "sha256": "7f8637d9af254db81660e702287740df8742da3bb3af37cdd734198a14a90bb9"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.RepositoryResolutionRendererTest.xml",
+          "sha256": "989dde1f291d3d9544d1f643b2ec752dd6c1cdbb495fe5aa24022b304ea56115"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.SemanticRepositoryCommandsTest.xml",
+          "sha256": "d2abbbdbf1b9423c3d1179af85b967ddd963a92d5b9589d9bd117213a984e51c"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.VerboseDiagnosticsContractTest.xml",
+          "sha256": "79ce0cc5818e15074a3750b7d9cdaa6dd0cc870dfce0e3f5917748d895e20a14"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.VerboseRepositoryCacheTest.xml",
+          "sha256": "01760d79c96d8230df67e31d2506e9d887582a329660a835568f73246e377b89"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.conformance.NormativeConformanceContractTest.xml",
+          "sha256": "ff037b12d5516edb7709c6e665744bf1f77ffc2738381126584e27a2a567fc72"
+        },
+        {
+          "file": "evidence/interlis-compiler-cli/TEST-guru.interlis.cli.conformance.OriginalViewFixtureContractTest.xml",
+          "sha256": "6c9992d24dc71686ce9ed7bc26637aa1706c8272f6c50a668520c6c0e317ff19"
+        }
+      ]
+    }
+  ]
+}

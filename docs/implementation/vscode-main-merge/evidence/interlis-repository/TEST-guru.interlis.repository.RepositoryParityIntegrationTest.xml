@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="guru.interlis.repository.RepositoryParityIntegrationTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:58.835Z" hostname="Monterrico.local" time="1.153">
+  <properties/>
+  <testcase name="rejectedImportUsesTheOriginalWorkspaceRevisionAfterAnEdit()" classname="guru.interlis.repository.RepositoryParityIntegrationTest" time="0.002"/>
+  <testcase name="adjustmentsReachTheCompilerGateAndLockReplayRetainsWarnings()" classname="guru.interlis.repository.RepositoryParityIntegrationTest" time="0.01"/>
+  <testcase name="aLockForAnExtendedAlreadyLoadedClosureReplaysInAFreshWorkspace()" classname="guru.interlis.repository.RepositoryParityIntegrationTest" time="0.011"/>
+  <testcase name="officialMotherAndDirectRepositoriesChooseTheSameCurrentGeometryAndReplayOffline()" classname="guru.interlis.repository.RepositoryParityIntegrationTest" time="1.121"/>
+  <testcase name="legacyLockKeepsStrictVersionAmbiguityAndNoImplicitUpgrade()" classname="guru.interlis.repository.RepositoryParityIntegrationTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

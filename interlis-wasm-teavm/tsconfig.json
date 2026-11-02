@@ -13,17 +13,14 @@
     ],
     "types": [],
     "paths": {
-      "@ilic/language-service": [
-        "./src/main/typescript/vendor/ilic-diagram/compiler-contract.d.ts"
-      ],
       "libavoid-js": [
-        "./src/main/typescript/vendor/ilic-diagram/libavoid-js.d.ts"
+        "../frontend/diagram-ui/src/contracts/libavoid-js.d.ts"
       ],
       "elkjs/lib/elk-api.js": [
-        "./src/main/typescript/vendor/ilic-diagram/elk-contract.d.ts"
+        "../frontend/diagram-ui/src/contracts/elk.d.ts"
       ],
       "elkjs/lib/elk.bundled.js": [
-        "./src/main/typescript/vendor/ilic-diagram/elk-contract.d.ts"
+        "../frontend/diagram-ui/src/contracts/elk.d.ts"
       ]
     }
   },

@@ -6,6 +6,7 @@ const path = require('node:path');
 
 function serve(root) {
   const types = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
     '.wasm': 'application/wasm'};
   return new Promise(resolve => {
     const server = http.createServer((request, response) => {

@@ -36,6 +36,10 @@ public final class PlantUmlRenderer {
             }
             if (edge.kind() == DiagramEdge.EdgeKind.INHERITANCE) {
                 out.append(target).append(" <|-- ").append(source).append('\n');
+            } else if(edge.kind()==DiagramEdge.EdgeKind.ASSOCIATION) {
+                out.append("").append(source).append(" \"").append(GraphTextFormatter.escape(GraphTextFormatter.endLabel(edge.sourceEnd())))
+                    .append("\" ").append(GraphTextFormatter.connector(edge)).append(" \"").append(GraphTextFormatter.escape(GraphTextFormatter.endLabel(edge.targetEnd())))
+                    .append("\" ").append(target).append(" : ").append(GraphTextFormatter.escape(edge.label())).append('\n');
             } else {
                 out.append(source).append(" --> ").append(target);
                 if (!edge.label().isBlank()) {

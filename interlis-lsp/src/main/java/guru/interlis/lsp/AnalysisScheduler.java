@@ -19,6 +19,9 @@ import java.util.function.*;
  */
 final class AnalysisScheduler implements AutoCloseable {
     private final Workspace workspace;
+    private final RepositoryHostCoordinator repositories;
+    private Consumer<guru.interlis.repository.RepositoryResolutionOutcome> repositoryResult=ignored -> { };
+    private Predicate<guru.interlis.source.SourceId> localSource=ignored -> true;
     private final CompilerEngine engine;
     private final CompilerServices services;
     private final Consumer<AnalysisSnapshot> accepted;
@@ -52,7 +55,12 @@ final class AnalysisScheduler implements AutoCloseable {
         this.services = Objects.requireNonNull(services);
         this.accepted = Objects.requireNonNull(accepted);
         this.operations = Objects.requireNonNull(operations);
+        this.repositories=new RepositoryHostCoordinator(operations);
     }
+
+    void repositorySettings(RepositorySettings settings) { requireOwner(); repositories.reconfigure(settings); }
+    void repositoryResult(Consumer<guru.interlis.repository.RepositoryResolutionOutcome> listener,
+                          Predicate<guru.interlis.source.SourceId> local) { repositoryResult=listener;localSource=local; }
 
     /** Short ordered host action; never waits for a compiler worker. */
     <T> T onOwner(Supplier<T> action) {
@@ -87,7 +95,8 @@ final class AnalysisScheduler implements AutoCloseable {
         invalidate();
         if (workspace.state().sourceRevisions().isEmpty()) return;
         var roots = workspace.state().sourceRevisions().keySet().stream()
-                .<ModelSelector>map(ModelSelector.BySource::new).toList();
+                .filter(localSource).<ModelSelector>map(ModelSelector.BySource::new).toList();
+        if(roots.isEmpty()) return;
         WorkspaceCapture capture;
         try { capture=workspace.capture(new AnalysisRequest(workspace.currentRevision(), roots)); }
         catch(OperationCancelledException cancelled) {
@@ -146,48 +155,89 @@ final class AnalysisScheduler implements AutoCloseable {
     }
 
     /** Independent compile request, captured on owner and executed with its own cancellable context. */
-    CompletableFuture<CompilationOutcome> compile() {
-        var result = new CompletableFuture<CompilationOutcome>();
+    CompletableFuture<CompilationOutcome> compile() { return compileRoots(null); }
+
+    CompletableFuture<CompilationOutcome> compileRoots(List<ModelSelector> selection) { return compileRoots(selection,() -> { }); }
+
+    CompletableFuture<CompilationOutcome> compileRoots(List<ModelSelector> selection,Runnable validate) {
+        var result=new CompletableFuture<CompilationOutcome>();
         enqueue(() -> {
-            var state = workspace.state();
-            if(state.sourceRevisions().isEmpty()) {
-                result.completeExceptionally(error(ResponseErrorCode.InvalidParams,"workspace has no sources to compile")); return;
-            }
-            var roots=state.sourceRevisions().keySet().stream().<ModelSelector>map(ModelSelector.BySource::new).toList();
-            var capture=workspace.capture(new AnalysisRequest(state.revision(),roots));
-            long capturedGeneration=generation;
+            validate.run();
+            var roots=selection==null?workspace.state().sourceRevisions().keySet().stream().filter(localSource)
+                    .<ModelSelector>map(ModelSelector.BySource::new).toList():List.copyOf(selection);
+            if(roots.isEmpty()) { result.completeExceptionally(error(ResponseErrorCode.InvalidParams,"workspace has no local roots to compile"));return; }
+            var initial=workspace.capture(new AnalysisRequest(workspace.currentRevision(),roots));
+            long initialGeneration=generation;
             compiles.add(result);
+            result.whenComplete((v,f) -> enqueue(() -> compiles.remove(result),null));
             CancellationToken token=new CancellationToken() {
-                public boolean isCancellationRequested() { return closing.get() || result.isCancelled(); }
-                public CancellationReason reason() { return closing.get() ? CancellationReason.HOST_SHUTDOWN : CancellationReason.USER_REQUESTED; }
+                public boolean isCancellationRequested() { return closing.get() || result.isCancelled() || generation!=initialGeneration; }
+                public CancellationReason reason() { return closing.get()?CancellationReason.HOST_SHUTDOWN:
+                        generation!=initialGeneration?CancellationReason.SUPERSEDED:CancellationReason.USER_REQUESTED; }
             };
-            try { compiler.execute(() -> {
-                CompilationOutcome outcome=null; RuntimeException failure=null;
-                try { outcome=Objects.requireNonNull(engine.compile(capture.request(),capture.reuse(),services.runContexts().createRoot(),token)); }
-                catch(OperationCancelledException cancelled) { outcome=new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason()); }
-                catch(RuntimeException failed) { failure=failed; }
-                var value=outcome; var problem=failure;
-                if(!closed) enqueue(() -> {
-                    compiles.remove(result);
-                    if(result.isDone()) return;
-                    if(problem!=null) { result.completeExceptionally(internal(problem)); return; }
-                    if(capturedGeneration!=generation || !workspace.currentRevision().equals(capture.workspaceRevision())) {
-                        result.completeExceptionally(changed()); return;
-                    }
-                    if(value instanceof CompilationOutcome.Succeeded succeeded) workspace.acceptAnalysis(capture,succeeded.analysis());
-                    else if(value instanceof CompilationOutcome.Rejected rejected) workspace.acceptAnalysis(capture,rejected.analysis());
-                    result.complete(value);
-                },result);
-            }); } catch(RejectedExecutionException full) {
-                compiles.remove(result);
-                result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"compiler queue is full or closed"));
-            }
+            var preparation=!repositories.needsResolution(initial)?CompletableFuture.<guru.interlis.repository.RepositoryResolutionOutcome>completedFuture(null):repositories.resolve(workspace,initial,workspace.configuration(),token);
+            preparation.whenComplete((prepared,failure) -> enqueue(() -> {
+                if(result.isDone()) return;
+                if(failure!=null) { result.completeExceptionally(LspFailures.response(failure,operations));return; }
+                if(initialGeneration!=generation || !workspace.currentRevision().equals(initial.workspaceRevision())) { result.completeExceptionally(changed());return; }
+                if(prepared instanceof guru.interlis.repository.RepositoryResolutionOutcome.Cancelled cancelled) {
+                    result.complete(new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason()));return;
+                }
+                if(prepared instanceof guru.interlis.repository.RepositoryResolutionOutcome.Stale) { result.completeExceptionally(changed());return; }
+                if(prepared instanceof guru.interlis.repository.RepositoryResolutionOutcome.Rejected rejected) {
+                    repositoryResult.accept(rejected);
+                    // A purely local ambiguity already belongs to this exact capture.
+                    // Preserve the existing compile gate's AMBIGUOUS_INPUT outcome.
+                    boolean localAmbiguity=rejected.problems().stream().allMatch(p -> p.reason()==guru.interlis.repository.RepositoryProblem.Reason.AMBIGUOUS)
+                            && rejected.sources().keySet().stream().allMatch(initial.request().sources().sources()::containsKey);
+                    if(!localAmbiguity) { result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"repository closure rejected: "+rejected.problems().stream().map(p -> p.loadReason().map(Enum::name).orElse(p.reason().name())).distinct().toList()));return; }
+                }
+                if(prepared instanceof guru.interlis.repository.RepositoryResolutionOutcome.Prepared success) {
+                    success.update().apply(workspace);repositoryResult.accept(prepared);
+                }
+                var capture=workspace.capture(new AnalysisRequest(workspace.currentRevision(),roots),token);
+                try { compiler.execute(() -> {
+                    CompilationOutcome value;
+                    try { value=Objects.requireNonNull(engine.compile(capture.request(),capture.reuse(),services.runContexts().createRoot(),token)); }
+                    catch(OperationCancelledException cancelled) { value=new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason()); }
+                    catch(RuntimeException problem) { result.completeExceptionally(LspFailures.response(problem,operations));return; }
+                    var outcome=value;
+                    enqueue(() -> {
+                        if(initialGeneration!=generation || !workspace.currentRevision().equals(capture.workspaceRevision())) { result.completeExceptionally(changed());return; }
+                        if(outcome instanceof CompilationOutcome.Succeeded success) workspace.acceptAnalysis(capture,success.analysis());
+                        else if(outcome instanceof CompilationOutcome.Rejected rejected) workspace.acceptAnalysis(capture,rejected.analysis());
+                        result.complete(outcome);
+                        if(!capture.workspaceRevision().equals(initial.workspaceRevision())) schedule();
+                    },result);
+                }); } catch(RejectedExecutionException full) { result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"compiler queue is full or closed")); }
+            },result));
         },result);
         return result;
     }
 
     private void launch(Job job) {
         running.add(job);
+        if(!repositories.needsResolution(job.capture)) { repositoryResult.accept(null);analyze(job);return; }
+        repositories.resolve(workspace,job.capture,workspace.configuration(),job.token()).whenComplete((outcome,failure) -> {
+            if(closed) return;
+            enqueue(() -> {
+                if(job.generation!=generation || job.cancelled.get()) { finish(job,null,new OperationCancelledException(CancellationReason.SUPERSEDED)); return; }
+                if(failure!=null) { finish(job,null,LspFailures.response(failure,operations)); return; }
+                if(outcome instanceof guru.interlis.repository.RepositoryResolutionOutcome.Cancelled cancelled) {
+                    finish(job,null,new OperationCancelledException(cancelled.reason()));return;
+                }
+                if(outcome instanceof guru.interlis.repository.RepositoryResolutionOutcome.Prepared prepared) {
+                    try { prepared.update().apply(workspace); }
+                    catch(UpdateRejectedException stale) { finish(job,null,changed());return; }
+                    repositoryResult.accept(outcome);
+                    job.capture=workspace.capture(new AnalysisRequest(workspace.currentRevision(),job.capture.request().roots()),job.token());
+                } else repositoryResult.accept(outcome);
+                analyze(job);
+            },null);
+        });
+    }
+
+    private void analyze(Job job) {
         workers.execute(() -> {
             AnalysisSnapshot analysis = null;
             RuntimeException failure = null;
@@ -200,7 +250,7 @@ final class AnalysisScheduler implements AutoCloseable {
         });
     }
 
-    private void finish(Job job, AnalysisSnapshot analysis, RuntimeException failure) {
+    private void finish(Job job, AnalysisSnapshot analysis, Throwable failure) {
         requireOwner();
         running.remove(job);
         if (job.generation == generation && !job.cancelled.get()) {
@@ -213,7 +263,7 @@ final class AnalysisScheduler implements AutoCloseable {
             } else {
                 var error = failure instanceof OperationCancelledException cancelled
                         ? error(ResponseErrorCode.RequestCancelled, "analysis cancelled: "+cancelled.reason())
-                        : failure == null ? changed() : internal(failure);
+                        : failure instanceof ResponseErrorException expected ? expected : failure == null ? changed() : internal(failure);
                 if(failure instanceof OperationCancelledException cancelled) {
                     captureFailure=error;
                     try { operations.accept("Analysis unavailable: "+cancelled.reason()); } catch(RuntimeException unavailable) { }
@@ -252,7 +302,7 @@ final class AnalysisScheduler implements AutoCloseable {
         catch (RuntimeException failure) { query.result.completeExceptionally(internal(failure)); }
     }
 
-    private ResponseErrorException internal(RuntimeException failure) {
+    private ResponseErrorException internal(Throwable failure) {
         return LspFailures.internal(failure,operations);
     }
 
@@ -299,7 +349,7 @@ final class AnalysisScheduler implements AutoCloseable {
                 try { hostCleanup.run(); invalidate(); List.copyOf(activeQueries).forEach(result -> result.cancel(false)); activeQueries.clear();
                     running.clear(); compiles.forEach(result -> result.cancel(false)); compiles.clear(); }
                 finally {
-                    closed=true; compiler.shutdownNow(); workers.shutdownNow(); language.shutdownNow(); owner.shutdown(); terminated.complete(null);
+                    closed=true; repositories.close(); compiler.shutdownNow(); workers.shutdownNow(); language.shutdownNow(); owner.shutdown(); terminated.complete(null);
                 }
             };
             if(Thread.currentThread()==ownerThread) shutdown.run();
@@ -324,7 +374,7 @@ final class AnalysisScheduler implements AutoCloseable {
     private record PendingQuery<T>(long generation, Function<CancellationToken, CompletableFuture<T>> action,
                                    CompletableFuture<T> result) { }
     private final class Job {
-        final long generation; final WorkspaceCapture capture; final AtomicBoolean cancelled = new AtomicBoolean();
+        final long generation; WorkspaceCapture capture; final AtomicBoolean cancelled = new AtomicBoolean();
         Job(long generation, WorkspaceCapture capture) { this.generation = generation; this.capture = capture; }
         CancellationToken token() {
             return new CancellationToken() {

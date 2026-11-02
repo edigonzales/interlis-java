@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.StreamSupport;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +43,7 @@ class LspProcessTest {
             assertTrue(initialize.contains("\"capabilities\""), initialize);
             assertTrue(initialize.contains("\"textDocumentSync\""), initialize);
             assertTrue(initialize.contains("interlis.diagram"), initialize);
+            assertTrue(initialize.contains("\"diagramSelection\":true"), initialize);
 
             String uri = "memory:/lsp-process.ili";
             String model = """
@@ -65,9 +67,26 @@ class LspProcessTest {
                     "params", Map.of("command", "interlis.diagram",
                             "arguments", List.of(Map.of("uri", uri,
                                     "symbolIds", List.of()))))));
-            String diagram = readResponse(output, 2);
+            boolean analysisReady=false;String diagram;
+            do {diagram=readMessage(output);if(diagram.contains("interlis/analysisReady"))analysisReady=true;} while(!diagram.contains("\"id\":2"));
+            assertTrue(analysisReady, "Accepted analysis notification must precede the derived diagram");
             assertTrue(diagram.contains("snapshotId"), diagram);
             assertTrue(diagram.contains("Building"), diagram);
+
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",20,"method","interlis/diagram","params",Map.of("protocolVersion",1,"requestId","wire-diagram","textDocument",Map.of("uri",uri,"version",1),"options",Map.of("schemaVersion","1.0")))));
+            var wire=com.google.gson.JsonParser.parseString(readResponse(output,20)).getAsJsonObject().getAsJsonObject("result");
+            assertNotNull(wire);assertEquals(1,wire.get("protocolVersion").getAsInt());assertEquals("wire-diagram",wire.get("requestId").getAsString());
+            assertEquals(uri,wire.get("rootUri").getAsString());assertEquals(1,wire.get("documentVersion").getAsInt());
+            var documentDto=wire.getAsJsonObject("document");assertTrue(documentDto.getAsJsonArray("containers").get(0).getAsJsonObject().has("parentId"),"Canonical nullable fields must survive LSP4J serialization");assertEquals("COMPLETE",documentDto.get("completeness").getAsString());
+            var building=StreamSupport.stream(documentDto.getAsJsonArray("nodes").spliterator(),false).map(v->v.getAsJsonObject()).filter(v->v.get("label").getAsString().equals("Building")).findFirst().orElseThrow();
+            assertTrue(building.getAsJsonArray("compartments").get(0).getAsJsonObject().getAsJsonArray("members").get(0).getAsJsonObject().has("cardinality"),"Nullable member cardinality must survive the real launcher");
+            var navigation=Map.of("protocolVersion",1,"serverInstanceId",wire.get("serverInstanceId").getAsString(),"diagramId",wire.get("diagramId").getAsString(),"snapshotId",wire.get("snapshotId").getAsString(),"textDocument",Map.of("uri",uri,"version",1),"elementId",building.get("id").getAsString());
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",21,"method","interlis/diagramNavigate","params",navigation)));
+            var location=com.google.gson.JsonParser.parseString(readResponse(output,21)).getAsJsonObject().getAsJsonObject("result");assertEquals(uri,location.get("uri").getAsString());assertEquals(3,location.getAsJsonObject("range").getAsJsonObject("start").get("line").getAsInt());
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",23,"method","interlis/diagramSelect","params",Map.of("protocolVersion",1,"serverInstanceId",wire.get("serverInstanceId").getAsString(),"diagramId",wire.get("diagramId").getAsString(),"snapshotId",wire.get("snapshotId").getAsString(),"textDocument",Map.of("uri",uri,"version",1),"sourceDocument",Map.of("uri",uri,"version",1),"position",location.getAsJsonObject("range").getAsJsonObject("start")))));
+            var selection=com.google.gson.JsonParser.parseString(readResponse(output,23)).getAsJsonObject().getAsJsonObject("result");assertEquals(wire.get("snapshotId").getAsString(),selection.get("snapshotId").getAsString());assertTrue(StreamSupport.stream(selection.getAsJsonArray("elementIds").spliterator(),false).anyMatch(id->id.getAsString().equals(building.get("id").getAsString())));
+            send(input,new Gson().toJson(Map.of("jsonrpc","2.0","id",22,"method","interlis/diagram","params",Map.of("protocolVersion",1,"requestId","bad-version","textDocument",Map.of("uri",uri,"version",0)))));
+            assertTrue(readResponse(output,22).contains("-32801"),"Old client versions must fail over the real launcher");
 
             send(input, new Gson().toJson(Map.of(
                     "jsonrpc", "2.0", "id", 3, "method", "workspace/executeCommand",
@@ -119,6 +138,34 @@ class LspProcessTest {
                 process.destroyForcibly();
             }
         }
+    }
+
+    @Test void customCompileAndReadonlySourceUseTheRealStdioLauncher() throws Exception {
+        Path repository=java.nio.file.Files.createTempDirectory("interlis-lsp-wire-repository-");
+        java.nio.file.Files.writeString(repository.resolve("Dep.ili"),RepositoryEditorTest.DEP);
+        java.nio.file.Files.writeString(repository.resolve("Base.ili"),RepositoryEditorTest.BASE);
+        String index="<TRANSFER>";
+        for(String name:List.of("Dep","Base")) index+="<ModelMetadata><Name>"+name+"</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>"+name+".ili</File></ModelMetadata>";
+        java.nio.file.Files.writeString(repository.resolve("ilimodels.xml"),index+"</TRANSFER>");
+        var process=new ProcessBuilder(Path.of(System.getProperty("java.home"),"bin","java").toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main").start();
+        try(var input=process.getOutputStream();var output=new BufferedInputStream(process.getInputStream())) {
+            var gson=new Gson();
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",1,"method","initialize","params",Map.of("capabilities",Map.of(),"initializationOptions",Map.of("repositories",List.of(repository.toUri().toString()))))));
+            String initialized=readResponse(output,1);assertTrue(initialized.contains("sourceContent"),initialized);
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","method","textDocument/didOpen","params",Map.of("textDocument",Map.of("uri",RepositoryEditorTest.URI,"version",11,"languageId","interlis","text",RepositoryEditorTest.ROOT)))));
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",2,"method","interlis/compile","params",Map.of("mode","current","textDocument",Map.of("uri",RepositoryEditorTest.URI,"version",11)))));
+            String compiled=readResponse(output,2);assertTrue(compiled.contains("succeeded"),compiled);
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",3,"method","textDocument/definition","params",Map.of("textDocument",Map.of("uri",RepositoryEditorTest.URI),"position",Map.of("line",3,"character",RepositoryEditorTest.ROOT.split("\n")[3].indexOf("Value"))))));
+            String target=com.google.gson.JsonParser.parseString(readResponse(output,3)).getAsJsonObject().getAsJsonArray("result").get(0).getAsJsonObject().get("uri").getAsString();
+            assertTrue(target.startsWith("interlis-source:/"));
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",4,"method","interlis/source","params",Map.of("handle",target,"expectedRevision",java.net.URI.create(target).getQuery()))));
+            var content=com.google.gson.JsonParser.parseString(readResponse(output,4)).getAsJsonObject().getAsJsonObject("result");
+            assertEquals(RepositoryEditorTest.DEP,content.get("text").getAsString());assertTrue(content.get("readonly").getAsBoolean());
+            send(input,gson.toJson(Map.of("jsonrpc","2.0","id",5,"method","interlis/source","params",Map.of("handle",repository.resolve("Dep.ili").toUri().toString(),"expectedRevision","1"))));
+            assertTrue(readResponse(output,5).contains("-32602"));
+            send(input,"{\"jsonrpc\":\"2.0\",\"id\":6,\"method\":\"shutdown\"}");assertTrue(readResponse(output,6).contains("result"));
+            send(input,"{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}");assertTrue(process.waitFor(10,TimeUnit.SECONDS));assertEquals(0,process.exitValue());
+        } finally { if(process.isAlive())process.destroyForcibly(); }
     }
 
     @Test void exitWithoutShutdownTerminatesWithFailureWhileInputRemainsOpen() throws Exception {

@@ -246,3 +246,11 @@ RES-009/013, CLI-004/006, LOG-005/008: MD5 vor Download,24h/7Tage,
 keine ETags und zweite Onlineprüfung, V2-Metadaten/V1-Offline, gemeinsame
 Loader-API und gezielte Abnahme gemäss Kapitel08 §17/13.
 [Operativer Nachweis](../implementation/ili2c-cache-policy/REPORT.md). Kein Commit/Push/Releaseauftrag.
+
+WP-31-/WP-26-Verbraucherfolgeauftrag VS-Code-V1: der LSP bindet die bestehende
+Repositorysuche und den Standardcache über eingefrorene Captures und bedingten
+Ownercommit an. Diagnoseprosa/RelatedInformation, semantische Outline,
+Readonly-Quellhandles und expliziter Rootcompile gehören zu diesem Abschnitt.
+Gezielte Abnahme nach Kapitel13; der verbindliche sequenzielle V0–V5-Plan und
+die unabhängigen Produktpaar-Gates liegen im Extensionrepo. Diese Ergänzung
+behauptet keine erfolgte V1-Abnahme und erteilt keinen separaten Releaseauftrag.

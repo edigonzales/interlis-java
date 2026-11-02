@@ -76,9 +76,6 @@ final class DefaultDiagramProjector implements DiagramProjector {
                     || model.translation().orElseThrow().sourceTarget().isEmpty()
                     || model.translation().orElseThrow().correspondences().isEmpty())return invalidOptions("projection.invalidTranslationSelection");
         }
-        if(options.associationPresentation()==AssociationPresentation.COMPACT_BINARY)
-            notices.add(new ProjectionNotice(ProjectionNoticeCode.UNSUPPORTED_PRESENTATION,Severity.WARNING,
-                    "projection.entityFallback",List.of("COMPACT_BINARY"),Optional.empty(),Optional.empty()));
         ProjectionState state = new ProjectionState(context, options, notices, token);
         for (SymbolRef ref : options.selection().symbols()) {
             token.throwIfCancellationRequested();
@@ -86,6 +83,8 @@ final class DefaultDiagramProjector implements DiagramProjector {
         }
         if(options.scope()==DiagramScope.NEIGHBOURHOOD)state.includeNeighbourhood();
         state.finishEdges();
+        if(options.associationPresentation()==AssociationPresentation.COMPACT_BINARY)
+            CompactAssociationProjection.apply(context.graph(),state.nodes,state.edges,token);
         ProjectionCompleteness completeness = state.completeness();
         DiagramDocument document = new DiagramDocument(DiagramDocument.SCHEMA_VERSION,
                 context.snapshotId(), context.sourceRevisions(), context.inputKind(),
@@ -131,6 +130,7 @@ final class DefaultDiagramProjector implements DiagramProjector {
         private final Set<SymbolId> expandedContainers=new LinkedHashSet<>();
         private final Map<SymbolId,SymbolId> translatedLabels=new LinkedHashMap<>();
         private final CancellationToken token;
+        private Map<SourceRange,Symbol> enumDeclarations;
 
         private ProjectionState(Context context, DiagramOptions options,
                                 List<ProjectionNotice> notices, CancellationToken token) {
@@ -357,6 +357,36 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-constraints",
                         DiagramCompartment.CompartmentKind.CONSTRAINTS, constraints));
             }
+            List<DiagramMember> inlineValues = new ArrayList<>();
+            for (var member : attributes) {
+                if (!(context.graph().symbol(member.declaredSymbol()).orElse(null) instanceof AttributeSymbol attribute)) continue;
+                TypeDescriptor type = context.graph().type(attribute.declaredType()).orElse(null);
+                var visited = new LinkedHashSet<TypeId>();
+                while (type instanceof guru.interlis.model.CollectionType collection && visited.add(type.id()))
+                    type = context.graph().type(collection.elementType()).orElse(null);
+                // Domain references retain their own domain node; only inline values
+                // belong in this viewable's enum compartment.
+                if (!(type instanceof guru.interlis.model.EnumerationType enumeration)) continue;
+                for (var value : enumeration.values()) {
+                    token.throwIfCancellationRequested();
+                    var declaration = value.range().map(enumDeclarations()::get);
+                    Symbol owner = declaration.orElse(attribute);
+                    var owners = new LinkedHashSet<SymbolId>();
+                    while (!(owner instanceof AttributeSymbol) && owner.owner().isPresent() && owners.add(owner.id()))
+                        owner = context.graph().symbol(owner.owner().orElseThrow()).orElse(attribute);
+                    boolean inherited = member.inherited() || !owner.id().equals(attribute.id());
+                    if (inherited && options.inheritedMembers() == InheritedMembers.HIDE) continue;
+                    if (!budget.admit()) break;
+                    var valueAnchor = value.range().map(range -> new SourceAnchor(context.snapshotId(), range, Optional.empty()));
+                    inlineValues.add(new DiagramMember(member.id() + "-enum-" + value.order(),
+                            DiagramMember.MemberKind.ENUM_VALUE,
+                            displayName(attribute) + "." + declaration.map(this::displayName).orElse(value.path()),
+                            Optional.empty(), Optional.empty(), declaration.map(Symbol::id).orElse(attribute.id()),
+                            member.effectiveOwner(), inherited, false, valueAnchor));
+                }
+            }
+            if (!inlineValues.isEmpty()) result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-inline-enum",
+                    DiagramCompartment.CompartmentKind.ENUM_VALUES, inlineValues));
             if (symbol instanceof DomainSymbol domain && budget.admit()) {
                 result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-details",
                         DiagramCompartment.CompartmentKind.DETAILS,
@@ -365,7 +395,37 @@ final class DefaultDiagramProjector implements DiagramProjector {
                                 options.showTypes() ? Optional.of(typeLabel(domain.typeId())) : Optional.empty(), Optional.empty(),
                                 domain.id(), domain.id(), false, false, anchor(domain)))));
             }
+            if(symbol instanceof DomainSymbol domain) {
+                var seen=new LinkedHashSet<TypeId>();TypeDescriptor type=context.graph().type(domain.typeId()).orElse(null);
+                while(type instanceof DomainReferenceType reference && seen.add(type.id())) {
+                    token.throwIfCancellationRequested();
+                    var target=context.graph().symbol(reference.targetDomain()).orElse(null);
+                    type=target instanceof DomainSymbol base?context.graph().type(base.typeId()).orElse(null):null;
+                }
+                if(type instanceof guru.interlis.model.EnumerationType enumeration) {
+                    var values=new ArrayList<DiagramMember>();
+                    for(var value:enumeration.values()) {
+                        token.throwIfCancellationRequested();
+                        var enumDeclaration=value.range().map(enumDeclarations()::get);
+                        var origin=enumDeclaration.map(Symbol::id).orElse(domain.id());
+                        Symbol owner=enumDeclaration.orElse(domain);var ownerPath=new LinkedHashSet<SymbolId>();
+                        while(!(owner instanceof DomainSymbol)&&owner.owner().isPresent()&&ownerPath.add(owner.id())){token.throwIfCancellationRequested();owner=context.graph().symbol(owner.owner().orElseThrow()).orElse(domain);}
+                        boolean inherited=!owner.id().equals(domain.id());
+                        if(inherited&&options.inheritedMembers()==InheritedMembers.HIDE)continue;
+                        if(!budget.admit())break;
+                        var valueAnchor=value.range().map(range->new SourceAnchor(context.snapshotId(),range,Optional.empty()));
+                        values.add(new DiagramMember("member-"+domain.id().value()+"-enum-"+value.order(),DiagramMember.MemberKind.ENUM_VALUE,
+                                enumDeclaration.map(this::displayName).orElse(value.path()),Optional.empty(),Optional.empty(),origin,domain.id(),inherited,false,valueAnchor));
+                    }
+                    if(!values.isEmpty())result.add(new DiagramCompartment("comp-"+domain.id().value()+"-enum",DiagramCompartment.CompartmentKind.ENUM_VALUES,values));
+                }
+            }
             return result;
+        }
+
+        private Map<SourceRange,Symbol> enumDeclarations() {
+            if(enumDeclarations==null){var index=new LinkedHashMap<SourceRange,Symbol>();for(var symbol:context.graph().symbols()){token.throwIfCancellationRequested();if(symbol instanceof guru.interlis.model.EnumElementSymbol)symbol.nameRange().ifPresent(range->index.putIfAbsent(range,symbol));}enumDeclarations=Map.copyOf(index);}
+            return enumDeclarations;
         }
 
         private void addEffectiveMembers(SymbolId viewable, List<DiagramMember> attributes,

@@ -19,7 +19,8 @@ public final class Main {
         InterlisLanguageServer server = new InterlisLanguageServer(
                 Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
         server.processExit(System::exit);
-        var launcher = LSPLauncher.createServerLauncher(server, System.in, System.out);
+        var launcher = new LSPLauncher.Builder<InterlisLanguageClientApi>().setLocalService(server)
+                .setRemoteInterface(InterlisLanguageClientApi.class).setInput(System.in).setOutput(System.out).create();
         server.connect(launcher.getRemoteProxy());
         try {
             launcher.startListening().get();

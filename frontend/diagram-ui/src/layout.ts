@@ -3,11 +3,11 @@ import type { ElkExtendedEdge, ElkLabel, ElkNode } from "elkjs/lib/elk-api.js";
 import type {
   DiagramEdge,
   DiagramNode,
-  SemanticSnapshot,
+  RenderSnapshot,
   SourceRange,
-} from "@ilic/language-service";
+} from "./render-types";
 import type { SEdge, SModelElement, SModelRoot, SNode } from "sprotty-protocol";
-import { routeWithLibavoid } from "./libavoid-router.js";
+
 
 export type EdgeRouting = "ORTHOGONAL" | "POLYLINE" | "SPLINES";
 export type RenderingTarget = "STANDARD" | "INKSCAPE";
@@ -21,6 +21,7 @@ export type EdgeCrossingStyle = "PLAIN" | "GAPS";
 export type AttributeMode = "OWN" | "NONE" | "OWN_AND_INHERITED";
 
 export interface DiagramSettings {
+  readonly direction?: "RIGHT" | "LEFT" | "DOWN" | "UP";
   readonly nodePlacement: NodePlacement;
   readonly edgeRouting: EdgeRouting;
   readonly renderingTarget: RenderingTarget;
@@ -108,73 +109,6 @@ export interface AnchoredViewport {
   readonly offsetY: number;
 }
 
-export interface DiagramState {
-  readonly status: "empty" | "loading" | "ready" | "stale" | "error";
-  readonly snapshot: SemanticSnapshot | null;
-  readonly message: string;
-}
-
-export class DiagramController {
-  #lastGood: SemanticSnapshot | null = null;
-  #state: DiagramState = {
-    status: "empty",
-    snapshot: null,
-    message: "Open an INTERLIS model to view its diagram.",
-  };
-
-  get state(): DiagramState {
-    return this.#state;
-  }
-
-  loading(): DiagramState {
-    this.#state = {
-      status: "loading",
-      snapshot: this.#lastGood,
-      message: "Updating diagram…",
-    };
-    return this.#state;
-  }
-
-  stale(
-    message = "Showing the last valid diagram; the model has changed.",
-  ): DiagramState {
-    this.#state = this.#lastGood
-      ? { status: "stale", snapshot: this.#lastGood, message }
-      : { status: "empty", snapshot: null, message };
-    return this.#state;
-  }
-
-  publish(
-    snapshot: SemanticSnapshot,
-    freshness: "fresh" | "stale" = "fresh",
-  ): DiagramState {
-    if (snapshot.success) this.#lastGood = snapshot;
-    const visible = snapshot.success ? snapshot : this.#lastGood;
-    this.#state = visible
-      ? {
-          status: snapshot.success && freshness === "fresh" ? "ready" : "stale",
-          snapshot: visible,
-          message:
-            snapshot.success && freshness === "fresh"
-              ? "Diagram is up to date."
-              : "Showing the last valid diagram; the current model contains errors.",
-        }
-      : {
-          status: "error",
-          snapshot: null,
-          message: "The model could not be analyzed.",
-        };
-    return this.#state;
-  }
-
-  fail(message: string): DiagramState {
-    this.#state = this.#lastGood
-      ? { status: "stale", snapshot: this.#lastGood, message }
-      : { status: "error", snapshot: null, message };
-    return this.#state;
-  }
-}
-
 const EDGE_LABEL_HEIGHT = 16;
 const edgeLabelSize = (text: string): { width: number; height: number } => ({
   width: Math.max(16, Array.from(text).length * 7 + 10),
@@ -219,10 +153,11 @@ const visibleEdgeLabelSpecs = (
 };
 
 export async function layoutDiagram(
-  projection: SemanticSnapshot["diagram"],
+  projection: RenderSnapshot["diagram"],
   settings: DiagramSettings = defaultDiagramSettings,
+  hostElk?: import('./contracts/elk').ELK,
 ): Promise<LayoutDiagram> {
-  const elk = new ELK();
+  const elk = hostElk ?? new ELK();
   const byId = new Map(projection.nodes.map((node) => [node.id, node]));
   const childrenByParent = new Map<string, DiagramNode[]>();
   for (const node of projection.nodes) {
@@ -232,6 +167,7 @@ export async function layoutDiagram(
     childrenByParent.set(node.containerId, children);
   }
   const nodeSize = (node: DiagramNode) => {
+    if(node.layoutSize)return node.layoutSize;
     if (isContainerNode(node)) return { width: 300, height: 100 };
     const content = nodeContentLayout(node, settings);
     const longest = [
@@ -255,7 +191,7 @@ export async function layoutDiagram(
       ...(children.length > 0
         ? {
             layoutOptions: {
-              "elk.padding": "[top=40,left=20,bottom=20,right=20]",
+              "elk.padding": `[top=${Math.max(40,node.headerHeight??40)},left=20,bottom=20,right=20]`,
               "elk.nodeSize.constraints": "MINIMUM_SIZE",
             },
           }
@@ -268,7 +204,7 @@ export async function layoutDiagram(
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
-      "elk.direction": "RIGHT",
+      "elk.direction": settings.direction ?? "RIGHT",
       "elk.edgeRouting": settings.edgeRouting,
       "elk.layered.nodePlacement.strategy": settings.nodePlacement,
       "elk.spacing.nodeNode": "60",
@@ -542,7 +478,7 @@ const encodedId = (value: string): string =>
     .map((character) => character.codePointAt(0)!.toString(16))
     .join("_") || "empty";
 const domId = (kind: string, value: string): string =>
-  `ilic-${kind}-${encodedId(value)}`;
+  `interlis-${kind}-${encodedId(value)}`;
 const nodeDomId = (value: string): string => domId("node", value);
 const nodeShapeDomId = (value: string): string => domId("shape", value);
 const edgeDomId = (value: string): string => domId("edge", value);
@@ -782,6 +718,7 @@ const routeLayoutWithLibavoid = async (
   settings: DiagramSettings,
 ): Promise<LayoutDiagram> => {
   if (settings.edgeRouting === "SPLINES") return layout;
+  const {routeWithLibavoid}=await import("./libavoid-router.js");
   const routes = await routeWithLibavoid(
     layout.nodes.map((node) => ({
       ...node,
@@ -1030,7 +967,7 @@ export function renderSvg(
       const connectorMetadata = connectorType
         ? ` inkscape:connector-type="${connectorType}" inkscape:connection-start="#${nodeShapeDomId(edge.sourceId)}" inkscape:connection-end="#${nodeShapeDomId(edge.targetId)}"`
         : "";
-      return `<g id="${edgeDomId(edge.id)}" class="ili-edge ili-edge-${xml(edge.source.kind.toLowerCase())}" data-edge-id="${xml(edge.id)}"><path id="${edgePathDomId(edge.id)}" d="${edgePathData(edge)}" fill="none" stroke="${inheritance ? "#6b58c9" : "#2c7f6d"}" stroke-width="1.6"${inheritance ? ' marker-end="url(#ilic-inheritance-arrow)"' : ""}${mask} data-edge-id="${xml(edge.id)}" data-source="${xml(edge.sourceId)}" data-target="${xml(edge.targetId)}"${connectorMetadata}/></g>`;
+      return `<g id="${edgeDomId(edge.id)}" class="ili-edge ili-edge-${xml(edge.source.kind.toLowerCase())}" data-edge-id="${xml(edge.id)}"><path id="${edgePathDomId(edge.id)}" d="${edgePathData(edge)}" fill="none" stroke="${inheritance ? "#6b58c9" : "#2c7f6d"}" stroke-width="1.6"${inheritance ? ' marker-end="url(#interlis-inheritance-arrow)"' : ""}${mask} data-edge-id="${xml(edge.id)}" data-source="${xml(edge.sourceId)}" data-target="${xml(edge.targetId)}"${connectorMetadata}/></g>`;
     })
     .join("");
   const containers = layout.nodes
@@ -1087,7 +1024,7 @@ export function renderSvg(
     layout.renderingTarget === "INKSCAPE"
       ? ' xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"'
       : "";
-  return `<svg xmlns="http://www.w3.org/2000/svg"${inkscapeNamespace} viewBox="${viewBox}" width="${width}" height="${height}" role="img"><defs><marker id="ilic-inheritance-arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1 1 L 11 6 L 1 11 Z" fill="#fff" stroke="#6b58c9" stroke-width="1.2"/></marker>${gapMasks}<style>.ili-title,.ili-stereotype{font:600 13px sans-serif}.ili-title{fill:#182234}.ili-stereotype{fill:#3c5b89}.ili-member,.ili-enumeration,.ili-operation{font:12px sans-serif;fill:#2a3a50}.ili-edge-label,.ili-edge-cardinality{font:600 11px sans-serif;fill:#33465f}.ili-muted-abstract text{fill:#a6a6a6}</style></defs><rect class="ili-background" x="${viewport?.scrollX ?? 0}" y="${viewport?.scrollY ?? 0}" width="${viewport ? viewport.width / viewport.zoom : Math.max(1, layout.width)}" height="${viewport ? viewport.height / viewport.zoom : Math.max(1, layout.height)}" fill="#fff"/>${containers}${edgePaths}${nodes}${edgeLabels}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg"${inkscapeNamespace} viewBox="${viewBox}" width="${width}" height="${height}" role="img"><defs><marker id="interlis-inheritance-arrow" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1 1 L 11 6 L 1 11 Z" fill="#fff" stroke="#6b58c9" stroke-width="1.2"/></marker>${gapMasks}<style>.ili-title,.ili-stereotype{font:600 13px sans-serif}.ili-title{fill:#182234}.ili-stereotype{fill:#3c5b89}.ili-member,.ili-enumeration,.ili-operation{font:12px sans-serif;fill:#2a3a50}.ili-edge-label,.ili-edge-cardinality{font:600 11px sans-serif;fill:#33465f}.ili-muted-abstract text{fill:#a6a6a6}</style></defs><rect class="ili-background" x="${viewport?.scrollX ?? 0}" y="${viewport?.scrollY ?? 0}" width="${viewport ? viewport.width / viewport.zoom : Math.max(1, layout.width)}" height="${viewport ? viewport.height / viewport.zoom : Math.max(1, layout.height)}" fill="#fff"/>${containers}${edgePaths}${nodes}${edgeLabels}</svg>`;
 }
 
 const svgAttribute = (tag: string, name: string, value: string): string => {
@@ -1114,7 +1051,7 @@ export function renderSvgViewport(svg: string, viewport: Viewport): string {
 }
 
 export async function layoutAndRenderDiagram(
-  projection: SemanticSnapshot["diagram"],
+  projection: RenderSnapshot["diagram"],
   settings: DiagramSettings = defaultDiagramSettings,
   viewport?: Viewport,
 ): Promise<{ layout: LayoutDiagram; svg: string; sprotty: SModelRoot }> {
@@ -1174,7 +1111,7 @@ export function restoreViewport(
 }
 
 export function sourceLocationForNode(
-  snapshot: SemanticSnapshot,
+  snapshot: RenderSnapshot,
   nodeId: string,
 ): SourceRange | null {
   const node = snapshot.diagram.nodes.find(

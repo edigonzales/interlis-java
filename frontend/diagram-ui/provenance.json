@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "adoptedFromCoreCommit": "3b60e6c1309a4897ad6d0e99f6d8dfd137520ca9",
+  "originalVendorPin": "docs/p3/diagram-adapter-pin.json",
+  "upstreamRepository": "https://github.com/edigonzales/interlis-language-tools",
+  "upstreamCommit": "f27801bfebf0fdac82a19e016f4c347ae2b6f8fb",
+  "originals": {
+    "ELK-LICENSE.md": {
+      "sha256": "89591d4578fb1ebd91501312a3d25f021bd865a2e436641c1cf7b1bc7e3c1617",
+      "oldPath": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/ELK-LICENSE.md"
+    },
+    "LICENSE": {
+      "sha256": "91904e7f7a936e2f873b6c7d893b34ecc43fa9f2beffe96a9d8e24c9ad449798",
+      "oldPath": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/LICENSE"
+    },
+    "compiler-contract.d.ts": {
+      "sha256": "bee44b1788b726e7cc5308241cb102a09b51f8e253c53f0ae02ab3441019a155",
+      "oldPath": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/compiler-contract.d.ts"
+    },
+    "elk-contract.d.ts": {
+      "sha256": "2e992211afcd079a0cd0a5df424086388b4ffcb0bd8d9ff3741940ad52006d4a",
+      "oldPath": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/elk-contract.d.ts"
+    },
+    "index.ts": {
+      "sha256": "9289f3c19fc3ce1e86a1b20b8fe98b5dd971f296091b8392f7ec8a50935d2f71",
+      "oldPath": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/index.ts"
+    },
+    "libavoid-js.d.ts": {
+      "sha256": "85f2c7a7721e2cd8f6a61a296e9238d4199bf3f361bcfd49d2d7c19119c90cb7",
+      "oldPath": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/libavoid-js.d.ts"
+    },
+    "libavoid-router.ts": {
+      "sha256": "6dfdecd0aee744d6ae210501b26f30f1d8fe652bb1b180c0f6e6562be08285dc",
+      "oldPath": "interlis-wasm-teavm/src/main/typescript/vendor/ilic-diagram/libavoid-router.ts"
+    }
+  },
+  "changes": [
+    "Own presentation types replace all Language-Service/Compiler/AST imports; compiler-contract.d.ts not adopted.",
+    "Shared adapter owns neutral DiagramDocument data only.",
+    "Layout and export helpers adopted with MIT provenance, interactive Sprotty views and worker lifecycle implemented separately."
+  ],
+  "note": "This is an initial adoption manifest, not an acceptance verdict; final source identities are tracked by Git and packaged artifact hashes."
+}
