@@ -425,3 +425,31 @@ und effektivem Besitzer. Geerbte Darstellungen haben eigene IDs und denselben
 ursprünglichen Anker. Domainreferenzen behalten ihre Domainknoten; der Renderer
 berechnet keine Enumsemantik aus Typtext. Das gemeinsame Memberbudget und
 `InheritedMembers.HIDE` gelten auch hier.
+
+`DiagramCanvas` integriert diese Filter in denselben echten Sprotty-Graphen.
+Sein Beobachter vereinigt sichtbare Geometrie mit ausgeblendeten Elementen;
+Snapshotwechsel gleichen auch Pin-/Manuell-/Hiddenmengen über die exakten
+Presentationkeys ab. Eigene begrenzte Viewhistory enthält nur Geometrie und
+überschreitet keine externe Projektionsantwort. `settle` erhält manuelle/pinnte
+Knoten und manuelle Routen; `resetLayout` verwirft diese explizit, aber keine Filter.
+Layout verwendet den vorhandenen ELKworker; Inkscape ist ein Exportziel und löst
+keinen zweiten Layoutrouter im interaktiven Consumer aus. SPLINES werden als
+kubische Bézierpfade gemalt; fachliche Endpunkte bleiben unverändert.
+
+`exportSvg(FULL|VISIBLE)` serialisiert die aktuelle gefilterte Sprotty-Zeichnung
+mit berechneten Styles und lokalen Referenzen. FULL verwendet gemalte Bounds
+inklusive Labels, VISIBLE den tatsächlichen Viewport. Keine neue Projektion oder
+ELKberechnung. Handles/Hitflächen/aktive Ressourcen sind ausgeschlossen. Partielle
+Sichten bleiben sichtbar markiert. Inkscape-Verbindungen verweisen auf tatsächliche
+Shapes; Splines erhalten nur statische Verweise, keine falschen Liveconnectoren.
+GAPS dekoriert geometrische Kreuzungen mit lokalen Masken, ohne Kanten zu entfernen;
+die Berechnung ist auf200000 Segmentvergleiche und64 Lücken pro Kante begrenzt.
+`exportPng` rastert genau dieses SVG lokal; maximal8192 Pixel pro Achse/32MP,
+Skalierung0.5..3. Ein währenddessen veränderter View bricht das Ergebnis ab.
+Beide Exporte begrenzen ihre Nutzlast auf16MB; der Host besitzt Save/Cancel,
+Zieldatei und abschliessendes Schreiben, nicht der Renderer.
+
+`mountDiagramControls` ist die gemeinsame lokale Bedienoberfläche für beide
+Consumer. Native Zeiger-/Tastatureingaben, ResizeObserver, begrenzter Pan und
+Viewportzoom verwenden CSSpixel; die Rasterauflösung ist explizit. Toolbarfokus
+und Quelleditorfokus dürfen von Hintergrundpatches nicht übernommen werden.

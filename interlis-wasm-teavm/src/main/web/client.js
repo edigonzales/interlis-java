@@ -1,6 +1,6 @@
 import {verifyBrowserClient} from './browser-client-contract.js';
 import {CompilerClient} from './compiler-client.js';
-import {diagramAdapter,DiagramCanvas} from './diagram-ui.js';
+import {diagramAdapter,DiagramCanvas,mountDiagramControls} from './diagram-ui.js';
 
 const source=document.getElementById('source'),output=document.getElementById('output');
 const picker=document.getElementById('sources'),canvas=document.getElementById('diagram-view'),members=document.getElementById('members');
@@ -9,6 +9,8 @@ let activeSource='memory:/browser.ili',session=null,snapshot=null,schema=null,vi
 const diagramCanvas=new DiagramCanvas(canvas,{navigate:id=>navigate(id),singleClickNavigation:true,status:(_status,message)=>{document.getElementById('diagram-status').textContent=message;}},new URL('./diagram-layout-worker.js',import.meta.url));
 const focusPicker=document.getElementById('diagram-focus'),scopePicker=document.getElementById('diagram-scope'),depthPicker=document.getElementById('diagram-depth'),languagePicker=document.getElementById('diagram-language');
 const associationPicker=document.getElementById('diagram-associations');
+const controlRoot=document.createElement('div');canvas.before(controlRoot);
+const sharedControls=mountDiagramControls(controlRoot,diagramCanvas,{error:message=>{document.getElementById('diagram-status').textContent=message;},export:(format,scope)=>{void(async()=>{const artifact=format==='SVG'?new Blob([diagramCanvas.exportSvg(scope).svg],{type:'image/svg+xml'}):new Blob([(await diagramCanvas.exportPng(scope)).data],{type:'image/png'}),url=URL.createObjectURL(artifact),link=document.createElement('a');link.href=url;link.download='diagram-'+scope.toLowerCase()+'.'+format.toLowerCase();link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);})().catch(displayError);}});
 
 const client=new CompilerClient({onRestored:pairs=>{
   const pair=pairs.find(p=>p.previous===session);session=pair?.current??null;invalidate(false);
@@ -49,7 +51,8 @@ function navigate(id){
 }
 function refreshPicker(){picker.replaceChildren(...[...drafts.keys()].map(id=>{const option=document.createElement('option');option.value=id;option.textContent=id;option.selected=id===activeSource;return option;}));}
 async function publishDiagram(result){
-  const accepted=await diagramCanvas.accept(result,String(session));if(!accepted)return false;
+  const accepted=await diagramCanvas.accept(result,String(session),diagramCanvas.getSettings());if(!accepted)return false;
+  sharedControls.refresh();
   canvas.dataset.stale='false';canvas.setAttribute('aria-label',result.completeness==='COMPLETE'?'Current INTERLIS diagram':'Partial INTERLIS diagram');
   members.replaceChildren();
   for(const node of result.nodes)for(const compartment of node.compartments)for(const member of compartment.members){

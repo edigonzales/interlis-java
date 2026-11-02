@@ -895,3 +895,12 @@ und leere/fehlerhafte Ergebnisse. Die eigenen TypeScript-Hosttypen stehen zusamm
 mit den bestehenden Diagrammtypen in `editor-protocol.ts`. Abnahmen:
 DiagramProtocolTest (Deklaration, Verwendung, readonly, CRLF/Emoji, Stale) und der
 echte LspProcessTest (Capability und tatsächlicher JSON-RPC-Request/Response).
+
+V3 derselben UI: `DiagramCanvas.filter/filterAll/resetFilters/hide`,
+`configure/settle/resetLayout/pinSelected/undo/redo`, `saveState/restoreState`,
+`setViewport/zoom/pan/getViewport/getScrollBounds` sowie `exportSvg/exportPng`
+besitzen nur getrennten Viewzustand; Kapitel11 regelt Grenzen und Fehler.
+`mountDiagramControls` bindet lokale native Controls an diese API, Hostcallbacks
+besitzen semantische Projektion und Dateien. Abnahmen: echte Sprotty-Dragregression,
+Viewstate-Verträge und `comfort.test.cjs` mit echten nativen Controls, Kurven,
+XML-/PNGdecodierung, Export ohne ELK und Wiederherstellung.

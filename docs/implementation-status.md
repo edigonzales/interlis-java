@@ -1423,3 +1423,14 @@ Core-Inline-Enumprojektion mit Originalankern/Vererbung, strukturelle Sichtfilte
 und begrenzter gehashter Viewzustand. Neue UI-Verträge3 und gezielter Javafall1
 bestanden unter Python-Guard (`interlis-vscode-evidence/phases/V3/foundation-r1`).
 Noch keine V3-GUI-/Export-/Phasenabnahme; V4 bleibt gesperrt.
+
+V3 Rendererzwischenstand: Sichtfilter/Pin/Settle/Reset, eigene geometrische
+Undohistory, Bézier-Splines, Viewportbedienung und aktuelle SVG/PNGserialisierung
+sind am gemeinsamen Sprottyviewer angebunden. Fünf gezielte Renderer-/Statefälle
+bestanden (`phases/V3/renderer-r3`, Guardpassed/Exit0). Ein zuvor gefundener
+Inkscapewechsel-Fehler ist mit demselben Komfortfall reproduziert und korrigiert;
+Export nutzt den aktuellen interaktiven Graphen statt den optionalen statischen
+libavoid-Pfad. Bilder und Exportpixel wurden geöffnet. Die neuen gemeinsamen
+Controls sind auch am Browserconsumer angeschlossen; dessen erneute tatsächliche
+WASMprüfung und die installierte Extension-/Host-/GUIqualifikation sind noch fällig.
+V3 ist nicht freigegeben, V4 bleibt gesperrt.

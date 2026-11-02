@@ -23,3 +23,13 @@
 
 .interlis-canvas[data-status=STALE] .interlis-viewer,.interlis-canvas[data-status=LOADING] .interlis-viewer{opacity:.65;pointer-events:none}
 .interlis-canvas .sprotty-edge path.interlis-edge-hit{stroke:transparent;stroke-width:10;pointer-events:stroke}
+.interlis-canvas .frame-hidden>.interlis-frame,.interlis-canvas .frame-hidden>.interlis-title{visibility:hidden}
+.interlis-canvas .deemphasized>.interlis-frame{stroke-dasharray:5 3}
+.interlis-canvas [data-pinned=true]>.interlis-frame{stroke-width:3}
+.interlis-controls{display:flex;flex-wrap:wrap;gap:6px;padding:5px;font:12px sans-serif;color:inherit;background:var(--diagram-background)}
+.interlis-controls label{display:inline-flex;gap:3px;align-items:center}
+.interlis-controls button,.interlis-controls select{color:inherit;background:var(--diagram-background);border:1px solid var(--diagram-border);padding:3px}
+.interlis-controls details{max-width:100%}.interlis-filter-list{display:flex;flex-wrap:wrap;gap:8px;max-height:180px;overflow:auto}
+.interlis-controls :focus-visible{outline:2px solid var(--diagram-selection);outline-offset:2px}
+.interlis-controls{max-height:32vh;overflow:auto;flex-shrink:0;--diagram-background:var(--vscode-editor-background,#fff);--diagram-border:var(--vscode-editor-foreground,#60748c);--diagram-selection:var(--vscode-focusBorder,#0777bf)}
+.interlis-controls [role=tree]{flex-basis:100%;max-height:180px;overflow:auto}
