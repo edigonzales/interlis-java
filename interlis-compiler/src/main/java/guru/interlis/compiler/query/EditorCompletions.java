@@ -14,11 +14,13 @@ final class EditorCompletions {
         var value=completeNow(snapshot,query,token);String prefix=snapshot.syntaxSnapshot(query.cursor().source()).orElseThrow().source().text().substring(value.replacementRange().startOffset(),query.cursor().startOffset());var candidates=value.candidates().stream().filter(c->c.label().startsWith(prefix)).toList();return new CompletionResult(candidates.stream().limit(query.limit()).toList(),value.replacementRange(),value.incomplete()||candidates.size()>query.limit(),value.snapshotId());
     }
     private static CompletionResult completeNow(AnalysisSnapshot snapshot,CompletionQuery query,CancellationToken token){
-        var base=LanguageQueries.create().complete(snapshot,query,token);var syntax=snapshot.syntaxSnapshot(query.cursor().source()).orElseThrow();int at=query.cursor().startOffset(),start=base.replacementRange().startOffset();
+        var plain=LanguageQueries.create().complete(snapshot,query,token);var syntax=snapshot.syntaxSnapshot(query.cursor().source()).orElseThrow();int at=query.cursor().startOffset();
+        var replacement=query.prefix().value().isEmpty()?plain.replacementRange():syntax.tokens().stream().filter(t->(t.kind()==TokenKind.IDENTIFIER||t.kind()==TokenKind.KEYWORD)&&t.range().startOffset()<at&&at<=t.range().endOffset()&&t.text().startsWith(query.prefix().value())).map(SyntaxToken::range).findFirst().orElse(plain.replacementRange());
+        var base=new CompletionResult(plain.candidates(),replacement,plain.incomplete(),plain.snapshotId());int start=base.replacementRange().startOffset();
         var meta=meta(snapshot,syntax,query,base);if(meta.isPresent())return meta.orElseThrow();
         if(EditorSyntax.inert(syntax,at))return result(base,List.of(),false);
         var before=EditorSyntax.tokens(syntax).stream().filter(t->t.range().endOffset()<=start).toList();
-        var block=EditorSyntax.enclosing(syntax,at).orElse(null);String last=before.isEmpty()?"":before.getLast().text();
+        var block=EditorSyntax.nodes(syntax).stream().flatMap(n->EditorSyntax.block(n).stream()).map(b->EditorSyntax.withActualEnd(syntax,b)).filter(b->b.node().range().startOffset()<start&&(at<=b.node().range().endOffset()||b.endName().isEmpty()&&b.node().range().endOffset()<=start&&syntax.source().text().substring(b.node().range().endOffset(),start).isBlank())).min(Comparator.comparingInt(b->b.node().width())).orElse(null);String last=before.isEmpty()?"":before.getLast().text();
         int boundary=-1;for(int i=before.size()-1;i>=0;i--)if(Set.of(";","=").contains(before.get(i).text())){boundary=i;break;}
         var tail=before.subList(boundary+1,before.size());var words=tail.stream().map(SyntaxToken::text).toList();
         if(last.equals("END"))return result(base,block==null?List.of():List.of(word(block.name())),false);
@@ -55,7 +57,7 @@ final class EditorCompletions {
     private static String headerKind(List<SyntaxToken> ts){for(int i=ts.size()-1;i>=0;i--)if(Set.of("MODEL","TOPIC","CLASS","STRUCTURE","ASSOCIATION","VIEW","GRAPHIC","DOMAIN","UNIT").contains(ts.get(i).text()))return ts.get(i).text();return "";}
     private static CompletionCandidate word(String s){return new CompletionCandidate(s,s,CompletionKind.KEYWORD,"INTERLIS syntax");}
     private static CompletionResult result(CompletionResult base,List<CompletionCandidate> values,boolean incomplete){var seen=new HashSet<String>();return new CompletionResult(values.stream().filter(c->seen.add(c.label())).toList(),base.replacementRange(),incomplete,base.snapshotId());}
-    private static List<String> declarations(String kind){return switch(kind){case "ROOT"->List.of("MODEL");case "MODEL"->List.of("TOPIC","CLASS","STRUCTURE","DOMAIN","UNIT","FUNCTION","CONTEXT","LINE FORM");case "TOPIC"->List.of("CLASS","STRUCTURE","ASSOCIATION","VIEW","VIEW TOPIC","GRAPHIC","DOMAIN","UNIT","FUNCTION","CONTEXT","CONSTRAINTS");case "ASSOCIATION"->List.of("Role");default->List.of();};}
+    private static List<String> declarations(String kind){return switch(kind){case "ROOT"->List.of("MODEL");case "MODEL"->List.of("TOPIC","VIEW TOPIC","CLASS","STRUCTURE","DOMAIN","UNIT","FUNCTION","CONTEXT","LINE FORM");case "TOPIC"->List.of("CLASS","STRUCTURE","ASSOCIATION","VIEW","GRAPHIC","DOMAIN","UNIT","FUNCTION","CONTEXT","CONSTRAINTS");case "ASSOCIATION"->List.of("Role");default->List.of();};}
     static String template(String k){return switch(k){
         case "MODEL"->"MODEL ${1:ModelName} (${2:de})\n  AT \"${3:https://example.org}\"\n  VERSION \"${4:2026-01-01}\"\n  =\n  $0\nEND $1.";
         case "CLASS","STRUCTURE","TOPIC"->k+" ${1:Name} ${2}=\n  $0\nEND $1;";
