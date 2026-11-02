@@ -37,7 +37,7 @@ public final class MermaidRenderer {
                 continue;
             }
             if (edge.kind() == DiagramEdge.EdgeKind.INHERITANCE) {
-                out.append("  ").append(source).append(" <|-- ").append(target).append('\n');
+                out.append("  ").append(source).append(" --|> ").append(target).append('\n');
             } else if(edge.kind()==DiagramEdge.EdgeKind.ASSOCIATION) {
                 out.append("  ").append(source).append(" \"").append(GraphTextFormatter.mermaidEscape(GraphTextFormatter.endLabel(edge.sourceEnd())))
                     .append("\" ").append(GraphTextFormatter.connector(edge)).append(" \"").append(GraphTextFormatter.mermaidEscape(GraphTextFormatter.endLabel(edge.targetEnd())))

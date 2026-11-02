@@ -20,6 +20,12 @@ final class RepositoryHostCoordinator implements AutoCloseable {
     private CoalescingSourceLoader loader;
     RepositoryHostCoordinator(Consumer<String> operations) { this.operations=operations; reconfigure(settings); }
     void reconfigure(RepositorySettings value) {
+        // A repeated client settings notification must not cancel the current capture.
+        // Diagnostic language does not change repository IO authority.
+        if (loader != null && value.options().equals(settings.options()) && value.cache().equals(settings.cache())) {
+            settings = value;
+            return;
+        }
         if(loader!=null)loader.cancelPending(CancellationReason.SUPERSEDED);
         settings=value;
         access=HostRepositories.create(Path.of(System.getProperty("user.dir")),value.cache(),event -> {

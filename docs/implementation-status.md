@@ -1487,3 +1487,31 @@ Wortumbruch ist ergänzt und wird erneut geprüft. UML-/Editorregression, finale
 Artefaktidentität und unabhängiger V4-Review stehen noch aus. Dies ist kein Abschluss oder V5-PASS. Der verbindliche laufende
 Auftragsstatus liegt im separaten `interlis-vscode`-Repo unter
 `docs/implementation/vscode-extension/STATUS.md`; V3 ist dort unabhängig akzeptiert.
+
+V4 unabhängiger Review attempt01: FAIL am Paar Core668caa9/Extensione38cfb7.
+Zwei Pflichtbefunde werden in derselben Phase repariert; V5 bleibt gesperrt.
+Mermaid zeigte die Basisklasse als Kind, weil die gerichtete neutrale Kante
+Child→Base als `Child <|-- Base` gerendert wurde. Der Renderer benutzt jetzt
+`Child --|> Base`; die bestehende Projektionsprüfung belegt die semantische
+Richtung und die Übereinstimmung mit PlantUML (zuerst echter RED, dann GREEN).
+
+Der GUI09-Neustartbefund ist als Serverfehler deterministisch reproduziert:
+Eine identische Konfigurationsnachricht während eines kontrolliert angehaltenen
+Repositoryloads ersetzte/cancelte den Loader mit SUPERSEDED. Die Workspace-
+Konfiguration war unverändert und plante deshalb keine neue Analyse; die
+abgebrochene aktuelle Analyse blockierte danach alle Queries. Identische
+Repositoryoptionen/Cacheeinstellungen behalten nun den Loader; reine
+Diagnosesprache ersetzt ebenfalls keine IO-Autorität. Der neue LSP-Test war
+vorher rot und ist danach grün. Die frühere Vermutung einer bloss spät
+registrierten Clientnotification erklärt diesen reproduzierten Serverfehler
+nicht; Client-/Listenerreihenfolge bleibt unverändert.
+
+Frische Reparaturqualifikation: alle75 LSP-Tests, alle22 Projektionstests und
+CLI `diagramExportUsesCheckedSchema` (1 Test), jeweils Exit0/Guardpassed.
+Ein zuerst exponierter zeitabhängiger Repositorytest stellt nun die lokale
+Basis vor dem abhängigen Modell bereit; alle bisherigen Assertions inklusive
+null HTTP bleiben unverändert. Ein zwischenzeitlich unvollständiger Bestand
+kann fachlich einen Lookup auslösen und gehört nicht zum Null-Netz-Orakel.
+Native Wiederholung folgt mit drei Offline-Restarts, frischen readonly Handles,
+null HTTP und unveränderten Zeitgrenzen sowie expliziter GUI-Export-Richtung.
+Rohbelege einschliesslich REDs unter `interlis-vscode-evidence/phases/V4`.

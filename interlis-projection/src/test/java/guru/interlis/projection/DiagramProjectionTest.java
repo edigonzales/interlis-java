@@ -229,6 +229,12 @@ class DiagramProjectionTest {
         assertTrue(mermaid.contains("Derived"));
         String plantUml = new PlantUmlRenderer().render(document);
         assertTrue(plantUml.startsWith("@startuml"));
+        Map<String, String> names = GraphTextFormatter.safeNames(document);
+        String base = names.get(document.nodes().stream().filter(n -> n.label().equals("Base")).findFirst().orElseThrow().id());
+        String derived = names.get(document.nodes().stream().filter(n -> n.label().equals("Derived")).findFirst().orElseThrow().id());
+        assertTrue(mermaid.contains(derived + " --|> " + base) || mermaid.contains(base + " <|-- " + derived), mermaid);
+        assertFalse(mermaid.contains(derived + " <|-- " + base), "Mermaid must not make the superclass derive from its child");
+        assertTrue(plantUml.contains(base + " <|-- " + derived), plantUml);
         String json = new DiagramJsonCodec().encode(document);
         assertTrue(json.contains("\"schemaVersion\":\"1.0\""));
         assertTrue(json.contains("\"snapshotId\":"));

@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RepositoryEditorTest {
     @TempDir Path directory;
     HttpServer http;
+    volatile CountDownLatch indexEntered, releaseIndex;
     final AtomicInteger requests=new AtomicInteger(),bodies=new AtomicInteger();
     static final String ROOT="INTERLIS 2.4;\nMODEL Root AT \"x\" VERSION \"1\" =\nIMPORTS Dep;\nTOPIC T= CLASS C= item:Dep.Value; END C; END T;\nEND Root.\n";
     static final String DEP="INTERLIS 2.4;\nMODEL Dep AT \"x\" VERSION \"1\" =\nIMPORTS Base;\nDOMAIN Value=0..10;\nTOPIC T= CLASS C= item:Base.Count; END C; END T;\nEND Dep.\n";
@@ -29,6 +30,11 @@ class RepositoryEditorTest {
         http=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         String index="<TRANSFER>"+List.of("Dep","Base").stream().map(n -> "<ModelMetadata><Name>"+n+"</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>"+n+".ili</File></ModelMetadata>").reduce("",String::concat)+"</TRANSFER>";
         http.createContext("/",e -> {
+            if (releaseIndex != null && e.getRequestURI().getPath().equals("/ilimodels.xml")) {
+                indexEntered.countDown();
+                try { if (!releaseIndex.await(5, TimeUnit.SECONDS)) throw new java.io.IOException("controlled index release timed out"); }
+                catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw new java.io.IOException(interrupted); }
+            }
             requests.incrementAndGet();String body=switch(e.getRequestURI().getPath()) {case "/ilimodels.xml" -> index;case "/Dep.ili" -> DEP;case "/Base.ili" -> BASE;default -> null;};
             if(body==null) {e.sendResponseHeaders(404,-1);e.close();return;}
             e.getResponseHeaders().set("ETag","\"frozen\"");
@@ -44,6 +50,29 @@ class RepositoryEditorTest {
     void open(InterlisLanguageServer s,String uri,int version,String text) { s.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri,"interlis",version,text))); }
     List<? extends Location> definitions(InterlisLanguageServer s,String uri,int line,int col) throws Exception { var result=s.getTextDocumentService().definition(new DefinitionParams(new TextDocumentIdentifier(uri),new Position(line,col))).get(10,TimeUnit.SECONDS).getLeft(); assertFalse(result.isEmpty(),() -> s.workspaceForTest().analyze(new AnalysisRequest(s.workspaceForTest().currentRevision(),List.of(new ModelSelector.BySource(new SourceId(uri)))),guru.interlis.execution.CancellationToken.none()).diagnostics().toString());return result; }
     CompileReport compile(InterlisLanguageServer s,String uri,int version) throws Exception { return s.compileModel(new CompileModelParams("current",new VersionedTextDocumentIdentifier(uri,version),null,null)).get(10,TimeUnit.SECONDS); }
+
+
+    @Test void repeatedIdenticalConfigurationDoesNotCancelInitialRepositoryAnalysis() throws Exception {
+        String base = serve();
+        indexEntered = new CountDownLatch(1);
+        releaseIndex = new CountDownLatch(1);
+        var ready = new CountDownLatch(1);
+        var s = server(base, false, directory.resolve("cache"));
+        s.textDocumentsForTest().analysisReadySink(event -> {
+            if (Integer.valueOf(7).equals(event.documentVersions().get(URI))) ready.countDown();
+        });
+        try {
+            open(s, URI, 7, ROOT);
+            assertTrue(indexEntered.await(5, TimeUnit.SECONDS), "initial repository load never started");
+            var revision = s.workspaceForTest().currentRevision();
+            // The real client repeats its unchanged initialization settings after didOpen.
+            s.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(Map.of("offline", false)));
+            assertEquals(revision, s.workspaceForTest().currentRevision(), "identical settings must not change the workspace");
+            releaseIndex.countDown();
+            assertTrue(ready.await(5, TimeUnit.SECONDS), "identical configuration cancelled the only accepted analysis");
+            assertFalse(definitions(s, URI, 3, ROOT.split("\n")[3].indexOf("Value")).isEmpty());
+        } finally { releaseIndex.countDown(); s.shutdown().get(5, TimeUnit.SECONDS); }
+    }
 
     @Test void transitiveSourcesRemainReadonlyAfterOpenAndPersistOfflineAcrossServerInstances() throws Exception {
         String base=serve();Path cache=directory.resolve("cache");
@@ -77,7 +106,9 @@ class RepositoryEditorTest {
     @Test void localDirtySourcesWinAndCurrentCompileExcludesBrokenNeighbour() throws Exception {
         String base=serve();var s=server(base,false,directory.resolve("cache"));
         try {
-            open(s,"untitled:Dep.ili",2,DEP);open(s,"untitled:Base.ili",3,BASE+"!! dirty 😀\n");
+            // Avoid an intentionally incomplete intermediate inventory: Dep imports Base.
+            // The zero-network assertion applies once all local closure members exist.
+            open(s,"untitled:Base.ili",3,BASE+"!! dirty 😀\n");open(s,"untitled:Dep.ili",2,DEP);
             open(s,"untitled:Broken.ili",1,"INTERLIS 2.4; MODEL Broken AT \"x\" VERSION \"1\" = DOMAIN Invalid=10..0; END Broken.");
             open(s,URI,9,ROOT);
             assertEquals("untitled:Dep.ili",definitions(s,URI,3,ROOT.split("\n")[3].indexOf("Value")).getFirst().getUri());
