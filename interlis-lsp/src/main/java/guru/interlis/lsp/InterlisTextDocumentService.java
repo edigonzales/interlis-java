@@ -234,6 +234,23 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private record CompileSelection(List<guru.interlis.compiler.ModelSelector> roots,List<CompileReport.ModelChoice> choices) { }
 
+    private boolean editorAssist;
+    void editorAssist(boolean enabled){editorAssist=enabled;}
+    CompletableFuture<EditorAssistResult> editorAssist(EditorAssistParams params){
+        if(!editorAssist)return failed(ResponseErrorCode.InvalidRequest,"editorAssist was not negotiated");
+        if(params==null||params.protocolVersion()!=1||params.textDocument()==null||params.textDocument().getVersion()==null||params.position()==null||params.options()==null)return failed(ResponseErrorCode.InvalidParams,"editorAssist requires an exact version, position and indentation options");
+        var p=copyParams(params,EditorAssistParams.class);
+        return requestReady((view,token)->{var state=requireState(view,p.position(),p.textDocument());
+            if(state.lspVersion!=p.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"editor assistance document version changed");
+            if(!editable(view,state.sourceId))return failed(ResponseErrorCode.RequestFailed,"readonly source cannot be edited");
+            var plan=new guru.interlis.compiler.query.EditorAssistanceService().planBlockClose(state.analysis,cursor(state,p.position()),new guru.interlis.compiler.query.EditorIndentOptions(p.options().getTabSize(),p.options().isInsertSpaces()),token);
+            if(plan.isEmpty())return CompletableFuture.completedFuture(null);var value=plan.orElseThrow();String text=state.source.text();
+            for(var edit:value.edits().stream().sorted(java.util.Comparator.comparingInt((guru.interlis.source.TextEdit e)->e.range().startOffset()).reversed()).toList())text=text.substring(0,edit.range().startOffset())+edit.replacement()+text.substring(edit.range().endOffset());
+            var resultSource=new SourceText(state.sourceId,state.source.revision(),text);var caret=resultSource.lineMap().positionAt(value.caretOffset());
+            return CompletableFuture.completedFuture(new EditorAssistResult(1,diagrams.serverInstanceId(),state.analysis.snapshotId().value(),p.textDocument().getUri(),state.lspVersion,value.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList(),new Position(caret.line(),caret.character())));
+        });
+    }
+
     private <T> CompletableFuture<T> requestReady(java.util.function.BiFunction<HostView,CancellationToken,CompletableFuture<T>> action) {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
         return afterFiles(() -> unsynchronized.isEmpty()?scheduler.requestNow(token -> {
@@ -882,7 +899,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     @Override public CompletableFuture<List<? extends TextEdit>> onTypeFormatting(org.eclipse.lsp4j.DocumentOnTypeFormattingParams params) {
         var p=copyParams(params,org.eclipse.lsp4j.DocumentOnTypeFormattingParams.class);
-        if(!"\n".equals(p.getCh()))return CompletableFuture.completedFuture(List.of());
+        if(editorAssist||!"\n".equals(p.getCh()))return CompletableFuture.completedFuture(List.of());
         return requestReady((view,token)->{var state=requireState(view,p.getPosition(),p.getTextDocument());if(!editable(view,state.sourceId))return CompletableFuture.completedFuture(List.of());
             var plan=new guru.interlis.compiler.query.EditorAssistanceService().planBlockClose(state.analysis,cursor(state,p.getPosition()),new guru.interlis.compiler.query.EditorIndentOptions(p.getOptions().getTabSize(),p.getOptions().isInsertSpaces()),token);
             return CompletableFuture.completedFuture(plan.map(value->value.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList()).orElse(List.of()));});

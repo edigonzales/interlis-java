@@ -919,3 +919,10 @@ werden vor der Projektion geprüft/defaultiert. Renderer besitzen keinen
 Workspacezustand. Hostlebensdauer und Cancellation gehören dem bestehenden
 LSP-Scheduler. Die Quelle der Metadatenhints ist als Verhaltensreferenz im
 `MetaAttributeCatalog` dokumentiert; deren Syntax-/Typauswahl bleibt Java-eigen.
+
+`EditorAssistParams` / `EditorAssistResult` im LSP ergänzen den generischen
+Compilerplan nur um Wireversionen und LSP-Positionen. Kapitel07 regelt die
+gegenseitig ausschliessende Verhandlung mit Standard-onTypeFormatting.
+`EditorAssistProtocolTest` und der reale Paketstdio prüfen Null-/Stale-/Caret-
+Antworten und verhindern doppelte Einfügung. Der ursprüngliche installierte
+Standard-GUI-Gegenfall (Cursor am END-Ende) bleibt als negativer Beleg erhalten.

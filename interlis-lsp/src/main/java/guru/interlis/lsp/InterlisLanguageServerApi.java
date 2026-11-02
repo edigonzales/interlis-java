@@ -4,6 +4,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
 import java.util.concurrent.CompletableFuture;
 /** Versioned editor requests exported by the real stdio launcher. Standard language queries remain standard LSP. */
 public interface InterlisLanguageServerApi extends LanguageServer {
+    @JsonRequest("interlis/editorAssist") CompletableFuture<EditorAssistResult> editorAssist(EditorAssistParams params);
     @JsonRequest("interlis/export") CompletableFuture<ExportArtifact> exportArtifact(ExportArtifactParams params);
     @JsonRequest("interlis/compile") CompletableFuture<CompileReport> compileModel(CompileModelParams params);
     @JsonRequest("interlis/source") CompletableFuture<SourceContent> sourceContent(SourceContentParams params);

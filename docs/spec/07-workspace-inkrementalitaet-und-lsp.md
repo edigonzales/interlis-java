@@ -727,8 +727,16 @@ nur als versionierte DocumentChanges auf editierbaren offenen Quellen.
 `LanguageQueries.complete` um editorbezogene Slots und native Snippets.
 `CompletionCandidate.snippet` markiert Snippet-Syntax; der Vierargumentkonstruktor
 bleibt Plaintext. Die Extension führt nur native Placeholder-/Cursorbefehle aus.
-`textDocument/onTypeFormatting` ist für Newline registriert; GUIqualifikation der
-resultierenden Cursorposition bleibt erforderlich.
+Ein installierter GUI-Gegenfall belegt die Cursorgrenze von Standard-
+`textDocument/onTypeFormatting`: END wird eingefügt, der Cursor steht am END-Ende.
+Deshalb verhandelt `capabilities.experimental.interlis.editorAssist=true` genau
+einen alternativen `interlis/editorAssist`-Pfad. Er liefert denselben Java-Plan
+mit URI, genauer LSP-Version, Server-/Snapshotidentität und resultierendem Caret.
+Der Client führt nach echtem Enter nur native versiongeprüfte Edits/Cursorwahl
+aus. Bei dieser Verhandlung wird kein onTypeFormatting-Provider registriert;
+der Standardhandler liefert ebenfalls keine zweite Einfügung. Ohne Verhandlung
+bleibt Standard-onTypeFormatting verfügbar; der Customrequest wird abgewiesen.
+Veraltete Versionen liefern ContentModified, Kommentare/Wertzuweisungen null.
 
 `interlis/export(ExportArtifactParams): ExportArtifact` erfordert Protokoll1,
 versioniertes Rootdokument, explizite Auswahl bei mehreren Modellen, eines der

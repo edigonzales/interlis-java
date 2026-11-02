@@ -80,6 +80,14 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
         boolean versioned=client!=null && client.getWorkspace()!=null && client.getWorkspace().getWorkspaceEdit()!=null
                 && Boolean.TRUE.equals(client.getWorkspace().getWorkspaceEdit().getDocumentChanges());
         textDocuments.versionedEdits(versioned);
+        var experimental=client==null?null:new com.google.gson.Gson().toJsonTree(client.getExperimental());
+        boolean editorAssist=experimental!=null&&experimental.isJsonObject()&&experimental.getAsJsonObject().has("interlis")
+                &&experimental.getAsJsonObject().get("interlis").isJsonObject()
+                &&experimental.getAsJsonObject().getAsJsonObject("interlis").has("editorAssist")
+                &&experimental.getAsJsonObject().getAsJsonObject("interlis").get("editorAssist").isJsonPrimitive()
+                &&experimental.getAsJsonObject().getAsJsonObject("interlis").getAsJsonPrimitive("editorAssist").isBoolean()
+                &&experimental.getAsJsonObject().getAsJsonObject("interlis").get("editorAssist").getAsBoolean();
+        textDocuments.editorAssist(editorAssist);
         var folders=new java.util.ArrayList<String>();
         if(params.getWorkspaceFolders()!=null) for(var folder:params.getWorkspaceFolders()) folders.add(folder.getUri());
         if(folders.isEmpty() && params.getRootUri()!=null) folders.add(params.getRootUri());
@@ -102,17 +110,19 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
         capabilities.setRenameProvider(new RenameOptions(true));
         capabilities.setCodeActionProvider(true);
         capabilities.setDocumentFormattingProvider(true);
-        capabilities.setDocumentOnTypeFormattingProvider(new org.eclipse.lsp4j.DocumentOnTypeFormattingOptions("\n",List.of()));
+        if(!editorAssist)capabilities.setDocumentOnTypeFormattingProvider(new org.eclipse.lsp4j.DocumentOnTypeFormattingOptions("\n",List.of()));
         capabilities.setSemanticTokensProvider(new SemanticTokensWithRegistrationOptions(
                 new SemanticTokensLegend(InterlisTextDocumentService.TOKEN_TYPES, List.of()), true, false));
         capabilities.setFoldingRangeProvider(true);
         capabilities.setPositionEncoding("utf-16");
-        capabilities.setExperimental(java.util.Map.of("interlis",java.util.Map.of("protocolVersion",1,"sourceContent",true,"compile",true,"diagram",true,"diagramProtocolVersion",1,"diagramDocumentVersion","1.0","serverInstanceId",textDocuments.serverInstanceId(),"semanticEditing",false,"diagramSelection",true,"documentation",true)));
+        var interlis=new java.util.LinkedHashMap<String,Object>(java.util.Map.of("protocolVersion",1,"sourceContent",true,"compile",true,"diagram",true,"diagramProtocolVersion",1,"diagramDocumentVersion","1.0","serverInstanceId",textDocuments.serverInstanceId(),"semanticEditing",false,"diagramSelection",true,"documentation",true));
+        interlis.put("editorAssist",editorAssist);capabilities.setExperimental(java.util.Map.of("interlis",interlis));
         var result=new InitializeResult(capabilities);
         result.setServerInfo(new org.eclipse.lsp4j.ServerInfo("interlis-java",guru.interlis.model.VersionManifest.current().toolVersion()));
         return LspFutures.map(workspaceService.initializeProject(folders),ignored -> { ready=true; return result; },textDocuments::operation);
     }
 
+    @Override public CompletableFuture<EditorAssistResult> editorAssist(EditorAssistParams params) {return textDocuments.editorAssist(params);}
     @Override public CompletableFuture<ExportArtifact> exportArtifact(ExportArtifactParams params) {return textDocuments.exportArtifact(params);}
     @Override public CompletableFuture<CompileReport> compileModel(CompileModelParams params) { return textDocuments.compileModel(params); }
     @Override public CompletableFuture<SourceContent> sourceContent(SourceContentParams params) { return textDocuments.sourceContent(params); }
