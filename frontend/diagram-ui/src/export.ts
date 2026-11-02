@@ -37,7 +37,7 @@ export function exportSvg(element:HTMLElement,document:DiagramDocumentDto,settin
  }
  if(document.completeness!=='COMPLETE'){const text=window.document.createElementNS(svgNamespace,'text');text.setAttribute('x',String(box.x+8));text.setAttribute('y',String(box.y+16));text.setAttribute('fill',getComputedStyle(element).color||'black');text.setAttribute('font-size','12');text.textContent=document.completeness+' diagram';clone.append(text);}
  const result=new XMLSerializer().serializeToString(clone);if(result.length>16_000_000)throw Error('SVG exceeds export size limit; narrow the visible view');
- const parsed=new DOMParser().parseFromString(result,'image/svg+xml');if(parsed.querySelector('parsererror,script,foreignObject')||/<!DOCTYPE|<!ENTITY|javascript:/i.test(result))throw Error('Unsafe or malformed SVG export');
+ const parsed=new DOMParser().parseFromString(result,'image/svg+xml');if(parsed.querySelector('parsererror,script,foreignObject')||/<!DOCTYPE|<!ENTITY/i.test(result))throw Error('Unsafe or malformed SVG export');
  for(const element of parsed.querySelectorAll('*'))for(const attr of [...element.attributes]){if(/^on/i.test(attr.name)||(/(?:^|:)href$/.test(attr.name)&&!attr.value.startsWith('#'))||(/url\s*\(/i.test(attr.value)&&!/^(?:url\(#[A-Za-z0-9_-]+\))$/.test(attr.value)))throw Error('SVG contains an external or active resource');}
  return {svg:result,width,height,viewBox:box,scope,snapshotId:document.snapshotId};
 }

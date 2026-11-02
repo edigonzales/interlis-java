@@ -198,3 +198,5 @@ export const diagramAdapter=Object.freeze(new SprottyDiagramAdapter());
 export {reconcileGeometry} from './identity';
 export {defaultFilters,visibleDocument,importDepths,DiagramFilterController} from './filters';
 export {validateSavedViewState,validateViewSettings,validateFilters,saveViewState,restoreViewState} from './view-state';
+
+export {curvePath,curveSamples,crossingGaps,svgId,displayText} from "./geometry";

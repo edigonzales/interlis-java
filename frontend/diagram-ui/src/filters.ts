@@ -41,7 +41,7 @@ export function visibleDocument(document:DiagramDocumentDto,filters:DiagramFilte
  for(const id of needed)ids.add(id);
  edges=edges.filter(e=>ids.has(e.source.elementId)&&ids.has(e.target.elementId));
  const visibleNodes=nodes.map(node=>({...node,compartments:node.compartments.filter(c=>!(c.kind==='ATTRIBUTES'&&!filters.attributes||c.kind==='ROLES'&&!filters.roles||c.kind==='CONSTRAINTS'&&!filters.constraints||c.kind==='ENUM_VALUES'&&!filters.enumerations)).map(c=>({...c,members:c.members.map(m=>({...m,typeLabel:filters.types?m.typeLabel:null,cardinality:filters.cardinalities?m.cardinality:null}))}))}));
- return {...document,nodes:visibleNodes,containers:document.containers.filter(c=>needed.has(c.id)),edges};
+ return {...document,nodes:visibleNodes,containers:document.containers.filter(c=>needed.has(c.id)),edges:edges.map(edge=>({...edge,sourceEnd:{...edge.sourceEnd,roleName:filters.roles?edge.sourceEnd.roleName:null,cardinality:filters.cardinalities?edge.sourceEnd.cardinality:null},targetEnd:{...edge.targetEnd,roleName:filters.roles?edge.targetEnd.roleName:null,cardinality:filters.cardinalities?edge.targetEnd.cardinality:null}}))};
 }
 
 export class DiagramFilterController {

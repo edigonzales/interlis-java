@@ -1434,3 +1434,10 @@ libavoid-Pfad. Bilder und Exportpixel wurden geöffnet. Die neuen gemeinsamen
 Controls sind auch am Browserconsumer angeschlossen; dessen erneute tatsächliche
 WASMprüfung und die installierte Extension-/Host-/GUIqualifikation sind noch fällig.
 V3 ist nicht freigegeben, V4 bleibt gesperrt.
+
+V3 weitere UIprüfung: sieben neue/gezielte Fälle bestehen, inklusive HiDPI-Wheel-
+/Keyboardbedienung, XML-/PNGdecodierung und HTML-/Bidi-Labelgegenprobe. Geometrische
+History ist auf40 Frames/8MB begrenzt und nimmt Pin-/Manuellmarkierungen mit.
+Versteckte Geometrie bleibt auch bei Settle erhalten. Der Source/Root-Host erhält
+seine unabhängige installierte Prüfung im Extensionrepo; dieses Zwischencommit
+ist keine V3-Abnahme (`phases/V3/history-r2`: sieben Fälle, Exit0/Guardpassed).

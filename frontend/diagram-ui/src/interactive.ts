@@ -22,6 +22,7 @@ import {exportSvg,exportPng,type ExportScope,type SvgArtifact} from './export';
 export const defaultInteractiveSettings:DiagramSettings=Object.freeze({...defaultDiagramSettings,attributeMode:'OWN_AND_INHERITED'});
 export type DiagramStatus='EMPTY'|'LOADING'|'FRESH'|'PARTIAL'|'STALE'|'ERROR';
 export interface DiagramViewState {positions:Record<string,Point>;routes:Record<string,Point[]>;}
+interface HistoryFrame {geometry:DiagramViewState;pins:string[];manualNodes:string[];manualRoutes:string[];}
 export interface DiagramCallbacks {navigate:(id:string)=>void;status?:(status:DiagramStatus,message:string)=>void;changed?:(state:DiagramViewState)=>void;singleClickNavigation?:boolean;}
 const OBSERVER=Symbol('InterlisViewObserver'),CALLBACKS=Symbol('InterlisViewCallbacks'),LABELS=Symbol('InterlisLabelPlacement');
 interface NodeData {label:string;kind:string;canonicalName:string;titleLines:string[];abstract:boolean;status:string;}
@@ -123,7 +124,7 @@ class InterlisEdgeView extends PolylineEdgeView {
   return [
    ...marker(route[0],route[1],data.sourceEnd.aggregation),
    ...marker(route[route.length-1],route[route.length-2],data.targetEnd.aggregation,data.kind==='INHERITANCE'),
-   ...(settings.showAssociationNames&&data.label&&data.label!==data.sourceEnd.roleName&&data.label!==data.targetEnd.roleName?[svg('text',{x:center.x,y:center.y-10,'text-anchor':'middle','class-interlis-edge-label':true,'data-element-id':edge.id},displayText(data.label))]:[]),
+   ...(settings.showAssociationNames&&(data.kind!=='ASSOCIATION_ROLE'||(edge.root as InterlisGraph).filters.roles)&&data.label&&data.label!==data.sourceEnd.roleName&&data.label!==data.targetEnd.roleName?[svg('text',{x:center.x,y:center.y-10,'text-anchor':'middle','class-interlis-edge-label':true,'data-element-id':edge.id},displayText(data.label))]:[]),
    ...[[data.sourceEnd,first,-8],[data.targetEnd,last,16]].flatMap(([end,at,offset])=>{
     const e=end as DiagramEdgeDto['sourceEnd'],value=endLabel({...e,cardinality:settings.showRoleCardinalities?e.cardinality:null}),point=this.labels.place(edge,end===data.sourceEnd?'source':'target',at as Point,value,Number(offset));
     return value?[svg('text',{x:point.x,y:point.y,'text-anchor':'middle','class-interlis-end-label':true,'data-element-id':edge.id},displayText(value))]:[];
@@ -236,14 +237,17 @@ export class DiagramCanvas {
  private pins=new Set<string>();
  private manualNodes=new Set<string>();
  private manualRoutes=new Set<string>();
- private history:DiagramViewState[]=[];
- private future:DiagramViewState[]=[];
- private dragStart?:DiagramViewState;
+ private history:HistoryFrame[]=[];
+ private future:HistoryFrame[]=[];
+ private dragStart?:HistoryFrame;
  private rendered?:DiagramDocumentDto;
  private resize?:ResizeObserver;
  private cleanup:Array<()=>void>=[];
  private revision=0;
- private remember():void {this.history.push(this.getViewState());if(this.history.length>40)this.history.shift();this.future=[];}
+ private frame():HistoryFrame {return {geometry:this.getViewState(),pins:[...this.pins],manualNodes:[...this.manualNodes],manualRoutes:[...this.manualRoutes]};}
+ private trimHistory():void {while(this.history.length+this.future.length>40||JSON.stringify([this.history,this.future]).length>8_000_000){if(this.history.length)this.history.shift();else if(this.future.length)this.future.shift();else break;}}
+ private remember(frame=this.frame()):void {this.history.push(frame);this.future=[];this.trimHistory();}
+ private applyFrame(frame:HistoryFrame):void {this.state=frame.geometry;this.pins=new Set(frame.pins);this.manualNodes=new Set(frame.manualNodes);this.manualRoutes=new Set(frame.manualRoutes);}
  getViewport():{zoom:number;x:number;y:number} {return this.viewport();}
  private viewport():{zoom:number;x:number;y:number} {const root=this.root as InterlisGraph|undefined;return {zoom:root?.zoom??1,x:root?.scroll.x??0,y:root?.scroll.y??0};}
  constructor(private readonly element:HTMLElement,private readonly callbacks:DiagramCallbacks,workerUrl:URL|string,layoutService?:LayoutServicePort) {
@@ -277,8 +281,8 @@ export class DiagramCanvas {
   }));
   this.source=this.container.get<LocalModelSource>(TYPES.ModelSource);this.dispatcher=this.container.get<IActionDispatcher>(TYPES.IActionDispatcher);
   const on=<K extends keyof HTMLElementEventMap>(type:K,listener:(event:HTMLElementEventMap[K])=>void,options?:AddEventListenerOptions)=>{element.addEventListener(type,listener,options);this.cleanup.push(()=>element.removeEventListener(type,listener,options));};
-  on('pointerdown',()=>{this.dragStart=this.getViewState();});
-  on('pointerup',()=>{const before=this.dragStart;this.dragStart=undefined;if(!before)return;requestAnimationFrame(()=>{if(this.closed)return;let changed=false;for(const [id,p]of Object.entries(this.state.positions))if(before.positions[id]&&JSON.stringify(p)!==JSON.stringify(before.positions[id])){this.manualNodes.add(id);changed=true;}for(const [id,p]of Object.entries(this.state.routes))if(before.routes[id]&&JSON.stringify(p)!==JSON.stringify(before.routes[id])){this.manualRoutes.add(id);changed=true;}if(changed){this.history.push(before);if(this.history.length>40)this.history.shift();this.future=[];}});});
+  on('pointerdown',()=>{this.dragStart=this.frame();});
+  on('pointerup',()=>{const before=this.dragStart;this.dragStart=undefined;if(!before)return;requestAnimationFrame(()=>{if(this.closed)return;let changed=false;for(const [id,p]of Object.entries(this.state.positions))if(before.geometry.positions[id]&&JSON.stringify(p)!==JSON.stringify(before.geometry.positions[id])){this.manualNodes.add(id);changed=true;}for(const [id,p]of Object.entries(this.state.routes))if(before.geometry.routes[id]&&JSON.stringify(p)!==JSON.stringify(before.geometry.routes[id])){this.manualRoutes.add(id);changed=true;}if(changed){this.remember(before);}});});
   on('wheel',event=>{event.preventDefault();event.stopImmediatePropagation();void this.zoom(Math.exp(-Math.max(-200,Math.min(200,event.deltaY))*.003),event.clientX,event.clientY);},{capture:true,passive:false});
   on('keydown',event=>{if(!(event.target instanceof SVGElement))return;const key=event.key.toLowerCase();if((event.ctrlKey||event.metaKey)&&key==='z'){event.preventDefault();event.stopImmediatePropagation();void(event.shiftKey?this.redo():this.undo());}else if((event.ctrlKey||event.metaKey)&&key==='y'){event.preventDefault();event.stopImmediatePropagation();void this.redo();}else if(['arrowleft','arrowright','arrowup','arrowdown'].includes(key)){event.preventDefault();event.stopImmediatePropagation();void this.pan((key==='arrowright'?40:key==='arrowleft'?-40:0),(key==='arrowdown'?40:key==='arrowup'?-40:0));}else if(key==='home'){event.preventDefault();void this.fit();}},{capture:true});
   this.resize=new ResizeObserver(()=>{const box=viewer.getBoundingClientRect();void this.dispatcher.dispatch(InitializeCanvasBoundsAction.create({x:box.x,y:box.y,width:box.width,height:box.height}));});this.resize.observe(viewer);
@@ -328,8 +332,8 @@ export class DiagramCanvas {
   await this.dispatcher.dispatch(SetViewportAction.create('interlis-diagram',{zoom,scroll:{x:bounds.x+bounds.width/2-width/(2*zoom),y:bounds.y+bounds.height/2-height/(2*zoom)}},{animate:false}));
  }
  async select(ids:string[]):Promise<void> {await this.dispatcher.dispatch(SelectAction.create({selectedElementsIDs:ids,deselectedElementsIDs:this.selectedIds().filter(id=>!ids.includes(id))}));}
- async undo():Promise<void> {const state=this.history.pop();if(state){this.future.push(this.getViewState());this.state=state;await this.repaint();}}
- async redo():Promise<void> {const state=this.future.pop();if(state){this.history.push(this.getViewState());this.state=state;await this.repaint();}}
+ async undo():Promise<void> {const state=this.history.pop();if(state){this.future.push(this.frame());this.applyFrame(state);this.trimHistory();await this.repaint();}}
+ async redo():Promise<void> {const state=this.future.pop();if(state){this.history.push(this.frame());this.applyFrame(state);this.trimHistory();await this.repaint();}}
  private async repaint():Promise<void> {if(this.document)await this.accept(this.document,this.sessionKey,this.settings,true);}
  selectedSymbolIds():string[] {const ids=new Set(this.selectedIds()),document=this.document;if(!document)return [];return [...new Set([...document.containers,...document.nodes].flatMap(node=>ids.has(node.id)&&node.symbol?[node.symbol.symbol]:[]).concat(document.edges.flatMap(edge=>ids.has(edge.id)&&edge.origin?[edge.origin.symbol]:[])))];}
  getScrollBounds():{minX:number;maxX:number;minY:number;maxY:number} {const svg=this.element.querySelector<SVGSVGElement>('svg.sprotty-graph');if(!svg)return {minX:0,maxX:1,minY:0,maxY:1};const b=paintedBounds(svg),v=this.viewport();return {minX:b.x-this.element.clientWidth/v.zoom+64/v.zoom,maxX:b.x+b.width-64/v.zoom,minY:b.y-this.element.clientHeight/v.zoom+64/v.zoom,maxY:b.y+b.height-64/v.zoom};}
@@ -341,7 +345,7 @@ export class DiagramCanvas {
  async hide(ids:string[],hidden=true):Promise<void> {for(const id of ids)if(hidden)this.filters.hiddenIds.add(id);else this.filters.hiddenIds.delete(id);await this.repaint();}
  selectedIds():string[] {return this.root?[...this.root.index.all()].filter(e=>(e instanceof InterlisNode||e instanceof InterlisEdge)&&e.selected).map(e=>e.id):[];}
  async pinSelected(value:boolean):Promise<void> {for(const id of this.selectedIds())if(this.state.positions[id]){if(value)this.pins.add(id);else this.pins.delete(id);}await this.repaint();}
- async settle():Promise<void> {this.remember();this.state={positions:Object.fromEntries(Object.entries(this.state.positions).filter(([id])=>this.pins.has(id)||this.manualNodes.has(id)||this.filters.hiddenIds.has(id))),routes:Object.fromEntries(Object.entries(this.state.routes).filter(([id])=>this.manualRoutes.has(id)))};await this.repaint();}
+ async settle():Promise<void> {this.remember();const visible=new Set([...this.rendered?.nodes??[],...this.rendered?.containers??[]].map(n=>n.id)),edges=new Set(this.rendered?.edges.map(e=>e.id));this.state={positions:Object.fromEntries(Object.entries(this.state.positions).filter(([id])=>this.pins.has(id)||this.manualNodes.has(id)||!visible.has(id))),routes:Object.fromEntries(Object.entries(this.state.routes).filter(([id])=>this.manualRoutes.has(id)||!edges.has(id)))};await this.repaint();}
  async resetLayout():Promise<void> {this.remember();this.state={positions:{},routes:{}};this.pins.clear();this.manualNodes.clear();this.manualRoutes.clear();await this.repaint();await this.fit();}
  async pan(dx:number,dy:number):Promise<void> {const v=this.viewport();await this.setViewport({...v,x:v.x+dx/v.zoom,y:v.y+dy/v.zoom});}
  async setViewport(v:{zoom:number;x:number;y:number}):Promise<void> {if(![v.zoom,v.x,v.y].every(Number.isFinite))return;const svg=this.element.querySelector<SVGSVGElement>('svg.sprotty-graph');if(!svg)return;const b=paintedBounds(svg),zoom=Math.max(.08,Math.min(4,v.zoom));const x=Math.max(b.x-this.element.clientWidth/zoom+64/zoom,Math.min(b.x+b.width-64/zoom,v.x)),y=Math.max(b.y-this.element.clientHeight/zoom+64/zoom,Math.min(b.y+b.height-64/zoom,v.y));await this.dispatcher.dispatch(SetViewportAction.create('interlis-diagram',{zoom,scroll:{x,y}},{animate:false}));}
