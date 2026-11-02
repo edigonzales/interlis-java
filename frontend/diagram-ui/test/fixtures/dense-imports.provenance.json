@@ -1,0 +1,13 @@
+{
+  "producer": "actual installed Java LSP interlis/diagram response, protocol 1",
+  "coreCommit": "988dea92462c27421ab470fe61ca8e66d616f240",
+  "extensionCommit": "18caa53b96fd734bd4a3cfd14cf6c5120c01a5c8",
+  "source": "interlis-vscode/build/reports/gui/view-controls/2026-11-02T06-08-57-693Z/workbench-logs/.../1-INTERLIS Language Server.log",
+  "fixtureSha256": "68c42a567a91833aaa813d9943e18fbb2f715459695baf24286e0364f2b0c7b1",
+  "sources": {
+    "Comfort.ili": "!! Grüezi 😀 native view controls\nINTERLIS 2.4;\nMODEL Comfort AT \"x\" VERSION \"1\" =\nIMPORTS V3Middle;\nDOMAIN Number=0..999;\nTOPIC Data(ABSTRACT)=OID AS INTERLIS.UUIDOID;\nSTRUCTURE Info=value:TEXT*12;END Info;\nCLASS A(ABSTRACT)=number:Number;external:V3Middle.Link;flag:(first,group(child));part:Info;MANDATORY CONSTRAINT number>=0;END A;\nCLASS B EXTENDS A=local:TEXT*20;END B;\nCLASS C=END C;\nVIEW Overview PROJECTION OF a~A; = ALL OF a; END Overview;\nASSOCIATION Many=one--{1}A;two--{0..*}B;three--{1}C;note:TEXT*20;END Many;\nASSOCIATION Self=parent--{0..1}A;children--{*}A;END Self;\nEND Data;END Comfort.\n",
+    "V3Middle.ili": "INTERLIS 2.4;\nMODEL V3Middle AT \"x\" VERSION \"1\" =\nIMPORTS V3Base;\nDOMAIN Link EXTENDS V3Base.Deep=TEXT*12;\nTOPIC MiddleData=CLASS Imported=value:Link;END Imported;END MiddleData;\nEND V3Middle.\n",
+    "V3Base.ili": "INTERLIS 2.4;\nMODEL V3Base AT \"x\" VERSION \"1\" =\nDOMAIN Deep=TEXT*12;\nTOPIC BaseData=CLASS DeepObject=value:Deep;END DeepObject;END BaseData;\nEND V3Base.\n"
+  },
+  "note": "Unmodified actual neutral DTO. Historical absolute source IDs are retained as immutable data; this UI test performs no source IO or compiler simulation."
+}

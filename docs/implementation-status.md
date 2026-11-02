@@ -1449,3 +1449,13 @@ Chromium/Firefox/WebKit3/3 und portabler Browserclient18/18, keine Testskips,
 GradleExit0/Guardpassed (`phases/V3/consumer-r2`). OWN ist nun der dokumentierte
 Initialmodus; Host-/Panelcontrols können ihn ausdrücklich ändern. Die öffentliche
 Source-Auswahl adressiert auch gerenderte Memberzeilen über ihre Original-ID.
+
+V3 installierter GUI22-Befund: In der dichten tatsächlichen WITH_DEPENDENCIES-
+Projektion bedeckte eine transparente Kantentrefferfläche den Klassentitel. Ein
+kleiner Browsergegenfall mit exakt aus der LSPantwort extrahiertem DTO reproduziert
+das fehlende Drag (topmost=interlis-edge-hit). Zeichenreihenfolge korrigiert:
+Kanten unter den Knoten, Containerrahmen transparent, damit innere Verbindungen
+sichtbar bleiben. Unverändertes echtes DTO mit Originalquellen/Hash als Regression-
+fixture archiviert. Alle acht relevanten UI-/Geometrie-/Statefälle bestehen danach
+(`phases/V3/dense-fix-r1`, Exit0/Guardpassed). Installierte Nachprüfung ist fällig;
+V3 weiterhin offen. Keine semantische Engineänderung dieser Nacharbeit.

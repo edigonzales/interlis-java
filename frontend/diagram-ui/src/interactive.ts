@@ -215,7 +215,7 @@ function build(document:DiagramDocumentDto,layout:LayoutDiagram,state:DiagramVie
   const routingPoints=state.routes[edge.id]??(edge.source.elementId===edge.target.elementId?[]:route.points.slice(1,-1).map(point=>({...point})));
   return {type:'edge:interlis',id:edge.id,sourceId:edge.source.elementId,targetId:edge.target.elementId,routerKind:settings.edgeRouting==='ORTHOGONAL'?'manhattan':'polyline',routingPoints,data:edge,children:[]} as SEdge;
  });
- return {type:'graph',id:'interlis-diagram',generation,children:[...roots,...edges],zoom:1,scroll:{x:0,y:0}} as SModelRoot;
+ return {type:'graph',id:'interlis-diagram',generation,children:[...edges,...roots],zoom:1,scroll:{x:0,y:0}} as SModelRoot;
 }
 
 /** Real Sprotty viewer. Semantic inputs stay frozen; Sprotty commands modify only its separate view model. */
