@@ -396,3 +396,32 @@ Die DOMaktualisierung bleibt ein VNodepatch; eine Selektionsänderung fordert ke
 neue Analyse oder Projektion an. Core-IDs enthalten im aktuellen Indexer auch
 Revision/Fingerprint und wechseln tatsächlich bei einer Quelldeklarationsänderung;
 sie sind deshalb ausdrücklich kein sitzungsübergreifender Presentationkey.
+
+### V3: lokale Sichtfilter und begrenzter Viewzustand
+
+`DiagramFilterController` und `visibleDocument` besitzen ausschliesslich die
+Darstellung bereits projizierter Kategorien, Kanten und Kompartimente. Sie ändern
+keine fachliche Auswahl und lösen keine Compileranalyse aus. Importtiefen folgen
+nur expliziten `MODEL_IMPORT`-Kanten vom Core-ausgewählten Modell; Labels werden
+nicht als Namen aufgelöst. Externe Stubs müssen über verbleibende sichtbare
+Verbindungen von einem normalen Knoten erreichbar sein; leere Rahmen entfallen.
+Ausblenden löscht keine Geometrie aus dem separaten Viewzustand.
+
+`SavedViewState.version=1` enthält begrenzte Geometrie, Pin-/Manuellmarkierungen,
+Filter, Layoutsettings und Viewport. Persistente Schlüssel sind SHA-256 der
+exakten eindeutigen Presentationkeys; Quelltext, Quell-URIs mit Credentials,
+Kommentar-/Labeltexte und Snapshot-Semantik werden nicht gespeichert. Beim Laden
+werden die Hashes nur gegen eindeutige aktuelle Corekeys abgeglichen. Umbenannte,
+entfernte, mehrdeutige oder quelllose Elemente erhalten keine fremde Geometrie.
+Unbekannte Felder, nicht finite/überdimensionierte Zahlen, ungültige Settings,
+mehr als1000 Knoten-/Kantenrecords, mehr als256 Punkte pro Route oder mehr als1MB
+serialisierter Zustand werden abgewiesen. Die Hostablage besitzt zusätzlich eine
+begrenzte Anzahl Workspace-/Root-/Panelschlüssel. Viewstate ist keine Befugnis
+für Navigation oder Spracheingriffe; diese bleiben versionsgebundene Javaqueries.
+
+Inline-Enumerationen deklarierter Attribute verwenden ebenfalls `ENUM_VALUES`.
+Der Core liefert geordnete Pfade mit Attributpräfix, Original-Enum-Symbol/Anker
+und effektivem Besitzer. Geerbte Darstellungen haben eigene IDs und denselben
+ursprünglichen Anker. Domainreferenzen behalten ihre Domainknoten; der Renderer
+berechnet keine Enumsemantik aus Typtext. Das gemeinsame Memberbudget und
+`InheritedMembers.HIDE` gelten auch hier.

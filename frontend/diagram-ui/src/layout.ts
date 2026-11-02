@@ -21,6 +21,7 @@ export type EdgeCrossingStyle = "PLAIN" | "GAPS";
 export type AttributeMode = "OWN" | "NONE" | "OWN_AND_INHERITED";
 
 export interface DiagramSettings {
+  readonly direction?: "RIGHT" | "LEFT" | "DOWN" | "UP";
   readonly nodePlacement: NodePlacement;
   readonly edgeRouting: EdgeRouting;
   readonly renderingTarget: RenderingTarget;
@@ -203,7 +204,7 @@ export async function layoutDiagram(
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
-      "elk.direction": "RIGHT",
+      "elk.direction": settings.direction ?? "RIGHT",
       "elk.edgeRouting": settings.edgeRouting,
       "elk.layered.nodePlacement.strategy": settings.nodePlacement,
       "elk.spacing.nodeNode": "60",

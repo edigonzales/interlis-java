@@ -26,6 +26,17 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DiagramProjectionTest {
+    @Test void inlineEnumerationValuesHaveOriginalAnchorsAndInheritedOwners() {
+        var schema=compile("INTERLIS 2.4;MODEL DiagramModel AT \"x\" VERSION \"1\"=TOPIC T=CLASS A=flag:(first,group(child));END A;CLASS B EXTENDS A=END B;END T;END DiagramModel.");
+        var document=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),DiagramOptions.defaults(new DiagramSelection(schema.rootModels())),CancellationToken.none())).document();
+        var a=document.nodes().stream().filter(n->n.label().equals("A")).findFirst().orElseThrow();
+        var b=document.nodes().stream().filter(n->n.label().equals("B")).findFirst().orElseThrow();
+        var values=a.compartments().stream().filter(c->c.kind()==DiagramCompartment.CompartmentKind.ENUM_VALUES).findFirst().orElseThrow().members();
+        assertEquals(List.of("flag.first","flag.group","flag.group.child"),values.stream().map(DiagramMember::label).toList());
+        var inherited=b.compartments().stream().filter(c->c.kind()==DiagramCompartment.CompartmentKind.ENUM_VALUES).findFirst().orElseThrow().members();
+        for(int i=0;i<values.size();i++){assertTrue(values.get(i).anchor().isPresent());assertTrue(inherited.get(i).inherited());assertFalse(values.get(i).inherited());assertEquals(values.get(i).declaredSymbol(),inherited.get(i).declaredSymbol());assertFalse(values.get(i).id().equals(inherited.get(i).id()));assertEquals(values.get(i).anchor(),inherited.get(i).anchor());}
+        assertTrue(new DiagramValidator().validate(document).isEmpty());
+    }
     @Test void enumDomainPathsAndSourceAnchorsSurviveProjectionWithoutRendererParsing() {
         var schema=compile("INTERLIS 2.4;MODEL DiagramModel AT \"x\" VERSION \"1\"=DOMAIN State=(first,group(child));DOMAIN CopyState EXTENDS State=(third);END DiagramModel.");
         var document=assertInstanceOf(DiagramProjectionOutcome.Produced.class,DiagramProjectors.create().project(new DiagramInput.FromSchema(schema),DiagramOptions.defaults(new DiagramSelection(schema.rootModels())),CancellationToken.none())).document();

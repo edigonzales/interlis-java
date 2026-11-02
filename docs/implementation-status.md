@@ -1413,3 +1413,13 @@ native Modellhistory zurück; aktuelle Layoutcommands können keinen alten
 Semantikgraphen per Undo zurückbringen. Native Rendererprüfung inklusive
 Projektionsrefresh/Undo-Barriere bestanden. Die portable Vorher-/Nachher-
 Gegenprobe und installierte V2-Abnahme folgen; kein V2-PASS vorweggenommen.
+
+## VS-Code V3 – begonnen nach unabhängig akzeptiertem V2-PASS
+
+V2-Abnahme: Core7026e7f / Extension01f3531; Originalreview und äussere Prüfung
+im Extensionrepo `docs/implementation/vscode-extension/reviews/V2/attempt-02`.
+V3-Startbasis bleibt extern unveränderlich erfasst. Erste V3-Bausteine:
+Core-Inline-Enumprojektion mit Originalankern/Vererbung, strukturelle Sichtfilter
+und begrenzter gehashter Viewzustand. Neue UI-Verträge3 und gezielter Javafall1
+bestanden unter Python-Guard (`interlis-vscode-evidence/phases/V3/foundation-r1`).
+Noch keine V3-GUI-/Export-/Phasenabnahme; V4 bleibt gesperrt.

@@ -357,6 +357,36 @@ final class DefaultDiagramProjector implements DiagramProjector {
                 result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-constraints",
                         DiagramCompartment.CompartmentKind.CONSTRAINTS, constraints));
             }
+            List<DiagramMember> inlineValues = new ArrayList<>();
+            for (var member : attributes) {
+                if (!(context.graph().symbol(member.declaredSymbol()).orElse(null) instanceof AttributeSymbol attribute)) continue;
+                TypeDescriptor type = context.graph().type(attribute.declaredType()).orElse(null);
+                var visited = new LinkedHashSet<TypeId>();
+                while (type instanceof guru.interlis.model.CollectionType collection && visited.add(type.id()))
+                    type = context.graph().type(collection.elementType()).orElse(null);
+                // Domain references retain their own domain node; only inline values
+                // belong in this viewable's enum compartment.
+                if (!(type instanceof guru.interlis.model.EnumerationType enumeration)) continue;
+                for (var value : enumeration.values()) {
+                    token.throwIfCancellationRequested();
+                    var declaration = value.range().map(enumDeclarations()::get);
+                    Symbol owner = declaration.orElse(attribute);
+                    var owners = new LinkedHashSet<SymbolId>();
+                    while (!(owner instanceof AttributeSymbol) && owner.owner().isPresent() && owners.add(owner.id()))
+                        owner = context.graph().symbol(owner.owner().orElseThrow()).orElse(attribute);
+                    boolean inherited = member.inherited() || !owner.id().equals(attribute.id());
+                    if (inherited && options.inheritedMembers() == InheritedMembers.HIDE) continue;
+                    if (!budget.admit()) break;
+                    var valueAnchor = value.range().map(range -> new SourceAnchor(context.snapshotId(), range, Optional.empty()));
+                    inlineValues.add(new DiagramMember(member.id() + "-enum-" + value.order(),
+                            DiagramMember.MemberKind.ENUM_VALUE,
+                            displayName(attribute) + "." + declaration.map(this::displayName).orElse(value.path()),
+                            Optional.empty(), Optional.empty(), declaration.map(Symbol::id).orElse(attribute.id()),
+                            member.effectiveOwner(), inherited, false, valueAnchor));
+                }
+            }
+            if (!inlineValues.isEmpty()) result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-inline-enum",
+                    DiagramCompartment.CompartmentKind.ENUM_VALUES, inlineValues));
             if (symbol instanceof DomainSymbol domain && budget.admit()) {
                 result.add(new DiagramCompartment("comp-" + symbol.id().value() + "-details",
                         DiagramCompartment.CompartmentKind.DETAILS,

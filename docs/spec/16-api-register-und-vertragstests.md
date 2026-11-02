@@ -872,3 +872,16 @@ DiagramDocument1.0-Werte und separater Viewzustand; Ergebnis enthält ausschlies
 neu zugeordnete Positionen/Routen. Es leitet keine Symbole/Quellbereiche ab und
 benutzt keine fuzzy Namens-/Offsetheuristik. Der echte portable Enginevertrag
 prüft IDs, die nach einem Deklarationsaustausch nicht dieselbe Klasse bezeichnen.
+
+V3 ergänzt im neutralen Besitzer `frontend/diagram-ui` die reinen APIs
+`DiagramFilterController`, `defaultFilters`, `visibleDocument`, `importDepths`
+und `presentationKeys`; Eingaben sind unveränderte DiagramDocument1.0-DTOs und
+separate Sichtflags, Ergebnisse sind abgeleitete Views/exakte eindeutige Keys.
+`saveViewState`/`restoreViewState` sind asynchron (lokales WebCrypto SHA-256),
+verwenden ausschliesslich Geometriekeys und akzeptieren `SavedViewState.version=1`.
+`validateSavedViewState`, `validateFilters` und `validateViewSettings` sind die
+synchrone strikte Host-/UIgrenze; sie werfen bei unbekannten Feldern, ungültigen
+Werten oder überschrittenen Grenzen. Ergebnisse sind getrennte kopierte Werte;
+keine Quelle wird verändert. Kapitel11 definiert Abgleich, Speichergrenzen und
+Inline-Enumherkunft. Abnahmen: `frontend/diagram-ui/test/view-state.test.cjs` und
+`DiagramProjectionTest.inlineEnumerationValuesHaveOriginalAnchorsAndInheritedOwners`.
