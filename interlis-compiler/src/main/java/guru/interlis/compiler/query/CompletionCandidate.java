@@ -11,7 +11,8 @@ import java.util.Objects;
  * @param detail the {@code detail} component
  */
 public record CompletionCandidate(String label, String insertText, CompletionKind kind,
-                                  String detail) {
+                                  String detail, boolean snippet) {
+    public CompletionCandidate(String label,String insertText,CompletionKind kind,String detail) {this(label,insertText,kind,detail,false); }
     /** Creates a validated instance. */
     public CompletionCandidate {
         Objects.requireNonNull(label, "label");

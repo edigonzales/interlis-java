@@ -709,3 +709,35 @@ liefert ContentModified, ungültige UTF-16-Grenzen InvalidParams. Auch selektier
 Verwendungen beziehen sich auf das Java-gebundene Symbol. Listen werden kopiert.
 Die Capability `experimental.interlis.diagramSelection=true` kündigt die Anfrage
 an; ihre Selektion schreibt keine Quelle und erteilt keine Editbefugnis.
+
+### Editorpläne und geprüfte Dokumentationsexporte
+
+`EditorAssistanceService` im Compilerquery-Package plant reine Operationen aus
+aktueller Syntax und Bindungsfakten. `EditorEditPlan` besitzt Snapshot, SourceId,
+SourceRevision, kopierte UTF-16-TextEdits und ein absolutes Caretziel im Ergebnis.
+`EditorIndentOptions` begrenzt Tabgrössen auf1–16. Blockschluss benötigt einen
+echten Zeilenumbruch nach dem ersten vollständigen Kopfgleichheitszeichen;
+Wertzuweisungen, Kommentare, Strings und vorhandene END werden ausgeschlossen.
+Semikolonreparaturen benötigen strukturierte Parsererwartung und erfolgreiche
+Recovery-Gegenprüfung. Importlöschung benötigt fehlerfreie vollständige Bindung
+und keine Verwendung ausserhalb des Import-Sites. Der LSP liefert QuickFixes
+nur als versionierte DocumentChanges auf editierbaren offenen Quellen.
+
+`EditorAssistanceService.complete` ergänzt die unveränderte allgemeine
+`LanguageQueries.complete` um editorbezogene Slots und native Snippets.
+`CompletionCandidate.snippet` markiert Snippet-Syntax; der Vierargumentkonstruktor
+bleibt Plaintext. Die Extension führt nur native Placeholder-/Cursorbefehle aus.
+`textDocument/onTypeFormatting` ist für Newline registriert; GUIqualifikation der
+resultierenden Cursorposition bleibt erforderlich.
+
+`interlis/export(ExportArtifactParams): ExportArtifact` erfordert Protokoll1,
+versioniertes Rootdokument, explizite Auswahl bei mehreren Modellen, eines der
+sechs Formate MARKDOWN/HTML/DOCX/MERMAID/PLANTUML/GRAPHML und streng geprüfte
+Darstellungsoptionen. Die Hostcompile akzeptiert nur das aktuelle Rootschema.
+Dokument-/Abhängigkeitsrevisionen und geschlossene Dateiinhalte werden vor
+Antwort erneut geprüft. Das Ergebnis besitzt Medientyp, utf8/base64, Dateinamen,
+Server-/Snapshot-/Workspace-/Root-/Versionsprovenienz und Formatgrenzen.
+Ausgaben über8MB werden abgewiesen; ungültige Modelle ergeben RequestFailed,
+veraltete Quellen ContentModified. Generierung/Übertragung bleiben abbrechbar.
+`experimental.interlis.documentation=true` kündigt nur den implementierten
+Exportvertrag an. SVG/PNG bleiben ausschliesslich aktuelle UI-Viewexporte.

@@ -904,3 +904,18 @@ besitzen nur getrennten Viewzustand; Kapitel11 regelt Grenzen und Fehler.
 besitzen semantische Projektion und Dateien. Abnahmen: echte Sprotty-Dragregression,
 Viewstate-Verträge und `comfort.test.cjs` mit echten nativen Controls, Kurven,
 XML-/PNGdecodierung, Export ohne ELK und Wiederherstellung.
+
+### Editorhilfe- und Dokumentationseinstiege
+
+| Besitzer | Kanonische Typen / Einstieg | Vertrag / Prüfungen |
+|---|---|---|
+| compiler/query | `EditorAssistanceService`, `EditorEditPlan`, `EditorIndentOptions`; `complete`, `planBlockClose`, `quickFixes` | Kapitel07; EditorAssistanceTest, EditorCompletionTest; aktuelle Syntax/Revision, konservative Bindung, keine IO |
+| documentation | `DocumentationOptions`, `DocumentationDocument`, `DocumentationProjector` | Kapitel11; DocumentationTest; geprüftes Schema, kopierte Reihenfolge, begrenzte Referenzdarstellung |
+| documentation | `MarkdownDocumentationRenderer`, `HtmlDocumentationRenderer`, `DocxDocumentationRenderer`, `GraphMlRenderer` | Kapitel11; reale escaped Text-/XML-/OOXML-Struktur, vier Labelsprachen |
+| lsp | `ExportArtifactParams`, `ExportArtifact`, `LspExportService`; `interlis/export` | Kapitel07; DocumentationProtocolTest und echter Extension-Paketstdio; Versionen, Rootschema, Größenlimit/Cancel |
+
+Öffentliche Werte sind nullfrei und immutable; fehlende optionale Wirefelder
+werden vor der Projektion geprüft/defaultiert. Renderer besitzen keinen
+Workspacezustand. Hostlebensdauer und Cancellation gehören dem bestehenden
+LSP-Scheduler. Die Quelle der Metadatenhints ist als Verhaltensreferenz im
+`MetaAttributeCatalog` dokumentiert; deren Syntax-/Typauswahl bleibt Java-eigen.

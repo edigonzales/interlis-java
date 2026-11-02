@@ -204,6 +204,30 @@ final class InterlisTextDocumentService implements TextDocumentService {
                     if(open==null || open.lspVersion!=captured.textDocument().getVersion() || !unsynchronized.isEmpty()) throw LspFailures.error(ResponseErrorCode.ContentModified,"compile document version changed");
                 })),this::compileReport,operations),operations);
     }
+    CompletableFuture<ExportArtifact> exportArtifact(ExportArtifactParams params) {
+        if(params==null||params.protocolVersion()!=1||params.textDocument()==null||params.textDocument().getVersion()==null||!LspExportService.FORMATS.contains(params.format()))return failed(ResponseErrorCode.InvalidParams,"export requires protocol 1, a format and an exact document version");
+        var p=copyParams(params,ExportArtifactParams.class);
+        try {LspExportService.options(p);}catch(RuntimeException invalid){return failed(ResponseErrorCode.InvalidParams,"invalid documentation options");}
+        var selection=requestReady((view,token)->{
+            var state=requireState(view,new Position(0,0),p.textDocument());if(state.lspVersion!=p.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"export document version changed");
+            var models=state.analysis.semanticGraph().symbols().stream().filter(guru.interlis.model.ModelSymbol.class::isInstance).map(guru.interlis.model.ModelSymbol.class::cast).filter(m->m.nameRange().map(r->r.source().equals(state.sourceId)).orElse(false)).toList();
+            if(models.size()>1&&p.modelName()==null)return failed(ResponseErrorCode.InvalidParams,"choose an explicit model for this source");
+            List<guru.interlis.compiler.ModelSelector> roots=List.of(new guru.interlis.compiler.ModelSelector.BySource(state.sourceId));
+            if(p.modelName()!=null){var matching=models.stream().filter(m->m.name().value().equals(p.modelName())&&(p.modelVersion()==null||m.modelVersion().equals(p.modelVersion()))).toList();if(matching.size()!=1)return failed(ResponseErrorCode.InvalidParams,"model selection is unavailable or ambiguous");roots=List.of(new guru.interlis.compiler.ModelSelector.ByName(p.modelName(),Optional.of(matching.getFirst().modelVersion()),Optional.of(state.sourceId)));}
+            return CompletableFuture.completedFuture(roots);
+        });
+        return LspFutures.compose(selection,roots->LspFutures.compose(afterFiles(()->scheduler.compileRoots(roots,()->{var state=documents.get(p.textDocument().getUri());if(state==null||state.lspVersion!=p.textDocument().getVersion()||!unsynchronized.isEmpty())throw LspFailures.error(ResponseErrorCode.ContentModified,"export source changed");})),outcome->{
+            if(!(outcome instanceof guru.interlis.compiler.CompilationOutcome.Succeeded success))return failed(outcome instanceof guru.interlis.compiler.CompilationOutcome.Cancelled?ResponseErrorCode.RequestCancelled:ResponseErrorCode.RequestFailed,"Documentation export requires a complete valid current model");
+            return requestReady((view,token)->{var state=requireState(view,new Position(0,0),p.textDocument());if(state.lspVersion!=p.textDocument().getVersion())return failed(ResponseErrorCode.ContentModified,"export document version changed");
+                var revisions=new LinkedHashMap<String,String>();var closed=new ArrayList<ProjectSourceLoader.FileContent>();
+                for(var e:success.schema().sourceRevisions().entrySet()){var source=view.source(e.getKey()).orElse(null);if(source==null||!source.revision().equals(e.getValue()))return failed(ResponseErrorCode.ContentModified,"export dependency changed");revisions.put(view.uri(e.getKey()),Long.toString(e.getValue().value()));var file=view.closedFiles().get(e.getKey().value());if(file!=null&&view.open(e.getKey())==null)closed.add(file);}
+                var provenance=new ExportArtifact.SourceSnapshot(diagrams.serverInstanceId(),success.schema().snapshotId().value(),p.textDocument().getUri(),state.lspVersion,view.workspaceRevision(),revisions);
+                var artifact=new LspExportService().render(success.schema(),p,provenance,token);
+                return closed.isEmpty()?CompletableFuture.completedFuture(artifact):verifyFiles.apply(List.copyOf(closed),token).thenApply(ignored->artifact);
+            });
+        },operations),operations);
+    }
+
     private CompileReport compileReport(guru.interlis.compiler.CompilationOutcome outcome) {
         return scheduler.onOwner(() -> new LspCompileMapper().map(outcome,diagnosticLanguage,captureView()::uri));
     }
@@ -637,7 +661,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         SourceText source = view.source(state.sourceId).orElseThrow();
         int offset = offsetAt(source, params.getPosition());
         String prefix = prefixAt(source.text(), offset);
-        CompletionResult result = queries.complete(state.analysis,
+        CompletionResult result = new guru.interlis.compiler.query.EditorAssistanceService().complete(state.analysis,
                 new CompletionQuery(cursor(state, params.getPosition()),
                         new NamePrefix(prefix), 100), token);
         List<CompletionItem> items = new ArrayList<>();
@@ -647,7 +671,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
             item.setKind(completionKind(candidate));
             item.setDetail(candidate.detail());
             item.setInsertText(candidate.insertText());
+            item.setInsertTextFormat(candidate.snippet()?org.eclipse.lsp4j.InsertTextFormat.Snippet:org.eclipse.lsp4j.InsertTextFormat.PlainText);
             item.setTextEdit(Either.forLeft(new TextEdit(toLspRange(state.source, result.replacementRange()), candidate.insertText())));
+            if(candidate.snippet()) {
+                String template=candidate.label().replace(" block","");int stops=switch(template){case "MODEL"->4;case "CLASS","STRUCTURE","TOPIC"->2;case "DOMAIN","UNIT"->2;case "VIEW TOPIC"->3;default->0;};
+                item.setCommand(new Command("INTERLIS snippet interaction","interlisGuru.snippet.accept",List.of(Map.of("uri",params.getTextDocument().getUri(),"baseVersion",state.lspVersion,"headerStops",stops,"suggestAtBody",java.util.Set.of("DOMAIN","UNIT").contains(template),"suppressHeader",template.equals("MODEL")))));
+            }
             item.setSortText(String.format(java.util.Locale.ROOT, "%06d", rank++));
             items.add(item);
         }
@@ -836,20 +865,27 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private CompletableFuture<List<Either<Command, CodeAction>>> codeActionNow(HostView view, CodeActionParams params, CancellationToken token) {
         DocumentState state = requireState(view, params.getRange().getStart(), params.getTextDocument());
         if(!editable(view,state.sourceId)) return CompletableFuture.completedFuture(List.of());
-        FormatOutcome outcome = ModelFormatters.create().format(state.source,
-                FormatOptions.defaults(), token);
-        if (!(outcome instanceof FormatOutcome.Formatted formatted)
-                || formatted.text().equals(state.source.text())) {
-            return CompletableFuture.completedFuture(List.of());
+        var result=new ArrayList<Either<Command,CodeAction>>();
+        if(view.versionedEdits())for(var plan:new guru.interlis.compiler.query.EditorAssistanceService().quickFixes(state.analysis,state.source.range(offsetAt(state.source,params.getRange().getStart()),offsetAt(state.source,params.getRange().getEnd())),token)) {
+            var action=new CodeAction(plan.title());action.setKind("quickfix");action.setIsPreferred(true);
+            var edits=plan.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList();
+            var edit=new WorkspaceEdit();edit.setChanges(null);edit.setDocumentChanges(List.of(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(view.uri(state.sourceId),state.lspVersion),edits))));action.setEdit(edit);result.add(Either.forRight(action));
         }
-        CodeAction action = new CodeAction("Format INTERLIS source");
-        action.setKind("source.format");
-        WorkspaceEdit edit = new WorkspaceEdit();
-        edit.setChanges(Map.of(view.uri(state.sourceId), List.of(new TextEdit(
-                toLspRange(state.source, state.source.range(0, state.source.length())),
-                formatted.text()))));
-        action.setEdit(edit);
-        return CompletableFuture.completedFuture(List.of(Either.forRight(action)));
+        FormatOutcome outcome=ModelFormatters.create().format(state.source,FormatOptions.defaults(),token);
+        if(outcome instanceof FormatOutcome.Formatted formatted&&!formatted.text().equals(state.source.text())) {
+            var action=new CodeAction("Format INTERLIS source");action.setKind("source.format");var edit=new WorkspaceEdit();
+            if(view.versionedEdits())edit.setDocumentChanges(List.of(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(view.uri(state.sourceId),state.lspVersion),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))))));
+            else edit.setChanges(Map.of(view.uri(state.sourceId),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))));action.setEdit(edit);result.add(Either.forRight(action));
+        }
+        return CompletableFuture.completedFuture(List.copyOf(result));
+    }
+
+    @Override public CompletableFuture<List<? extends TextEdit>> onTypeFormatting(org.eclipse.lsp4j.DocumentOnTypeFormattingParams params) {
+        var p=copyParams(params,org.eclipse.lsp4j.DocumentOnTypeFormattingParams.class);
+        if(!"\n".equals(p.getCh()))return CompletableFuture.completedFuture(List.of());
+        return requestReady((view,token)->{var state=requireState(view,p.getPosition(),p.getTextDocument());if(!editable(view,state.sourceId))return CompletableFuture.completedFuture(List.of());
+            var plan=new guru.interlis.compiler.query.EditorAssistanceService().planBlockClose(state.analysis,cursor(state,p.getPosition()),new guru.interlis.compiler.query.EditorIndentOptions(p.getOptions().getTabSize(),p.getOptions().isInsertSpaces()),token);
+            return CompletableFuture.completedFuture(plan.map(value->value.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList()).orElse(List.of()));});
     }
 
     void configurationChanged(Object settings) {

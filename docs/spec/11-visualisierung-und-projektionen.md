@@ -461,3 +461,25 @@ Quellantwort werden für die nächste aktuelle Antwort vorgemerkt; eine während
 ELK geänderte Option verwirft deren überholtes Layout. STALE/LOADING erlaubt
 keinen Export. Auch der Host prüft Frische zusätzlich zur Generation für
 Navigation, Source-Reveal, semantischen Fokus, Persistenz und Exportdialog.
+
+### Reine Dokumentationsprojektion
+
+Das JVM-Verbrauchermodul `interlis-documentation` hängt vom neutralen Modell
+und der bestehenden Diagrammprojektion ab; der Compiler hängt nicht davon ab.
+`DocumentationProjector.project(CompiledSchema, DocumentationOptions,
+CancellationToken)` akzeptiert ausschliesslich gategeprüfte Schemas. Optionen
+besitzen Root-IDs, Labelsprache DE/FR/IT/EN, SEPARATE/INLINE/INLINE_ABSTRACT_ONLY,
+validierte Headeroverrides und höchstens20000 Einträge. Erreichen des Budgets
+führt zu Ablehnung, nicht zu einem scheinbar vollständigen Katalog.
+
+`DocumentationDocument` kopiert Abschnitte, Member, Herkunft, Typen,
+Kardinalitäten, Constraints, Dokumentation und Referenzen. Strukturen werden
+referenziert, nicht rekursiv inline expandiert. Identifikatoren/Kommentare
+werden niemals übersetzt. `MarkdownDocumentationRenderer`,
+`HtmlDocumentationRenderer` und `DocxDocumentationRenderer` rendern nur dieses
+Dokument, ohne Compiler-/Datei-/Netz-IO. Inhalte werden zielgerecht escaped;
+HTML ist inert, DOCX besitzt echte OOXML-Tabellen/Styles/Beziehungen ohne
+Fremdfonts oder externe Ressourcen. `GraphMlRenderer` liest ausschliesslich
+`DiagramDocument`; n-äre Assoziationen behalten Knoten und Rollen. Geometrie
+wird nicht erfunden. Mermaid-/PlantUML-Text benutzt die bestehenden Renderer;
+deren Textnotation ersetzt keinen interaktiven Sprottyview.

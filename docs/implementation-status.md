@@ -1473,3 +1473,11 @@ Filter während ausstehender Antworten werden nur vorgemerkt. Veränderte Option
 während ELK verwerfen das überholte Layout. Die neue Gegenprobe prüft STALE,
 keinen Layoutlauf/Export aus dem alten Graphen und Übernahme des Filters nach der
 aktuellen Antwort. Acht UItests bestanden (`phases/V3/freshness-r1`, Exit0/Guardpassed).
+
+Extension-Folgeauftrag, V4 in Arbeit: reine Compiler-Editorpläne und ein eigenes
+`interlis-documentation`-Modul sowie versionierter Java-LSP-Exporttransport.
+Dokumentprojektion5, Editorhilfe3/Completion6 und Export-LSP2 sind gezielt grün;
+installierte GUI29–35, vollständige betroffene Regression und unabhängiger V4-Review
+stehen noch aus. Dies ist kein Abschluss oder V5-PASS. Der verbindliche laufende
+Auftragsstatus liegt im separaten `interlis-vscode`-Repo unter
+`docs/implementation/vscode-extension/STATUS.md`; V3 ist dort unabhängig akzeptiert.

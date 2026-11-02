@@ -102,16 +102,18 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
         capabilities.setRenameProvider(new RenameOptions(true));
         capabilities.setCodeActionProvider(true);
         capabilities.setDocumentFormattingProvider(true);
+        capabilities.setDocumentOnTypeFormattingProvider(new org.eclipse.lsp4j.DocumentOnTypeFormattingOptions("\n",List.of()));
         capabilities.setSemanticTokensProvider(new SemanticTokensWithRegistrationOptions(
                 new SemanticTokensLegend(InterlisTextDocumentService.TOKEN_TYPES, List.of()), true, false));
         capabilities.setFoldingRangeProvider(true);
         capabilities.setPositionEncoding("utf-16");
-        capabilities.setExperimental(java.util.Map.of("interlis",java.util.Map.of("protocolVersion",1,"sourceContent",true,"compile",true,"diagram",true,"diagramProtocolVersion",1,"diagramDocumentVersion","1.0","serverInstanceId",textDocuments.serverInstanceId(),"semanticEditing",false,"diagramSelection",true)));
+        capabilities.setExperimental(java.util.Map.of("interlis",java.util.Map.of("protocolVersion",1,"sourceContent",true,"compile",true,"diagram",true,"diagramProtocolVersion",1,"diagramDocumentVersion","1.0","serverInstanceId",textDocuments.serverInstanceId(),"semanticEditing",false,"diagramSelection",true,"documentation",true)));
         var result=new InitializeResult(capabilities);
         result.setServerInfo(new org.eclipse.lsp4j.ServerInfo("interlis-java",guru.interlis.model.VersionManifest.current().toolVersion()));
         return LspFutures.map(workspaceService.initializeProject(folders),ignored -> { ready=true; return result; },textDocuments::operation);
     }
 
+    @Override public CompletableFuture<ExportArtifact> exportArtifact(ExportArtifactParams params) {return textDocuments.exportArtifact(params);}
     @Override public CompletableFuture<CompileReport> compileModel(CompileModelParams params) { return textDocuments.compileModel(params); }
     @Override public CompletableFuture<SourceContent> sourceContent(SourceContentParams params) { return textDocuments.sourceContent(params); }
     @Override public CompletableFuture<DiagramResponse> diagram(DiagramRequest params) { return textDocuments.diagramRequest(params); }

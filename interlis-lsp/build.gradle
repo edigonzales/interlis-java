@@ -8,6 +8,7 @@ dependencies {
     implementation project(':interlis-repository')
     implementation project(':interlis-compiler')
     implementation project(':interlis-projection')
+    implementation project(':interlis-documentation')
     implementation project(':interlis-model')
     implementation libs.lsp4j
     implementation libs.gson

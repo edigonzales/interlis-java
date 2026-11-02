@@ -9,3 +9,7 @@ export interface DiagramNavigationParams {protocolVersion:1;serverInstanceId:str
 export interface DiagramNavigation {serverInstanceId:string;snapshotId:string;uri:string;range:{start:{line:number;character:number};end:{line:number;character:number}};readonly:boolean;}
 export interface DiagramSelectionParams {protocolVersion:1;serverInstanceId:string;diagramId:string;snapshotId:string;textDocument:VersionedDocument;sourceDocument:VersionedDocument;position:{line:number;character:number};}
 export interface DiagramSelectionResult {protocolVersion:1;serverInstanceId:string;diagramId:string;snapshotId:string;rootUri:string;documentVersion:number;sourceUri:string;sourceVersion:number;elementIds:string[];symbolIds:string[];}
+export type ExportFormat='MARKDOWN'|'HTML'|'DOCX'|'MERMAID'|'PLANTUML'|'GRAPHML';
+export interface DocumentationOptions {language?:'DE'|'FR'|'IT'|'EN';inheritance?:'SEPARATE'|'INLINE'|'INLINE_ABSTRACT_ONLY';headers?:Record<string,string>;}
+export interface ExportArtifactParams {protocolVersion:1;textDocument:VersionedDocument;format:ExportFormat;modelName?:string;modelVersion?:string;options?:DocumentationOptions;}
+export interface ExportArtifact {mediaType:string;encoding:'utf8'|'base64';content:string;fileNameSuggestion:string;sourceSnapshot:{serverInstanceId:string;snapshotId:string;rootUri:string;documentVersion:number;workspaceRevision:string;sourceRevisions:Record<string,string>};limitations:string[];}
