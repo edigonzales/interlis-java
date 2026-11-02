@@ -2,7 +2,7 @@ plugins { id 'java-library' }
 apply from: rootProject.file('gradle/java-conventions.gradle')
 dependencies {
     api project(':interlis-model')
-    implementation project(':interlis-projection')
+    api project(':interlis-projection')
     testImplementation project(':interlis-compiler')
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter

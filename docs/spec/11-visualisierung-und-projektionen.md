@@ -483,3 +483,12 @@ Fremdfonts oder externe Ressourcen. `GraphMlRenderer` liest ausschliesslich
 `DiagramDocument`; n-äre Assoziationen behalten Knoten und Rollen. Geometrie
 wird nicht erfunden. Mermaid-/PlantUML-Text benutzt die bestehenden Renderer;
 deren Textnotation ersetzt keinen interaktiven Sprottyview.
+
+Die Dokumentprojektion begrenzt zusätzlich den summierten Text auf4 Millionen
+UTF-16-Codeeinheiten, bevor Vererbung Inhalte vervielfachen kann. Renderer prüfen
+das Präsentationsbudget nach jeder Tabellenzeile; der LSP begrenzt die tatsächlich
+UTF-8-kodierte Antwort weiterhin auf8MB. Quellrevisionen und Snapshot werden in
+allen Katalogformaten ausgegeben. Vordefinierte Namen stammen aus dem kanonischen
+`PredefinedOrigin.key`, einschliesslich `INTERLIS.XMLDate` für den gebundenen
+Datumstyp. Der GraphML-Einstieg exponiert `DiagramDocument`; daher ist das
+Projektionsmodul eine öffentliche API-Abhängigkeit der Dokumentation.

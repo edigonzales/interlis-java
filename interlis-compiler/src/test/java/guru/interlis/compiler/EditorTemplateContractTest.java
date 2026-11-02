@@ -109,6 +109,16 @@ class EditorTemplateContractTest {
             }
     }
 
+    @Test void metadataLanguageSuffixesUseNativePlaceholderAndTypedValueHints(){
+        String head="INTERLIS 2.4;MODEL M AT \"x\" VERSION \"1\"=CLASS C=value:BOOLEAN;\n";
+        var names=EditorCompletionTest.complete(head+"!!@ ilivalid.msg_│\nMANDATORY CONSTRAINT value;END C;END M.");
+        var name=names.candidates().stream().filter(c->c.label().equals("ilivalid.msg_<lang>")).findFirst().orElseThrow();
+        assertTrue(name.snippet());assertEquals("ilivalid.msg_${1:de}",name.insertText());
+        var values=EditorCompletionTest.complete(head+"!!@ ilivalid.msg_fr=│\nMANDATORY CONSTRAINT value;END C;END M.");
+        assertEquals(List.of("\"...\""),values.candidates().stream().map(CompletionCandidate::label).toList());
+        assertTrue(values.candidates().getFirst().snippet());
+    }
+
     private static String nodes(guru.interlis.syntax.SyntaxNode n, int at) {
         return (n.range().startOffset() <= at && at <= n.range().endOffset()
                         ? n.kind()
