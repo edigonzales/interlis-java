@@ -34,8 +34,12 @@ export function paintedBounds(svg:SVGSVGElement):Rectangle {
  const root=svg.querySelector('g');if(!root)throw Error('Diagram has no rendered graph');const matrix=root.getCTM();if(!matrix)throw Error('Diagram is not visible');const inverse=matrix.inverse();let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
  for(const leaf of svg.querySelectorAll<SVGGraphicsElement>('rect,circle,text,path,polygon,polyline,line')){
   if(leaf.closest('defs,mask,clipPath,[data-handle-kind]')||leaf.classList.contains('interlis-edge-hit')||leaf.classList.contains('interlis-export-background'))continue;
+  const style=getComputedStyle(leaf);if(style.display==='none'||style.visibility==='hidden')continue;
   const box=leaf.getBBox(),ctm=leaf.getCTM();if(!ctm)continue;const transform=inverse.multiply(ctm);
   for(const [x,y]of [[box.x,box.y],[box.x+box.width,box.y],[box.x,box.y+box.height],[box.x+box.width,box.y+box.height]]){const p=new DOMPoint(x,y).matrixTransform(transform);minX=Math.min(minX,p.x);minY=Math.min(minY,p.y);maxX=Math.max(maxX,p.x);maxY=Math.max(maxY,p.y);}
  }
  if(![minX,minY,maxX,maxY].every(Number.isFinite))return {x:0,y:0,width:1,height:1};return {x:minX,y:minY,width:Math.max(1,maxX-minX),height:Math.max(1,maxY-minY)};
 }
+
+/** The convex hull of cubic control points contains every painted curve point. */
+export function curveEnvelope(points:readonly Point[]):Point[] {const result=points.map(p=>({...p}));for(let i=0;i<points.length-1;i++){const a=points[Math.max(0,i-1)],b=points[i],c=points[i+1],d=points[Math.min(points.length-1,i+2)];result.push({x:b.x+(c.x-a.x)/6,y:b.y+(c.y-a.y)/6},{x:c.x-(d.x-b.x)/6,y:c.y-(d.y-b.y)/6});}return result;}

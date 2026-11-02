@@ -5,7 +5,7 @@ import {paintedBounds,svgId,type Rectangle} from './geometry';
 export type ExportScope='FULL'|'VISIBLE';
 export interface SvgArtifact {svg:string;width:number;height:number;viewBox:Rectangle;scope:ExportScope;snapshotId:string;}
 const svgNamespace='http://www.w3.org/2000/svg',inkscapeNamespace='http://www.inkscape.org/namespaces/inkscape';
-const paints=['fill','fill-opacity','stroke','stroke-width','stroke-opacity','stroke-dasharray','stroke-linecap','stroke-linejoin','font-family','font-size','font-weight','font-style','text-anchor','dominant-baseline','opacity','color','paint-order','vector-effect'] as const;
+const paints=['visibility','display','fill','fill-opacity','stroke','stroke-width','stroke-opacity','stroke-dasharray','stroke-linecap','stroke-linejoin','font-family','font-size','font-weight','font-style','text-anchor','dominant-baseline','opacity','color','paint-order','vector-effect'] as const;
 
 /** Serializes the actual painted view. It never reprojects or invokes ELK. */
 export function exportSvg(element:HTMLElement,document:DiagramDocumentDto,settings:DiagramSettings,scope:ExportScope,viewport:{zoom:number;x:number;y:number}):SvgArtifact {

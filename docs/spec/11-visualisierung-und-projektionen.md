@@ -453,3 +453,11 @@ Zieldatei und abschliessendes Schreiben, nicht der Renderer.
 Consumer. Native Zeiger-/Tastatureingaben, ResizeObserver, begrenzter Pan und
 Viewportzoom verwenden CSSpixel; die Rasterauflösung ist explizit. Toolbarfokus
 und Quelleditorfokus dürfen von Hintergrundpatches nicht übernommen werden.
+
+Lokale Sichtaktionen dürfen einen durch den Host invalidierten Graphen nicht
+wieder als aktuell ausgeben. Der Canvas behält dafür Quellfrische getrennt von
+lokaler Layoutaktivität. Filter-/Settingsänderungen während einer ausstehenden
+Quellantwort werden für die nächste aktuelle Antwort vorgemerkt; eine während
+ELK geänderte Option verwirft deren überholtes Layout. STALE/LOADING erlaubt
+keinen Export. Auch der Host prüft Frische zusätzlich zur Generation für
+Navigation, Source-Reveal, semantischen Fokus, Persistenz und Exportdialog.

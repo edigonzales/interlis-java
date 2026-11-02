@@ -1459,3 +1459,17 @@ sichtbar bleiben. Unverändertes echtes DTO mit Originalquellen/Hash als Regress
 fixture archiviert. Alle acht relevanten UI-/Geometrie-/Statefälle bestehen danach
 (`phases/V3/dense-fix-r1`, Exit0/Guardpassed). Installierte Nachprüfung ist fällig;
 V3 weiterhin offen. Keine semantische Engineänderung dieser Nacharbeit.
+
+V3 weitere Exportabsicherung: Ausgeblendete Rahmen behalten ihre tatsächliche
+CSSvisibility auch im exportierten SVG; Bounds ignorieren unsichtbare Blätter.
+Eine echte Controls-/Exportassertion prüft dies. Spline-GAPSmasken verwenden die
+vollständige kubische Kontrollpunkthülle, damit keine gültigen Kurventeile am
+Maskenrechteck abgeschnitten werden. Acht Tests im Lauf export-filter-r1 bestanden;
+anschliessend wurden Labelposition/Scroll-ARIA und Reset View vervollständigt.
+
+V3 Frischeabsicherung: Lokale Filter konnten nach Hostinvalidierung bislang den
+alten Graphen wieder auf FRESH setzen. Quellfrische ist nun ein eigener Zustand;
+Filter während ausstehender Antworten werden nur vorgemerkt. Veränderte Optionen
+während ELK verwerfen das überholte Layout. Die neue Gegenprobe prüft STALE,
+keinen Layoutlauf/Export aus dem alten Graphen und Übernahme des Filters nach der
+aktuellen Antwort. Acht UItests bestanden (`phases/V3/freshness-r1`, Exit0/Guardpassed).

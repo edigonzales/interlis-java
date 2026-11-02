@@ -16,7 +16,7 @@ import {reconcileGeometry,presentationKeys} from './identity';
 import {presentation,endLabel} from './presentation';
 import {DiagramFilterController,type DiagramFilters} from './filters';
 import {saveViewState,restoreViewState,validateViewSettings,type SavedViewState} from './view-state';
-import {curvePath,curveSamples,crossingGaps,svgId,paintedBounds,displayText} from './geometry';
+import {curvePath,curveSamples,curveEnvelope,crossingGaps,svgId,paintedBounds,displayText} from './geometry';
 import {exportSvg,exportPng,type ExportScope,type SvgArtifact} from './export';
 
 export const defaultInteractiveSettings:DiagramSettings=Object.freeze({...defaultDiagramSettings});
@@ -62,7 +62,7 @@ class InterlisNodeView extends ShapeView {
   return svg('g',{'class-interlis-node':true,'class-interlis-container':container,'class-selected':node.selected,
    'class-abstract':data.abstract,'data-element-id':node.id,'data-symbol-id':node.id,'data-kind':data.kind,'data-label':data.label,'data-canonical-name':data.canonicalName,'data-pinned':(node.root as InterlisGraph).pins.includes(node.id),
    'class-frame-hidden':container&&!(data.kind==='MODEL'?(node.root as InterlisGraph).filters.modelFrames:(node.root as InterlisGraph).filters.topicFrames),'class-deemphasized':data.abstract&&(node.root as InterlisGraph).settings.deemphasizeAbstractTypes},
-   svg('title',{},data.canonicalName),
+   svg('title',{},displayText(data.canonicalName)),
    svg('rect',{width:node.size.width,height:node.size.height,rx:container?7:3,'class-interlis-frame':true}),
    ...data.titleLines.map((line,index)=>svg('text',{x:12,y:22+index*18,'class-interlis-title':true},line)),
    ...(!container&&data.kind!=='CLASS'?[svg('text',{x:12,y:data.titleLines.length*18+20,'class-interlis-stereotype':true},'«'+data.kind.toLowerCase()+'»')]:[]),
@@ -114,17 +114,17 @@ class InterlisEdgeView extends PolylineEdgeView {
   let mask:VNode|undefined;const settings=(edge.root as InterlisGraph).settings;
   if(settings.edgeCrossingStyle==='GAPS'){
    if(!this.labels.gaps){const routes=new Map<string,Point[]>();for(const value of edge.root.index.all())if(value instanceof InterlisEdge){const points=this.routers.get(value.routerKind).route(value);routes.set(value.id,settings.edgeRouting==='SPLINES'?curveSamples(points):points);}this.labels.gaps=crossingGaps(routes).gaps;}
-   const gaps=this.labels.gaps.get(edge.id);if(gaps?.length){const id=svgId('gaps:'+edge.id),xs=route.map(p=>p.x),ys=route.map(p=>p.y),x=Math.min(...xs)-40,y=Math.min(...ys)-40;line.data.attrs.mask='url(#'+id+')';mask=svg('defs',{},svg('mask',{id,maskUnits:'userSpaceOnUse',x,y,width:Math.max(...xs)-x+40,height:Math.max(...ys)-y+40},svg('rect',{x,y,width:Math.max(...xs)-x+40,height:Math.max(...ys)-y+40,fill:'white'}),...gaps.map(p=>svg('circle',{cx:p.x,cy:p.y,r:5,fill:'black'}))));}
+   const gaps=this.labels.gaps.get(edge.id);if(gaps?.length){const id=svgId('gaps:'+edge.id),extent=settings.edgeRouting==='SPLINES'?curveEnvelope(route):route,xs=extent.map(p=>p.x),ys=extent.map(p=>p.y),x=Math.min(...xs)-40,y=Math.min(...ys)-40;line.data.attrs.mask='url(#'+id+')';mask=svg('defs',{},svg('mask',{id,maskUnits:'userSpaceOnUse',x,y,width:Math.max(...xs)-x+40,height:Math.max(...ys)-y+40},svg('rect',{x,y,width:Math.max(...xs)-x+40,height:Math.max(...ys)-y+40,fill:'white'}),...gaps.map(p=>svg('circle',{cx:p.x,cy:p.y,r:5,fill:'black'}))));}
   }
   return svg('g',{},...(mask?[mask]:[]),svg('path',{d:line.data.attrs['d'],'class-interlis-edge-hit':true,'vector-effect':'non-scaling-stroke'}),line);
  }
  protected override renderAdditionals(edge:InterlisEdge,route:Point[]):VNode[] {
   if(route.length<2)return [];
-  const settings=(edge.root as InterlisGraph).settings,data=edge.data,center=pointAt(route,.5),first=pointAt(route,.16),last=pointAt(route,.84);
+  const settings=(edge.root as InterlisGraph).settings,data=edge.data,labelRoute=settings.edgeRouting==='SPLINES'?curveSamples(route):route,center=this.labels.place(edge,'association',pointAt(labelRoute,.5),displayText(data.label),-10),first=pointAt(labelRoute,.16),last=pointAt(labelRoute,.84);
   return [
    ...marker(route[0],route[1],data.sourceEnd.aggregation),
    ...marker(route[route.length-1],route[route.length-2],data.targetEnd.aggregation,data.kind==='INHERITANCE'),
-   ...(settings.showAssociationNames&&(data.kind!=='ASSOCIATION_ROLE'||(edge.root as InterlisGraph).filters.roles)&&data.label&&data.label!==data.sourceEnd.roleName&&data.label!==data.targetEnd.roleName?[svg('text',{x:center.x,y:center.y-10,'text-anchor':'middle','class-interlis-edge-label':true,'data-element-id':edge.id},displayText(data.label))]:[]),
+   ...(settings.showAssociationNames&&(data.kind!=='ASSOCIATION_ROLE'||(edge.root as InterlisGraph).filters.roles)&&data.label&&data.label!==data.sourceEnd.roleName&&data.label!==data.targetEnd.roleName?[svg('text',{x:center.x,y:center.y,'text-anchor':'middle','class-interlis-edge-label':true,'data-element-id':edge.id},displayText(data.label))]:[]),
    ...[[data.sourceEnd,first,-8],[data.targetEnd,last,16]].flatMap(([end,at,offset])=>{
     const e=end as DiagramEdgeDto['sourceEnd'],value=endLabel({...e,cardinality:settings.showRoleCardinalities?e.cardinality:null}),point=this.labels.place(edge,end===data.sourceEnd?'source':'target',at as Point,value,Number(offset));
     return value?[svg('text',{x:point.x,y:point.y,'text-anchor':'middle','class-interlis-end-label':true,'data-element-id':edge.id},displayText(value))]:[];
@@ -232,6 +232,8 @@ export class DiagramCanvas {
  private generation=0;
  private sessionKey='';
  private closed=false;
+ private current=false;
+ private optionsRevision=0;
  private settings:DiagramSettings={...defaultInteractiveSettings};
  readonly filters=new DiagramFilterController();
  private pins=new Set<string>();
@@ -248,6 +250,7 @@ export class DiagramCanvas {
  private trimHistory():void {while(this.history.length+this.future.length>40||JSON.stringify([this.history,this.future]).length>8_000_000){if(this.history.length)this.history.shift();else if(this.future.length)this.future.shift();else break;}}
  private remember(frame=this.frame()):void {this.history.push(frame);this.future=[];this.trimHistory();}
  private applyFrame(frame:HistoryFrame):void {this.state=frame.geometry;this.pins=new Set(frame.pins);this.manualNodes=new Set(frame.manualNodes);this.manualRoutes=new Set(frame.manualRoutes);}
+ get elementId():string {return this.element.id;}
  getViewport():{zoom:number;x:number;y:number} {return this.viewport();}
  private viewport():{zoom:number;x:number;y:number} {const root=this.root as InterlisGraph|undefined;return {zoom:root?.zoom??1,x:root?.scroll.x??0,y:root?.scroll.y??0};}
  constructor(private readonly element:HTMLElement,private readonly callbacks:DiagramCallbacks,workerUrl:URL|string,layoutService?:LayoutServicePort) {
@@ -290,6 +293,7 @@ export class DiagramCanvas {
  async accept(raw:unknown,sessionKey:string,settings:DiagramSettings=defaultInteractiveSettings,local=false):Promise<boolean> {
   if(this.closed)return false;
   this.settings=validateViewSettings(settings);
+  if(!local)this.current=false;const optionsRevision=this.optionsRevision;
   if(!local){this.history=[];this.future=[];}
   const full=adapt(raw).document;
   if(this.document&&this.document.snapshotId!==full.snapshotId&&this.sessionKey===sessionKey){
@@ -303,7 +307,7 @@ export class DiagramCanvas {
   const mark=++this.generation;this.setStatus('LOADING','Updating diagram…');
   const projection=legacyProjection(view);for(const node of projection.nodes){const value=[...document.nodes,...document.containers].find(value=>value.id===node.id);if(value){const p=presentation(value,settings);node.layoutSize=p;node.headerHeight=p.titleLines.length*18+22;}}
   try {
-   const layout=await this.worker.layout(projection,{...settings,renderingTarget:"STANDARD"});if(this.closed||mark!==this.generation)return false;
+   const layout=await this.worker.layout(projection,{...settings,renderingTarget:"STANDARD"});if(this.closed||mark!==this.generation)return false;if(optionsRevision!==this.optionsRevision)return this.accept(full,sessionKey,this.settings,local);
    for(const node of layout.nodes)if(![node.x,node.y,node.width,node.height].every(Number.isFinite)||node.width<=0||node.height<=0)throw new Error('Invalid layout bounds');
    for(const edge of layout.edges)if(!edge.points.every(point=>Number.isFinite(point.x)&&Number.isFinite(point.y)))throw new Error('Invalid edge geometry');
    const first=!this.document;const reconciled=reconcileGeometry(this.document,full,this.state);
@@ -315,12 +319,13 @@ export class DiagramCanvas {
    await this.source.setModel(model);
    if(this.closed||mark!==this.generation)return false;
    if(first){await new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())));if(this.closed||mark!==this.generation)return false;await this.fit();}
+   this.current=true;
    if(!document.nodes.length&&!document.containers.length){this.setStatus('EMPTY','No visible elements — change or reset filters');return true;}
    this.setStatus(document.completeness==='COMPLETE'?'FRESH':'PARTIAL',document.completeness==='COMPLETE'?'Diagram is current':document.completeness==='LIMITED'?'Limited diagram — narrow the selection or increase the explicit projection budget':'Partial diagram — check Problems');
    return true;
   }catch(error){if(mark!==this.generation||this.closed)return false;this.setStatus('ERROR',error instanceof Error?error.message:'Diagram failed');throw error;}
  }
- invalidate(message='Source changed — updating diagram'):void {if(!this.closed){this.generation++;this.worker.cancel();this.setStatus('STALE',message);}}
+ invalidate(message='Source changed — updating diagram'):void {if(!this.closed){this.current=false;this.generation++;this.worker.cancel();this.setStatus('STALE',message);}}
  private setStatus(status:DiagramStatus,message:string):void {this.status=status;this.element.dataset.status=status;this.callbacks.status?.(status,message);}
  getViewState():DiagramViewState {return structuredClone(this.state);}
  getDocument():DiagramDocumentDto|undefined {return this.document;}
@@ -334,15 +339,15 @@ export class DiagramCanvas {
  async select(ids:string[]):Promise<void> {const wanted=new Set(ids),elements=this.root?[...this.root.index.all()]:[];const selected=elements.filter(e=>wanted.has(e instanceof InterlisMember?e.elementId:e.id)).map(e=>e.id),deselected=elements.filter(e=>(e instanceof InterlisNode||e instanceof InterlisEdge||e instanceof InterlisMember)&&e.selected&&!selected.includes(e.id)).map(e=>e.id);await this.dispatcher.dispatch(SelectAction.create({selectedElementsIDs:selected,deselectedElementsIDs:deselected}));}
  async undo():Promise<void> {const state=this.history.pop();if(state){this.future.push(this.frame());this.applyFrame(state);this.trimHistory();await this.repaint();}}
  async redo():Promise<void> {const state=this.future.pop();if(state){this.history.push(this.frame());this.applyFrame(state);this.trimHistory();await this.repaint();}}
- private async repaint():Promise<void> {if(this.document)await this.accept(this.document,this.sessionKey,this.settings,true);}
+ private async repaint():Promise<void> {if(this.document&&this.current)await this.accept(this.document,this.sessionKey,this.settings,true);}
  selectedSymbolIds():string[] {const ids=new Set(this.selectedIds()),document=this.document;if(!document)return [];return [...new Set([...document.containers,...document.nodes].flatMap(node=>ids.has(node.id)&&node.symbol?[node.symbol.symbol]:[]).concat(document.edges.flatMap(edge=>ids.has(edge.id)&&edge.origin?[edge.origin.symbol]:[])))];}
  getScrollBounds():{minX:number;maxX:number;minY:number;maxY:number} {const svg=this.element.querySelector<SVGSVGElement>('svg.sprotty-graph');if(!svg)return {minX:0,maxX:1,minY:0,maxY:1};const b=paintedBounds(svg),v=this.viewport();return {minX:b.x-this.element.clientWidth/v.zoom+64/v.zoom,maxX:b.x+b.width-64/v.zoom,minY:b.y-this.element.clientHeight/v.zoom+64/v.zoom,maxY:b.y+b.height-64/v.zoom};}
  getSettings():DiagramSettings {return {...this.settings};}
- async configure(settings:DiagramSettings):Promise<void> {this.settings=validateViewSettings(settings);await this.settle();}
- async filter(path:string,value:boolean):Promise<void> {this.filters.set(path,value);await this.repaint();}
- async filterAll(value:boolean):Promise<void> {this.filters.setAll(value);await this.repaint();}
- async resetFilters():Promise<void> {this.filters.reset();await this.repaint();}
- async hide(ids:string[],hidden=true):Promise<void> {for(const id of ids)if(hidden)this.filters.hiddenIds.add(id);else this.filters.hiddenIds.delete(id);await this.repaint();}
+ async configure(settings:DiagramSettings):Promise<void> {this.settings=validateViewSettings(settings);this.optionsRevision++;await this.settle();}
+ async filter(path:string,value:boolean):Promise<void> {this.filters.set(path,value);this.optionsRevision++;await this.repaint();}
+ async filterAll(value:boolean):Promise<void> {this.filters.setAll(value);this.optionsRevision++;await this.repaint();}
+ async resetFilters():Promise<void> {this.filters.reset();this.optionsRevision++;await this.repaint();}
+ async hide(ids:string[],hidden=true):Promise<void> {this.optionsRevision++;for(const id of ids)if(hidden)this.filters.hiddenIds.add(id);else this.filters.hiddenIds.delete(id);await this.repaint();}
  selectedIds():string[] {return this.root?[...this.root.index.all()].filter(e=>(e instanceof InterlisNode||e instanceof InterlisEdge)&&e.selected).map(e=>e.id):[];}
  async pinSelected(value:boolean):Promise<void> {for(const id of this.selectedIds())if(this.state.positions[id]){if(value)this.pins.add(id);else this.pins.delete(id);}await this.repaint();}
  async settle():Promise<void> {this.remember();const visible=new Set([...this.rendered?.nodes??[],...this.rendered?.containers??[]].map(n=>n.id)),edges=new Set(this.rendered?.edges.map(e=>e.id));this.state={positions:Object.fromEntries(Object.entries(this.state.positions).filter(([id])=>this.pins.has(id)||this.manualNodes.has(id)||!visible.has(id))),routes:Object.fromEntries(Object.entries(this.state.routes).filter(([id])=>this.manualRoutes.has(id)||!edges.has(id)))};await this.repaint();}
@@ -352,7 +357,7 @@ export class DiagramCanvas {
  async zoom(factor:number,clientX?:number,clientY?:number):Promise<void> {const v=this.viewport(),r=this.element.getBoundingClientRect(),x=clientX===undefined?r.width/2:clientX-r.left,y=clientY===undefined?r.height/2:clientY-r.top,zoom=Math.max(.08,Math.min(4,v.zoom*factor));await this.setViewport({zoom,x:v.x+x/v.zoom-x/zoom,y:v.y+y/v.zoom-y/zoom});}
  async saveState():Promise<SavedViewState|undefined> {if(!this.document)return;return saveViewState(this.document,{geometry:this.state,pins:this.pins,manualNodes:this.manualNodes,manualRoutes:this.manualRoutes,hiddenNodes:this.filters.hiddenIds,filters:this.filters.filters,settings:this.settings,viewport:this.viewport()});}
  async restoreState(value:unknown):Promise<void> {if(!this.document)throw Error('No diagram for saved state');const document=this.document,generation=this.generation,state=await restoreViewState(document,value);if(this.closed||generation!==this.generation||this.document!==document)return;this.state=state.geometry;this.pins=state.pins;this.manualNodes=state.manualNodes;this.manualRoutes=state.manualRoutes;this.filters.hiddenIds=state.hiddenNodes;this.filters.filters=state.filters;this.settings=state.settings;await this.repaint();await this.setViewport(state.viewport);}
- exportSvg(scope:ExportScope):SvgArtifact {if(!this.rendered||!['FRESH','PARTIAL','EMPTY'].includes(this.status))throw Error('Wait for a current diagram before exporting');return exportSvg(this.element,this.rendered,this.settings,scope,this.viewport());}
+ exportSvg(scope:ExportScope):SvgArtifact {if(!this.current||!this.rendered||!['FRESH','PARTIAL','EMPTY'].includes(this.status))throw Error('Wait for a current diagram before exporting');return exportSvg(this.element,this.rendered,this.settings,scope,this.viewport());}
  async exportPng(scope:ExportScope,scale=1):Promise<{data:Uint8Array;width:number;height:number}> {const revision=this.revision,generation=this.generation,artifact=await exportPng(this.exportSvg(scope),scale);if(this.closed||generation!==this.generation||revision!==this.revision)throw Error('View changed during export; retry');return artifact;}
  dispose():void {if(this.closed)return;this.closed=true;this.generation++;this.resize?.disconnect();for(const cleanup of this.cleanup)cleanup();this.worker.close();this.container.unbindAll();this.element.replaceChildren();this.document=undefined;this.root=undefined;this.view=undefined;this.state={positions:{},routes:{}};}
 }
