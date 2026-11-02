@@ -890,10 +890,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
         }
         FormatOutcome outcome=ModelFormatters.create().format(state.source,FormatOptions.defaults(),token);
         if(outcome instanceof FormatOutcome.Formatted formatted&&!formatted.text().equals(state.source.text())) {
-            var action=new CodeAction("Format INTERLIS source");action.setKind("source.format");var edit=new WorkspaceEdit();
+            var action=new CodeAction("Format INTERLIS source");action.setKind("source.format");var edit=new WorkspaceEdit();edit.setChanges(null);
             if(view.versionedEdits())edit.setDocumentChanges(List.of(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(view.uri(state.sourceId),state.lspVersion),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))))));
             else edit.setChanges(Map.of(view.uri(state.sourceId),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))));action.setEdit(edit);result.add(Either.forRight(action));
         }
+        var only=params.getContext()==null?null:params.getContext().getOnly();
+        if(only!=null&&!only.isEmpty())return CompletableFuture.completedFuture(result.stream().filter(action->action.isRight()&&only.stream().anyMatch(kind->kind.equals(action.getRight().getKind())||action.getRight().getKind().startsWith(kind+"."))).toList());
         return CompletableFuture.completedFuture(List.copyOf(result));
     }
 

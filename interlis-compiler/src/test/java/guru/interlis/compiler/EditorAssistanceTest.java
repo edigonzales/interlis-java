@@ -123,4 +123,11 @@ class EditorAssistanceTest {
             }
         }
     }
+    @Test void missingBlockClosersDoNotTurnIntoAnEndNameRewrite(){
+        var source=source("INTERLIS 2.4;MODEL M AT \"x\" VERSION \"1\"=CLASS C=END M.");
+        var snapshot=analyze(source);
+        assertFalse(snapshot.syntaxSnapshot(source.id()).orElseThrow().diagnostics().isEmpty());
+        assertTrue(new EditorAssistanceService().quickFixes(snapshot,source.range(0,source.length()),CancellationToken.none()).stream().noneMatch(p->p.id().equals("end.name")));
+    }
+
 }

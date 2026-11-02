@@ -116,6 +116,9 @@ public final class EditorAssistanceService {
         var out = new ArrayList<EditorEditPlan>();
         for (var n : EditorSyntax.nodes(s)) {
             token.throwIfCancellationRequested();
+            // A missing outer/inner END can make recovery assign an existing closer
+            // to the wrong declaration. Only a syntax-complete tree proves a rename.
+            if (!s.diagnostics().isEmpty()) break;
             var b = EditorSyntax.block(n).map(v -> EditorSyntax.withActualEnd(s, v)).orElse(null);
             if (b == null
                     || b.endName().isEmpty()
