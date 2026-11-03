@@ -38,7 +38,7 @@ function validateBuild(build,candidate,sourceFingerprint){
  const resourceFiles=Object.keys(build.artifacts).filter(file=>file.startsWith(prefix+'web/')&&file!==manifestFile).sort();
  assert.deepEqual(Object.keys(manifest.resources).map(file=>prefix+'web/'+file).sort(),resourceFiles,'independent browser inventory');
  for(const file of resourceFiles){const meta=build.artifacts[file],declared=manifest.resources[file.slice((prefix+'web/').length)];assert.equal(meta.sha256,declared.sha256);assert.equal(meta.bytes,declared.bytes);}
- assert.equal(manifest.artifacts[prefix+'web/interlis-compiler.wasm'],build.artifacts[prefix+'web/interlis-compiler.wasm'].sha256);
+ assert.deepEqual(manifest.artifacts,Object.fromEntries(['interlis-compiler.wasm','interlis-compiler.wasm-runtime.js'].map(file=>[prefix+'web/'+file,build.artifacts[prefix+'web/'+file]?.sha256])),'independent manifest loaded-artifact aliases differ from delivery');
  assert.deepEqual(manifest.toolchain?.core,require('../../gradle/teavm-core.json'));
  functionalProof(build.proofs?.js,[js],build,candidate,sourceFingerprint);
  functionalProof(build.proofs?.wasm,[wasm,runtime],build,candidate,sourceFingerprint);

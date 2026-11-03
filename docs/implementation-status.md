@@ -35,6 +35,19 @@ Keine vollständige P3-Neufreigabe: externe Plattform-, Web-Image-, vollständig
 Corpus-/Performance- und Releasegates sind für diesen lokalen Auftrag nicht fällig
 und werden daraus nicht behauptet. Keine Compilersemantik oder öffentliche API geändert.
 
+Unabhängiger Erstreview am1dd4e494: PASS (OpenCode2.2.5, direkte DeepSeek-API,
+Flash1017), Originalurteil ausserhalb des Repos in reviews/1dd4e494/output.
+Zwei berechtigte niedrige Hinweise sind zusätzlich korrigiert: beide redundanten
+Ladeartefakt-Hashes müssen dem eigenen Inventar entsprechen; der Stale-Proof-
+Negativtest aktualisiert nun auch die Manifestmetadaten und prüft den konkreten
+Ablehnungsgrund.125 gezielte Node-Tests ohne Fehler/Skips bestanden; der strengere
+Validator akzeptiert die ursprünglichen beiden realen Vergleichsbuilds.
+Nur Prüflogik/Fixtures und dieser Status wurden nach dem Erstreview geändert;
+Compiler, Generatoren, Toolchain, Serialisierung und Browserconsumer bleiben
+bytegenau gleich. Deren Original-Laufzeitnachweise werden mit offener Provenienz
+wiederverwendet; ein frischer unabhängiger Review des Folgecommits bleibt fällig.
+
+
 
 VS-Code-Core und aktuelles main auf Nutzerauftrag zusammengeführt: neuere
 Cache-/HTTP-Verträge erhalten, LSP-CacheRequest/FetchPolicy integriert. Gezielte

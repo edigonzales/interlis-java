@@ -23,7 +23,7 @@ for(const [name,mutate]of [
  ['size',b=>b.browserManifest.resources['interlis-compiler.wasm'].bytes++],
  ['permissions',b=>b.artifacts[js].mode=0o755],
  ['artifact replaced after test',b=>b.artifacts[js].sha256='4'.repeat(64)],
- ['manifest updated but stale test',b=>{b.artifacts[wasm].sha256='4'.repeat(64);b.artifacts['interlis-wasm-teavm/build/web/interlis-compiler.wasm'].sha256='4'.repeat(64);b.browserManifest.resources['interlis-compiler.wasm'].sha256='4'.repeat(64);b.browserManifest.artifacts['interlis-wasm-teavm/build/web/interlis-compiler.wasm']='4'.repeat(64);}],
+ ['manifest updated but stale test',b=>{b.artifacts[wasm].sha256='4'.repeat(64);b.artifacts['interlis-wasm-teavm/build/web/interlis-compiler.wasm'].sha256='4'.repeat(64);b.browserManifest.resources['interlis-compiler.wasm'].sha256='4'.repeat(64);b.browserManifest.artifacts['interlis-wasm-teavm/build/web/interlis-compiler.wasm']='4'.repeat(64);b.artifacts['interlis-wasm-teavm/build/web/build-manifest.json']=require('./artifact-comparison.cjs').manifestMetadata(b.browserManifest);}],
  ['foreign report',b=>b.proofs.js.gitCommit='5'.repeat(40)],
  ['missing report',b=>delete b.proofs.wasm],
  ['failed report',b=>b.proofs.js.status='failed'],
@@ -33,5 +33,13 @@ for(const [name,mutate]of [
  ['missing upstream binding',b=>delete b.browserManifest.toolchain],
  ['wrong upstream core',b=>b.browserManifest.toolchain.core.sha256='4'.repeat(64)],
  ['non-generated manifest field',b=>b.browserManifest.compilerCapabilities={foreign:true}],
-])test('rejects '+name,()=>{const f=fixture();mutate(f.reproducibility.builds[1]);assert.throws(()=>check(f));});
+])test('rejects '+name,()=>{const f=fixture();mutate(f.reproducibility.builds[1]);assert.throws(()=>check(f),name==='manifest updated but stale test'?/independent runtime artifact mismatch/:undefined);});
 test('projection preserves every unrelated manifest field',()=>{const f=fixture(),m=f.browserManifest,p=manifestProjection(m);assert.deepEqual(p.versions,m.versions);assert.deepEqual(p.toolchain,m.toolchain);assert.deepEqual(m.resources['interlis-compiler.wasm'],{sha256:'3'.repeat(64),bytes:1});});
+
+for(const coordinated of [false,true])test('rejects false loaded-runtime alias, coordinated='+coordinated,()=>{
+ const f=fixture();for(const b of coordinated?f.reproducibility.builds:[f.reproducibility.builds[1]]){
+  b.browserManifest.artifacts['interlis-wasm-teavm/build/web/interlis-compiler.wasm-runtime.js']='4'.repeat(64);
+  b.artifacts['interlis-wasm-teavm/build/web/build-manifest.json']=require('./artifact-comparison.cjs').manifestMetadata(b.browserManifest);
+ }
+ assert.throws(()=>check(f),/independent manifest loaded-artifact aliases differ from delivery/);
+});
