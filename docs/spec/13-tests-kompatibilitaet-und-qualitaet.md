@@ -444,10 +444,16 @@ Diagnosekatalog-, Bridge-, Formatierungs- und Diagrammschemaversionen werden
 getrennt geliefert und gegen die tatsächlichen Prozesse geprüft.
 
 `sdkReproducibilityCheck` erzeugt dasselbe saubere Produkt in zwei separaten
-Git-Checkouts. Alle ausgelieferten JVM-Dateien, das SDK-ZIP, TeaVM-JavaScript,
-Wasm samt Runtime und die Browserressourcen einschliesslich Buildmanifest
-müssen bytegleich sein. Native OS-Images und andere Rechnerarchitekturen
-werden daraus nicht als reproduzierbar behauptet.
+Git-Checkouts. Alle ausgelieferten JVM-Dateien, das SDK-ZIP, die kopierte
+TeaVM-Runtime und Browserwerkzeuge müssen bytegleich sein. Nur die exakten
+generierten Programme (JS, Wasm und dessen Webkopie) dürfen variieren; beim
+Browsermanifest werden ausschliesslich deren Hash-/Grössenfelder für den
+Vergleich projiziert. Lieferdateien werden dafür nie verändert. Beide Builds
+behalten vollständige Inventare und eigene erfolgreiche JS-/Wasm-Vertragstests
+mit Artefakthashes. Die Lieferung benötigt ihre eigenen unveränderten
+Laufzeitnachweise; Hashes eines Vergleichsbuilds erlauben keine andere
+TeaVM-Datei. Native OS-Images und andere Rechnerarchitekturen werden daraus
+nicht als reproduzierbar behauptet.
 
 `platformCheck` verlangt echte JVM-/CLI-/LSP-/SDK-Prozesse auf Windows x64,
 Linux x64 und macOS arm64. Die beiden Actions-Nachweise werden über denselben

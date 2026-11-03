@@ -1,5 +1,10 @@
 # P3 – operativer Status
 
+Dieser Status bewahrt die historische P3-Abnahme des unten genannten Commits.
+Für spätere Builds gilt die aktuelle Abgrenzung im
+[SDK-Freigabeprofil](SDK_RELEASE_PROFILE.md); die TeaVM-Umstellung und ihr
+eigener Prüfstand stehen im [Implementierungsstatus](../implementation-status.md).
+
 - **P3 und G3: PASS, vollständig abgeschlossen**, kumulativ AC-P3-01–20,
   WP-30–33 und G0–G3. Der Auftrag wurde ohne Teilphasenstopp ausgeführt.
 - **Geprüfter Schlussproduktcommit:**

@@ -219,7 +219,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [BUILD-003](03-build-und-repository.md) | P0 | Dependencytest, keine impliziten Zwischen-JAR-Kopien. |
 | [BUILD-004](03-build-und-repository.md) | P0 | Konfiguration ist deklarativ, Taskabhängigkeiten explizit. |
 | [BUILD-005](03-build-und-repository.md) | P0 | Runtimeclasspath und generierter Parser geprüft. |
-| [BUILD-006](03-build-und-repository.md) | P0 | Zwei saubere Läufe ohne Zeitstempel-/Pfadabhängigkeit in fachlichen Outputs. |
+| [BUILD-006](03-build-und-repository.md) | P0 | Zwei unabhängige Builds mit vollständigen Inventaren, funktionalen JS-/Wasm-Nachweisen und präzisem Bytevergleich; Integrität der konkreten Lieferung bleibt geprüft. |
 | [BUILD-007](03-build-und-repository.md) | P0 | Wiederholung offline ohne Live-Repositoryzugriff. |
 | [BUILD-008](03-build-und-repository.md) | P1 | Releaseprofil scheitert mit konkreter Vorbedingung. |
 | [BUILD-009](03-build-und-repository.md) | P0 | Lokale Distribution funktioniert ohne Zugangsdaten. |

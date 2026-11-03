@@ -48,7 +48,7 @@ Nicht dadurch bewiesen sind vollständige INTERLIS 2.3/2.4-Semantik, Modellaufl�
 | ADR-007 | CompiledSchema-Interface im model, interne finale Engineimplementierung | azyklischer Modulgraph, unkomplizierte Konstruktion über Gate | neuem öffentlichen Vertragsbedarf |
 | ADR-008 | Hostbeschaffung ausserhalb des Compilers | Offline-/Browser-/Testfähigkeit und reproduzierbare Inputs | keine Ausnahme ohne explizite neue Hostgrenze |
 | ADR-009 | Diagnosen als Daten, Betriebsereignisse separat | Legacydarstellung, LSP und JSON aus derselben Ursache | Schemaevolution mit Migration |
-| ADR-010 | TeaVM zuerst weiterführen, Web Image real vergleichen | erster Weg praktisch belegt, zweiter ernsthaft untersucht | Ergebnis der P1-Vergleichsmatrix |
+| ADR-010 | TeaVM unverändert gepinnt weiterführen, Web Image real vergleichen | Nutzerentscheidung vom 03.11.2026: eigenen Determinismuspatch entfernen; keine binäre Reproduzierbarkeit für TeaVM-Programme, Integritäts-/Funktionsnachweise bleiben gemäss BUILD-006 verbindlich | Ergebnis der P1-Vergleichsmatrix; spätere Toolchainänderung als eigener Auftrag |
 | ADR-011 | ganze geänderte Datei zuerst neu parsen, Semantikcache graduell verfeinern | einfacher korrekter Einstieg mit erhaltenem Optimierungsspielraum | gemessenen Engpässen oder Editoranforderung |
 | ADR-012 | neutrale Diagrammprojektion und vorhandene Renderer | gemeinsame Fachsemantik, bestehende Arbeit nutzbar | konkretem Rendering-/Interaktionsbedarf |
 | ADR-013 | Transfer-/Validation-/SchemaPlan | Verbraucher erhalten explizite kompakte Laufzeitverträge | fachlicher neuer Verbraucheranforderung |

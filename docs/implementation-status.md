@@ -1,5 +1,41 @@
 # Implementierungsstatus interlis-java
 
+## TeaVM-Upstream-Umstellung vom 03.11.2026
+
+Nutzerauftrag TP-01–TP-08; BUILD-002/006, WASM-006 und WP-33 betroffen.
+Patchskript, Ersatz-Core, Klassenordnungskontrolle und Anleitung entfernt.
+Beide Generatoren verwenden unverändert TeaVM0.16.0; der tatsächliche
+Compilerclasspath wird gegen den offiziellen Core-SHA geprüft.
+Die aktuelle Regel zur Reproduzierbarkeit und Artefaktintegrität steht in
+[Kapitel03](spec/03-build-und-repository.md). Ältere untenstehende Zahlen und
+Patch-/Reproduzierbarkeitsnachweise gelten ausschliesslich für ihren damaligen
+Produktstand; zentrale historische Einordnung im [P3-Profil](p3/SDK_RELEASE_PROFILE.md).
+
+Tatsächlich vor dem Commit geprüft auf macOS15.8.1/arm64, Temurin25.0.3+9,
+Gradle9.8.1, Node24.22.0 unter dem bestehenden OS-Interpreterschutz:
+112 gezielte Node-Prüfungen ohne Fehler/Skips; drei voneinander getrennte
+frische TeaVM-Erzeugungen ohne Buildcache, jeweils JS und Wasm mit3560+24
+Vertrags-/Regressionsfällen; Chromium/Firefox/WebKit und echtes Safari am
+Drittkandidaten, UI3, Node-Client18/Diagramm6; SDK9-Prozesse und externer
+Consumer aus entpacktem ZIP. Alle Prozesse Exit0. Das optionale TeaVM-
+Disassembly ist pluginseitig SKIPPED und keine Laufzeitpflichtprüfung.
+134 Lieferdateien vollständig inventarisiert. JS-/Wasm-Hashes unterscheiden
+sich; nur die vier vorgesehenen Dateien (JS, Wasm, Web-Wasm, Manifest) variieren.
+Alle übrigen Dateien einschliesslich SDK-ZIP und Runtime stimmen bytegleich.
+
+Originalbelege ausserhalb des Repos unter
+`/Users/stefan/sources/interlis-java-teavm-evidence/`: first/second/third,
+`third-build-browser.log`, `unit-r2.log`, `tested-source-files.json` und
+`precommit-comparison.json`. Die vor dem Commit erzeugten Belege behalten
+BASE1952a84 und dirty=true; sie werden nicht auf einen späteren SHA umgeschrieben.
+Das saubere Commit-Gate sdkReproducibilityCheck und der anschliessende
+unabhängige OpenCode2/direct DeepSeek Flash1017-Review sind danach noch fällig;
+deren Ergebnis bleibt separat beim geprüften Kandidaten, ohne Selbstreferenzcommit.
+Keine vollständige P3-Neufreigabe: externe Plattform-, Web-Image-, vollständige
+Corpus-/Performance- und Releasegates sind für diesen lokalen Auftrag nicht fällig
+und werden daraus nicht behauptet. Keine Compilersemantik oder öffentliche API geändert.
+
+
 VS-Code-Core und aktuelles main auf Nutzerauftrag zusammengeführt: neuere
 Cache-/HTTP-Verträge erhalten, LSP-CacheRequest/FetchPolicy integriert. Gezielte
 Integrationstests Repository112, CLI141, LSP76 ohne Fehler/Skips. Die ursprüngliche

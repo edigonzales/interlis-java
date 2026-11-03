@@ -64,12 +64,18 @@ gesamthaft geprüft: [G3-Abnahme](STATUS.md) und
 [unveränderter Review](reviews/P3-5-review.md). `sdkArchiveCheck` prüft den
 Consumer aus dem entpackten SDK einschliesslich Launcher. `platformCheck`
 führt die JVM-/CLI-/LSP-/SDK-Prozesse aus. `sdkReproducibilityCheck` baut zwei
-separate saubere Checkouts und vergleicht die ausgelieferten Dateien byteweise.
-Das tatsächliche Browserverzeichnis enthält `build-manifest.json` mit
-Quell-/Commitbindung, getrennten Versionen und Ressourcenhashes.
-Es nennt auch die Originalpins und den tatsächlichen Core-JAR-Hash der
-gezielten [TeaVM-Toolkorrektur](../../tools/teavm/README.md), welche stabile
-Klassenreihenfolgen für bytegleiche JavaScript-/Wasm-Erzeugung herstellt.
+separate saubere Checkouts mit vollständigen Inventaren und eigenen
+JS-/Wasm-Vertragstests. Die aktuelle Abgrenzung steht verbindlich in
+[BUILD-006](../spec/03-build-und-repository.md): JVM-/SDK-Dateien, kopierte
+Runtime und Browserwerkzeuge bleiben bytegleich; TeaVM-Programme und deren
+Manifesthash-/Grössenfelder dürfen variieren. Das ausgelieferte Browsermanifest
+und sämtliche Laufzeitnachweise bleiben an genau die getesteten Bytes gebunden.
+Die Toolchainidentität stammt aus dem tatsächlich verwendeten offiziellen Core.
+
+Die folgenden Zahlen und Patchnachweise sind historische Evidenz des oben
+genannten Produktcommits, keine Abnahme der heutigen ungepatchten Ausgaben.
+Historische Rohlogs und Reviews unter docs/evidence/, docs/implementation/
+und docs/p3/ behalten ihre ursprünglichen Pins, Hashes und Ergebnisse.
 
 Der damalige P3-Gesamtlauf besteht in35m1s mit Exit0; zwei separate
 saubere Builds liefern84 bytegleiche Dateien, das Browsermanifest enthält

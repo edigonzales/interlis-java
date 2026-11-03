@@ -51,6 +51,12 @@ Der historische Versuch verwendet Maven. Das ist kein Zielbuildvertrag. P0 muss 
 
 ### 2.1 TeaVM als erster laufender Adapter
 
+Die unveränderte gepinnte Upstream-Toolchain und die Trennung von fachlicher
+Deterministik, binärer Reproduzierbarkeit und Artefaktintegrität regelt
+[Kapitel 03](03-build-und-repository.md). Unterschiedliche erzeugte Programmbytes
+zwischen Builds erlauben keine fachlichen Unterschiede und ersetzen keine
+Browserabnahme genau der ausgelieferten Datei.
+
 TeaVM dokumentiert Java-25-Unterstützung und WasmGC-Coroutinen. Es verwendet eine eigene Implementierung eines Teils der Java-Klassenbibliothek; eine unterstützte Sprachsyntax garantiert deshalb noch nicht die gleiche Verfügbarkeit jeder JDK-Methode. Quellen: [Release 0.13](https://teavm.org/docs/release-notes/0.13.0.html), [Java-Klassenbibliothek](https://teavm.org/docs/runtime/java-classes.html).
 
 Der Zieladapter heisst `interlis-wasm-teavm`. Er enthält nur Einstieg, Interop und Laufzeitintegration. Das JavaScript-Backend bleibt während der Portierungsphase als zusätzlicher Vergleich aktiv. Ob es dauerhaft als Fallback ausgeliefert wird, wird anhand der Browsermatrix und Wartungskosten entschieden.

@@ -2,6 +2,7 @@
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),cp=require('node:child_process'),crypto=require('node:crypto');
 const root=process.cwd(),output=path.join(root,'build/reports/p3/P3-5/reproducibility'),hash=b=>crypto.createHash('sha256').update(b).digest('hex');
 const git=(...args)=>cp.execFileSync('git',args,{cwd:root,encoding:'utf8'}).trim();
+const {compareBuilds,validateBuild}=require('./artifact-comparison.cjs');
 const {distributionFiles}=require('./distribution-files.cjs');
 async function run(cwd,command,args,log){
  return new Promise((resolve,reject)=>{const fd=fs.openSync(log,'w'),child=cp.spawn(command,args,{cwd,env:process.env,stdio:['ignore',fd,fd]});child.on('error',reject);child.on('exit',(code,signal)=>{fs.closeSync(fd);code===0?resolve():reject(Error('repro build failed: '+command+' exit='+code+' signal='+signal+'; '+log));});});
@@ -15,19 +16,20 @@ async function run(cwd,command,args,log){
    const cwd=path.join(temp,name),record=path.join(output,name);fs.mkdirSync(record,{recursive:true});git('worktree','add','--detach',cwd,candidate);
    try{
     await run(path.join(cwd,'interlis-wasm-teavm'),'npm',['ci'],path.join(record,'npm-ci.log'));
-    await run(cwd,path.join(cwd,'gradlew'),['--no-daemon','sdkPackage',':interlis-wasm-teavm:buildWasmGC',':interlis-wasm-teavm:generateJavaScript',':interlis-wasm-teavm:prepareBrowserHarness','-PnodeExecutable='+process.execPath],path.join(record,'build.log'));
+    await run(cwd,path.join(cwd,'gradlew'),['--no-daemon','sdkPackage',':interlis-wasm-teavm:buildWasmGC',':interlis-wasm-teavm:generateJavaScript',':interlis-wasm-teavm:prepareBrowserHarness',':interlis-wasm-teavm:jsContractTest',':interlis-wasm-teavm:wasmContractTest','--no-build-cache','-PnodeExecutable='+process.execPath],path.join(record,'build.log'));
     if(cp.execFileSync('git',['status','--porcelain'],{cwd,encoding:'utf8'}).trim())throw Error('Clean build changed tracked inputs; checkout retained at '+cwd);
     const files=distributionFiles(cwd).map(file=>path.join(cwd,file));
-    const manifest={};for(const file of files){const key=path.relative(cwd,file).split(path.sep).join('/');const bytes=fs.readFileSync(file);manifest[key]={sha256:hash(bytes),bytes:bytes.length};const copy=path.join(record,'artifacts',key);fs.mkdirSync(path.dirname(copy),{recursive:true});fs.writeFileSync(copy,bytes);}
-    fs.writeFileSync(path.join(record,'artifacts.json'),JSON.stringify(manifest,null,2)+'\n');manifests.push(manifest);
+    const manifest={};for(const file of files){const key=path.relative(cwd,file).split(path.sep).join('/');const bytes=fs.readFileSync(file);manifest[key]={sha256:hash(bytes),bytes:bytes.length,mode:fs.statSync(file).mode&0o777};const copy=path.join(record,'artifacts',key);fs.mkdirSync(path.dirname(copy),{recursive:true});fs.writeFileSync(copy,bytes);}
+    fs.writeFileSync(path.join(record,'artifacts.json'),JSON.stringify(manifest,null,2)+'\n');const read=file=>JSON.parse(fs.readFileSync(path.join(cwd,file),'utf8'));
+    const build={artifacts:manifest,browserManifest:read('interlis-wasm-teavm/build/web/build-manifest.json'),proofs:{js:read('interlis-wasm-teavm/build/js-contract-result.json'),wasm:read('interlis-wasm-teavm/build/wasm-contract-result.json')}};
+    fs.writeFileSync(path.join(record,'build-evidence.json'),JSON.stringify(build,null,2)+'\n');validateBuild(build,candidate,sourceFingerprint);manifests.push(build);
    }finally{
     if(!cp.execFileSync('git',['status','--porcelain'],{cwd,encoding:'utf8'}).trim())git('worktree','remove',cwd);
    }
   }
-  const keys=Object.keys(manifests[0]),differences=keys.filter(k=>JSON.stringify(manifests[0][k])!==JSON.stringify(manifests[1][k]));
-  if(JSON.stringify(keys)!==JSON.stringify(Object.keys(manifests[1]))||differences.length)throw Error('Non-reproducible shipped files: '+differences.join(', '));
+  const keys=Object.keys(manifests[0].artifacts);compareBuilds(...manifests);
   if(git('rev-parse','HEAD')!==candidate||git('status','--porcelain')||require('../performance/profile.cjs').fingerprint()!==sourceFingerprint)throw Error('Candidate changed during two-clean-build verification');
-  const result={status:'passed',candidate,sourceFingerprint,node:process.version,os:process.platform,arch:process.arch,cleanBuilds:2,shippedFiles:keys.length,artifacts:manifests[0],scope:'Two separate clean checkouts, independent Java/ANTLR/TeaVM/TypeScript generation. All shipped CLI files, SDK ZIP, TeaVM JS/Wasm/runtime and browser tools byte-identical; no native OS-image claim.'};
+  const result={status:'passed',candidate,sourceFingerprint,node:process.version,os:process.platform,arch:process.arch,cleanBuilds:2,shippedFiles:keys.length,artifacts:manifests[0].artifacts,builds:manifests,scope:'Two separate clean checkouts, independent Java/ANTLR/TeaVM/TypeScript generation. All shipped files inventoried; JVM/SDK, copied runtime and browser tools byte-identical. Exact TeaVM program paths and their manifest hash/size fields may differ. Each build has its own functional JS/Wasm proofs; no native OS-image claim.'};
   fs.writeFileSync(path.join(output,'result.json'),JSON.stringify(result,null,2)+'\n');console.log('SDK_REPRODUCIBILITY_PASS',keys.length,candidate);
  }finally{try{fs.rmdirSync(temp);}catch{}}
 })().catch(error=>{console.error(error);process.exitCode=1;});

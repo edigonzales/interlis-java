@@ -210,17 +210,18 @@ entsprechend reduziertem Zähler, ein partielles Manifest oder explizite
 Skip-/Fehler-/Abbruchangaben dürfen auch neben positiven Gesamtsummen keinen
 Erfolg ergeben.
 
-Der aktuelle P3-Build verwendet für die beiden offiziellen TeaVM-Generatoren
-eine eng gepinnte0.16.0-Toolkorrektur aus
-`gradle/deterministic-teavm.gradle`: Klassenlisten für Analyse und beide
-Ausgabepipelines werden lexikalisch durchlaufen, bei unveränderter
-Mitgliedschaft und Unveränderlichkeit. Original-Core, Quellarchiv und
-Quelltext werden vor drei exakt passenden Ersetzungen per SHA-256 geprüft;
-andere Eingänge schliessen den Build. Eine Klassenquellenkontrolle sowie
-zwei separate saubere Erzeugungen prüfen die Korrektur. Die tatsächliche
-Toolidentität steht im Browsermanifest. Das korrigierte Buildtool ist kein
-zusätzlich ausgelieferter Java-SDK-Bestandteil; Sprach- und Fehlerverträge
-werden dadurch nicht geändert. Details: `tools/teavm/README.md`.
+TeaVM wird unverändert in der gepinnten Upstream-Version 0.16.0 verwendet.
+Für dessen JavaScript-/Wasm-Ausgaben wird keine binäre Reproduzierbarkeit
+zugesichert. Die Freigabe basiert auf den funktionalen und relevanten
+nichtfunktionalen Prüfungen des konkreten Auslieferungsartefakts.
+Dessen Integritäts- und Herkunftsnachweise bleiben verbindlich.
+
+Beide Generatoren prüfen den gepinnten offiziellen Core im tatsächlichen
+Compilerclasspath gegen `gradle/teavm-core.json`. Das Browsermanifest bindet
+diese Identität an die generierten Wasm-Bytes. JVM-/SDK-Dateien, kopierte
+TeaVM-Runtime und unveränderte Browserwerkzeuge bleiben bytegleichheitspflichtig.
+Einmal bauen, genau diese Dateien testen, unverändert archivieren und ausliefern.
+Ein unabhängiger Build ersetzt keinen Laufzeitnachweis der ausgelieferten Datei.
 
 Korpusbeschaffung, falls erforderlich, ist eine getrennte explizite Task mit festem Commit und Prüfsumme. Tests laufen gegen lokal bereitgestellte Bytes. Unit-Tests verwenden keine unstabilen Online-Modellserver. Integrationstests mit HTTP benötigen einen kontrollierten Testserver und festgelegte Antworten.
 
@@ -241,7 +242,7 @@ Die Architekturregeln können zunächst mit kleinen gezielten Tests geprüft wer
 | BUILD-003 | Teilprojekte MÜSSEN dem azyklischen fachlichen Modulgraph entsprechen. | P0 | Dependencytest, keine impliziten Zwischen-JAR-Kopien. |
 | BUILD-004 | Buildlogik MUSS klein und sichtbar bleiben; Projektzugriffe in `afterEvaluate` sind zu vermeiden. | P0 | Konfiguration ist deklarativ, Taskabhängigkeiten explizit. |
 | BUILD-005 | ANTLR-Generator und Runtime MÜSSEN getrennt und gleichversioniert sein. | P0 | Runtimeclasspath und generierter Parser geprüft. |
-| BUILD-006 | Generierte Artefakte MÜSSEN reproduzierbar aus Quellen entstehen. | P0 | Zwei saubere Läufe ohne Zeitstempel-/Pfadabhängigkeit in fachlichen Outputs. |
+| BUILD-006 | Generierte Artefakte MÜSSEN aus gepinnten Quellen entstehen; fachliche Ergebnisse bleiben deterministisch. JVM-/SDK- und nicht von TeaVM-Programmen abhängige Lieferdateien MÜSSEN binär reproduzierbar bleiben. TeaVM-Programme und ausschliesslich ihre Hash-/Grössenfelder im Manifest sind davon ausgenommen. | P0 | Zwei unabhängige Builds mit vollständigen Inventaren, funktionalen JS-/Wasm-Nachweisen und präzisem Bytevergleich; Integrität der konkreten Lieferung bleibt geprüft. |
 | BUILD-007 | `check` MUSS eine schnelle, netzwerkunabhängige Entwicklerabnahme sein, sobald Abhängigkeiten/Korpus bereitstehen. | P0 | Wiederholung offline ohne Live-Repositoryzugriff. |
 | BUILD-008 | Pflichtprüfungen DÜRFEN bei fehlenden Tools nicht als erfolgreich übersprungen gelten. | P1 | Releaseprofil scheitert mit konkreter Vorbedingung. |
 | BUILD-009 | Publishing DARF keine Voraussetzung für lokales Bauen/Testen sein. | P0 | Lokale Distribution funktioniert ohne Zugangsdaten. |

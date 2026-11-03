@@ -161,7 +161,7 @@ Erst die realen alten/neuen Werkzeuge auf derselben Datenbank beantworten die Dr
 
 | Gate | Muss vorliegen | Unzulässiger Ersatz |
 |---|---|---|
-| G0 | reproduzierbarer Gradle-/Parser-/TeaVM-Build, Pins und erste Diagnostik | kopiertes historisches Maven-Erfolgsprotokoll |
+| G0 | Gradle-/Parser-/TeaVM-Build aus gepinnten Quellen; binäre Reproduzierbarkeit gemäss BUILD-006 und erste Diagnostik | kopiertes historisches Maven-Erfolgsprotokoll |
 | G1 | semantischer P1-Umfang, IDE-Zwischenstand, Chrome/Firefox/echtes Safari gemäss Kapitel 10, Diagramm, realer Web-Image-Versuch mit Ergebnis/ggf. begründetem Blocker | nur Parser, nur Node oder nur ClassSkeleton |
 | G2 | vollständige 2.3/2.4-Feature-/Normmatrix und semantische Vergleichstests | Akzeptanzsuite allein |
 | G3 | freigegebene CLI-/SDK-/Integrations- und Plattformprofile | allgemeine Behauptung „kompatibel“ |
