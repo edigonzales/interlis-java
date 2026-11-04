@@ -89,3 +89,44 @@ mit externem Gradle-Initskript auf Rückdependency geprüft: Exit 0
 an Gradle9-Ownerlocks; Probe auf eigene Projekttasks korrigiert.
 Kein Browser-/Wasm-/Vollkorpus-/Benchmark-/Mehrplattform-/P3-Releaseprofil
 wurde hier ausgeführt oder aus Fixtures als bestanden abgeleitet.
+
+## Findings-Folgeprüfung am ersten Kandidaten decd97c
+
+Unabhängiger OpenCode2.0.28/direct DeepSeek Flash1017-Review: regulärer Exit0,
+Kandidat/Tree und alle72 Originalhashes unverändert; tatsächliches Sessionmodell
+DeepSeek/deepseek-flash bestätigt. Urteil FAIL mit R1–R4; Originale extern unter
+`reviews/decd97c07257ee197cf8c833db4081faf339b08c/round-01/`.
+R1: Nodevalidator/Fixtures auf tatsächliche55 CLI-Fälle und Diagnosekatalogv4
+abgeglichen. Fixtures nutzen jetzt dieselbe explizite Node-Profilliste; ein
+unabhängiger Quellvertragstest vergleicht sie mit Java REQUIRED/VERSION.
+Vor Fix ist der neue Test RED (Exit1, r1-red.log), danach95 Nodefälle/0 Skips
+PASS (r1-node-final.log). Produktversionen wurden nicht geändert.
+R2: aktive P3-Dokumente korrigiert und mit aktuellem JVM-Profil verknüpft.
+R3: alle verificationTest-Zielpfade im Inventar berichtigt.
+R4: ungenutzte direkte Projektion-Dependency entfernt. Compile-/Testtasks
+bleiben bei identischen Klassen und aufgelöstem Classpath up-to-date
+(r1-java-process.log); die ursprünglichen V4-79er-Belege bleiben mit ihrer
+Herkunft gültig. SDK-/CLI-Hostprogramme wurden wirklich ausgeführt:55 CLI-
+Fälle,9 SDK-Kommandos und entpackter separater Consumer, alle Exit0.
+
+Zusätzlich selbst gefunden: Root-ordering für fullCorpusJvm war noch am alten
+CLI-Projekt registriert. Besitzer korrigiert; nur der aktuelle Build-Pin im
+Overlay nachgeführt. Tatsächlicher Dry-run zeigt den Hosttask nach allen vier
+vorgeschriebenen Root-Tasks (`r1-taskgraph-order.log`, Exit0); kein Korpuslauf.
+Direkte Gradle-Introspektionsversuche waren wegen Gradle9-Lifecycle/Ownerlocks
+ungeeignet, ein hängender Versuch wurde bewusst mit SIGINT abgebrochen und ist
+kein PASS. Der erfolgreiche Nachweis verwendet den tatsächlichen Taskgraph.
+Sieben Coverage-Unitfälle nach dem aktuellen Build-Pin bestehen
+(`r1-coverage-cli-final.log`).
+
+`node tools/release/producer-evidence.cjs`: tatsächliche55 CLI-Fälle und
+vollständiger SDK-Versionsbericht v4 gegen die synthetische übrige Releasehülle
+PASS; fehlender aktueller CLI-Fall und veralteter Diagnosekatalog werden
+zurückgewiesen (`r1-interop-passed.json`, Exit0). Inputdateien sind gehasht;
+Herkunft bleibt decd97c/dirty=true, keine spätere SHA-Umetikettierung.
+Ein erster Lauf erkannte korrekt einen nach Quellergänzung veralteten CLI-
+Fingerprint. Nach frischem CLI-Lauf wurde die synthetische Versionshülle auf
+den vollständigen tatsächlichen SDK-Versionssatz abgestimmt; keine Assertion
+gelockert. Rohfehler und finale erfolgreiche Probe bleiben separat erhalten.
+Keine Produktsemantik, Erwartungen, Originalbelege, Toolpins oder Testgrenzen
+wurden geändert. Unbetroffene breite Prüfungen wurden nicht wiederholt.

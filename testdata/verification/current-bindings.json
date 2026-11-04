@@ -176,8 +176,8 @@
     },
     "build.gradle": {
       "source": "build.gradle",
-      "sha256": "3b150853c7e5e540f428155f24215aaa0cfe015429eaeef3f769a66f278fedb7",
-      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+      "sha256": "563aaa40badae1a339d791eb01a7c3b246a276603e68c1a663546d5af6005820",
+      "reason": "Verification root delegation and migrated fullCorpusJvm ordering owner; no benchmark bounds or semantic changes"
     },
     "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/ReferenceProcesses.java": {
       "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",

@@ -226,7 +226,7 @@ Imports: `com.google.gson.*`, `guru.interlis.bridge.BridgeDispatcher`, `java.net
 
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/CompilerCliProcessesTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `e70a1bc228f4d448ba23e3ae554ae2926f15c16cb92ceb7231fc758d6f8c6070`.
+Ziel: interlis-verification/src/test/java/guru/interlis/verification; SHA-256 `e70a1bc228f4d448ba23e3ae554ae2926f15c16cb92ceb7231fc758d6f8c6070`.
 
 Imports: `java.util.List`, `java.util.LinkedHashMap`, `java.util.Map`, `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.*`.
 
@@ -235,7 +235,7 @@ Imports: `java.util.List`, `java.util.LinkedHashMap`, `java.util.Map`, `org.juni
 - `strictColorCheckerRejectsAnsiLeaksMissingResetsAndFalseExits()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/CorpusOuterNameContractTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `47a6837201c8f8a95bf5773d1c2263bc4d9423aa3d8c49a287440a5aad30201d`.
+Ziel: interlis-verification/src/test/java/guru/interlis/verification; SHA-256 `47a6837201c8f8a95bf5773d1c2263bc4d9423aa3d8c49a287440a5aad30201d`.
 
 Imports: `com.google.gson.*`, `guru.interlis.cli.*`, `guru.interlis.compiler.*`, `guru.interlis.diagnostics.*`, `guru.interlis.execution.CancellationToken`, `guru.interlis.model.*`, `guru.interlis.source.*`, `java.nio.charset.StandardCharsets`, `java.io.*`, `java.nio.file.*`, `java.util.*`, `java.util.zip.ZipFile`, `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.*`, `static guru.interlis.cli.verification.HostChecks.*`.
 
@@ -243,7 +243,7 @@ Imports: `com.google.gson.*`, `guru.interlis.cli.*`, `guru.interlis.compiler.*`,
 - `wrongSuccessExitDiagnosticSourceRangeAndMultiplicityCannotPassTheNegativeBenchmark()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/FullCorpusInputContractTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `6ff292cd0ae8f27d096e8a484cb4def7f95876c280fb43630201ace2e4473940`.
+Ziel: interlis-verification/src/test/java/guru/interlis/verification; SHA-256 `6ff292cd0ae8f27d096e8a484cb4def7f95876c280fb43630201ace2e4473940`.
 
 Imports: `com.google.gson.*`, `java.nio.file.*`, `org.junit.jupiter.api.Test`, `org.junit.jupiter.api.io.TempDir`, `static org.junit.jupiter.api.Assertions.*`, `static guru.interlis.cli.verification.HostChecks.*`.
 
@@ -253,7 +253,7 @@ Imports: `com.google.gson.*`, `java.nio.file.*`, `org.junit.jupiter.api.Test`, `
 - `changedOriginalArchiveIsNeverRepairedOrDownloaded()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/HostChecksTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `9ccf513f22fcbe0f5e462fda4fb5a3e099b0e9290621ac55f93717edd464a817`.
+Ziel: interlis-verification/src/test/java/guru/interlis/verification; SHA-256 `9ccf513f22fcbe0f5e462fda4fb5a3e099b0e9290621ac55f93717edd464a817`.
 
 Imports: `com.google.gson.*`, `java.nio.file.*`, `java.time.Duration`, `java.util.*`, `org.junit.jupiter.api.Test`, `org.junit.jupiter.api.io.TempDir`, `static org.junit.jupiter.api.Assertions.*`, `static guru.interlis.cli.verification.HostChecks.*`.
 
@@ -263,7 +263,7 @@ Imports: `com.google.gson.*`, `java.nio.file.*`, `java.time.Duration`, `java.uti
 - `realSubprocessTimeoutAndNonzeroExitRemainDistinct()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/LegacyOidCompatibilityTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `d0de83aa0240fddab33e667dddbb3283ded0923f3cd684bab527c5b3c609e0bc`.
+Ziel: interlis-compiler/src/test/java/guru/interlis/compiler; SHA-256 `d0de83aa0240fddab33e667dddbb3283ded0923f3cd684bab527c5b3c609e0bc`.
 
 Imports: `guru.interlis.compiler.*`, `guru.interlis.execution.CancellationToken`, `guru.interlis.model.*`, `guru.interlis.source.*`, `java.util.*`, `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.*`.
 
@@ -272,7 +272,7 @@ Imports: `guru.interlis.compiler.*`, `guru.interlis.execution.CancellationToken`
 - `unrelatedContractedRulesAreNotWaived()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/LegacySourceMetadataTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `79f7cf9857c543ca3e98afea8d98562c58a05d65514517c692c086e8ada1bc68`.
+Ziel: interlis-compiler/src/test/java/guru/interlis/compiler; SHA-256 `79f7cf9857c543ca3e98afea8d98562c58a05d65514517c692c086e8ada1bc68`.
 
 Imports: `guru.interlis.compiler.*`, `guru.interlis.execution.CancellationToken`, `guru.interlis.source.*`, `guru.interlis.model.*`, `guru.interlis.syntax.*`, `java.util.*`, `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.*`.
 
@@ -282,7 +282,7 @@ Imports: `guru.interlis.compiler.*`, `guru.interlis.execution.CancellationToken`
 - `scalarConflictsAndUnterminatedOrMalformedContinuationsRemainSourceErrors()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/PythonFreeCheckTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `c08c0348ea1956316c3e1b172766becd5ff1666039b90494941c05a0c15cb70f`.
+Ziel: interlis-verification/src/test/java/guru/interlis/verification; SHA-256 `c08c0348ea1956316c3e1b172766becd5ff1666039b90494941c05a0c15cb70f`.
 
 Imports: `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.*`.
 
@@ -290,14 +290,14 @@ Imports: `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.
 - `absoluteAndEnvWrappedShellCommandsFail()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/cli/verification/SemanticComparisonTest.java
 
-Ziel: interlis-verification/src/main; SHA-256 `eebd6a10855b7f520dfee01dd0fb40cbab41914bfd4592bc73cf8a26a96d5143`.
+Ziel: interlis-verification/src/test/java/guru/interlis/verification; SHA-256 `eebd6a10855b7f520dfee01dd0fb40cbab41914bfd4592bc73cf8a26a96d5143`.
 
 Imports: `java.nio.file.Path`, `java.util.List`, `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.*`.
 
 - `actualGraphProjectionDetectsLossWrongEqualNamedTargetOrderAndFalseValidity()`: `@Test`
 ## interlis-compiler-cli/src/verificationTest/java/guru/interlis/compiler/internal/UnicodeWeightsTest.java
 
-Ziel: interlis-compiler/src/test (internal); SHA-256 `5af02a6c7d797c682952995e1546100b02a11c7b8ce27f940579428061d72244`.
+Ziel: interlis-compiler/src/test/java/guru/interlis/compiler/internal; SHA-256 `5af02a6c7d797c682952995e1546100b02a11c7b8ce27f940579428061d72244`.
 
 Imports: `java.io.*`, `java.nio.charset.StandardCharsets`, `java.nio.file.*`, `java.security.MessageDigest`, `java.util.*`, `java.util.zip.GZIPInputStream`, `org.junit.jupiter.api.Test`, `static org.junit.jupiter.api.Assertions.*`.
 

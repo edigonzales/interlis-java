@@ -19,7 +19,7 @@ Die nachstehenden P3-Nachweise bezeichnen ausschliesslich den historischen P3-SH
 |---|---|---|
 | Werkzeug/Artefakte | 0.2.0-SNAPSHOT | Entwicklungskandidat; kein stabiler1.0-Release |
 | Java-API | 0.2 | Öffentliche guru.interlis-API; interne Packages ausgeschlossen |
-| Diagnosekatalog | interlis-diagnostics/v1 | Stabile Codes und strukturierte Argumente |
+| Diagnosekatalog | interlis-diagnostics/v4 | Stabile Codes und strukturierte Argumente |
 | Compilerbridge | interlis.compiler/1.0 | Versionierte Requests/Replies und typisierte Ergebnisse |
 | Quellformatierung | 1.0 | Deterministische Formatierungsoptionen und Ergebnisvertrag |
 | Diagramm-/Optionsschema | 1.0 | Kanonische IDs/Anker sowie additive explizite Optionsfelder |
@@ -140,8 +140,18 @@ AUTO benötigt echtes stderr-TTY, nichtleeres NO_COLOR/TERM=dumb unterdrücken e
 Windows AUTO bleibt konservativ plain. Explizite Wahl übersteuert Environmentdefaults.
 Quellframes sind revisionstreu und begrenzt (3 Zeilen/160 Spalten), unsichere
 Unicodebreiten werden ohne falschen Caret angezeigt. Die SDK-Kanondaten bleiben unverändert.
-Das aktuelle Releaseprofil verlangt mindestens1232 Tests/229 Suites,50 reale
+Das aktuelle Releaseprofil verlangt die Mindestzahlen des
+[aktuellen JVM-Profils](../../testdata/verification/jvm-profile.json)
+(derzeit 1411 Tests/352 Suites), 55 reale
 CLI-Fälle und erneut validierte Farb-/JSONbytes. Auf macOS werden zusätzlich6
 echte PTY-/Redirectprozesse ausgeführt. Kanallecks, falsche Exits, fehlende Resets,
 fremde SHAs und unvollständige Berichte werden aktiv abgewiesen.
 [Operativer COLOR-Status](../implementation/compiler-cli-color-output/STATUS.md).
+
+Die kleine lokale Produzent-/Validator-Gegenprobe läuft nach
+`./gradlew compilerCliCheck sdkArchiveCheck` mit
+`node tools/release/producer-evidence.cjs`. Sie liest die tatsächlichen frischen
+CLI-/SDK-Berichte und prüft deren Übergang in den Releasevalidator sowie zwei
+Negativkontrollen. Die übrige Releasehülle ist dabei synthetisch; dies ist kein
+Plattform-, Browser- oder P3-Freigabenachweis. Die gewöhnliche Node-Prüfung bindet
+Fallnamen und Diagnoseversion zusätzlich an die aktuellen Java-Produzenten.

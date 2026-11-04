@@ -240,7 +240,7 @@ tasks.register('releaseEvidenceCheck', Exec) {
     commandLine nodeExecutable.get(), 'tools/release/evidence.cjs'
 }
 tasks.named('releaseCheckP3') { dependsOn 'releaseEvidenceCheck' }
-project(':interlis-compiler-cli') {
+project(':interlis-verification') {
     tasks.matching { it.name == 'fullCorpusJvm' }.configureEach {
         mustRunAfter ':sdkReproducibilityCheck', ':platformCheck', ':releaseEvidenceCheckerTest', ':conformanceEvidence'
     }

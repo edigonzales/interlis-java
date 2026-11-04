@@ -44,3 +44,12 @@ Kandidaten-SHA wird nach dem Commit extern festgehalten, um keine Selbstreferenz
 zu erzeugen; dieser Stand ist noch nicht unabhängig abgenommen (VM-18 offen).
 Gesamt-Review folgt erst jetzt nach Kandidatencommit. Ergebnisartefakte verbleiben
 extern unter `/Users/stefan/sources/interlis-java-verification-evidence/reviews/`.
+
+Erster Gesamt-Review auf decd97c: FAIL mit vier berechtigten Findings.
+R1–R4 korrigiert: aktuelle55 CLI-Fälle/Katalogv4 im Nodevalidator, aktive
+P3-Doku, Inventarziele, ungenutzte Projektion-Dependency. Zusätzlich verlorenes
+fullCorpusJvm-Ordering am richtigen Taskbesitzer wiederhergestellt.
+Gezielte Folgeprüfungen:95 Nodefälle,7 Coverage-Unitfälle,55 echte CLI-Fälle,
+9 SDK-Kommandos/Archivconsumer und tatsächliche Produzent-/Validator-Gegenprobe
+bestanden; vier Orderingkanten im Dry-run bestätigt. Details im TEST_LEDGER.
+Neuer Kandidat wird committet; VM-18 bleibt bis zum frischen Gesamt-Review offen.

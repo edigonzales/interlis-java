@@ -1692,3 +1692,12 @@ kann fachlich einen Lookup auslösen und gehört nicht zum Null-Netz-Orakel.
 Native Wiederholung folgt mit drei Offline-Restarts, frischen readonly Handles,
 null HTTP und unveränderten Zeitgrenzen sowie expliziter GUI-Export-Richtung.
 Rohbelege einschliesslich REDs unter `interlis-vscode-evidence/phases/V4`.
+
+Verifikationsmodul-Folgekandidat: vier berechtigte Findings des ersten
+OpenCode-Gesamtreviews auf decd97c korrigiert. Node-Profil an die bereits
+bestehenden55 CLI-Fälle und Diagnosekatalogv4 gebunden;95 Nodefälle und echte
+Produzent-/Validator-Interoperabilität bestehen. Aktive Profildoku und Inventar
+korrigiert, redundante Dependency entfernt und fullCorpusJvm-Ordering am
+neuen Besitzer wiederhergestellt.7 gezielte Coveragefälle und echte CLI-/SDK-
+Prozesse bestehen. Ein frischer unabhängiger Gesamt-Review bleibt erforderlich;
+kein PASS vom alten Kandidaten übernommen und kein Vollrelease behauptet.

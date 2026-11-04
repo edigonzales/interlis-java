@@ -5,7 +5,6 @@ dependencies {
     implementation project(':interlis-model')
     implementation project(':interlis-workspace')
     implementation project(':interlis-repository')
-    implementation project(':interlis-projection')
     implementation project(':interlis-wasm-bridge')
     implementation libs.gson
     testImplementation project(':interlis-compiler-cli')

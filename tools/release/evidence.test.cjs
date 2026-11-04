@@ -61,3 +61,15 @@ test('downloaded platform XML must match the recorded hashes',()=>{
  assert.throws(()=>validateJvmReports(p,()=>Buffer.from('tampered')),/changed archived JVM XML/);
  assert.throws(()=>validateJvmReports(p,()=>{throw Error('missing XML');}),/missing XML/);
 });
+
+test('release profile matches current Java CLI case and diagnostic producers',()=>{
+ const fs=require('node:fs'),path=require('node:path'),{root}=require('../performance/profile.cjs');
+ const {compilerCliCases,diagnosticCatalogVersion}=require('./evidence.cjs');
+ const cli=fs.readFileSync(path.join(root,'interlis-verification/src/main/java/guru/interlis/verification/CompilerCliProcesses.java'),'utf8');
+ const declaration=cli.match(/static final Set<String> REQUIRED = Set\.of\(([\s\S]*?)\);/);
+ assert.ok(declaration,'Missing concrete CLI REQUIRED declaration');
+ const actual=[...declaration[1].matchAll(/"([^"\n]+)"/g)].map(m=>m[1]).sort();
+ assert.deepEqual(compilerCliCases,actual);
+ const catalog=fs.readFileSync(path.join(root,'interlis-model/src/main/java/guru/interlis/diagnostics/DiagnosticCatalog.java'),'utf8');
+ assert.equal(diagnosticCatalogVersion,catalog.match(/public static final String VERSION = "([^"]+)";/)[1]);
+});
