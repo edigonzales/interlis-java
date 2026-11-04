@@ -63,3 +63,11 @@ die tatsächlich gelesenen Quellen/Manifeste, damit Datenänderungen die Tests
 invalidieren. Die zusätzlich geprüften25 Artefaktvergleichsfälle sind mit ihrer
 1bb9aa9-Herkunft dokumentiert. VM-18 bleibt für den neuen Kandidaten offen;
 finales unabhängiges Urteil wird extern aufbewahrt, ohne Nachtragscommit.
+
+Review auf818b5d4 bestätigt R5, meldet R6 (fehlende acht weitere Unitinputs).
+Seed-Archiv, A3-Modelle und Node-Fingerprinthelfer sind jetzt deklariert. Vier
+betroffene Unitfälle bestehen; reale beschreibbare Scratchprobe bestätigt
+Input-Erfassung, unveränderten Cachehit und Neuausführung nach reiner Helfer-
+Dateiänderung. Originalquellen und historische Belege bleiben unverändert.
+Aktuelle Zusammenfassung auf95 Nodefälle korrigiert. Neuer Kandidat wird
+committet und frisch vollständig überprüft; VM-18 bis dahin offen.

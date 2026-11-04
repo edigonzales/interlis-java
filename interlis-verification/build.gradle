@@ -22,8 +22,10 @@ tasks.named('test', Test) {
             'testdata/g2/appendix-characters.properties',
             'docs/evidence/conformance/normative-expectations.json',
             'docs/evidence/conformance/normative-expectations-before-set-context.json',
-            'docs/evidence/p3/geo-corpus.json', 'docs/evidence/p3/full-corpus/manifest.json',
+            'docs/evidence/p3/geo-corpus.json', 'docs/evidence/p3/corpus-seed.zip',
+            'tools/performance/profile.cjs', 'docs/evidence/p3/full-corpus/manifest.json',
             'docs/evidence/p3/full-corpus/sources.zip'))
+    inputs.files(rootProject.fileTree('testdata/g2/a3') { include '*.ili' })
     inputs.files(['rule-matrix', 'source-inventory', 'norm-inventory', 'norm-conditions',
             'grammar-inventory', 'builtin-inventory', 'spec-contract-inventory',
             'test-candidate-index', 'normative-decision-packet-2026-10-28'].collect {

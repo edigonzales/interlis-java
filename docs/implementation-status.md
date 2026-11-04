@@ -8,7 +8,7 @@ regressionen im Compiler. 145 frühere Evidenzfälle methodengenau disponiert;
 aktuelle Coverage-, Normentscheidungs- und Integritätsverträge explizit über
 `compilerContractCheck`, historische G2-Planungsprüfer stillgelegt und Originale
 unverändert bewahrt. 79 Unitfälle, vier Contracts, 272 ausgewählte Assertions,
-32 fachliche Ersatzfälle, 94 Nodefälle und neun reale SDK-Kommandos gezielt
+32 fachliche Ersatzfälle, 95 Nodefälle und neun reale SDK-Kommandos gezielt
 bestanden; separater Consumer aus SDK-ZIP, LSP-Distribution und Dependency-/
 Artefaktisolation erfolgreich. Keine Jenesis-/Versions-/Semantikmigration.
 Korpus-, Benchmark-, Browser-/Web-Image-/Mehrplattform-/Vollreleaseprüfungen
@@ -1709,3 +1709,10 @@ Inputvorbereitung347/366 aus fehlenden Outputs und sieben frische Coverage-
 Gegenproben bestehen. Aktuelle Quellen-/Manifeste sind deklarierte Unitinputs.
 25 zusätzliche Artefaktvergleichsfälle am unveränderten gemeinsamen Fixture
 bestehen. Frischer unabhängiger Gesamt-Review des Folgecommits bleibt fällig.
+
+Verifikations-Folgeauftrag R6: weitere acht tatsächlich gelesene normale
+Fixtureinputs ergänzt (Seed-Archiv, A3-Modelle, Node-Fingerprinthelfer).
+Vier betroffene Unitfälle bestehen. In einer beschreibbaren Git-Kopie bestätigt:
+Baseline läuft, unveränderter Stand bleibt UP-TO-DATE, reine Helferänderung
+führt zur echten erneuten Testausführung. Alle acht Inputs tatsächlich erfasst;
+Originale unverändert. Der nächste Kandidat benötigt den frischen Gesamt-Review.

@@ -170,3 +170,34 @@ keine pauschale Wiederholung dieses gültigen Verbrauchernachweises.
 
 Nur aktuelle Root-/Inputbindungen geändert, historische Belege/Erwartungen und
 Budgets unverändert. Neuer Kandidat wird erneut vollständig unabhängig geprüft.
+
+## R6 – sämtliche weiteren normalen Fixtureinputs
+
+Gesamt-Review auf818b5d4 (round-04): R5 bestätigt behoben, FAIL wegen acht
+weiteren tatsächlichen normalen Testinputs, die in der neuen Deklaration fehlten.
+R6 ergänzt corpus-seed.zip, die sechs A3-Modelle (über begrenzten *.ili-FileTree)
+und tools/performance/profile.cjs. Keine Originaldatei oder Assertion verändert.
+Die aktuelle Statuszusammenfassung nennt nun95 statt94 Nodefälle; die historische
+V3-Zahl94 im damaligen Phasennachweis bleibt unverändert.
+
+`./gradlew :interlis-verification:test --tests '*CorpusOuterNameContractTest'
+--tests '*SemanticComparisonTest' --tests '*ProfileFingerprintTest'`: Exit0,
+vier betroffene Fälle wirklich ausgeführt (r6-affected-units.log).
+Reale Cache-Gegenprobe in beschreibbarer separater Git-Kopie von818b5d4 plus
+exakt aktuellem Modul-Buildfile. Unveränderte Originale werden nicht mutiert.
+Ein DoFirst-Beobachter protokolliert die tatsächlichen TaskInput-Dateien.
+Alle acht Pflichtdateien sind vorhanden und als Input enthalten. Derselbe
+selektierte ProfileFingerprintTest ohne --rerun oder abgeschalteten Cache:
+1. Baseline: Exit0, Test ausgeführt.
+2. Unverändert: Exit0, Test UP-TO-DATE.
+3. Nur Kommentar an kopiertem profile.cjs geändert: Exit0, Test neu ausgeführt.
+Original-helper-SHA vor/nach identisch. Exakte Kommandos, Zeiten, Quelle und
+Inputliste: extern r6-success/cache-invalidation.json; die drei Original-Logs
+liegen daneben. Erste Scratch-Instrumentierung scheiterte an einer unqualifizierten
+Gradle-layout-Property (r6/baseline.log); sie ist kein PASS und blieb erhalten.
+Die korrigierte Probe verwendet ausdrücklich verification.layout.
+
+Java-/Node-Produzentcode, Profile, Testzahlen und alle zuvor positiv geprüften
+Produkt-/SDK-/Korpus-/Normbytes bleiben unverändert. Keine Wiederholung von
+Korpuskompilierung, Browsermatrix oder Benchmarks. Frischer Gesamt-Review folgt
+auf dem neu committeten Kandidaten; kein alter PASS übernommen.
