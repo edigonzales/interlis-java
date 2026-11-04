@@ -28,15 +28,30 @@ public final class PythonFreeCheck {
     }
     private static boolean active(String path) { return path.matches(".*\\.(gradle|sh|bat|cmd|ps1|cjs|mjs|js|java|ya?ml)$") || path.matches("(?:.*/)?package(?:-lock)?\\.json") || path.equals("gradlew");
     }
+    /** Vendor capabilities are inventoried separately only after every original byte is verified. */
+    static Set<String> pinnedVendor(Path root)throws Exception {
+        Path pin=root.resolve("build/JENESIS-UPSTREAM.json");if(!Files.exists(pin))return Set.of();
+        var document=read(pin);require(s(document,"version").equals("0.18.1")&&s(document,"commit").equals("177014053cce311924f6724d4e4a7fe5689ed9b6"),"Unexpected vendor pin");
+        var files=document.getAsJsonObject("files");Set<String> expected=new HashSet<>();
+        for(var entry:files.entrySet()) {
+            String relative=entry.getKey();Path path=root.resolve("build/jenesis").resolve(relative).normalize();
+            require(!Path.of(relative).isAbsolute()&&!relative.contains("..")&&Files.isRegularFile(path,LinkOption.NOFOLLOW_LINKS)&&hash(path).equals(entry.getValue().getAsString()),"Changed/unsafe pinned vendor source: "+relative);
+            expected.add("build/jenesis/"+relative);
+        }
+        Set<String> actual=new HashSet<>();try(var walk=Files.walk(root.resolve("build/jenesis"))){for(Path path:walk.filter(p->!Files.isDirectory(p)).toList())actual.add(root.relativize(path).toString().replace('\\','/'));}
+        require(actual.equals(expected),"Added/missing vendor input");return Set.copyOf(expected);
+    }
     public static void main(String[] args) throws Exception {
         Path root=Path.of(args[0]).toAbsolutePath();Path report=root.resolve("build/reports/python-free/source-check.json");Files.deleteIfExists(report);
         var result=run(root,List.of("git","ls-files","-z","--cached","--others","--exclude-standard"),Duration.ofSeconds(30));require(result.exitCode()==0,"Cannot enumerate repository inputs");
+        Set<String> vendor=pinnedVendor(root);
         int checked=0;Set<String> files=new HashSet<>(List.of(result.stdout().split("\u0000")));
         for(String file:files)if(!file.isEmpty()) {
+            if(vendor.contains(file))continue;
             Path path=root.resolve(file);
             validate(file,Files.isRegularFile(path)&&active(file)?Files.readString(path):"");checked++;
         }
-        write(report,Map.of("status","passed","files",checked,"scope","Tracked and non-ignored worktree inputs; historical docs excluded from command scanning. Runtime proof is separate."));
+        write(report,Map.of("status","passed","files",checked,"pinnedVendorFiles",vendor.size(),"vendorPinSha256",vendor.isEmpty()?"none":hash(root.resolve("build/JENESIS-UPSTREAM.json")),"scope","Own tracked/non-ignored inputs scanned; byte-verified unchanged upstream engine capabilities inventoried separately; historical docs excluded. Runtime proof is separate."));
         System.out.println("PYTHON_FREE_SOURCE_PASS "+checked+" inputs");
     }
 }

@@ -1,6 +1,7 @@
 package guru.interlis.verification.contracts;
 
 import com.google.gson.*;
+import guru.interlis.verification.VerificationLayout;
 import java.nio.file.*;
 import java.time.Instant;
 import java.util.*;
@@ -14,27 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CompilerCoverageContractTest {
     private static final String LINKS="testdata/g2/completion-links.json";
     static JsonObject current() throws Exception {
-        var overlay=json("testdata/verification/current-bindings.json");
-        pin(LINKS,s(overlay.getAsJsonObject("origin"),"sha256"));
-        var result=json(LINKS); var bindings=result.getAsJsonObject("bindings");
-        for(String key:List.of("overrides","extras")) for(var entry:overlay.getAsJsonObject(key).entrySet()) {
-            require(key.equals("overrides")==bindings.has(entry.getKey()),"Unknown override/duplicate extra");
-            bindings.add(entry.getKey(),entry.getValue());
-        }
-        for(var entry:bindings.entrySet()) {
-            var binding=entry.getValue().getAsJsonObject();
-            var parameters=overlay.getAsJsonObject("parameterInvocations");
-            if(parameters.has(entry.getKey()))binding.add("invocations",parameters.get(entry.getKey()));
-            else {var invocations=new JsonArray();invocations.add(s(binding,"method")+"()");binding.add("invocations",invocations);}
-        }
-        for(var row:rows(result,"requirements")) if(row.has("processEvidence")) {
-            var evidence=row.getAsJsonArray("processEvidence");
-            for(int i=0;i<evidence.size();i++) {
-                String source=s(evidence.get(i).getAsJsonObject(),"source");
-                if(overlay.getAsJsonObject("processOverrides").has(source))evidence.set(i,overlay.getAsJsonObject("processOverrides").get(source));
-            }
-        }
-        return result;
+        return guru.interlis.verification.CurrentContractSelection.read(root());
     }
     private static void sameIds(List<JsonObject> actual,List<JsonObject> expected) {
         require(ids(actual,"id").equals(ids(expected,"id")),"Missing/foreign/duplicate worklist id");
@@ -94,10 +75,10 @@ class CompilerCoverageContractTest {
         }
         String candidate=git("rev-parse","HEAD"),tree=git("rev-parse","HEAD^{tree}");
         for(var module:modules.entrySet()) {
-            String base=module.getKey()+"/build/";
-            var manifest=json(base+"contract-assertions.json");
+            var layout=VerificationLayout.forInvocation(root());
+            var manifest=JsonParser.parseString(Files.readString(layout.contractAssertionManifest(module.getKey()))).getAsJsonObject();
             validateRunIdentity(manifest,candidate,tree,System.getProperty("contract.runId"));
-            JUnitReportAssertions.fresh(module.getValue(),root().resolve(base+"test-results/contractAssertionsTest"),
+            JUnitReportAssertions.fresh(module.getValue(),layout.junitDirectory(module.getKey(),"contractAssertionsTest"),
                     Instant.parse(s(manifest,"started")),manifest.getAsJsonObject("hashes"));
         }
     }

@@ -1,5 +1,19 @@
 # Implementierungsstatus interlis-java
 
+## Jenesis-JVM-Auftrag A vom04.11.2026
+
+A0–A5 (JA-01–17/19/20/22/24/25/36, BUILD-001–007/WP-00/30): parallele
+POM-/Classpath-Spur für zehn JVM-Module angelegt; Engine0.18.1 unverändert
+gepinnt. Frische Gradlebaseline1297Tests und Jenesis-Modell24Tests grün.
+Neun Produktmodule mit1218 normalen Fällen, Verification mit86Fällen,
+272 frische Produzenteninvocations und4 Contractconsumer erfolgreich;
+Cache-/Report-/Source-/Artefaktgegenproben und Gradledefaults bestanden.
+Logischer Gesamtvergleich1297 Originalinvocations, Distributionen und echte
+Editor-Kompatibilität E-01–07 erfolgreich. 81 Lieferartefakte aus unabhängigen Erzeugungen bytegleich, Differenzfehler
+real geprüft. A5-Diff-/Stageabschluss erfolgreich; vollständiger lokaler Kandidat für den
+anschliessenden unabhängigen Review. Unabhängige Abnahme/R (JA-30–32) noch offen.
+[Operativer Stand und originale Belege](implementation/jenesis-jvm-a/STATUS.md).
+
 ## Internes Verifikationsmodul vom 04.11.2026
 
 VM-01–17 (BUILD-001/003/004/007/008, WP-00/01/30): Hostprogramme in

@@ -1,6 +1,16 @@
 .gradle/
-build/
 **/build/
+!/build/
+/build/*
+!/build/jenesis/
+!/build/interlis/
+!/build/interlis/archive-tool/src/main/java/build/
+!/build/interlis/archive-tool/src/main/java/build/**
+!/build/InterlisJvmBuild.java
+!/build/JENESIS-UPSTREAM.json
+!/build/.jenesis.skip
+target/
+.jenesis/
 .idea/
 *.iml
 .DS_Store

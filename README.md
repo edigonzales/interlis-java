@@ -34,6 +34,35 @@ Der Gradle-Wrapper ist gepinnt (9.8.1). Maven/Ant sind keine Build-Einstiege.
 ./gradlew pythonFreeCheck      # Quellen-/Buildpfade ohne Python-Abhängigkeit
 ```
 
+Die parallele Jenesis-JVM-Spur für zehn Module verwendet dieselben Produktquellen,
+Java25 und streng gepinnte Dependencies. Gradle bleibt Gesamtbuild, Wasm- und
+Editor-Stagingpfad. Maven wird durch die POMs nicht zum Buildausführer.
+
+```sh
+java build/InterlisJvmBuild.java build
+java build/InterlisJvmBuild.java build --module interlis-compiler --tests '.*VersionScannerTest'
+java build/InterlisJvmBuild.java contracts
+java build/InterlisJvmBuild.java sdk-check
+java build/InterlisJvmBuild.java parity --baseline /absolute/path/to/parity-input.json
+```
+
+`build` führt normale Tests ohne Compiler-Contractmethoden aus; eingeschränkte
+Filter sind keine Gesamtabnahme. `contracts` erzeugt frische ausgewählte
+Produzenten vor den Contractconsumern. Ausgaben liegen unter `target/jenesis-jvm`,
+Dependencycaches unter `.jenesis`; keine Ergänzung aus Gradleausgaben oder `~/.m2`.
+`sdk-check` erwartet ein noch freies `target/jenesis-jvm/delivery`; frühere
+Lieferungen bei Bedarf zuvor separat archivieren. Parität liest gebundene echte
+Gradle-/Jenesis-Inventare, ohne selbst eine neue Testsuite zu starten.
+
+[Kommandos, Grenzen und ausgeführte Belege](docs/implementation/jenesis-jvm-a/STATUS.md)
+und [Editor-Verbraucherprobe](docs/implementation/jenesis-jvm-a/EDITOR_COMPATIBILITY_REPORT.md).
+`editor-check --extension-dir /absolute/extension --reference-bundle /absolute/bundle`
+ist ein expliziter Scratch-Verbraucherlauf mit separat vorbereiteten
+Developmentressourcen, kein neuer normaler Extensionbuild. Der rohe
+`java build/jenesis/Make.java` ist nur der Engineeinstieg; er ersetzt die
+Projekt-Input-/Layout-/Contract-/Paritätsgates nicht. Compiler-APE bleibt ein
+separater Folgeauftrag; JPMS ist dafür keine Voraussetzung.
+
 Portable Browserverträge (Chromium/Firefox/WebKit):
 
 ```sh

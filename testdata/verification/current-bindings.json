@@ -171,13 +171,13 @@
   "processOverrides": {
     "interlis-compiler/build.gradle": {
       "source": "interlis-compiler/build.gradle",
-      "sha256": "3a56a6c4f0f0fafa36350711e7546d36f4d3d3c604f61daab30089309d582f79",
-      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+      "sha256": "8fe8d8d1b673a829c2a3437a076c53d8c17d012216e267fca732f824651647f7",
+      "reason": "ANTLR plugin already contributes generated Java; remove redundant source binding so Sources JAR has no duplicate entries. Compile/generator inputs and existing SDK consumer preserved."
     },
     "build.gradle": {
       "source": "build.gradle",
-      "sha256": "769164464dc361e84185856c22f83519a7075d0d70644c16a117468650bc511d",
-      "reason": "Complete migrated fullCorpusJvm preparation/ordering and pressure ordering on verification owner; unchanged corpus inputs and budgets"
+      "sha256": "5c7f504163bcbda226f5ed5295801a63a4489f4dd2bff8e630ee5d0f49f90c13",
+      "reason": "Root clean protects versioned Jenesis sources; existing task graph preserved"
     },
     "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/ReferenceProcesses.java": {
       "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",
@@ -186,8 +186,8 @@
     },
     "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/SdkProcesses.java": {
       "source": "interlis-verification/src/main/java/guru/interlis/verification/SdkProcesses.java",
-      "sha256": "a0ef36aa27242a486e9bf574f5f720767fcb1b53dcd99b2bccdfd6430f5fbb37",
-      "reason": "Host package/module relocation only"
+      "sha256": "56ff5266128af6f026c3ce1f3471be5244383c23839110e36a797acfcf43f54f",
+      "reason": "Same SDK process assertions with explicit Gradle/Jenesis layout; defaults preserved"
     },
     "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java": {
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java",

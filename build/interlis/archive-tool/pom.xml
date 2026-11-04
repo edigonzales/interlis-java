@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>guru.interlis</groupId><artifactId>interlis-jvm-archive-tool</artifactId><version>1</version>
+  <properties><maven.compiler.release>25</maven.compiler.release></properties>
+  <dependencies>
+    <dependency><groupId>org.apache.commons</groupId><artifactId>commons-compress</artifactId><version>1.28.0</version></dependency>
+  </dependencies>
+  <!--jenesis.pin
+  commons-codec/commons-codec 1.19.0 SHA-256/5c3881e4f556855e9c532927ee0c9dfde94cc66760d5805c031a59887070af5f
+  maven/commons-codec/commons-codec/pom 1.19.0 SHA-256/e0f3269fa23de0c83130c5659f5f9514cc5422c0bcdf45f2eae004a78b9fca34
+  commons-io/commons-io 2.20.0 SHA-256/df90bba0fe3cb586b7f164e78fe8f8f4da3f2dd5c27fa645f888100ccc25dd72
+  maven/commons-io/commons-io/pom 2.20.0 SHA-256/bdbdf81072c190ee9a8b181a5c58f5bd917a750fb13a256debbf53f5dbd33a2a
+  org.apache.commons/commons-compress 1.28.0 SHA-256/e1522945218456f3649a39bc4afd70ce4bd466221519dba7d378f2141a4642ca
+  maven/org.apache.commons/commons-compress/pom 1.28.0 SHA-256/033f4c78d632da88d0eb8ead974fc14a264392cebf12ab6c68d6cea7adf0c64a
+  org.apache.commons/commons-lang3 3.18.0 SHA-256/4eeeae8d20c078abb64b015ec158add383ac581571cddc45c68f0c9ae0230720
+  maven/org.apache.commons/commons-lang3/pom 3.18.0 SHA-256/aa254b373b6f6d46bc9dca86331b072a8ab86eb25ea9921fd439618392e98a16
+  maven/org.apache.commons/commons-parent/pom 85 SHA-256/d189ff2c0027e96bb65d31e6f227ed2af966169b36af1e973dd5ba08926dc7b5
+  maven/org.apache/apache/pom 35 SHA-256/ea297dcd114136e8b8e8b630230d52a76c2fc69f6c5db25d672b1857000728b8
+  maven/org.junit/junit-bom/pom 5.13.1 SHA-256/fa68451ea830572ed43ffe51d75b6a05f7a5e665a602a51f49d6be02063a65f3
+  -->
+</project>

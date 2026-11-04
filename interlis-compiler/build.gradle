@@ -52,7 +52,8 @@ generateGrammarSource {
     arguments += ['-package', 'guru.interlis.compiler.internal.antlr', '-visitor', '-no-listener']
 }
 
-sourceSets.main.java.srcDir layout.buildDirectory.dir('generated-src/antlr/main')
+// The ANTLR plugin already binds this generated directory through its task
+// provider. A second binding makes sourcesJar visit generated files twice.
 
 tasks.named('processResources') {
     from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt')) {

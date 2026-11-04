@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <parent><groupId>guru.interlis</groupId><artifactId>interlis-java</artifactId><version>0.2.0-SNAPSHOT</version></parent>
+  <artifactId>interlis-compiler-cli</artifactId>
+  <dependencies>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-compiler</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-workspace</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-repository</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-projection</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>guru.interlis</groupId><artifactId>interlis-model</artifactId><version>${project.version}</version></dependency>
+    <dependency><groupId>com.google.code.gson</groupId><artifactId>gson</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><scope>test</scope></dependency>
+  </dependencies>
+  <!--jenesis.pin
+  com.google.code.gson/gson 2.14.0 SHA-256/2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f
+  maven/com.google.code.gson/gson-parent/pom 2.14.0 SHA-256/82b0f6694c5758ab8bb07e05630208d50f589d4b5e04fd0a046d59cdf7ba3d1d
+  maven/com.google.code.gson/gson/pom 2.14.0 SHA-256/1fa0122c0e3733192642861c36be4c6f799a795327a23bdd2922691b6e9ba480
+  com.google.errorprone/error_prone_annotations 2.48.0 SHA-256/b49c5c958316ed67a09c699dda9aa749caf434d51d863dea599ef36a49b9c855
+  maven/com.google.errorprone/error_prone_annotations/pom 2.48.0 SHA-256/189e09ad0489c325e90daaa9d5c8f406330602fa366609bca07cbcdad03ab9da
+  maven/com.google.errorprone/error_prone_parent/pom 2.48.0 SHA-256/b33fa8a45c9f1794a5008c0b2d83a84eb28b5d0117a6d156f003f9f09be7410f
+  maven/org.antlr/antlr4-master/pom 4.13.2 SHA-256/0adda026685873f651360178bffc446ceee4833081739e3ae9d6e8f07e8d902a
+  org.antlr/antlr4-runtime 4.13.2 SHA-256/dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7
+  maven/org.antlr/antlr4-runtime/pom 4.13.2 SHA-256/03ce07a2796c511b0c94dc14fd86ccdd6e3828c57967ad2383de304e0d11ba79
+  org.apiguardian/apiguardian-api 1.1.2 SHA-256/b509448ac506d607319f182537f0b35d71007582ec741832a1f111e5b5b70b38
+  maven/org.apiguardian/apiguardian-api/pom 1.1.2 SHA-256/32355081d109095c3d5d374d5a43b4f4c1b75d549e983ef50723e2772e5302a0
+  org.junit.jupiter/junit-jupiter 5.11.4 SHA-256/aa880e4afba87d447357e4c1fc098c5cb1d200cb9403496c00d3b35a5bd0e8db
+  org.junit.jupiter/junit-jupiter-api 5.11.4 SHA-256/ab83ef9e51ac4597d59d26b4b58812129550e2f579a404c8af7d09f5ce5b4293
+  maven/org.junit.jupiter/junit-jupiter-api/pom 5.11.4 SHA-256/512d23ff39c76665a1a3645526230bcf889bd49884304f7febe047b018eeb339
+  org.junit.jupiter/junit-jupiter-engine 5.11.4 SHA-256/cdf8ac59f3fad774ca738ad03890950eeb91833ef0e8908753177edd26f1581c
+  maven/org.junit.jupiter/junit-jupiter-engine/pom 5.11.4 SHA-256/b0a323b0d03444441d13d4630b40db5ef84160d2c2f585d4d646dc3882f99207
+  org.junit.jupiter/junit-jupiter-params 5.11.4 SHA-256/02a6e015de7ce94ac7f256e7fa05b8091dea861fe79a555a7993313d0f6c7d96
+  maven/org.junit.jupiter/junit-jupiter-params/pom 5.11.4 SHA-256/8c359bbea07c64a6acdd8c1e13b4f77058b2432b35e86e9a95ddc63249a0ad54
+  maven/org.junit.jupiter/junit-jupiter/pom 5.11.4 SHA-256/a862df11ee539982efcb141d9c0ade7037bba0265d0b589d5fb84db0d212f1d9
+  org.junit.platform/junit-platform-commons 1.11.4 SHA-256/9edd969b0d0670c54105bc91ae79bd1c6f503e12115faba82073b84c86bbc334
+  maven/org.junit.platform/junit-platform-commons/pom 1.11.4 SHA-256/cd12d2b7c242f165548ed9c9406160dcedb6080925b47cf731e0fdae5fb4bce2
+  org.junit.platform/junit-platform-console 1.11.4 SHA-256/a9c3309cdfded3542200de85da6cb274864439d6b02ba80bb45ecc8e0bdf1be7
+  maven/org.junit.platform/junit-platform-console/pom 1.11.4 SHA-256/496d8b270b4d6c7a8b163326a42df7278f923540da3e6713780adf79aa0e79ca
+  org.junit.platform/junit-platform-engine 1.11.4 SHA-256/b1dd998f64f9acadc15966d9cd3d08074662677b3e390f0a38fcbf0bb4c72330
+  maven/org.junit.platform/junit-platform-engine/pom 1.11.4 SHA-256/943471579984212fbe69d03edec7c2ff4fbab1888be0b80c265ea70869fd8abd
+  org.junit.platform/junit-platform-launcher 1.11.4 SHA-256/d7430bd029e7fcced53ee445e4d2d1a8a1e043ea4c4df43b6335a857f79761ae
+  maven/org.junit.platform/junit-platform-launcher/pom 1.11.4 SHA-256/b67cd53802e06aa82aa5966e99fb42917d220457849e5c080c8360753ed67c31
+  org.junit.platform/junit-platform-reporting 1.11.4 SHA-256/df6896109bfaef4de8d2fa9e3371a6176936d1a45a6c0e7fd8f7e6dd6f4c5597
+  maven/org.junit.platform/junit-platform-reporting/pom 1.11.4 SHA-256/9496915d0a8a194b9ad9408c8ed307785339124bad7a40a9f44e425051c95601
+  maven/org.junit/junit-bom/pom 5.11.4 SHA-256/19d4b747b204805325b6334553296f986562277a4ac1cb5e593a5e4c4f5e4115
+  org.opentest4j/opentest4j 1.3.0 SHA-256/48e2df636cab6563ced64dcdff8abb2355627cb236ef0bf37598682ddf742f1b
+  maven/org.opentest4j/opentest4j/pom 1.3.0 SHA-256/9bf7cffc410f3e8372c2522578df9ca56d9d43bd937e30948706c232a943b355
+  maven/org.sonatype.oss/oss-parent/pom 9 SHA-256/fb40265f982548212ff82e362e59732b2187ec6f0d80182885c14ef1f982827a
+  -->
+</project>

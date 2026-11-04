@@ -40,4 +40,20 @@ class VerificationLayoutTest {
         assertFalse(child.stderr().contains("ClassNotFoundException"), child.stderr());
         assertFalse(child.stderr().contains("NoClassDefFoundError"), child.stderr());
     }
+    @Test void explicitJenesisLayoutHasNoGradleFallbackAndRejectsEscapes() throws Exception {
+        Path root=Files.createDirectory(temporary.resolve("root"));
+        Path output=Files.createDirectories(root.resolve("target/jenesis-jvm"));
+        Path file=output.resolve("layout.properties");
+        String valid="schemaVersion=1\nbuilder=jenesis\nroot="+root+"\nreports=target/jenesis-jvm/reports\ncompiler=target/jenesis-jvm/delivery/compiler\n";
+        Files.writeString(file,valid);var layout=VerificationLayout.read(root,file);
+        assertEquals(output.resolve("delivery/compiler/bin/interlis-compiler"),layout.compilerLauncher(false));
+        assertThrows(IllegalArgumentException.class,()->layout.junitDirectory("interlis-compiler","test"));
+        assertEquals(output.resolve("reports/probe.json"),layout.rootReport("probe.json"));
+        for(String bad:new String[]{"../../outside","build/install/compiler","/tmp/compiler"}) {
+            Files.writeString(file,valid.replace("target/jenesis-jvm/delivery/compiler",bad));
+            assertThrows(IllegalArgumentException.class,()->VerificationLayout.read(root,file));
+        }
+        Files.writeString(file,valid);Files.createSymbolicLink(output.resolve("delivery"),temporary);
+        assertThrows(IllegalArgumentException.class,()->VerificationLayout.read(root,file));
+    }
 }

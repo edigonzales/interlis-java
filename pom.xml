@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>guru.interlis</groupId><artifactId>interlis-java</artifactId><version>0.2.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <properties><maven.compiler.release>25</maven.compiler.release></properties>
+  <modules>
+    <module>interlis-model</module>
+    <module>interlis-compiler</module>
+    <module>interlis-workspace</module>
+    <module>interlis-repository</module>
+    <module>interlis-projection</module>
+    <module>interlis-documentation</module>
+    <module>interlis-wasm-bridge</module>
+    <module>interlis-compiler-cli</module>
+    <module>interlis-lsp</module>
+    <module>interlis-verification</module>
+  </modules>
+  <dependencyManagement><dependencies>
+    <dependency><groupId>org.junit</groupId><artifactId>junit-bom</artifactId><version>5.11.4</version><type>pom</type><scope>import</scope></dependency>
+    <dependency><groupId>org.antlr</groupId><artifactId>antlr4-runtime</artifactId><version>4.13.2</version></dependency>
+    <dependency><groupId>com.google.code.gson</groupId><artifactId>gson</artifactId><version>2.14.0</version></dependency>
+    <dependency><groupId>com.google.errorprone</groupId><artifactId>error_prone_annotations</artifactId><version>2.48.0</version></dependency>
+    <dependency><groupId>org.eclipse.lsp4j</groupId><artifactId>org.eclipse.lsp4j</artifactId><version>0.23.1</version></dependency>
+    <dependency><groupId>org.eclipse.lsp4j</groupId><artifactId>org.eclipse.lsp4j.jsonrpc</artifactId><version>0.23.1</version></dependency>
+  </dependencies></dependencyManagement>
+</project>

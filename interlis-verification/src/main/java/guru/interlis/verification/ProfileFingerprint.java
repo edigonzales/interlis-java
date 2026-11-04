@@ -27,9 +27,11 @@ final class ProfileFingerprint {
         return hash(text.toString().getBytes(StandardCharsets.UTF_8));
     }
     private static boolean included(String file) {
-        return file.startsWith("frontend/diagram-ui/")||file.startsWith("testdata/verification/")||file.startsWith("interlis-")||file.startsWith("tools/")||file.startsWith("gradle/")
+        return file.endsWith("/.jenesis.skip")||file.startsWith("frontend/diagram-ui/")||file.startsWith("testdata/verification/")||file.startsWith("interlis-")||file.startsWith("tools/")||file.startsWith("gradle/")
                 ||file.startsWith(".github/workflows/")||file.startsWith("docs/spec/")
                 ||file.startsWith("docs/evidence/p3/full-corpus/")
-                ||Set.of("build.gradle","settings.gradle","gradle.properties","gradlew","gradlew.bat").contains(file);
+                ||file.startsWith("build.jenesis/")||file.startsWith("build/jenesis/")||file.startsWith("build/interlis/")
+                ||Set.of("pom.xml","jenesis.properties","jenesis-contracts.properties","build/InterlisJvmBuild.java","build/JENESIS-UPSTREAM.json",
+                        "build.gradle","settings.gradle","gradle.properties","gradlew","gradlew.bat").contains(file);
     }
 }

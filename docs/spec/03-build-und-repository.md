@@ -11,6 +11,18 @@ Revieweingaben sind saubere Checkouts des vollständigen Kandidaten-SHA.
 
 ## 1. Entscheidung: Gradle mit Groovy-DSL
 
+Ausdrückliche begrenzte Ausnahme seit Auftrag A vom04.11.2026:
+Die parallele POM-/Classpath-JVM-Spur nach
+[Jenesis-Auftrag A](../implementation/jenesis-jvm-a/SPECIFICATION.md) ist erlaubt.
+Gradle bleibt funktionsfähiger Gesamtbuild und Referenz. Die Ausnahme betrifft
+genau zehn JVM-Module einschliesslich Verification und wasm-bridge, keine
+Wasm-/Frontend-/JPMS-/Native-Migration. Maven ist kein Ausführer. Versionierte
+Engine-/Adapterquellen unter Root-`build/` bleiben bei Gradle-`clean` erhalten;
+Jenesis schreibt ausschliesslich nach `target/jenesis-jvm/` und `.jenesis/`.
+Die folgenden historischen Nur-Gradle-Anforderungen gelten ausserhalb dieser
+ausdrücklich abgegrenzten Ausnahme weiter. Der Implementierungs-/Prüfstand
+steht im [Auftragsstatus](../implementation/jenesis-jvm-a/STATUS.md).
+
 Das Projekt verwendet **Gradle als einziges orchestrierendes Build-Tool**. Alle Buildskripte sind Groovy (`.gradle`), Java-Quellen verwenden Java 25 ohne Preview. Der Gradle-Wrapper gehört ins Repository. Maven wird nicht als zusätzliches Buildsystem eingeführt. Das historische Maven-POM des Syntaxspikes ist Referenzevidenz; P0 überführt dessen Ablauf in Gradle.
 
 Ant/Ivy wäre technisch tauglich: Ant führt explizite Tasks aus, Ivy löst Abhängigkeiten auf. Für dieses Projekt ist Gradle die einfachere Gesamtentscheidung, weil Projektabhängigkeiten, Parsergenerierung, Tests und JVM-/WASM-Auslieferung bereits in einem Projektmodell organisiert werden können. Ein zweiter Ant-/Ivy-Build wäre zu pflegen und würde keinen aktuellen Verbraucher vereinfachen. Diese Bewertung bezieht sich auf diesen Modulverbund, nicht auf die generelle Eignung von Ant. Quellen: [Gradle Multiprojektbuilds](https://docs.gradle.org/current/userguide/multi_project_builds.html), [Ant-Tutorial](https://ant.apache.org/manual/tutorial-tasks-filesets-properties.html), [Ivy Quick Start](https://ant.apache.org/ivy/history/latest-milestone/tutorial/start.html).

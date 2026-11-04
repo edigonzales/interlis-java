@@ -2,6 +2,18 @@ plugins {
     id 'base'
 }
 
+// Root build/ now also holds versioned Jenesis sources. Replace the base
+// plugin's deletion set; adding another delete would still remove the root.
+tasks.named('clean', Delete) {
+    setDelete(providers.provider {
+        def sources = ['jenesis', 'interlis', 'InterlisJvmBuild.java',
+                       'JENESIS-UPSTREAM.json', '.jenesis.skip']
+        layout.buildDirectory.get().asFile.listFiles()?.findAll {
+            !sources.contains(it.name)
+        } ?: []
+    })
+}
+
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 def releaseProfile = providers.gradleProperty('releaseProfile')
 def releaseRequested = gradle.startParameter.taskNames.any { it.tokenize(':').last() in ['releaseCheck', 'releaseCheckP3'] }

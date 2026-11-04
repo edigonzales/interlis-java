@@ -26,7 +26,7 @@ final class HostChecks {
         String configured=System.getenv(variable);
         return configured==null ? Path.of(System.getProperty("user.home"),".cache/interlis-java",fallback) : root.resolve(configured).toAbsolutePath().normalize();
     }
-    static Path cli(Path root) { return new VerificationLayout(root).compilerLauncher(System.getProperty("os.name").startsWith("Windows")); }
+    static Path cli(Path root) { return VerificationLayout.forInvocation(root).compilerLauncher(System.getProperty("os.name").startsWith("Windows")); }
     static Path java() { return Path.of(System.getProperty("java.home"),"bin","java"); }
     static void pin(Path path, String expected) throws Exception { require(Files.isRegularFile(path) && hash(path).equals(expected),"Changed or missing pinned input: "+path); }
     static void download(URI uri, Path target, String expected) throws Exception {

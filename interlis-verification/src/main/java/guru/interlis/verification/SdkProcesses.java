@@ -13,13 +13,13 @@ public final class SdkProcesses {
     }
     public static void main(String[] args) throws Exception { check(Path.of(args[0]).toAbsolutePath()); }
     static void check(Path root) throws Exception {
-        Path output=root.resolve("build/reports/sdk/sdk-process-comparison.json");Files.deleteIfExists(output);
+        Path output=VerificationLayout.forInvocation(root).rootReport("sdk/sdk-process-comparison.json");Files.deleteIfExists(output);
         var artifacts=artifacts(root); List<Result> results=new ArrayList<>();
         var version=expect(root,List.of("version"),0);
         for(String field:List.of("api:","diagnostics:","protocol:","format:","diagram:"))require(version.stdout().contains(field),"Missing SDK version field: "+field);
         results.add(version);var versionJson=expect(root,List.of("version","--json"),0);results.add(versionJson);
         var manifest=JsonParser.parseString(versionJson.stdout()).getAsJsonObject();version(manifest);
-        write(root.resolve("build/reports/sdk/version-manifest.json"),manifest);
+        write(VerificationLayout.forInvocation(root).rootReport("sdk/version-manifest.json"),manifest);
         var capabilities=expect(root,List.of("capabilities"),0);version(JsonParser.parseString(capabilities.stdout()).getAsJsonObject());results.add(capabilities);
         results.add(expect(root,List.of("check",root.resolve("testdata/models/base24.ili").toString(),root.resolve("testdata/models/survey24.ili").toString()),0));
         var negative=expect(root,List.of("check",root.resolve("testdata/models/broken24.ili").toString()),1);require(negative.stderr().contains("ILI-"),"Missing SDK diagnostic");results.add(negative);

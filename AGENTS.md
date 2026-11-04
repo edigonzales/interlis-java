@@ -22,6 +22,13 @@ Die Spezifikation ist die fachliche Vertragsquelle. Kapitel 16 regelt gemeinsame
 
 ## 3. Architektur- und Qualitätsgrenzen
 
+Für den ausdrücklich beauftragten Auftrag A ist zusätzlich die POM-basierte
+Jenesis-JVM-Spur gemäss `docs/implementation/jenesis-jvm-a/` erlaubt. Gradle
+bleibt Gesamtbuild und Referenz; Wasm, Extension-Paketierung, JPMS und native
+Auslieferung werden dadurch nicht migriert. `build/jenesis/`,
+`build/InterlisJvmBuild.java`, `build/interlis/` und der Upstreampin sind Quellen:
+kein manuelles Löschen des gesamten Root-`build/`. Gradle-`clean` schützt sie.
+
 - Verwende Java 25 ohne Preview, Gradle mit Groovy-DSL und den Repository-Wrapper. Paketbasis und Group sind `guru.interlis`. Lege nur tatsächlich benötigte Module an; führe keinen parallelen Maven-/Ant-Build und kein zusätzliches Buildframework ein. Das historische POM unter `docs/evidence/` bleibt Referenzevidenz.
 - Unterstütze ausschliesslich INTERLIS 2.3 und 2.4. ANTLR bleibt intern; öffentliche APIs verwenden eigene Quell-, Syntax- und Modelltypen.
 - Halte Compiler und Modell unabhängig von Dateisystem, HTTP, JDBC, LSP-Transport und UI. Hostzugriffe und Laufzeitintegration gehören in explizite Adapter.

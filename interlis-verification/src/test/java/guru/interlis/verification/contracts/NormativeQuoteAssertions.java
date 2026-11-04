@@ -1,6 +1,7 @@
 package guru.interlis.verification.contracts;
 
 import com.google.gson.*;
+import guru.interlis.verification.VerificationLayout;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
@@ -13,7 +14,7 @@ final class NormativeQuoteAssertions {
     private NormativeQuoteAssertions() { }
     static List<String> pages(String version, JsonObject document, JsonObject recorded) throws IOException {
         require(Set.of("2.3", "2.4").contains(version), "Wrong norm version");
-        pin("build/norms/ili" + version.replace(".", "") + ".pdf", s(document, "sha256"));
+        require(hash(VerificationLayout.forInvocation(root()).normativePdf(version)).equals(s(document,"sha256")),"Changed norm PDF");
         Path path = inside(root(), BASE + "norm-text/ili" + version.replace(".", "") + "-pypdf-6.10.0.json.gz");
         JsonObject data;
         try (var reader = new InputStreamReader(new GZIPInputStream(Files.newInputStream(path)), StandardCharsets.UTF_8)) {

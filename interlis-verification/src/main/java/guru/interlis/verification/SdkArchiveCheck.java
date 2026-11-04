@@ -12,9 +12,9 @@ import static guru.interlis.verification.HostChecks.*;
 public final class SdkArchiveCheck {
     private SdkArchiveCheck() { }
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath(),out=root.resolve("build/reports/sdk/archive-consumer.json");Files.deleteIfExists(out);
+        Path root=Path.of(args[0]).toAbsolutePath(),out=VerificationLayout.forInvocation(root).rootReport("sdk/archive-consumer.json");Files.deleteIfExists(out);
         var properties=new Properties();try(var reader=Files.newBufferedReader(root.resolve("gradle.properties"))){properties.load(reader);}
-        Path archive=root.resolve("build/releases/interlis-java-sdk-"+properties.getProperty("projectVersion")+".zip");String archiveSha=hash(archive);
+        Path archive=VerificationLayout.forInvocation(root).sdkArchive(properties.getProperty("projectVersion"));String archiveSha=hash(archive);
         boolean windows=System.getProperty("os.name").startsWith("Windows");
         Path temporary=Files.createTempDirectory("interlis SDK consumer ");var entries=new TreeMap<String,String>();
         try {
