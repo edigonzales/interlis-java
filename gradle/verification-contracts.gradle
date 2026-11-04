@@ -79,6 +79,14 @@ selected.each { module, rows ->
 }
 project(':interlis-verification') {
     plugins.withId('java') {
+        tasks.named('test', Test) {
+            // Unit counterprobes read current source bindings too: data-only or
+            // comment-only edits must not reuse an unrelated successful report.
+            inputs.files(bindings.values().collect { rootProject.file(it.source) })
+            inputs.files(original.requirements.collectMany { it.processEvidence ?: [] }.collect {
+                rootProject.file(overlay.processOverrides[it.source]?.source ?: it.source)
+            })
+        }
         tasks.register('contractTest', Test) {
             group = 'verification'
             testClassesDirs = sourceSets.test.output.classesDirs

@@ -177,8 +177,14 @@ tasks.register('performanceCheck', Exec) {
     workingDir rootProject.projectDir
     commandLine nodeExecutable.get(), 'tools/performance/check.cjs'
 }
-project(':interlis-compiler-cli') {
-    tasks.matching { it.name == 'fullCorpusJvm' }.configureEach { dependsOn 'fullCorpus'; mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':sdkProcessCheck', ':sdkPackage', ':compilerCliCheck', ':interlis-wasm-webimage:webImageProbe', ':interlis-wasm-teavm:prepareBrowserHarness' }
+project(':interlis-verification') {
+    tasks.matching { it.name == 'fullCorpusJvm' }.configureEach {
+        dependsOn 'fullCorpus'
+        mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':sdkProcessCheck',
+                ':sdkPackage', ':compilerCliCheck', ':interlis-wasm-webimage:webImageProbe',
+                ':interlis-wasm-teavm:prepareBrowserHarness', ':sdkReproducibilityCheck',
+                ':platformCheck', ':releaseEvidenceCheckerTest', ':conformanceEvidence'
+    }
     tasks.matching { it.name == 'editorPressure' }.configureEach { mustRunAfter ':fullCorpusEditorWasm' }
     tasks.matching { it.name == 'observationPressure' }.configureEach { mustRunAfter 'editorPressure' }
 }
@@ -240,11 +246,6 @@ tasks.register('releaseEvidenceCheck', Exec) {
     commandLine nodeExecutable.get(), 'tools/release/evidence.cjs'
 }
 tasks.named('releaseCheckP3') { dependsOn 'releaseEvidenceCheck' }
-project(':interlis-verification') {
-    tasks.matching { it.name == 'fullCorpusJvm' }.configureEach {
-        mustRunAfter ':sdkReproducibilityCheck', ':platformCheck', ':releaseEvidenceCheckerTest', ':conformanceEvidence'
-    }
-}
 
 // One neutral diagram source is consumed by the portable browser and editor artifacts.
 tasks.register('diagramUiBuild', Exec) {

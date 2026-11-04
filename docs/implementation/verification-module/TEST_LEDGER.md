@@ -130,3 +130,43 @@ den vollständigen tatsächlichen SDK-Versionssatz abgestimmt; keine Assertion
 gelockert. Rohfehler und finale erfolgreiche Probe bleiben separat erhalten.
 Keine Produktsemantik, Erwartungen, Originalbelege, Toolpins oder Testgrenzen
 wurden geändert. Unbetroffene breite Prüfungen wurden nicht wiederholt.
+
+## R5 – vollständige Vorbereitung und Reihenfolge am neuen Besitzer
+
+Frischer unabhängiger Gesamt-Review auf1bb9aa9 (extern round-03): regulärer
+Exit0; R1–R4 bestätigt behoben, alle109 ursprünglichen Belege hashgleich.
+Neues berechtigtes Finding R5: zweiter alter CLI-Taskblock hielt weiterhin die
+fullCorpus-Abhängigkeit und breiteren Lauf-/Drucktestreihenfolgen. Der vorherige
+Folgefix hatte nur die vier späteren Reihenfolgekanten übertragen. Gesamten
+Block nun am Verifikationsmodul zusammengeführt; kein leerer CLI-Block bleibt.
+
+Tatsächlich geprüft (`JAVA_HOME=…/25.0.3-tem`, jeweils Exit0):
+- `./gradlew fullCorpusJvm --dry-run` → r5-jvm-graph.log.
+- `./gradlew fullCorpusWasm --dry-run` → r5-wasm-graph.log.
+- `./gradlew performanceCheck --dry-run` → r5-performance-graph.log.
+Alle drei enthalten den tatsächlichen fullCorpus-Produzenten vor fullCorpusJvm;
+performanceCheck ordnet fullCorpusEditorWasm vor editorPressure und danach
+observationPressure. Diese Graphen sind keine ausgeführten Benchmarkprofile.
+
+Nur die beiden generierten Vorbereitungsoutputs wurden vor dem echten
+`./gradlew fullCorpus :interlis-verification:test --tests '*CompilerCoverageContractTest'`
+entfernt (vorhandene Outputs extern gesichert). Der reale neue JavaExec meldet
+FULL_CORPUS_INPUT_PASS roots=347 files=366; prepared.json und input-verification.json
+sind vollständig unter dem externen r5/-Pfad erhalten und gehasht.
+Rohlog r5-preparation-coverage.log, Exit0; **die dabei up-to-date gebliebene
+Unitgruppe ist kein frischer Testnachweis**. Die Daten-/Quellenbindungen und
+verwendeten JSON-/Archivfixtures wurden deshalb ausdrücklich als normale
+Testinputs deklariert. Danach sieben Coverage-Unitfälle wirklich ausgeführt,
+Exit0 (r5-coverage-inputs.log; Tasktest ohne UP-TO-DATE).
+Der echte Vorbereitungslauf prüft gepinnte Eingaben und decodierte Texte,
+kompiliert keine347 Modelle und misst keine Performancebudgets.
+
+Ergänzend nach dem1bb9aa9-Commit25 Tests von artifact-comparison.test.cjs
+bestanden, Exit0/0 Skips. Anlass: die korrigierte gemeinsame SDK-Versionsfixture
+wird auch dort konsumiert. Herkunft bleibt ausdrücklich der saubere1bb9aa9-
+Commit; postcommit-artifact-comparison.json/log enthält die tatsächliche SHA,
+Zeiten und Loghash. Vergleichscode und Fixturebytes bleiben beim R5-Fix identisch;
+keine pauschale Wiederholung dieses gültigen Verbrauchernachweises.
+
+Nur aktuelle Root-/Inputbindungen geändert, historische Belege/Erwartungen und
+Budgets unverändert. Neuer Kandidat wird erneut vollständig unabhängig geprüft.

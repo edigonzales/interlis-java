@@ -53,3 +53,13 @@ Gezielte Folgeprüfungen:95 Nodefälle,7 Coverage-Unitfälle,55 echte CLI-Fälle
 9 SDK-Kommandos/Archivconsumer und tatsächliche Produzent-/Validator-Gegenprobe
 bestanden; vier Orderingkanten im Dry-run bestätigt. Details im TEST_LEDGER.
 Neuer Kandidat wird committet; VM-18 bleibt bis zum frischen Gesamt-Review offen.
+
+Frischer Gesamt-Review auf1bb9aa9: R1–R4 erfüllt, FAIL wegen neuem R5.
+R5 nun vollständig korrigiert: fullCorpus-Produzent und alle ursprünglichen
+Lauf-/Drucktestreihenfolgen am neuen Besitzer. Drei reale Taskgraphprüfungen,
+sauberer echter Vorbereitungsprozess (347/366, kein Korpusbenchmark) und sieben
+frisch ausgeführte Coverage-Gegenproben erfolgreich. Normale Testinputs binden
+die tatsächlich gelesenen Quellen/Manifeste, damit Datenänderungen die Tests
+invalidieren. Die zusätzlich geprüften25 Artefaktvergleichsfälle sind mit ihrer
+1bb9aa9-Herkunft dokumentiert. VM-18 bleibt für den neuen Kandidaten offen;
+finales unabhängiges Urteil wird extern aufbewahrt, ohne Nachtragscommit.

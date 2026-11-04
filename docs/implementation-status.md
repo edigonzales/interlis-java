@@ -1701,3 +1701,11 @@ korrigiert, redundante Dependency entfernt und fullCorpusJvm-Ordering am
 neuen Besitzer wiederhergestellt.7 gezielte Coveragefälle und echte CLI-/SDK-
 Prozesse bestehen. Ein frischer unabhängiger Gesamt-Review bleibt erforderlich;
 kein PASS vom alten Kandidaten übernommen und kein Vollrelease behauptet.
+
+Zweiter Verifikations-Gesamtreview auf1bb9aa9 bestätigt R1–R4, meldet R5:
+weiteren alten CLI-Taskblock vollständig migriert. Vorbereitung vor JVM/Wasm
+und Drucktestreihenfolgen sind in drei echten Dry-run-Graphen bestätigt;
+Inputvorbereitung347/366 aus fehlenden Outputs und sieben frische Coverage-
+Gegenproben bestehen. Aktuelle Quellen-/Manifeste sind deklarierte Unitinputs.
+25 zusätzliche Artefaktvergleichsfälle am unveränderten gemeinsamen Fixture
+bestehen. Frischer unabhängiger Gesamt-Review des Folgecommits bleibt fällig.
