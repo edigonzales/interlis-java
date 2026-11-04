@@ -1,5 +1,6 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');const {root,hash,commitInfo}=require('../performance/profile.cjs');
+const {validateJvmReports}=require('./evidence.cjs');
 const repository='edigonzales/interlis-java',directory=path.join(root,'build/reports/p3/platform-evidence'),output=path.join(directory,'result.json'),gh=process.env.GH_EXECUTABLE||'gh';
 const assert=(value,message)=>{if(!value)throw Error(message);};
 function api(endpoint){return JSON.parse(cp.execFileSync(gh,['api',endpoint],{cwd:root,encoding:'utf8',maxBuffer:16*1024*1024}));}
@@ -23,6 +24,7 @@ try{
   const extracted=path.join(folder,'extracted');fs.rmSync(extracted,{recursive:true,force:true});fs.mkdirSync(extracted);cp.execFileSync('/usr/bin/unzip',['-q',zip,'-d',extracted]);
   const report=path.join(extracted,'build/reports/p3/platform/result.json');const proof=JSON.parse(fs.readFileSync(report,'utf8'));const commit=fs.readFileSync(path.join(extracted,'build/reports/p3/platform/commit.txt'),'utf8').replace(/^\uFEFF/,'').trim();
   assert(commit===candidate.gitCommit&&proof.gitCommit===candidate.gitCommit&&!proof.dirty&&proof.status==='passed','Foreign/dirty/unsuccessful platform proof');
+  validateJvmReports(proof,file=>fs.readFileSync(path.join(extracted,file)));
   selected.push({platform,jobId:job.id,artifactId:artifact.id,digest:artifact.digest,zip:path.relative(root,zip),report:path.relative(root,report),reportSha256:hash(fs.readFileSync(report)),proof});
  }
  const result={schemaVersion:'1.0',profile:'P3',repository,gitCommit:candidate.gitCommit,run:{id:run.id,url:run.html_url,status:run.status,conclusion:run.conclusion,headSha:run.head_sha,attempt:run.run_attempt,path:run.path},jobs:jobs.map(j=>({id:j.id,name:j.name,status:j.status,conclusion:j.conclusion})),artifacts:selected};

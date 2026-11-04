@@ -65,7 +65,7 @@ auf macOS kommen6 reale PTY-/Redirectfälle hinzu. Headless Windows/Linux
 behaupten kein interaktives Terminal. Die bestehenden Releaseprüfer verlangen
 1232 Tests/229 Suites sowie alle50 Fälle und erneut validierte Farbausgaben.
 Prüfung einer entpackten Distribution ausserhalb des Checkouts:
-`java -cp <verification-classpath> guru.interlis.cli.verification.CompilerCliProcesses <repo-root> <external-launcher>`.
+`java -cp <verification-classpath> guru.interlis.verification.CompilerCliProcesses <repo-root> <external-launcher>`.
 Das ist eine Hostprüfhilfe, kein Bestandteil der Produktdistribution.
 
 Die ausgelieferten Launcher starten dieselben unmodifizierten Runtime-JARs als

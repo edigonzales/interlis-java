@@ -1,5 +1,21 @@
 # Implementierungsstatus interlis-java
 
+## Internes Verifikationsmodul vom 04.11.2026
+
+VM-01–17 (BUILD-001/003/004/007/008, WP-00/01/30): Hostprogramme in
+`interlis-verification` mit main/test ausgelagert; direkte Unicode-/OID-/Metadaten-
+regressionen im Compiler. 145 frühere Evidenzfälle methodengenau disponiert;
+aktuelle Coverage-, Normentscheidungs- und Integritätsverträge explizit über
+`compilerContractCheck`, historische G2-Planungsprüfer stillgelegt und Originale
+unverändert bewahrt. 79 Unitfälle, vier Contracts, 272 ausgewählte Assertions,
+32 fachliche Ersatzfälle, 94 Nodefälle und neun reale SDK-Kommandos gezielt
+bestanden; separater Consumer aus SDK-ZIP, LSP-Distribution und Dependency-/
+Artefaktisolation erfolgreich. Keine Jenesis-/Versions-/Semantikmigration.
+Korpus-, Benchmark-, Browser-/Web-Image-/Mehrplattform-/Vollreleaseprüfungen
+für diesen organisatorischen Auftrag nicht fällig; kein solcher PASS behauptet.
+VM-18 bleibt bis zum unabhängigen Gesamt-Review des Kandidaten offen.
+[Phasen, Disposition und originale Rohbelege](implementation/verification-module/STATUS.md).
+
 ## TeaVM-Upstream-Umstellung vom 03.11.2026
 
 Nutzerauftrag TP-01–TP-08; BUILD-002/006, WASM-006 und WP-33 betroffen.

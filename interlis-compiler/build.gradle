@@ -59,3 +59,9 @@ tasks.named('processResources') {
         into 'META-INF/licenses'
     }
 }
+
+tasks.withType(Test).configureEach {
+    systemProperty 'repo.root', rootProject.projectDir.absolutePath
+    inputs.dir(rootProject.file('docs/evidence/stabilization/registries/unicode-17.0.0'))
+    inputs.file(rootProject.file('interlis-compiler/src/main/java/guru/interlis/compiler/internal/TextLengths.java'))
+}

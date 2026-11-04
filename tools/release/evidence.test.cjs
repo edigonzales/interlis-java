@@ -1,6 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict');const {validate,validatePreflight,definitions,browser}=require('./evidence.cjs');
 const {fixture}=require('./test-fixtures.cjs');
+const jvmProfile=require('../../testdata/verification/jvm-profile.json');
 test('complete current P3 candidate evidence validates',()=>assert.equal(validate(fixture()).status,'passed'));
 test('real guard combines unavailable PATH names with absolute OS execution denials',()=>{
  const f=fixture();f.guard.probes.unshift({command:'absent-command',status:null,error:'ENOENT'});
@@ -30,7 +31,10 @@ for(const [name,mutate]of [
  ['historical thirteen-root performance',f=>f.performance.roots=13],['partial edits',f=>f.performance.realCorpusEdits=1000],['semantic mismatch',f=>f.performance.semanticMismatches=1],
  ['unexpected conformance result',f=>f.conformance.summary.summary.FAIL=1],['removed normative control',f=>f.conformance.summary.normativeAssessments.pop()],
  ['missing Windows',f=>f.platforms.splice(1,1)],['wrong architecture',f=>f.platforms[1].arch='aarch64'],['skipped JVM',f=>f.platforms[0].skipped=1],['incomplete SDK processes',f=>f.platforms[0].sdkCommands=8],
- ['missing COLOR JVM cases',f=>f.platforms[0].tests=1229],['missing COLOR suite',f=>f.platforms[0].suites=228],['missing suite XML',f=>delete f.platforms[0].xmlHashes.suite0],
+ ['missing COLOR JVM cases',f=>f.platforms[0].tests=jvmProfile.minimumTests-1],['missing COLOR suite',f=>f.platforms[0].suites=jvmProfile.minimumSuites-1],['missing suite XML',f=>delete f.platforms[0].xmlHashes[jvmProfile.requiredReports[0]]],
+ ['old report path instead of new',f=>{const p=f.platforms[0];p.xmlHashes['interlis-compiler-cli/build/test-results/verificationTest/TEST-Old.xml']=p.xmlHashes[jvmProfile.requiredReports[0]];delete p.xmlHashes[jvmProfile.requiredReports[0]];}],
+ ['extra old duplicate report',f=>f.platforms[0].xmlHashes['interlis-compiler-cli/build/test-results/evidenceTest/TEST-Old.xml']='3'.repeat(64)],
+ ['changed XML hash shape',f=>f.platforms[0].xmlHashes[jvmProfile.requiredReports[0]]='changed'],
  ['missing standard process',f=>f.platforms[0].compilerCliCases.pop()],['foreign standard process',f=>f.platforms[0].compilerCliCases[0]='foreign'],
  ['ANSI in machine platform report',f=>f.platforms[0].extra='\u001b[31mbad\u001b[0m'],['missing color verification',f=>delete f.platforms[0].compilerCliColorVerified],
  ['foreign workflow',f=>f.github.repository='other/project'],['failed workflow',f=>f.github.run.conclusion='failure'],['failed job',f=>f.github.jobs[0].conclusion='failure'],['unhashed artifact',f=>f.github.artifacts[0].digest=''],
@@ -48,3 +52,12 @@ for(const [name,mutate]of [
  ['old completed guard',f=>f.guard.status='passed'],['dead guard',f=>f.guard.active=false],['unproved execution denial',f=>f.guard.probes=[]],['successful interpreter',f=>f.guard.probes[0].status=0],
  ['absolute absence without execution denial',f=>f.guard.probes[0].error='ENOENT'],['unexpected PATH execution error',f=>f.guard.probes.push({command:'unavailable',status:null,error:'EACCES'})]
 ])test('P3 fails closed: '+name,()=>{const f=fixture();mutate(f);assert.throws(()=>validate(f));});
+
+test('downloaded platform XML must match the recorded hashes',()=>{
+ const {validateJvmReports}=require('./evidence.cjs'),{hash}=require('../performance/profile.cjs');
+ const p=fixture().platforms[0],bytes=Buffer.from('archived XML fixture');
+ for(const file of Object.keys(p.xmlHashes))p.xmlHashes[file]=hash(bytes);
+ validateJvmReports(p,()=>bytes);
+ assert.throws(()=>validateJvmReports(p,()=>Buffer.from('tampered')),/changed archived JVM XML/);
+ assert.throws(()=>validateJvmReports(p,()=>{throw Error('missing XML');}),/missing XML/);
+});

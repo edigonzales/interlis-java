@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0",
+  "profile": "P3-jvm-distribution-v2",
+  "minimumTests": 1411,
+  "minimumSuites": 352,
+  "delta": {
+    "previousTests": 1232,
+    "previousSuites": 229,
+    "removed": {
+      "evidence": [
+        145,
+        6
+      ],
+      "verification": [
+        25,
+        9
+      ],
+      "g2Assertions": [
+        15,
+        11
+      ]
+    },
+    "added": {
+      "compilerRegressions": [
+        9,
+        3
+      ],
+      "verificationUnit": [
+        79,
+        16
+      ],
+      "contracts": [
+        4,
+        2
+      ],
+      "selectedAssertions": [
+        272,
+        128
+      ]
+    }
+  },
+  "requiredDirectories": [
+    "interlis-model/build/test-results/test",
+    "interlis-compiler/build/test-results/test",
+    "interlis-compiler-cli/build/test-results/test",
+    "interlis-lsp/build/test-results/test",
+    "interlis-projection/build/test-results/test",
+    "interlis-repository/build/test-results/test",
+    "interlis-workspace/build/test-results/test",
+    "interlis-wasm-bridge/build/test-results/test",
+    "interlis-verification/build/test-results/test",
+    "interlis-verification/build/test-results/contractTest",
+    "interlis-compiler/build/test-results/contractAssertionsTest",
+    "interlis-compiler-cli/build/test-results/contractAssertionsTest",
+    "interlis-lsp/build/test-results/contractAssertionsTest",
+    "interlis-model/build/test-results/contractAssertionsTest",
+    "interlis-repository/build/test-results/contractAssertionsTest",
+    "interlis-wasm-bridge/build/test-results/contractAssertionsTest",
+    "interlis-workspace/build/test-results/contractAssertionsTest"
+  ],
+  "requiredReports": [
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.CompilerCliProcessesTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.CorpusOuterNameContractTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.FullCorpusInputContractTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.HostChecksTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.PythonFreeCheckTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.SemanticComparisonTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.VerificationLayoutTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.contracts.CompilerCoverageContractTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.contracts.ContractFilesTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.contracts.JUnitReportAssertionsTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.contracts.NormativeDecisionsContractTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.contracts.NormativeQuoteAssertionsTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.contracts.RuntimeReportValidationTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.contracts.SdkReportPathValidationTest.xml",
+    "interlis-verification/build/test-results/contractTest/TEST-guru.interlis.verification.contracts.CompilerCoverageContractTest.xml",
+    "interlis-verification/build/test-results/contractTest/TEST-guru.interlis.verification.contracts.NormativeDecisionsContractTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.PlatformProcessesTest.xml",
+    "interlis-verification/build/test-results/test/TEST-guru.interlis.verification.ProfileFingerprintTest.xml"
+  ]
+}

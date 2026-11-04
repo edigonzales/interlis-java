@@ -1,0 +1,67 @@
+plugins { id 'java' }
+apply from: rootProject.file('gradle/java-conventions.gradle')
+dependencies {
+    implementation project(':interlis-compiler')
+    implementation project(':interlis-model')
+    implementation project(':interlis-workspace')
+    implementation project(':interlis-repository')
+    implementation project(':interlis-projection')
+    implementation project(':interlis-wasm-bridge')
+    implementation libs.gson
+    testImplementation project(':interlis-compiler-cli')
+    testImplementation platform(libs.junit.bom)
+    testImplementation libs.junit.jupiter
+    testRuntimeOnly libs.junit.platform.launcher
+}
+tasks.named('test', Test) {
+    useJUnitPlatform { excludeTags 'compiler-contract' }
+    systemProperty 'repo.root', rootProject.projectDir.absolutePath
+}
+def hostNodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
+def hostProfiles = [
+    pythonFreeCheck: ['PythonFreeCheck', []],
+    semanticComparison: ['SemanticComparison', [hostNodeExecutable.get()]],
+    geoCorpus: ['GeoCorpus', []],
+    fullCorpus: ['FullCorpus', []],
+    fullCorpusJvm: ['FullCorpusRun', []],
+    observationPressure: ['ObservationPressure', []],
+    editorPressure: ['EditorPressure', []],
+    jvmBenchmark: ['JvmBenchmark', []],
+    sdkProcessCheck: ['SdkProcesses', []],
+    sdkArchiveCheck: ['SdkArchiveCheck', []],
+    platformCheck: ['PlatformProcesses', []],
+    conformanceEvidence: ['ConformanceEvidence', []],
+    compilerCliCheck: ['CompilerCliProcesses', []],
+    repositoryReferenceCheck: ['RepositoryReferenceCheck', []],
+    referenceCheck: ['ReferenceProcesses', ['profile']],
+    originalViewReferenceCheck: ['ReferenceProcesses', ['originals']],
+    viewReferenceCheck: ['ReferenceProcesses', ['views', hostNodeExecutable.get()]],
+    unitReferenceCheck: ['ReferenceProcesses', ['units', hostNodeExecutable.get()]]
+]
+        hostProfiles.each { name, profile ->
+            tasks.register(name, JavaExec) {
+                group = 'verification'
+                description = "Runs the Java host verification profile ${name}."
+                dependsOn 'classes'
+                classpath = sourceSets.main.runtimeClasspath
+                mainClass = "guru.interlis.verification.${profile[0]}"
+                args rootProject.projectDir.absolutePath
+                args profile[1]
+                javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+                if (name in ['sdkProcessCheck', 'compilerCliCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':interlis-compiler-cli:installDist'
+                if (name == 'conformanceEvidence') dependsOn ':conformanceCheck'
+                if (name == 'sdkArchiveCheck') dependsOn ':sdkPackage'
+                if (name == 'platformCheck') dependsOn ':check', ':compilerContractCheck', ':compilerCliCheck', ':sdkArchiveCheck', ':interlis-lsp:installDist'
+                if (name == 'jvmBenchmark') dependsOn 'geoCorpus'
+                if (name == 'jvmBenchmark') mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':interlis-wasm-webimage:webImageProbe'
+                if (name in ['viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':checkNodeRuntime'
+                if (name == 'semanticComparison') {
+                    dependsOn ':checkNodeRuntime', ':interlis-wasm-teavm:generateJavaScript', ':interlis-wasm-teavm:generateWasmGC'
+                    mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck'
+                }
+                if (name in ['originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'referenceCheck'
+                if (name in ['viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'originalViewReferenceCheck'
+                if (name == 'unitReferenceCheck') mustRunAfter 'viewReferenceCheck'
+            }
+    
+}

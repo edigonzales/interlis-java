@@ -1,12 +1,13 @@
 # Build und Repository
 
-Der beauftragte G2-Abschluss prüft Quellen, Normbelege und frisch ausgeführte
-JUnit-Assertionbindungen über `g2EvidenceTest` als Teil von `check`. Die kleine
-Java-Testhilfe verwendet die gepinnten Original-PDFs und unverändert erhaltene
-`pypdf`-Textkoordinaten; sie schreibt keine Baselines oder Erwartungen.
+Aktuelle Compilerabdeckung, Quellenbindungen, normative Entscheidungen und frisch
+selektierte JUnit-Assertions werden ausdrücklich über `compilerContractCheck`
+geprüft. `check` führt die normalen Produkt- und Verifikationstests aus und
+benötigt keine Norm-PDFs. Historische G2-Originalbelege bleiben unverändert;
+ihr damaliger Planungsstand ist kein aktueller Produktvertrag.
+Die methodengenaue Disposition steht im
+[Verifikationsauftrag](../implementation/verification-module/STATUS.md).
 Revieweingaben sind saubere Checkouts des vollständigen Kandidaten-SHA.
-Rohberichte liegen unter `build/reports/g2/` und den JUnit-Ausgabeverzeichnissen.
-Das spätere G2-Gate bleibt vom P3-`releaseCheck` getrennt.
 
 ## 1. Entscheidung: Gradle mit Groovy-DSL
 
@@ -283,9 +284,12 @@ werden nicht verändert. Inkrementelle und frische Builds müssen übereinstimme
 ### L0B-3: Java-Hostprüfungen und Pythonfreiheit
 
 `geoCorpus`, `jvmBenchmark`, `sdkProcessCheck`, `referenceCheck` und die
-Original-/View-/Unit-Referenzvergleiche verwenden das separate CLI-SourceSet
-`verification`; seine Gson-/JUnit-Abhängigkeiten gehören nicht zur Distribution.
-`verificationTest` prüft Fehlerpfade und das eingefrorene Unicode-NFD-Orakel.
+Original-/View-/Unit-Referenzvergleiche gehören zum internen Modul
+`interlis-verification` mit ausschliesslich `src/main` und `src/test`.
+Seine Gson-/JUnit-Abhängigkeiten gehören nicht zur Distribution. Tool- und
+Validator-Unit-Tests laufen unter `:interlis-verification:test`; aktuelle
+Repository-/Runbindungen unter `contractTest` mit dem Tag `compiler-contract`.
+Direkte OID-/Metadaten-/Unicode-NFD-Regressionsfälle gehören zum Compiler.
 `pythonFreeCheck` ist Teil von `check` und prüft getrackte sowie nicht ignorierte
 Eingaben mit Negativcanarys. Historische Texte bleiben lesbar. Das abschliessende
 0b-Gate läuft zusätzlich mit gesperrtem Interpreterzugriff einschliesslich

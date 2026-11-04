@@ -27,6 +27,7 @@ function distributionFiles(root) {
   const files=[...mandatory,...[cli,teavm+'/browser-tools',teavm+'/web'].flatMap(directory=>{
     const contents=walk(directory);if(!contents.length)throw Error('Empty distribution directory: '+directory);return contents;
   })];
+  if(files.some(file=>file.includes('interlis-verification')||file.includes('/guru/interlis/verification/')))throw Error('Verification artifact in product delivery');
   return [...new Set(files)].sort();
 }
 /** Actual served resources exclude only the manifest's self-reference. */

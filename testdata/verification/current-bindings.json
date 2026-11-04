@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "1.0",
+  "origin": {
+    "path": "testdata/g2/completion-links.json",
+    "sha256": "33848b8c0ad6c65a316a62a3af1a833b06169618433ba72e303ea9cba890d920",
+    "baseSha": "e389c8eecf50f7672d418df59f37341e47a44038"
+  },
+  "reason": "Explicit CLI module rename and six pre-existing source/API drifts; original links and expectations unchanged. Union of observed assertions, no historical PARTIAL status.",
+  "overrides": {
+    "DiagnosticCatalogTest.initialCatalogIsStableAndUnique": {
+      "source": "interlis-model/src/test/java/guru/interlis/diagnostics/DiagnosticCatalogTest.java",
+      "suite": "guru.interlis.diagnostics.DiagnosticCatalogTest",
+      "method": "initialCatalogIsStableAndUnique",
+      "methodStart": 1533,
+      "methodEnd": 2021,
+      "methodSha256": "550d323c3e41edd265e9caa2f917ea66308f8bdef5141d4b746a6eb2c866186d",
+      "sourceSha256": "9a07e27316638a09bcec53e43f9cbe99e16342f72ee1b18953422931ad0631e2",
+      "observations": [
+        "codes stable",
+        "catalog stable/unique",
+        "schema/catalog"
+      ]
+    },
+    "CliApplicationTest.jsonOutputIsMachineReadable": {
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "suite": "guru.interlis.cli.CliApplicationTest",
+      "method": "jsonOutputIsMachineReadable",
+      "methodStart": 5948,
+      "methodEnd": 6252,
+      "methodSha256": "e8e52fb35fe714d3b4eb665fb96aed19e0a9e6681244b5f17d3cf6a30efb9de3",
+      "sourceSha256": "f34b173e48877d81b85233e87772236aba6919e3e362c5e021e9a47d407e9736",
+      "observations": [
+        "CLI JSON diagnostics",
+        "JSON diagnostic shape",
+        "JSON output"
+      ]
+    },
+    "CliApplicationTest.checkPositiveAndNegativeModels": {
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "suite": "guru.interlis.cli.CliApplicationTest",
+      "method": "checkPositiveAndNegativeModels",
+      "methodStart": 2082,
+      "methodEnd": 2743,
+      "methodSha256": "e9f0777a6cf390fc3968b6f6ae00bd5575902d9a71721f252ab31f0c0fdeca99",
+      "sourceSha256": "f34b173e48877d81b85233e87772236aba6919e3e362c5e021e9a47d407e9736",
+      "observations": [
+        "CLI stdout/exit",
+        "CLI outcome"
+      ]
+    },
+    "HttpSourceLoaderTest.mapsAccessEncodingSizeAndOffline": {
+      "source": "interlis-repository/src/test/java/guru/interlis/repository/HttpSourceLoaderTest.java",
+      "suite": "guru.interlis.repository.HttpSourceLoaderTest",
+      "method": "mapsAccessEncodingSizeAndOffline",
+      "methodStart": 1926,
+      "methodEnd": 3575,
+      "methodSha256": "c324e5c2f0e0a1123221b62841bc66a37d5e0d57eff1820104513bca35394dfd",
+      "sourceSha256": "27126f727a9326813f76240b48e0e7ddc8b4a5bd1dc9e431eff79fd11a3d8fb9",
+      "observations": [
+        "host errors"
+      ]
+    },
+    "CliApplicationTest.formatWritesStdoutChecksAndWritesAtomically": {
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "suite": "guru.interlis.cli.CliApplicationTest",
+      "method": "formatWritesStdoutChecksAndWritesAtomically",
+      "methodStart": 3512,
+      "methodEnd": 4780,
+      "methodSha256": "3b8c4defa6de4f122669f4302a4d5526e83132ecad523efecd838a64b7667692",
+      "sourceSha256": "f34b173e48877d81b85233e87772236aba6919e3e362c5e021e9a47d407e9736",
+      "observations": [
+        "stdout/--check/--write/exit",
+        "atomic write"
+      ]
+    },
+    "CliApplicationTest.formatDoesNotWriteInvalidSource": {
+      "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
+      "suite": "guru.interlis.cli.CliApplicationTest",
+      "method": "formatDoesNotWriteInvalidSource",
+      "methodStart": 5534,
+      "methodEnd": 5942,
+      "methodSha256": "0733edbf6996589a75702e98a0f3d24b179fe01debda2dfae95091d447b4a234",
+      "sourceSha256": "f34b173e48877d81b85233e87772236aba6919e3e362c5e021e9a47d407e9736",
+      "observations": [
+        "invalid source leaves file unchanged"
+      ]
+    }
+  },
+  "extras": {
+    "A2R3CaseSensitivityCounterProbeTest.exactCaseControlsIdentityBindingAndPublicNavigation": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/A2R3CaseSensitivityCounterProbeTest.java",
+      "suite": "guru.interlis.compiler.A2R3CaseSensitivityCounterProbeTest",
+      "method": "exactCaseControlsIdentityBindingAndPublicNavigation",
+      "observations": [
+        "assertNotEquals(",
+        "ILI-SEM-0001",
+        "definition("
+      ],
+      "sourceSha256": "3771b678a0458bd8b543d8c2763c1fc78ba93d9a185a99a90ea2f59268cbde08",
+      "methodStart": 1299,
+      "methodEnd": 4529,
+      "methodSha256": "6cfe9628660e86117cb380bac9905687abdcec3f2d3a26249abd6bf549f88235"
+    },
+    "ModelKindContractTest.typeModelPermittedFamiliesExposePublicSymbolsAndQueries": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelKindContractTest.java",
+      "suite": "guru.interlis.compiler.ModelKindContractTest",
+      "method": "typeModelPermittedFamiliesExposePublicSymbolsAndQueries",
+      "observations": [
+        "ModelKind.TYPE",
+        "LanguageQueries.create().symbolAt",
+        "function.returnType()"
+      ],
+      "sourceSha256": "98b14e9e5944a0af0486805ea179ea7a35a441cfec453acf3ddc2f8e481b635d",
+      "methodStart": 5646,
+      "methodEnd": 7817,
+      "methodSha256": "556bf073c88b15c2d1bec9b5aa81937ad34b1c32e231d1ef4b4f7c2d485f6124"
+    },
+    "StructuredTranslationContractTest.versionedIdentifiersAndDocumentaryParameterNamesNeedNoNameHeuristics": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructuredTranslationContractTest.java",
+      "suite": "guru.interlis.compiler.StructuredTranslationContractTest",
+      "method": "versionedIdentifiersAndDocumentaryParameterNamesNeedNoNameHeuristics",
+      "observations": [
+        "model.translation().orElseThrow().correspondences()",
+        "assertEquals(\"Zeitpunkt\",graph.symbol(link.translated()).orElseThrow().name().value())"
+      ],
+      "sourceSha256": "9da3eb1736dc6254a18382fb3fd1663997d131cc7e302395ecb31af40ecf0a54",
+      "methodStart": 1905,
+      "methodEnd": 2648,
+      "methodSha256": "2c200829d2343cd8daddfe5081171bac01ca97cebb534f05f7813e92e8ef6843"
+    },
+    "StructuredTranslationContractTest.translationCorrespondencesPreserveStructuralMemberOrder": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructuredTranslationContractTest.java",
+      "suite": "guru.interlis.compiler.StructuredTranslationContractTest",
+      "method": "translationCorrespondencesPreserveStructuralMemberOrder",
+      "observations": [
+        "List.of(\"A1\",\"A2\",\"A3\")",
+        "correspondences()",
+        "B1=BOOLEAN"
+      ],
+      "sourceSha256": "9da3eb1736dc6254a18382fb3fd1663997d131cc7e302395ecb31af40ecf0a54",
+      "methodStart": 2653,
+      "methodEnd": 3626,
+      "methodSha256": "9dc130f3a269ef17d32694591b278a7e6981362244b9182eff015efd129bff14"
+    },
+    "PredefinedNameBindingContractTest.unknownQualifiedTargetsFailAndBareLenBindsTheActualCallTarget": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
+      "suite": "guru.interlis.compiler.PredefinedNameBindingContractTest",
+      "method": "unknownQualifiedTargetsFailAndBareLenBindsTheActualCallTarget",
+      "observations": [
+        "INTERLIS.NoSuchDomain",
+        "ILI-SEM-0001",
+        "INTERLIS.len",
+        "targetFunction()"
+      ],
+      "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
+      "methodStart": 11210,
+      "methodEnd": 13110,
+      "methodSha256": "25583fd145a7d1cab99c363e445cb27c5cda95c66f2f2afe7f028d2c9f020fe3"
+    }
+  },
+  "parameterInvocations": {
+    "NestedBlockCommentContractTest.balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations": [
+      "balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations(String) [1] 2.3",
+      "balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations(String) [2] 2.4"
+    ],
+    "NestedBlockCommentContractTest.unfinishedCommentsHaveOriginalSyntaxErrorsInBothParseModes": [
+      "unfinishedCommentsHaveOriginalSyntaxErrorsInBothParseModes(String) [1] 2.3",
+      "unfinishedCommentsHaveOriginalSyntaxErrorsInBothParseModes(String) [2] 2.4"
+    ]
+  },
+  "processOverrides": {
+    "interlis-compiler/build.gradle": {
+      "source": "interlis-compiler/build.gradle",
+      "sha256": "3a56a6c4f0f0fafa36350711e7546d36f4d3d3c604f61daab30089309d582f79",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    },
+    "build.gradle": {
+      "source": "build.gradle",
+      "sha256": "3b150853c7e5e540f428155f24215aaa0cfe015429eaeef3f769a66f278fedb7",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    },
+    "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/ReferenceProcesses.java": {
+      "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",
+      "sha256": "9f33363cd0e34bdd16aac0a358f24aa85d02f9705ecee93e9a199835eb51f70a",
+      "reason": "Host package/module relocation only"
+    },
+    "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/SdkProcesses.java": {
+      "source": "interlis-verification/src/main/java/guru/interlis/verification/SdkProcesses.java",
+      "sha256": "a0ef36aa27242a486e9bf574f5f720767fcb1b53dcd99b2bccdfd6430f5fbb37",
+      "reason": "Host package/module relocation only"
+    },
+    "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java": {
+      "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java",
+      "sha256": "35151355df94d60a2e86cc838b4abd26d22dc172c0d1054c77df4e7c2f4c2516",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    },
+    "interlis-lsp/src/main/java/guru/interlis/lsp/InterlisLanguageServer.java": {
+      "source": "interlis-lsp/src/main/java/guru/interlis/lsp/InterlisLanguageServer.java",
+      "sha256": "ec620485ec75c3ed756b95a9655a4b242022f17fbf60df35b471d2f946ab0beb",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    },
+    "docs/spec/16-api-register-und-vertragstests.md": {
+      "source": "docs/spec/16-api-register-und-vertragstests.md",
+      "sha256": "7b50fa19b2c698534e3b2f0b76c1ed644c2428eb63e054512f02d6adabe6a3ca",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    },
+    "docs/spec/07-workspace-inkrementalitaet-und-lsp.md": {
+      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
+      "sha256": "a96d83c41d82d8d243886ea7eae75ed7415d05ac02c2b480846a6aeb0652bdae",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    },
+    "docs/spec/10-webassembly-und-portabilitaet.md": {
+      "source": "docs/spec/10-webassembly-und-portabilitaet.md",
+      "sha256": "9e12490971a0be850591ef9bd38d29cd4a92d5989649ce97a3527dbf21bd7bb8",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    },
+    "docs/spec/17-abdeckungsmatrix-und-review.md": {
+      "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
+      "sha256": "e89edd5c51d8e2cd900d34bf28512e04d8508e93fcdf30222bad55bbf938b86e",
+      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+    }
+  }
+}

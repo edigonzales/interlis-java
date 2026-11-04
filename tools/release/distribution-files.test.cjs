@@ -39,3 +39,5 @@ for(const file of ['bin/interlis-cli','bin/interlis-cli.bat','bin/ili2c','bin/il
 if(process.platform!=='win32')test('non-executable delivered launcher fails inventory',t=>{
  const f=fixture(t);fs.chmodSync(path.join(f.root,f.cli,'bin/interlis-compiler'),0o644);assert.throws(()=>distributionFiles(f.root),/not executable/);
 });
+
+test('internal verification jar is rejected from delivery',t=>{const f=fixture(t);fs.writeFileSync(path.join(f.root,f.cli,'lib/interlis-verification-1-test.jar'),'internal');assert.throws(()=>distributionFiles(f.root),/Verification artifact/);});

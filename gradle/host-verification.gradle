@@ -1,86 +1,8 @@
-def hostNodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
-def hostProfiles = [
-    pythonFreeCheck: ['PythonFreeCheck', []],
-    semanticComparison: ['SemanticComparison', [hostNodeExecutable.get()]],
-    geoCorpus: ['GeoCorpus', []],
-    fullCorpus: ['FullCorpus', []],
-    fullCorpusJvm: ['FullCorpusRun', []],
-    observationPressure: ['ObservationPressure', []],
-    editorPressure: ['EditorPressure', []],
-    jvmBenchmark: ['JvmBenchmark', []],
-    sdkProcessCheck: ['SdkProcesses', []],
-    sdkArchiveCheck: ['SdkArchiveCheck', []],
-    platformCheck: ['PlatformProcesses', []],
-    conformanceEvidence: ['ConformanceEvidence', []],
-    compilerCliCheck: ['CompilerCliProcesses', []],
-    repositoryReferenceCheck: ['RepositoryReferenceCheck', []],
-    referenceCheck: ['ReferenceProcesses', ['profile']],
-    originalViewReferenceCheck: ['ReferenceProcesses', ['originals']],
-    viewReferenceCheck: ['ReferenceProcesses', ['views', hostNodeExecutable.get()]],
-    unitReferenceCheck: ['ReferenceProcesses', ['units', hostNodeExecutable.get()]]
-]
-project(':interlis-compiler-cli') {
-    plugins.withId('java') {
-        sourceSets {
-            verification {
-                compileClasspath += sourceSets.main.output
-                runtimeClasspath += sourceSets.main.output
-            }
-            verificationTest {
-                compileClasspath += sourceSets.verification.output + sourceSets.main.output
-                runtimeClasspath += sourceSets.verification.output + sourceSets.main.output
-            }
-        }
-        configurations {
-            verificationImplementation.extendsFrom testImplementation
-            verificationRuntimeOnly.extendsFrom testRuntimeOnly
-            verificationTestImplementation.extendsFrom verificationImplementation
-            verificationTestRuntimeOnly.extendsFrom verificationRuntimeOnly
-        }
-        dependencies { verificationImplementation project(':interlis-wasm-bridge') }
-        tasks.register('verificationTest', Test) {
-            testClassesDirs = sourceSets.verificationTest.output.classesDirs
-            classpath = sourceSets.verificationTest.runtimeClasspath
-            useJUnitPlatform()
-            systemProperty 'repo.root', rootProject.projectDir.absolutePath
-            inputs.dir(rootProject.file('docs/evidence/stabilization/registries/unicode-17.0.0'))
-            inputs.file(rootProject.file('interlis-compiler/src/main/java/guru/interlis/compiler/internal/TextLengths.java'))
-        }
-        tasks.named('check') { dependsOn 'verificationTest' }
-        hostProfiles.each { name, profile ->
-            tasks.register(name, JavaExec) {
-                group = 'verification'
-                description = "Runs the Java host verification profile ${name}."
-                dependsOn 'verificationClasses'
-                classpath = sourceSets.verification.runtimeClasspath
-                mainClass = "guru.interlis.cli.verification.${profile[0]}"
-                args rootProject.projectDir.absolutePath
-                args profile[1]
-                javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
-                if (name in ['sdkProcessCheck', 'compilerCliCheck', 'jvmBenchmark', 'originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) dependsOn 'installDist'
-                if (name == 'conformanceEvidence') dependsOn ':conformanceCheck'
-                if (name == 'sdkArchiveCheck') dependsOn ':sdkPackage'
-                if (name == 'platformCheck') dependsOn ':check', ':compilerCliCheck', ':sdkArchiveCheck', ':interlis-lsp:installDist'
-                if (name == 'jvmBenchmark') dependsOn 'geoCorpus'
-                if (name == 'jvmBenchmark') mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck', ':interlis-wasm-webimage:webImageProbe'
-                if (name in ['viewReferenceCheck', 'unitReferenceCheck']) dependsOn ':checkNodeRuntime'
-                if (name == 'semanticComparison') {
-                    dependsOn ':checkNodeRuntime', ':interlis-wasm-teavm:generateJavaScript', ':interlis-wasm-teavm:generateWasmGC'
-                    mustRunAfter ':checkPortable', ':checkBrowser', ':conformanceCheck'
-                }
-                if (name in ['originalViewReferenceCheck', 'viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'referenceCheck'
-                if (name in ['viewReferenceCheck', 'unitReferenceCheck']) mustRunAfter 'originalViewReferenceCheck'
-                if (name == 'unitReferenceCheck') mustRunAfter 'viewReferenceCheck'
-            }
-        }
-    }
-}
-hostProfiles.each { name, profile ->
+// Stable root entrypoints; execution and dependencies belong to the internal module.
+['pythonFreeCheck','semanticComparison','geoCorpus','fullCorpus','fullCorpusJvm','observationPressure','editorPressure','jvmBenchmark','sdkProcessCheck','sdkArchiveCheck','platformCheck','conformanceEvidence','compilerCliCheck','repositoryReferenceCheck','referenceCheck','originalViewReferenceCheck','viewReferenceCheck','unitReferenceCheck'].each { name ->
     tasks.register(name) {
         group = 'verification'
-        description = "Runs the Java host verification profile ${name}."
-        dependsOn ":interlis-compiler-cli:${name}"
+        dependsOn ":interlis-verification:${name}"
     }
 }
-
 tasks.named('check') { dependsOn 'pythonFreeCheck' }

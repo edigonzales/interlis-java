@@ -109,16 +109,11 @@ tasks.register('releaseCheckP3') {
 
 apply from: 'gradle/conformance.gradle'
 
-apply from: 'gradle/evidence.gradle'
+apply from: 'gradle/verification-contracts.gradle'
 
 apply from: 'gradle/host-verification.gradle'
 
-tasks.register('g2EvidenceTest') {
-    group = 'verification'
-    description = 'Checks G2 source inventory, frozen review inputs and evidence failure paths.'
-    dependsOn ':interlis-compiler-cli:evidenceTest'
-}
-tasks.named('check') { dependsOn 'g2EvidenceTest' }
+
 
 
 
