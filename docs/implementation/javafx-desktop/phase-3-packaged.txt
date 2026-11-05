@@ -1,0 +1,17 @@
+java=25.0.2+10-LTS
+javafx=25.0.2+4
+os=Mac OS X 27.0.1 aarch64
+java.home=/private/var/folders/0z/1lwhf37x0h9858xcm889mbz80000gn/T/interlis-gui-offline-1874235731223946534/INTERLIS Compiler.app/Contents/runtime/Contents/Home
+result=PASS
+Accepted compile, resolved import, interactive diagram, exports and rejected compile verified
+CAPABILITIES: {"modules":true,"worker":"function","webAssembly":"undefined","crypto":"undefined","userAgent":"Mozilla/5.0 (Macintosh; PPC Mac OS X) AppleWebKit/622.1 (KHTML, like Gecko) JavaFX/25 Version/18.4 Safari/622.1"}
+HOST_READY: Compile model files to show a diagram.
+COMPILE: background=true, Compiled successfully — 0 diagnostic(s)
+DEPENDENCY: GuiExample -> Interactive
+LOADING: Updating diagram…
+FRESH: Diagram is current
+EXPORT: diagram.svg 151305 bytes
+EXPORT: diagram.png 69650 bytes
+PROBE_RENDERED: {"nodes":10,"pngWidth":2095,"pngHeight":656,"viewport":{"zoom":0.5023937469467513,"x":182.58333333333326,"y":-54.26086311829968}}
+COMPILE: background=true, Compilation rejected: [SOURCE_ERRORS] — 1 diagnostic(s)
+DIAGNOSTIC: Problem[severity=ERROR, position=/var/folders/0z/1lwhf37x0h9858xcm889mbz80000gn/T/interlis-gui-offline-1874235731223946534/probe-models/Broken.ili:5:16, code=ILI-SEM-0001, message=The name 'UndefinedDomain' cannot be resolved at this location.]

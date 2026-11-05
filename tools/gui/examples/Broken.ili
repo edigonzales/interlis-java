@@ -1,0 +1,8 @@
+INTERLIS 2.4;
+MODEL Broken AT "https://example.org" VERSION "1" =
+  TOPIC Records =
+    CLASS Record =
+      number : UndefinedDomain;
+    END Record;
+  END Records;
+END Broken.

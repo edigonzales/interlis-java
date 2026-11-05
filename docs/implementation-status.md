@@ -1,3 +1,14 @@
+## JavaFX Desktop-Prototyp — 05.11.2026
+
+Auf `codex/javafx-desktop-prototype`: optionales JPMS-GUI mit lokalem Workspace,
+Compilerdiagnosen und bestehendem Sprotty/ELK-Renderer (WP-15/WP-31,
+VIZ-001/004/010/011/014/018, ARCH-008, BUILD-001–004, DIAG-002/003/006).
+Alle drei Prototypphasen automatisiert belegt: reales WebView-Layout,
+verschobene ARM64-App mit eigener Runtime und Offline-Test, gültige/fehlerhafte
+Dateikompilierung, Importbaum und SVG/PNG. Native Dialoge und Gesten wurden
+nicht separat manuell abgenommen. [Bericht und Rohbelege](implementation/javafx-desktop/REPORT.md).
+Kein Release und keine Änderung am G2-/Jenesis-B-Gesamtstatus.
+
 ## Jenesis-Migration B — operativer Stand
 
 B-I und B-II/B0–B7 sind lokal implementiert und gezielt verifiziert. Das erste

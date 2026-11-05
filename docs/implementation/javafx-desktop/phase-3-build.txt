@@ -1,0 +1,17 @@
+command=java build/InterlisJvmBuild.java gui-package --javafx-jmods /Users/stefan/sources/interlis-java/target/jenesis-gui/toolchain/javafx-jmods-25.0.2.zip
+exit=0
+appKiB=179676
+sharedRendererAssetsByteIdentical=41
+svgParsed=true
+pngDimensions=2095x656
+[COMPLETED] Finished in 21.54 seconds
+[COMPLETED] Finished in 1.45 seconds
+[SKIPPED]   link
+[EXECUTED]  package in 39.02 seconds
+[COMPLETED] Finished in 40.37 seconds
+Relocated offline app probe: PASS
+6b5e4620a0cd0d2441adcadce9be5e3391b4dfecf45e5e5736bc177150584e4c  target/jenesis-gui/packaging/package/output/packages/INTERLIS Compiler.app/Contents/app/mods/guru.interlis.compiler.gui.jar
+fa45978c7ab0cf7be33d9c0a93e0a80990e1f4c7033075e38b2773505646e15a  target/jenesis-gui/packaging/package/output/packages/INTERLIS Compiler.app/Contents/MacOS/INTERLIS Compiler
+6abd6a1087e8a4a3ddd6c78e1cc6d2780d7643daf5078ead5b2d48a2591bd8c4  target/jenesis-gui/diagram.svg
+f5f01483b1a97e796c0593cbc33a2861a83701ec57225e31a86565e18d554bee  target/jenesis-gui/diagram.png
+8d08192c0bd83e3a94c23debf3a0a887aad343263a61e9de558d25c4de333577  target/jenesis-jvm/reports/engine-results.properties

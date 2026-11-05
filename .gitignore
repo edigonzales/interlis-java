@@ -18,3 +18,5 @@ node_modules/
 docs/evidence/generated/
 __pycache__/
 *.py[cod]
+# Generated shared renderer resources for the optional JavaFX feasibility host.
+interlis-compiler-gui/src/main/resources/guru/interlis/compiler/gui/web/

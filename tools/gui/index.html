@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width">
+<link rel="stylesheet" href="dist/diagram-ui.css">
+<style>html,body{margin:0;height:100%;font:13px system-ui}body{display:flex;flex-direction:column}#status{padding:6px;white-space:pre-wrap}#controls{max-height:160px;overflow:auto}#canvas{flex:1;min-height:200px;width:100%}</style>
+</head><body><div id="status">Compile model files to show a diagram.</div><div id="controls"></div><div id="canvas" class="interlis-canvas"></div>
+<script>
+window.guiEvents=[];
+window.report=function(kind,message){var text=kind+': '+message;window.guiEvents.push(text);document.getElementById('status').textContent=text;if(window.javaHost)window.javaHost.report(kind,String(message));};
+window.addEventListener('error',function(e){report('ERROR',e.message||('Resource load failed: '+(e.target.src||e.target.href)));},true);
+window.addEventListener('unhandledrejection',function(e){report('ERROR',String(e.reason));});
+</script><script type="module" src="host.js"></script></body></html>

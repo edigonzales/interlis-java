@@ -1,0 +1,11 @@
+java=25.0.2+10-LTS
+javafx=25.0.2+4
+os=Mac OS X 27.0.1 aarch64
+result=PASS
+PROBE_PASS: {"nodes":9,"svgBytes":121901,"pngBytes":54878,"viewport":{"zoom":0.8220588235294117,"x":147.99999999999997,"y":17.891525377741004}}
+WEB_CAPABILITIES: {"worker":"function","webAssembly":"undefined","userAgent":"Mozilla/5.0 (Macintosh; PPC Mac OS X) AppleWebKit/622.1 (KHTML, like Gecko) JavaFX/25 Version/18.4 Safari/622.1"}
+CAPABILITIES: {"modules":true,"worker":"function","webAssembly":"undefined","crypto":"undefined","userAgent":"Mozilla/5.0 (Macintosh; PPC Mac OS X) AppleWebKit/622.1 (KHTML, like Gecko) JavaFX/25 Version/18.4 Safari/622.1"}
+LOADING: Updating diagram…
+FRESH: Diagram is current
+READY: Real compiler projection rendered; Java bridge available
+PROBE_PASS: {"nodes":9,"svgBytes":121901,"pngBytes":54878,"viewport":{"zoom":0.8220588235294117,"x":147.99999999999997,"y":17.891525377741004}}

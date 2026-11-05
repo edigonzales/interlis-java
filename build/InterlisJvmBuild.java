@@ -18,6 +18,11 @@ public final class InterlisJvmBuild {
         BuildRequest request = parse(args);
         JvmBuildInputs.requireProject(request.root());
         Path target=JvmBuildInputs.requireOutputRoot(request.root(),"target/jenesis-jvm");Files.createDirectories(target);
+        if(request.profile().equals("gui-run") || request.profile().equals("gui-check") || request.profile().equals("gui-package")) {
+            build.interlis.GuiPrototypeRun.run(request);
+            JvmBuildInputs.requireProject(request.root());
+            return;
+        }
         if(request.profile().equals("wasm")) {
             build.interlis.WasmBuildRun.run(request);
             JvmBuildInputs.requireProject(request.root());
@@ -74,7 +79,7 @@ public final class InterlisJvmBuild {
         var options=new java.util.HashMap<String,String>();
         int i = 0;
         if (args.length > 0 && !args[0].startsWith("--")) profile = args[i++];
-        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle").contains(profile))
+        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle", "gui-run", "gui-check", "gui-package").contains(profile))
             throw new IllegalArgumentException("Unknown profile: " + profile);
         while (i < args.length) {
             String option = args[i++];
@@ -91,7 +96,7 @@ public final class InterlisJvmBuild {
                         throw new IllegalArgumentException("Expected one explicit class regex with optional #method");
                     tests = value;
                 }
-                case "--baseline", "--extension-dir", "--reference-bundle", "--inputs" -> {
+                case "--baseline", "--extension-dir", "--reference-bundle", "--inputs", "--javafx-jmods" -> {
                     if(options.put(option,value)!=null||!Path.of(value).isAbsolute()||!Files.exists(Path.of(value)))throw new IllegalArgumentException("Expected existing absolute path for "+option);
                 }
                 case "--application" -> {
@@ -116,7 +121,7 @@ public final class InterlisJvmBuild {
             }
         }
         if (tests != null && module == null) throw new IllegalArgumentException("--tests requires --module");
-        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("parity")?java.util.Set.of("--baseline"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
+        var expected=profile.equals("gui-package")?java.util.Set.of("--javafx-jmods"):profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("parity")?java.util.Set.of("--baseline"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
         if(!options.keySet().equals(expected))throw new IllegalArgumentException("Expected options for "+profile+": "+expected);
         if(!List.of("build","artifacts").contains(profile)&&(module!=null||tests!=null))throw new IllegalArgumentException("Module/test restrictions are only available for build/artifacts");
         if(profile.equals("artifacts")&&tests!=null)throw new IllegalArgumentException("artifacts never selects tests");

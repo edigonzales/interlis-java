@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Optional desktop prototype. Metadata only; built by the root Jenesis gui-* profiles. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+<modelVersion>4.0.0</modelVersion><groupId>guru.interlis</groupId>
+<artifactId>interlis-compiler-gui</artifactId><version>0.2.0-SNAPSHOT</version>
+<properties><maven.compiler.release>25</maven.compiler.release></properties>
+<dependencies>
+  <dependency>
+    <groupId>guru.interlis</groupId><artifactId>interlis-projection</artifactId><version>${project.version}</version>
+  </dependency>
+  <dependency>
+    <groupId>guru.interlis</groupId><artifactId>interlis-workspace</artifactId><version>${project.version}</version>
+  </dependency>
+  <dependency>
+    <groupId>org.openjfx</groupId><artifactId>javafx-base</artifactId><version>25.0.2</version><classifier>mac-aarch64</classifier>
+    <exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions>
+  </dependency>
+  <dependency>
+    <groupId>org.openjfx</groupId><artifactId>javafx-graphics</artifactId><version>25.0.2</version><classifier>mac-aarch64</classifier>
+    <exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions>
+  </dependency>
+  <dependency>
+    <groupId>org.openjfx</groupId><artifactId>javafx-controls</artifactId><version>25.0.2</version><classifier>mac-aarch64</classifier>
+    <exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions>
+  </dependency>
+  <dependency>
+    <groupId>org.openjfx</groupId><artifactId>javafx-media</artifactId><version>25.0.2</version><classifier>mac-aarch64</classifier>
+    <exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions>
+  </dependency>
+  <dependency>
+    <groupId>org.openjfx</groupId><artifactId>javafx-web</artifactId><version>25.0.2</version><classifier>mac-aarch64</classifier>
+    <exclusions><exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion></exclusions>
+  </dependency>
+</dependencies>
+<!--jenesis.pin
+  org.antlr/antlr4-runtime 4.13.2 SHA-256/dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7
+  maven/org.antlr/antlr4-runtime/pom 4.13.2 SHA-256/03ce07a2796c511b0c94dc14fd86ccdd6e3828c57967ad2383de304e0d11ba79
+  maven/org.antlr/antlr4-master/pom 4.13.2 SHA-256/0adda026685873f651360178bffc446ceee4833081739e3ae9d6e8f07e8d902a
+  maven/org.sonatype.oss/oss-parent/pom 9 SHA-256/fb40265f982548212ff82e362e59732b2187ec6f0d80182885c14ef1f982827a
+  maven/org.openjfx/javafx-base/jar/mac-aarch64 25.0.2 SHA-256/728ec13064abe6d625ca163faab65eccc9484dfbb27742d5dbe92060f79b5bd2
+  maven/org.openjfx/javafx-graphics/jar/mac-aarch64 25.0.2 SHA-256/a589e663de80d15fed62a12b0d81c0a6cedbde0edd04dd70cd65519e0eb140ac
+  maven/org.openjfx/javafx-controls/jar/mac-aarch64 25.0.2 SHA-256/0ed7a57f510b07d05554dc1b9d637e6566efa9647daf03f9690e7f3c271ff79b
+  maven/org.openjfx/javafx-media/jar/mac-aarch64 25.0.2 SHA-256/3c133210f500c8d34e22004eced06f2766e4a5b7944ac342c0b3f25d8a6be855
+  maven/org.openjfx/javafx-web/jar/mac-aarch64 25.0.2 SHA-256/892ad546ecbbc60c7bf5be16d76a0037b06327f1303dc527a6b068de9515d734
+  maven/org.openjfx/javafx-base/pom 25.0.2 SHA-256/114a9702ca65e24df43b8cc611b9a3d0c01d13beed164a08002a65fd25efc314
+  maven/org.openjfx/javafx-graphics/pom 25.0.2 SHA-256/ad9d1c0d595db22c8131f668428e01560f9dfed0c28d4a3a00c37a0cd873332b
+  maven/org.openjfx/javafx-controls/pom 25.0.2 SHA-256/de7ffc6442f0d17bdae60ff524c6ad6840df9bcb384ae41e2b8a0bfe6aeced69
+  maven/org.openjfx/javafx-media/pom 25.0.2 SHA-256/9317e8a1f23b97a00787018e6c5a16665a813258b68b0f37675a472a1fe2bd68
+  maven/org.openjfx/javafx-web/pom 25.0.2 SHA-256/a282ab48357692d9d9f245814e6085530c6edac6c2d55bf3cf4b461ebd84328d
+  maven/org.openjfx/javafx/pom 25.0.2 SHA-256/a7038dd7cc02b54fb07915d2120fcfed90a5aca9ccac48f7a9ea506a23d3592b
+-->
+</project>
