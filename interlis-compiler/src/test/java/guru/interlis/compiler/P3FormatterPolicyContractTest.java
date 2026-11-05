@@ -33,7 +33,10 @@ class P3FormatterPolicyContractTest {
                 assertFalse(result.text().replace(expectedEnding, "").contains("\r"));
                 assertEquals(result.text(), format(result.text(), ending).text());
                 assertTrue(parse(result.text()).diagnostics().isEmpty());
-                assertEquals(input.replace("\r\n", "\n"), result.text().replace("\r\n", "\n"));
+                String expected = "INTERLIS " + version + ";\n\n"
+                        + "MODEL F AT \"https://example.org\" VERSION \"1\" =\n\n"
+                        + "  /* comment 🦊\n    continuation\n   end */\n\nEND F.\n";
+                assertEquals(expected, result.text().replace("\r\n", "\n"));
             }
         }
     }

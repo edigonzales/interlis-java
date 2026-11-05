@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.List;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -97,10 +98,40 @@ class CliApplicationTest {
         Run write = run("format", "--write", file.toString());
         assertEquals(0, write.result().exitCode(), write.err());
         assertTrue(Files.readString(file).contains("  TOPIC T ="));
-        assertTrue(Files.readString(file).contains("      value: TEXT*10;"));
+        assertTrue(Files.readString(file).contains("      value : TEXT*10;"));
 
         Run clean = run("format", "--check", file.toString());
         assertEquals(0, clean.result().exitCode(), clean.err());
+    }
+
+    @Test
+    void formatWidthIsValidatedBeforeReadingAndHelpListsIt() {
+        for (String value : List.of("39", "241", "-40", "100.0", "wide")) {
+            Run result = run("format", "--max-line-width", value, "missing.ili");
+            assertEquals(CliTermination.USAGE_ERROR, result.result().termination());
+            assertTrue(result.out().isEmpty());
+        }
+        assertEquals(CliTermination.USAGE_ERROR,
+                run("format", "--max-line-width").result().termination());
+        assertEquals(CliTermination.USAGE_ERROR,
+                run("format", "--max-line-width", "40", "--max-line-width", "240", "missing.ili")
+                        .result().termination());
+        assertTrue(run("help").out().contains("--max-line-width"));
+    }
+
+    @Test
+    void formatWritePreservesOriginalBytesOnBomOrInvalidUtf8() throws Exception {
+        Path file = tempDir.resolve("Modell 🦊.ili");
+        for (byte[] bytes : List.of(
+                ("\ufeffINTERLIS 2.4; MODEL M AT \"x\" VERSION \"1\" = END M.")
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                new byte[]{(byte) 0xff, (byte) 0xfe})) {
+            Files.write(file, bytes);
+            Run result = run("format", "--write", file.toString());
+            assertEquals(1, result.result().exitCode(), result.err());
+            assertTrue(result.out().isEmpty());
+            org.junit.jupiter.api.Assertions.assertArrayEquals(bytes, Files.readAllBytes(file));
+        }
     }
 
     @Test

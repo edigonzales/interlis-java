@@ -133,7 +133,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 case "capabilities" -> arguments.size() == 1 ? capabilities(environment)
                         : usage(environment, "capabilities accepts no arguments");
                 case "check", "compile", "analyze", "diagram" -> semantic(environment, token, invocation);
-                case "format" -> format(arguments, environment, token, invocation);
+                case "format" -> format(environment, token, invocation);
                 default -> usage(environment, "unknown command: " + command);
             };
         } catch (OperationCancelledException cancelled) {
@@ -419,13 +419,10 @@ public final class DefaultCompilerCli implements CliApplication {
         return hostPath(value, environment).toUri().toString();
     }
 
-    private CliExecutionResult format(List<String> args, CliEnvironment environment,
+    private CliExecutionResult format(CliEnvironment environment,
                                       CancellationToken token, Invocation invocation) {
         FormatArguments parsed = parseFormat(invocation.command);
         new OutputPlanner().plan(invocation.command, environment);
-        if (parsed.error() != null) {
-            return usage(environment, parsed.error());
-        }
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
         }
@@ -515,8 +512,18 @@ public final class DefaultCompilerCli implements CliApplication {
             case "crlf" -> FormatOptions.LineEnding.CRLF;
             default -> throw new CliUsageException("--line-ending must be lf or crlf");
         }).orElse(FormatOptions.LineEnding.PRESERVE);
+        int width;
+        try {
+            width = Integer.parseInt(command.value("--max-line-width")
+                    .orElse(Integer.toString(FormatOptions.DEFAULT_MAX_LINE_WIDTH)));
+        } catch (NumberFormatException invalid) {
+            throw new CliUsageException("invalid --max-line-width value");
+        }
+        if (width < 40 || width > 240) {
+            throw new CliUsageException("--max-line-width must be between 40 and 240");
+        }
         return new FormatArguments(command.files(), command.has("--check"), command.has("--write"),
-                new FormatOptions(indent, ending, true), null);
+                new FormatOptions(indent, ending, true, width));
     }
 
     private static ParsedCommand parseCommand(List<String> args) {
@@ -529,12 +536,7 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private record FormatArguments(List<String> files, boolean check, boolean write,
-                                   FormatOptions options, String error) {
-        private FormatArguments(List<String> files, boolean check, boolean write,
-                                int indent, FormatOptions.LineEnding lineEnding, String error) {
-            this(files, check, write, new FormatOptions(indent, lineEnding, true), error);
-        }
-    }
+                                   FormatOptions options) { }
 
     private record FormatInput(SourceText source, Path file, Path workingDirectory) {
         Path resolved(CliEnvironment environment) {

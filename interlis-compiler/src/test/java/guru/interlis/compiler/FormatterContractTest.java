@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FormatterContractTest {
     private static SourceText source(String text) {
@@ -47,6 +48,49 @@ class FormatterContractTest {
     }
 
     @Test
+    void preservesTheThreeArgumentConstructorAndValidatesWidths() {
+        var ending = FormatOptions.LineEnding.PRESERVE;
+        assertEquals(FormatOptions.defaults(), new FormatOptions(2, ending, true));
+        for (int width : List.of(40, 120, 240)) {
+            assertEquals(width, new FormatOptions(2, ending, true, width).maxLineWidth());
+        }
+        for (int width : List.of(39, 241)) {
+            assertThrows(IllegalArgumentException.class, () -> new FormatOptions(2, ending, true, width));
+        }
+    }
+
+    @Test
+    void cancelsBeforeAndDuringAFormatRequest() {
+        var formatter = ModelFormatters.create();
+        var input = source("INTERLIS 2.4; MODEL M AT \"x\" VERSION \"1\" = "
+                + "/* sample */ CLASS C = A : TEXT; END C; ".repeat(400) + "END M.");
+        var checks = new java.util.concurrent.atomic.AtomicInteger();
+        assertInstanceOf(FormatOutcome.Cancelled.class,
+                formatter.format(input, FormatOptions.defaults(), () -> true));
+        assertInstanceOf(FormatOutcome.Cancelled.class,
+                formatter.format(input, FormatOptions.defaults(), () -> checks.incrementAndGet() == 100));
+        assertTrue(checks.get() >= 100);
+    }
+
+    @Test
+    void isolatesOptionsAcrossConcurrentRequests() throws Exception {
+        var formatter = ModelFormatters.create();
+        var input = source("INTERLIS 2.4;\nMODEL M AT \"x\" VERSION \"1\" =\nCLASS C = END C;\nEND M.\n");
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var lf = executor.submit(() -> formatter.format(input,
+                    new FormatOptions(2, FormatOptions.LineEnding.LF, true, 40), CancellationToken.none()));
+            var crlf = executor.submit(() -> formatter.format(input,
+                    new FormatOptions(4, FormatOptions.LineEnding.CRLF, false, 240), CancellationToken.none()));
+            var a = assertInstanceOf(FormatOutcome.Formatted.class, lf.get()).text();
+            var b = assertInstanceOf(FormatOutcome.Formatted.class, crlf.get()).text();
+            assertTrue(a.contains("\n  CLASS"));
+            assertTrue(b.contains("\r\n    CLASS"));
+            assertTrue(a.endsWith("\n"));
+            assertTrue(b.endsWith("."));
+        }
+    }
+
+    @Test
     void formatsIndentationAndPreservesCommentsAndUnicode() {
         String input = """
                 INTERLIS 2.4;
@@ -61,7 +105,7 @@ class FormatterContractTest {
         String formatted = format(input, FormatOptions.defaults());
         assertTrue(formatted.contains("  TOPIC T ="));
         assertTrue(formatted.contains("    CLASS C ="));
-        assertTrue(formatted.contains("      value: TEXT*10; !! Grüezi 😀"), formatted);
+        assertTrue(formatted.contains("      value : TEXT*10; !! Grüezi 😀"), formatted);
         assertTrue(formatted.contains("    END C;"));
         assertEquals(tokenTexts(input), tokenTexts(formatted));
     }
@@ -121,10 +165,12 @@ class FormatterContractTest {
                     var options = new FormatOptions(2, setting, true);
                     String formatted = format(input, options);
                     assertEquals(formatted, format(formatted, options));
+                    // The standalone comment moves two spaces to the model body margin.
+                    String expected = input.replace(ending + "  second */", ending + "    second */");
                     if (setting == FormatOptions.LineEnding.PRESERVE) {
-                        assertEquals(tokenTexts(input), tokenTexts(formatted));
+                        assertEquals(tokenTexts(expected), tokenTexts(formatted));
                     } else {
-                        assertEquals(tokensWithNormalizedCommentEndings(input),
+                        assertEquals(tokensWithNormalizedCommentEndings(expected),
                                 tokensWithNormalizedCommentEndings(formatted));
                     }
                     assertTrue(formatted.contains("    CLASS D ="));

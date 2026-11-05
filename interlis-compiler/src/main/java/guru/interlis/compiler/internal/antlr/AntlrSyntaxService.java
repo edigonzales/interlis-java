@@ -50,13 +50,25 @@ public final class AntlrSyntaxService implements SyntaxService {
     @Override
     public SyntaxSnapshot parse(SourceText source, ParseOptions options,
                                 CancellationToken cancellation) {
-        try { return parseDocument(source,options,cancellation); }
+        return parse(source, options, cancellation, null);
+    }
+
+    /** Internal entry point that extracts layout roles from the same concrete syntax tree. */
+    public SyntaxSnapshot parseForFormatting(SourceText source, ParseOptions options,
+                                             CancellationToken cancellation, FormatStructure structure) {
+        return parse(source, options, cancellation, Objects.requireNonNull(structure));
+    }
+
+    private SyntaxSnapshot parse(SourceText source, ParseOptions options,
+                                 CancellationToken cancellation, FormatStructure structure) {
+        try { return parseDocument(source,options,cancellation,structure); }
         catch(AnalysisBudgetExceededException limit) {
             throw new guru.interlis.execution.OperationCancelledException(guru.interlis.execution.CancellationReason.RESOURCE_LIMIT);
         }
     }
 
-    private SyntaxSnapshot parseDocument(SourceText source,ParseOptions options,CancellationToken cancellation) {
+    private SyntaxSnapshot parseDocument(SourceText source, ParseOptions options,
+                                         CancellationToken cancellation, FormatStructure structure) {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(options, "options");
         Objects.requireNonNull(cancellation, "cancellation");
@@ -158,6 +170,10 @@ public final class AntlrSyntaxService implements SyntaxService {
                         || d.code().value().startsWith("ILI-SYN-0003")
                         || d.code().value().startsWith("ILI-SYN-0004")),
                 builder.recoveredRanges(), builder.unsupportedFeatures(), false, false);
+        if (structure != null && coverage.parseComplete() && coverage.lexicallyComplete()
+                && diagnostics.stream().noneMatch(diagnostic -> diagnostic.severity() == Severity.ERROR)) {
+            structure.index(tree, offsets, cancellation);
+        }
         return new SyntaxSnapshot(source, options, effectiveDetection, document,
                 buildTokens(source, offsets, tokens), buildTrivia(source, offsets, tokens),
                 diagnostics, coverage, fingerprint(source, options, effectiveDetection), metadata);

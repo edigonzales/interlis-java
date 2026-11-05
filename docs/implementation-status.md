@@ -1746,3 +1746,19 @@ Vier betroffene Unitfälle bestehen. In einer beschreibbaren Git-Kopie bestätig
 Baseline läuft, unveränderter Stand bleibt UP-TO-DATE, reine Helferänderung
 führt zur echten erneuten Testausführung. Alle acht Inputs tatsächlich erfasst;
 Originale unverändert. Der nächste Kandidat benötigt den frischen Gesamt-Review.
+
+### Formatter SO_STANDARD
+
+F0 im Branch `codex/formatter-so-standard`: acht gepinnte und strikt
+parsebare SO-Originale, Ausgangsprobe mit sieben bestandenen Formattertests
+und technischer OpenCode-Verbindungsprobe. Die Herkunft, Syntaxvarianten
+und Baselinebelege stehen in
+[BASELINE.md](implementation/formatter-so-standard/BASELINE.md).
+
+F1-Zwischenstand F1a–F1c. Der Formatter verwendet konkrete Syntaxrollen und
+strikte Reparse-/Quelltreueprüfung. Der neue Breitenwert ist über die
+kompatible API, die CLI-Option und den Standard-LSP-Request verfügbar.
+Die redundante LSP-Format-Code-Action ist entfernt. Acht Referenzmodelle
+wurden formatiert und auf Idempotenz geprüft. Die echten modularen
+Launcher liefern denselben Text wie der benannte API-Verbraucher.
+Das Constraint-Breitenlayout bleibt in diesem Zwischenstand F2 vorbehalten.

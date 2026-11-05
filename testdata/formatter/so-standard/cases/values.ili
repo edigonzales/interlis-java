@@ -1,0 +1,14 @@
+INTERLIS 2.3;
+MODEL Values AT "https://example.org" VERSION "1" // explanation with END and !! // =
+!!@ fn.return="First line
+!!@ second line"
+FUNCTION f(x:TEXT; y:TEXT):TEXT;
+DOMAIN D=0..100;
+TOPIC T =
+CLASS C =
+a:TEXT*30;
+b:(a,b);
+MANDATORY CONSTRAINT a == "END !! 👋";
+END C;
+END T;
+END Values.
