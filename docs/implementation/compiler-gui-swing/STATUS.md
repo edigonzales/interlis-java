@@ -78,7 +78,7 @@ wurde wegen fehlender globaler Kriterien im JSON verworfen. Der neue Review
 mit unveränderten Produktquellen und vollständig validiertem Urteil liegt
 unter `../interlis-java-compiler-gui-g0.TVRLc5/G2/573e0c366a631bb93bbf886fa8e33c73681264ac/round-02/`.
 
-## G3 – Dependencies in Prüfung
+## G3 – Dependencies bestanden
 
 GUI-21 bis GUI-28. Der Explorer zeigt konkrete Wurzeln und echte
 Importbindungen aus der strikten Vorbereitung desselben Workspace-Laufs.
@@ -88,4 +88,20 @@ die erfassten Suchentscheidungen und die Workspace-Spur. Quelle und
 Problemfilter verwenden die zum Lauf gehörenden Bereiche.
 
 `java build/InterlisJvmBuild.java gui-check --profile dependencies` prüft
-den Explorer im realen Fenster. G4 folgt nach gültigem G3-PASS.
+den Explorer im realen Fenster. G3-PASS für `c4f1439d2f2ee9e563dd3791aeac407075a5e261`.
+Die GUI- und Workspace-Verträge, der CLI-Host-Smoke und beide unabhängigen
+Gegenproben sind bestanden. Das Urteil liegt unter
+`../interlis-java-compiler-gui-g0.TVRLc5/G3/c4f1439d2f2ee9e563dd3791aeac407075a5e261/round-01/`.
+
+## G4 – Repositories in Prüfung
+
+GUI-29 bis GUI-38. Repositories verwaltet explizit konfigurierte lokale
+Verzeichnisse und HTTP(S)-Basen. Indexe und Quellenpreview werden asynchron
+über den gemeinsamen Hostloader geladen. Die Tabelle hält Indexvorkommen
+und Originalversionen getrennt. Vergleich und Quellenpreview ändern den
+Kompilierauftrag nicht. Die ausdrückliche Rootübernahme erhält Name, Version
+und SourceId. Die nächste Prüfung verwendet die sichtbare Prioritätsliste.
+
+`java build/InterlisJvmBuild.java gui-check --profile repositories` prüft
+Metadatenvergleich, Preview und exakte Rootübernahme im realen Fenster.
+G5 folgt nach gültigem G4-PASS.

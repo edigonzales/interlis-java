@@ -26,11 +26,14 @@ final class CheckInputsPanel extends JPanel {
     private final DefaultListModel<RootChoice.Local> models = new DefaultListModel<>();
     private final JList<LocalInput> fileList = new JList<>(files);
     private final JList<RootChoice.Local> modelList = new JList<>(models);
+    private final DefaultListModel<RootChoice.Repository> repositoryRoots = new DefaultListModel<>();
+    private final JList<RootChoice.Repository> repositoryRootList = new JList<>(repositoryRoots);
     private final JLabel rootMode = new JLabel("All input models");
     private final JLabel checkSummary = new JLabel("Add INTERLIS files to start a check.");
     private final JButton remove = new JButton("Remove");
     private final JButton useSelected = new JButton("Use selected roots");
     private final JButton useAll = new JButton("Use all inputs");
+    private final JButton removeRepositoryRoot = new JButton("Remove root");
     private final JLabel message = new JLabel();
     private final SessionController session;
     private final ProblemsPanel problems;
@@ -60,6 +63,14 @@ final class CheckInputsPanel extends JPanel {
             modelList.clearSelection();
             session.useAllInputs();
         });
+        repositoryRootList.setName("selected-repository-roots");
+        repositoryRootList.setCellRenderer(renderer((RootChoice.Repository root) -> root.name() + " · "
+                + guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(root.version()) + " · "
+                + guru.interlis.gui.presentation.DiagnosticPresenter.shortSource(root.source()),
+                root -> guru.interlis.gui.presentation.DiagnosticPresenter.displaySource(root.source())));
+        repositoryRootList.addListSelectionListener(event -> updateButtons());
+        removeRepositoryRoot.setName("remove-repository-root");
+        removeRepositoryRoot.addActionListener(event -> session.removeRepositoryRoots(repositoryRootList.getSelectedValuesList()));
         rootMode.setName("root-mode");
         message.putClientProperty("html.disable", true);
         message.setName("input-notice");
@@ -72,8 +83,11 @@ final class CheckInputsPanel extends JPanel {
         var rootHeader = new JPanel(new BorderLayout());
         rootHeader.add(rootMode, BorderLayout.NORTH);
         rootPanel.add(rootHeader, BorderLayout.NORTH);
-        var selectors = new JSplitPane(JSplitPane.VERTICAL_SPLIT, filePanel, rootPanel);
-        selectors.setResizeWeight(.50);
+        var repoPanel = section("Repository roots", new JScrollPane(repositoryRootList), actions(removeRepositoryRoot));
+        var rootsPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, rootPanel, repoPanel);
+        rootsPanel.setResizeWeight(.60);
+        var selectors = new JSplitPane(JSplitPane.VERTICAL_SPLIT, filePanel, rootsPanel);
+        selectors.setResizeWeight(.40);
         var summary = new JPanel(new BorderLayout());
         summary.add(checkSummary, BorderLayout.NORTH);
         summary.add(problems, BorderLayout.CENTER);
@@ -109,6 +123,18 @@ final class CheckInputsPanel extends JPanel {
             }
         }
         activeRoots = view.roots();
+        var selectedRepositoryRoots = repositoryRootList.getSelectedValuesList();
+        var activeRepositories = activeRoots.stream().filter(RootChoice.Repository.class::isInstance)
+                .map(RootChoice.Repository.class::cast).toList();
+        if (!modelItems(repositoryRoots).equals(activeRepositories)) {
+            repositoryRoots.clear();
+            repositoryRoots.addAll(activeRepositories);
+            for (int i = 0; i < repositoryRoots.size(); i++) {
+                if (selectedRepositoryRoots.contains(repositoryRoots.get(i))) {
+                    repositoryRootList.addSelectionInterval(i, i);
+                }
+            }
+        }
         modelList.repaint();
         rootMode.setText(view.roots().isEmpty() ? "All input models" : "Explicit roots: " + view.roots().size());
         message.setText(view.notice());
@@ -124,7 +150,8 @@ final class CheckInputsPanel extends JPanel {
     private void updateButtons() {
         remove.setEnabled(editable && !fileList.isSelectionEmpty());
         useSelected.setEnabled(editable && !modelList.isSelectionEmpty());
-        useAll.setEnabled(editable && !models.isEmpty());
+        useAll.setEnabled(editable && (!models.isEmpty() || !activeRoots.isEmpty()));
+        removeRepositoryRoot.setEnabled(editable && !repositoryRootList.isSelectionEmpty());
     }
 
     private static <T> List<T> modelItems(DefaultListModel<T> model) {

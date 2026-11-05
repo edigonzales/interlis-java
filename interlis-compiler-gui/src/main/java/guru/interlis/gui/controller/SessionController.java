@@ -6,10 +6,12 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.RunContextFactory;
 import guru.interlis.gui.application.CompileRequest;
 import guru.interlis.gui.application.CompileResult;
+import guru.interlis.gui.application.ConfiguredRepository;
 import guru.interlis.gui.application.LocalInput;
 import guru.interlis.gui.application.RootChoice;
 import guru.interlis.gui.application.SessionInputs;
 import guru.interlis.gui.application.SessionOptions;
+import guru.interlis.repository.RepositoryConfig;
 
 import javax.swing.SwingUtilities;
 import java.nio.file.Path;
@@ -37,6 +39,7 @@ public final class SessionController implements AutoCloseable {
     private final Consumer<View> render;
     private final Map<Path, LocalInput> inputs = new LinkedHashMap<>();
     private List<RootChoice> roots = List.of();
+    private List<ConfiguredRepository> repositories;
     private SessionOptions options;
     private CompileResult last;
     private WorkToken active;
@@ -58,11 +61,13 @@ public final class SessionController implements AutoCloseable {
     public enum Job { IDLE, ADDING, COMPILING, CANCELLING }
 
     /** An immutable, ordered view of the current EDT state. */
-    public record View(List<LocalInput> files, List<RootChoice> roots, SessionOptions options, Job job,
+    public record View(List<LocalInput> files, List<RootChoice> roots, List<ConfiguredRepository> repositories,
+                       SessionOptions options, Job job,
                        Optional<CompileResult> last, boolean outdated, String notice) {
         public View {
             files = List.copyOf(files);
             roots = List.copyOf(roots);
+            repositories = List.copyOf(repositories);
         }
 
         public boolean canCompile() {
@@ -79,12 +84,13 @@ public final class SessionController implements AutoCloseable {
         this.contexts = Objects.requireNonNull(contexts);
         this.directory = directory.toAbsolutePath().normalize();
         this.options = Objects.requireNonNull(options);
+        repositories = options.repositories().sources().stream().map(source -> new ConfiguredRepository(source, true)).toList();
         this.render = Objects.requireNonNull(render);
     }
 
     public View view() {
         requireEdt();
-        return new View(List.copyOf(inputs.values()), roots, options, job, Optional.ofNullable(last),
+        return new View(List.copyOf(inputs.values()), roots, repositories, options, job, Optional.ofNullable(last),
                 last != null && last.request().generation() != generation, notice);
     }
 
@@ -177,8 +183,65 @@ public final class SessionController implements AutoCloseable {
         }
         var selected = new LinkedHashSet<RootChoice>();
         roots.stream().filter(RootChoice.Repository.class::isInstance).forEach(selected::add);
+        for (var choice : choices) {
+            if (selected.stream().anyMatch(root -> root instanceof RootChoice.Repository repository
+                    && repository.name().equals(choice.name()) && !root.selector().equals(choice.selector()))) {
+                notice = "Remove the conflicting repository root before changing this local root.";
+                publish();
+                return;
+            }
+        }
         selected.addAll(choices);
         setRoots(List.copyOf(selected));
+    }
+
+    public enum RootAddition { ADDED, ALREADY_SELECTED, CONFLICT, BUSY }
+
+    public RootAddition addRepositoryRoot(RootChoice.Repository root) {
+        requireEdt();
+        if (!idle()) {
+            return RootAddition.BUSY;
+        }
+        if (roots.stream().anyMatch(selected -> selected.selector().equals(root.selector()))) {
+            return RootAddition.ALREADY_SELECTED;
+        }
+        if (roots.stream().anyMatch(selected -> selected.selector().modelName().equals(root.name()))) {
+            return RootAddition.CONFLICT;
+        }
+        var updated = new ArrayList<>(roots);
+        updated.add(root);
+        setRoots(List.copyOf(updated));
+        return RootAddition.ADDED;
+    }
+
+    public void removeRepositoryRoots(List<RootChoice.Repository> selected) {
+        requireEdt();
+        if (idle()) {
+            setRoots(roots.stream().filter(root -> !selected.contains(root)).toList());
+        }
+    }
+
+    public boolean configureRepositories(List<ConfiguredRepository> updated) {
+        requireEdt();
+        if (!idle()) {
+            return false;
+        }
+        if (updated.stream().map(repository -> repository.source().base()).distinct().count() != updated.size()) {
+            throw new IllegalArgumentException("Repository bases must be unique");
+        }
+        if (!repositories.equals(updated)) {
+            repositories = List.copyOf(updated);
+            var enabled = repositories.stream().filter(ConfiguredRepository::enabled).map(ConfiguredRepository::source).toList();
+            var config = new RepositoryConfig(enabled, options.repositories().fetchPolicy());
+            var changed = new SessionOptions(config, options.cache(), options.proxy(), options.warnings(), options.diagnosticLanguage());
+            if (!options.sameCompileOptions(changed)) {
+                generation++;
+            }
+            options = changed;
+            notice = "";
+            publish();
+        }
+        return true;
     }
 
     public void useAllInputs() {

@@ -181,6 +181,10 @@ public final class GuiRuntime {
                 compile.add(probes.resolve("GuiDependenciesProbe.java").toString());
                 yield "GuiDependenciesProbe";
             }
+            case "repositories" -> {
+                compile.add(probes.resolve("GuiRepositoriesProbe.java").toString());
+                yield "GuiRepositoriesProbe";
+            }
             default -> throw new IllegalArgumentException("Unknown GUI interaction profile: " + profile);
         };
         process(run, "probe-compile", compile);

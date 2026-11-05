@@ -115,7 +115,7 @@ public final class JpmsTestRun {
                 }
             }
             if(testClasses.isEmpty()&&methods.isEmpty())throw new IllegalStateException("Empty required JPMS test selection");
-            var testJdkModules=Set.of("interlis-repository","interlis-compiler-cli","interlis-lsp").contains(project)?List.of("jdk.httpserver"):project.equals("interlis-documentation")?List.of("java.xml"):List.<String>of();
+            var testJdkModules=Set.of("interlis-repository","interlis-compiler-cli","interlis-lsp","interlis-compiler-gui").contains(project)?List.of("jdk.httpserver"):project.equals("interlis-documentation")?List.of("java.xml"):List.<String>of();
             var resolvedNames=new TreeSet<>(names);resolvedNames.addAll(testJdkModules);
             String mp=join(modulePath),cp=join(classpath),resolved=String.join(",",resolvedNames);
             var access=new ArrayList<String>();access.addAll(List.of("--module-path",mp,"--add-modules",resolved,"--add-reads",moduleName+"=ALL-UNNAMED"));

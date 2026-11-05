@@ -63,6 +63,7 @@ final class MainFrame extends JFrame {
     private final SessionController session;
     private final CheckInputsPanel check;
     private final DependenciesPanel dependencies;
+    private final RepositoriesPanel repositories;
     private JDialog sourceInspector;
     private SourcePreviewPanel inspectorPreview;
     private CompileResult displayedResult;
@@ -97,6 +98,7 @@ final class MainFrame extends JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent event) {
+                repositories.close();
                 session.close();
             }
         });
@@ -135,7 +137,8 @@ final class MainFrame extends JFrame {
             views.setSelectedIndex(0);
         });
         views.addTab("Dependencies", dependencies);
-        addView("Repositories", "No repositories are configured.");
+        repositories = new RepositoriesPanel(session, directory);
+        views.addTab("Repositories", repositories);
         add(views, BorderLayout.CENTER);
 
         status.setName("session-status");
@@ -175,6 +178,7 @@ final class MainFrame extends JFrame {
         }
         displayedResult = result;
         dependencies.render(result);
+        repositories.render(view);
     }
 
     private static String runSummary(CompileResult result) {
@@ -238,13 +242,6 @@ final class MainFrame extends JFrame {
         inspectorPreview.show(model);
         sourceInspector.setVisible(true);
         sourceInspector.toFront();
-    }
-
-    private void addView(String title, String message) {
-        var panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
-        panel.add(new JLabel(message), BorderLayout.NORTH);
-        views.addTab(title, panel);
     }
 
     private JMenuBar menuBar(Action settings) {
