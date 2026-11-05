@@ -1,0 +1,3 @@
+# The pinned upstream bytes include original line endings and trailing spaces.
+originals/** -text -whitespace
+LICENSE.sogis -text

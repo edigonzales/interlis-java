@@ -31,7 +31,7 @@ public record CommandSpec(String command, List<Option> options, boolean acceptsF
             case "version" -> { options.add(new Option("--json", 0, false)); yield false; }
             case "format" -> {
                 for (String flag : List.of("--check", "--write")) options.add(new Option(flag, 0, false));
-                for (String value : List.of("--indent", "--line-ending")) options.add(new Option(value, 1, false));
+                for (String value : List.of("--indent", "--line-ending", "--max-line-width")) options.add(new Option(value, 1, false));
                 yield true;
             }
             case "check", "compile", "analyze", "diagram" -> {

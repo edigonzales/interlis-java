@@ -1,0 +1,29 @@
+INTERLIS 2.4;
+
+MODEL Example AT "https://example.org" VERSION "1" =
+
+  TOPIC Data =
+
+    /* Table:
+     *  A | B
+     *  1 | 2
+     */
+    CLASS /* embedded */ Building =
+      Name : TEXT*100; !! Grüezi 😀
+      Number : TEXT*20;
+    END Building;
+
+    /** Address /* nested */ documentation.
+     */
+    !!@ name = "Adresse"
+    CLASS Address =
+      Street : TEXT*100;
+    END Address;
+
+    CONSTRAINTS OF Address =
+      MANDATORY CONSTRAINT DEFINED(Street);
+    END;
+
+  END Data;
+
+END Example.

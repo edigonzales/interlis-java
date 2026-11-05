@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "repository": "sogis/sogis-interlis-repository",
+  "commit": "630e3550a93288a99dd9eb4d2d6dc804f9027107",
+  "files": [
+    {
+      "sourcePath": "models/AGI/SO_AGI_Datahub_20240403.ili",
+      "fixturePath": "originals/AGI/SO_AGI_Datahub_20240403.ili",
+      "sha256": "8f135571f0d8f82efec426d65e94e51cba2ed01f6446f25c911e243d7a8a1b3c",
+      "bytes": 3545,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 121,
+        "CRLF": 0,
+        "CR": 0
+      },
+      "languageVersion": "2.3",
+      "roles": [
+        "documentation",
+        "metadata",
+        "declarations"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    },
+    {
+      "sourcePath": "models/ADA/SO_ADA_Denkmal_20250114.ili",
+      "fixturePath": "originals/ADA/SO_ADA_Denkmal_20250114.ili",
+      "sha256": "b229ccaf0c79743004f5dc6ab12c0d9e5f296103c8f8ab3bb129b7e72f313837",
+      "bytes": 6497,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 181,
+        "CRLF": 0,
+        "CR": 0
+      },
+      "languageVersion": "2.3",
+      "roles": [
+        "comments",
+        "declarations"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    },
+    {
+      "sourcePath": "models/AWJF/SO_AWJF_Waldplan_20250312.ili",
+      "fixturePath": "originals/AWJF/SO_AWJF_Waldplan_20250312.ili",
+      "sha256": "2b5ba60dff1966cf3417920f801b1467f14ec4a916d158b069b8313c35fe07ee",
+      "bytes": 11634,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 0,
+        "CRLF": 317,
+        "CR": 0
+      },
+      "languageVersion": "2.3",
+      "roles": [
+        "constraints",
+        "metadata",
+        "external-constraints"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    },
+    {
+      "sourcePath": "models/AFU/SO_AFU_Naturgefahren_20240515.ili",
+      "fixturePath": "originals/AFU/SO_AFU_Naturgefahren_20240515.ili",
+      "sha256": "b248abbef594ada624389a59094daea62cddddf5c6130c1874a203726d623b66",
+      "bytes": 65081,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 1072,
+        "CRLF": 0,
+        "CR": 0
+      },
+      "languageVersion": "2.3",
+      "roles": [
+        "constraints",
+        "calls",
+        "comments"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    },
+    {
+      "sourcePath": "models/HBA/SO_HBA_Immobilienportfolio_20260713.ili",
+      "fixturePath": "originals/HBA/SO_HBA_Immobilienportfolio_20260713.ili",
+      "sha256": "d257dd4ba23ff9c6526a78987f4aaf7b103f891c94655521624a0e2b798e87fe",
+      "bytes": 6503,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 186,
+        "CRLF": 0,
+        "CR": 0
+      },
+      "languageVersion": "2.4",
+      "roles": [
+        "declarations"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    },
+    {
+      "sourcePath": "models/AVT/SO_AVT_OevKov_20260727.ili",
+      "fixturePath": "originals/AVT/SO_AVT_OevKov_20260727.ili",
+      "sha256": "82d960cc2f0db03234fd3f0590e3610c23f56578c13663c916cde922850c3756",
+      "bytes": 17385,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 540,
+        "CRLF": 0,
+        "CR": 0
+      },
+      "languageVersion": "2.3",
+      "roles": [
+        "declarations"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    },
+    {
+      "sourcePath": "models/AGI/SO_AGI_MOpublic_20240711.ili",
+      "fixturePath": "originals/AGI/SO_AGI_MOpublic_20240711.ili",
+      "sha256": "ad2a6153150532584e7e2861ff61d04f94595c78442ba01cb82215770905129f",
+      "bytes": 21577,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 708,
+        "CRLF": 0,
+        "CR": 0
+      },
+      "languageVersion": "2.3",
+      "roles": [
+        "metadata",
+        "declarations"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    },
+    {
+      "sourcePath": "models/AFU/SO_AFU_Gewaesserraum_20260526.ili",
+      "fixturePath": "originals/AFU/SO_AFU_Gewaesserraum_20260526.ili",
+      "sha256": "6506babbf2de6c33f35803a2e83514163393e4f8cacc0dc52eef9cd9c83fb2b3",
+      "bytes": 2178,
+      "encoding": "UTF-8",
+      "bom": false,
+      "lineEndings": {
+        "LF": 72,
+        "CRLF": 0,
+        "CR": 0
+      },
+      "languageVersion": "2.3",
+      "roles": [
+        "comments",
+        "declarations"
+      ],
+      "baselineSyntax": "ACCEPTED"
+    }
+  ]
+}

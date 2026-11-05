@@ -749,3 +749,16 @@ Ausgaben über8MB werden abgewiesen; ungültige Modelle ergeben RequestFailed,
 veraltete Quellen ContentModified. Generierung/Übertragung bleiben abbrechbar.
 `experimental.interlis.documentation=true` kündigt nur den implementierten
 Exportvertrag an. SVG/PNG bleiben ausschliesslich aktuelle UI-Viewexporte.
+
+
+## Quellformatierung mit Requestoptionen
+
+`textDocument/formatting` übernimmt `tabSize` (1 bis 16), verlangt
+`insertSpaces=true` und akzeptiert optional `interlis.maxLineWidth` als
+JSON-Ganzzahl von 40 bis 240. Ohne Zusatzfeld gilt 120. Die Formatierung
+verwendet PRESERVE und ein Schlussnewline. Sie liefert bei unveränderter
+Quelle eine leere Editliste. Die Ergebnisbereiche verwenden UTF-16 und
+gehören zur erfassten Dokumentrevision. Schreibgeschützte, inzwischen
+geänderte oder abgebrochene Dokumentanfragen liefern keine Edits.
+Quickfixes werden weiterhin über Code Actions angeboten. Die vollständige
+Formatierung verwendet den Standardprovider.

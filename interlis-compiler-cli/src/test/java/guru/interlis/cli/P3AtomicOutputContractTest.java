@@ -102,6 +102,21 @@ class P3AtomicOutputContractTest {
         try (var paths = Files.list(directory)) { assertEquals(1, paths.count()); }
     }
 
+    @Test void formatterInvariantFailureCannotBeReportedAsAUserSyntaxError() throws Exception {
+        Path file = directory.resolve("Invariant.ili");
+        String source = "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = END F.";
+        Files.writeString(file, source);
+        var cli = new DefaultCompilerCli(new CliOutputWriter(), (input, options, token) -> {
+            throw new IllegalStateException("Formatter invariant: mutated value");
+        });
+        var result = cli.run(List.of("format", "--write", file.toString()),
+                environment(), CancellationToken.none());
+        assertEquals(CliTermination.INTERNAL_FAILURE, result.termination());
+        assertTrue(result.diagnostics().isEmpty());
+        assertTrue(result.artifacts().isEmpty());
+        assertEquals(source, Files.readString(file));
+    }
+
     @Test void aliasesOfOneExistingSourceAreRejectedBeforeAnyOutput() throws Exception {
         Path first = directory.resolve("Case.ili"), hardlink = directory.resolve("Hardlink.ili");
         String original = "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = END F.";

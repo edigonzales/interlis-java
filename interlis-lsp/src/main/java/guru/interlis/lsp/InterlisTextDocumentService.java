@@ -857,14 +857,13 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private CompletableFuture<List<? extends TextEdit>> formattingNow(HostView view, DocumentFormattingParams params, CancellationToken token) {
         DocumentState state = requireState(view, new Position(0, 0), params.getTextDocument());
         if(!editable(view,state.sourceId)) return failed(ResponseErrorCode.RequestFailed,"readonly source cannot be formatted");
-        var preferences=params.getOptions();
-        if(preferences==null || preferences.getTabSize()<1 || preferences.getTabSize()>16)
-            return failed(ResponseErrorCode.InvalidParams,"tabSize must be between 1 and 16");
-        FormatOutcome outcome = ModelFormatters.create().format(state.source,
-                new FormatOptions(preferences.getTabSize(),FormatOptions.LineEnding.PRESERVE,true), token);
+        FormatOptions options = LspFormattingOptions.decode(params.getOptions());
+        FormatOutcome outcome = ModelFormatters.create().format(state.source, options, token);
         if(outcome instanceof FormatOutcome.Cancelled cancelled) return failed(ResponseErrorCode.RequestCancelled,"formatting cancelled: "+cancelled.reason());
         if(outcome instanceof FormatOutcome.Rejected) return failed(ResponseErrorCode.RequestFailed,"source cannot be formatted without changing its meaning");
-        var formatted=(FormatOutcome.Formatted)outcome;
+        var formatted = (FormatOutcome.Formatted) outcome;
+        formatted.notices().stream().map(notice -> notice.code() + ": " + notice.message())
+                .distinct().limit(3).forEach(this::operation);
         if (formatted.text().equals(state.source.text())) {
             return CompletableFuture.completedFuture(List.of());
         }
@@ -887,12 +886,6 @@ final class InterlisTextDocumentService implements TextDocumentService {
             var action=new CodeAction(plan.title());action.setKind("quickfix");action.setIsPreferred(true);
             var edits=plan.edits().stream().map(e->new TextEdit(toLspRange(state.source,e.range()),e.replacement())).toList();
             var edit=new WorkspaceEdit();edit.setChanges(null);edit.setDocumentChanges(List.of(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(view.uri(state.sourceId),state.lspVersion),edits))));action.setEdit(edit);result.add(Either.forRight(action));
-        }
-        FormatOutcome outcome=ModelFormatters.create().format(state.source,FormatOptions.defaults(),token);
-        if(outcome instanceof FormatOutcome.Formatted formatted&&!formatted.text().equals(state.source.text())) {
-            var action=new CodeAction("Format INTERLIS source");action.setKind("source.format");var edit=new WorkspaceEdit();edit.setChanges(null);
-            if(view.versionedEdits())edit.setDocumentChanges(List.of(Either.forLeft(new TextDocumentEdit(new org.eclipse.lsp4j.VersionedTextDocumentIdentifier(view.uri(state.sourceId),state.lspVersion),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))))));
-            else edit.setChanges(Map.of(view.uri(state.sourceId),List.of(new TextEdit(toLspRange(state.source,state.source.range(0,state.source.length())),formatted.text()))));action.setEdit(edit);result.add(Either.forRight(action));
         }
         var only=params.getContext()==null?null:params.getContext().getOnly();
         if(only!=null&&!only.isEmpty())return CompletableFuture.completedFuture(result.stream().filter(action->action.isRight()&&only.stream().anyMatch(kind->kind.equals(action.getRight().getKind())||action.getRight().getKind().startsWith(kind+"."))).toList());

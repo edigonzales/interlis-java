@@ -594,7 +594,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 |---|---|---|
 | [FMT-001](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Deterministische, idempotente API ohne IO. |
 | [FMT-002](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Kommentare/Strings/Unicode/Semantik erhalten; Fehler ohne Teilprodukt. |
-| [FMT-003](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | stdout/`--write`/`--check`/Exitcodes. |
+| [FMT-003](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | stdout, `--write`, `--check`, `--max-line-width` und Exitcodes. |
 | [FMT-004](18-cli-sdk-und-kompatibilitaetsadapter.md) | P3 | Atomisches Schreiben; vorhandene Datei bleibt bei Fehler unverändert. |
 
 ### LEGACY – Zurückgestellter alter Java-API-Adapter

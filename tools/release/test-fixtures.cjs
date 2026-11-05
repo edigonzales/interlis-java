@@ -17,7 +17,7 @@ function fixture(versionOverride){
  proofs.nativeBrowsers=names.map(browserName=>({...bound(['interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js','interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js.wasm']),browser:browserName,browserVersion:'fixture',runtime:'graalvm-web-image',result:{...suite,outcome:'succeeded'}}));
  proofs.safari={...bound(browser),browser:'Safari',driverVersion:'fixture',result:{...transport}};
  proofs.ui=names.map(browserName=>({...bound([browser[0],browser[1],browser[3]]),browser:browserName,observations:Array(5).fill('actual observation')}));
- const versions=versionOverride||{version:'0.2.0-SNAPSHOT',apiVersion:'0.2',protocol:'interlis.compiler/1.0',diagnosticCatalogVersion,formatVersion:'1.0',diagramSchemaVersion:'1.0'};
+ const versions=versionOverride||{version:'0.2.0-SNAPSHOT',apiVersion:'0.2',protocol:'interlis.compiler/1.0',diagnosticCatalogVersion,formatVersion:'2.0',diagramSchemaVersion:'1.0'};
  const sdk={status:'passed',archiveSha256:sha,versions};
  const expectedBrowserResources=Object.fromEntries([...Array.from({length:36},(_,i)=>['file'+i,{sha256:sha,bytes:1}]),...['interlis-compiler.wasm','interlis-compiler.wasm-runtime.js'].map(file=>[file,{sha256:sha,bytes:1}])]);
  const expectedShippedFiles=[...Object.keys(expectedBrowserResources).map(file=>'interlis-wasm-teavm/build/web/'+file),'interlis-wasm-teavm/build/web/build-manifest.json',...Array.from({length:45},(_,i)=>'file'+i),...definitions.js.artifacts,...definitions.wasm.artifacts];

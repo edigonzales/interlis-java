@@ -31,6 +31,69 @@ class LspProcessTest {
     }
 
     @Test
+    void formattingUsesRequestOptionsAndLeavesCodeActionsToQuickFixes() throws Exception {
+        Path java = Path.of(System.getProperty("java.home"), "bin", "java");
+        Process process = new ProcessBuilder(serverCommand(java)).start();
+        var gson = new Gson();
+        try (OutputStream input = process.getOutputStream();
+             InputStream output = new BufferedInputStream(process.getInputStream())) {
+            send(input, """
+                    {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"capabilities":{}}}
+                    """);
+            assertTrue(readResponse(output, 1).contains("documentFormattingProvider"));
+            String uri = "memory:/format-process.ili";
+            String model = "INTERLIS 2.4; MODEL M AT \"x\" VERSION \"1\" =\r\n"
+                    + "CLASS C = value: TEXT*10; !! emoji 😀\r\nEND C; END M.";
+            send(input, gson.toJson(Map.of("jsonrpc", "2.0", "method", "textDocument/didOpen",
+                    "params", Map.of("textDocument", Map.of("uri", uri, "version", 1,
+                            "languageId", "interlis", "text", model)))));
+            int id = 2;
+            for (Object invalid : List.of("40", 40.5, 40.0, 39, 241, true)) {
+                send(input, formattingRequest(gson, id, uri,
+                        Map.of("tabSize", 4, "insertSpaces", true, "interlis.maxLineWidth", invalid)));
+                assertTrue(readResponse(output, id++).contains("-32602"));
+            }
+            send(input, formattingRequest(gson, id, uri, Map.of("tabSize", 4, "insertSpaces", false)));
+            assertTrue(readResponse(output, id++).contains("-32602"));
+            send(input, formattingRequest(gson, id, uri,
+                    Map.of("tabSize", 4, "insertSpaces", true, "interlis.maxLineWidth", 40)));
+            var response = com.google.gson.JsonParser.parseString(readResponse(output, id++))
+                    .getAsJsonObject();
+            assertTrue(response.has("result"), response.toString());
+            var edit = response.getAsJsonArray("result").get(0).getAsJsonObject();
+            var source = new guru.interlis.source.SourceText(new guru.interlis.source.SourceId(uri),
+                    new guru.interlis.source.SourceRevision(1), model);
+            var expected = (guru.interlis.format.FormatOutcome.Formatted)
+                    guru.interlis.format.ModelFormatters.create().format(source,
+                            new guru.interlis.format.FormatOptions(4,
+                                    guru.interlis.format.FormatOptions.LineEnding.PRESERVE, true, 40),
+                            guru.interlis.execution.CancellationToken.none());
+            assertEquals(expected.text(), edit.get("newText").getAsString());
+            assertEquals(2, edit.getAsJsonObject("range").getAsJsonObject("end").get("line").getAsInt());
+            assertEquals(13, edit.getAsJsonObject("range").getAsJsonObject("end").get("character").getAsInt());
+            send(input, """
+                    {"jsonrpc":"2.0","id":30,"method":"textDocument/codeAction","params":{
+                      "textDocument":{"uri":"memory:/format-process.ili"},
+                      "range":{"start":{"line":0,"character":0},"end":{"line":0,"character":0}},
+                      "context":{"diagnostics":[],"only":["source.format"]}}}
+                    """);
+            assertTrue(readResponse(output, 30).contains("\"result\":[]"));
+            send(input, "{\"jsonrpc\":\"2.0\",\"id\":31,\"method\":\"shutdown\"}");
+            readResponse(output, 31);
+            send(input, "{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}");
+            assertTrue(process.waitFor(5, TimeUnit.SECONDS));
+            assertEquals(0, process.exitValue());
+        } finally {
+            if (process.isAlive()) process.destroyForcibly();
+        }
+    }
+
+    private static String formattingRequest(Gson gson, int id, String uri, Map<String, ?> options) {
+        return gson.toJson(Map.of("jsonrpc", "2.0", "id", id, "method", "textDocument/formatting",
+                "params", Map.of("textDocument", Map.of("uri", uri), "options", options)));
+    }
+
+    @Test
     @SuppressWarnings("try")
     void initializeShutdownAndExitOverStdio() throws Exception {
         Path java = Path.of(System.getProperty("java.home"), "bin", "java");

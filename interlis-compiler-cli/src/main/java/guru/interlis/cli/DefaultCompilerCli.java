@@ -59,12 +59,18 @@ import java.nio.file.Path;
 /** Default CLI implementation using the same CompilerEngine as the SDK. */
 public final class DefaultCompilerCli implements CliApplication {
     private final CliOutputWriter fileWriter;
+    private final ModelFormatter formatter;
 
     /** Creates the new standard command profile. */
     public DefaultCompilerCli() { this(new CliOutputWriter()); }
 
     DefaultCompilerCli(CliOutputWriter fileWriter) {
+        this(fileWriter, ModelFormatters.create());
+    }
+
+    DefaultCompilerCli(CliOutputWriter fileWriter, ModelFormatter formatter) {
         this.fileWriter = Objects.requireNonNull(fileWriter);
+        this.formatter = Objects.requireNonNull(formatter);
     }
 
     @Override
@@ -133,7 +139,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 case "capabilities" -> arguments.size() == 1 ? capabilities(environment)
                         : usage(environment, "capabilities accepts no arguments");
                 case "check", "compile", "analyze", "diagram" -> semantic(environment, token, invocation);
-                case "format" -> format(arguments, environment, token, invocation);
+                case "format" -> format(environment, token, invocation);
                 default -> usage(environment, "unknown command: " + command);
             };
         } catch (OperationCancelledException cancelled) {
@@ -178,6 +184,8 @@ public final class DefaultCompilerCli implements CliApplication {
             help.append('\n');
         }
         help.append("Diagram JSON: interlis-compiler diagram --format json [options] [files...].\n");
+        help.append("Formatter width: --max-line-width 40..240 (default "
+                + FormatOptions.DEFAULT_MAX_LINE_WIDTH + ").\n");
         help.append("Diagnostic color: --color=auto|always|never or --color MODE (default: auto).\n");
         help.append("Diagnostic language: --diagnostic-language de|en (default: en).\n");
         help.append("Auto colors only terminal stderr; nonempty NO_COLOR or TERM=dumb disables auto. Windows auto is plain.\n");
@@ -226,6 +234,8 @@ public final class DefaultCompilerCli implements CliApplication {
                 + "\"diagnosticCatalogVersion\":\"" + manifest.diagnosticCatalogVersion() + "\","
                 + "\"formatVersion\":\"" + manifest.formatVersion() + "\","
                 + "\"diagramSchemaVersion\":\"" + manifest.diagramSchemaVersion() + "\","
+                + "\"formatOptions\":{\"maxLineWidth\":{\"min\":40,\"max\":240,\"default\":"
+                + FormatOptions.DEFAULT_MAX_LINE_WIDTH + "}},"
                 + "\"languageProfiles\":[\"2.3\",\"2.4\"],"
                 + "\"languages\":[\"2.3\",\"2.4\"],"
                 + "\"features\":[\"MODEL\",\"TOPIC\",\"CLASS\",\"STRUCTURE\",\"DOMAIN\",\"FORMAT\","
@@ -419,13 +429,10 @@ public final class DefaultCompilerCli implements CliApplication {
         return hostPath(value, environment).toUri().toString();
     }
 
-    private CliExecutionResult format(List<String> args, CliEnvironment environment,
+    private CliExecutionResult format(CliEnvironment environment,
                                       CancellationToken token, Invocation invocation) {
         FormatArguments parsed = parseFormat(invocation.command);
         new OutputPlanner().plan(invocation.command, environment);
-        if (parsed.error() != null) {
-            return usage(environment, parsed.error());
-        }
         if (parsed.files().isEmpty()) {
             return usage(environment, "no source files");
         }
@@ -445,7 +452,6 @@ public final class DefaultCompilerCli implements CliApplication {
             }
             inputs.add(new FormatInput(source, Path.of(java.net.URI.create(loaded.sourceId().value())), environment.workingDirectory()));
         }
-        ModelFormatter formatter = ModelFormatters.create();
         List<FormatOutput> outputs = new ArrayList<>();
         for (FormatInput input : inputs) {
             FormatOutcome outcome = formatter.format(input.source(), parsed.options(), token);
@@ -515,8 +521,18 @@ public final class DefaultCompilerCli implements CliApplication {
             case "crlf" -> FormatOptions.LineEnding.CRLF;
             default -> throw new CliUsageException("--line-ending must be lf or crlf");
         }).orElse(FormatOptions.LineEnding.PRESERVE);
+        int width;
+        try {
+            width = Integer.parseInt(command.value("--max-line-width")
+                    .orElse(Integer.toString(FormatOptions.DEFAULT_MAX_LINE_WIDTH)));
+        } catch (NumberFormatException invalid) {
+            throw new CliUsageException("invalid --max-line-width value");
+        }
+        if (width < 40 || width > 240) {
+            throw new CliUsageException("--max-line-width must be between 40 and 240");
+        }
         return new FormatArguments(command.files(), command.has("--check"), command.has("--write"),
-                new FormatOptions(indent, ending, true), null);
+                new FormatOptions(indent, ending, true, width));
     }
 
     private static ParsedCommand parseCommand(List<String> args) {
@@ -529,12 +545,7 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private record FormatArguments(List<String> files, boolean check, boolean write,
-                                   FormatOptions options, String error) {
-        private FormatArguments(List<String> files, boolean check, boolean write,
-                                int indent, FormatOptions.LineEnding lineEnding, String error) {
-            this(files, check, write, new FormatOptions(indent, lineEnding, true), error);
-        }
-    }
+                                   FormatOptions options) { }
 
     private record FormatInput(SourceText source, Path file, Path workingDirectory) {
         Path resolved(CliEnvironment environment) {

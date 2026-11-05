@@ -1746,3 +1746,40 @@ Vier betroffene Unitfälle bestehen. In einer beschreibbaren Git-Kopie bestätig
 Baseline läuft, unveränderter Stand bleibt UP-TO-DATE, reine Helferänderung
 führt zur echten erneuten Testausführung. Alle acht Inputs tatsächlich erfasst;
 Originale unverändert. Der nächste Kandidat benötigt den frischen Gesamt-Review.
+
+### Formatter SO_STANDARD
+
+F0 im Branch `codex/formatter-so-standard`: acht gepinnte und strikt
+parsebare SO-Originale, Ausgangsprobe mit sieben bestandenen Formattertests
+und technischer OpenCode-Verbindungsprobe. Die Herkunft, Syntaxvarianten
+und Baselinebelege stehen in
+[BASELINE.md](implementation/formatter-so-standard/BASELINE.md).
+
+F1-Zwischenstand F1a–F1c. Der Formatter verwendet konkrete Syntaxrollen und
+strikte Reparse-/Quelltreueprüfung. Der neue Breitenwert ist über die
+kompatible API, die CLI-Option und den Standard-LSP-Request verfügbar.
+Die redundante LSP-Format-Code-Action ist entfernt. Acht Referenzmodelle
+wurden formatiert und auf Idempotenz geprüft. Die echten modularen
+Launcher liefern denselben Text wie der benannte API-Verbraucher.
+Das Constraint-Breitenlayout bleibt in diesem Zwischenstand F2 vorbehalten.
+
+F2-Zwischenstand F2a–F2b. Alle fünf Constraintfamilien verwenden dieselben
+Quellordinale und parserbasierten Gruppen. Die Goldens prüfen kurze und
+gebrochene Bedingungen, WHERE-/LOCAL-Trenner, SET-Kopfreihenfolgen und
+mehrzeilige Aufrufe. Der gezielte Compilerlauf umfasst 19 Tests ohne Skips.
+Waldplan und Naturgefahren sind am Korpuspin idempotent formatiert.
+
+F3 bindet Formatversion 2.0, API-/Hostverträge, acht Korpusdateien bei
+Breite 120 und 40, semantische Stichproben für 2.3/2.4 und
+Fixture-Invalidierung an die Kandidatenabnahme.
+[Abnahmematrix](implementation/formatter-so-standard/ACCEPTANCE.md) und
+[Testprotokoll](implementation/formatter-so-standard/TEST_LEDGER.md)
+verweisen auf die externen Rohbelege. Die unabhängige Gesamtprüfung
+führt ihr eigenes, an den Kandidatencommit gebundenes Urteil.
+
+Der unabhängige Gesamt-Review des ersten Kandidaten `68e24bd` ergab FAIL.
+Die Reproduktion betraf Abschnittsstruktur, Klammerabstände, gemischte
+mehrzeilige Kommentare und fehlende Sollfälle. Die Korrektur wurde mit
+29 Formattertests, dem gesamten ausgewählten Korpus bei beiden Breiten
+und einer neuen modularen Hostprobe geprüft. Der Korrekturcommit erhält
+einen frischen unabhängigen Gesamt-Review.

@@ -123,6 +123,16 @@ Repository-Optionssatz: `--repository DIR_OR_URI` (mehrfach), `--model-pin`,
 `--explain-config` und `--warnings allow|reject`. Repositoryoptionen ausser Cacheeinstellungen benötigen
 `--repository`; jedes Repository benötigt `ilimodels.xml`. Es gibt keine
 Defaultrepositories. `format` benötigt und akzeptiert keine Repositories.
+
+```sh
+target/jenesis-jvm/delivery/compiler/bin/interlis-compiler format \
+  --check --max-line-width 100 Modell.ili
+```
+
+Der Formatter verwendet den Solothurner Hausstil (Formatversion 2.0).
+Die Breite ist ein weiches Ziel von 40 bis 240 Codepoints, standardmässig
+120. `--write` ersetzt jede Datei atomar nach Inhaltsprüfung. LSP „Format
+Document“ verwendet die Optionen des aktuellen Editorrequests.
 Zum Beispiel (Modellname und Repository entsprechend ersetzen):
 
 ```sh

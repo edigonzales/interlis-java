@@ -15,7 +15,7 @@ class VersionManifestTest {
         assertEquals(DiagnosticCatalog.VERSION, manifest.diagnosticCatalogVersion());
         assertEquals("interlis.compiler/1.0", manifest.protocolIdentifier());
         assertEquals("2.3, 2.4", manifest.languageProfiles());
-        assertEquals("1.0", manifest.formatVersion());
+        assertEquals("2.0", manifest.formatVersion());
         assertEquals("1.0", manifest.diagramSchemaVersion());
     }
 
