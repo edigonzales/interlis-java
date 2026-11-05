@@ -130,7 +130,7 @@ die gemalten UTF-16-Bereiche in beiden Themes und den Shutdown.
 Das Urteil liegt unter
 `../interlis-java-compiler-gui-g0.TVRLc5/G5/3dfd48e80cf18b589d455533e3c90bb0168af905/round-02/`.
 
-## G6 – Delivery in Prüfung
+## G6 – Delivery bestanden
 
 GUI-45 und GUI-48 bis GUI-52, mit kumulativer Prüfung von GUI-01 bis GUI-52.
 `gui-package` baut die native macOS-ARM64-App mit eingebettetem Java.
@@ -138,3 +138,27 @@ GUI-45 und GUI-48 bis GUI-52, mit kumulativer Prüfung von GUI-01 bis GUI-52.
 und das reguläre Prozessende ausserhalb des Checkouts. Der Swing-Treiber
 durchläuft Check, Repositories und Dependencies im nativen App-Prozess.
 Die [Benutzer- und Bauanleitung](USER_GUIDE.md) nennt die Plattformgrenzen.
+
+G6-PASS für `ea77b6f15c4d6cc76332521a7f153abb78584634`.
+Das Urteil für den früheren G6-Kandidaten `1486cbb` wurde nach einer
+Korrektur der sichtbaren Quellmarkierung durch einen frischen
+kumulativen Review des endgültigen Produktstands ersetzt. Alle
+52 Kriterien und die zwei unabhängigen Paket-Gegenproben sind
+bestanden. Das endgültige Urteil und die lokalen Testbelege liegen unter
+`../interlis-java-compiler-gui-g0.TVRLc5/G6/ea77b6f15c4d6cc76332521a7f153abb78584634/round-02/`
+und `../interlis-java-compiler-gui-g0.TVRLc5/g6-final-tests/`.
+
+Der native Launcher und der kombinierte Bedienablauf endeten mit Exit 0.
+Die App nutzte eingebettetes Java und lud FlatLafs ARM64-Bibliothek.
+Das Headful-Profil `diagnostics` und fünf ausgewählte headless
+Diagnostiktests bestanden auf demselben Kandidaten. Die gezielten
+CLI-, SDK- und LSP-Prozessnachweise des vorherigen Kandidaten wurden
+wiederverwendet. Die abschliessende Änderung betraf ausschliesslich
+die Swing-Quellvorschau und ihren Pakettest.
+
+Geprüft ist macOS 15.8.1 ARM64 mit Temurin 25.0.3+9 und Jenesis 0.18.1.
+Die App und ihre Laufbelege liegen unter
+`target/jenesis-jvm/gui/5d1eaf20-d903-41cb-96be-1b5f279cac91/`.
+Andere Plattformen, Developer-ID-Signierung, Notarisierung und
+Gatekeeper nach Download wurden nicht geprüft. Es wurde keine
+Korpus- oder Releaseprüfung angesetzt.
