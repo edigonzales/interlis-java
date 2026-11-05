@@ -47,6 +47,8 @@ public final class InterlisJvmBuild {
                 System.out.println("Parity completed: "+target.resolve("reports/parity.json"));
             } else if(request.profile().equals("editor-check")) {
                 build.interlis.EditorCompatibilityRun.run(request);
+            } else if(List.of("gui-run", "gui-runtime", "gui-check").contains(request.profile())) {
+                build.interlis.GuiRuntime.run(request);
             } else if(request.profile().equals("runtime-check")) {
                 build.interlis.CompilerRuntimeCheck.run(request.root());
             } else if(request.profile().equals("module-check")) {
@@ -74,7 +76,7 @@ public final class InterlisJvmBuild {
         var options=new java.util.HashMap<String,String>();
         int i = 0;
         if (args.length > 0 && !args[0].startsWith("--")) profile = args[i++];
-        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle").contains(profile))
+        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-check").contains(profile))
             throw new IllegalArgumentException("Unknown profile: " + profile);
         while (i < args.length) {
             String option = args[i++];
@@ -102,7 +104,7 @@ public final class InterlisJvmBuild {
                         throw new IllegalArgumentException("Expected exactly one clean scope: jvm|consumer|wasm");
                 }
                 case "--profile" -> {
-                    var profiles=profile.equals("release-check")?java.util.Set.of("P3"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
+                    var profiles=profile.equals("gui-check")?java.util.Set.of("shell"):profile.equals("release-check")?java.util.Set.of("P3"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
                     if(!profiles.contains(value)||options.put(option,value)!=null)
                         throw new IllegalArgumentException("Unknown or duplicate host profile: "+value);
                 }
@@ -116,7 +118,7 @@ public final class InterlisJvmBuild {
             }
         }
         if (tests != null && module == null) throw new IllegalArgumentException("--tests requires --module");
-        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("parity")?java.util.Set.of("--baseline"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
+        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("parity")?java.util.Set.of("--baseline"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check","gui-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
         if(!options.keySet().equals(expected))throw new IllegalArgumentException("Expected options for "+profile+": "+expected);
         if(!List.of("build","artifacts").contains(profile)&&(module!=null||tests!=null))throw new IllegalArgumentException("Module/test restrictions are only available for build/artifacts");
         if(profile.equals("artifacts")&&tests!=null)throw new IllegalArgumentException("artifacts never selects tests");

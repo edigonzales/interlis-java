@@ -14,6 +14,7 @@
     <module>interlis-wasm-bridge</module>
     <module>interlis-compiler-cli</module>
     <module>interlis-lsp</module>
+    <module>interlis-compiler-gui</module>
     <module>interlis-verification</module>
   </modules>
   <dependencyManagement><dependencies>
