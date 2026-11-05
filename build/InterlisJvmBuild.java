@@ -104,7 +104,7 @@ public final class InterlisJvmBuild {
                         throw new IllegalArgumentException("Expected exactly one clean scope: jvm|consumer|wasm");
                 }
                 case "--profile" -> {
-                    var profiles=profile.equals("gui-check")?java.util.Set.of("shell"):profile.equals("release-check")?java.util.Set.of("P3"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
+                    var profiles=profile.equals("gui-check")?java.util.Set.of("shell","compile"):profile.equals("release-check")?java.util.Set.of("P3"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
                     if(!profiles.contains(value)||options.put(option,value)!=null)
                         throw new IllegalArgumentException("Unknown or duplicate host profile: "+value);
                 }

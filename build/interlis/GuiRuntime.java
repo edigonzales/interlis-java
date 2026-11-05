@@ -76,6 +76,11 @@ public final class GuiRuntime {
             return;
         }
 
+        if (request.profile().equals("gui-check") && request.options().get("--profile").equals("compile")) {
+            checkCompilation(root, run, jdk, jars);
+            return;
+        }
+
         var linkPath = new ArrayList<String>();
         linkPath.add(jdk.resolve("jmods").toString());
         for (var entry : modules.entrySet()) {
@@ -157,6 +162,19 @@ public final class GuiRuntime {
                     && !stdout.lines().anyMatch(line -> line.contains("Loaded library") && line.contains("flatlaf"))) {
                 throw new IllegalStateException("FlatLaf native load is missing: " + variant);
             }
+        }
+    }
+
+    private static void checkCompilation(Path root, Path run, Path jdk, String jars) throws Exception {
+        Path probe = root.resolve("build/interlis/tests/GuiCompileProbe.java");
+        Path classes = Files.createDirectory(run.resolve("probe-classes"));
+        process(run, "probe-compile", List.of(tool(jdk, "javac"), "--release", "25", "--module-path", jars,
+                "--patch-module", MODULE + "=" + probe.getParent(), "-d", classes.toString(), probe.toString()));
+        process(run, "interactive-compile", List.of(tool(jdk, "java"), "-Djava.awt.headless=false",
+                "--module-path", jars, "--patch-module", MODULE + "=" + classes,
+                "--module", MODULE + "/guru.interlis.gui.GuiCompileProbe"));
+        if (!Files.readString(run.resolve("interactive-compile.stdout")).contains("GUI_COMPILE_PASS")) {
+            throw new IllegalStateException("The interactive compile probe produced no assertions");
         }
     }
 
