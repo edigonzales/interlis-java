@@ -107,6 +107,30 @@ final class SourcePreviewPanel extends JPanel {
         private int marker = -1;
 
         @Override
+        public void updateUI() {
+            var previous = getHighlighter();
+            int start = 0;
+            int end = 0;
+            if (previous != null) {
+                for (var highlight : previous.getHighlights()) {
+                    if (highlight.getPainter() == SOURCE_MARK) {
+                        start = highlight.getStartOffset();
+                        end = highlight.getEndOffset();
+                        break;
+                    }
+                }
+            }
+            super.updateUI();
+            if (start < end) {
+                try {
+                    getHighlighter().addHighlight(start, end, SOURCE_MARK);
+                } catch (BadLocationException failure) {
+                    throw new IllegalStateException("Invalid preview coordinates", failure);
+                }
+            }
+        }
+
+        @Override
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
             if (marker >= 0) {
