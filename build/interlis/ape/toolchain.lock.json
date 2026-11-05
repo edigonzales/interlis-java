@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "1.0",
+  "reference": "https://github.com/elide-dev/madura/tree/88cd910650f2e0db4968c0ad6c38089a8ef6b78d",
+  "builderPlatform": "linux-x86_64",
+  "builderImage": "sha256:063b17654e59a88128e193fcc8cc4a094d37921b20bbc07eed35aa0e01004aff",
+  "archives": [
+    {
+      "id": "cosmogvm",
+      "version": "25.2.4-dev",
+      "uri": "https://static.elideusercontent.com/cosmogvm/25.2i-r2/graalvm-ce-25.2.4-dev-linux-x86_64.tar.gz",
+      "sha256": "c420fdfe510baa353290267e53821edf23f6e47127587b7ff0ee6ff7c288f704",
+      "format": "tar.gz"
+    },
+    {
+      "id": "cosmocc",
+      "version": "25.2i-r2",
+      "uri": "https://static.elideusercontent.com/cosmogvm/25.2i-r2/cosmocc.zip",
+      "sha256": "7b3c11802791037aa5d7d1c02c9f54b21b25ba6369e1f1cc222aca9698641a97",
+      "format": "zip"
+    }
+  ],
+  "requiredTools": [
+    "bin/native-image",
+    "bin/java",
+    "bin/javac",
+    "bin/cosmocc",
+    "bin/cosmoc++",
+    "bin/fixupobj",
+    "bin/apelink",
+    "bin/ape-x86_64.elf",
+    "bin/ape-aarch64.elf",
+    "bin/ape-m1.c"
+  ],
+  "installedTreeSha256": "cc819e6dbbac1c4b4dd579d448c2cdd2d3a19c784a96e2006b13039be14a125f"
+}

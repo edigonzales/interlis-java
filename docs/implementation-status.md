@@ -1,5 +1,20 @@
 # Implementierungsstatus interlis-java
 
+## Compiler-APE-Machbarkeit vom 05.11.2026
+
+AP-01–32: Compiler-APE-Untersuchung über den vorhandenen Jenesis-JVM-Build.
+F0/F1/F2 gezielt bestanden: gepinnte unveränderte Toolchain, zwei echte
+Architekturbilder und Fusion, echte lokale CLI-/Formatter-/Hostparität.
+F3 scheitert nach konfigurierbarem EPoll-Befund an unabhängig minimiertem
+Vendor-Wallclockfehler: System.currentTimeMillis nutzt CLOCK_MONOTONIC;
+positive sichere TLS-Kontrolle scheitert. Eigene JDK-Substitutionen sind
+Scopeblocker. Terminaler F5-Weg, Machbarkeit **NO_GO**, kein Produkt-PASS.
+Weitere native Netzwerk-/F4-Gates NOT_RUN_BLOCKED; natives Linuxx64 und
+Windowsx64 fehlen zusätzlich. Keine Semantik-/JPMS-/LSP-/Extension-/Wasm-
+oder Formatter-Stiländerung. Unabhängiger Gesamt-Review erst nach geprüftem
+Commit; tatsächliches Urteil und SHA/Tree bleiben in externen Reviewbelegen.
+[Operativer Stand und Originalbelege](implementation/compiler-ape-feasibility/STATUS.md).
+
 ## Jenesis-JVM-Auftrag A vom04.11.2026
 
 A0–A5 (JA-01–17/19/20/22/24/25/36, BUILD-001–007/WP-00/30): parallele

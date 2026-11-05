@@ -1,0 +1,8 @@
+INTERLIS 2.4;
+MODEL Valid AT "https://example.invalid" VERSION "1" =
+  TOPIC T =
+    CLASS Item =
+      label : TEXT*20;
+    END Item;
+  END T;
+END Valid.

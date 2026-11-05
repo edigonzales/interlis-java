@@ -17,6 +17,11 @@ public final class InterlisJvmBuild {
     }
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].equals("ape")) {
+            build.interlis.ape.CompilerApe.run(Path.of("").toAbsolutePath().normalize(),
+                    java.util.Arrays.copyOfRange(args, 1, args.length));
+            return;
+        }
         BuildRequest request = parse(args);
         JvmBuildInputs.requireProject(request.root());
         Path target=request.root().resolve("target/jenesis-jvm");Files.createDirectories(target);

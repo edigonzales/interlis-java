@@ -1,0 +1,29 @@
+{
+  "purpose": "Public test fixtures only; not in application trust",
+  "files": {
+    "ca.key.pem": {
+      "sha256": "b667a10a6a117150cfb4657f84a1c6ed938f1849b913932da62459e0c741f3e9",
+      "bytes": 1704
+    },
+    "ca.pem": {
+      "sha256": "eb0045b86fb3f71f012ad25ec6c4b364db9e9507899ce854c4a09b7523f7193d",
+      "bytes": 1082
+    },
+    "valid.key.pem": {
+      "sha256": "d293acb26cb4ac1361285cd76a93827710a15bcc9f00af892a1222110bb182d5",
+      "bytes": 1708
+    },
+    "valid.pem": {
+      "sha256": "da0215f4e8f1c2a7e251a82a84ea1f57b7ce406a459fa7a51277865d32ecc3a2",
+      "bytes": 1090
+    },
+    "wrong-host.key.pem": {
+      "sha256": "10b611e4c60ecf414ac212f301a192c630ae580672d48b2df12965256dfc0b27",
+      "bytes": 1704
+    },
+    "wrong-host.pem": {
+      "sha256": "7bbe9416f43e560d98e460a16e91bfde67ef3b7f4b4adf6ecb676e94f4043137",
+      "bytes": 1107
+    }
+  }
+}

@@ -1,0 +1,8 @@
+INTERLIS 2.4;
+MODEL Invalid AT "https://example.invalid" VERSION "1" =
+  TOPIC T =
+    CLASS Item =
+      label : MissingType;
+    END Item;
+  END T;
+END Invalid.
