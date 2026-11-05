@@ -478,3 +478,18 @@ Neue Host-APIs: `CommandSpec`, `CommandLineParser`, `CliParseOutcome`,
 `CliOutputWriter`. Das frühere `LegacyCliProfile` und seine Laufzeitadapter sind mit dem Compiler-CLI-Folgeauftrag entfernt; der einzige Programmeinstieg ist `Main` im Modul `interlis-compiler-cli`. Fachvertrag: Kapitel 18,
 kanonische Besitzer und Tests: Kapitel 16. LF/CRLF bewahrt werttragende
 Literal-/Metadatenzeilenenden und liefert dafür einen FormattingNotice.
+
+## Solothurner Quellformatierung (Formatversion 2.0)
+
+`ModelFormatters.create().format(source, options, cancellation)` behält die
+Ergebnisvarianten. Die bisherige und die erweiterte Konfiguration lauten:
+
+```java
+new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true);
+new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 100);
+```
+
+Der Dreierkonstruktor verwendet 120 Codepoints. Record-Destrukturierung muss
+die vierte Komponente berücksichtigen. CLI verwendet `--max-line-width`,
+LSP `textDocument/formatting` akzeptiert `interlis.maxLineWidth` im Request.
+Der frühere direkte LSP-Format-Edit über Code Actions entfällt.

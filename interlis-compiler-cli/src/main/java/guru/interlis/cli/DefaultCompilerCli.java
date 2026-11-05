@@ -59,12 +59,18 @@ import java.nio.file.Path;
 /** Default CLI implementation using the same CompilerEngine as the SDK. */
 public final class DefaultCompilerCli implements CliApplication {
     private final CliOutputWriter fileWriter;
+    private final ModelFormatter formatter;
 
     /** Creates the new standard command profile. */
     public DefaultCompilerCli() { this(new CliOutputWriter()); }
 
     DefaultCompilerCli(CliOutputWriter fileWriter) {
+        this(fileWriter, ModelFormatters.create());
+    }
+
+    DefaultCompilerCli(CliOutputWriter fileWriter, ModelFormatter formatter) {
         this.fileWriter = Objects.requireNonNull(fileWriter);
+        this.formatter = Objects.requireNonNull(formatter);
     }
 
     @Override
@@ -178,6 +184,8 @@ public final class DefaultCompilerCli implements CliApplication {
             help.append('\n');
         }
         help.append("Diagram JSON: interlis-compiler diagram --format json [options] [files...].\n");
+        help.append("Formatter width: --max-line-width 40..240 (default "
+                + FormatOptions.DEFAULT_MAX_LINE_WIDTH + ").\n");
         help.append("Diagnostic color: --color=auto|always|never or --color MODE (default: auto).\n");
         help.append("Diagnostic language: --diagnostic-language de|en (default: en).\n");
         help.append("Auto colors only terminal stderr; nonempty NO_COLOR or TERM=dumb disables auto. Windows auto is plain.\n");
@@ -226,6 +234,8 @@ public final class DefaultCompilerCli implements CliApplication {
                 + "\"diagnosticCatalogVersion\":\"" + manifest.diagnosticCatalogVersion() + "\","
                 + "\"formatVersion\":\"" + manifest.formatVersion() + "\","
                 + "\"diagramSchemaVersion\":\"" + manifest.diagramSchemaVersion() + "\","
+                + "\"formatOptions\":{\"maxLineWidth\":{\"min\":40,\"max\":240,\"default\":"
+                + FormatOptions.DEFAULT_MAX_LINE_WIDTH + "}},"
                 + "\"languageProfiles\":[\"2.3\",\"2.4\"],"
                 + "\"languages\":[\"2.3\",\"2.4\"],"
                 + "\"features\":[\"MODEL\",\"TOPIC\",\"CLASS\",\"STRUCTURE\",\"DOMAIN\",\"FORMAT\","
@@ -442,7 +452,6 @@ public final class DefaultCompilerCli implements CliApplication {
             }
             inputs.add(new FormatInput(source, Path.of(java.net.URI.create(loaded.sourceId().value())), environment.workingDirectory()));
         }
-        ModelFormatter formatter = ModelFormatters.create();
         List<FormatOutput> outputs = new ArrayList<>();
         for (FormatInput input : inputs) {
             FormatOutcome outcome = formatter.format(input.source(), parsed.options(), token);

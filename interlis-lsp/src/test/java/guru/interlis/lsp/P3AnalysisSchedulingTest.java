@@ -92,10 +92,16 @@ class P3AnalysisSchedulingTest {
                     new DidOpenTextDocumentParams(new TextDocumentItem(URI, "interlis", 1, TEXT))));
             assertTrue(entered.await(5, TimeUnit.SECONDS));
             open.get(300, TimeUnit.MILLISECONDS);
+            var staleFormatting = server.getTextDocumentService().formatting(new DocumentFormattingParams(
+                    new TextDocumentIdentifier(URI), new FormattingOptions(2, true)));
             var edit = notifications.submit(() -> server.getTextDocumentService().didChange(
                     new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(URI, 2),
                             List.of(new TextDocumentContentChangeEvent(TEXT + "\n!! newest")))));
             edit.get(300, TimeUnit.MILLISECONDS);
+            var stale = assertThrows(ExecutionException.class, () -> staleFormatting.get(5, TimeUnit.SECONDS));
+            assertEquals(org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode.ContentModified.getValue(),
+                    assertInstanceOf(org.eclipse.lsp4j.jsonrpc.ResponseErrorException.class, stale.getCause())
+                            .getResponseError().getCode());
             var current = publications.poll(5, TimeUnit.SECONDS);
             assertNotNull(current); assertEquals(2, current.getVersion());
             release.countDown();

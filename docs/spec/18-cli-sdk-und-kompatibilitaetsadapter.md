@@ -103,7 +103,9 @@ SDK-Versionierung unterscheidet Binär-/Quellkompatibilität der Java-API, seman
 
 ## 6.1 Quellformatierung
 
-Die Formatierung ist kein Modellgenerator und kein Ersatz für die semantische Prüfung. Sie arbeitet auf einer bereits gelesenen `SourceText`-Revision und verändert ausschliesslich die Darstellung, nicht die fachliche Bedeutung. Die öffentliche API liegt im Compiler-Modul unter `guru.interlis.format` und führt keine IO aus:
+Die Quellformatierung arbeitet auf einer unveränderlichen `SourceText`-Revision.
+Der öffentliche Einstieg `ModelFormatters.create()` liefert einen zustandslosen
+`ModelFormatter` aus dem Compiler-Modul `guru.interlis.format`.
 
 ```java
 public interface ModelFormatter {
@@ -112,31 +114,40 @@ public interface ModelFormatter {
 }
 ```
 
-`FormattingNotice` ist ein unveränderlicher Hinweis mit Code, sicherem Text und
-optionalem `SourceRange`; er ist kein Sprachfehler. `FormatOutcome` unterscheidet
-mindestens `Formatted(String text, List<FormattingNotice>)`,
-`Rejected(List<Diagnostic>)` und `Cancelled`. `FormatOptions` enthält mindestens
-Einrückung, Zeilenende und die Regel für den finalen Zeilenumbruch. Dateisystemzugriffe
-und das Schreiben von Dateien bleiben Hostaufgabe.
+Alle Eingaben sind nullfrei. `FormatOptions` enthält die Einrückung (0 bis 16
+Spaces je Ebene), die EOL-Policy, die Schlussnewline-Regel und `maxLineWidth`
+(40 bis 240 Unicode-Codepoints einschliesslich Einrückung). Der bisherige
+Dreierkonstruktor verwendet 120. Defaults sind 2 Spaces, PRESERVE, ein
+Schlussnewline und 120 Codepoints. Die Recordstruktur enthält die neue
+vierte Komponente.
 
-Die Formatierung MUSS:
+Der Stil und die Abnahmefälle für die Formatversion 2.0 stehen im
+[Formatterauftrag](../implementation/formatter-so-standard/SPECIFICATION.md).
+Deklarationen, Kommentare und die fünf Constraintfamilien erhalten
+syntaxabhängiges Layout. Unteilbare Atome dürfen die Zielbreite überschreiten.
+Der Formatter MUSS strikt reparsen und die fachliche Tokenfolge, Kommentar-
+und Metadatenanker sowie alle Wertlexeme prüfen, bevor er `Formatted` liefert.
+Der Kern benötigt weder IO noch Modellauflösung. Die Ausgabe ist deterministisch
+und idempotent.
 
-- Kommentare, Zeichenketten, Unicode und die fachliche Tokenfolge erhalten;
-- deterministisch und idempotent sein;
-- syntaktisch fehlerhafte Quellen ohne Teilprodukt ablehnen;
-- die formatierte Quelle wieder parsebar machen;
-- keine zweite Compilersemantik ausführen.
-
-Die CLI bietet:
+`FormatOutcome` unterscheidet `Formatted(String text, List<FormattingNotice>)`,
+`Rejected(List<Diagnostic>)` mit den ursprünglichen Syntaxdiagnosen und
+`Cancelled` mit dem typisierten Grund. Alle Listen sind unveränderlich.
+`FormattingNotice` verwendet sichere Meldungen und optionale UTF-16-Bereiche
+der Originalrevision. Eine verletzte interne Quelltreueinvariante gelangt zum
+internen Hostfehlerpfad. Ablehnung, Abbruch und interne Defekte liefern
+keinen formatierten Teiltext.
 
 ```text
-interlis-compiler format [--check] [--write] [--indent N] [--line-ending lf|crlf] <files...>
+interlis-compiler format [--check | --write] [--indent N] [--line-ending lf|crlf] [--max-line-width N] <files...>
 ```
 
-Ohne Ausgabemodus geht das Ergebnis nach stdout. `--write` schreibt atomar in die
-Quelldatei; `--check` schreibt nicht und signalisiert Änderungsbedarf über den
-Exitcode. Bei Syntaxfehlern entsteht keine Zieldatei. Der Befehl verwendet dieselbe
-Formatter-API wie das SDK.
+Ohne Ausgabemodus geht die Quelle nach stdout. Hinweise und Diagnosen stehen
+auf stderr. `--write` ersetzt jede Datei atomar mit Prüfung des
+Originalinhalts. `--check` meldet Änderungsbedarf mit Exitcode 1. Ungültige
+Breiten sind Bedienfehler vor Dateizugriff. Der UTF-8-Loader meldet ungültige
+Bytefolgen. Eine vom strikten Parser abgelehnte führende BOM bleibt beim
+Schreiben im Original erhalten.
 
 ## 7. Zurückgestellter Legacy-Adapter
 
@@ -163,7 +174,7 @@ bleibt ohne diesen Adapter nutzbar.
 | SDK-004 | Modellgeneratoren sind nicht Bestandteil von P3; die Anforderung ist durch die Formatierungsanforderungen FMT-001..004 ersetzt. | entfällt (P3-Scope-Entscheidung) | Keine Generator-API; Entscheidung und Ersatz sind dokumentiert. |
 | FMT-001 | Die Formatierung MUSS als deterministische, idempotente öffentliche API ohne IO verfügbar sein. | P3 | API-Vertrag, Wiederholungslauf und Unveränderlichkeit der fachlichen Tokenfolge. |
 | FMT-002 | Die Formatierung MUSS Kommentare, Zeichenketten, Unicode und die fachliche Bedeutung erhalten und fehlerhafte Quellen ohne Teilprodukt ablehnen. | P3 | Positive/negative Formatfixtures, Re-Parse und semantischer Vergleich. |
-| FMT-003 | Die CLI MUSS `format` mit stdout, `--write`, `--check` und dokumentierten Exitcodes anbieten. | P3 | Prozessfixtures für Ausgabe, In-Place-Schreiben und Check-Modus. |
+| FMT-003 | Die CLI MUSS `format` mit stdout, `--write`, `--check` und dokumentierten Exitcodes anbieten. | P3 | Prozessfixtures für Ausgabe, In-Place-Schreiben, Check-Modus und Breitenoption. |
 | FMT-004 | In-Place-Formatierung MUSS atomar sein und bei Fehlern die vorhandene Datei unverändert lassen. | P3 | IO-Fehler-/Abbruchtest mit vorhandener Zieldatei. |
 | LEGACY-001 | Ein Legacy-Java-API-Adapter ist derzeit nicht Bestandteil von P3. | zurückgestellt (nicht P3) | Eigener Auftrag mit echten Verbrauchertests erforderlich. |
 | LEGACY-002 | Ein alter mutabler Objektgraph DARF das neue Schema nicht verändern. | zurückgestellt (nicht P3) | Gilt erst bei Wiederaufnahme des Adapterauftrags. |
@@ -268,17 +279,15 @@ wird weder ersetzt noch geschlossen. Injizierte Streams bleiben beim Aufrufer.
 Externe Referenzprozesse verwenden dokumentiert UTF-8-JVM-Streamoptionen;
 der Vergleich behauptet keine Gleichheit nativer Konsolencodepages.
 
-FMT-001–004: Explizite LF-/CRLF-Wahl normalisiert auch gewöhnliche mehrzeilige
-Kommentare. Zeilenenden **innerhalb werttragender Literale oder mehrzeiliger
-Metaattributwerte** bleiben dagegen erhalten: ihre Änderung würde den
-freigegebenen Metadatenvertrag und die fachliche Bedeutung ändern. In diesem
-Fall meldet `Formatted.notices` den Hinweis `VALUE_LINE_ENDING_PRESERVED` mit
-Originalbereich; die CLI schreibt den Hinweis getrennt nach stderr. PRESERVE
-bewahrt alle ursprünglichen Zeilenenden. Diese Präzisierung ändert keinen
-String-/Metadatenwert und erlaubt keine stille semantische Formattransformation.
-Die entsprechenden Kommentar-Tokenvergleiche normalisieren ausschliesslich
-Kommentarzeilenenden bei expliziter Wahl; Literalwerte werden separat exakt
-geprüft. Die Formate bleiben idempotent und wieder parsebar.
+FMT-001–004: Explizite LF-/CRLF-Wahl normalisiert Layoutumbrüche und
+Zeilenenden gewöhnlicher Kommentare. Zeilenenden in werttragenden Literalen
+und mehrzeiligen Metaattributwerten bleiben exakt erhalten.
+`VALUE_LINE_ENDING_PRESERVED` bezeichnet den betreffenden Originalbereich.
+PRESERVE übernimmt erhaltene Umbrüche an derselben Token- oder
+Triviagrenze. Neu eingeführte Umbrüche verwenden das dominierende EOL
+ausserhalb geschützter Werte, bei Gleichstand das erste und ohne Vorlage LF.
+Tests vergleichen Kommentarinhalt mit der zulässigen gemeinsamen
+Randverschiebung und prüfen Meta- und Literalwerte separat.
 
 Der gemeinsame atomare Hostschreiber prüft Abbruch nach Staging und unmittelbar
 vor Ersetzung. Formatierungen vergleichen ausserdem die gelesenen Originalbytes;

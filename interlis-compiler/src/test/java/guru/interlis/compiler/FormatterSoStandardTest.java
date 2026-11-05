@@ -86,8 +86,22 @@ class FormatterSoStandardTest {
         var output = verify(input, new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 40));
         assertTrue(output.contains("REQUIRED !! requirement\n"));
         assertTrue(output.contains("FirstKey, !! key\n"));
-        assertTrue(output.contains(": /* field list */ FirstKey"));
+        assertTrue(output.contains(": /* field list */\n        FirstKey"), output);
         assertTrue(output.contains("Second : !! condition\n"));
+    }
+
+    @Test
+    void preservesSpecialFactorsAndOriginalPathSpansInNestedArguments() {
+        String input = "INTERLIS 2.4; MODEL M AT \"x\" VERSION \"1\" = CLASS C = "
+                + "MANDATORY CONSTRAINT Functions.Check(ALL OF details, PARAMETER M.Name, "
+                + "INSPECTION View OF detail, Functions.Nested(THIS->detail, Other[Relation]->Key)); "
+                + "END C; END M.";
+        String output = verify(input, new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 40));
+        assertTrue(output.contains("ALL OF details,"));
+        assertTrue(output.contains("PARAMETER M.Name,"));
+        assertTrue(output.contains("INSPECTION View OF detail,"));
+        assertTrue(output.contains("THIS->detail,"));
+        assertTrue(output.contains("Other[Relation]->Key"));
     }
 
     static void assertGolden(String name, FormatOptions options) throws Exception {
@@ -104,6 +118,7 @@ class FormatterSoStandardTest {
                 && after.coverage().lexicallyComplete(), after.diagnostics().toString());
         assertEquals(lexemes(before), lexemes(after));
         assertEquals(annotations(before), annotations(after));
+        assertComments(before, after, options.lineEnding());
         assertEquals(output, formatted(output, options));
         return output;
     }
@@ -111,6 +126,41 @@ class FormatterSoStandardTest {
     private static String formatted(String input, FormatOptions options) {
         return assertInstanceOf(FormatOutcome.Formatted.class,
                 ModelFormatters.create().format(source(input), options, ACTIVE)).text();
+    }
+
+    private static void assertComments(SyntaxSnapshot before, SyntaxSnapshot after,
+                                       FormatOptions.LineEnding ending) {
+        var original = before.tokens();
+        var formatted = after.tokens();
+        assertEquals(original.size(), formatted.size());
+        for (int i = 0; i < original.size(); i++) {
+            SyntaxToken left = original.get(i);
+            if (left.channel() == 0) continue;
+            SyntaxToken right = formatted.get(i);
+            assertEquals(left.channel(), right.channel());
+            String oldText = left.text();
+            String newText = right.text();
+            if (!oldText.startsWith("/*")) {
+                assertEquals(oldText, newText);
+                continue;
+            }
+            if (ending != FormatOptions.LineEnding.PRESERVE) {
+                oldText = oldText.replace("\r\n", "\n").replace('\r', '\n');
+                newText = newText.replace("\r\n", "\n").replace('\r', '\n');
+            }
+            if (oldText.equals(newText)) continue;
+            var oldLines = oldText.split("\r\n|\r|\n", -1);
+            var newLines = newText.split("\r\n|\r|\n", -1);
+            assertEquals(oldLines.length, newLines.length);
+            assertEquals(oldLines[0], newLines[0]);
+            int shift = after.source().lineMap().positionAt(right.range().startOffset()).character()
+                    - before.source().lineMap().positionAt(left.range().startOffset()).character();
+            for (int line = 1; line < oldLines.length; line++) {
+                if (oldLines[line].isEmpty()) assertEquals("", newLines[line]);
+                else if (shift >= 0) assertEquals(" ".repeat(shift) + oldLines[line], newLines[line]);
+                else assertEquals(oldLines[line], " ".repeat(-shift) + newLines[line]);
+            }
+        }
     }
 
     private static List<String> lexemes(SyntaxSnapshot syntax) {
@@ -133,7 +183,7 @@ class FormatterSoStandardTest {
         return result;
     }
 
-    private static SyntaxSnapshot parse(String text) {
+    static SyntaxSnapshot parse(String text) {
         return SyntaxServices.create().parse(source(text), ParseOptions.defaults(ParseMode.STRICT), ACTIVE);
     }
 

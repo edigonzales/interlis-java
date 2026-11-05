@@ -28,3 +28,26 @@ sind Bestandteil der folgenden Phasen.
 | --- | --- | --- |
 | F2a | `f2a/compiler-gate.log`, `f2a/gate-junit.xml` | 16 Tests, keine Skips. Ausdrucksgolden mit geschachteltem NOT und Funktionsaufruf, beide Prozentvergleiche, Codepoint-Breitenschwelle. Der erste als flach vorgesehene Kurzfall war über 40 Spalten; der kurze Fall verwendet nun den unbenannten Kopf. |
 | F2b | `f2b/compiler.log`, `f2b/gate-junit.xml`, `f2b/corpus.log`, `f2b/second.log`, `f2b/diffs/` | 19 Tests, keine Skips. Alle fünf Familien, beide SET-Kopfformen und UNIQUE WHERE/LOCAL/BASKET. Waldplan und Naturgefahren strikt reparsbar und idempotent. |
+
+## F3
+
+- `f3/compiler-final-coverage.log` und `f3/interlis-compiler-junit.xml`
+  enthalten 26 gezielte Tests. Der zweite Teil des Fixturetests fügte dem
+  Deklarationsgolden einen Kommentar hinzu. Jenesis führte die Testklasse
+  erneut aus und der exakte Vergleich schlug wie erwartet fehl.
+  Das wiederhergestellte Golden entspricht bytegenau der vorab geprüften
+  Datei. Der Folgelauf durfte dieses Resultat wiederverwenden.
+- `f3/cli-final.log`, `f3/lsp-stable.log`, `f3/version-final.log` und die
+  zugehörigen JUnitberichte belegen die Host- und Versionsverträge.
+  Der ursprüngliche LSP-Lauf erkannte eine währenddessen bearbeitete
+  Dokumentationsdatei im Inputbereich. Die Tests hatten ausgeführt.
+  Der stabile Lauf übernahm das zu den gleichen Testinputs gehörende
+  Resultat und endete mit Exit 0.
+- `f3/host-smoke.log`, `f3/lsp.jsonl`, `f3/lsp-cancel.jsonl` und
+  `f3/runtime-inventory.json` belegen die echten modulbasierten Prozesse.
+- `f3/corpus-default/corpus-report.json` und
+  `f3/corpus-narrow/corpus-report.json` erfassen acht Originale bei
+  Breite 120 bzw. 40. Beide Läufe haben je acht erfolgreiche Reparses
+  und Wiederholungsvergleiche, ohne Schutzhinweise im Korpus.
+- `node --test tools/release/evidence.test.cjs` ergibt 81 Tests, keine
+  Fehler oder Skips. Geprüft wurde der Versionskonsument, kein Releasegate.

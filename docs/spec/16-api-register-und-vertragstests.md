@@ -217,7 +217,7 @@ Die Foundation enthält keine `AnalysisSnapshot`-Referenzen. Eine Abbruchausnahm
 | Laufkontext | `RunContextFactory.defaults()`; `createRoot()`; `createRoot(attributes)`; `createChild(parent)` | frische unveränderliche Root-/Kindmetadaten; die Factory startet keinen Lauf |
 | Workspace | `Workspaces.create(CompilerEngine, WorkspaceConfiguration)`; `WorkspaceConfiguration.defaults()` | leerer Workspace, Revision 0, keine Modellbeschaffung beim Erzeugen |
 | Diagramm | `DiagramProjectors.create()`; `DiagramOptions.defaults(selection)` | verwendet expliziten Snapshot beziehungsweise Schema und eine konkrete Auswahl; `translationModel: Optional<SymbolRef>` und `neighbourhoodDepth: OptionalInt` parametrisieren Labelwahl/Nachbarschaft gemäss Kap.11; bisherige Konstruktorüberladung bleibt erhalten; kein aktueller globaler Workspace |
-| Formatierung | `ModelFormatter.format(source, options, token)` | deterministische Quellformatierung ohne IO; kein Modellgenerator |
+| Formatierung | `ModelFormatter.format(source, options, token)` | deterministische Quellformatierung ohne IO mit Reparse; `FormatOptions` akzeptiert eine optionale Breite über den Viererkonstruktor |
 | CLI | `CliApplication.run(arguments,environment,token)` | Bibliotheksaufruf ohne System.exit |
 | Browser | `CompilerClient` gemäss Kapitel 10 | versioniertes Promise-/Sessionprotokoll und explizite Abbruchoptionen |
 

@@ -15,6 +15,9 @@ final class CommentLayout {
             int end = start;
             while (end < text.length() && text.charAt(end) != '\r' && text.charAt(end) != '\n') end++;
             if (start > 0 && end > start) {
+                int firstContent = start;
+                while (firstContent < end && text.charAt(firstContent) == ' ') firstContent++;
+                if (firstContent < end && text.charAt(firstContent) == '\t') return Optional.empty();
                 if (delta > 0) {
                     shifted.append(" ".repeat(delta));
                 } else {

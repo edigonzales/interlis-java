@@ -124,13 +124,20 @@ final class ConstraintLayout {
         String text = atoms.get(first).text();
         if (hard != 0 || text.indexOf('\r') >= 0 || text.indexOf('\n') >= 0) return false;
         int width = flatColumns[last + 1] - flatColumns[first] - (space[first] ? 1 : 0);
+        for (int i = last + 1; i < atoms.size() && width <= options.maxLineWidth(); i++) {
+            if (space[i] || lines[i] > 0 || atoms.get(i).eof()) break;
+            String suffix = atoms.get(i).text();
+            if (!suffix.equals(")") && !suffix.equals(";") && !suffix.equals(",")) break;
+            width += widths[i];
+        }
         return column + width <= options.maxLineWidth();
     }
 
     private void open(FormatStructure.Group group, int level, int first) {
         for (var item : group.breaks()) {
             int index = Math.max(first + 1, leading(item.ordinal()));
-            if (index <= group.first() || trailing[index] || mixed[index - 1]) continue;
+            if (index <= group.first() || trailing[index]
+                    || mixed[index - 1] && !trailing[index - 1]) continue;
             lines[index] = 1;
             planned[index] = true;
             levels[index] = level + item.extraIndent();

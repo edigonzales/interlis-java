@@ -390,6 +390,12 @@ Für P5 gilt diese Mindestmatrix pro ausdrücklich unterstütztem DB-Profil:
 | P4 | Transfer-/Validierungspläne und Laufzeit, bidirektionale Transferfälle, Coverage- und Ressourcenberichte | Gesamte historische ili2db-Schemafamilie |
 | P5 | Benannte DB-Profile mit bidirektionalen Operationen, DDL-/Metadatenvergleich, Abbruch-/Fehlerfälle | Nicht ausgeführte historische Versionen oder Backends |
 
+Für den Solothurner Formatter gelten der
+[Korpus- und Testverträge](../implementation/formatter-so-standard/CORPUS_AND_TESTS.md).
+Die Phasengates binden Reparse, Token-/Metawert-/Ankervergleiche, Goldens,
+Idempotenz, semantische Stichproben und reale modulare Verbraucher an den
+geprüften Produktstand.
+
 LSP, Diagramm und WASM beginnen bereits in P1. Die Nennung von P3 bezeichnet Integrationstiefe, Leistung und Kompatibilitätsreife; diese Funktionen dürfen nicht bis dahin vollständig aufgeschoben werden.
 
 Schnelle lokale Gates prüfen die direkt betroffene fachliche Strecke. Umfangreiche externe Compiler-/Browser-/DB-Matrizen werden nach definiertem Anlass oder in geeigneten CI-Jobs ausgeführt. Der Agent soll Tests nicht beliebig verbreitern, wenn die relevanten Risiken bereits ausreichend geprüft sind. Für einen Release gelten jedoch alle zugesagten Profilgates.

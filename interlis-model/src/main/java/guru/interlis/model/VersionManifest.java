@@ -35,7 +35,7 @@ public record VersionManifest(String toolVersion, String apiVersion,
     /** Supported language profiles. */
     public static final String LANGUAGE_PROFILES = "2.3, 2.4";
     /** Current source-formatting contract version. */
-    public static final String FORMAT_VERSION = "1.0";
+    public static final String FORMAT_VERSION = "2.0";
     /** Current diagram document schema version. */
     public static final String DIAGRAM_SCHEMA_VERSION = "1.0";
 

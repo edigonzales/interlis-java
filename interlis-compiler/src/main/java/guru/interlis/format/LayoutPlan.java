@@ -57,6 +57,12 @@ final class LayoutPlan {
                         && atoms.get(i + 1).endings().isEmpty();
             }
         }
+        for (var header : structure.headers()) {
+            for (int i = header.first() + 1; i <= header.last(); i++) {
+                cancellation.throwIfCancellationRequested();
+                if (lines[i] > 0) levels[i]++;
+            }
+        }
         for (var boundary : structure.boundaries()) {
             cancellation.throwIfCancellationRequested();
             int ordinal = boundary.ordinal();
@@ -132,7 +138,8 @@ final class LayoutPlan {
                 String previousEnding = "";
                 for (int line = 0; line < lines[i]; line++) {
                     String ending = source.ending(atom, line);
-                    if (previousEnding.equals("\r") && ending.equals("\n")) ending = "\r";
+                    // A bare CR and a subsequent LF need a separator to remain two EOLs.
+                    if (previousEnding.equals("\r") && ending.equals("\n")) output.append(' ');
                     output.append(ending);
                     previousEnding = ending;
                 }

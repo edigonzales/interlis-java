@@ -15,6 +15,7 @@ import static guru.interlis.compiler.internal.antlr.InterlisParser.*;
 public final class FormatStructure {
     public record Indent(int first, int endExclusive) { }
     public record Boundary(int ordinal, int lines, boolean exact) { }
+    public record Header(int first, int last) { }
     public record Break(int ordinal, int extraIndent) { }
     public record Group(int first, int last, List<Break> breaks) {
         public Group { breaks = List.copyOf(breaks); }
@@ -24,12 +25,14 @@ public final class FormatStructure {
     private final List<Indent> indents = new ArrayList<>();
     private final List<Boundary> boundaries = new ArrayList<>();
     private final List<Integer> tight = new ArrayList<>();
+    private final List<Header> headers = new ArrayList<>();
     private final List<Group> expressionGroups = new ArrayList<>();
     private final List<Group> constraints = new ArrayList<>();
 
     public List<Indent> indents() { return List.copyOf(indents); }
     public List<Boundary> boundaries() { return List.copyOf(boundaries); }
     public List<Integer> tight() { return List.copyOf(tight); }
+    public List<Header> headers() { return List.copyOf(headers); }
     public List<Group> expressionGroups() { return List.copyOf(expressionGroups); }
     public List<Group> constraints() { return List.copyOf(constraints); }
 
@@ -67,7 +70,13 @@ public final class FormatStructure {
                     if (node.getToken(COLON, 0) != null) tight.add(last(node));
                 }
                 case RULE_objectOrAttributePath, RULE_localUniqueness,
-                        RULE_rotationDef, RULE_inspection, RULE_attributePathConst -> arrows(node);
+                        RULE_rotationDef, RULE_inspection -> arrows(node);
+                case RULE_attributePathConst -> {
+                    tight.add(ordinal(node.getToken(GT, 1)));
+                    tight.add(ordinal(node.getToken(GT, 1)) + 1);
+                    arrows(node);
+                }
+                case RULE_classConst -> tight.add(first(node) + 1);
                 case RULE_relation -> {
                     if (node.getChildCount() == 2) tight.add(last(node));
                 }
@@ -190,6 +199,7 @@ public final class FormatStructure {
         int first = first(node);
         boundary(first, 2, false);
         int open = ordinal(node.getToken(EQ, 0));
+        headers.add(new Header(first, open));
         int close = ordinal(node.getToken(END, 0));
         boolean airy = node instanceof ModeldefContext || node instanceof TopicDefContext;
         boolean empty = open + 1 == close;

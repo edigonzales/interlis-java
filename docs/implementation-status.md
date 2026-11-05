@@ -1768,3 +1768,11 @@ Quellordinale und parserbasierten Gruppen. Die Goldens prüfen kurze und
 gebrochene Bedingungen, WHERE-/LOCAL-Trenner, SET-Kopfreihenfolgen und
 mehrzeilige Aufrufe. Der gezielte Compilerlauf umfasst 19 Tests ohne Skips.
 Waldplan und Naturgefahren sind am Korpuspin idempotent formatiert.
+
+F3 bindet Formatversion 2.0, API-/Hostverträge, acht Korpusdateien bei
+Breite 120 und 40, semantische Stichproben für 2.3/2.4 und
+Fixture-Invalidierung an die Kandidatenabnahme.
+[Abnahmematrix](implementation/formatter-so-standard/ACCEPTANCE.md) und
+[Testprotokoll](implementation/formatter-so-standard/TEST_LEDGER.md)
+verweisen auf die externen Rohbelege. Die unabhängige Gesamtprüfung
+führt ihr eigenes, an den Kandidatencommit gebundenes Urteil.

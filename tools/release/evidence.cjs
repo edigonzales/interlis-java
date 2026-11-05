@@ -79,7 +79,7 @@ function validate(input){
  assert(github.profile==='P3'&&github.repository==='edigonzales/interlis-java'&&github.gitCommit===candidate&&github.run.headSha===candidate&&github.run.status==='completed'&&github.run.conclusion==='success'&&github.run.path==='.github/workflows/p3-platforms.yml','invalid GitHub run provenance');
  assert(github.jobs.length===2&&github.jobs.every(j=>j.status==='completed'&&j.conclusion==='success')&&github.artifacts.map(a=>a.platform).sort().join(',')==='linux-x64,windows-x64','incomplete actual GitHub jobs');
  assert(github.artifacts.length===2&&github.artifacts.every(a=>/^sha256:[a-f0-9]{64}$/.test(a.digest)&&a.proof.gitCommit===candidate),'missing verified GitHub artifacts');
- assert(sdk.status==='passed'&&sdk.versions.apiVersion==='0.2'&&sdk.versions.protocol==='interlis.compiler/1.0'&&sdk.versions.diagnosticCatalogVersion===diagnosticCatalogVersion&&sdk.versions.formatVersion==='1.0'&&sdk.versions.diagramSchemaVersion==='1.0','missing delivered SDK/version separation');
+ assert(sdk.status==='passed'&&sdk.versions.apiVersion==='0.2'&&sdk.versions.protocol==='interlis.compiler/1.0'&&sdk.versions.diagnosticCatalogVersion===diagnosticCatalogVersion&&sdk.versions.formatVersion==='2.0'&&sdk.versions.diagramSchemaVersion==='1.0','missing delivered SDK/version separation');
  comparison.validateComparison(reproducibility,expectedShippedFiles,candidate,sourceFingerprint);
  assert(browserManifest.schemaVersion==='1.0'&&browserManifest.gitCommit===candidate&&!browserManifest.dirty&&browserManifest.sourceFingerprint===sourceFingerprint&&Object.keys(browserManifest.resources).length>20,'missing current shipped browser build manifest');
  const webPrefix='interlis-wasm-teavm/build/web/';
