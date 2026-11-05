@@ -49,13 +49,16 @@ public final class FormatStructure {
                 case RULE_modeldef, RULE_topicDef, RULE_classDef, RULE_structureDef,
                         RULE_associationDef, RULE_viewDef, RULE_graphicDef, RULE_constraintsDef -> block(node);
                 case RULE_attributeDef, RULE_roleDef, RULE_parameterDef, RULE_runTimeParameterDef,
-                        RULE_viewAttribute, RULE_drawingRule,
+                        RULE_viewAttribute,
                         RULE_basketOidRule, RULE_objectOidRule, RULE_contextMapping,
                         RULE_lineFormTypeDef -> boundary(first(node), 1, false);
-                case RULE_functionDef, RULE_metaDataBasketDef -> boundary(first(node), 2, false);
+                case RULE_functionDef -> boundary(first(node), 2, false);
+                case RULE_metaDataBasketDef -> metadataBasket((MetaDataBasketDefContext) node);
+                case RULE_drawingRule -> drawingRule((DrawingRuleContext) node);
                 case RULE_constraintDef -> constraint((ConstraintDefContext) node);
                 case RULE_domainDef -> domain(node);
-                case RULE_unitDef, RULE_contextDef -> prefixedSection(node);
+                case RULE_unitDef -> prefixedSection(node);
+                case RULE_contextDef -> context((ContextDefContext) node);
                 case RULE_enumeration -> enumeration((EnumerationContext) node, offsets);
                 case RULE_cardinality -> {
                     for (int i = first(node) + 1; i <= last(node); i++) tight.add(i);
@@ -68,7 +71,9 @@ public final class FormatStructure {
                 }
                 case RULE_pathEl -> {
                     if (node.getToken(COLON, 0) != null) tight.add(last(node));
+                    tightToken(node.getToken(LSBR, 0));
                 }
+                case RULE_attributeRef, RULE_refSys -> tightToken(node.getToken(LSBR, 0));
                 case RULE_objectOrAttributePath, RULE_localUniqueness,
                         RULE_rotationDef, RULE_inspection -> arrows(node);
                 case RULE_attributePathConst -> {
@@ -219,6 +224,39 @@ public final class FormatStructure {
         sections(node);
     }
 
+    private void metadataBasket(MetaDataBasketDefContext node) {
+        boundary(first(node), 2, false);
+        var groups = node.metaObjectGroup();
+        if (groups.isEmpty()) return;
+        int first = first(groups.getFirst());
+        indents.add(new Indent(first, last(node) + 1));
+        for (var group : groups) boundary(first(group), 1, true);
+    }
+
+    private void drawingRule(DrawingRuleContext node) {
+        boundary(first(node), 1, false);
+        int body = ordinal(node.COLON()) + 1;
+        indents.add(new Indent(body, last(node) + 1));
+        for (var clause : node.condSignParamAssignment()) {
+            boundary(first(clause), 1, true);
+            int open = ordinal(clause.LPAR());
+            int close = ordinal(clause.RPAR());
+            indents.add(new Indent(open + 1, close));
+            boundary(open + 1, 1, true);
+            for (var assignment : clause.signParamAssignment()) {
+                boundary(first(assignment), 1, true);
+            }
+            boundary(close, 1, true);
+        }
+    }
+
+    private void context(ContextDefContext node) {
+        prefixedSection(node);
+        int body = ordinal(node.EQ()) + 1;
+        indents.add(new Indent(body, last(node) + 1));
+        boundary(body, 1, true);
+    }
+
     private void sections(ParserRuleContext node) {
         List<ParseTree> children = new ArrayList<>();
         for (int i = 0; i < node.getChildCount(); i++) {
@@ -226,6 +264,21 @@ public final class FormatStructure {
             children.add(child instanceof DefinitionsContext definition ? definition.getChild(0) : child);
         }
         for (int i = 0; i < children.size(); i++) {
+            if (children.get(i) instanceof ParserRuleContext heading) {
+                int kind = heading.getStart().getType();
+                if (kind == UNIT || kind == CONTEXT) {
+                    int end = last(heading) + 1;
+                    for (int j = i + 1; j < children.size(); j++) {
+                        if (!(children.get(j) instanceof ParserRuleContext member)
+                                || member.getRuleIndex() != heading.getRuleIndex()
+                                || member.getStart().getType() == kind) break;
+                        end = last(member) + 1;
+                        i = j;
+                    }
+                    if (end > last(heading) + 1) indents.add(new Indent(last(heading) + 1, end));
+                }
+                continue;
+            }
             if (!(children.get(i) instanceof TerminalNode token)) continue;
             int kind = token.getSymbol().getType();
             String sectionRule = switch (kind) {
@@ -262,9 +315,12 @@ public final class FormatStructure {
 
     private void domain(ParserRuleContext node) {
         prefixedSection(node);
+        int start = first(node) + (node.getStart().getType() == DOMAIN ? 1 : 0);
         for (TerminalNode separator : node.getTokens(SEMI)) {
-            int next = ordinal(separator) + 1;
-            if (next <= last(node)) boundary(next, 1, false);
+            int end = ordinal(separator);
+            headers.add(new Header(start, end));
+            start = end + 1;
+            if (start <= last(node)) boundary(start, 1, false);
         }
     }
 
@@ -315,6 +371,10 @@ public final class FormatStructure {
                 tight.add(ordinal(right) + 1);
             }
         }
+    }
+
+    private void tightToken(TerminalNode token) {
+        if (token != null) tight.add(ordinal(token));
     }
 
     private void boundary(int ordinal, int lines, boolean exact) {

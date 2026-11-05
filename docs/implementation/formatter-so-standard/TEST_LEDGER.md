@@ -51,3 +51,21 @@ sind Bestandteil der folgenden Phasen.
   und Wiederholungsvergleiche, ohne Schutzhinweise im Korpus.
 - `node --test tools/release/evidence.test.cjs` ergibt 81 Tests, keine
   Fehler oder Skips. Geprüft wurde der Versionskonsument, kein Releasegate.
+
+## Korrektur nach Reviewrunde 01
+
+OpenCode meldete am Kandidaten `68e24bd` vier Findings. Die Korrektur
+fasst UNIT-/CONTEXT-Folgedeklarationen zusammen, gibt SIGN-BASKET-Gruppen
+und GRAPHIC-Zeichenklauseln eigene Layoutgrenzen, unterscheidet
+Einheitenklammern von Pfadindizes und verschiebt gemischte mehrzeilige
+Blockkommentare starr. Zwei neue Sollfixtures und eine Verifiermutation
+prüfen die korrigierten Fälle.
+
+Wegen der gemeinsamen Layout- und Schutzregeln wurden alle 29
+Formattertests und der ausgewählte Korpus bei 120 und 40 erneut geprüft.
+`fix01/junit.xml`, `fix01/corpus-default/` und `fix01/corpus-narrow/`
+enthalten die aktuellen Nachweise. Die neue Modulintegration über SDK,
+CLI und LSP prüft das Strukturfixture auf Bytegleichheit und liegt in
+`fix01/host-smoke.log`. Die CLI-Schreib-/Fehlerpfade, LSP-Schedulerpfade,
+Versionsprüfung und Release-Konsumenten stammen aus F3, da deren
+Adapter- und Testquellen bei dieser Korrektur identisch sind.

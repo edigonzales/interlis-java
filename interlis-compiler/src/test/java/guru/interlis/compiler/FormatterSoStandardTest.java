@@ -104,6 +104,16 @@ class FormatterSoStandardTest {
         assertTrue(output.contains("Other[Relation]->Key"));
     }
 
+    @Test
+    void coversNestedDeclarationsSectionsAndBracketRoles() throws Exception {
+        assertGolden("sections", FormatOptions.defaults());
+    }
+
+    @Test
+    void shiftsMixedBlockCommentAndKeepsTheFollowingToken() throws Exception {
+        assertGolden("mixed-comment", FormatOptions.defaults());
+    }
+
     static void assertGolden(String name, FormatOptions options) throws Exception {
         String input = Files.readString(FIXTURES.resolve("cases/" + name + ".ili"));
         String expected = Files.readString(FIXTURES.resolve("golden/" + name + ".ili"));
@@ -148,13 +158,16 @@ class FormatterSoStandardTest {
                 oldText = oldText.replace("\r\n", "\n").replace('\r', '\n');
                 newText = newText.replace("\r\n", "\n").replace('\r', '\n');
             }
-            if (oldText.equals(newText)) continue;
+            var oldPosition = before.source().lineMap().positionAt(left.range().startOffset());
+            var newPosition = after.source().lineMap().positionAt(right.range().startOffset());
+            String linePrefix = before.source().text().substring(left.range().startOffset() - oldPosition.character(),
+                    left.range().startOffset());
+            int shift = newPosition.character() - oldPosition.character();
+            if (oldText.equals(newText) && (shift == 0 || !linePrefix.isBlank())) continue;
             var oldLines = oldText.split("\r\n|\r|\n", -1);
             var newLines = newText.split("\r\n|\r|\n", -1);
             assertEquals(oldLines.length, newLines.length);
             assertEquals(oldLines[0], newLines[0]);
-            int shift = after.source().lineMap().positionAt(right.range().startOffset()).character()
-                    - before.source().lineMap().positionAt(left.range().startOffset()).character();
             for (int line = 1; line < oldLines.length; line++) {
                 if (oldLines[line].isEmpty()) assertEquals("", newLines[line]);
                 else if (shift >= 0) assertEquals(" ".repeat(shift) + oldLines[line], newLines[line]);

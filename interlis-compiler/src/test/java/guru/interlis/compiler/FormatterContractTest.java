@@ -145,8 +145,10 @@ class FormatterContractTest {
                 """;
         String formatted = format(input, FormatOptions.defaults());
         assertEquals(formatted, format(formatted, FormatOptions.defaults()));
-        assertEquals(tokenTexts(input), tokenTexts(formatted));
-        assertTrue(formatted.contains("/* first 😀\n   middle\n last */"));
+        String expected = input.replace("/* first 😀\n   middle\n last */",
+                "/* first 😀\n     middle\n   last */");
+        assertEquals(tokenTexts(expected), tokenTexts(formatted));
+        assertTrue(formatted.contains("  /* first 😀\n     middle\n   last */ TOPIC T"));
         assertTrue(formatted.contains("CLASS /* between keyword and name */ C"));
     }
 

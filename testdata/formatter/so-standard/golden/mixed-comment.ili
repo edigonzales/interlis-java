@@ -1,0 +1,16 @@
+INTERLIS 2.4;
+
+MODEL M AT "x" VERSION "1" =
+
+  TOPIC T =
+
+    /* note
+     * A | B
+     */ CLASS D =
+      a : TEXT;
+      b : TEXT;
+    END D;
+
+  END T;
+
+END M.

@@ -124,7 +124,11 @@ vierte Komponente.
 Der Stil und die Abnahmefälle für die Formatversion 2.0 stehen im
 [Formatterauftrag](../implementation/formatter-so-standard/SPECIFICATION.md).
 Deklarationen, Kommentare und die fünf Constraintfamilien erhalten
-syntaxabhängiges Layout. Unteilbare Atome dürfen die Zielbreite überschreiten.
+syntaxabhängiges Layout. Einheitenqualifikationen verwenden einen Abstand
+vor der eckigen Klammer, Pfadindizes stehen direkt am Pfadsegment.
+Klammern enthalten am inneren Rand kein Padding. Eine starre Verschiebung
+eines Blockkommentars erfasst auch dessen Schlusszeile, wenn dort weiterer
+Code folgt. Unteilbare Atome dürfen die Zielbreite überschreiten.
 Der Formatter MUSS strikt reparsen und die fachliche Tokenfolge, Kommentar-
 und Metadatenanker sowie alle Wertlexeme prüfen, bevor er `Formatted` liefert.
 Der Kern benötigt weder IO noch Modellauflösung. Die Ausgabe ist deterministisch

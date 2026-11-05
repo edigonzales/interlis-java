@@ -37,6 +37,14 @@ class FormatterVerifierTest {
                 "CLASS C = END C;\n/** Documentation. */\n"));
     }
 
+    @Test
+    void rejectsMovingOnlyTheOpenerOfAMultilineComment() {
+        String input = INPUT.replace("/** Documentation. */", "/** Documentation.\n */");
+        String output = input.replace("/** Documentation.", "  /** Documentation.");
+        assertThrows(IllegalStateException.class, () -> FormatVerifier.verify(parse(input), parse(output),
+                FormatOptions.defaults(), CancellationToken.none()));
+    }
+
     private static void reject(String output) {
         assertThrows(IllegalStateException.class, () -> FormatVerifier.verify(parse(INPUT), parse(output),
                 FormatOptions.defaults(), CancellationToken.none()));

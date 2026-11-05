@@ -47,11 +47,15 @@ final class FormatVerifier {
             }
             var oldAtom = beforeSource.atoms().get(ordinal);
             var newAtom = afterSource.atoms().get(ordinal);
-            if (oldAtom.blockComment() && !expected.equals(right.text())
-                    && standalone(beforeSource, ordinal) && standalone(afterSource, ordinal)
-                    && CommentLayout.spaceMargin(oldAtom) && CommentLayout.spaceMargin(newAtom)) {
+            if (oldAtom.blockComment() && !FormatSource.lineEndings(left.text()).isEmpty()
+                    && atMargin(oldAtom, ordinal) && atMargin(newAtom, ordinal)) {
                 int delta = CommentLayout.column(newAtom) - CommentLayout.column(oldAtom);
-                expected = CommentLayout.shift(expected, delta).orElse(expected);
+                if (delta != 0) {
+                    require(CommentLayout.spaceMargin(oldAtom) && CommentLayout.spaceMargin(newAtom),
+                            "comment margin uses non-space indentation at ordinal " + ordinal);
+                    expected = CommentLayout.shift(expected, delta).orElseThrow(() ->
+                            new IllegalStateException("Formatter invariant: comment margin cannot shift uniformly"));
+                }
             }
             require(left.kind() == right.kind() && left.channel() == right.channel()
                     && expected.equals(right.text()), "token or comment changed at ordinal " + ordinal);
@@ -90,10 +94,8 @@ final class FormatVerifier {
         cancellation.throwIfCancellationRequested();
     }
 
-    private static boolean standalone(FormatSource source, int ordinal) {
-        var atoms = source.atoms();
-        return (ordinal == 0 || !atoms.get(ordinal).endings().isEmpty())
-                && (atoms.get(ordinal + 1).eof() || !atoms.get(ordinal + 1).endings().isEmpty());
+    private static boolean atMargin(FormatSource.Atom atom, int ordinal) {
+        return ordinal == 0 || !atom.endings().isEmpty();
     }
 
     static String normalizeCommentEndings(String text, FormatOptions.LineEnding ending) {

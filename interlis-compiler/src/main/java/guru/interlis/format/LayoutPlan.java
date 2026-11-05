@@ -57,13 +57,17 @@ final class LayoutPlan {
                         && atoms.get(i + 1).endings().isEmpty();
             }
         }
+        var boundaries = structure.boundaries();
+        boolean[] structural = new boolean[size];
+        for (var boundary : boundaries) structural[boundary.ordinal()] = boundary.exact();
         for (var header : structure.headers()) {
+            int base = levels[header.first()];
             for (int i = header.first() + 1; i <= header.last(); i++) {
                 cancellation.throwIfCancellationRequested();
-                if (lines[i] > 0) levels[i]++;
+                if (lines[i] > 0 && levels[i] == base && !structural[i]) levels[i]++;
             }
         }
-        for (var boundary : structure.boundaries()) {
+        for (var boundary : boundaries) {
             cancellation.throwIfCancellationRequested();
             int ordinal = boundary.ordinal();
             int anchor = ordinal;
@@ -84,7 +88,7 @@ final class LayoutPlan {
             }
         }
         // Exact block edges take precedence over sibling separators, including attached trivia.
-        for (var boundary : structure.boundaries()) {
+        for (var boundary : boundaries) {
             if (!boundary.exact()) continue;
             int anchor = boundary.ordinal();
             while (anchor < size && trailing[anchor]) anchor++;
@@ -118,7 +122,7 @@ final class LayoutPlan {
             String indent = " ".repeat(column);
             String text = atom.text();
             if (atom.blockComment()) {
-                if ((i == 0 || lines[i] > 0) && !mixed[i] && FormatSource.lineEndings(text).size() > 0) {
+                if ((i == 0 || lines[i] > 0) && !FormatSource.lineEndings(text).isEmpty()) {
                     var shifted = CommentLayout.spaceMargin(atom)
                             ? CommentLayout.shift(text, column - CommentLayout.column(atom)) : Optional.<String>empty();
                     if (shifted.isPresent()) {
@@ -144,7 +148,9 @@ final class LayoutPlan {
                     previousEnding = ending;
                 }
                 output.append(indent);
-            } else if (i > 0 && space[i]) {
+            } else if (i == 0) {
+                output.append(indent);
+            } else if (space[i]) {
                 output.append(' ');
             }
             output.append(text);
@@ -155,9 +161,9 @@ final class LayoutPlan {
 
     private static boolean needsSpace(String left, String right) {
         return switch (right) {
-            case ",", ";", ")", "]", ".", "[" -> false;
+            case ",", ";", ")", "]", "}", "." -> false;
             default -> switch (left) {
-                case "(", "[", ".", "#", "\\" -> false;
+                case "(", "[", "{", ".", "#", "\\" -> false;
                 default -> !right.equals("%");
             };
         };

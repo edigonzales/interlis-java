@@ -1776,3 +1776,10 @@ Fixture-Invalidierung an die Kandidatenabnahme.
 [Testprotokoll](implementation/formatter-so-standard/TEST_LEDGER.md)
 verweisen auf die externen Rohbelege. Die unabhängige Gesamtprüfung
 führt ihr eigenes, an den Kandidatencommit gebundenes Urteil.
+
+Der unabhängige Gesamt-Review des ersten Kandidaten `68e24bd` ergab FAIL.
+Die Reproduktion betraf Abschnittsstruktur, Klammerabstände, gemischte
+mehrzeilige Kommentare und fehlende Sollfälle. Die Korrektur wurde mit
+29 Formattertests, dem gesamten ausgewählten Korpus bei beiden Breiten
+und einer neuen modularen Hostprobe geprüft. Der Korrekturcommit erhält
+einen frischen unabhängigen Gesamt-Review.
