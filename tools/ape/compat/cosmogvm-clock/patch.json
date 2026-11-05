@@ -1,0 +1,108 @@
+{
+  "schemaVersion": "1.0",
+  "patchId": "cosmogvm-25.2i-r2-current-time-millis-realtime-v1",
+  "strategy": "SUBSTITUTION_JAR",
+  "baseLockSha256": "c6f7cc137aa25b1e43591152408e10579d179ad2dc6bedb57d477fdb57e34df6",
+  "installedTreeSha256": "cc819e6dbbac1c4b4dd579d448c2cdd2d3a19c784a96e2006b13039be14a125f",
+  "builderJarRelativePath": "cosmogvm/graalvm-b0d7b51f55-java25-25.2.4-dev/lib/svm/builder/svm.jar",
+  "builderJarSha256": "e0683f80f5b92a7165fd133fdb739ef99cfb65543cb4d81d700d7f2b52b85608",
+  "targetClassSha256": "6a971725c5a4e531eb703d98412c41ed3f8c8c934433227669c1b94674ea79ab",
+  "classEntry": "com/oracle/svm/core/posix/cosmo/Target_java_lang_System_Cosmo.class",
+  "methodName": "currentTimeMillis",
+  "methodDescriptor": "()J",
+  "originalClock": "CLOCK_MONOTONIC",
+  "replacementClock": "CLOCK_REALTIME",
+  "disableTarget": "com.oracle.svm.core.posix.cosmo.Target_java_lang_System_Cosmo.currentTimeMillis",
+  "replacementEntry": "guru/interlis/ape/compat/Target_java_lang_System_ApeClock.class",
+  "originalMethod": {
+    "annotations": [
+      "Lcom/oracle/svm/core/annotate/Substitute;[]",
+      "Lcom/oracle/svm/shared/Uninterruptible;[mayBeInlined=true, reason=Called from uninterruptible code.]"
+    ],
+    "descriptor": "()J",
+    "exceptionHandlers": 0,
+    "flags": 9,
+    "instructions": [
+      "LDC Lcom/oracle/svm/core/posix/cosmo/headers/Time$timespec;",
+      "INVOKESTATIC org/graalvm/nativeimage/StackValue.get(Ljava/lang/Class;)Lorg/graalvm/word/PointerBase;",
+      "CHECKCAST com/oracle/svm/core/posix/cosmo/headers/Time$timespec",
+      "ASTORE_0 0",
+      "INVOKESTATIC com/oracle/svm/core/posix/cosmo/headers/Time.CLOCK_MONOTONIC()I",
+      "ALOAD_0 0",
+      "INVOKESTATIC com/oracle/svm/core/posix/cosmo/CosmoUtils.clock_gettime(ILcom/oracle/svm/core/posix/cosmo/headers/Time$timespec;)I",
+      "ISTORE_1 1",
+      "ILOAD_1 1",
+      "LDC System.currentTimeMillis(): clock_gettime(CLOCK_MONOTONIC) failed.",
+      "INVOKESTATIC com/oracle/svm/core/posix/cosmo/CosmoUtils.checkStatusIs0(ILjava/lang/String;)V",
+      "ALOAD_0 0",
+      "INVOKEINTERFACE com/oracle/svm/core/posix/cosmo/headers/Time$timespec.tv_sec()J",
+      "LDC2_W 1000",
+      "LMUL",
+      "ALOAD_0 0",
+      "INVOKEINTERFACE com/oracle/svm/core/posix/cosmo/headers/Time$timespec.tv_nsec()J",
+      "LDC2_W 1000000",
+      "LDIV",
+      "LADD",
+      "LRETURN"
+    ],
+    "invokes": [
+      {
+        "descriptor": "(Ljava/lang/Class;)Lorg/graalvm/word/PointerBase;",
+        "name": "get",
+        "opcode": "INVOKESTATIC",
+        "owner": "org/graalvm/nativeimage/StackValue"
+      },
+      {
+        "descriptor": "()I",
+        "name": "CLOCK_MONOTONIC",
+        "opcode": "INVOKESTATIC",
+        "owner": "com/oracle/svm/core/posix/cosmo/headers/Time"
+      },
+      {
+        "descriptor": "(ILcom/oracle/svm/core/posix/cosmo/headers/Time$timespec;)I",
+        "name": "clock_gettime",
+        "opcode": "INVOKESTATIC",
+        "owner": "com/oracle/svm/core/posix/cosmo/CosmoUtils"
+      },
+      {
+        "descriptor": "(ILjava/lang/String;)V",
+        "name": "checkStatusIs0",
+        "opcode": "INVOKESTATIC",
+        "owner": "com/oracle/svm/core/posix/cosmo/CosmoUtils"
+      },
+      {
+        "descriptor": "()J",
+        "name": "tv_sec",
+        "opcode": "INVOKEINTERFACE",
+        "owner": "com/oracle/svm/core/posix/cosmo/headers/Time$timespec"
+      },
+      {
+        "descriptor": "()J",
+        "name": "tv_nsec",
+        "opcode": "INVOKEINTERFACE",
+        "owner": "com/oracle/svm/core/posix/cosmo/headers/Time$timespec"
+      }
+    ],
+    "name": "currentTimeMillis",
+    "strings": [
+      "System.currentTimeMillis(): clock_gettime(CLOCK_MONOTONIC) failed."
+    ],
+    "structuralDigest": "60bc2d42e44a2d5de973f7c103f1d633aa4af220cb7a86bfef00b34affa023b4"
+  },
+  "nanoTimeDigest": "3cfa919f05973dd2a80c2d09e3287a93b1aa1b4651848da2d2e595c7d893abcf",
+  "targetAnnotations": [
+    "Lcom/oracle/svm/core/annotate/TargetClass;[onlyWith=[Lcom/oracle/svm/core/posix/cosmo/CosmoLibCSupplier;], value=Ljava/lang/System;]"
+  ],
+  "sources": {
+    "tools/ape/compat/cosmogvm-clock/inspector/InspectCosmoClock.java": "64a65e4ce48f0ce989fd2db73ec56b0541db4b5269a556cc70d9190a6137c77d",
+    "tools/ape/compat/cosmogvm-clock/src/guru/interlis/ape/compat/Target_java_lang_System_ApeClock.java": "29d6a12de808f6c1f7dbc8e3fa79923f6c94e3d4f10719b4b9073a0693a4c9b8",
+    "build/jenesis/Json.java": "6162febde8539fe2cd3c920bd5863f43b33addba853c6a3735009fcb46d941c4"
+  },
+  "builderExports": [
+    "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.posix.cosmo.headers=ALL-UNNAMED",
+    "--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.posix.cosmo=ALL-UNNAMED"
+  ],
+  "expectedJarSha256": "a5b39292aa2e700820b0ed606611a97fc79d8e7d9aa7d47e85b8b90414697826",
+  "expectedJarBytes": 978,
+  "expectedReplacementClassSha256": "aa60005430163f95d596e907d399ff22f2e8307938aff301c7b4d2825e92793e"
+}

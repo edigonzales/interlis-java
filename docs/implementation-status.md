@@ -1,5 +1,14 @@
 # Implementierungsstatus interlis-java
 
+## Lokaler APE-Clock-Patch vom 05.11.2026 — abgebrochen
+
+Auf ausdrücklichen Nutzerwunsch in C1 beendet. C0 bestanden; Route A begonnen,
+kein korrigiertes Native-PASS, C2–C5 und Review nicht ausgeführt. Eigener
+Nativecontainer entfernt. Unfertige Quellen auf Folgeanweisung als abgebrochener
+Versuch lokal committet; Originalbelege extern erhalten. Keine weiteren Tests,
+Builds oder Reviews für diesen Zwischenstandscommit.
+[Fortsetzungsstand](implementation/compiler-ape-clock-patch/STATUS.md).
+
 ## Compiler-APE-Machbarkeit vom 05.11.2026
 
 AP-01–32: Compiler-APE-Untersuchung über den vorhandenen Jenesis-JVM-Build.
