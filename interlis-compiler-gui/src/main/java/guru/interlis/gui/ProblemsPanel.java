@@ -40,6 +40,7 @@ final class ProblemsPanel extends JPanel {
     private final JTextField search = new JTextField(13);
     private final JCheckBox group = new JCheckBox("Group related");
     private final JLabel counts = new JLabel();
+    private final JLabel dependencyFilter = new JLabel();
     private final JTextArea details = new JTextArea(7, 20);
     private final JComboBox<DiagnosticPresenter.Related> locations = new JComboBox<>();
     private final JComboBox<Reference> references = new JComboBox<>();
@@ -55,6 +56,7 @@ final class ProblemsPanel extends JPanel {
     private DiagnosticLanguage language;
     private CompileResult result;
     private boolean refreshing;
+    private Optional<SourceRange> scope = Optional.empty();
 
     private record Reference(String label, DiagnosticId id) {
         @Override
@@ -116,7 +118,9 @@ final class ProblemsPanel extends JPanel {
         filters.add(group);
         var controls = new JPanel(new BorderLayout());
         controls.add(filters, BorderLayout.NORTH);
-        controls.add(buttons(clearFilters, counts), BorderLayout.SOUTH);
+        dependencyFilter.setName("dependency-problem-filter");
+        dependencyFilter.putClientProperty("html.disable", true);
+        controls.add(buttons(clearFilters, counts, dependencyFilter), BorderLayout.SOUTH);
 
         details.setName("diagnostic-details");
         details.setEditable(false);
@@ -176,6 +180,10 @@ final class ProblemsPanel extends JPanel {
             return;
         }
         var preserve = result == next ? selectedId() : Optional.<DiagnosticId>empty();
+        if (result != next) {
+            scope = Optional.empty();
+            dependencyFilter.setText("");
+        }
         result = next;
         language = nextLanguage;
         presenter = next == null ? null : new DiagnosticPresenter(next, nextLanguage);
@@ -196,7 +204,7 @@ final class ProblemsPanel extends JPanel {
             var selected = severity.getSelectedItem();
             var levels = selected instanceof Severity level ? EnumSet.of(level) : EnumSet.allOf(Severity.class);
             var projection = presenter == null ? new DiagnosticPresenter.Projection(List.of(), 0, 0)
-                    : presenter.present(levels, search.getText(), group.isSelected(), Optional.empty());
+                    : presenter.present(levels, search.getText(), group.isSelected(), scope);
             table.clearSelection();
             tableModel.show(projection.visible());
             counts.setText(projection.visible().size() + " of " + projection.total() + " visible"
@@ -208,6 +216,13 @@ final class ProblemsPanel extends JPanel {
         showSelection();
     }
 
+    void showRelated(SourceRange range) {
+        resetFilters();
+        scope = Optional.of(range);
+        dependencyFilter.setText("Dependency source: " + DiagnosticPresenter.shortSource(range.source()));
+        refresh(Optional.empty());
+    }
+
     private void resetFilters() {
         var preserve = selectedId();
         refreshing = true;
@@ -215,6 +230,8 @@ final class ProblemsPanel extends JPanel {
             severity.setSelectedItem(ALL);
             search.setText("");
             group.setSelected(false);
+            scope = Optional.empty();
+            dependencyFilter.setText("");
         } finally {
             refreshing = false;
         }

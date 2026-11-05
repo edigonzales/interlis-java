@@ -2,6 +2,7 @@ package guru.interlis.gui.application;
 
 import guru.interlis.compiler.AnalysisSnapshot;
 import guru.interlis.compiler.CompilationOutcome;
+import guru.interlis.workspace.WorkspaceCapture;
 import guru.interlis.workspace.resolution.PreparedClosure;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.execution.CancellationReason;
@@ -22,11 +23,11 @@ import java.util.Optional;
 
 /**
  * A terminal result with the original source revisions and diagnostics for this request.
- * The prepared closure, when present, is the workspace preparation at the same revision.
+ * The capture, when present, is the strict preparation actually supplied to the compiler.
  * The actual compiler outcome supplies the gate decision and request diagnostics.
  */
 public record CompileResult(CompileRequest request, Instant completedAt, Duration elapsed, Outcome outcome,
-                            Map<SourceId, SourceSnapshot> sources, Optional<PreparedClosure> preparedClosure,
+                            Map<SourceId, SourceSnapshot> sources, Optional<WorkspaceCapture> capture,
                             Optional<ResolutionLock> repositoryLock, List<RepositorySearchStep> repositorySteps,
                             List<RunEvent> events) {
     public CompileResult {
@@ -35,10 +36,14 @@ public record CompileResult(CompileRequest request, Instant completedAt, Duratio
         Objects.requireNonNull(elapsed);
         Objects.requireNonNull(outcome);
         sources = Map.copyOf(sources);
-        Objects.requireNonNull(preparedClosure);
+        Objects.requireNonNull(capture);
         Objects.requireNonNull(repositoryLock);
         repositorySteps = List.copyOf(repositorySteps);
         events = List.copyOf(events);
+    }
+
+    public Optional<PreparedClosure> preparedClosure() {
+        return capture.map(WorkspaceCapture::resolution);
     }
 
     public List<Diagnostic> diagnostics() {

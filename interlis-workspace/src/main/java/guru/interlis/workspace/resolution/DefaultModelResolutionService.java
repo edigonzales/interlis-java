@@ -177,12 +177,13 @@ public final class DefaultModelResolutionService implements ModelResolutionServi
             Map<SourceId, SourceText> sources = new LinkedHashMap<>(inventory.sources());
             SourceSet sourceSet = SourceSet.of(sources, bindings, List.of(),
                     resolutionFingerprint(request, inventory), translations);
+            var rootLocations = roots.stream().map(DefaultModelResolutionService::location).distinct().toList();
             if (pending.isEmpty() && !roots.isEmpty()) {
                 return new ResolutionOutcome.Prepared(new ResolvedClosure(sourceSet,
-                        new ResolutionTrace(trace), dependencies));
+                        new ResolutionTrace(trace), dependencies, rootLocations));
             }
             return new ResolutionOutcome.Prepared(new IncompleteClosure(sourceSet, pending,
-                    new ResolutionTrace(trace), dependencies, negative));
+                    new ResolutionTrace(trace), dependencies, negative, rootLocations));
         } catch (OperationCancelledException cancelled) {
             return new ResolutionOutcome.ResolutionCancelled(cancelled.reason());
         } catch (RuntimeException failure) {

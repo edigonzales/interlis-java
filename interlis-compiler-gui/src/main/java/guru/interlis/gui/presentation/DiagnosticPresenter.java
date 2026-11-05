@@ -77,12 +77,11 @@ public final class DiagnosticPresenter {
     }
 
     /** Filters and groups the view while leaving the original diagnostics and total intact. */
-    public Projection present(Set<Severity> severities, String query, boolean groupRelated, Optional<SourceId> sourceFilter) {
+    public Projection present(Set<Severity> severities, String query, boolean groupRelated, Optional<SourceRange> scope) {
         String search = query.strip().toLowerCase(Locale.ROOT);
         var matching = original.stream()
                 .filter(diagnostic -> severities.contains(diagnostic.severity()))
-                .filter(diagnostic -> sourceFilter.isEmpty() || diagnostic.primaryRange()
-                        .filter(range -> sourceFilter.orElseThrow().equals(range.source())).isPresent())
+                .filter(diagnostic -> scope.isEmpty() || associated(diagnostic, scope.orElseThrow()))
                 .filter(diagnostic -> matches(rows.get(diagnostic.id()), search))
                 .toList();
         var view = new DiagnosticPresentation().project(matching,
@@ -144,6 +143,22 @@ public final class DiagnosticPresenter {
 
     public static String displayPosition(SourcePosition position) {
         return (position.line() + 1) + ":" + (position.character() + 1);
+    }
+
+    private static boolean associated(Diagnostic diagnostic, SourceRange scope) {
+        return diagnostic.primaryRange().filter(range -> overlaps(range, scope)).isPresent()
+                || diagnostic.relatedLocations().stream().anyMatch(related -> overlaps(related.range(), scope));
+    }
+
+    private static boolean overlaps(SourceRange first, SourceRange second) {
+        if (!first.source().equals(second.source()) || !first.revision().equals(second.revision())) {
+            return false;
+        }
+        if (first.isEmpty()) {
+            return second.isEmpty() ? first.startOffset() == second.startOffset() : second.contains(first.startOffset());
+        }
+        return second.isEmpty() ? first.contains(second.startOffset())
+                : first.startOffset() < second.endOffset() && second.startOffset() < first.endOffset();
     }
 
     private static boolean matches(Row row, String search) {

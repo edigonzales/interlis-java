@@ -33,7 +33,7 @@ import guru.interlis.workspace.Workspace;
 import guru.interlis.workspace.WorkspaceCompileRequest;
 import guru.interlis.workspace.WorkspaceConfiguration;
 import guru.interlis.workspace.Workspaces;
-import guru.interlis.workspace.resolution.PreparedClosure;
+import guru.interlis.workspace.WorkspaceCapture;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -167,9 +167,9 @@ public final class CompileService {
         }
 
         var revision = workspace.currentRevision();
-        state.closure = Optional.of(workspace.capture(new AnalysisRequest(revision, roots), token).resolution());
-        return new CompileResult.Compiled(workspace.compile(new WorkspaceCompileRequest(revision, roots),
-                request.context(), token));
+        var compilation = workspace.compileCaptured(new WorkspaceCompileRequest(revision, roots), request.context(), token);
+        state.capture = compilation.capture();
+        return new CompileResult.Compiled(compilation.outcome());
     }
 
     private static LoadedSource load(FileSourceLoader loader, Path path, CancellationToken token) {
@@ -193,7 +193,7 @@ public final class CompileService {
         private final long started = System.nanoTime();
         private final Map<SourceId, CompileResult.SourceSnapshot> sources = new LinkedHashMap<>();
         private final ArrayDeque<RunEvent> events = new ArrayDeque<>();
-        private Optional<PreparedClosure> closure = Optional.empty();
+        private Optional<WorkspaceCapture> capture = Optional.empty();
         private Optional<ResolutionLock> lock = Optional.empty();
         private List<RepositorySearchStep> steps = List.of();
 
@@ -214,7 +214,7 @@ public final class CompileService {
 
         private CompileResult complete(CompileResult.Outcome outcome) {
             return new CompileResult(request, Instant.now(), Duration.ofNanos(System.nanoTime() - started),
-                    outcome, sources, closure, lock, steps, List.copyOf(events));
+                    outcome, sources, capture, lock, steps, List.copyOf(events));
         }
     }
 }

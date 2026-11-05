@@ -61,7 +61,7 @@ bestanden auf macOS ARM64. Die unabhängige Mehrmodell-Gegenprobe und das
 gültige Urteil liegen lokal unter
 `../interlis-java-compiler-gui-g0.TVRLc5/G1/364406a4289db4e257a6fbf4850e002c5825b5d6/round-01/`.
 
-## G2 – Diagnostics in Prüfung
+## G2 – Diagnostics bestanden
 
 GUI-14 bis GUI-20. Die Problemtabelle zeigt strukturierte Diagnosen des
 letzten Laufs. Gruppierung und Filter belassen Gesamtzahlen und Ergebnis.
@@ -73,4 +73,19 @@ DE/EN und Copy message/details verwenden die gemeinsame Formatierung.
 `java build/InterlisJvmBuild.java gui-check --profile diagnostics` startet
 einen Headful-Lauf mit Fehlern in zwei Quellen, sortierter Auswahl,
 verwandter Fundstelle, Kopieren und einem anschliessend erfolgreichen Lauf.
-G3 folgt nach gültigem G2-PASS.
+G2-PASS für `573e0c366a631bb93bbf886fa8e33c73681264ac`. Die erste Runde
+wurde wegen fehlender globaler Kriterien im JSON verworfen. Der neue Review
+mit unveränderten Produktquellen und vollständig validiertem Urteil liegt
+unter `../interlis-java-compiler-gui-g0.TVRLc5/G2/573e0c366a631bb93bbf886fa8e33c73681264ac/round-02/`.
+
+## G3 – Dependencies in Prüfung
+
+GUI-21 bis GUI-28. Der Explorer zeigt konkrete Wurzeln und echte
+Importbindungen aus der strikten Vorbereitung desselben Workspace-Laufs.
+Gemeinsame Abhängigkeiten erscheinen pro Pfad. Zyklen werden als Referenz
+beendet. Direktimporte und direkte Nutzer sind getrennt. Resolution zeigt
+die erfassten Suchentscheidungen und die Workspace-Spur. Quelle und
+Problemfilter verwenden die zum Lauf gehörenden Bereiche.
+
+`java build/InterlisJvmBuild.java gui-check --profile dependencies` prüft
+den Explorer im realen Fenster. G4 folgt nach gültigem G3-PASS.

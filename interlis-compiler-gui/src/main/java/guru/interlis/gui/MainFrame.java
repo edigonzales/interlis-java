@@ -9,6 +9,7 @@ import guru.interlis.gui.application.CompileResult;
 import guru.interlis.gui.application.CompileService;
 import guru.interlis.gui.application.SessionOptions;
 import guru.interlis.gui.controller.SessionController;
+import guru.interlis.gui.presentation.SourcePreviewModel;
 import guru.interlis.repository.FetchPolicy;
 import guru.interlis.repository.RepositoryConfig;
 
@@ -19,6 +20,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -60,6 +62,10 @@ final class MainFrame extends JFrame {
     private final JLabel status = new JLabel();
     private final SessionController session;
     private final CheckInputsPanel check;
+    private final DependenciesPanel dependencies;
+    private JDialog sourceInspector;
+    private SourcePreviewPanel inspectorPreview;
+    private CompileResult displayedResult;
     private final Action add;
     private final Action compile;
     private final Action cancel;
@@ -124,7 +130,11 @@ final class MainFrame extends JFrame {
         views.setName("work-areas");
         check = new CheckInputsPanel(session, add, clipboard);
         views.addTab("Check", check);
-        addView("Dependencies", "Dependencies will appear after a compiler run.");
+        dependencies = new DependenciesPanel(this::showSourceInspector, range -> {
+            check.showRelated(range);
+            views.setSelectedIndex(0);
+        });
+        views.addTab("Dependencies", dependencies);
         addView("Repositories", "No repositories are configured.");
         add(views, BorderLayout.CENTER);
 
@@ -158,6 +168,13 @@ final class MainFrame extends JFrame {
         String last = view.last().map(result -> runSummary(result) + " · " + TIME.format(result.completedAt())).orElse("None");
         status.setText("Last run: " + last + running + (view.outdated() ? " · Inputs changed — compile again" : ""));
         check.render(view, view.last().map(MainFrame::runSummary).orElse("Add INTERLIS files to start a check."));
+        CompileResult result = view.last().orElse(null);
+        if (result != displayedResult && sourceInspector != null) {
+            sourceInspector.setVisible(false);
+            inspectorPreview.clear("Select a source location.");
+        }
+        displayedResult = result;
+        dependencies.render(result);
     }
 
     private static String runSummary(CompileResult result) {
@@ -206,6 +223,21 @@ final class MainFrame extends JFrame {
     void addFiles(List<Path> paths) {
         views.setSelectedIndex(0);
         session.addFiles(paths);
+    }
+
+    private void showSourceInspector(SourcePreviewModel model) {
+        if (sourceInspector == null) {
+            sourceInspector = new JDialog(this, "Captured source");
+            sourceInspector.setName("dependency-source-inspector");
+            sourceInspector.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+            inspectorPreview = new SourcePreviewPanel();
+            sourceInspector.add(inspectorPreview);
+            sourceInspector.setSize(780, 500);
+            sourceInspector.setLocationRelativeTo(this);
+        }
+        inspectorPreview.show(model);
+        sourceInspector.setVisible(true);
+        sourceInspector.toFront();
     }
 
     private void addView(String title, String message) {

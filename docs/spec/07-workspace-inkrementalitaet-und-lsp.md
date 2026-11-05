@@ -53,6 +53,7 @@ Die erste inkrementelle Implementierung parst eine geänderte Datei vollständig
 | `AnalysisRequest` | `guru.interlis.workspace` | Wurzelauswahl, Analyseumfang und erwarteter Workspace-Stand. |
 | `WorkspaceCompileRequest` | `guru.interlis.workspace` | Wurzelauswahl und erwarteter Stand für das Produktions-Gate. |
 | `WorkspaceCapture` | `guru.interlis.workspace` | Eingefrorener Eingabesatz für einen einzelnen Lauf. |
+| `WorkspaceCompilation` | `guru.interlis.workspace` | Ergebnis und strikter Capture desselben Compilerlaufs. |
 | `AnalysisAcceptance` | `guru.interlis.workspace` | `ACCEPTED` oder `STALE_NO_COMMIT` für die bedingte Übernahme eines abgeschlossenen Analyselaufs. |
 | `DependencyIndex` | `guru.interlis.workspace.internal` | Vorwärts- und Rückwärtsabhängigkeiten samt negativen Lookups. |
 | `AnalysisCache` | `guru.interlis.workspace.internal` | Begrenzte Wiederverwendung vollständiger, fingerprintgeprüfter Ergebnisse. |
@@ -93,6 +94,8 @@ public interface Workspace extends AutoCloseable {
 
     WorkspaceCapture capture(AnalysisRequest request);
     WorkspaceCapture capture(AnalysisRequest request, CancellationToken token);
+    WorkspaceCompilation compileCaptured(WorkspaceCompileRequest request,
+        RunContext context, CancellationToken token);
     AnalysisAcceptance acceptAnalysis(
         WorkspaceCapture capture, AnalysisSnapshot analysis);
     AnalysisSnapshot analyze(AnalysisRequest request, CancellationToken token);
@@ -145,7 +148,7 @@ Fachliche Konfiguration und reine Cachegrenzen erhalten getrennte Fingerprints. 
 
 Die öffentliche SDK-Fabrik lautet `Workspaces.create(CompilerEngine engine, WorkspaceConfiguration configuration) -> Workspace`. Sie prüft alle Argumente, erzeugt einen leeren Workspace mit Revision 0 und verwendet den reinen Standard-`ModelResolutionService` aus Kapitel 08 auf eingefrorenen Inventaren. Sie führt keine Dateisuche und keinen Netzwerkzugriff aus. Die Engine erhält der Aufrufer beispielsweise aus `CompilerEngines.create()` gemäss Kapitel 06. Resolver-/Cacheinjektion für Implementierungstests kann intern bleiben; ein zweites öffentliches Factorysystem ist ohne konkreten Verbraucher nicht anzulegen.
 
-`WorkspaceCapture` enthält `workspaceRevision`, `CompilationRequest`, `AnalysisReuse`, `PreparedClosure resolution` und einen vollständigen `InputFingerprint`. Es besitzt kopierte beziehungsweise unveränderlich geteilte Werte und keine Rückreferenz auf den lebenden Workspace. Es wird ausschliesslich durch `Workspace.capture` erzeugt und trägt intern eine sitzungslokale Herkunftskennung, damit `acceptAnalysis` einen Capture aus einem anderen Workspace zurückweisen kann. Diese Kennung ist kein öffentlich konstruierbares Compilerzertifikat. `PreparedClosure` liegt unter `guru.interlis.workspace.resolution`, ist der gemeinsame Untertyp von `ResolutionOutcome` für `ResolvedClosure` und `IncompleteClosure` und bietet `sourceSet()`, `pendingFetches()`, `trace()`, `dependencies()` sowie `negativeDependencies()`. Der Compiler nimmt keine Workspace-Typen entgegen. Der Host kann die enthaltenen Compilerwerte an die in Kapitel 06 spezifizierten Engine-Overloads übergeben und für Beschaffung ausschliesslich `capture.resolution().pendingFetches()` verwenden.
+`WorkspaceCapture` enthält `workspaceRevision`, `CompilationRequest`, `AnalysisReuse`, `PreparedClosure resolution` und einen vollständigen `InputFingerprint`. Es besitzt kopierte beziehungsweise unveränderlich geteilte Werte und keine Rückreferenz auf den lebenden Workspace. Es wird durch `Workspace.capture` oder den strikten Compilerlauf erzeugt und trägt intern eine sitzungslokale Herkunftskennung, damit `acceptAnalysis` einen Capture aus einem anderen Workspace zurückweisen kann. Diese Kennung ist kein öffentlich konstruierbares Compilerzertifikat. `PreparedClosure` liegt unter `guru.interlis.workspace.resolution`, ist der gemeinsame Untertyp von `ResolutionOutcome` für `ResolvedClosure` und `IncompleteClosure` und bietet `sourceSet()`, `pendingFetches()`, `trace()`, `dependencies()` sowie `negativeDependencies()`. Der Compiler nimmt keine Workspace-Typen entgegen. Der Host kann die enthaltenen Compilerwerte an die in Kapitel 06 spezifizierten Engine-Overloads übergeben und für Beschaffung ausschliesslich `capture.resolution().pendingFetches()` verwenden.
 
 `capture.request().sources()` und `capture.resolution().sourceSet()` müssen denselben eingefrorenen Quellen-/Bindungsstand darstellen. Ein erfolgreich vollständig beschaffter Stand hat leere `pendingFetches()`. Eine IncompleteClosure bleibt als solche erkennbar, auch wenn ein fehlendes Modell mangels Locator derzeit gar keinen ausführbaren Downloadvorschlag besitzt. Die Bridge übernimmt diesen Bericht, statt Modellköpfe nochmals mit eigener Logik zu lesen.
 
@@ -203,6 +206,16 @@ Die in einer LSP-`didChange`-Nachricht enthaltenen Änderungen beziehen sich dag
 ### 2.5 Methodenverträge für Analyse und Veröffentlichung
 
 `capture(request, token)` prüft die erwartete WorkspaceRevision, bereitet über den reinen Resolver die Wurzeln auf und friert sämtliche benötigten Quellen, Importbindungen, Optionen und den PreparedClosure-Bericht ein. Der Token wird an Headeranalyse und Closureaufbereitung weitergereicht; Budget- und Abbruchprüfungen beginnen vor dieser Arbeit. Fehlende Modelle werden als explizite fehlende Bindungen erfasst, nicht stillschweigend aus dem Request entfernt. I/O innerhalb der Methode ist verboten. Die Beschaffung benötigter Quellen erfolgt durch den Host gemäss Kapitel 08 vor beziehungsweise zwischen Analyseläufen.
+
+`compileCaptured(request, context, token)` verwendet denselben strikten
+Compilerlauf und dieselbe Workspace-Akzeptanz wie `compile(request, context, token)`.
+Der unveränderliche `WorkspaceCompilation` enthält das fachliche Ergebnis und
+den dafür tatsächlich verwendeten Capture mit originalen Quellen und
+Auflösungsbindungen. Ein Abbruch vor Abschluss der Vorbereitung liefert
+`Cancelled` mit leerem Capture. Alternative Workspace-Implementierungen
+können den kompatiblen Default verwenden. Er liefert das Ergebnis ohne
+Capture. Alle Argumente und Ergebniswerte sind nullfrei.
+Das Ergebnis bleibt die Autorität für die Gateentscheidung.
 
 `capture(request)` delegiert mit einem Token, der nie einen externen Abbruch anfordert. Die konfigurierten Ressourcenbudgets bleiben trotzdem wirksam. `ResolutionCancelled` wird in `OperationCancelledException` mit gleichem Grund übersetzt; eine interne `ResolutionFailed`-Fehlfunktion in den internen Fehlerpfad mit FailureId. Keine der beiden Varianten erzeugt eine scheinbar normale WorkspaceCapture. Regulär fehlende, mehrdeutige oder technisch blockierte Eingaben bleiben dagegen PreparedClosure-/SourceSet-Daten.
 

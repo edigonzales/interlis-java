@@ -117,6 +117,10 @@ final class CheckInputsPanel extends JPanel {
         updateButtons();
     }
 
+    void showRelated(guru.interlis.source.SourceRange range) {
+        problems.showRelated(range);
+    }
+
     private void updateButtons() {
         remove.setEnabled(editable && !fileList.isSelectionEmpty());
         useSelected.setEnabled(editable && !modelList.isSelectionEmpty());

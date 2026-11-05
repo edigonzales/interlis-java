@@ -309,8 +309,9 @@ final class DefaultWorkspace implements Workspace {
             diagnostics.addAll(capturedConfiguration.resolutionDiagnostics());
             var enriched = guru.interlis.compiler.SourceSet.of(original.sources(), original.imports(),
                     diagnostics, original.fingerprint(), original.translations());
-            closure = closure.complete() ? new ResolvedClosure(enriched, closure.trace(), closure.dependencies())
-                    : new IncompleteClosure(enriched, closure.pendingFetches(), closure.trace(), closure.dependencies(), closure.negativeDependencies());
+            closure = closure.complete() ? new ResolvedClosure(enriched, closure.trace(), closure.dependencies(), closure.rootLocations())
+                    : new IncompleteClosure(enriched, closure.pendingFetches(), closure.trace(), closure.dependencies(),
+                            closure.negativeDependencies(), closure.rootLocations());
         }
         List<guru.interlis.compiler.ModelSelector> concreteRoots = request.roots().stream().map(root -> {
             if (root instanceof guru.interlis.compiler.ModelSelector.ByName name) {
@@ -423,18 +424,27 @@ final class DefaultWorkspace implements Workspace {
     @Override
     public CompilationOutcome compile(WorkspaceCompileRequest request, RunContext context,
                                       CancellationToken token) {
-        Objects.requireNonNull(request,"request");Objects.requireNonNull(context,"context");Objects.requireNonNull(token,"token");
+        return compileCaptured(request, context, token).outcome();
+    }
+
+    @Override
+    public WorkspaceCompilation compileCaptured(WorkspaceCompileRequest request, RunContext context,
+                                                CancellationToken token) {
+        Objects.requireNonNull(request, "request");
+        Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(token, "token");
+        WorkspaceCapture capture = null;
         try {
-            WorkspaceCapture capture = capture(new AnalysisRequest(
-                    request.expectedWorkspaceRevision(), request.roots()), token, guru.interlis.syntax.ParseMode.STRICT);
+            capture = capture(new AnalysisRequest(request.expectedWorkspaceRevision(), request.roots()),
+                    token, guru.interlis.syntax.ParseMode.STRICT);
             recordSemanticInvocation();
-            CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), context,
-                    token);
+            CompilationOutcome outcome = engine.compile(capture.request(), capture.reuse(), context, token);
             acceptOutcome(capture, outcome);
-            return outcome;
-        } catch(OperationCancelledException cancelled) {
-            synchronized(this) {cancellations++;}
-            return new CompilationOutcome.Cancelled(Optional.empty(),cancelled.reason());
+            return new WorkspaceCompilation(outcome, Optional.of(capture));
+        } catch (OperationCancelledException cancelled) {
+            synchronized (this) { cancellations++; }
+            return new WorkspaceCompilation(new CompilationOutcome.Cancelled(Optional.empty(), cancelled.reason()),
+                    Optional.ofNullable(capture));
         }
     }
 

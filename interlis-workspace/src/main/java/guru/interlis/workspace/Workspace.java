@@ -146,6 +146,17 @@ public interface Workspace extends AutoCloseable {
     CompilationOutcome compile(WorkspaceCompileRequest request, RunContext context,
                                CancellationToken token);
 
+    /**
+     * Compiles exactly as the context-aware overload and includes its actual strict preparation.
+     * Arguments are non-null. If cancelled before preparation finishes, the capture is absent.
+     * A capture alone does not establish a successful compilation. The compatibility default
+     * returns the outcome without capture for workspace implementations that do not expose one.
+     */
+    default WorkspaceCompilation compileCaptured(WorkspaceCompileRequest request, RunContext context,
+                                                 CancellationToken token) {
+        return new WorkspaceCompilation(compile(request, context, token), Optional.empty());
+    }
+
     /** Returns accumulated workspace metrics; values are advisory, not a snapshot.
      *
      * @return current counters

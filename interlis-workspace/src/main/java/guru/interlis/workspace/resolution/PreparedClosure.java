@@ -1,6 +1,7 @@
 package guru.interlis.workspace.resolution;
 
 import guru.interlis.compiler.SourceSet;
+import guru.interlis.compiler.ModelLocation;
 
 import java.util.List;
 
@@ -12,6 +13,9 @@ public sealed interface PreparedClosure permits ResolvedClosure, IncompleteClosu
      * @return the value
      */
     SourceSet sourceSet();
+
+    /** Concrete resolved root declarations in request order, possibly partial. */
+    List<ModelLocation> rootLocations();
 
     /**
      * Returns the {@code pendingFetches} value.
