@@ -175,6 +175,9 @@ def start_review(args, root, directory):
         "Run at least one reviewer-chosen counterprobe using one exact command in probeCommands. "
         "The shell records its own stdout, stderr, argv and exit in scratch/<label>.json. "
         "Use that path in commandLog. Record any out-of-scope limitations in review.md. "
+        "In verdict.json, criteria MUST contain exactly these IDs, including all global criteria: "
+        + ", ".join(request["requiredCriteria"]) + ". For unchanged global criteria, audit the previously accepted "
+        "gate and the current diff and include a separate criterion object with evidence for each. "
         "For PASS leave verdict limitations empty. Keep review.md and verdict.json in outputDirectory.\n")
     manifest = {str(path): digest(path) for path in (*tracked, *originals, *descendants(inputs), config_file)}
     write(inputs / "evidence-index.json", manifest)
@@ -236,7 +239,8 @@ def run_session(args, directory, candidate, inputs, request, manifest, opener, a
                   "--file", str(inputs / "REVIEW_REQUEST.md"),
                   f"Independently review {request['phaseId']}. Read {inputs / 'request.json'} and "
                   f"{inputs / 'REVIEW_REQUEST.md'} first. Allowed shell commands are exactly: "
-                  + ", ".join(request["probeCommands"]) + ". Write review.md and verdict.json as instructed."]
+                  + ", ".join(request["probeCommands"]) + ". Required verdict IDs, each exactly once: "
+                  + ", ".join(request["requiredCriteria"]) + ". Write review.md and verdict.json as instructed."]
     start = now()
     write(directory / "launch.json", dict(argv=invocation, cwd=str(candidate), startedAt=start, openCodeVersion=version,
                                          model=request["model"], endpoint=ENDPOINT))
