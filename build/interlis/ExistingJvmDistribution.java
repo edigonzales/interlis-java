@@ -20,7 +20,7 @@ public final class ExistingJvmDistribution {
     }
     static void generateAt(Path root,JenesisBridge.BuildOutcome outcome,Path delivery,Path reports,boolean checks)throws Exception {
         JvmBuildInputs.requireOutputRoot(root,root.relativize(delivery).toString());
-        JvmBuildInputs.requireOutputRoot(root,root.relativize(reports).toString());
+        JvmBuildInputs.requireOutputRoot(root,JvmBuildInputs.portableRelative(root,reports));
         Files.createDirectories(delivery);
         var provenance=new TreeMap<String,Object>();
         for(var item:Map.of("compiler","interlis-compiler-cli","lsp","interlis-lsp").entrySet()) {
@@ -29,7 +29,7 @@ public final class ExistingJvmDistribution {
             for(var artifact:artifacts) {
                 Path copy=distribution.resolve("lib").resolve(artifact.fileName());Files.copy(artifact.file(),copy);
                 if(!JvmBuildInputs.sha256(copy).equals(artifact.sha256()))throw new IllegalStateException("Copied artifact changed");
-                facts.add(Map.of("coordinates",artifact.coordinates(),"source",root.relativize(artifact.file()).toString(),"file",root.relativize(copy).toString(),"sha256",artifact.sha256()));
+                facts.add(Map.of("coordinates",artifact.coordinates(),"source",JvmBuildInputs.portableRelative(root,artifact.file()),"file",JvmBuildInputs.portableRelative(root,copy),"sha256",artifact.sha256()));
             }
             String name=item.getKey().equals("compiler")?"interlis-compiler":"interlis-lsp";
             String module=ModulePathContract.name(item.getValue());
@@ -46,8 +46,8 @@ public final class ExistingJvmDistribution {
         }
         Files.writeString(delivery.resolve("runtime-inventory.json"),JsonOutput.write(provenance));
         Properties layout=new Properties();layout.setProperty("schemaVersion","1");layout.setProperty("builder","jenesis");layout.setProperty("root",root.toString());
-        for(var pair:Map.of("compiler","compiler","lsp","lsp","sdk","sdk.zip","reports","reports","norms","norms").entrySet())layout.setProperty(pair.getKey(),root.relativize(delivery.resolve(pair.getValue())).toString());
-        layout.setProperty("reports",root.relativize(reports).toString());
+        for(var pair:Map.of("compiler","compiler","lsp","lsp","sdk","sdk.zip","reports","reports","norms","norms").entrySet())layout.setProperty(pair.getKey(),JvmBuildInputs.portableRelative(root,delivery.resolve(pair.getValue())));
+        layout.setProperty("reports",JvmBuildInputs.portableRelative(root,reports));
         Path file=delivery.resolve("layout.properties");try(var writer=Files.newBufferedWriter(file)){layout.store(writer,"Explicit Jenesis delivery check layout");}
         var classpath=JenesisBridge.runtimeClasspath("interlis-verification",outcome);
         if(checks) {

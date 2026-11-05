@@ -11,11 +11,17 @@ public final class ModulePathContract {
         if(!JvmBuildInputs.MODULES.contains(project))throw new IllegalArgumentException("Unknown own module");
         return "guru.interlis."+project.substring(9).replace('-','.');
     }
+    /** Own products always have the exact explicit, encapsulated descriptor. */
+    public static void requireOwnDescriptor(String project, ModuleDescriptor descriptor) {
+        if(descriptor.isAutomatic()||descriptor.isOpen()||!descriptor.name().equals(name(project)))
+            throw new IllegalStateException("Own runtime module must be explicit and encapsulated: "+project);
+    }
     public static void run(Path root)throws Exception {
+        for(String project:JvmBuildInputs.MODULES)if(!Files.isRegularFile(root.resolve(project+"/src/main/java/module-info.java")))throw new IllegalStateException("Missing own module descriptor: "+project);
         var outcome=JenesisBridge.run(new build.InterlisJvmBuild.BuildRequest("artifacts",null,null,root));
         Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/module-checks/"+UUID.randomUUID()),lib=run.resolve("lib");Files.createDirectories(lib);
         var own=new TreeSet<String>();var files=new TreeMap<String,Path>();
-        for(String project:JvmBuildInputs.MODULES)if(Files.isRegularFile(root.resolve(project+"/src/main/java/module-info.java"))) {
+        for(String project:JvmBuildInputs.MODULES) {
             var result=JenesisBridge.moduleResult(outcome,project);
             if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(name(project)))throw new IllegalStateException("Wrong own module: "+project);
             own.add(name(project));
@@ -32,7 +38,7 @@ public final class ModulePathContract {
             var descriptor=descriptors.iterator().next().descriptor();
             if(modules.containsKey(descriptor.name()))throw new IllegalStateException("Duplicate module name");
             for(String pkg:descriptor.packages())if(packages.putIfAbsent(pkg,descriptor.name())!=null)throw new IllegalStateException("Split production package: "+pkg);
-            if(own.contains(descriptor.name())&&(descriptor.isAutomatic()||descriptor.isOpen()))throw new IllegalStateException("Nonexplicit/broad-open own module");
+            if(own.contains(descriptor.name()))requireOwnDescriptor(JvmBuildInputs.MODULES.stream().filter(project->name(project).equals(descriptor.name())).findFirst().orElseThrow(),descriptor);
             modules.put(descriptor.name(),Map.of("file",copy.toString(),"sha256",JvmBuildInputs.sha256(copy),"automatic",descriptor.isAutomatic(),"descriptor",descriptor.toString()));
         }
         Configuration.resolve(ModuleFinder.of(lib),List.of(ModuleLayer.boot().configuration()),ModuleFinder.ofSystem(),own);

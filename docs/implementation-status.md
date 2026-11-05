@@ -1,7 +1,8 @@
 ## Jenesis-Migration B — operativer Stand
 
-B-I und B-II/B0–B7 sind lokal implementiert und gezielt verifiziert. Die beiden
-Kandidatencommits und der unabhängige kumulative OpenCode-Review folgen. Details, Fehlversuche,
+B-I und B-II/B0–B7 sind lokal implementiert und gezielt verifiziert. Das erste
+Kandidatenpaar wurde unabhängig mit FAIL reviewt; sechs Findings werden gezielt
+korrigiert und danach an neuen Kandidaten frisch vollständig reviewt. Details, Fehlversuche,
 Rohbelege und nächste Schritte ausschliesslich im
 [aktuellen B-Status](implementation/jenesis-migration-b/STATUS.md).
 Kein Gesamt-/Release-PASS. Compiler-APE und CosmoGVM-Uhrpatch bleiben pausiert.

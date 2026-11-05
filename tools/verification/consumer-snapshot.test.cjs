@@ -22,3 +22,5 @@ test('required parent POM cannot be omitted from a closed repository',()=>{const
 test('path traversal is rejected before external input can be used',()=>{const f=fixture('traversal');f.data.files['../outside.jar']=f.data.files[f.data.artifacts[0].jar.path];check(f.manifest,write(f),false);});
 test('absolute inventory paths are rejected',()=>{const f=fixture('absolute');f.data.files[path.join(scratch,'outside.jar')]=f.data.files[f.data.artifacts[0].jar.path];check(f.manifest,write(f),false);});
 test('same-byte symlink escape is rejected',()=>{const f=fixture('symlink'),file=path.join(f.dir,f.data.artifacts[0].jar.path),outside=path.join(scratch,'outside.jar');fs.copyFileSync(file,outside);fs.unlinkSync(file);fs.symlinkSync(outside,file);check(f.manifest,handoff.manifestSha256,false);});
+
+test('own module descriptor metadata cannot claim an automatic module',()=>{const f=fixture('own-automatic');f.data.artifacts.find(a=>a.projectId).descriptorKind='automatic';check(f.manifest,write(f),false);});

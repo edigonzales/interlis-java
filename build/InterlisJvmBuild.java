@@ -5,8 +5,6 @@ import build.interlis.JvmBuildInputs;
 import build.interlis.CompilerContractRun;
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
-import java.nio.channels.FileChannel;
 import java.util.List;
 
 /** Project entry point. Uses the current checkout, Java25 and the pinned engine. */
@@ -30,15 +28,13 @@ public final class InterlisJvmBuild {
             JvmBuildInputs.requireProject(request.root());
             return;
         }
-        try(var channel=FileChannel.open(JvmBuildInputs.requireOutputRoot(request.root(),"target/jenesis-jvm/project.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);
-                var lock=channel.tryLock()) {
-            if(lock==null)throw new IllegalStateException("Another project build is active");
+        try(var lease=build.interlis.JvmBuildLock.acquire(request.root())) {
             if(request.profile().equals("wasm-export")) {
                 var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,request.root()));
                 var snapshot=build.interlis.ConsumerSnapshot.create(request.root(),outcome);
                 System.out.println("Consumer snapshot: "+snapshot.manifest()+" SHA-256="+snapshot.manifestSha256());
             } else if(request.profile().equals("host")) {
-                build.interlis.HostVerificationProfiles.run(request);
+                build.interlis.HostVerificationProfiles.run(request,lease);
             } else if(request.profile().equals("clean")) {
                 build.interlis.BuildOutputs.clean(request.root(),request.options().get("--scope"));
             } else if(request.profile().equals("contracts")) {
@@ -58,7 +54,7 @@ public final class InterlisJvmBuild {
             } else if(request.profile().equals("sdk-package")) {
                 build.interlis.ExistingJvmDistribution.generate(request.root());
             } else if(request.profile().equals("release-check")) {
-                build.interlis.HostVerificationProfiles.release(request.root());
+                build.interlis.HostVerificationProfiles.release(request.root(),lease);
             } else if(request.profile().equals("sdk-check")) {
                 if(request.module()!=null||request.tests()!=null)throw new IllegalArgumentException("sdk-check uses complete runtime closures");
                 build.interlis.ExistingJvmDistribution.run(request.root());

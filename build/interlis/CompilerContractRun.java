@@ -18,15 +18,15 @@ public final class CompilerContractRun {
         var selection=new Properties();try(var reader=Files.newBufferedReader(run.resolve("plan/selection.properties"))){selection.load(reader);}
         var layout=new Properties();layout.setProperty("schemaVersion","1");layout.setProperty("builder","jenesis");layout.setProperty("root",root.toString());
         for(var entry:Map.of("compiler","target/jenesis-jvm/delivery/compiler","lsp","target/jenesis-jvm/delivery/lsp","sdk","target/jenesis-jvm/delivery/sdk.zip").entrySet())layout.setProperty(entry.getKey(),entry.getValue());
-        layout.setProperty("reports",root.relativize(run.resolve("reports")).toString());layout.setProperty("norms",root.relativize(run.resolve("norms")).toString());
+        layout.setProperty("reports",JvmBuildInputs.portableRelative(root,run.resolve("reports")));layout.setProperty("norms",JvmBuildInputs.portableRelative(root,run.resolve("norms")));
         var modules=new TreeSet<>(selection.stringPropertyNames());if(modules.isEmpty())throw new IllegalStateException("Empty contract plan");
         for(String module:modules) {
             if(!JvmBuildInputs.MODULES.contains(module))throw new IllegalStateException("Foreign producer: "+module);
             Path moduleRun=run.resolve(module);
-            layout.setProperty("junit."+module+".contractAssertionsTest",root.relativize(moduleRun.resolve("projected")).toString());
-            layout.setProperty("manifest."+module,root.relativize(moduleRun.resolve("manifest.json")).toString());
+            layout.setProperty("junit."+module+".contractAssertionsTest",JvmBuildInputs.portableRelative(root,moduleRun.resolve("projected")));
+            layout.setProperty("manifest."+module,JvmBuildInputs.portableRelative(root,moduleRun.resolve("manifest.json")));
         }
-        layout.setProperty("junit.interlis-verification.contractTest",root.relativize(run.resolve("consumer/native")).toString());
+        layout.setProperty("junit.interlis-verification.contractTest",JvmBuildInputs.portableRelative(root,run.resolve("consumer/native")));
         Path layoutFile=run.resolve("layout.properties");store(layoutFile,layout);
         String commit=git(root,"HEAD"),tree=git(root,"HEAD^{tree}");boolean dirty=dirty(root);
         for(String module:modules) {

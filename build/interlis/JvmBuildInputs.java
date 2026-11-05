@@ -45,6 +45,15 @@ public final class JvmBuildInputs {
         }
     }
 
+    /** Portable relative output spelling shared by Java and Node layout readers. */
+    public static String portableRelative(Path root, Path target) {
+        Path relative=root.toAbsolutePath().normalize().relativize(target.toAbsolutePath().normalize());
+        if(relative.isAbsolute()||relative.startsWith(".."))throw new IllegalArgumentException("Output escapes root");
+        return portablePath(relative);
+    }
+    /** Converts the native platform separator without changing path ownership or resolution. */
+    public static String portablePath(Path path) { return path.toString().replace('\\','/'); }
+
     /** Authoritative product version from the root POM, shared by builders and consumers. */
     public static String projectVersion(Path root) throws Exception {
         var document=xml(root.resolve("pom.xml"));

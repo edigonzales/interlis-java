@@ -35,9 +35,9 @@ public final class HostVerificationProfiles {
         Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/host/python-free-"+UUID.randomUUID());Files.createDirectories(run);
         var context=new Context(root,run,outcome);context.perform("python-free");context.finish("python-free");
     }
-    public static void release(Path root)throws Exception {
+    public static void release(Path root,JvmBuildLock lease)throws Exception {
         Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/host/P3-"+UUID.randomUUID());Files.createDirectories(run);
-        var context=new Context(root,run,null);
+        var context=new Context(root,run,null,lease);
         // External platform and active OS guard evidence must already exist for this candidate.
         Path external=root.resolve("target/jenesis-jvm/reports");
         for(String directory:List.of("p3/platform-evidence","python-free")) {
@@ -51,13 +51,14 @@ public final class HostVerificationProfiles {
         }
         context.node("tools/release/evidence.cjs","--preflight");
         context.outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
+        context.initialInputs=Map.copyOf(JenesisBridge.inputFingerprints(context.outcome));
         context.producerInventorySha256=JvmBuildInputs.sha256(context.outcome.inventory());
         Files.copy(context.outcome.inventory(),run.resolve("producer-index.properties"));
         for(String profile:List.of("platform","conformance-evidence","portable","browser","reproducibility","release-evidence-checker-test"))context.perform(profile);
         context.node("tools/release/reproducibility.cjs");context.perform("performance");
         context.node("tools/release/evidence.cjs");context.finish("P3");
     }
-    public static void run(BuildRequest request) throws Exception {
+    public static void run(BuildRequest request,JvmBuildLock lease) throws Exception {
         String profile=request.options().get("--profile");
         if(!PROFILES.contains(profile))throw new IllegalArgumentException("Unknown host profile: "+profile);
         Path root=request.root(),run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/host/"+profile+"-"+UUID.randomUUID());
@@ -65,18 +66,22 @@ public final class HostVerificationProfiles {
         String githubOutput=System.getenv("GITHUB_OUTPUT");
         if(githubOutput!=null)Files.writeString(Path.of(githubOutput),"evidence="+run+"\n",StandardOpenOption.APPEND);
         var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
-        var context=new Context(root,run,outcome);context.perform(profile);
+        var context=new Context(root,run,outcome,lease);context.perform(profile);
         context.finish(profile);
     }
     private static final class Context {
         final Path root,run,reports,layoutFile;JenesisBridge.BuildOutcome outcome;
         final Properties layout=new Properties();final Set<String> done=new HashSet<>();
+        final JvmBuildLock lease;
+        Map<String,String> initialInputs;
         String producerInventorySha256;
         final List<Map<String,Object>> processes=new ArrayList<>();int step;ConsumerSnapshot.Snapshot snapshot;
-        Context(Path root,Path run,JenesisBridge.BuildOutcome outcome)throws Exception {
+        Context(Path root,Path run,JenesisBridge.BuildOutcome outcome)throws Exception {this(root,run,outcome,null);}
+        Context(Path root,Path run,JenesisBridge.BuildOutcome outcome,JvmBuildLock lease)throws Exception {
+            this.lease=lease;initialInputs=outcome==null?null:Map.copyOf(JenesisBridge.inputFingerprints(outcome));
             this.root=root;this.run=run;this.outcome=outcome;reports=run.resolve("reports");layoutFile=run.resolve("layout.properties");
             layout.setProperty("schemaVersion","1");layout.setProperty("builder","jenesis");layout.setProperty("root",root.toString());
-            for(var pair:Map.of("reports","reports","compiler","delivery/compiler","lsp","delivery/lsp","sdk","delivery/sdk.zip","norms","norms","conformance","conformance","reference","reference/ili2c.jar").entrySet())layout.setProperty(pair.getKey(),root.relativize(run.resolve(pair.getValue())).toString());
+            for(var pair:Map.of("reports","reports","compiler","delivery/compiler","lsp","delivery/lsp","sdk","delivery/sdk.zip","norms","norms","conformance","conformance","reference","reference/ili2c.jar").entrySet())layout.setProperty(pair.getKey(),JvmBuildInputs.portableRelative(root,run.resolve(pair.getValue())));
             producerInventorySha256=outcome==null?"PREFLIGHT":JvmBuildInputs.sha256(outcome.inventory());
             if(outcome!=null)Files.copy(outcome.inventory(),run.resolve("producer-index.properties"));
             store();
@@ -96,7 +101,7 @@ public final class HostVerificationProfiles {
                         var result=JenesisBridge.moduleResult(normal,module);
                         if(result.testReports().isPresent()) {
                             Path copy=reports.resolve("jvm/"+module+"/test");copyXml(result.testReports().get(),copy);
-                            layout.setProperty("junit."+module+".test",root.relativize(copy).toString());
+                            layout.setProperty("junit."+module+".test",JvmBuildInputs.portableRelative(root,copy));
                         }
                     }
                     Path contracts=CompilerContractRun.run(root);
@@ -105,7 +110,7 @@ public final class HostVerificationProfiles {
                     for(String key:layout.stringPropertyNames())if(key.startsWith("junit.")&&!key.endsWith(".test")) {
                         String[] parts=key.split("\\.");Path source=root.resolve(layout.getProperty(key));
                         Path destination=reports.resolve("jvm/"+parts[1]+"/"+parts[2]);copyXml(source,destination);
-                        layout.setProperty(key,root.relativize(destination).toString());
+                        layout.setProperty(key,JvmBuildInputs.portableRelative(root,destination));
                     }
                     store();perform("sdk");host(profile);
                     Files.writeString(reports.resolve("p3/platform/commit.txt"),git("rev-parse","HEAD")+"\n");
@@ -151,10 +156,23 @@ public final class HostVerificationProfiles {
             }
             return node;
         }
-        void node(String... args)throws Exception{var command=new ArrayList<String>();command.add(node());command.addAll(List.of(args));execute(command,Duration.ofHours(2),Set.of(0));}
+        void node(String... args)throws Exception{var command=new ArrayList<String>();command.add(node());command.addAll(List.of(args));consume(()->{execute(command,Duration.ofHours(2),Set.of(0));return null;});}
         void backend(String profile)throws Exception {
             if(snapshot==null)snapshot=ConsumerSnapshot.create(root,outcome);
-            WasmBuildRun.run(new BuildRequest("wasm",null,null,root,Map.of("--profile",profile,"--inputs",snapshot.manifest().toString(),"--inputs-sha256",snapshot.manifestSha256())));
+            consume(()->{WasmBuildRun.run(new BuildRequest("wasm",null,null,root,Map.of("--profile",profile,"--inputs",snapshot.manifest().toString(),"--inputs-sha256",snapshot.manifestSha256())));return null;});
+        }
+        void requireOriginalInputs()throws Exception {
+            if(initialInputs!=null)for(var entry:initialInputs.entrySet())if(!JvmBuildInputs.fingerprint(root,entry.getKey()).equals(entry.getValue()))throw new IllegalStateException("Host inputs changed");
+        }
+        <T> T consume(java.util.concurrent.Callable<T> consumer)throws Exception {
+            if(lease==null)throw new IllegalStateException("Explicit host consumer requires its invocation lease");
+            requireOriginalInputs();
+            T result=lease.withoutLock(consumer);
+            requireOriginalInputs();
+            // Another producer may have replaced the last selected result index. Resolve all
+            // current artifacts again under the lease; original input/provenance facts stay fixed.
+            if(outcome!=null)outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
+            return result;
         }
         Path execute(List<String> command,Duration timeout,Set<Integer> allowed)throws Exception {
             Path output=run.resolve("process-"+(step++));Files.writeString(output.resolveSibling(output.getFileName()+".argv.json"),JsonOutput.write(command));
@@ -207,8 +225,8 @@ public final class HostVerificationProfiles {
             }
         }
         void finish(String profile)throws Exception {
-            for(var entry:JenesisBridge.inputFingerprints(outcome).entrySet())if(!JvmBuildInputs.fingerprint(root,entry.getKey()).equals(entry.getValue()))throw new IllegalStateException("Host inputs changed");
-            var files=new TreeMap<String,String>();if(Files.isDirectory(reports))try(var walk=Files.walk(reports)){for(Path file:walk.filter(Files::isRegularFile).toList())files.put(run.relativize(file).toString(),JvmBuildInputs.sha256(file));}
+            requireOriginalInputs();
+            var files=new TreeMap<String,String>();if(Files.isDirectory(reports))try(var walk=Files.walk(reports)){for(Path file:walk.filter(Files::isRegularFile).toList())files.put(JvmBuildInputs.portableRelative(run,file),JvmBuildInputs.sha256(file));}
             Files.writeString(run.resolve("receipt.json"),JsonOutput.write(Map.of("schemaVersion",1,"profile",profile,"exitCode",0,"engineInventorySha256",producerInventorySha256,"completedSteps",new TreeSet<>(done),"processes",processes,"reports",files)));
             System.out.println("Host verification completed: "+run);
         }

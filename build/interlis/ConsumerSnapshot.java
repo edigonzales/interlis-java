@@ -47,7 +47,8 @@ public final class ConsumerSnapshot {
             Path jar=staging.resolve(base+".jar");
             var modules=java.lang.module.ModuleFinder.of(jar).findAll();
             if(modules.size()!=1)throw new IllegalStateException("Unidentified module: "+coordinate);
-            var descriptor=modules.iterator().next().descriptor();row.put("moduleName",descriptor.name());
+            var descriptor=modules.iterator().next().descriptor();
+            if(coordinate.startsWith("maven/guru.interlis/"))ModulePathContract.requireOwnDescriptor(coordinate.split("/")[2],descriptor);row.put("moduleName",descriptor.name());
             row.put("descriptorKind",descriptor.isAutomatic()?"automatic":"explicit");
             if(id[1].equals("guru.interlis")) {
                 if(!JvmBuildInputs.MODULES.contains(id[2])||id[2].equals("interlis-verification"))throw new IllegalStateException("Nonproduct own artifact");
@@ -186,6 +187,7 @@ public final class ConsumerSnapshot {
             var modules=java.lang.module.ModuleFinder.of(jar).findAll();
             if(modules.size()!=1)throw new IllegalStateException("Ambiguous module");
             var descriptor=modules.iterator().next().descriptor();
+            if(coordinate.startsWith("maven/guru.interlis/"))ModulePathContract.requireOwnDescriptor(coordinate.split("/")[2],descriptor);
             if(!descriptor.name().equals(artifact.get("moduleName"))||!(descriptor.isAutomatic()?"automatic":"explicit").equals(artifact.get("descriptorKind")))
                 throw new IllegalStateException("Foreign descriptor identity");
         }

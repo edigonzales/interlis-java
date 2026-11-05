@@ -55,4 +55,16 @@ class VerificationLayoutTest {
         Files.writeString(file,valid);Files.createSymbolicLink(output.resolve("delivery"),temporary);
         assertThrows(IllegalArgumentException.class,()->VerificationLayout.read(root,file));
     }
+    @Test void portableWriterFormatResolvesWindowsNativeRelativePaths() throws Exception {
+        Path root=Files.createDirectories(temporary.resolve("windows-paths"));
+        Path file=Files.createDirectories(root.resolve("target/jenesis-jvm")).resolve("layout.properties");
+        var properties=new java.util.Properties();properties.setProperty("schemaVersion","1");properties.setProperty("builder","jenesis");properties.setProperty("root",root.toString());
+        String nativeReports="target\\jenesis-jvm\\host\\run\\reports";
+        properties.setProperty("reports",nativeReports.replace('\\','/'));
+        try(var writer=Files.newBufferedWriter(file)){properties.store(writer,"portable layout format");}
+        assertEquals(root.resolve("target/jenesis-jvm/host/run/reports/probe.json"),VerificationLayout.read(root,file).rootReport("probe.json"));
+        properties.setProperty("reports",nativeReports);
+        try(var writer=Files.newBufferedWriter(file)){properties.store(writer,"nonportable input");}
+        assertThrows(IllegalArgumentException.class,()->VerificationLayout.read(root,file));
+    }
 }

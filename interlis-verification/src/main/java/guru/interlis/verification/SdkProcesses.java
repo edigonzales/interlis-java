@@ -19,7 +19,10 @@ public final class SdkProcesses {
         for(String field:List.of("api:","diagnostics:","protocol:","format:","diagram:"))require(version.stdout().contains(field),"Missing SDK version field: "+field);
         results.add(version);var versionJson=expect(root,List.of("version","--json"),0);results.add(versionJson);
         var manifest=JsonParser.parseString(versionJson.stdout()).getAsJsonObject();version(manifest);
-        write(VerificationLayout.forInvocation(root).rootReport("sdk/version-manifest.json"),manifest);
+        Path manifestFile=VerificationLayout.forInvocation(root).rootReport("sdk/version-manifest.json");
+        Files.createDirectories(manifestFile.getParent());
+        // The actual CLI byte stream is the single SDK version producer in both build profiles.
+        Files.writeString(manifestFile,versionJson.stdout());
         var capabilities=expect(root,List.of("capabilities"),0);version(JsonParser.parseString(capabilities.stdout()).getAsJsonObject());results.add(capabilities);
         results.add(expect(root,List.of("check",root.resolve("testdata/models/base24.ili").toString(),root.resolve("testdata/models/survey24.ili").toString()),0));
         var negative=expect(root,List.of("check",root.resolve("testdata/models/broken24.ili").toString()),1);require(negative.stderr().contains("ILI-"),"Missing SDK diagnostic");results.add(negative);

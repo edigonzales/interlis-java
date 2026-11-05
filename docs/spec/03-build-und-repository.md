@@ -245,3 +245,5 @@ bleibt über seine expliziten Einzelprofile als historische Evidenz verfügbar.
 Ein fehlender Safari-/Runtime-/Hardware-/Ergebnisnachweis scheitert, ohne Skip.
 
 Der explizite Runtimecheck verwendet `java build/InterlisJvmBuild.java runtime-check --application compiler`. Er erzeugt ein privates JDK-only-Image mit unveränderten modularen CLI-JARs, prüft SDK/HTTP/HTTPS sowie eine lokale app-image-Eignungsprobe. App-Image-Proben verwenden die technische macOS-kompatible Version 1.0; sie ändern keine GAV und sind keine Standarddistribution oder Installerfreigabe. Die Extension besitzt weiterhin ihre eigene gepinnte JRE-/jlink-Auswahl.
+
+Host-/Contract-/SDK-Layouts schreiben relative Rollen immer mit `/`, auch auf Windows; die Java- und Node-Leser lehnen native Backslashes in Rollen weiterhin ab. `JvmBuildLock` ist eine aufrufgebundene Producerlease. Explizite immutable Backend-/Node-Verbraucher suspendieren sie, prüfen anschliessend die ursprünglichen Quellinputs und normalisieren den aktuellen Artefaktstand nach Wiedererwerb. SDK-Prozessprüfung und reine Paketierung verwenden dieselben tatsächlichen CLI-Versionsbytes.

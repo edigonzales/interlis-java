@@ -176,8 +176,8 @@
     },
     "build.gradle": {
       "source": "build/interlis/HostVerificationProfiles.java",
-      "sha256": "3dd55c030ec3d9c2caa6e07b8702dee9e6efe309817cd03916ff148f4ebd6f16",
-      "reason": "Auftrag B: tatsächlicher Jenesis-/JPMS- und expliziter Host-/Reportbesitz; fachliche Compilerassertionen und historische Originalpins bleiben unverändert."
+      "sha256": "5d8c8c8cf3f3d85fb4b39294c81eeb355d6df5283bf3543ef55888f76fbef63f",
+      "reason": "Auftrag B Reviewkorrektur: portable Layoutproduktion, einheitliche echte CLI-Versionsbytes und kontrollierter Consumer-Lockumfang; ursprüngliche Assertions bleiben unverändert."
     },
     "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/ReferenceProcesses.java": {
       "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",
@@ -186,8 +186,8 @@
     },
     "interlis-compiler-cli/src/verification/java/guru/interlis/cli/verification/SdkProcesses.java": {
       "source": "interlis-verification/src/main/java/guru/interlis/verification/SdkProcesses.java",
-      "sha256": "56ff5266128af6f026c3ce1f3471be5244383c23839110e36a797acfcf43f54f",
-      "reason": "Same SDK process assertions with explicit Gradle/Jenesis layout; defaults preserved"
+      "sha256": "08a6b0580ffafdbe9a4ec09072538e9630cb5dd1ac87dee6806051a0749b1649",
+      "reason": "Auftrag B Reviewkorrektur: portable Layoutproduktion, einheitliche echte CLI-Versionsbytes und kontrollierter Consumer-Lockumfang; ursprüngliche Assertions bleiben unverändert."
     },
     "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java": {
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java",
