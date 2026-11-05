@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -28,6 +29,8 @@ public final class GuiRuntime {
     private static final String PROJECT = "interlis-compiler-gui";
     private static final String MODULE = "guru.interlis.compiler.gui";
     private static final String ENTRY = MODULE + "/guru.interlis.gui.GuiMain";
+    private static final String APP_NAME = "INTERLIS Compiler";
+    private static final String NATIVE_ACCESS = "--enable-native-access=com.formdev.flatlaf";
     private static final String ANTLR = "org.antlr.antlr4.runtime";
     private static final String ANTLR_SHA = "dd3e8a13a2d669bf84fb8d834de35ce4875f27157698d206241ec8488aadcaf7";
     private static final Set<String> GUI_MODULES = Set.of(MODULE, "guru.interlis.model", "guru.interlis.compiler",
@@ -40,6 +43,12 @@ public final class GuiRuntime {
 
     public static void run(BuildRequest request) throws Exception {
         Path root = request.root();
+        String check = request.options().get("--profile");
+        boolean packageApp = request.profile().equals("gui-package") || "packaged".equals(check);
+        if (packageApp && !(System.getProperty("os.name").startsWith("Mac")
+                && System.getProperty("os.arch").equals("aarch64"))) {
+            throw new IllegalArgumentException("The GUI app package requires macOS on ARM64");
+        }
         var outcome = JenesisBridge.run(new BuildRequest("artifacts", PROJECT, null, root));
         var artifacts = ModuleArtifacts.runtime(root, PROJECT, outcome);
         var modules = new TreeMap<String, ModuleArtifacts.Artifact>();
@@ -68,7 +77,7 @@ public final class GuiRuntime {
         String jars = String.join(File.pathSeparator, artifacts.stream().map(a -> a.file().toString()).toList());
         Path jdk = Path.of(System.getProperty("java.home"));
         if (request.profile().equals("gui-run")) {
-            var process = new ProcessBuilder(tool(jdk, "java"), "--module-path", jars, "--module", ENTRY)
+            var process = new ProcessBuilder(tool(jdk, "java"), NATIVE_ACCESS, "--module-path", jars, "--module", ENTRY)
                     .directory(root.toFile()).inheritIO().start();
             if (process.waitFor() != 0) {
                 throw new IllegalStateException("GUI launch failed");
@@ -76,8 +85,8 @@ public final class GuiRuntime {
             return;
         }
 
-        if (request.profile().equals("gui-check") && !request.options().get("--profile").equals("shell")) {
-            checkInteraction(root, run, jdk, jars, request.options().get("--profile"));
+        if (check != null && !check.equals("shell") && !check.equals("packaged")) {
+            checkInteraction(root, run, jdk, jars, check);
             return;
         }
 
@@ -101,8 +110,136 @@ public final class GuiRuntime {
                 throw new IllegalStateException("FlatLaf resources are incomplete in the linked image");
             }
         }
-        if (request.profile().equals("gui-check")) {
+        if (packageApp) {
+            Path app = packageApp(root, run, jdk, image, modules.get("com.formdev.flatlaf").file());
+            if ("packaged".equals(check)) {
+                checkPackage(root, run, jdk, jars, app);
+            }
+        } else if ("shell".equals(check)) {
             checkShell(root, run, jdk, image, jars);
+        }
+    }
+
+    private static Path packageApp(Path root, Path run, Path jdk, Path image, Path flatlafJar) throws Exception {
+        Path notices = Files.createDirectory(run.resolve("Licenses"));
+        Files.copy(root.resolve("LICENSE"), notices.resolve("INTERLIS.txt"));
+        Files.copy(root.resolve("interlis-compiler/src/main/antlr/LICENSE"), notices.resolve("ANTLR.txt"));
+        Files.copy(root.resolve("interlis-compiler/src/main/antlr/NOTICE"), notices.resolve("ANTLR-NOTICE.txt"));
+        try (var flatlaf = new JarFile(flatlafJar.toFile());
+             var license = flatlaf.getInputStream(flatlaf.getJarEntry("META-INF/LICENSE"))) {
+            Files.copy(license, notices.resolve("FlatLaf.txt"));
+        }
+        Path destination = Files.createDirectory(run.resolve("macos-arm64"));
+        process(run, "jpackage", List.of(tool(jdk, "jpackage"), "--type", "app-image", "--name", APP_NAME,
+                "--mac-package-name", "INTERLIS", "--mac-package-identifier", MODULE, "--app-version", "1",
+                "--module", ENTRY, "--runtime-image", image.toString(), "--dest", destination.toString(),
+                "--java-options", NATIVE_ACCESS, "--app-content", notices.toString()));
+        Path app = destination.resolve(APP_NAME + ".app");
+        Path launcher = app.resolve("Contents/MacOS").resolve(APP_NAME);
+        Path bundledJava = app.resolve("Contents/runtime/Contents/Home");
+        process(run, "mac-launcher", List.of("/usr/bin/file", launcher.toString()));
+        process(run, "mac-modules", List.of(tool(bundledJava, "java"), "--list-modules"));
+        process(run, "mac-signature", List.of("/usr/bin/codesign", "-dv", launcher.toString()));
+        if (!Files.readString(run.resolve("mac-launcher.stdout")).strip().endsWith(": Mach-O 64-bit executable arm64")
+                || Files.mismatch(image.resolve("lib/modules"), bundledJava.resolve("lib/modules")) != -1
+                || Files.mismatch(run.resolve("modules.stdout"), run.resolve("mac-modules.stdout")) != -1) {
+            throw new IllegalStateException("The app does not contain the expected ARM64 launcher and runtime");
+        }
+        Files.writeString(run.resolve("packaged-artifacts.json"), JsonOutput.write(Map.of(
+                "app", app.toString(), "launcherSha256", JvmBuildInputs.sha256(launcher),
+                "modulesSha256", JvmBuildInputs.sha256(bundledJava.resolve("lib/modules")))));
+        System.out.println("macOS ARM64 app: " + app);
+        return app;
+    }
+
+    private static void checkPackage(Path root, Path run, Path jdk, String jars, Path app) throws Exception {
+        Path outside = Files.createTempDirectory("INTERLIS GUI Smoke ").toRealPath();
+        if (outside.startsWith(root.toRealPath())) {
+            throw new IllegalStateException("The packaged smoke needs a temporary directory outside the checkout");
+        }
+        try {
+            Path copiedApp = outside.resolve(app.getFileName());
+            process(run, "copy-app", outside, List.of("/usr/bin/ditto", app.toString(), copiedApp.toString()), Map.of());
+            Path launcher = copiedApp.resolve("Contents/MacOS").resolve(APP_NAME);
+            Path configuration = copiedApp.resolve("Contents/app").resolve(APP_NAME + ".cfg");
+            Path javaHome = copiedApp.resolve("Contents/runtime/Contents/Home").toRealPath();
+            checkNativeWindow(root, run, jdk, outside, launcher, javaHome);
+
+            Path probes = root.resolve("build/interlis/tests");
+            Path classes = Files.createDirectory(outside.resolve("Smoke Classes"));
+            process(run, "packaged-probe-compile", List.of(tool(jdk, "javac"), "--release", "25", "--module-path", jars,
+                    "--patch-module", MODULE + "=" + probes, "-d", classes.toString(),
+                    probes.resolve("GuiCompileProbe.java").toString(), probes.resolve("GuiPackagedProbe.java").toString()));
+            String production = Files.readString(configuration);
+            if (!production.contains("app.mainmodule=" + ENTRY + "\n")) {
+                throw new IllegalStateException("Native launcher does not name the GUI entry point");
+            }
+            Files.writeString(run.resolve("packaged-production.cfg"), production);
+            String driver = production.replace("app.mainmodule=" + ENTRY + "\n",
+                    "app.mainmodule=" + MODULE + "/guru.interlis.gui.GuiPackagedProbe\n")
+                    + "java-options=--patch-module=" + MODULE + "=" + classes + "\n"
+                    + "java-options=-Dinterlis.smoke.directory=" + outside + "\n"
+                    + "java-options=-Dinterlis.gui.settingsDir=" + outside.resolve("Test Settings") + "\n";
+            Files.writeString(configuration, driver);
+            Files.writeString(run.resolve("packaged-probe.cfg"), driver);
+            if (Files.mismatch(app.resolve("Contents/MacOS").resolve(APP_NAME), launcher) != -1
+                    || Files.mismatch(app.resolve("Contents/runtime/Contents/Home/lib/modules"), javaHome.resolve("lib/modules")) != -1) {
+                throw new IllegalStateException("Packaged driver must use the original native launcher and linked modules");
+            }
+            process(run, "interactive-packaged", outside, List.of(launcher.toString()), Map.of("PATH", "/usr/bin:/bin"));
+            if (!Files.readString(run.resolve("interactive-packaged.stdout")).contains("GUI_PACKAGED_PASS")) {
+                throw new IllegalStateException("The packaged interaction produced no assertions");
+            }
+            for (String area : List.of("check", "dependencies", "repositories")) {
+                Files.copy(outside.resolve(area + ".png"), run.resolve("packaged-" + area + ".png"));
+            }
+        } finally {
+            try (var paths = Files.walk(outside)) {
+                for (Path path : paths.sorted(Comparator.reverseOrder()).toList()) {
+                    Files.delete(path);
+                }
+            }
+        }
+    }
+
+    private static void checkNativeWindow(Path root, Path run, Path jdk, Path outside, Path launcher, Path javaHome)
+            throws Exception {
+        var start = Instant.now();
+        var command = List.of(launcher.toString());
+        var builder = processBuilder(run, "native-app", outside, command, Map.of("PATH", "/usr/bin:/bin",
+                "JAVA_TOOL_OPTIONS", "-Dinterlis.gui.settingsDir=\"" + outside.resolve("Launch Settings") + "\" -Xlog:library=info"));
+        var child = builder.start();
+        boolean finished = false;
+        try {
+            Path properties = outside.resolve("vm-properties.txt");
+            var attach = new ProcessBuilder(tool(jdk, "jcmd"), Long.toString(child.pid()), "VM.system_properties")
+                    .directory(outside.toFile()).redirectOutput(properties.toFile())
+                    .redirectError(ProcessBuilder.Redirect.DISCARD).start();
+            if (!attach.waitFor(20, TimeUnit.SECONDS)) {
+                attach.destroyForcibly().waitFor();
+                throw new IllegalStateException("Could not read the app's embedded runtime properties");
+            }
+            List<String> observed = Files.readAllLines(properties).stream().filter(line -> line.startsWith("java.home=")
+                    || line.startsWith("os.arch=") || line.startsWith("user.dir=")).toList();
+            Files.delete(properties);
+            Files.write(run.resolve("native-app-runtime.txt"), observed);
+            if (attach.exitValue() != 0 || !observed.contains("java.home=" + javaHome)
+                    || !observed.contains("os.arch=aarch64") || !observed.contains("user.dir=" + outside)) {
+                throw new IllegalStateException("Native app did not use the expected embedded runtime and working directory: " + observed);
+            }
+            process(run, "native-window", outside, List.of("/usr/bin/swift", "-module-cache-path",
+                    outside.resolve("SwiftCache").toString(), root.resolve("build/interlis/tests/quit-macos-gui.swift").toString(),
+                    Long.toString(child.pid()), MODULE), Map.of());
+            finished = child.waitFor(15, TimeUnit.SECONDS);
+        } finally {
+            if (child.isAlive()) {
+                child.destroyForcibly().waitFor();
+            }
+            recordProcess(run, "native-app", outside, command, start, child.exitValue(), finished);
+        }
+        if (!finished || child.exitValue() != 0 || !Files.readString(run.resolve("native-app.stdout")).lines()
+                .anyMatch(line -> line.contains("Loaded library") && line.contains("libflatlaf-macos-arm64"))) {
+            throw new IllegalStateException("Native app did not load the ARM64 FlatLaf library and quit normally");
         }
     }
 
@@ -207,22 +344,38 @@ public final class GuiRuntime {
     }
 
     private static void process(Path run, String role, List<String> command) throws Exception {
-        var start = Instant.now();
-        var builder = new ProcessBuilder(command).directory(run.toFile())
+        process(run, role, run, command, Map.of());
+    }
+
+    private static ProcessBuilder processBuilder(Path run, String role, Path cwd, List<String> command,
+                                                  Map<String, String> environment) {
+        var builder = new ProcessBuilder(command).directory(cwd.toFile())
                 .redirectOutput(run.resolve(role + ".stdout").toFile())
                 .redirectError(run.resolve(role + ".stderr").toFile());
-        for (String key : List.of("JDK_JAVA_OPTIONS", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH")) {
+        for (String key : List.of("JDK_JAVA_OPTIONS", "JAVA_TOOL_OPTIONS", "_JAVA_OPTIONS", "CLASSPATH", "JAVA_HOME")) {
             builder.environment().remove(key);
         }
-        var child = builder.start();
+        builder.environment().putAll(environment);
+        return builder;
+    }
+
+    private static void process(Path run, String role, Path cwd, List<String> command,
+                                Map<String, String> environment) throws Exception {
+        var start = Instant.now();
+        var child = processBuilder(run, role, cwd, command, environment).start();
         boolean finished = child.waitFor(90, TimeUnit.SECONDS);
         if (!finished) {
             child.destroyForcibly().waitFor();
         }
-        Files.writeString(run.resolve(role + ".json"), JsonOutput.write(Map.of("argv", command, "start", start.toString(),
-                "end", Instant.now().toString(), "cwd", run.toString(), "exitCode", child.exitValue(), "timeout", !finished)));
+        recordProcess(run, role, cwd, command, start, child.exitValue(), finished);
         if (!finished || child.exitValue() != 0) {
             throw new IllegalStateException(role + " failed. See " + run);
         }
+    }
+
+    private static void recordProcess(Path run, String role, Path cwd, List<String> command, Instant start,
+                                      int exitCode, boolean finished) throws Exception {
+        Files.writeString(run.resolve(role + ".json"), JsonOutput.write(Map.of("argv", command, "start", start.toString(),
+                "end", Instant.now().toString(), "cwd", cwd.toString(), "exitCode", exitCode, "timeout", !finished)));
     }
 }

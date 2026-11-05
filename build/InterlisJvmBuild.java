@@ -47,7 +47,7 @@ public final class InterlisJvmBuild {
                 System.out.println("Parity completed: "+target.resolve("reports/parity.json"));
             } else if(request.profile().equals("editor-check")) {
                 build.interlis.EditorCompatibilityRun.run(request);
-            } else if(List.of("gui-run", "gui-runtime", "gui-check").contains(request.profile())) {
+            } else if(List.of("gui-run", "gui-runtime", "gui-package", "gui-check").contains(request.profile())) {
                 build.interlis.GuiRuntime.run(request);
             } else if(request.profile().equals("runtime-check")) {
                 build.interlis.CompilerRuntimeCheck.run(request.root());
@@ -76,7 +76,7 @@ public final class InterlisJvmBuild {
         var options=new java.util.HashMap<String,String>();
         int i = 0;
         if (args.length > 0 && !args[0].startsWith("--")) profile = args[i++];
-        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-check").contains(profile))
+        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-package", "gui-check").contains(profile))
             throw new IllegalArgumentException("Unknown profile: " + profile);
         while (i < args.length) {
             String option = args[i++];
@@ -104,7 +104,7 @@ public final class InterlisJvmBuild {
                         throw new IllegalArgumentException("Expected exactly one clean scope: jvm|consumer|wasm");
                 }
                 case "--profile" -> {
-                    var profiles=profile.equals("gui-check")?java.util.Set.of("shell","compile","diagnostics","dependencies","repositories","lifecycle"):profile.equals("release-check")?java.util.Set.of("P3"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
+                    var profiles=profile.equals("gui-check")?java.util.Set.of("shell","compile","diagnostics","dependencies","repositories","lifecycle","packaged"):profile.equals("release-check")?java.util.Set.of("P3"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
                     if(!profiles.contains(value)||options.put(option,value)!=null)
                         throw new IllegalArgumentException("Unknown or duplicate host profile: "+value);
                 }

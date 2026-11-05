@@ -109,7 +109,7 @@ der Headful-Smoke und zwei unabhängige Repository-Gegenproben sind bestanden.
 Das Urteil liegt unter
 `../interlis-java-compiler-gui-g0.TVRLc5/G4/be632c74bbf55733f066103fc5885be2b4a8ed14/round-01/`.
 
-## G5 – Integration in Prüfung
+## G5 – Integration bestanden
 
 GUI-39 bis GUI-44. Gemeinsame Compiler- und Hostoptionen sind im
 Settingsdialog zugänglich. Die Einstellungen werden ausserhalb des EDT
@@ -119,3 +119,22 @@ Resultate und ein begrenztes Laufprotokoll. Der Headful-Smoke
 `java build/InterlisJvmBuild.java gui-check --profile lifecycle` prüft
 Tastaturbedienung, Dark Theme, Fenstergrösse und das tatsächliche
 Prozessende nach dem Schliessen während eines laufenden Auftrags.
+
+
+G5-PASS für `3dfd48e80cf18b589d455533e3c90bb0168af905`. Der erste
+Review beanstandete die Sichtbarkeit von markierten Quellbereichen.
+Die korrigierte Vorschau erhält die Markierung beim Themewechsel.
+15 gezielte JUnit-Tests sowie die Headful-Profile `diagnostics`,
+`lifecycle` und `repositories` bestanden. OpenCode bestätigte
+die gemalten UTF-16-Bereiche in beiden Themes und den Shutdown.
+Das Urteil liegt unter
+`../interlis-java-compiler-gui-g0.TVRLc5/G5/3dfd48e80cf18b589d455533e3c90bb0168af905/round-02/`.
+
+## G6 – Delivery in Prüfung
+
+GUI-45 und GUI-48 bis GUI-52, mit kumulativer Prüfung von GUI-01 bis GUI-52.
+`gui-package` baut die native macOS-ARM64-App mit eingebettetem Java.
+`gui-check --profile packaged` prüft den unveränderten nativen Start
+und das reguläre Prozessende ausserhalb des Checkouts. Der Swing-Treiber
+durchläuft Check, Repositories und Dependencies im nativen App-Prozess.
+Die [Benutzer- und Bauanleitung](USER_GUIDE.md) nennt die Plattformgrenzen.

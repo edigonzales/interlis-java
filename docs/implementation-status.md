@@ -11,7 +11,7 @@ Kein Gesamt-/Release-PASS. Compiler-APE und CosmoGVM-Uhrpatch bleiben pausiert.
 
 ## Compiler GUI Swing
 
-Der separate Produktbranch und die G0-Abnahme stehen im
+Der separate Produktbranch und die phasenweisen Abnahmen stehen im
 [GUI-Status](implementation/compiler-gui-swing/STATUS.md).
 
 ## Jenesis-Migration B vom 05.11.2026
