@@ -95,9 +95,11 @@ def start_review(args, root, directory):
     xdg = directory / "opencode-state"
     for folder in ("data/opencode", "config/opencode", "cache", "state", "tmp"):
         (xdg / folder).mkdir(parents=True, exist_ok=True)
-    auth = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "opencode/auth.json"
-    if auth.is_file():
-        (xdg / "data/opencode/auth.json").symlink_to(auth.resolve())
+    auth_directory = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "opencode"
+    for name in ("account.json", "auth.json"):
+        auth = auth_directory / name
+        if auth.is_file():
+            (xdg / "data/opencode" / name).symlink_to(auth.resolve())
 
     # Commands are selected by the reviewer from exact argv vectors. Shell syntax is never evaluated.
     probe_commands = {}
@@ -250,6 +252,10 @@ def run_session(args, directory, candidate, inputs, request, manifest, opener, a
                    fatalError=any(event.get("type") == "error" for event in events),
                    completed=responses[-1].get("finish") in ("stop", "end_turn", "completed"))
     write(directory / "process-result.json", process)
+    errors = [event["error"] for event in events if event.get("type") == "error"]
+    error_codes = [(error.get("type"), error.get("status")) for error in errors if isinstance(error, dict)]
+    require(not process["fatalError"] and process["exitCode"] == 0 and process["completed"] and not timed_out,
+            f"OpenCode ended before completing the review (exit={child.returncode}, errors={error_codes})")
     probe_logs = {}
     for event in events:
         part = event.get("part", {})
