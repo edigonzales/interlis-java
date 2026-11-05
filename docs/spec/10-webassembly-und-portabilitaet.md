@@ -77,62 +77,36 @@ Die Adapterentscheidung berücksichtigt Ergebnisgleichheit, API-Verfügbarkeit, 
 
 Die Entscheidung muss als ADR festhalten: bevorzugtes Ziel, überprüfter Toolchainstand, bekannte Grenzen, Gründe gegen beziehungsweise für den zweiten Adapter und Bedingungen für eine erneute Bewertung. Die Kernarchitektur darf dadurch keine Runtime-Annotationen aufnehmen.
 
-## 3. Gradle-Integration
+## 3. Wasm-Verbraucher und explizite Buildprofile
 
-Der gesamte Build folgt [03](03-build-und-repository.md): Gradle Wrapper, Groovy DSL, Java 25, explizite Versionen. Das offizielle TeaVM-Plugin dokumentiert die ID `org.teavm`, die `wasmGC`-Konfiguration sowie die Tasks `generateWasmGC`, `copyWasmGCRuntime`, `buildWasmGC` und `generateJavaScript`. Die folgenden Einträge sind eine projektspezifische Minimalkonfiguration auf dieser dokumentierten API; sie wurden für die Spezifikation recherchiert, aber hier noch nicht als neuer Gradle-Build ausgeführt. Quelle: [TeaVM Gradle](https://teavm.org/docs/tooling/gradle.html).
+Der Buildbesitz folgt [Kapitel 03](03-build-und-repository.md): Jenesis produziert die gemeinsamen JVM-JARs/Sources/POMs, Gradle baut ausschliesslich die zwei Backendadapter und deren Zielprogramme. Die Backendprojekte beziehen die unveränderten modularen JVM-JARs über einen geprüften immutable ConsumerSnapshot. Sie kompilieren weder workspace/projection noch andere gemeinsame JVM-Quellverzeichnisse erneut.
 
-**Der folgende Block beschreibt die P1-Konfiguration**, nachdem workspace und projection tatsächlich angelegt wurden. Für den P0-Parserspike werden nur die bereits vorhandenen compiler-/model-Projekte eingebunden. Abhängigkeiten auf noch nicht existierende Projekte dürfen den P0-Build nicht blockieren. Wird der gemeinsame Bridge-Code später in das reale Modul `interlis-wasm-bridge` verschoben, richten sich die direkten Projektabhängigkeiten nach Kapitel 02.
+Die ausführbare TeaVM-Konfiguration steht in [interlis-wasm-teavm/build.gradle](../../interlis-wasm-teavm/build.gradle); die gemeinsame Artefaktübergabe in [jvm-inputs.gradle](../../gradle/jvm-inputs.gradle) und [backend-inputs.gradle](../../gradle/backend-inputs.gradle). Der Pluginpin bleibt in der zentralen Versionverwaltung. Direkte Gradle-`project(...)`-Kanten auf JVM-Produkte sind kein aktives Konfigurationsbeispiel mehr. Das offizielle Plugin dokumentiert `generateWasmGC`, `copyWasmGCRuntime`, `buildWasmGC` und `generateJavaScript`; die tatsächliche gepinnte Projektkonfiguration ist massgeblich. Quelle: [TeaVM Gradle](https://teavm.org/docs/tooling/gradle.html).
 
-```groovy
-plugins {
-    id 'java'
-    id 'org.teavm' version '0.16.0'
-}
-
-dependencies {
-    implementation project(':interlis-workspace')
-    implementation project(':interlis-projection')
-    implementation teavm.libs.jso
-}
-
-teavm {
-    all {
-        mainClass = 'guru.interlis.wasm.teavm.TeaVmEntryPoint'
-    }
-    wasmGC {
-        targetFileName = 'interlis-compiler.wasm'
-        copyRuntime = true
-        modularRuntime = true
-    }
-}
-```
-
-P0 muss diese Integration mit dem gepinnten Wrapper prüfen und gegebenenfalls eine dokumentierte, minimal angepasste Konfiguration verwenden. Zentral verwaltete Versionen können den sichtbaren Pluginpin im endgültigen Modul ersetzen. Zusätzliche Optimierungs-, Reflection- oder Shared-Memory-Optionen werden nur mit einem konkreten Bedarf aktiviert.
-
-Vorgesehene Aufrufe:
+Aktuelle Aufrufe aus dem Repository-Root mit Java25 und der explizit gewählten gepinnten `INTERLIS_NODE`-Laufzeit:
 
 ```sh
-./gradlew :interlis-wasm-teavm:buildWasmGC
-./gradlew :interlis-wasm-teavm:generateJavaScript
-./gradlew :interlis-wasm-teavm:wasmContractTest
-./gradlew checkPortable
-./gradlew checkBrowser
+java build/InterlisJvmBuild.java host --profile portable
+java build/InterlisJvmBuild.java host --profile browser
+java build/InterlisJvmBuild.java release-check --profile P3
 ```
 
-`wasmContractTest`, `checkPortable`, `checkBrowser` und `releaseCheck` sind **neu zu implementierende Projekttasks**, keine behaupteten TeaVM-Standardtasks. Ihr verbindlicher Zusammenhang lautet:
+Für einzelne Backendaufrufe erzeugt `java build/InterlisJvmBuild.java wasm-export` den verifizierten Snapshot. `wasm --profile teavm-contracts` beziehungsweise `wasm --profile webimage-contracts` erhalten dessen tatsächlichen absoluten Manifestpfad über `--inputs` und dessen Producerhash über `--inputs-sha256`. Direkte Gradle-Debugaufrufe erhalten dieselbe Referenz mit `-PjvmInputs`/`-PjvmInputsSha256` und die gepinnte Node-Auswahl mit `-PnodeExecutable`; fehlende Inputs sind ein Fehler, kein JVM-Quellfallback.
 
-| Task | Pflichtumfang |
+`wasmContractTest` bleibt eine projektspezifische Backendtask, keine TeaVM-Standardtask. Die historischen Roottasknamen `checkPortable`, `checkBrowser` und `releaseCheck` bezeichnen die folgenden weiterhin verpflichtenden Umfänge; sie sind keine aktiven Gradle-Rootaliases:
+
+| Aktueller Einstieg | Pflichtumfang |
 |---|---|
-| `:interlis-wasm-teavm:wasmContractTest` | Vertragstests des gebauten TeaVM-Moduls unter der gepinnten Node-Version, einschliesslich Bridge und exakter Zahlen. |
-| `checkPortable` | Gemeinsame JVM-Prüfungen und die Node-Vertragstests der für die Phase vorgesehenen Zielprofile. |
-| `checkBrowser` | Reale gepinnte Chrome-/Firefox-/Safari-Matrix des ausgewählten TeaVM-Produktionspfads. |
-| `releaseCheck` | Beide vorstehenden Aggregate ab G1 sowie der für P1 erforderliche Web-Image-Untersuchungsnachweis und weitere phasenbezogene Gates aus Kapitel 03/14. |
+| `:interlis-wasm-teavm:wasmContractTest` mit expliziten Snapshotinputs | Vertragstests des gebauten TeaVM-Moduls unter der gepinnten Node-Version, einschliesslich Bridge und exakter Zahlen. |
+| `host --profile portable` | Gemeinsame JVM-Prüfungen und die Node-Vertragstests der für die Phase vorgesehenen Zielprofile. |
+| `host --profile browser` | Reale gepinnte Chrome-/Firefox-/Safari-Matrix des ausgewählten TeaVM-Produktionspfads. |
+| `release-check --profile P3` | Beide vorstehenden Aggregate ab G1 sowie Web-Image-Nachweis und sämtliche weiteren fälligen Gates aus Kapitel 03/14. |
 
-Browserprüfungen haben dokumentierte Laufzeitvoraussetzungen. Das einfache JVM-`check` darf keinen ungeplanten Browser-/SDK-Download auslösen. Ein lokaler Lauf darf fehlende Browser als NOT_RUN dokumentieren; dieser Bericht erfüllt G1 und den entsprechenden releaseCheck nicht. Ein realer, begründet blockierter Web-Image-Versuch erfüllt lediglich den gesonderten Untersuchungsauftrag und wird nicht zu PASS umetikettiert.
+Browserprüfungen haben dokumentierte Laufzeitvoraussetzungen. Der Default-JVM-`build` darf keinen ungeplanten Browser-/SDK-Download auslösen. Ein lokaler Lauf darf fehlende Browser als NOT_RUN dokumentieren; dieser Bericht erfüllt G1 und die entsprechende Releaseabnahme nicht. Ein realer, begründet blockierter Web-Image-Versuch erfüllt lediglich den gesonderten Untersuchungsauftrag und wird nicht zu PASS umetikettiert.
 
 Der [WasmGC-Loader](https://teavm.org/docs/wasm-gc-backend/loader.html) benötigt die passende JavaScript-Runtime. `generateWasmGC` allein ist deshalb kein vollständiges Auslieferungsartefakt. Der Build muss den Runtime-Kopierschritt enthalten und die finalen Dateinamen anhand der tatsächlich erzeugten Ausgaben prüfen.
 
-Für Web Image wird zunächst ein kleiner expliziter Gradle-Task verwendet, der eine konfigurierte Toolchain aufruft. Er deklariert Eingabe-JARs, Main-Klasse, Toolchainversion und Ausgabedateien. Keine erfundene offizielle Gradle-Web-Image-DSL ist Voraussetzung. Der Task darf nicht bei jeder normalen JVM-Kompilierung anlaufen.
+Der [Web-Image-Backendbuild](../../interlis-wasm-webimage/build.gradle) deklariert dieselben geprüften Eingabe-JARs sowie Main-Klasse, Toolchainversion und Ausgabedateien. Keine erfundene offizielle Gradle-Web-Image-DSL ist Voraussetzung. Er darf nicht bei jeder normalen JVM-Kompilierung anlaufen. Fachliche Pflichten, IDs, Browsermatrix und Protokoll dieses Kapitels bleiben unverändert.
 
 ## 4. Gemeinsame Bridge und Klassengrenzen
 

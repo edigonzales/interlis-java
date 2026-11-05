@@ -23,7 +23,7 @@ Die folgende Erstimplementierungsanleitung bleibt als ursprünglicher Einstieg e
 4. Für die Erstimplementierung dem Coding-Agenten [STARTPROMPT.md](STARTPROMPT.md) als ausdrücklichen Arbeitsauftrag geben.
 5. Mit P0 und P1 aus [Implementierungsplan](14-implementierungsplan-und-arbeitspakete.md) arbeiten. Der Agent aktualisiert Status und Nachweise im Repository.
 
-Die Spezifikation allein benötigt kein Build-Tool. Sie ist eine Dokumentlieferung; ein neues GitHub-Repository oder der hier beschriebene Compiler wurde damit noch nicht erstellt. Der beigefügte historische Syntaxspike ist tatsächlich ausgeführte Evidenz und wird im neuen Projekt auf Gradle überführt.
+Das ursprüngliche Spezifikationspaket war eine Dokumentlieferung; sein historischer Syntaxspike bleibt unveränderte Evidenz. Den aktuellen Buildbesitz und die ausführbaren Einstiegspunkte des inzwischen implementierten Projekts regelt Kapitel 03.
 
 ### 1.1 Zwei Arbeitsregeldateien
 
@@ -34,7 +34,7 @@ Beide Dateien verweisen auf die Fachkapitel, statt deren Signaturkataloge zu kop
 ## 2. Verbindliche Grundentscheidungen
 
 - Repository-Arbeitsname `interlis-java`, Maven-/Gradle-Group `guru.interlis`, Java-Pakete `guru.interlis.*`.
-- Java 25 ohne Preview; Gradle-Wrapper und Groovy-DSL als einziger aktiver Build.
+- Java 25 ohne Preview; Jenesis als alleiniger JVM-Builder, Gradle-Wrapper/Groovy ausschliesslich für die zwei Wasm-Backends.
 - Nur INTERLIS 2.3 und 2.4; vollständige Sprachsemantik ist P2-Ziel.
 - ANTLR 4 als internes Parserwerkzeug; keine ANTLR-Typen in der öffentlichen API.
 - `SyntaxSnapshot`, `AnalysisSnapshot` und `CompiledSchema` als getrennte Nutzungssichten.
@@ -44,7 +44,7 @@ Beide Dateien verweisen auf die Fachkapitel, statt deren Signaturkataloge zu kop
 - Transfer-/Validation-/SchemaPlan halten das Gesamtziel präsent, werden aber erst in ihrer Phase implementiert.
 - Bestehende DB-Mappings/Metadaten und gegenseitige Alt-/Neu-Verwendung sind verbindliche P5-Abnahmen.
 
-Ant/Ivy ist technisch möglich, wird für dieses Projekt aber nicht gewählt. Der bestehende Wunsch nach möglichst einfacher Bedienung wird durch wenige Gradle-Konventionen, tatsächlich benötigte Module und explizite Tasks umgesetzt. Es gibt kein zusätzliches Buildframework.
+Ant/Ivy ist technisch möglich, wird für dieses Projekt aber nicht gewählt. Die Bedienung folgt dem gemeinsamen Java-25-Projekteinstieg und expliziten Verbraucherprofilen aus Kapitel 03. Dieselben eigenen JVM-Quellen werden nicht parallel durch ein zweites Buildframework produziert.
 
 ## 3. Inhaltsverzeichnis
 
@@ -53,7 +53,7 @@ Ant/Ivy ist technisch möglich, wird für dieses Projekt aber nicht gewählt. De
 | [00-auftrag-und-agentenregeln.md](00-auftrag-und-agentenregeln.md) | Ausführbarer Auftrag, normative Sprache, Arbeitszyklus, Status- und Änderungsregeln |
 | [01-zielbild-und-anforderungen.md](01-zielbild-und-anforderungen.md) | Gesamtprodukt, Benutzerabläufe, funktionale/nichtfunktionale Anforderungen, Phasen |
 | [02-architektur-und-modulgrenzen.md](02-architektur-und-modulgrenzen.md) | Modulgraph, Datenebenen, Zustandsbesitz, Kern-/Host-/Verbrauchergrenzen |
-| [03-build-und-repository.md](03-build-und-repository.md) | Gradle/Groovy, Wrapper, Toolchains, ANTLR-Isolation, CI und Distributionen |
+| [03-build-und-repository.md](03-build-und-repository.md) | Jenesis-JVM/Gradle-Wasm, Artefaktübergabe, Toolchains, CI und Distributionen |
 | [04-quelltext-syntax-und-parser.md](04-quelltext-syntax-und-parser.md) | Quellen, Unicode/UTF-16, lossless Syntax, Grammatik/Versionen, Recovery |
 | [05-metamodell-und-typensystem.md](05-metamodell-und-typensystem.md) | TransferDescription-Nachfolge, Symbole, Typen, Ausdrücke, fachliche Vollständigkeit |
 | [06-kompilierung-und-semantik.md](06-kompilierung-und-semantik.md) | Engine-API, Phasen, fachliche Prüfdienste, Coverage, Gültigkeitsgate und Resultate |

@@ -211,8 +211,8 @@
     },
     "docs/spec/10-webassembly-und-portabilitaet.md": {
       "source": "docs/spec/10-webassembly-und-portabilitaet.md",
-      "sha256": "9e12490971a0be850591ef9bd38d29cd4a92d5989649ce97a3527dbf21bd7bb8",
-      "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
+      "sha256": "46813f9a9c8210099ef341b14b16c2ad463f909ae43072fee0f7e66e20113ed8",
+      "reason": "Redaktioneller Reviewhinweis O-01: bestehende Jenesis-/Backend-Einstiege statt entfernter Gradle-Roottasknamen; Sprach-/Bridge-/Abnahmeverträge unverändert."
     },
     "docs/spec/17-abdeckungsmatrix-und-review.md": {
       "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
