@@ -1,5 +1,9 @@
 package guru.interlis.gui;
 
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.FlatLightLaf;
+
 import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.WarningPolicy;
 import guru.interlis.diagnostics.DiagnosticLanguage;
@@ -10,6 +14,9 @@ import guru.interlis.gui.application.CompileService;
 import guru.interlis.gui.application.SessionOptions;
 import guru.interlis.gui.controller.SessionController;
 import guru.interlis.gui.presentation.SourcePreviewModel;
+import guru.interlis.gui.infrastructure.GuiSettings;
+import guru.interlis.gui.infrastructure.GuiSettingsStore;
+import guru.interlis.repository.RepositoryCacheConfiguration;
 import guru.interlis.repository.FetchPolicy;
 import guru.interlis.repository.RepositoryConfig;
 
@@ -27,6 +34,10 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.JTabbedPane;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JToggleButton;
@@ -41,6 +52,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -51,6 +63,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
@@ -60,6 +73,17 @@ final class MainFrame extends JFrame {
     private final JTabbedPane views = new JTabbedPane();
     private final JLabel inputs = new JLabel();
     private final JLabel status = new JLabel();
+    private final JLabel settingsWarning = new JLabel();
+    private final JProgressBar progress = new JProgressBar();
+    private final JButton showLog = new JButton("Show log");
+    private final Optional<WindowPreferences> preferences;
+    private final java.util.EnumMap<DiagnosticLanguage, JRadioButtonMenuItem> languageItems =
+            new java.util.EnumMap<>(DiagnosticLanguage.class);
+    private GuiSettings.Theme theme;
+    private Optional<Path> lastDirectory;
+    private boolean initialized;
+    private JDialog logWindow;
+    private JTextArea logText;
     private final SessionController session;
     private final CheckInputsPanel check;
     private final DependenciesPanel dependencies;
@@ -72,6 +96,7 @@ final class MainFrame extends JFrame {
     private final Action cancel;
     private final Action offline;
     private final Action rejectWarnings;
+    private final Action settings;
 
     MainFrame(Path directory, CompileService backend) {
         this(directory, backend::compile, backend::inspect);
@@ -84,12 +109,23 @@ final class MainFrame extends JFrame {
 
     MainFrame(Path directory, SessionController.CompileWork backend, SessionController.InputDiscovery discovery,
               Consumer<String> clipboard) {
+        this(directory, backend, discovery, clipboard, GuiSettings.defaults(), Optional.empty(), "");
+    }
+
+    MainFrame(Path directory, SessionController.CompileWork backend, SessionController.InputDiscovery discovery,
+              Consumer<String> clipboard, GuiSettings saved, Optional<GuiSettingsStore> store, String warning) {
         super("INTERLIS Compiler");
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("The compiler window must be created on the event dispatch thread");
         }
+        theme = saved.theme();
+        lastDirectory = saved.lastDirectory();
+        settingsWarning.setName("settings-warning");
+        settingsWarning.putClientProperty("html.disable", true);
+        showSettingsWarning(warning);
+        preferences = store.map(value -> new WindowPreferences(value, this::showSettingsWarning));
         session = new SessionController(Executors.newSingleThreadExecutor(Thread.ofPlatform().name("interlis-session").factory()),
-                backend, discovery, RunContextFactory.defaults(), directory, SessionOptions.defaults(), this::render);
+                backend, discovery, RunContextFactory.defaults(), directory, saved.session(), this::render);
         setName("compiler-window");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setMinimumSize(new Dimension(1000, 700));
@@ -100,6 +136,8 @@ final class MainFrame extends JFrame {
             public void windowClosed(WindowEvent event) {
                 repositories.close();
                 session.close();
+                persistPreferences();
+                preferences.ifPresent(WindowPreferences::close);
             }
         });
 
@@ -112,7 +150,7 @@ final class MainFrame extends JFrame {
             session.updateOptions(options.withWarnings(options.warnings() == WarningPolicy.REJECT_WARNINGS
                     ? WarningPolicy.ALLOW_WARNINGS : WarningPolicy.REJECT_WARNINGS));
         });
-        Action settings = unavailable("Settings…");
+        settings = action("Settings…", event -> editSettings());
         setJMenuBar(menuBar(settings));
 
         var toolbar = new JPanel(new FlowLayout(FlowLayout.LEADING, 8, 8));
@@ -121,7 +159,7 @@ final class MainFrame extends JFrame {
         toolbar.add(button(compile, "compile"));
         toolbar.add(button(cancel, "cancel"));
         toolbar.add(new JToggleButton(offline));
-        toolbar.add(new JButton(settings));
+        toolbar.add(button(settings, "compiler-settings"));
         inputs.setName("session-inputs");
         inputs.setBorder(BorderFactory.createEmptyBorder(0, 12, 8, 12));
         var header = new JPanel(new BorderLayout());
@@ -145,10 +183,22 @@ final class MainFrame extends JFrame {
         status.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
         var footer = new JPanel(new BorderLayout());
         footer.add(status, BorderLayout.CENTER);
-        footer.add(new JButton(unavailable("Show log")), BorderLayout.EAST);
+        showLog.setName("show-run-log");
+        showLog.addActionListener(event -> showRunLog());
+        progress.setName("compile-progress");
+        progress.setIndeterminate(true);
+        progress.setPreferredSize(new Dimension(100, 16));
+        var activity = new JPanel(new FlowLayout(FlowLayout.TRAILING, 8, 4));
+        activity.add(progress);
+        activity.add(showLog);
+        footer.add(activity, BorderLayout.EAST);
+        footer.add(settingsWarning, BorderLayout.NORTH);
         add(footer, BorderLayout.SOUTH);
         setTransferHandler(new FileDrop());
+        session.configureRepositories(saved.repositories());
         render(session.view());
+        WindowPreferences.restore(this, saved);
+        initialized = true;
     }
 
     private void render(SessionController.View view) {
@@ -157,6 +207,10 @@ final class MainFrame extends JFrame {
         compile.setEnabled(view.canCompile());
         cancel.setEnabled(view.job() == SessionController.Job.COMPILING);
         offline.setEnabled(idle);
+        settings.setEnabled(idle);
+        progress.setVisible(view.job() == SessionController.Job.COMPILING || view.job() == SessionController.Job.CANCELLING);
+        showLog.setEnabled(view.last().isPresent());
+        languageItems.get(view.options().diagnosticLanguage()).setSelected(true);
         offline.putValue(Action.SELECTED_KEY, view.options().repositories().fetchPolicy().offline());
         rejectWarnings.setEnabled(idle);
         rejectWarnings.putValue(Action.SELECTED_KEY, view.options().warnings() == WarningPolicy.REJECT_WARNINGS);
@@ -176,9 +230,16 @@ final class MainFrame extends JFrame {
             sourceInspector.setVisible(false);
             inspectorPreview.clear("Select a source location.");
         }
+        if (result != displayedResult && logWindow != null && logWindow.isVisible()) {
+            logText.setText(RunLog.text(result));
+            logText.setCaretPosition(0);
+        }
         displayedResult = result;
         dependencies.render(result);
         repositories.render(view);
+        if (initialized && idle) {
+            persistPreferences();
+        }
     }
 
     private static String runSummary(CompileResult result) {
@@ -217,9 +278,11 @@ final class MainFrame extends JFrame {
 
     private void chooseFiles() {
         var chooser = new JFileChooser();
+        lastDirectory.ifPresent(path -> chooser.setCurrentDirectory(path.toFile()));
         chooser.setFileFilter(new FileNameExtensionFilter("INTERLIS models (*.ili)", "ili"));
         chooser.setMultiSelectionEnabled(true);
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            lastDirectory = Optional.ofNullable(chooser.getCurrentDirectory()).map(File::toPath);
             addFiles(Arrays.stream(chooser.getSelectedFiles()).map(File::toPath).toList());
         }
     }
@@ -247,15 +310,19 @@ final class MainFrame extends JFrame {
     private JMenuBar menuBar(Action settings) {
         var menus = new JMenuBar();
         var file = new JMenu("File");
-        file.add(add);
-        file.add(compile);
-        file.add(cancel);
+        int shortcut = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        file.add(add).setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, shortcut));
+        file.add(compile).setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, shortcut));
+        file.add(cancel).setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0));
         file.addSeparator();
         file.add(action("Close", event -> dispose()));
         menus.add(file);
         var view = new JMenu("View");
-        for (var title : new String[]{"Check", "Dependencies", "Repositories"}) {
-            view.add(action(title, event -> views.setSelectedIndex(views.indexOfTab(title))));
+        String[] titles = {"Check", "Dependencies", "Repositories"};
+        for (int index = 0; index < titles.length; index++) {
+            String title = titles[index];
+            view.add(action(title, event -> views.setSelectedIndex(views.indexOfTab(title))))
+                    .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1 + index, shortcut));
         }
         menus.add(view);
         var preferences = new JMenu("Settings");
@@ -267,6 +334,7 @@ final class MainFrame extends JFrame {
                     event -> session.setDiagnosticLanguage(value)));
             item.setName("diagnostic-language-" + value.name());
             item.setSelected(session.view().options().diagnosticLanguage() == value);
+            languageItems.put(value, item);
             languages.add(item);
             language.add(item);
         }
@@ -278,6 +346,61 @@ final class MainFrame extends JFrame {
                 "INTERLIS Compiler", "About", JOptionPane.INFORMATION_MESSAGE)));
         menus.add(help);
         return menus;
+    }
+
+    private void editSettings() {
+        Path home = Path.of(System.getProperty("user.home"));
+        Path suggestedCache = RepositoryCacheConfiguration.defaults(home).directory().orElseThrow();
+        SettingsDialog.edit(this, theme, session.view().options(), suggestedCache)
+                .ifPresent(choice -> applySettings(choice.theme(), choice.options()));
+    }
+
+    void applySettings(GuiSettings.Theme chosenTheme, SessionOptions chosenOptions) {
+        if (session.view().job() != SessionController.Job.IDLE) {
+            return;
+        }
+        if (theme != chosenTheme) {
+            if (!setupTheme(chosenTheme)) {
+                showSettingsWarning("The selected theme could not be installed.");
+                return;
+            }
+            theme = chosenTheme;
+            FlatLaf.updateUI();
+        }
+        session.updateOptions(chosenOptions);
+        persistPreferences();
+    }
+
+    static boolean setupTheme(GuiSettings.Theme theme) {
+        return theme == GuiSettings.Theme.DARK ? FlatDarkLaf.setup() : FlatLightLaf.setup();
+    }
+
+    private void persistPreferences() {
+        var view = session.view();
+        preferences.ifPresent(saver -> saver.save(new GuiSettings(theme, view.options(), view.repositories(),
+                WindowPreferences.bounds(this), WindowPreferences.dividers(this), lastDirectory)));
+    }
+
+    private void showSettingsWarning(String warning) {
+        settingsWarning.setText(warning);
+        settingsWarning.setVisible(!warning.isEmpty());
+    }
+
+    private void showRunLog() {
+        if (logWindow == null) {
+            logWindow = new JDialog(this, "Compiler run log");
+            logWindow.setName("compiler-run-log");
+            logWindow.setDefaultCloseOperation(JDialog.HIDE_ON_CLOSE);
+            logText = new JTextArea();
+            logText.setName("compiler-run-log-text");
+            logText.setEditable(false);
+            logWindow.add(new JScrollPane(logText));
+            logWindow.setSize(720, 440);
+            logWindow.setLocationRelativeTo(this);
+        }
+        logText.setText(RunLog.text(displayedResult));
+        logText.setCaretPosition(0);
+        logWindow.setVisible(true);
     }
 
     private static JButton button(Action action, String name) {
@@ -293,12 +416,6 @@ final class MainFrame extends JFrame {
                 perform.accept(event);
             }
         };
-    }
-
-    private static Action unavailable(String name) {
-        var action = action(name, event -> { throw new IllegalStateException("Disabled action: " + name); });
-        action.setEnabled(false);
-        return action;
     }
 
     private final class FileDrop extends TransferHandler {

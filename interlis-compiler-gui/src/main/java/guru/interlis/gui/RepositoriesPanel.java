@@ -143,6 +143,18 @@ final class RepositoriesPanel extends JPanel implements AutoCloseable {
             @Override public void changedUpdate(DocumentEvent event) { applyFilter(); }
         });
         language.setName("repository-language");
+        language.setRenderer(new javax.swing.DefaultListCellRenderer() {
+            {
+                putClientProperty("html.disable", true);
+            }
+
+            @Override
+            public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                                   boolean selected, boolean focus) {
+                return super.getListCellRendererComponent(list, value == null ? "" : plain(value.toString()),
+                        index, selected, focus);
+            }
+        });
         language.addItem(ALL_LANGUAGES);
         language.addActionListener(event -> applyFilter());
         browseOnly.setName("repository-include-browse-only");
@@ -197,9 +209,11 @@ final class RepositoriesPanel extends JPanel implements AutoCloseable {
         right.add(commands, BorderLayout.SOUTH);
 
         var main = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, catalog, right);
+        main.setName("repository-inspector");
         main.setResizeWeight(.60);
         main.setDividerLocation(550);
         var layout = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, list, main);
+        layout.setName("repository-main");
         layout.setDividerLocation(235);
         layout.setResizeWeight(.18);
         add(layout, BorderLayout.CENTER);

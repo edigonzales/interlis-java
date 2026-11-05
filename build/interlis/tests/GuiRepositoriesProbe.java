@@ -68,6 +68,11 @@ public final class GuiRepositoriesProbe {
             SwingUtilities.invokeAndWait(() -> {
                 var table = component(window, "repository-catalog", JTable.class);
                 require(table.getRowCount() == 4, "all indexed rows");
+                var language = component(window, "repository-language", javax.swing.JComboBox.class);
+                var rendered = (javax.swing.JComponent) language.getRenderer().getListCellRendererComponent(
+                        new JList<>(), "<html><img src='http://127.0.0.1:1/image'>", 0, false, false);
+                require(rendered.getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey) == null,
+                        "repository language text must not become HTML");
                 table.setRowSelectionInterval(find(table, "Browse", "1", "selected"), find(table, "Browse", "1", "selected"));
                 require(!component(window, "repository-add-exact-root", JButton.class).isEnabled(), "browse-only cannot add");
                 component(window, "repository-include-browse-only", JCheckBox.class).doClick();
@@ -126,7 +131,7 @@ public final class GuiRepositoriesProbe {
             SwingUtilities.invokeAndWait(() -> window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING)));
         }
         System.out.println("GUI_REPOSITORIES_PASS twoIndexes=true browseOnlyBlocked=true metadataCompared=true "
-                + "explicitPreview=true exactLowerPriorityRoot=true repositoryOnlyCompile=true priorityAndEnablement=true");
+                + "explicitPreview=true exactLowerPriorityRoot=true repositoryOnlyCompile=true priorityAndEnablement=true literalSchema=true");
     }
 
     private static int find(JTable table, String name, String version, String repository) {

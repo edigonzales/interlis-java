@@ -85,13 +85,16 @@ final class CheckInputsPanel extends JPanel {
         rootPanel.add(rootHeader, BorderLayout.NORTH);
         var repoPanel = section("Repository roots", new JScrollPane(repositoryRootList), actions(removeRepositoryRoot));
         var rootsPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT, rootPanel, repoPanel);
+        rootsPanel.setName("check-roots");
         rootsPanel.setResizeWeight(.60);
         var selectors = new JSplitPane(JSplitPane.VERTICAL_SPLIT, filePanel, rootsPanel);
+        selectors.setName("check-files");
         selectors.setResizeWeight(.40);
         var summary = new JPanel(new BorderLayout());
         summary.add(checkSummary, BorderLayout.NORTH);
         summary.add(problems, BorderLayout.CENTER);
         var split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, selectors, summary);
+        split.setName("check-main");
         split.setResizeWeight(.40);
         split.setDividerLocation(395);
         add(split, BorderLayout.CENTER);
@@ -183,8 +186,8 @@ final class CheckInputsPanel extends JPanel {
                 putClientProperty("html.disable", true);
                 @SuppressWarnings("unchecked")
                 T row = (T) value;
-                setText(label.apply(row));
-                setToolTipText("<html>" + escape(detail.apply(row)) + "</html>");
+                setText(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(label.apply(row)));
+                setToolTipText("<html>" + escape(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(detail.apply(row))) + "</html>");
                 return this;
             }
         };

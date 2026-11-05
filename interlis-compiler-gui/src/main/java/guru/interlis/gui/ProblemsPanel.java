@@ -167,8 +167,10 @@ final class ProblemsPanel extends JPanel {
         detailPanel.add(commands, BorderLayout.SOUTH);
 
         var inspector = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, detailPanel, preview);
+        inspector.setName("problems-inspector");
         inspector.setResizeWeight(.43);
         var content = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(table), inspector);
+        content.setName("problems-main");
         content.setResizeWeight(.45);
         add(controls, BorderLayout.NORTH);
         add(content, BorderLayout.CENTER);

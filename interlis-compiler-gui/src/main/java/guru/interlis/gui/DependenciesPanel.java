@@ -128,6 +128,7 @@ final class DependenciesPanel extends JPanel {
         buttons.add(showProblems);
         right.add(buttons, BorderLayout.SOUTH);
         var split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(tree), right);
+        split.setName("dependency-main");
         split.setResizeWeight(.38);
         split.setDividerLocation(340);
         add(split, BorderLayout.CENTER);

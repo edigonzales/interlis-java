@@ -93,7 +93,7 @@ Die GUI- und Workspace-Verträge, der CLI-Host-Smoke und beide unabhängigen
 Gegenproben sind bestanden. Das Urteil liegt unter
 `../interlis-java-compiler-gui-g0.TVRLc5/G3/c4f1439d2f2ee9e563dd3791aeac407075a5e261/round-01/`.
 
-## G4 – Repositories in Prüfung
+## G4 – Repositories bestanden
 
 GUI-29 bis GUI-38. Repositories verwaltet explizit konfigurierte lokale
 Verzeichnisse und HTTP(S)-Basen. Indexe und Quellenpreview werden asynchron
@@ -104,4 +104,18 @@ und SourceId. Die nächste Prüfung verwendet die sichtbare Prioritätsliste.
 
 `java build/InterlisJvmBuild.java gui-check --profile repositories` prüft
 Metadatenvergleich, Preview und exakte Rootübernahme im realen Fenster.
-G5 folgt nach gültigem G4-PASS.
+G4-PASS für `be632c74bbf55733f066103fc5885be2b4a8ed14`. Acht GUI-Tests,
+der Headful-Smoke und zwei unabhängige Repository-Gegenproben sind bestanden.
+Das Urteil liegt unter
+`../interlis-java-compiler-gui-g0.TVRLc5/G4/be632c74bbf55733f066103fc5885be2b4a8ed14/round-01/`.
+
+## G5 – Integration in Prüfung
+
+GUI-39 bis GUI-44. Gemeinsame Compiler- und Hostoptionen sind im
+Settingsdialog zugänglich. Die Einstellungen werden ausserhalb des EDT
+geladen und atomar gespeichert. Beschädigte Werte und Schreibfehler sind
+sichtbar. Der Laufzustand bietet Cancel, einen Hinweis auf veraltete
+Resultate und ein begrenztes Laufprotokoll. Der Headful-Smoke
+`java build/InterlisJvmBuild.java gui-check --profile lifecycle` prüft
+Tastaturbedienung, Dark Theme, Fenstergrösse und das tatsächliche
+Prozessende nach dem Schliessen während eines laufenden Auftrags.

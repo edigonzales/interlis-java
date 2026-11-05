@@ -71,7 +71,7 @@ final class SourcePreviewPanel extends JPanel {
                     text.marker = highlight.start();
                 } else {
                     text.getHighlighter().addHighlight(highlight.start(), highlight.end(),
-                            new DefaultHighlighter.DefaultHighlightPainter(new Color(0xe9bd62)));
+                            new DefaultHighlighter.DefaultHighlightPainter(null));
                 }
                 text.setCaretPosition(highlight.start());
                 var shape = text.modelToView2D(highlight.start());
@@ -106,7 +106,8 @@ final class SourcePreviewPanel extends JPanel {
                     var shape = modelToView2D(marker);
                     if (shape != null) {
                         var area = shape.getBounds();
-                        graphics.setColor(new Color(0xc45516));
+                        Color accent = javax.swing.UIManager.getColor("Component.focusColor");
+                        graphics.setColor(accent == null ? new Color(0xc45516) : accent);
                         graphics.fillRect(area.x, area.y, 2, area.height);
                     }
                 } catch (BadLocationException failure) {

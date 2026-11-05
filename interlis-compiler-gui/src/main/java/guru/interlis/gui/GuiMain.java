@@ -1,10 +1,13 @@
 package guru.interlis.gui;
 
-import com.formdev.flatlaf.FlatLightLaf;
 import guru.interlis.gui.application.CompileService;
+import guru.interlis.gui.infrastructure.GuiSettingsStore;
 
 import java.awt.GraphicsEnvironment;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.nio.file.Path;
+import java.util.Optional;
 import javax.swing.SwingUtilities;
 
 /** Entry point for the modular Swing compiler application. */
@@ -20,11 +23,18 @@ public final class GuiMain {
             throw new IllegalStateException("The INTERLIS Compiler GUI requires a graphical desktop");
         }
         var directory = Path.of("").toAbsolutePath();
+        var defaultSettings = Path.of(System.getProperty("user.home"), ".interlis", "gui");
+        var store = new GuiSettingsStore(Path.of(System.getProperty("interlis.gui.settingsDir", defaultSettings.toString())));
+        var settings = store.load();
+        var backend = new CompileService();
         SwingUtilities.invokeAndWait(() -> {
-            if (!FlatLightLaf.setup()) {
+            if (!MainFrame.setupTheme(settings.settings().theme())) {
                 throw new IllegalStateException("Could not initialize the FlatLaf look and feel");
             }
-            new MainFrame(directory, new CompileService()).setVisible(true);
+            var frame = new MainFrame(directory, backend::compile, backend::inspect,
+                    text -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null),
+                    settings.settings(), settings.writable() ? Optional.of(store) : Optional.empty(), settings.warning());
+            frame.setVisible(true);
         });
     }
 }

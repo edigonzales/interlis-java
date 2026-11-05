@@ -148,7 +148,7 @@ public final class GuiRuntime {
         for (String variant : List.of("module-path", "linked-image")) {
             Path executable = variant.equals("module-path") ? jdk : image;
             var args = new ArrayList<>(List.of(tool(executable, "java"), "-Djava.awt.headless=false",
-                    "-Xlog:library=info", "--patch-module", MODULE + "=" + classes));
+                    "-Dinterlis.gui.settingsDir=" + run.resolve("settings-" + variant), "-Xlog:library=info", "--patch-module", MODULE + "=" + classes));
             if (variant.equals("module-path")) {
                 args.addAll(List.of("--module-path", jars));
             }
@@ -184,6 +184,10 @@ public final class GuiRuntime {
             case "repositories" -> {
                 compile.add(probes.resolve("GuiRepositoriesProbe.java").toString());
                 yield "GuiRepositoriesProbe";
+            }
+            case "lifecycle" -> {
+                compile.add(probes.resolve("GuiLifecycleProbe.java").toString());
+                yield "GuiLifecycleProbe";
             }
             default -> throw new IllegalArgumentException("Unknown GUI interaction profile: " + profile);
         };
