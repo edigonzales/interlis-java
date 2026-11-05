@@ -18,6 +18,7 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 final class CheckInputsPanel extends JPanel {
@@ -32,12 +33,14 @@ final class CheckInputsPanel extends JPanel {
     private final JButton useAll = new JButton("Use all inputs");
     private final JLabel message = new JLabel();
     private final SessionController session;
+    private final ProblemsPanel problems;
     private boolean editable;
     private List<RootChoice> activeRoots = List.of();
 
-    CheckInputsPanel(SessionController session, Action add) {
+    CheckInputsPanel(SessionController session, Action add, Consumer<String> clipboard) {
         super(new BorderLayout());
         this.session = session;
+        problems = new ProblemsPanel(clipboard);
         fileList.setName("local-files");
         fileList.setCellRenderer(renderer((LocalInput file) -> file.path().getFileName() + file.problem()
                 .map(problem -> " · " + problem.message())
@@ -73,6 +76,7 @@ final class CheckInputsPanel extends JPanel {
         selectors.setResizeWeight(.50);
         var summary = new JPanel(new BorderLayout());
         summary.add(checkSummary, BorderLayout.NORTH);
+        summary.add(problems, BorderLayout.CENTER);
         var split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, selectors, summary);
         split.setResizeWeight(.40);
         split.setDividerLocation(395);
@@ -109,6 +113,7 @@ final class CheckInputsPanel extends JPanel {
         rootMode.setText(view.roots().isEmpty() ? "All input models" : "Explicit roots: " + view.roots().size());
         message.setText(view.notice());
         checkSummary.setText(runSummary);
+        problems.render(view.last().orElse(null), view.options().diagnosticLanguage());
         updateButtons();
     }
 

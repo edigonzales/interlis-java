@@ -34,6 +34,10 @@ public record SessionOptions(RepositoryConfig repositories, RepositoryCacheConfi
                 && proxy.equals(other.proxy) && warnings == other.warnings;
     }
 
+    public SessionOptions withDiagnosticLanguage(DiagnosticLanguage language) {
+        return new SessionOptions(repositories, cache, proxy, warnings, language);
+    }
+
     public SessionOptions withWarnings(WarningPolicy policy) {
         return new SessionOptions(repositories, cache, proxy, policy, diagnosticLanguage);
     }

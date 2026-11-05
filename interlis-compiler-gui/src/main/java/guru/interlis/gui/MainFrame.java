@@ -2,11 +2,11 @@ package guru.interlis.gui;
 
 import guru.interlis.compiler.CompilationOutcome;
 import guru.interlis.compiler.WarningPolicy;
+import guru.interlis.diagnostics.DiagnosticLanguage;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.RunContextFactory;
 import guru.interlis.gui.application.CompileResult;
 import guru.interlis.gui.application.CompileService;
-import guru.interlis.gui.application.RootChoice;
 import guru.interlis.gui.application.SessionOptions;
 import guru.interlis.gui.controller.SessionController;
 import guru.interlis.repository.FetchPolicy;
@@ -15,6 +15,7 @@ import guru.interlis.repository.RepositoryConfig;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
@@ -25,6 +26,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
@@ -32,7 +34,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
@@ -67,6 +71,12 @@ final class MainFrame extends JFrame {
     }
 
     MainFrame(Path directory, SessionController.CompileWork backend, SessionController.InputDiscovery discovery) {
+        this(directory, backend, discovery, text -> Toolkit.getDefaultToolkit().getSystemClipboard()
+                .setContents(new StringSelection(text), null));
+    }
+
+    MainFrame(Path directory, SessionController.CompileWork backend, SessionController.InputDiscovery discovery,
+              Consumer<String> clipboard) {
         super("INTERLIS Compiler");
         if (!SwingUtilities.isEventDispatchThread()) {
             throw new IllegalStateException("The compiler window must be created on the event dispatch thread");
@@ -112,7 +122,7 @@ final class MainFrame extends JFrame {
         add(header, BorderLayout.NORTH);
 
         views.setName("work-areas");
-        check = new CheckInputsPanel(session, add);
+        check = new CheckInputsPanel(session, add, clipboard);
         views.addTab("Check", check);
         addView("Dependencies", "Dependencies will appear after a compiler run.");
         addView("Repositories", "No repositories are configured.");
@@ -221,6 +231,17 @@ final class MainFrame extends JFrame {
         menus.add(view);
         var preferences = new JMenu("Settings");
         preferences.add(new JCheckBoxMenuItem(rejectWarnings));
+        var language = new JMenu("Diagnostic language");
+        var languages = new ButtonGroup();
+        for (DiagnosticLanguage value : List.of(DiagnosticLanguage.EN, DiagnosticLanguage.DE)) {
+            var item = new JRadioButtonMenuItem(action(value == DiagnosticLanguage.EN ? "English" : "German",
+                    event -> session.setDiagnosticLanguage(value)));
+            item.setName("diagnostic-language-" + value.name());
+            item.setSelected(session.view().options().diagnosticLanguage() == value);
+            languages.add(item);
+            language.add(item);
+        }
+        preferences.add(language);
         preferences.add(settings);
         menus.add(preferences);
         var help = new JMenu("Help");

@@ -104,7 +104,7 @@ public final class GuiCompileProbe {
                 + "badHeaderRejected=true tabSwitch=true cooperativeCancel=true java.home=" + System.getProperty("java.home"));
     }
 
-    private static void drop(MainFrame window, Path file) {
+    static void drop(MainFrame window, Path file) {
         var payload = new Transferable() {
             @Override
             public DataFlavor[] getTransferDataFlavors() {
@@ -125,7 +125,7 @@ public final class GuiCompileProbe {
         require(window.getTransferHandler().importData(support), "file-list transfer");
     }
 
-    private static void await(MainFrame window, String name, String expected) throws Exception {
+    static void await(MainFrame window, String name, String expected) throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(8);
         var text = new AtomicReference<String>();
         do {
@@ -138,7 +138,7 @@ public final class GuiCompileProbe {
         throw new AssertionError("Expected " + expected + " in " + name + ", saw " + text.get());
     }
 
-    private static <T extends Component> T component(Container parent, String name, Class<T> type) {
+    static <T extends Component> T component(Container parent, String name, Class<T> type) {
         var found = find(parent, name, type);
         if (found == null) {
             throw new AssertionError("Missing " + name);
@@ -161,7 +161,7 @@ public final class GuiCompileProbe {
         return null;
     }
 
-    private static void require(boolean condition, String label) {
+    static void require(boolean condition, String label) {
         if (!condition) {
             throw new AssertionError(label);
         }

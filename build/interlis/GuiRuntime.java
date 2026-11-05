@@ -76,8 +76,8 @@ public final class GuiRuntime {
             return;
         }
 
-        if (request.profile().equals("gui-check") && request.options().get("--profile").equals("compile")) {
-            checkCompilation(root, run, jdk, jars);
+        if (request.profile().equals("gui-check") && !request.options().get("--profile").equals("shell")) {
+            checkInteraction(root, run, jdk, jars, request.options().get("--profile"));
             return;
         }
 
@@ -165,16 +165,28 @@ public final class GuiRuntime {
         }
     }
 
-    private static void checkCompilation(Path root, Path run, Path jdk, String jars) throws Exception {
-        Path probe = root.resolve("build/interlis/tests/GuiCompileProbe.java");
+    private static void checkInteraction(Path root, Path run, Path jdk, String jars, String profile) throws Exception {
+        Path probes = root.resolve("build/interlis/tests");
         Path classes = Files.createDirectory(run.resolve("probe-classes"));
-        process(run, "probe-compile", List.of(tool(jdk, "javac"), "--release", "25", "--module-path", jars,
-                "--patch-module", MODULE + "=" + probe.getParent(), "-d", classes.toString(), probe.toString()));
-        process(run, "interactive-compile", List.of(tool(jdk, "java"), "-Djava.awt.headless=false",
+        var compile = new ArrayList<>(List.of(tool(jdk, "javac"), "--release", "25", "--module-path", jars,
+                "--patch-module", MODULE + "=" + probes, "-d", classes.toString(),
+                probes.resolve("GuiCompileProbe.java").toString()));
+        String probe = switch (profile) {
+            case "compile" -> "GuiCompileProbe";
+            case "diagnostics" -> {
+                compile.add(probes.resolve("GuiDiagnosticsProbe.java").toString());
+                yield "GuiDiagnosticsProbe";
+            }
+            default -> throw new IllegalArgumentException("Unknown GUI interaction profile: " + profile);
+        };
+        process(run, "probe-compile", compile);
+        String role = "interactive-" + profile;
+        process(run, role, List.of(tool(jdk, "java"), "-Djava.awt.headless=false",
                 "--module-path", jars, "--patch-module", MODULE + "=" + classes,
-                "--module", MODULE + "/guru.interlis.gui.GuiCompileProbe"));
-        if (!Files.readString(run.resolve("interactive-compile.stdout")).contains("GUI_COMPILE_PASS")) {
-            throw new IllegalStateException("The interactive compile probe produced no assertions");
+                "--module", MODULE + "/guru.interlis.gui." + probe));
+        if (!Files.readString(run.resolve(role + ".stdout"))
+                .contains("GUI_" + profile.toUpperCase(java.util.Locale.ROOT) + "_PASS")) {
+            throw new IllegalStateException("The interactive probe produced no assertions: " + profile);
         }
     }
 

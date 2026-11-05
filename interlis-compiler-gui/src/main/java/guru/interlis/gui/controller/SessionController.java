@@ -1,5 +1,6 @@
 package guru.interlis.gui.controller;
 
+import guru.interlis.diagnostics.DiagnosticLanguage;
 import guru.interlis.execution.CancellationReason;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.RunContextFactory;
@@ -204,6 +205,14 @@ public final class SessionController implements AutoCloseable {
             } else {
                 publish();
             }
+        }
+    }
+
+    public void setDiagnosticLanguage(DiagnosticLanguage language) {
+        requireEdt();
+        if (!closed && options.diagnosticLanguage() != language) {
+            options = options.withDiagnosticLanguage(language);
+            publish();
         }
     }
 

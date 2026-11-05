@@ -44,7 +44,7 @@ Der reguläre Prozessabschluss und das unveränderte Urteil liegen lokal unter
 Die drei früheren Runden bleiben als zwei Authfehler und ein Abbruch
 wegen fehlerhafter Leserechte dokumentiert.
 
-## G1 – Compilation in Prüfung
+## G1 – Compilation bestanden
 
 GUI-07 bis GUI-13. Check unterstützt ausdrücklich hinzugefügte lokale Dateien,
 Dateilisten-Drop, Entfernen und explizite Modell-Roots auch in Mehrmodell-Dateien.
@@ -55,4 +55,22 @@ Das EDT-Modell trennt Cancel, tatsächliche Beendigung und alte Resultate.
 
 `java build/InterlisJvmBuild.java gui-check --profile compile` prüft die
 Bedienung im real geöffneten Fenster mit Dateilisten-Transfer und kontrolliertem
-Hintergrundauftrag. G2 folgt nach gültigem G1-PASS.
+Hintergrundauftrag. G1-PASS für `364406a4289db4e257a6fbf4850e002c5825b5d6`.
+Sieben headless GUI-Tests, ein CLI-Hosttest und der Headful-Compile-Smoke
+bestanden auf macOS ARM64. Die unabhängige Mehrmodell-Gegenprobe und das
+gültige Urteil liegen lokal unter
+`../interlis-java-compiler-gui-g0.TVRLc5/G1/364406a4289db4e257a6fbf4850e002c5825b5d6/round-01/`.
+
+## G2 – Diagnostics in Prüfung
+
+GUI-14 bis GUI-20. Die Problemtabelle zeigt strukturierte Diagnosen des
+letzten Laufs. Gruppierung und Filter belassen Gesamtzahlen und Ergebnis.
+Ursachen, Folgediagnosen und verwandte Quellstellen verwenden ihre IDs
+und exakten Bereiche. Die Vorschau liest den erfassten Snapshot und
+bildet originale UTF-16-Offsets auf die sichtbaren Zeilenenden ab.
+DE/EN und Copy message/details verwenden die gemeinsame Formatierung.
+
+`java build/InterlisJvmBuild.java gui-check --profile diagnostics` startet
+einen Headful-Lauf mit Fehlern in zwei Quellen, sortierter Auswahl,
+verwandter Fundstelle, Kopieren und einem anschliessend erfolgreichen Lauf.
+G3 folgt nach gültigem G2-PASS.
