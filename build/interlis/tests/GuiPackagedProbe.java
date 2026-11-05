@@ -12,6 +12,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.TreePath;
+import javax.swing.text.BadLocationException;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Window;
@@ -66,6 +67,7 @@ public final class GuiPackagedProbe {
                 table.setRowSelectionInterval(0, 0);
                 var source = component(frame, "source-preview", JTextArea.class);
                 require(!source.isEditable() && source.getText().contains("MissingModel"), "diagnostic source preview");
+                requireMarkVisible(source, "MissingModel");
                 capture(frame, workspace.resolve("check.png"));
                 var files = component(frame, "local-files", JList.class);
                 files.setSelectedIndex(0);
@@ -131,8 +133,22 @@ public final class GuiPackagedProbe {
             SwingUtilities.invokeAndWait(() -> frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING)));
         }
         require(!frame.isDisplayable(), "normal window close");
-        System.out.println("GUI_PACKAGED_PASS checkProblems=true exactRepositoryRoot=true capturedImport=true nativeWindowClosed=true"
+        System.out.println("GUI_PACKAGED_PASS checkProblems=true sourceMarkVisible=true exactRepositoryRoot=true capturedImport=true nativeWindowClosed=true"
                 + " java.home=" + javaHome + " user.dir=" + System.getProperty("user.dir"));
+    }
+
+    private static void requireMarkVisible(JTextArea source, String token) {
+        var mark = Arrays.stream(source.getHighlighter().getHighlights())
+                .filter(span -> span.getEndOffset() > span.getStartOffset()).findFirst().orElseThrow();
+        int offset = source.getText().indexOf(token);
+        require(mark.getStartOffset() == offset && mark.getEndOffset() == offset + token.length(), "exact source mark");
+        try {
+            var first = source.modelToView2D(mark.getStartOffset()).getBounds();
+            var last = source.modelToView2D(mark.getEndOffset()).getBounds();
+            require(source.getVisibleRect().contains(first.union(last)), "complete source mark in viewport");
+        } catch (BadLocationException failure) {
+            throw new AssertionError("Could not locate source mark", failure);
+        }
     }
 
     private static void press(MainFrame frame, String name) {

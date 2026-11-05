@@ -82,15 +82,33 @@ final class SourcePreviewPanel extends JPanel {
                     text.getHighlighter().addHighlight(highlight.start(), highlight.end(), SOURCE_MARK);
                 }
                 text.setCaretPosition(highlight.start());
-                var shape = text.modelToView2D(highlight.start());
-                if (shape != null) {
-                    text.scrollRectToVisible(shape.getBounds());
-                }
+                scrollToMark(highlight.start(), highlight.end());
             } catch (BadLocationException failure) {
                 throw new IllegalStateException("Invalid preview coordinates", failure);
             }
         });
         text.repaint();
+    }
+
+    private void scrollToMark(int start, int end) throws BadLocationException {
+        var first = text.modelToView2D(start);
+        if (first == null) {
+            return;
+        }
+        var target = first.getBounds();
+        int viewportWidth = scroll.getViewport().getExtentSize().width;
+        if (viewportWidth > 0) {
+            int context = 4 * text.getFontMetrics(text.getFont()).charWidth('m');
+            int left = Math.max(0, target.x - context);
+            var last = text.modelToView2D(end);
+            int right = target.x + context;
+            if (last != null && last.getY() == first.getY()) {
+                right = Math.max(right, last.getBounds().x + context);
+            }
+            target.x = left;
+            target.width = Math.min(viewportWidth, right - left);
+        }
+        text.scrollRectToVisible(target);
     }
 
     void clear(String reason) {
