@@ -46,7 +46,10 @@ def rights(candidate, evidence, directory, probes):
         return dict(action=action, resource=resource, effect=effect)
 
     inputs = directory / "inputs"
-    permissions = [rule("*", "*", "deny")]
+    # Internal reads are location-relative. The external-directory rules
+    # remain the boundary for any location outside the isolated candidate.
+    permissions = [rule("*", "*", "deny"), rule("read", "*"), rule("glob", "*"), rule("grep", "*"),
+                   rule("read", "*.env*", "deny"), rule("read", ".git", "deny")]
     for base in (candidate, evidence, inputs):
         for resource in (str(base), str(base / "*")):
             for action in ("read", "glob", "grep", "external_directory"):
@@ -74,6 +77,15 @@ def start_review(args, root, directory):
     previous = git(root, "rev-parse", args.phase_base + "^{commit}")
     git(root, "merge-base", "--is-ancestor", base, previous)
     git(root, "merge-base", "--is-ancestor", previous, commit)
+    if args.phase == "G0":
+        require(previous == base and not args.previous_pass, "G0 phase base must be the assignment base")
+    else:
+        require(args.previous_pass, "An accepted previous phase is required")
+        prior = read(args.previous_pass)
+        require(prior == {"passed": True, "phase": "G" + str(int(args.phase[1:]) - 1),
+                          "baseSha": base, "candidateSha": previous,
+                          "candidateTree": git(root, "rev-parse", previous + "^{tree}")},
+                "Previous phase PASS does not match the phase base")
     git(root, "worktree", "add", "--detach", str(candidate), commit)
     require(not git(candidate, "status", "--porcelain"), "Review candidate is dirty")
 
@@ -115,6 +127,8 @@ def start_review(args, root, directory):
     config = {"shell": str(shell), "providers": {"deepseek": {"settings": {"baseURL": ENDPOINT}}},
               "permissions": rights(candidate, evidence, directory, probe_commands)}
     config_file = xdg / "config/opencode/opencode.json"
+    config["agents"] = {"phase-review": {"description": "Independent phase review",
+                                         "mode": "primary", "permissions": config["permissions"]}}
     write(config_file, config)
     env = {key: os.environ[key] for key in ("HOME", "USER", "LOGNAME", "DEEPSEEK_API_KEY") if key in os.environ}
     env.update(PATH="/usr/bin:/bin:/usr/sbin:/sbin", SHELL=str(shell), TMPDIR=str(xdg / "tmp"),
@@ -208,7 +222,8 @@ def run_session(args, directory, candidate, inputs, request, manifest, opener, a
     policies = [source for source in sources if source.get("info", {}).get("permissions")]
     require(len(policies) == 1 and policies[0]["path"] == str(config_path)
             and policies[0]["info"]["permissions"] == declared["permissions"]
-            and policies[0]["info"]["shell"] == declared["shell"], "Unexpected effective review permissions")
+            and policies[0]["info"]["shell"] == declared["shell"]
+            and policies[0]["info"]["agents"] == declared["agents"], "Unexpected effective review permissions")
     write(directory / "permissions-binding.json", {"configSource": str(config_path), "sha256": digest(config_path)})
     model, = [m for m in models if m["id"] == "deepseek-flash" and m["providerID"] == "deepseek"]
     require(model["enabled"] and model["status"] == "active" and model["modelID"] == "deepseek-flash"
@@ -216,9 +231,12 @@ def run_session(args, directory, candidate, inputs, request, manifest, opener, a
             and model["package"] == "@opencode/ai/providers/deepseek", "Wrong effective DeepSeek transport")
     write(directory / "model.json", dict(id=model["id"], providerID=model["providerID"], modelID=model["modelID"],
                                         package=model["package"], baseURL=model["settings"]["baseURL"]))
-    invocation = [*guard, str(binary), "run", "--server", address, "--auto", "--agent", "build",
+    invocation = [*guard, str(binary), "run", "--server", address, "--auto", "--agent", "phase-review",
                   "--model", "deepseek/deepseek-flash", "--format", "json", "--file", str(inputs / "request.json"),
-                  "--file", str(inputs / "REVIEW_REQUEST.md"), "Run the independent phase review specified in the two attachments."]
+                  "--file", str(inputs / "REVIEW_REQUEST.md"),
+                  f"Independently review {request['phaseId']}. Read {inputs / 'request.json'} and "
+                  f"{inputs / 'REVIEW_REQUEST.md'} first. Allowed shell commands are exactly: "
+                  + ", ".join(request["probeCommands"]) + ". Write review.md and verdict.json as instructed."]
     start = now()
     write(directory / "launch.json", dict(argv=invocation, cwd=str(candidate), startedAt=start, openCodeVersion=version,
                                          model=request["model"], endpoint=ENDPOINT))
@@ -280,6 +298,7 @@ def main():
     parser.add_argument("--phase-base", required=True)
     parser.add_argument("--ledger", type=Path, required=True)
     parser.add_argument("--round-directory", type=Path, required=True)
+    parser.add_argument("--previous-pass", type=Path)
     parser.add_argument("--previous-round", action="append", default=[])
     parser.add_argument("--timeout", type=int, default=1800)
     args = parser.parse_args()
@@ -292,7 +311,9 @@ def main():
     except Exception as error:
         write(directory / "gate-result.json", {"passed": False, "detail": str(error)})
         raise
-    write(directory / "gate-result.json", {"passed": True, "phase": args.phase})
+    request = read(directory / "inputs/request.json")
+    write(directory / "gate-result.json", {"passed": True, "phase": args.phase,
+          "baseSha": request["baseSha"], "candidateSha": request["candidateSha"], "candidateTree": request["candidateTree"]})
     print("Valid independent PASS in", directory)
 
 
