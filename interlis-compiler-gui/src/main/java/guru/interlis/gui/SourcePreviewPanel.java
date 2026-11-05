@@ -8,6 +8,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import java.awt.BorderLayout;
@@ -16,6 +17,14 @@ import java.awt.Font;
 import java.awt.Graphics;
 
 final class SourcePreviewPanel extends JPanel {
+    private static final DefaultHighlighter.DefaultHighlightPainter SOURCE_MARK =
+            new DefaultHighlighter.DefaultHighlightPainter(new Color(0xe9bd62)) {
+                @Override
+                public Color getColor() {
+                    Color selection = UIManager.getColor("TextArea.selectionBackground");
+                    return selection == null ? super.getColor() : selection;
+                }
+            };
     private final PreviewText text = new PreviewText();
     private final JTextArea gutter = new JTextArea();
     private final JLabel location = new JLabel();
@@ -70,8 +79,7 @@ final class SourcePreviewPanel extends JPanel {
                 if (highlight.start() == highlight.end()) {
                     text.marker = highlight.start();
                 } else {
-                    text.getHighlighter().addHighlight(highlight.start(), highlight.end(),
-                            new DefaultHighlighter.DefaultHighlightPainter(null));
+                    text.getHighlighter().addHighlight(highlight.start(), highlight.end(), SOURCE_MARK);
                 }
                 text.setCaretPosition(highlight.start());
                 var shape = text.modelToView2D(highlight.start());
@@ -106,7 +114,7 @@ final class SourcePreviewPanel extends JPanel {
                     var shape = modelToView2D(marker);
                     if (shape != null) {
                         var area = shape.getBounds();
-                        Color accent = javax.swing.UIManager.getColor("Component.focusColor");
+                        Color accent = UIManager.getColor("Component.focusColor");
                         graphics.setColor(accent == null ? new Color(0xc45516) : accent);
                         graphics.fillRect(area.x, area.y, 2, area.height);
                     }

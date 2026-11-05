@@ -1,6 +1,8 @@
 package guru.interlis.gui;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
 import guru.interlis.gui.application.CompileResult;
 import guru.interlis.gui.application.CompileService;
 
@@ -13,6 +15,8 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
@@ -88,10 +92,18 @@ public final class GuiDiagnosticsProbe {
                 int start = original.substring(0, range.startOffset()).replace("\r\n", "\n").length();
                 int end = original.substring(0, range.endOffset()).replace("\r\n", "\n").length();
                 require(span.getStartOffset() == start && span.getEndOffset() == end, "primary range follows sorted row");
+                requirePaintedRange(preview, start);
                 var related = component(window, "related-locations", JComboBox.class);
                 require(related.getItemCount() == 1, "related location count");
                 component(window, "open-related-location", JButton.class).doClick();
                 require(highlight(preview).getStartOffset() == preview.getText().indexOf("Office"), "related exact range");
+                int relatedStart = highlight(preview).getStartOffset();
+                requirePaintedRange(preview, relatedStart);
+                require(FlatDarkLaf.setup(), "dark theme");
+                FlatLaf.updateUI();
+                requirePaintedRange(preview, relatedStart);
+                require(FlatLightLaf.setup(), "restore light theme");
+                FlatLaf.updateUI();
                 component(window, "copy-diagnostic-message", JButton.class).doClick();
                 require(copied.get().contains("local type name 'Office'"), "English copied message");
                 var settings = window.getJMenuBar().getMenu(2);
@@ -125,7 +137,7 @@ public final class GuiDiagnosticsProbe {
             SwingUtilities.invokeAndWait(() -> window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING)));
         }
         System.out.println("GUI_DIAGNOSTICS_PASS sortedTwoSources=true filterCounts=true exactRelatedRange=true "
-                + "localizedCopy=true readOnly=true nextRunCleared=true");
+                + "localizedCopy=true readOnly=true paintedRangeLightDark=true nextRunCleared=true");
     }
 
     private static int findCode(JTable table, String code) {
@@ -135,6 +147,31 @@ public final class GuiDiagnosticsProbe {
             }
         }
         throw new AssertionError("Missing real compiler diagnostic " + code);
+    }
+
+    private static void requirePaintedRange(JTextArea preview, int offset) {
+        var painter = (DefaultHighlighter.DefaultHighlightPainter) highlight(preview).getPainter();
+        var mark = painter.getColor();
+        require(mark != null && !mark.equals(preview.getBackground()), "visible range colour");
+        var image = new BufferedImage(preview.getWidth(), preview.getHeight(), BufferedImage.TYPE_INT_RGB);
+        var graphics = image.createGraphics();
+        try {
+            preview.paint(graphics);
+            var start = preview.modelToView2D(offset).getBounds();
+            var next = preview.modelToView2D(offset + 1).getBounds();
+            for (int x = start.x; x < next.x; x++) {
+                for (int y = start.y; y < start.y + start.height; y++) {
+                    if (image.getRGB(x, y) == mark.getRGB()) {
+                        return;
+                    }
+                }
+            }
+            throw new AssertionError("Range colour was not painted at offset " + offset);
+        } catch (BadLocationException failure) {
+            throw new AssertionError("Cannot locate range at offset " + offset, failure);
+        } finally {
+            graphics.dispose();
+        }
     }
 
     private static javax.swing.text.Highlighter.Highlight highlight(JTextArea preview) {
