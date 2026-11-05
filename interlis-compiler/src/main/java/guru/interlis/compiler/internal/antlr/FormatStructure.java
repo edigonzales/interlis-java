@@ -2,7 +2,6 @@ package guru.interlis.compiler.internal.antlr;
 
 import guru.interlis.execution.CancellationToken;
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -16,15 +15,23 @@ import static guru.interlis.compiler.internal.antlr.InterlisParser.*;
 public final class FormatStructure {
     public record Indent(int first, int endExclusive) { }
     public record Boundary(int ordinal, int lines, boolean exact) { }
-    public record Span(int first, int last) { }
+    public record Break(int ordinal, int extraIndent) { }
+    public record Group(int first, int last, List<Break> breaks) {
+        public Group { breaks = List.copyOf(breaks); }
+    }
+
 
     private final List<Indent> indents = new ArrayList<>();
     private final List<Boundary> boundaries = new ArrayList<>();
     private final List<Integer> tight = new ArrayList<>();
+    private final List<Group> expressionGroups = new ArrayList<>();
+    private final List<Group> constraints = new ArrayList<>();
 
     public List<Indent> indents() { return List.copyOf(indents); }
     public List<Boundary> boundaries() { return List.copyOf(boundaries); }
     public List<Integer> tight() { return List.copyOf(tight); }
+    public List<Group> expressionGroups() { return List.copyOf(expressionGroups); }
+    public List<Group> constraints() { return List.copyOf(constraints); }
 
     void index(Interlis2defContext root, AntlrOffsetMap offsets, CancellationToken cancellation) {
         var pending = new ArrayDeque<ParserRuleContext>();
@@ -38,12 +45,12 @@ public final class FormatStructure {
             switch (node.getRuleIndex()) {
                 case RULE_modeldef, RULE_topicDef, RULE_classDef, RULE_structureDef,
                         RULE_associationDef, RULE_viewDef, RULE_graphicDef, RULE_constraintsDef -> block(node);
-                case RULE_definitions -> { }
                 case RULE_attributeDef, RULE_roleDef, RULE_parameterDef, RULE_runTimeParameterDef,
-                        RULE_constraintDef, RULE_viewAttribute, RULE_drawingRule,
+                        RULE_viewAttribute, RULE_drawingRule,
                         RULE_basketOidRule, RULE_objectOidRule, RULE_contextMapping,
                         RULE_lineFormTypeDef -> boundary(first(node), 1, false);
                 case RULE_functionDef, RULE_metaDataBasketDef -> boundary(first(node), 2, false);
+                case RULE_constraintDef -> constraint((ConstraintDefContext) node);
                 case RULE_domainDef -> domain(node);
                 case RULE_unitDef, RULE_contextDef -> prefixedSection(node);
                 case RULE_enumeration -> enumeration((EnumerationContext) node, offsets);
@@ -86,7 +93,97 @@ public final class FormatStructure {
                 }
             }
             callOpening(node);
+            expressionGroup(node);
         }
+    }
+
+    private void constraint(ConstraintDefContext node) {
+        int first = first(node);
+        int last = last(node);
+        boundary(first, 1, false);
+        var breaks = switch (node.getChild(0)) {
+            case MandatoryConstraintContext mandatory -> List.of(new Break(first(mandatory.expression()), 1));
+            case PlausibilityConstraintContext plausibility -> List.of(new Break(first(plausibility.expression()), 1));
+            case ExistenceConstraintContext existence -> existenceBreaks(existence);
+            case UniquenessConstraintContext unique -> uniquenessBreaks(unique);
+            case SetConstraintContext set -> setBreaks(set);
+            default -> throw new IllegalStateException("Missing layout role for constraint");
+        };
+        constraints.add(new Group(first, last, breaks));
+    }
+
+    private static List<Break> existenceBreaks(ExistenceConstraintContext node) {
+        var breaks = new ArrayList<Break>();
+        breaks.add(new Break(first(node.attributePath(0)), 1));
+        breaks.add(new Break(ordinal(node.REQUIRED()), 1));
+        for (var alternative : node.OR()) breaks.add(new Break(ordinal(alternative), 1));
+        return breaks;
+    }
+
+    private static List<Break> uniquenessBreaks(UniquenessConstraintContext node) {
+        var breaks = new ArrayList<Break>();
+        boolean conditional = node.WHERE() != null;
+        if (conditional) breaks.add(new Break(ordinal(node.WHERE()), 1));
+        if (node.globalUniqueness() != null) {
+            for (var key : node.globalUniqueness().uniqueEl()) {
+                breaks.add(new Break(first(key), conditional ? 2 : 1));
+            }
+        } else {
+            var local = node.localUniqueness();
+            if (conditional) breaks.add(new Break(first(local), 2));
+            for (var field : local.fields) {
+                breaks.add(new Break(field.getTokenIndex(), conditional ? 3 : 1));
+            }
+        }
+        return breaks;
+    }
+
+    private static List<Break> setBreaks(SetConstraintContext node) {
+        if (node.WHERE() == null) return List.of(new Break(first(node.expression(0)), 1));
+        int whereEnd = last(node.expression(0));
+        int separator = node.COLON().stream().mapToInt(FormatStructure::ordinal)
+                .filter(colon -> colon > whereEnd).findFirst().orElseThrow();
+        return List.of(new Break(ordinal(node.WHERE()), 1), new Break(separator + 1, 1));
+    }
+
+    private void expressionGroup(ParserRuleContext node) {
+        if (node instanceof TermContext term) {
+            if (term.EQ() != null) addGroup(node, List.of(new Break(ordinal(term.EQ()), 0)));
+        } else if (node instanceof Term0Context || node instanceof Term1Context) {
+            var breaks = new ArrayList<Break>();
+            for (int i = 1; i < node.getChildCount(); i += 2) {
+                if (node.getChild(i) instanceof TerminalNode operator) {
+                    int type = operator.getSymbol().getType();
+                    breaks.add(new Break(ordinal(operator), type == OR || type == AND ? 0 : 1));
+                }
+            }
+            addGroup(node, breaks);
+        } else if (node instanceof Term2Context comparison && comparison.relation() != null) {
+            addGroup(node, List.of(new Break(first(comparison.relation()), 1)));
+        } else if (node instanceof PredicateContext predicate && predicate.expression() != null) {
+            addGroup(node, List.of(new Break(ordinal(predicate.LPAR()) + 1, 1),
+                    new Break(ordinal(predicate.RPAR()), 0)));
+        } else if (node instanceof FunctionCallContext call) {
+            callGroup(node, call.LPAR(), call.RPAR(), call.argument());
+        } else if (node instanceof FactorContext factor && factor.INTERLIS() != null && factor.LPAR() != null) {
+            callGroup(node, factor.LPAR(), factor.RPAR(), factor.argument());
+        }
+    }
+
+    private void callGroup(ParserRuleContext node, TerminalNode open, TerminalNode close,
+                           List<ArgumentContext> arguments) {
+        if (arguments.isEmpty()) return;
+        var breaks = new ArrayList<Break>();
+        breaks.add(new Break(ordinal(open) + 1, 1));
+        for (int i = 1; i < arguments.size(); i++) {
+            breaks.add(new Break(first(arguments.get(i)), 1));
+        }
+        breaks.add(new Break(ordinal(close), 0));
+        addGroup(node, breaks);
+    }
+
+    private void addGroup(ParserRuleContext node, List<Break> breaks) {
+        if (!breaks.isEmpty()) expressionGroups.add(new Group(first(node), last(node), breaks));
     }
 
     private void block(ParserRuleContext node) {

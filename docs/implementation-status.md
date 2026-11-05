@@ -1762,3 +1762,9 @@ Die redundante LSP-Format-Code-Action ist entfernt. Acht Referenzmodelle
 wurden formatiert und auf Idempotenz geprüft. Die echten modularen
 Launcher liefern denselben Text wie der benannte API-Verbraucher.
 Das Constraint-Breitenlayout bleibt in diesem Zwischenstand F2 vorbehalten.
+
+F2-Zwischenstand F2a–F2b. Alle fünf Constraintfamilien verwenden dieselben
+Quellordinale und parserbasierten Gruppen. Die Goldens prüfen kurze und
+gebrochene Bedingungen, WHERE-/LOCAL-Trenner, SET-Kopfreihenfolgen und
+mehrzeilige Aufrufe. Der gezielte Compilerlauf umfasst 19 Tests ohne Skips.
+Waldplan und Naturgefahren sind am Korpuspin idempotent formatiert.

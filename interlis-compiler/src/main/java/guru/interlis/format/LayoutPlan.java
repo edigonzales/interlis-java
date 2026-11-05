@@ -93,6 +93,10 @@ final class LayoutPlan {
             if (trailing[i] || mixed[i - 1]) lines[i] = 0;
             if (atoms.get(i - 1).lineComment()) lines[i] = Math.max(1, lines[i]);
         }
+        if (!structure.constraints().isEmpty()) {
+            new ConstraintLayout(atoms, lines, levels, space, trailing, mixed, options, cancellation)
+                    .apply(structure);
+        }
     }
 
     FormatOutcome.Formatted print(CancellationToken cancellation) {

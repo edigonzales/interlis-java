@@ -23,3 +23,8 @@ und startet separat CLI, LSP und einen benannten Consumer gegen die erzeugten
 JARs. Der Korpuslauf verwendet die strikte Parserprobe und den Produktverifier.
 Vollständige Constraint-Goldens und unabhängiges Orakel für den ganzen Korpus
 sind Bestandteil der folgenden Phasen.
+
+| Phase | Belege | Beobachtung |
+| --- | --- | --- |
+| F2a | `f2a/compiler-gate.log`, `f2a/gate-junit.xml` | 16 Tests, keine Skips. Ausdrucksgolden mit geschachteltem NOT und Funktionsaufruf, beide Prozentvergleiche, Codepoint-Breitenschwelle. Der erste als flach vorgesehene Kurzfall war über 40 Spalten; der kurze Fall verwendet nun den unbenannten Kopf. |
+| F2b | `f2b/compiler.log`, `f2b/gate-junit.xml`, `f2b/corpus.log`, `f2b/second.log`, `f2b/diffs/` | 19 Tests, keine Skips. Alle fünf Familien, beide SET-Kopfformen und UNIQUE WHERE/LOCAL/BASKET. Waldplan und Naturgefahren strikt reparsbar und idempotent. |

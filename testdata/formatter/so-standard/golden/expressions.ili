@@ -8,7 +8,7 @@ MODEL Example AT "https://example.org" VERSION "1" =
       A : TEXT;
       B : TEXT;
 
-      MANDATORY CONSTRAINT Short : DEFINED(A);
+      MANDATORY CONSTRAINT DEFINED(A);
 
       MANDATORY CONSTRAINT Check :
         NOT (

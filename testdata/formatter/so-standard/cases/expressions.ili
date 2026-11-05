@@ -1,6 +1,6 @@
 INTERLIS 2.4; MODEL Example AT "https://example.org" VERSION "1" = TOPIC Data =
 CLASS Entry = A: TEXT; B: TEXT;
-MANDATORY CONSTRAINT Short: DEFINED(A);
+MANDATORY CONSTRAINT DEFINED(A);
 MANDATORY CONSTRAINT Check: NOT (DEFINED(ReallyLongAttributeName) AND NOT (A==B OR B=="A much longer string that exceeds the available width"));
 CONSTRAINT >= 90.00% Functions.Check("very long argument with 😀", Functions.Nested(A,B), THIS);
 CONSTRAINT <= 10.00% DEFINED(A) !! after the first predicate

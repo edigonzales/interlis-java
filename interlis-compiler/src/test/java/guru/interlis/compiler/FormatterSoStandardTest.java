@@ -43,6 +43,53 @@ class FormatterSoStandardTest {
         assertTrue(output.endsWith("END Values."));
     }
 
+    @Test
+    void mandatoryAndPlausibilityBreakGolden() throws Exception {
+        assertGolden("expressions", new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 40));
+    }
+
+    @Test
+    void flatWidthCountsCodePointsAndIncludesTheWholeConstraint() {
+        String input = "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = "
+                + "CLASS C = MANDATORY CONSTRAINT A == \"🦊123456789\"; END C; END F.";
+        String flat = "    MANDATORY CONSTRAINT A == \"🦊123456789\";";
+        int width = flat.codePointCount(0, flat.length());
+        assertTrue(verify(input, new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, width))
+                .contains(flat));
+        assertTrue(verify(input, new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, width - 1))
+                .contains("    MANDATORY CONSTRAINT\n      A =="));
+    }
+
+    @Test
+    void existenceUniqueAndSetBreakGolden() throws Exception {
+        assertGolden("clauses", new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 40));
+    }
+
+    @Test
+    void preservesAllConstraintFamiliesAndClausesInTheFlatForm() throws Exception {
+        var input = Files.readString(FIXTURES.resolve("cases/constraints.ili"));
+        var output = verify(input, FormatOptions.defaults());
+        assertTrue(output.contains("EXISTENCE CONSTRAINT A REQUIRED IN Entry : B OR Entry : A;"));
+        assertTrue(output.contains("UNIQUE (BASKET) Named : WHERE DEFINED(A) : A, B;"));
+        assertTrue(output.contains("UNIQUE (LOCAL) Parts : Key;"));
+        assertTrue(output.contains("SET CONSTRAINT (BASKET) First : WHERE DEFINED(A) : DEFINED(B);"));
+        assertTrue(output.contains("SET CONSTRAINT WHERE DEFINED(B) : Second : DEFINED(A);"));
+    }
+
+    @Test
+    void preservesCommentsWithinEveryClauseFamily() throws Exception {
+        var input = Files.readString(FIXTURES.resolve("cases/clauses.ili"))
+                .replace("REQUIRED IN", "REQUIRED !! requirement\nIN")
+                .replace("FirstKey, SecondKey, ThirdKey", "FirstKey, !! key\nSecondKey, ThirdKey")
+                .replace("Subdetails: FirstKey", "Subdetails: /* field list */ FirstKey")
+                .replace("Second: DEFINED", "Second: !! condition\nDEFINED");
+        var output = verify(input, new FormatOptions(2, FormatOptions.LineEnding.PRESERVE, true, 40));
+        assertTrue(output.contains("REQUIRED !! requirement\n"));
+        assertTrue(output.contains("FirstKey, !! key\n"));
+        assertTrue(output.contains(": /* field list */ FirstKey"));
+        assertTrue(output.contains("Second : !! condition\n"));
+    }
+
     static void assertGolden(String name, FormatOptions options) throws Exception {
         String input = Files.readString(FIXTURES.resolve("cases/" + name + ".ili"));
         String expected = Files.readString(FIXTURES.resolve("golden/" + name + ".ili"));
