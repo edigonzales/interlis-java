@@ -16,7 +16,7 @@ public final class JvmBenchmark {
         require((expectedExit==0||expectedExit==1) && baseline.exitCode()==expectedExit && actual.exitCode()==expectedExit && baseline.stdout().equals(actual.stdout()) && baseline.stderr().equals(actual.stderr()),"Failed/unstable benchmark subprocess: "+actual);
     }
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath(),output=root.resolve("build/reports/performance/performance-jvm.json");Files.deleteIfExists(output);
+        Path root=Path.of(args[0]).toAbsolutePath(),output=VerificationLayout.forInvocation(root).rootReport("performance/performance-jvm.json");Files.deleteIfExists(output);
         var manifest=GeoCorpus.verify(root);var expectations=CorpusExpectations.load(root,manifest);var artifacts=artifacts(root);List<Map<String,Object>> models=new ArrayList<>();
         boolean mac=System.getProperty("os.name").startsWith("Mac");
         require(mac || System.getProperty("os.name").equals("Linux"),"RSS benchmark requires macOS or Linux /usr/bin/time");

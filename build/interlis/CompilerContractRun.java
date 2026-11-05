@@ -8,10 +8,10 @@ import java.util.concurrent.TimeUnit;
 
 /** Serial, fresh producer-to-consumer coordination using the shared current selection. */
 public final class CompilerContractRun {
-    public static void run(Path root) throws Exception {
+    public static Path run(Path root) throws Exception {
         String runId="contract-"+UUID.randomUUID();Path run=root.resolve("target/jenesis-jvm/evidence").resolve(runId);
         Files.createDirectories(run);
-        var verification=JenesisBridge.run(new BuildRequest("build","interlis-verification",null,root));
+        var verification=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
         var classpath=JenesisBridge.runtimeClasspath("interlis-verification",verification);
         host(root,classpath,"guru.interlis.verification.CurrentContractSelection",List.of(root.toString(),run.resolve("plan").toString()),run.resolve("plan-process"));
         host(root,classpath,"guru.interlis.verification.CurrentContractSelection",List.of("norms",root.toString(),run.resolve("norms").toString()),run.resolve("norm-process"));
@@ -45,6 +45,7 @@ public final class CompilerContractRun {
         var receipt=JenesisBridge.snapshotFreshTests(root,"interlis-verification",consumer,run.resolve("consumer"));
         bindReceipt(receipt,"interlis-verification",runId,started,commit,tree,dirty);store(run.resolve("consumer/receipt.properties"),receipt);
         System.out.println("Fresh compiler contracts completed: "+run);
+        return run;
     }
     private static void bindReceipt(Properties receipt,String module,String runId,Instant started,String commit,String tree,boolean dirty) {
         receipt.setProperty("module",module);receipt.setProperty("builder","jenesis");receipt.setProperty("runId",runId);receipt.setProperty("started",started.toString());

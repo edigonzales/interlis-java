@@ -15,6 +15,10 @@
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><scope>test</scope></dependency>
     <dependency><groupId>org.junit.platform</groupId><artifactId>junit-platform-launcher</artifactId><scope>test</scope></dependency>
   </dependencies>
+  <!-- The pinned foreign JARs have no declared Automatic-Module-Name.
+       Jenesis names byte-identical copies; no descriptor is injected into them. -->
+  <!--jenesis.alias org.eclipse.lsp4j org.eclipse.lsp4j/org.eclipse.lsp4j-->
+  <!--jenesis.alias org.eclipse.lsp4j.jsonrpc org.eclipse.lsp4j/org.eclipse.lsp4j.jsonrpc-->
   <!--jenesis.pin
   com.google.code.gson/gson 2.14.0 SHA-256/2cbd119bf1961c28788310963dc80ba65f58cdeec1dd139c8bdb1240faa2c36f
   maven/com.google.code.gson/gson-parent/pom 2.14.0 SHA-256/82b0f6694c5758ab8bb07e05630208d50f589d4b5e04fd0a046d59cdf7ba3d1d

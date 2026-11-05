@@ -1,8 +1,0 @@
-// Stable root entrypoints; execution and dependencies belong to the internal module.
-['pythonFreeCheck','semanticComparison','geoCorpus','fullCorpus','fullCorpusJvm','observationPressure','editorPressure','jvmBenchmark','sdkProcessCheck','sdkArchiveCheck','platformCheck','conformanceEvidence','compilerCliCheck','repositoryReferenceCheck','referenceCheck','originalViewReferenceCheck','viewReferenceCheck','unitReferenceCheck'].each { name ->
-    tasks.register(name) {
-        group = 'verification'
-        dependsOn ":interlis-verification:${name}"
-    }
-}
-tasks.named('check') { dependsOn 'pythonFreeCheck' }

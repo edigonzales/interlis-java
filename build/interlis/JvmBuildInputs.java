@@ -16,12 +16,8 @@ public final class JvmBuildInputs {
 
     public static void requireProject(Path root) throws Exception {
         if (Runtime.version().feature() != 25) throw new IllegalStateException("Java25 required");
-        var gradle = new Properties();
-        try (var reader = Files.newBufferedReader(root.resolve("gradle.properties"))) { gradle.load(reader); }
         var pom = xml(root.resolve("pom.xml"));
-        String version = pom.getDocumentElement().getElementsByTagName("version").item(0).getTextContent();
-        if (!version.equals(gradle.getProperty("projectVersion")))
-            throw new IllegalStateException("Product version drift: POM=" + version);
+        String version = projectVersion(root);
         var nodes = pom.getElementsByTagName("module");
         var actual = new ArrayList<String>();
         for (int i = 0; i < nodes.getLength(); i++) actual.add(nodes.item(i).getTextContent());
@@ -47,6 +43,27 @@ public final class JvmBuildInputs {
             var actualFiles = new TreeSet<>(files.filter(Files::isRegularFile).toList());
             if (expected.isEmpty() || !expected.equals(actualFiles)) throw new IllegalStateException("Engine file set drift");
         }
+    }
+
+    /** Authoritative product version from the root POM, shared by builders and consumers. */
+    public static String projectVersion(Path root) throws Exception {
+        var document=xml(root.resolve("pom.xml"));
+        for(var node=document.getDocumentElement().getFirstChild();node!=null;node=node.getNextSibling())
+            if(node instanceof org.w3c.dom.Element element && element.getTagName().equals("version")) {
+                String value=element.getTextContent().trim();
+                if(value.matches("[0-9][A-Za-z0-9_.-]*"))return value;
+                throw new IllegalStateException("Invalid product version: "+value);
+            }
+        throw new IllegalStateException("Missing product version");
+    }
+
+    /** Rejects symbolic-link ancestors before writing or trusting a generated output. */
+    public static Path requireOutputRoot(Path root,String relative) throws IOException {
+        root=root.toAbsolutePath().normalize();Path path=root.resolve(relative).normalize();
+        if(!path.startsWith(root))throw new IllegalArgumentException("Output escapes repository");
+        for(Path ancestor=path;ancestor!=null&&ancestor.startsWith(root)&&!ancestor.equals(root);ancestor=ancestor.getParent())
+            if(Files.isSymbolicLink(ancestor))throw new IllegalStateException("Symlink in generated output: "+ancestor);
+        return path;
     }
 
     public static Document xml(Path file) throws Exception {

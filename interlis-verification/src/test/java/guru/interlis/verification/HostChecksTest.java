@@ -34,9 +34,9 @@ class HostChecksTest {
         Files.writeString(file,xml.replace("</TRANSFER>",xml.substring("<TRANSFER>".length())));manifest.getAsJsonObject("index").addProperty("sha256",hash(file));assertThrows(Exception.class,()->GeoCorpus.validateIndex(file,manifest));
     }
     @Test void realSubprocessTimeoutAndNonzeroExitRemainDistinct() throws Exception {
-        var command=List.of(java().toString(),"-cp",System.getProperty("java.class.path"),HostChecksTest.class.getName(),"fail");
+        var command=new ArrayList<>(javaCommand(HostChecksTest.class.getName(),true));command.add("fail");
         assertEquals(37,run(directory,command,Duration.ofSeconds(10)).exitCode());
-        var timeout=List.of(java().toString(),"-cp",System.getProperty("java.class.path"),HostChecksTest.class.getName(),"sleep");
+        var timeout=new ArrayList<>(javaCommand(HostChecksTest.class.getName(),true));timeout.add("sleep");
         assertThrows(java.io.IOException.class,()->run(directory,timeout,Duration.ofMillis(100)));
     }
     public static void main(String[] args) throws Exception {if(args[0].equals("sleep"))Thread.sleep(60000);else System.exit(37);}

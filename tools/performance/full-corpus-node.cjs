@@ -3,7 +3,7 @@ const sourceFingerprint=require('./profile.cjs').fingerprint(),commitInfo=requir
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),os=require('node:os');
 const {capture}=require('./full-corpus-contract.js');
 (async()=>{
-  const root=path.resolve(__dirname,'../..'),directory=path.join(root,'build/reports/performance/full-corpus'),out=path.join(directory,'wasm.json');fs.rmSync(out,{force:true});
+  const root=path.resolve(__dirname,'../..'),directory=require('../verification/layout.cjs').report(root,'performance/full-corpus'),out=path.join(directory,'wasm.json');fs.rmSync(out,{force:true});
   const prepared=JSON.parse(fs.readFileSync(path.join(directory,'prepared.json'),'utf8')),baseline=JSON.parse(fs.readFileSync(path.join(directory,'jvm.json'),'utf8'));
   if(baseline.captureStatus!=='complete'||baseline.manifestSha256!==prepared.manifestSha256||baseline.roots.length!==347||prepared.roots.length!==347)throw Error('missing/stale/incomplete JVM parity capture');
   const started=performance.now(),runtime=path.join(root,'interlis-wasm-teavm/build/generated/teavm/wasm-gc');

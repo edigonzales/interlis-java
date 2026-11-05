@@ -11,8 +11,16 @@ public final class ExistingJvmDistribution {
     public static void generate(Path root)throws Exception { run(root,false); }
     private static void run(Path root,boolean checks)throws Exception {
         var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
-        Path delivery=root.resolve("target/jenesis-jvm/delivery");
-        if(Files.exists(delivery))throw new IllegalStateException("Delivery already exists; select a fresh output checkout or archive/remove only this generated delivery directory");
+        Path delivery=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/delivery");
+        if(Files.exists(delivery)) {
+            Path history=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/delivery-history/"+UUID.randomUUID());
+            Files.createDirectories(history.getParent());Files.move(delivery,history);
+        }
+        generateAt(root,outcome,delivery,delivery.resolve("reports"),checks);
+    }
+    static void generateAt(Path root,JenesisBridge.BuildOutcome outcome,Path delivery,Path reports,boolean checks)throws Exception {
+        JvmBuildInputs.requireOutputRoot(root,root.relativize(delivery).toString());
+        JvmBuildInputs.requireOutputRoot(root,root.relativize(reports).toString());
         Files.createDirectories(delivery);
         var provenance=new TreeMap<String,Object>();
         for(var item:Map.of("compiler","interlis-compiler-cli","lsp","interlis-lsp").entrySet()) {
@@ -24,12 +32,14 @@ public final class ExistingJvmDistribution {
                 facts.add(Map.of("coordinates",artifact.coordinates(),"source",root.relativize(artifact.file()).toString(),"file",root.relativize(copy).toString(),"sha256",artifact.sha256()));
             }
             String name=item.getKey().equals("compiler")?"interlis-compiler":"interlis-lsp";
+            String module=ModulePathContract.name(item.getValue());
+            var result=JenesisBridge.moduleResult(outcome,item.getValue());
+            if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(module))throw new IllegalStateException("Distribution requires its explicit product module");
+            String main=item.getKey().equals("compiler")?"guru.interlis.cli.Main":"guru.interlis.lsp.Main";
             for(String suffix:List.of("",".bat")) {
-                String separator=suffix.isEmpty()?":":";",home=suffix.isEmpty()?"$APP_HOME/lib/":"%APP_HOME%\\lib\\";
-                String cp=String.join(separator,artifacts.stream().map(a->home+a.fileName()).toList());
                 String template=Files.readString(root.resolve("build/interlis/templates/"+name+suffix));
-                if(template.indexOf("@CLASSPATH@")!=template.lastIndexOf("@CLASSPATH@")||!template.contains("@CLASSPATH@"))throw new IllegalStateException("Unexpected launcher template");
-                Path launcher=distribution.resolve("bin/"+name+suffix);Files.writeString(launcher,template.replace("@CLASSPATH@",cp));
+                if(!template.contains("--module "+module+"/"+main)||!template.contains("--module-path")||template.contains("@CLASSPATH@")||template.contains("ALL-MODULE-PATH")||template.contains("ALL-DEFAULT")||template.contains("--patch-module")||java.util.regex.Pattern.compile("(?m)^[ \t]*set[ \t]*$").matcher(template).find())throw new IllegalStateException("Unexpected modular launcher template");
+                Path launcher=distribution.resolve("bin/"+name+suffix);Files.writeString(launcher,template);
                 if(!launcher.toFile().setExecutable(true,false))throw new IllegalStateException("Cannot set launcher permission");
             }
             provenance.put(item.getValue(),facts);
@@ -37,13 +47,14 @@ public final class ExistingJvmDistribution {
         Files.writeString(delivery.resolve("runtime-inventory.json"),JsonOutput.write(provenance));
         Properties layout=new Properties();layout.setProperty("schemaVersion","1");layout.setProperty("builder","jenesis");layout.setProperty("root",root.toString());
         for(var pair:Map.of("compiler","compiler","lsp","lsp","sdk","sdk.zip","reports","reports","norms","norms").entrySet())layout.setProperty(pair.getKey(),root.relativize(delivery.resolve(pair.getValue())).toString());
+        layout.setProperty("reports",root.relativize(reports).toString());
         Path file=delivery.resolve("layout.properties");try(var writer=Files.newBufferedWriter(file)){layout.store(writer,"Explicit Jenesis delivery check layout");}
         var classpath=JenesisBridge.runtimeClasspath("interlis-verification",outcome);
         if(checks) {
             host(root,classpath,file,"SdkProcesses",delivery.resolve("sdk-process"));
             host(root,classpath,file,"CompilerCliProcesses",delivery.resolve("cli-process"));
         } else {
-            Path manifest=delivery.resolve("reports/sdk/version-manifest.json");Files.createDirectories(manifest.getParent());
+            Path manifest=reports.resolve("sdk/version-manifest.json");Files.createDirectories(manifest.getParent());
             String launcher="interlis-compiler"+(System.getProperty("os.name").startsWith("Windows")?".bat":"");
             var command=List.of(delivery.resolve("compiler/bin/"+launcher).toString(),"version","--json");
             Files.writeString(delivery.resolve("version-command.json"),JsonOutput.write(command));
@@ -56,7 +67,7 @@ public final class ExistingJvmDistribution {
             }finally{if(process.isAlive()){process.descendants().forEach(ProcessHandle::destroyForcibly);process.destroyForcibly();}}
         }
         Path staging=delivery.resolve("sdk-staging");copyTree(delivery.resolve("compiler"),staging.resolve("cli"));copyTree(root.resolve("examples/sdk"),staging.resolve("examples/sdk"));
-        Files.createDirectories(staging.resolve("version"));Files.copy(delivery.resolve("reports/sdk/version-manifest.json"),staging.resolve("version/version-manifest.json"));
+        Files.createDirectories(staging.resolve("version"));Files.copy(reports.resolve("sdk/version-manifest.json"),staging.resolve("version/version-manifest.json"));
         CompilerContractRun.host(root,JenesisBridge.buildArchiveTool(root,false),"build.interlis.archive.ArchiveWriter",List.of(staging.toString(),delivery.resolve("sdk.zip").toString()),delivery.resolve("archive-process"));
         if(checks)host(root,classpath,file,"SdkArchiveCheck",delivery.resolve("sdk-archive-check"));
         System.out.println((checks?"SDK_CHECK_PASS":"SDK_GENERATED")+"; tests NOT_RUN (artifact generation only); "+delivery);

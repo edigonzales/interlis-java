@@ -1,5 +1,10 @@
 # Implementierungsplan und überprüfbare Arbeitspakete
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 ## Verbindliche G2-Fortsetzung ab 29.10.2026
 
 Der [G2-Ausführungsplan](../g2/EXECUTION_PLAN.md) steuert organisatorisch den

@@ -1,7 +1,7 @@
 // Focused real-distribution regression for invalid HTTP redirect addresses.
 const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),http=require('node:http'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'../..'),out=path.join(root,'build/http-redirect-fix/processes');fs.mkdirSync(out,{recursive:true});
-const launcher=process.argv[2]||path.join(root,'interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler');
+const launcher=process.argv[2]||path.join(require('./layout.cjs').resolveRole(require('./layout.cjs').readVerificationInputs(root),'compiler'),'bin/interlis-compiler'+(process.platform==='win32'?'.bat':''));
 const dir=fs.mkdtempSync(path.join(out,'run-')),home=path.join(dir,'home');fs.mkdirSync(home);
 const model='INTERLIS 2.4; MODEL Basis AT "x" VERSION "1" = END Basis.';
 const index='<TRANSFER><ModelMetadata><Name>Basis</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>Basis.ili</File></ModelMetadata></TRANSFER>';

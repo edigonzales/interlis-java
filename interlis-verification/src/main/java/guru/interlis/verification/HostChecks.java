@@ -26,6 +26,19 @@ final class HostChecks {
         String configured=System.getenv(variable);
         return configured==null ? Path.of(System.getProperty("user.home"),".cache/interlis-java",fallback) : root.resolve(configured).toAbsolutePath().normalize();
     }
+    static String projectVersion(Path root) throws Exception {
+        var parser=javax.xml.parsers.DocumentBuilderFactory.newInstance();
+        parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl",true);
+        parser.setFeature("http://xml.org/sax/features/external-general-entities",false);
+        parser.setFeature("http://xml.org/sax/features/external-parameter-entities",false);
+        parser.setXIncludeAware(false);parser.setExpandEntityReferences(false);
+        var document=parser.newDocumentBuilder().parse(root.resolve("pom.xml").toFile());
+        for(var node=document.getDocumentElement().getFirstChild();node!=null;node=node.getNextSibling())
+            if(node instanceof org.w3c.dom.Element element && element.getTagName().equals("version")) {
+                String value=element.getTextContent().trim();require(value.matches("[0-9][A-Za-z0-9_.-]*"),"Invalid project version");return value;
+            }
+        throw new IllegalArgumentException("Missing project version");
+    }
     static Path cli(Path root) { return VerificationLayout.forInvocation(root).compilerLauncher(System.getProperty("os.name").startsWith("Windows")); }
     static Path java() { return Path.of(System.getProperty("java.home"),"bin","java"); }
     static void pin(Path path, String expected) throws Exception { require(Files.isRegularFile(path) && hash(path).equals(expected),"Changed or missing pinned input: "+path); }
@@ -69,6 +82,21 @@ final class HostChecks {
             throw new IOException("Non-UTF-8 process output from "+command+"; first bytes="
                     +HexFormat.of().formatHex(Arrays.copyOf(bytes,Math.min(bytes.length,4096))),failure);
         }
+    }
+    /** Constructs one host child launch; named callers remain named without a failure fallback. */
+    static List<String> javaCommand(String main) { return javaCommand(main,false); }
+    static List<String> javaCommand(String main,boolean testPatch) {
+        var command=new ArrayList<String>();command.add(java().toString());
+        if(HostChecks.class.getModule().isNamed()) {
+            String modulePath=System.getProperty("jdk.module.path");require(modulePath!=null&&!modulePath.isBlank(),"Missing host module path");
+            command.addAll(List.of("--module-path",modulePath));
+            if(testPatch) {
+                String patch=System.getProperty("interlis.test.patch");require(patch!=null&&!patch.isBlank(),"Missing explicit test patch");
+                command.addAll(List.of("--patch-module","guru.interlis.verification="+patch,"--add-reads","guru.interlis.verification=ALL-UNNAMED","-cp",System.getProperty("java.class.path")));
+            }
+            command.addAll(List.of("--module","guru.interlis.verification/"+main));
+        } else command.addAll(List.of("-cp",System.getProperty("java.class.path"),main));
+        return List.copyOf(command);
     }
     static Result cli(Path root, List<String> arguments) throws Exception {
         var command=new ArrayList<String>();command.add(cli(root).toString());command.addAll(arguments);return run(root,command,Duration.ofSeconds(60));

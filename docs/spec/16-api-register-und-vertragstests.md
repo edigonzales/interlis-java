@@ -1,5 +1,30 @@
 # API-Register und gemeinsame Vertragstests
 
+## JVM-Modulidentitäten seit Auftrag B
+
+Die Java-Packages und fachlichen APIs bleiben unverändert. Normale JARs tragen
+explizite JPMS-Deskriptoren; GAV, Dateiname und Modulname sind getrennte Identitäten.
+
+| Artefakt (Group guru.interlis) | Modulname | Öffentlicher Zugriff |
+|---|---|---|
+| interlis-model | guru.interlis.model | model/model.query/source/diagnostics/execution; model.internal nur qualifiziert an compiler |
+| interlis-compiler | guru.interlis.compiler | compiler/compiler.query/syntax/format; ANTLR/internals bleiben verborgen |
+| interlis-workspace | guru.interlis.workspace | workspace/workspace.resolution |
+| interlis-repository | guru.interlis.repository | repository |
+| interlis-projection | guru.interlis.projection | projection |
+| interlis-documentation | guru.interlis.documentation | documentation |
+| interlis-wasm-bridge | guru.interlis.wasm.bridge | bridge |
+| interlis-compiler-cli | guru.interlis.compiler.cli | cli; Main guru.interlis.cli.Main |
+| interlis-lsp | guru.interlis.lsp | lsp; Main guru.interlis.lsp.Main |
+| interlis-verification | guru.interlis.verification | interner Host, nicht Bestandteil einer Produktlieferung |
+
+Produktive Gson-Reflection ist ausschliesslich für die vorhandenen LSP-DTOs und
+Verification-Prozessrecords qualifiziert geöffnet. Keine globalen Testfreigaben
+in Produktdeskriptoren. Requires-/Transitivitätsgründe und tatsächliche JDK-/
+Fremdmodule stehen in den [B-Entscheidungen](../implementation/jenesis-migration-b/DECISIONS.md);
+Build-/Modulpfadabnahme in [Kapitel03](03-build-und-repository.md).
+
+
 ## 1. Zweck und Autorität
 
 Dieses Register ordnet die gemeinsamen Typen, Fabriken und Dienste eindeutig einem Modul und Fachvertrag zu. Die vollständigen Signaturen und Methodenbedingungen stehen im verlinkten Kapitel. Eine Tabellenbeschreibung hier ist kein Auftrag, daneben eine zweite anders benannte Implementierung einzuführen. Nicht öffentliche Hilfsmethoden dürfen im jeweiligen Arbeitspaket angepasst werden, sofern die beobachtbaren Verträge und Abnahmen erhalten bleiben.

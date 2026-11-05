@@ -17,7 +17,7 @@ public final class FullCorpus {
     private FullCorpus() { }
     public static void main(String[] args) throws Exception {
         Path root=Path.of(args[0]).toAbsolutePath(),directory=root.resolve("docs/evidence/p3/full-corpus");
-        Path output=root.resolve("build/reports/performance/full-corpus/prepared.json");Files.deleteIfExists(output);
+        Path output=VerificationLayout.forInvocation(root).rootReport("performance/full-corpus/prepared.json");Files.deleteIfExists(output);
         var prepared=prepare(directory);
         write(output,prepared);
         write(output.resolveSibling("input-verification.json"),Map.of("status","passed","roots",347,"files",366,

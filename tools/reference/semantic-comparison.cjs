@@ -26,6 +26,6 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
       assert.deepEqual(actual,entry.jvm);assert.deepEqual(actual,entry.reference);results.push({backend,source:entry.source,actual});
     }finally{call('closeSession',sessionId);}
   }
-  fs.writeFileSync(path.join(root,'build/reports/g2/a3-portable.json'),JSON.stringify({status:'passed',cases:results},null,2)+'\n');
+  fs.writeFileSync(require('../verification/layout.cjs').report(root,'g2/a3-portable.json'),JSON.stringify({status:'passed',cases:results},null,2)+'\n');
   console.log('A3_PORTABLE_PASS '+results.length+' actual projections compared to fresh JVM/reference');
 })().catch(e=>{console.error(e);process.exitCode=1;});

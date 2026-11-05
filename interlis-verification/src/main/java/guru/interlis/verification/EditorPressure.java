@@ -25,7 +25,7 @@ public final class EditorPressure {
     }
     private static JsonObject object(String key,String value) {var result=new JsonObject();result.addProperty(key,value);return result;}
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath(),output=root.resolve("build/reports/performance/full-corpus/editor-jvm.json");Files.deleteIfExists(output);String sourceFingerprint=ProfileFingerprint.current(root),gitCommit=ProfileFingerprint.commit(root);boolean dirty=ProfileFingerprint.dirty(root);
+        Path root=Path.of(args[0]).toAbsolutePath(),output=VerificationLayout.forInvocation(root).rootReport("performance/full-corpus/editor-jvm.json");Files.deleteIfExists(output);String sourceFingerprint=ProfileFingerprint.current(root),gitCommit=ProfileFingerprint.commit(root);boolean dirty=ProfileFingerprint.dirty(root);
         var prepared=FullCorpus.prepare(root.resolve("docs/evidence/p3/full-corpus"));
         var input=rows(prepared,"roots").stream().max(Comparator.comparingInt(r->rows(r,"sources").stream().mapToInt(v->s(v,"text").length()).sum())).orElseThrow();
         int closure=rows(input,"sources").stream().mapToInt(v->s(v,"text").length()).sum();require(closure>=200000,"Editor closure too small");

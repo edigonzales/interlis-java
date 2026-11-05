@@ -1,5 +1,10 @@
 # 13 – Tests, Kompatibilitätsnachweise und Qualitätsgates
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 L4-1 ergänzt mit `./gradlew semanticComparison` den tatsächlichen A3-Vergleich:
 vier identische2.3-/2.4-Quellen über JVM, gepinntes ili2c-Metamodell, TeaVM-JS und
 WasmGC. Verglichen werden Compile-Outcome, geordnete effektive Member und

@@ -5,7 +5,7 @@ import java.nio.file.*;
 import java.util.*;
 
 /**
- * Immutable host-only layout. Defaults preserve Gradle paths; an explicitly
+ * Immutable host-only layout. Defaults select only Jenesis outputs; an explicitly
  * selected Jenesis layout never falls back to them. All paths are root-relative
  * and confined, including existing symbolic-link ancestors.
  */
@@ -45,7 +45,7 @@ public final class VerificationLayout {
         Map<String, String> paths = new TreeMap<>();
         for (String key : data.stringPropertyNames()) {
             if (Set.of("schemaVersion", "builder", "root").contains(key)) continue;
-            if (!Set.of("compiler", "lsp", "sdk", "reports", "norms").contains(key)
+            if (!Set.of("compiler", "lsp", "sdk", "reports", "norms", "conformance", "reference").contains(key)
                     && !key.matches("junit\\.interlis-[a-z-]+\\.(test|contractTest|contractAssertionsTest)")
                     && !key.matches("manifest\\.interlis-[a-z-]+"))
                 throw new IllegalArgumentException("Unknown layout key: " + key);
@@ -57,33 +57,35 @@ public final class VerificationLayout {
         return layout;
     }
     public Path repositoryRoot() { return root; }
-    public Path compilerDistribution() { return path("compiler", "interlis-compiler-cli/build/install/interlis-compiler"); }
+    public Path compilerDistribution() { return path("compiler", "target/jenesis-jvm/delivery/compiler"); }
     public Path compilerLauncher(boolean windows) { return compilerDistribution().resolve("bin/interlis-compiler" + (windows ? ".bat" : "")); }
-    public Path lspDistribution() { return path("lsp", "interlis-lsp/build/install/interlis-lsp"); }
-    public Path sdkArchive(String version) { segment(version); return path("sdk", "build/releases/interlis-java-sdk-" + version + ".zip"); }
+    public Path lspDistribution() { return path("lsp", "target/jenesis-jvm/delivery/lsp"); }
+    public Path sdkArchive(String version) { segment(version); return path("sdk", "target/jenesis-jvm/delivery/sdk.zip"); }
     public Path junitDirectory(String module, String taskName) {
         segment(module); segment(taskName);
-        return path("junit." + module + "." + taskName, module + "/build/test-results/" + taskName);
+        return path("junit." + module + "." + taskName, "target/jenesis-jvm/reports/junit/" + module + "/" + taskName);
     }
-    public Path contractAssertionManifest(String module) { segment(module); return path("manifest." + module, module + "/build/contract-assertions.json"); }
+    public Path contractAssertionManifest(String module) { segment(module); return path("manifest." + module, "target/jenesis-jvm/reports/contracts/" + module + ".json"); }
     public Path normativePdf(String languageVersion) {
         if (!Set.of("2.3", "2.4").contains(languageVersion)) throw new IllegalArgumentException("Unknown norm version");
-        return path("norms", "build/norms").resolve("ili" + languageVersion.replace(".", "") + ".pdf");
+        return path("norms", "target/jenesis-jvm/norms").resolve("ili" + languageVersion.replace(".", "") + ".pdf");
     }
+    public Path conformanceDirectory() { return path("conformance", "target/jenesis-jvm/conformance"); }
+    public Path referenceCompiler() { return path("reference", "target/jenesis-jvm/reference/ili2c.jar"); }
     public Path verificationUnitReports() { return junitDirectory("interlis-verification", "test"); }
     public Path verificationContractReports() { return junitDirectory("interlis-verification", "contractTest"); }
     public Path rootReport(String relativeName) throws IOException {
         Path relative = relative(relativeName);
-        Path base = path("reports", "build/reports"), target = base.resolve(relative).normalize();
+        Path base = path("reports", "target/jenesis-jvm/reports"), target = base.resolve(relative).normalize();
         if (!target.startsWith(base)) throw new IllegalArgumentException("Report escapes directory");
         checkAncestors(target, base);
         return target;
     }
-    private Path path(String key, String gradleDefault) {
-        String value = paths.isEmpty() ? gradleDefault : paths.get(key);
+    private Path path(String key, String defaultPath) {
+        String value = paths.isEmpty() ? defaultPath : paths.get(key);
         if (value == null) throw new IllegalArgumentException("Missing explicit layout path: " + key);
         Path target = root.resolve(relative(value)).normalize();
-        Path boundary = paths.isEmpty() ? root : root.resolve("target/jenesis-jvm");
+        Path boundary = root.resolve("target/jenesis-jvm");
         if (!target.startsWith(boundary)) throw new IllegalArgumentException("Layout path escapes output boundary");
         try { checkAncestors(target, boundary); }
         catch (IOException e) { throw new IllegalArgumentException("Cannot resolve layout path", e); }

@@ -17,15 +17,15 @@ class PlatformProcessesTest {
         var layout=new VerificationLayout(root);
         var directories=List.of(layout.verificationUnitReports(),layout.verificationContractReports());
         assertThrows(IllegalArgumentException.class,()->PlatformProcesses.inspectJUnitReports(root,directories));
-        var unit=report("interlis-verification/build/test-results/test","test.Example",XML);
-        report("interlis-verification/build/test-results/contractTest","test.Contract",XML.replace("test.Example","test.Contract"));
+        var unit=report("target/jenesis-jvm/reports/junit/interlis-verification/test","test.Example",XML);
+        report("target/jenesis-jvm/reports/junit/interlis-verification/contractTest","test.Contract",XML.replace("test.Example","test.Contract"));
         var summary=PlatformProcesses.inspectJUnitReports(root,directories);
         assertEquals(2,summary.tests());assertEquals(2,summary.suites());assertEquals(2,summary.xmlHashes().size());
         assertFalse(summary.xmlHashes().containsKey(root.relativize(old).toString()));
         assertThrows(IllegalArgumentException.class,()->PlatformProcesses.inspectJUnitReports(root,List.of(unit.getParent(),unit.getParent())));
         var profile=new JsonObject();profile.addProperty("minimumTests",2);profile.addProperty("minimumSuites",2);
         profile.add("requiredDirectories",HostChecks.JSON.toJsonTree(directories.stream().map(root::relativize).map(Path::toString).map(s->s.replace('\\','/')).toList()));
-        profile.add("requiredReports",HostChecks.JSON.toJsonTree(summary.xmlHashes().keySet()));
+        profile.add("requiredLogicalReports",HostChecks.JSON.toJsonTree(summary.logicalReports()));
         PlatformProcesses.verifyRequiredProfile(summary,profile);
         assertThrows(IllegalArgumentException.class,()->PlatformProcesses.verifyRequiredProfile(PlatformProcesses.inspectJUnitReports(root,List.of(unit.getParent(),old.getParent())),profile));
         Files.writeString(unit,XML.replace("sample()","changed()"));
@@ -42,4 +42,17 @@ class PlatformProcessesTest {
             Files.writeString(file,xml);assertThrows(Exception.class,()->PlatformProcesses.inspectJUnitReports(root,List.of(dir)));
         }
     }
+    @Test void nativeContainersKeepAllLogicalCasesAndOriginalRawHashes() throws Exception {
+        String first="<testcase classname=\"test.Example\" name=\"sample()\"><system-out>unique-id: [engine:junit-jupiter]/[class:test.Example]/[method:sample()]\ndisplay-name: sample()</system-out></testcase>";
+        String second=first.replace("test.Example","test.Other");
+        String nativeXml="<testsuite name=\"JUnit Jupiter\" tests=\"2\" failures=\"0\" errors=\"0\" skipped=\"0\">"+first+second+"</testsuite>";
+        Path file=report("native","junit-jupiter",nativeXml);var summary=PlatformProcesses.inspectJUnitReports(root,List.of(file.getParent()));
+        assertEquals(2,summary.tests());assertEquals(2,summary.suites());assertEquals(1,summary.xmlHashes().size());
+        assertEquals(Set.of("native/TEST-test.Example.xml","native/TEST-test.Other.xml"),summary.logicalReports());
+        assertEquals(HostChecks.hash(file),summary.xmlHashes().get("native/TEST-junit-jupiter.xml"));
+        for(String broken:List.of(nativeXml.replace("tests=\"2\"","tests=\"3\""),nativeXml.replace("unique-id: ","missing-id: "),nativeXml.replace(second,first),nativeXml.replace("[class:test.Other]","[class:foreign.Class]"))) {
+            Files.writeString(file,broken);assertThrows(Exception.class,()->PlatformProcesses.inspectJUnitReports(root,List.of(file.getParent())));
+        }
+    }
+
 }

@@ -248,7 +248,9 @@ public final class NormativeConformance {
 
     public static void main(String[] args) throws Exception {
         Path root = Path.of(args[0]).toAbsolutePath();
-        Path output = root.resolve("build/conformance");
+        if (args.length != 3) throw new IllegalArgumentException("Expected root, explicit conformance output and report directory");
+        Path output = Path.of(args[1]), reports = Path.of(args[2]);
+        for (Path path : List.of(output, reports)) require(path.isAbsolute() && path.normalize().startsWith(root.resolve("target/jenesis-jvm")), "Foreign conformance output");
         var pins = new Properties();
         try (var input = Files.newInputStream(root.resolve("gradle/conformance-suite.properties"))) { pins.load(input); }
         var config = read(output.resolve("run-config.json"));
@@ -287,10 +289,10 @@ public final class NormativeConformance {
         selection.addProperty("excludedCaseCount", excluded); selection.add("excludedVersions", JSON.toJsonTree(excludedVersions));
         combined.add("selection", selection); combined.addProperty("exitCode", exit);
         combined.addProperty("cli", root.relativize(cli).toString().replace('\\', '/'));
-        write(root.resolve("build/reports/conformance/conformance-summary.json"), combined);
+        write(reports.resolve("conformance-summary.json"), combined);
         String log = Files.readString(output.resolve("conformance.log"), StandardCharsets.UTF_8)
                 .replace(root.toString(), "<repo>").replace(System.getProperty("user.home"), "<home>");
-        Files.writeString(root.resolve("build/reports/conformance/conformance-log.txt"), log.substring(Math.max(0, log.length() - 12000)) + "\n");
+        Files.writeString(reports.resolve("conformance-log.txt"), log.substring(Math.max(0, log.length() - 12000)) + "\n");
         System.out.println("selected=" + selected.size() + " result=" + text(result, "overallResult") + " rawExit=" + exit);
         System.out.println(result.get("summary"));
         if (!text(result, "overallResult").equals("PASS")) System.exit(1);

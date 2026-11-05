@@ -1,5 +1,10 @@
 # INTERLIS Java Spezifikation und Anforderungskatalog
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 **Version 1.0 · 18. Oktober 2026 · Arbeitsname `interlis-java` · Java 25 · Gradle/Groovy**
 
 Dieses Paket spezifiziert einen neuen Java-INTERLIS-Stack für die Fähigkeiten von ili2c, iox-ili, ilivalidator und ili2db. Die unmittelbare Implementierung beginnt beim Compiler. Die Dokumente enthalten das Gesamtziel, verbindliche Anforderungen, Klassen- und Methodenverträge, Fehler-/Zustandsmodelle, konkrete Agentenaufträge und überprüfbare Abnahmen.

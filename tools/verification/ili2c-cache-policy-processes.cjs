@@ -4,7 +4,7 @@ const cp = require('node:child_process'), crypto = require('node:crypto'), asser
 const root = path.resolve(__dirname, '../..');
 const out = path.join(root, 'build/ili2c-cache-policy/processes');
 fs.mkdirSync(out, {recursive: true});
-const launcher = process.argv[2] || path.join(root, 'interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler');
+const launcher = process.argv[2] || path.join(require('./layout.cjs').resolveRole(require('./layout.cjs').readVerificationInputs(root),'compiler'),'bin/interlis-compiler'+(process.platform==='win32'?'.bat':''));
 const dir = fs.mkdtempSync(path.join(out, 'run-')), home = path.join(dir, 'home');
 fs.mkdirSync(home);
 const input = path.join(dir, 'Projekt.ili');

@@ -11,7 +11,7 @@ Lies vor einer Änderung die betroffenen Kapitel und ihre im Text verknüpften V
 | `00-auftrag-und-agentenregeln.md` | Normative Sprache, Arbeitszyklus und Nachweisregeln |
 | `01-zielbild-und-anforderungen.md` | Produktumfang und übergeordnete Ziele |
 | `02-architektur-und-modulgrenzen.md` | Modulgrenzen, Abhängigkeiten und Zustandsbesitz |
-| `03-build-und-repository.md` | Gradle/Groovy, Toolchain und Build-/Testaufgaben |
+| `03-build-und-repository.md` | Jenesis-JVM / Gradle-Wasm, Toolchain und Build-/Testprofile |
 | `04` bis `12` und `18` | Ausführliche fachliche Daten-, Klassen- und Methodenverträge |
 | `13-tests-kompatibilitaet-und-qualitaet.md` | Referenzprofile, Fallmetadaten und Qualitätsnachweise |
 | `14-implementierungsplan-und-arbeitspakete.md` | Arbeitspakete, Voraussetzungen und Phasengates |

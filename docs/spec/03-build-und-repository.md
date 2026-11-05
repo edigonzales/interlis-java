@@ -1,185 +1,108 @@
 # Build und Repository
 
-Aktuelle Compilerabdeckung, Quellenbindungen, normative Entscheidungen und frisch
-selektierte JUnit-Assertions werden ausdrücklich über `compilerContractCheck`
-geprüft. `check` führt die normalen Produkt- und Verifikationstests aus und
-benötigt keine Norm-PDFs. Historische G2-Originalbelege bleiben unverändert;
-ihr damaliger Planungsstand ist kein aktueller Produktvertrag.
-Die methodengenaue Disposition steht im
-[Verifikationsauftrag](../implementation/verification-module/STATUS.md).
-Revieweingaben sind saubere Checkouts des vollständigen Kandidaten-SHA.
+## 1. Buildbesitz seit Auftrag B
 
-## 1. Entscheidung: Gradle mit Groovy-DSL
+Der ausdrückliche Nutzerauftrag vom05.11.2026 ersetzt die parallele A-Spur:
+Jenesis0.18.1 (Quellpin in `build/JENESIS-UPSTREAM.json`) ist alleiniger
+JVM-Builder. Gradle9.8.1 mit Groovy-DSL und Wrapper bleibt ausschliesslich
+für `interlis-wasm-teavm` und `interlis-wasm-webimage`. POMs definieren
+Koordinaten, Scopes und Pins; Maven/Ant werden nicht ausgeführt.
+Die Änderung betrifft BUILD-001/007/010 und die Ausführung bestehender Gates;
+fachliche Pflichtmengen werden nicht gesenkt.
 
-Ausdrückliche begrenzte Ausnahme seit Auftrag A vom04.11.2026:
-Die parallele POM-/Classpath-JVM-Spur nach
-[Jenesis-Auftrag A](../implementation/jenesis-jvm-a/SPECIFICATION.md) ist erlaubt.
-Gradle bleibt funktionsfähiger Gesamtbuild und Referenz. Die Ausnahme betrifft
-genau zehn JVM-Module einschliesslich Verification und wasm-bridge, keine
-Wasm-/Frontend-/JPMS-/Native-Migration. Maven ist kein Ausführer. Versionierte
-Engine-/Adapterquellen unter Root-`build/` bleiben bei Gradle-`clean` erhalten;
-Jenesis schreibt ausschliesslich nach `target/jenesis-jvm/` und `.jenesis/`.
-Die folgenden historischen Nur-Gradle-Anforderungen gelten ausserhalb dieser
-ausdrücklich abgegrenzten Ausnahme weiter. Der Implementierungs-/Prüfstand
-steht im [Auftragsstatus](../implementation/jenesis-jvm-a/STATUS.md).
+Operativer Fortschritt und tatsächliche Nachweise stehen in
+[Jenesis B](../implementation/jenesis-migration-b/STATUS.md).
+Historische A-/G2-Belege behalten Builder, Pfade und ihren damaligen Stand.
+Ein eingeschränkter Erfolg ist keine allgemeine Produktfreigabe.
 
-Das Projekt verwendet **Gradle als einziges orchestrierendes Build-Tool**. Alle Buildskripte sind Groovy (`.gradle`), Java-Quellen verwenden Java 25 ohne Preview. Der Gradle-Wrapper gehört ins Repository. Maven wird nicht als zusätzliches Buildsystem eingeführt. Das historische Maven-POM des Syntaxspikes ist Referenzevidenz; P0 überführt dessen Ablauf in Gradle.
+## 2. Toolchains und Grenzen
 
-Ant/Ivy wäre technisch tauglich: Ant führt explizite Tasks aus, Ivy löst Abhängigkeiten auf. Für dieses Projekt ist Gradle die einfachere Gesamtentscheidung, weil Projektabhängigkeiten, Parsergenerierung, Tests und JVM-/WASM-Auslieferung bereits in einem Projektmodell organisiert werden können. Ein zweiter Ant-/Ivy-Build wäre zu pflegen und würde keinen aktuellen Verbraucher vereinfachen. Diese Bewertung bezieht sich auf diesen Modulverbund, nicht auf die generelle Eignung von Ant. Quellen: [Gradle Multiprojektbuilds](https://docs.gradle.org/current/userguide/multi_project_builds.html), [Ant-Tutorial](https://ant.apache.org/manual/tutorial-tasks-filesets-properties.html), [Ivy Quick Start](https://ant.apache.org/ivy/history/latest-milestone/tutorial/start.html).
+Java25 ohne Preview und `--release 25` bleibt verbindlich. Die bestehenden
+Pins für ANTLR4.13.2, JUnit5.11.4, TeaVM0.16.0, LSP4J0.23.1, Gson2.14.0,
+Node24.22.0 sowie die expliziten GraalVM-/Binaryenprofile bleiben erhalten.
+Die tatsächlichen Versionen und Prozess-Exits gehören zum Beleg.
+Der Default-JVMbuild benötigt weder Node noch Gradle, Extensioncheckout,
+Browser, Web Image oder native APE-Toolchain. APE/Uhrpatch bleiben pausiert.
+Externe Installationen werden ausdrücklich bereitgestellt, nicht still nachgeladen.
 
-Maven Central und Maven-kompatible Veröffentlichungsmetadaten sind Repository-/Artefaktformate. Ihre Verwendung bedeutet nicht, dass Maven als Build-Tool benötigt wird.
+Alle eigenen Produkte erhalten in B-II explizite JPMS-Deskriptoren. Exporte
+folgen öffentlichen API-Packages; interne ANTLR-/Implementierungspackages
+bleiben gekapselt. Testpatches und Testopens gehören ausschliesslich in den
+engen Testhook. Reguläre CLI-/LSPstarts verwenden benannte Module.
+Gleiche modulare JARs bleiben für Classpath-/Wasmverbraucher verwendbar.
 
-## 2. Toolchain und feste Versionen
+## 3. Quellen, Outputs und Übergaben
 
-| Bestandteil | Entscheidung | Verifikationspflicht |
-|---|---|---|
-| Java-Sprache/Zielbytecode | Java 25, `--release 25`, keine Preview | JVM- und portable Prüfungen mit den konkreten verwendeten JDK-Patches |
-| Gradle | feste stabile 9.x-Version mit Java 25-Unterstützung; P0 pinnt den getesteten Patch | mindestens 9.1.0 laut Kompatibilitätsmatrix; kein `latest`/Versionsbereich im Wrapper |
-| Gradle-Ausführung | JDK 25 | `./gradlew --version` im Report |
-| ANTLR Generator/Runtime | beide 4.13.2 als Startpin | Versionen bleiben identisch; Generator nur im Buildclasspath |
-| TeaVM | 0.16.0 als Startpin | dokumentierte DSL plus tatsächlicher Gradle-/Browserlauf |
-| Tests | JUnit Jupiter auf JUnit Platform | konkreter kompatibler BOM-/Engine-Pin bei P0, keine dynamischen Versionen |
-| Web Image | separat installierte geeignete Oracle-GraalVM-Version | eigener P1-Versuch, nicht still als Standard-JDK vorausgesetzt |
-| Node/Browser | Node 24.22.0 für portable Hostprüfungen, Browserpins je Testprofil | echte Versionsausgaben im Report; `checkNodeRuntime` prüft den Node-Pin |
-
-`-PnodeExecutable=/absoluter/pfad/zu/node` bestimmt die Node-Ausführung für
-Vertragstests und Benchmarks; ohne Angabe wird `node` verwendet und dessen
-Version geprüft. Der Pin steht in `gradle.properties`. Node 22.23.1 bleibt wegen
-eines reproduzierten Stillstands im optimierenden V8-Wasm-Compiler ausserhalb
-dieses Hostprofils. Diagnoseversuche mit `--liftoff-only` ersetzen den Pin nicht.
-Der Produktionspfad im Browser bleibt TeaVM-WasmGC mit normaler Optimierung.
-
-Die offizielle Gradle-Matrix nennt Java 25-Unterstützung ab 9.1.0. Der am 18.10.2026 abgerufene aktuelle Dokumentationsstand bezeichnet sich als 9.8.1. **P0 muss einen tatsächlich verfügbaren und mit TeaVM getesteten 9.x-Patch fest eintragen**, vorzugsweise den dann aktuellen stabilen Patch. Dieser noch auszuführende Integrationsschritt ist keine offene Wahl des Build-Tools. Quelle: [Gradle-Kompatibilität](https://docs.gradle.org/current/userguide/compatibility.html).
-
-Ein Wrapperpin besteht aus URL, Distributiontyp `bin`, Versionsnummer und offizieller SHA-256. Die Wrapperdateien werden mit Gradle erzeugt und nicht aus erfundenen Binärdaten erstellt. JDK-Installation kann lokal vorhanden oder in CI durch einen expliziten Setup-Schritt bereitgestellt sein. Der Build installiert nicht unbemerkt mehrere JDKs. Ein automatischer Toolchain-Download wird erst hinzugefügt, wenn sein Nutzen und seine Konfiguration konkret sind. Quelle: [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html).
-
-## 3. Kleinste sinnvolle Dateistruktur
-
-| Pfad | Zweck |
+| Pfad | Besitzer/Zweck |
 |---|---|
-| `settings.gradle` | Projektname, tatsächliche Teilprojekte, zentrale Repositories |
-| `build.gradle` | Root-Lifecycle und wenige Aggregationstasks |
-| `gradle.properties` | Projektversion und wenige nachvollziehbare Buildparameter |
-| `gradle/libs.versions.toml` | feste Bibliotheks-/Pluginversionen |
-| `gradle/java-conventions.gradle` | kurze gemeinsame Java-/Test-/Archivkonventionen, explizit je Modul angewendet |
-| `gradlew`, `gradlew.bat`, `gradle/wrapper/…` | reproduzierbarer Einstieg |
-| `<modul>/build.gradle` | sichtbare Plugin- und Projektabhängigkeiten des Moduls |
-| `<modul>/src/main/java` | Produktionscode |
-| `<modul>/src/test/java` | Einheit-/Vertragstests |
-| `interlis-compiler/src/main/antlr` | gepflegte `.g4`-Quellen mit Provenienz |
-| `testdata/` | kleine eigene Fixtures und Manifeste externer Korpora |
-| `docs/spec/` | dieses Spezifikationspaket |
-| `docs/implementation-status.md` | Fortschritt und reproduzierbare nächste Schritte |
+| `pom.xml`, `<modul>/pom.xml`, `jenesis.properties` | Zehn JVM-Module, Version, Dependency-/Generator-/Testkonfiguration |
+| `build/InterlisJvmBuild.java`, `build/interlis/` | Kleiner Projekteinstieg und explizite Adapter |
+| `build/jenesis/`, `build/JENESIS-UPSTREAM.json` | Unveränderte gepinnte Enginequellen |
+| `target/jenesis-jvm/engine` | Tatsächliche Engineergebnisse |
+| `target/jenesis-jvm/reports`, `evidence`, `host` | Inventare, rohe JUnit-/Prozessreports, explizite Laufbindung |
+| `target/jenesis-jvm/consumers/<digest>` | Immutable Mavenclosure mit gehashten JARs/POMs/Sources |
+| `target/jenesis-jvm/editor-bundles/<hash>` | LSP-JARs, Renderer, Typen, Schemas und Lizenz |
+| `settings.gradle`, `build.gradle`, `gradle/*` | Ausschliesslich zwei Backendadapter, deren Pins/Preflight |
+| `<modul>/src/main`, `src/test`, `testdata/` | Unveränderte Quellstruktur und fachliche Tests |
+| `.jenesis` | Dependencycache, kein eigener globaler Maven-SNAPSHOT |
 
-Die gemeinsame Scriptdatei bleibt klein, deklarativ und ohne eigene Java/Groovy-Klassen. Module wenden sie ausdrücklich an. Für P0/P1 sind kein `buildSrc`, kein zusätzliches Convention-Plugin-Projekt und keine verschachtelte Composite-Build-Hierarchie erforderlich. Wird später eine echte komplexe wiederverwendbare Task benötigt, wird genau diese Buildlogik isoliert; es wird kein allgemeines eigenes Buildframework entwickelt.
+Ein Consumer prüft Manifestidentität, Producerbezug, exakten Dateisatz,
+Closure/POMs und Hashes vor der Auflösung und nach der Erzeugung. Kein
+`mavenLocal`, keine alten Gradle-JARs, keine zweite Produktionskompilierung.
+Verifikation verwendet ein explizites gehashtes Layout mit Laufwurzel;
+fehlende Rollen werden nicht durch alte Gradlepfade ergänzt.
+JVM-, Consumer- und Backendlocks haben getrennte endliche Zuständigkeiten.
 
-## 4. Minimale Groovy-Konfiguration
+## 4. Architektur und Tests
 
-Folgende Ausschnitte sind verbindliche Strukturbeispiele, keine bereits getesteten fertigen Repositorydateien. P0 führt sie im tatsächlichen Wrapperstand aus und schreibt die geprüfte Form ein.
+Der fachliche DAG bleibt unverändert. Öffentliche APIs benutzen eigene
+Quell-/Modelltypen, niemals ANTLR. SDKprodukte bleiben unverschattet.
+Normale Tests erhalten Parameter-/dynamische Fälle, echte Assertionausführung
+und unveränderte Rohreports. Compilercontracts werden frisch selektiert,
+danach prüfen gebundene Consumer die Produzenten. Leere Auswahl, Fehler,
+unerlaubte Skips, Abbruch und fremde Laufbindung sind Gatefehler.
 
-`settings.gradle`:
+## 5. ANTLR und Ressourcen
 
-```groovy
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        mavenCentral()
-    }
-}
-
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories { mavenCentral() }
-}
-
-rootProject.name = 'interlis-java'
-include('interlis-model', 'interlis-compiler',
-        'interlis-compiler-cli', 'interlis-wasm-teavm')
-```
-
-Weitere Module werden mit ihrem ersten ausführbaren Abschnitt aufgenommen. Abhängigkeiten auf noch nicht angelegte Projekte werden nicht auskommentiert als dauernde Vorlage behalten.
-
-`gradle/java-conventions.gradle` setzt mindestens:
-
-```groovy
-group = 'guru.interlis'
-version = providers.gradleProperty('projectVersion').get()
-
-java {
-    toolchain { languageVersion = JavaLanguageVersion.of(25) }
-    withSourcesJar()
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.release = 25
-    options.encoding = 'UTF-8'
-}
-
-tasks.withType(Test).configureEach {
-    useJUnitPlatform()
-    systemProperty 'file.encoding', 'UTF-8'
-}
-
-tasks.withType(AbstractArchiveTask).configureEach {
-    preserveFileTimestamps = false
-    reproducibleFileOrder = true
-}
-```
-
-Das Modul wendet zuvor sein `java-library`- oder `application`-Plugin an und bindet dann das Script ein. Testabhängigkeiten werden einmal eindeutig festgelegt und tatsächlich verfügbar gemacht. Javadoc-Artefakte und Publishing folgen, wenn eine veröffentlichte SDK-Abnahme ansteht.
-
-Ein Bibliotheksmodul zeigt seine Abhängigkeiten beispielsweise so:
-
-```groovy
-plugins { id 'java-library' }
-apply from: rootProject.file('gradle/java-conventions.gradle')
-
-dependencies {
-    api project(':interlis-model')
-    implementation libs.antlr.runtime
-    testImplementation platform(libs.junit.bom)
-    testImplementation libs.junit.jupiter
-    testRuntimeOnly libs.junit.platform.launcher
-}
-```
-
-`api` ist nur richtig, wenn die öffentlichen Signaturen Typen des anderen Moduls enthalten. Interne Bibliotheken verwenden `implementation`. Die gezeigten Catalog-Aliase werden im tatsächlichen TOML passend deklariert; sie sind keine vorhandenen eingebauten Gradle-Aliase.
-
-## 5. ANTLR-Generierung und Runtimegrenze
-
-Das Gradle-ANTLR-Plugin erzeugt Parser über `generateGrammarSource`. Es kann Generatorbibliotheken standardmässig in die API-/Laufzeitkonfiguration vererben. Ausserdem muss die gewünschte ANTLR-Version ausdrücklich gesetzt werden. Quelle: [ANTLR-Plugin](https://docs.gradle.org/current/userguide/antlr_plugin.html).
-
-Deshalb ist die Buildabnahme konkreter als „ANTLR-Plugin angewendet“:
-
-1. Generator und Runtime sind explizit auf 4.13.2 gepinnt.
-2. Grammatik liegt unter `src/main/antlr`; generierte Java-Dateien liegen ausschliesslich unter `build/generated-src/…`.
-3. Generierter Packagepfad ist `guru.interlis.compiler.internal.antlr` oder ein gleichwertiger interner Unterpfad.
-4. Runtimeartefakte enthalten nur die benötigte ANTLR-Runtime, nicht den Generator, StringTemplate oder dessen Tool-Abhängigkeiten.
-5. Die automatische Konfigurationsvererbung wird gezielt gelöst oder eine isolierte Generator-Konfiguration verwendet. P0 prüft die tatsächliche Gradle-Version; ein pauschales Löschen aller `extendsFrom`-Beziehungen ist unzulässig.
-6. Ein Runtime-Dependencytest und ein Wasm-Reachabilitytest kontrollieren die Grenze.
-7. Die Generierung läuft nach `clean` und lässt sich aus einem frischen Checkout reproduzieren.
-
-Wenn das integrierte Plugin mit wenig deklarativer Konfiguration sauber isolierbar ist, wird es verwendet. Wenn nicht, darf eine einzige isolierte `JavaExec`-Task mit deklarierten Inputs, Outputs, Toolclasspath und JavaLauncher eingesetzt werden. Keine dritte parallele Generatorpipeline und kein per Shell zusammengesetzter Classpath. Lexer-/Parserabhängigkeit und `tokenVocab`-Auflösung müssen im Generierungstest enthalten sein.
+Die gepinnte Engine generiert Lexer/Parser aus `interlis-compiler/src/main/antlr`
+in ihre eigenen Outputs. Generator und Runtime bleiben4.13.2. Generierte
+Klassen liegen intern unter `guru.interlis.compiler.internal.antlr` und
+werden nicht öffentlich exportiert. Tokennummern, `tokenVocab`, UTF-16-Positionen
+und EOF werden aus demselben Grammatikstand geprüft. Keine Testgrammatik
+wird durch eine Dummy-Task ersetzt. Der normale Produktclasspath enthält
+ausschliesslich die Runtime, niemals Generator/StringTemplate/Testwerkzeuge.
+Ressourcen und Lizenzen bleiben vollständig in den erzeugten JARs/Sources.
+Frische und wiederverwendete Erzeugung müssen fachlich übereinstimmen.
 
 ## 6. Lifecycle und Kommandos
 
-| Kommando/Task | Vertrag |
+Alle JVMkommandos verwenden `java build/InterlisJvmBuild.java` (Java25).
+
+| Profil | Vertrag |
 |---|---|
-| `./gradlew check` | Alle vorhandenen Module kompilieren; schnelle fachliche, Vertrags- und Architekturtests ausführen. Keine Browserinstallation, keine fremden Live-Repositories. |
-| `./gradlew :interlis-compiler-cli:installDist` | JVM-Distribution mit Startskripten und benötigten Bibliotheken erstellen. |
-| `./gradlew :interlis-compiler:conformanceTest` | Gepinnte 2.3/2.4-Suite und ihren Ergebniskatalog ausführen; Vorbedingungen/Fetched-Korpus explizit. |
-| `./gradlew :interlis-compiler:semanticGoldenTest` | Semantische Referenzprojektionen und Legacyvergleich prüfen. |
-| `./gradlew :interlis-workspace:incrementalTest` | Editiersequenzen, Invalidierung, Lebensdauer und Fresh-vs-Reuse-Gleichheit prüfen. |
-| `./gradlew :interlis-wasm-teavm:buildWasmGC` | TeaVM-WasmGC samt Runtime erzeugen; reale Plugin-Task aus Kapitel 10. |
-| `./gradlew :interlis-wasm-teavm:wasmContractTest` | Fachliche Vertragstests im Node-Profil ausführen; keine Browserprüfung behaupten. |
-| `./gradlew :interlis-wasm-webimage:webImageProbe` | Vergleichsversuch mit deklarierter externer Toolchain ausführen und Ergebnis erfassen. |
-| `./gradlew checkPortable` | Vorhandene JVM- und Node-Zielprofile einschliesslich wasmContractTest aggregieren. |
-| `./gradlew checkBrowser` | Tatsächliche verpflichtende Chrome-/Firefox-/Safari-Matrix aus Kapitel 10 prüfen. |
-| `./gradlew releaseCheck` | Alle für die gewählte Freigabe verpflichtenden Prüfungen koordinieren; fehlende Pflichtumgebung ist kein grüner Skip. |
+| `build` | Zehn Module, normale Tests; kein Gradle/Node/Browser/Live-Repository nötig. |
+| `build --module interlis-compiler --tests Klassenregex#Methode` | Gezielte echte Auswahl; leer ist Fehler, kein Gesamtbeleg. |
+| `artifacts` | Nur Produkte/Sources/POMs; ausdrücklich kein Testnachweis. |
+| `contracts` | Frische ausgewählte Assertions, anschliessend gebundene Consumer. |
+| `sdk-package` / `sdk-check` | Inventargesteuerte CLI-/LSP-/SDK-Produktion bzw. reale Prozess-/Archivprüfung. |
+| `host --profile conformance` | Gepinnter externer Runner und getrennte normative Bewertung. |
+| `host --profile reference` | Gepinnte ili2c-Gegenprobe. |
+| `host --profile python-free` | Quellen-/Buildgrenzenprüfung mit Negativcanarys. |
+| `wasm-export` | Immutable Mavenclosure und verifizierter ConsumerSnapshot. |
+| `wasm --profile teavm-smoke --inputs ABSOLUT --inputs-sha256 HASH` | Frische JS-/WasmGC-Erzeugung und schmale echte Laufzeitfälle. |
+| `wasm --profile webimage-smoke --inputs ABSOLUT --inputs-sha256 HASH` | Web Image mit expliziter externer Toolchain und echter Laufzeitprobe. |
+| `host --profile portable` / `host --profile browser` | Explizite portable Vertrags- bzw. reale Browserabnahme. |
+| `host --profile performance` | Vollständige bestehende P3-Leistungspflichten. |
+| `release-check --profile P3` | Vollständiger fachlicher Freigabeplan; fehlende Pflichtbelege sind Fehler. |
+| `editor-bundle` | Node-Renderer und echte Jenesis-LSP-Closure, reiner Bundleassembler. |
+| `clean --scope jvm\|consumer\|wasm` | Endliche Outputbesitzer; niemals Root-build-Quellen oder Caches löschen. |
 
-Ab P1 hängt releaseCheck für die P1-Freigabe von check, checkPortable, checkBrowser und dem dokumentierten Web-Image-Untersuchungsnachweis ab. P0 verwendet nur seine bereits vorhandenen Tasks und darf daraus keine P1-Freigabe ableiten. Die gewählte Freigabephase wird als expliziter Taskparameter oder eigenes Releaseprofil angegeben; eine unbekannte Phase ist ein Konfigurationsfehler.
+Direkte Backend-Wrapperaufrufe benötigen `-PjvmInputs=/absolut/consumer-manifest.json`
+und `-PjvmInputsSha256=PRODUCER_HASH`. Gradle enthält nur zwei Adapterprojekte.
 
-Root-Tasks aggregieren nur vorhandene Module. `check` muss nach Einführung weiterer Module weiter sinnvoll bleiben. Ein optionales lokales Profil darf Toolchainfehlen sichtbar als `NOT_RUN` berichten; im freigabepflichtigen CI-Profil ist dasselbe Fehlen ein Gate-Fehler. Es gibt keine success-Task, die nur eine Datei mit Erfolgstext schreibt.
+Die Releasepflichten umfassen normale JVMtests, Contracts, portable und Browserprüfungen sowie den dokumentierten Web-Image-Nachweis. Ein eingeschränktes Profil erteilt keine vollständige Freigabe. Die gewählte Freigabephase wird als expliziter Taskparameter oder eigenes Releaseprofil angegeben; eine unbekannte Phase ist ein Konfigurationsfehler.
+
+Der Projekteinstieg wählt ausschliesslich vorhandene Module und feste Profile. Ein optionales lokales Profil darf Toolchainfehlen sichtbar als `NOT_RUN` berichten; im freigabepflichtigen CI-Profil ist dasselbe Fehlen ein Gate-Fehler. Es gibt keine success-Task, die nur eine Datei mit Erfolgstext schreibt.
 
 Die vorhandenen TeaVM- und Web-Image-Contracttasks akzeptieren
 `-PnodeExecutable=/absoluter/pfad/zu/node`. Reports nennen die tatsächlich
@@ -197,8 +120,7 @@ ausdrücklich mit Stand, Werkzeugversionen und Artefakthashes nach
 Erwartungen. Für P3 gehören Konformitäts-, Performance-, Distributions- und
 Plattformnachweise zu den Pflichtprüfungen; fehlende Nachweise halten G3 offen.
 
-Das aktuelle P3-Profil wird ausdrücklich mit `releaseCheckP3` oder
-`-PreleaseProfile=P3 releaseCheck` gewählt. `releaseCheck` ohne Profil und
+Das aktuelle P3-Profil wird ausdrücklich mit `release-check --profile P3` gewählt. `release-check` ohne Profil und
 unbekannte Profile scheitern bereits bei der Konfiguration. Vor dem Gesamtlauf
 werden erfolgreiche Windows-/Linux-Actions desselben sauberen Produktcommits
 mit `tools/release/platform-evidence.cjs` bezogen und gegen die von GitHub
@@ -207,7 +129,7 @@ macOS-arm64-Referenzmaschine unter `tools/verification/without-python.cjs`;
 der aktive, vererbte OS-Ausführungsschutz ist eine Vorbedingung. Eine blosse
 frühere Erfolgsmeldung dieses Schutzes reicht nicht.
 
-`releaseEvidenceCheck` bindet die tatsächlich geladenen Laufzeitartefakte,
+`tools/release/evidence.cjs` bindet die tatsächlich geladenen Laufzeitartefakte,
 Quellfingerprints, Fallzahlen, Plattformprozesse, Corpusmessungen und zwei
 saubere reproduzierbare Builds an diesen Commit. Er prüft auch das ausgelieferte
 Browser-Buildmanifest und die getrennten Versionsverträge. Geänderte Quellen,
@@ -250,34 +172,34 @@ Die Architekturregeln können zunächst mit kleinen gezielten Tests geprüft wer
 
 | ID | Normative Anforderung | Phase | Abnahme |
 |---|---|---|---|
-| BUILD-001 | Gradle-Wrapper und Groovy-DSL MÜSSEN der einzige aktive Build-Einstieg sein. | P0 | Frischer Checkout baut ohne Maven/Ant-Installation. |
+| BUILD-001 | Jenesis MUSS der alleinige aktive JVM-Builder sein; Gradle/Groovy/Wrapper MUSS ausschliesslich die zwei Wasm-Backends bauen. | P0 | Frischer Checkout baut ohne Maven/Ant-Installation. |
 | BUILD-002 | JDK 25 und feste verifizierte Versionen MÜSSEN dokumentiert sein. | P0 | Versionen-/Wrapper-/Dependencyreport. |
 | BUILD-003 | Teilprojekte MÜSSEN dem azyklischen fachlichen Modulgraph entsprechen. | P0 | Dependencytest, keine impliziten Zwischen-JAR-Kopien. |
 | BUILD-004 | Buildlogik MUSS klein und sichtbar bleiben; Projektzugriffe in `afterEvaluate` sind zu vermeiden. | P0 | Konfiguration ist deklarativ, Taskabhängigkeiten explizit. |
 | BUILD-005 | ANTLR-Generator und Runtime MÜSSEN getrennt und gleichversioniert sein. | P0 | Runtimeclasspath und generierter Parser geprüft. |
 | BUILD-006 | Generierte Artefakte MÜSSEN aus gepinnten Quellen entstehen; fachliche Ergebnisse bleiben deterministisch. JVM-/SDK- und nicht von TeaVM-Programmen abhängige Lieferdateien MÜSSEN binär reproduzierbar bleiben. TeaVM-Programme und ausschliesslich ihre Hash-/Grössenfelder im Manifest sind davon ausgenommen. | P0 | Zwei unabhängige Builds mit vollständigen Inventaren, funktionalen JS-/Wasm-Nachweisen und präzisem Bytevergleich; Integrität der konkreten Lieferung bleibt geprüft. |
-| BUILD-007 | `check` MUSS eine schnelle, netzwerkunabhängige Entwicklerabnahme sein, sobald Abhängigkeiten/Korpus bereitstehen. | P0 | Wiederholung offline ohne Live-Repositoryzugriff. |
+| BUILD-007 | Der normale JVMbuild MUSS eine schnelle, netzwerkunabhängige Entwicklerabnahme sein, sobald Abhängigkeiten/Korpus bereitstehen. | P0 | Wiederholung offline ohne Live-Repositoryzugriff. |
 | BUILD-008 | Pflichtprüfungen DÜRFEN bei fehlenden Tools nicht als erfolgreich übersprungen gelten. | P1 | Releaseprofil scheitert mit konkreter Vorbedingung. |
 | BUILD-009 | Publishing DARF keine Voraussetzung für lokales Bauen/Testen sein. | P0 | Lokale Distribution funktioniert ohne Zugangsdaten. |
-| BUILD-010 | Das historische Maven-Spike-POM DARF nicht zum zweiten aktiven Build des Produkts werden. | P0 | Gradle reproduziert die Probe; POM bleibt nur in Evidenzarchiv. |
+| BUILD-010 | Das historische Maven-Spike-POM DARF nicht zum zweiten aktiven Build des Produkts werden. | P0 | Jenesis reproduziert die Produkte; aktive POMs sind Metadaten, das historische Spike-POM bleibt Evidenz. |
 
 ## 9. Auslieferung
 
-Die erste nutzbare CLI-Auslieferung ist eine `application`-Distribution mit `lib/` und Startskripten. Ein CLI-Fat-JAR und ili2c-Kompatibilitätsartefakte gehören nicht zur Lieferung. Normale Bibliotheks-JARs bleiben unverschattet. Die Hauptklasse ist guru.interlis.cli.Main; applicationName und distributionBaseName sind explizit interlis-compiler. Das CLI-JAR bleibt eindeutig interlis-compiler-cli-<version>.jar.
+Die CLI-Auslieferung ist eine Jenesis-erzeugte Distribution mit `lib/` und Startskripten. Ein CLI-Fat-JAR und ili2c-Kompatibilitätsartefakte gehören nicht zur Lieferung. Normale Bibliotheks-JARs bleiben unverschattet. Die Hauptklasse ist guru.interlis.cli.Main; der Launchername ist explizit interlis-compiler. Das CLI-JAR bleibt eindeutig interlis-compiler-cli-<version>.jar.
 
-WASM-Auslieferungen enthalten einen versionierten JS-Lader, das Wasm-Artefakt, eine Protokollversion und einen Ressourcen-/Buildmanifest. Das Builddatum ist Betriebsmetadatum, kein semantischer Modellfingerprint. Veröffentlichungen verwenden feste Versionsnummern und nachvollziehbare Releaseprofile. Eine Maven-kompatible Publikation ist mit Gradle möglich und verpflichtet Anwender nicht zur Verwendung von Maven.
+WASM-Auslieferungen enthalten einen versionierten JS-Lader, das Wasm-Artefakt, eine Protokollversion und einen Ressourcen-/Buildmanifest. Das Builddatum ist Betriebsmetadatum, kein semantischer Modellfingerprint. Veröffentlichungen verwenden feste Versionsnummern und nachvollziehbare Releaseprofile. Maven-kompatible Publikationsmetadaten sind möglich und verpflichtet Anwender nicht zur Verwendung von Maven.
 
 
-`conformanceWrapperTest` prüft mit JUnit im CLI-Testquellensatz die Fehlerpfade
+Die normalen CLI-Conformancetests prüft mit JUnit im CLI-Testquellensatz die Fehlerpfade
 der versionierten Normerwartungen und die gepinnten portablen Originalfixtures.
-`check` und `conformanceCheck` hängen davon ab. `conformanceCheck` startet den
-unveränderten externen `InterlisConformance.java` direkt aus Gradle mit Java 25;
+`host --profile conformance` startet den unveränderten externen
+`InterlisConformance.java` direkt mit Java25;
 Archivprüfung, Konfiguration und direkte Prozessausführung stehen in
-`gradle/conformance.gradle`, die Pins in `gradle/conformance-suite.properties`.
-Der rohe Bericht und Runner-Exit bleiben unter `build/conformance/` erhalten.
+`build/interlis/HostVerificationProfiles.java`, die Pins in `gradle/conformance-suite.properties`.
+Der rohe Bericht und Runner-Exit bleiben unter dem expliziten Hostlauf unter `target/jenesis-jvm/host/` erhalten.
 Eine separate Java-Testhilfe bewertet ausschliesslich die expliziten
 Normabweichungen mit Original-/Kontrollhashes und strukturierten Diagnosen und
-schreibt den Projektbericht unter `build/reports/conformance/`. Die Suite bleibt
+schreibt den Projektbericht unter dessen `reports/conformance/`. Die Suite bleibt
 alleiniger Runner; Erwartungen, Baseline und Pins werden nie automatisch aktualisiert.
 
 Die funktionalen portablen Probeläufe werden nach den im selben Taskgraph
@@ -295,14 +217,14 @@ werden nicht verändert. Inkrementelle und frische Builds müssen übereinstimme
 
 ### L0B-3: Java-Hostprüfungen und Pythonfreiheit
 
-`geoCorpus`, `jvmBenchmark`, `sdkProcessCheck`, `referenceCheck` und die
+Die Hostprofile `geo-corpus`, `jvm-benchmark`, `sdk`, `reference` und die
 Original-/View-/Unit-Referenzvergleiche gehören zum internen Modul
 `interlis-verification` mit ausschliesslich `src/main` und `src/test`.
 Seine Gson-/JUnit-Abhängigkeiten gehören nicht zur Distribution. Tool- und
-Validator-Unit-Tests laufen unter `:interlis-verification:test`; aktuelle
-Repository-/Runbindungen unter `contractTest` mit dem Tag `compiler-contract`.
+Validator-Unit-Tests laufen unter `build --module interlis-verification`; aktuelle
+Repository-/Runbindungen unter `contracts` mit dem Tag `compiler-contract`.
 Direkte OID-/Metadaten-/Unicode-NFD-Regressionsfälle gehören zum Compiler.
-`pythonFreeCheck` ist Teil von `check` und prüft getrackte sowie nicht ignorierte
+`host --profile python-free` prüft getrackte sowie nicht ignorierte
 Eingaben mit Negativcanarys. Historische Texte bleiben lesbar. Das abschliessende
 0b-Gate läuft zusätzlich mit gesperrtem Interpreterzugriff einschliesslich
 absoluter Aufrufe, nicht nur mit einem bereinigten PATH. Kein älterer Gradle-
@@ -311,13 +233,15 @@ bleiben frisch und an dieselben geprüften Eingaben gebunden.
 
 ### P3: vollständiger Performancevertrag
 
-`fullCorpus` prüft den eingefrorenen offiziellen Index und sämtliche
+`host --profile full-corpus` prüft den eingefrorenen offiziellen Index und sämtliche
 Originaldateien mit expliziten Encodings und Byte-/Texthashes.
-`fullCorpusJvm`, `fullCorpusWasm`, `fullCorpusBrowsers` und `fullCorpusSafari`
+die Hostprofile `full-corpus-jvm`, `full-corpus-wasm`, `full-corpus-browsers` und `full-corpus-safari`
 erzeugen aktuelle vollständige öffentliche Protokollcaptures.
-`fullCorpusEditorWasm`, `editorPressure`, `observationPressure` und
-`fullCorpusArtifacts` messen lange reale Sitzungen, Abbruch, begrenzte
-Beobachtung und ausgelieferte Roh-/Kompressionsgrössen. `performanceCheck`
+die Hostprofile `full-corpus-editor-wasm`, `editor-pressure`, `observation-pressure` und
+`full-corpus-artifacts` messen lange reale Sitzungen, Abbruch, begrenzte
+Beobachtung und ausgelieferte Roh-/Kompressionsgrössen. `host --profile performance`
 führt das vollständige feste Profil aus Kapitel13 aus; das frühere13er-Profil
-bleibt über seine bisherigen Einzeltasks als historische Evidenz verfügbar.
+bleibt über seine expliziten Einzelprofile als historische Evidenz verfügbar.
 Ein fehlender Safari-/Runtime-/Hardware-/Ergebnisnachweis scheitert, ohne Skip.
+
+Der explizite Runtimecheck verwendet `java build/InterlisJvmBuild.java runtime-check --application compiler`. Er erzeugt ein privates JDK-only-Image mit unveränderten modularen CLI-JARs, prüft SDK/HTTP/HTTPS sowie eine lokale app-image-Eignungsprobe. App-Image-Proben verwenden die technische macOS-kompatible Version 1.0; sie ändern keine GAV und sind keine Standarddistribution oder Installerfreigabe. Die Extension besitzt weiterhin ihre eigene gepinnte JRE-/jlink-Auswahl.

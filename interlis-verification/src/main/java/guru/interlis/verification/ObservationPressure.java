@@ -17,7 +17,7 @@ public final class ObservationPressure {
         return new CompilationRequest(List.of(new ModelSelector.ByName("Pressure",Optional.empty(),Optional.empty())),SourceSet.of(Map.of(source.id(),source)),CompilerOptions.defaults());
     }
     public static void main(String[] args) throws Exception {
-        Path out=Path.of(args[0]).resolve("build/reports/performance/full-corpus/observation-pressure.json");Files.deleteIfExists(out);
+        Path out=VerificationLayout.forInvocation(Path.of(args[0])).rootReport("performance/full-corpus/observation-pressure.json");Files.deleteIfExists(out);
         var first=new BoundedObservationQueue(32);var second=new BoundedObservationQueue(32);
         var engineA=CompilerEngines.create(new CompilerServices(first,ClockSource.system(),RunContextFactory.defaults()));
         var engineB=CompilerEngines.create(new CompilerServices(second,ClockSource.system(),RunContextFactory.defaults()));

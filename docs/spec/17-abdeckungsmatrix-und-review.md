@@ -1,5 +1,10 @@
 # Abdeckungsmatrix, Anforderungsindex und Dokumentreview
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 CLI2 konkretisiert DIAG-001–009, SEM-017/019, API-Verträge und CLI-001/006 durch die gemeinsame `requestDiagnostics()`-Auswahl (Kapitel06/16), den reinen DE-/EN-Formatter (Kapitel09) und explizite CLI-Sprach-/JSON-Verträge (Kapitel18). Multi-Source-/Multi-Modell-, Import-/Translation-/Overlay-, Fresh/Reuse-, Office-Original-/Kontroll- und Portablegegenproben prüfen unveränderte Sprachentscheidungen. Dies ist eine Vertragszuordnung; der operative Stand steht in `docs/implementation/compiler-cli-modernization/STATUS.md`.
 
 P3-2 konkretisiert die vorhandenen INC-018/019/022 und LSP-001–016 durch
@@ -78,7 +83,7 @@ Die Kapitel 00 bis 18 sind die 19 Fach- und Steuerungsdokumente. Zusammen mit RE
 | Vorhandene Compilertestsuite nutzen | Gepinnte Suite, bewusste Auswahl des 2.3/2.4-Umfangs, getrennte PASS/XFAIL/ERROR-Behandlung, zusätzliche semantische Goldens | [13](13-tests-kompatibilitaet-und-qualitaet.md), [15](15-entscheidungen-risiken-und-quellen.md) | Referenzfälle in WP-01; vollständige Norm-/Feature-/Suitebilanz in G2 |
 | ilic-fork, Downstreamprojekte und GeoWerkstatt auswerten | Herkunfts- und Quellenregister mit konkreten übernommenen Architekturideen und Grenzen | [15](15-entscheidungen-risiken-und-quellen.md), [07](07-workspace-inkrementalitaet-und-lsp.md), [11](11-visualisierung-und-projektionen.md), [12](12-transfer-validierung-und-datenbanken.md) | Entscheidungen sind mit Quellen und eigenen Abnahmen verbunden; fremde Architektur wird nicht ungeprüft kopiert |
 | Geeignete Repo-, Paket- und Toolnamen | Arbeitsname interlis-java, Group und Packages guru.interlis; interlis-compiler als eigenes Standard-CLI, weitere Werkzeuge nach expliziten Profilen | [01](01-zielbild-und-anforderungen.md), [02](02-architektur-und-modulgrenzen.md), [03](03-build-und-repository.md), [18](18-cli-sdk-und-kompatibilitaetsadapter.md) | Konsistente Artefakte, Imports, Distributionen und SDK-Beispiele |
-| Gradle bevorzugen und Build einfach halten | Ein Groovy-Multiprojektbuild mit Wrapper, wenigen Konventionen und tatsächlich benötigten Modulen | [03](03-build-und-repository.md), [14](14-implementierungsplan-und-arbeitspakete.md) | Frischer Checkout und einfache Lifecycle-Tasks; kein aktiver paralleler Maven-/Ant-Build |
+| Gradle bevorzugen und Build einfach halten | Ein Jenesis-JVMbuild und zwei Gradle-Backendadapter mit geprüftem Snapshot und festen Pins | [03](03-build-und-repository.md), [14](14-implementierungsplan-und-arbeitspakete.md) | Frischer Checkout und einfache Lifecycle-Tasks; kein aktiver paralleler Maven-/Ant-Build |
 | Tiefgehende Spezifikation für einen Coding-Agenten bis zu Methoden/Klassen | Öffentliche Fabriken und Signaturen, interne Verantwortungen, Dateninvarianten, Vor-/Nachbedingungen, Zustands- und Fehlerverträge | [04](04-quelltext-syntax-und-parser.md) bis [12](12-transfer-validierung-und-datenbanken.md), [16](16-api-register-und-vertragstests.md), [18](18-cli-sdk-und-kompatibilitaetsadapter.md) | Kompilierende SDK-Vertragstests und fachliche Positiv-/Negativfälle; Fortschritt nach Anforderungs-IDs |
 
 ## 3. Konsistenz der Methoden- und Klassenverträge
@@ -223,7 +228,7 @@ Der Index gruppiert die 289 Anforderungen nach ihrem fachlichen Besitzer. Die ve
 | [BUILD-007](03-build-und-repository.md) | P0 | Wiederholung offline ohne Live-Repositoryzugriff. |
 | [BUILD-008](03-build-und-repository.md) | P1 | Releaseprofil scheitert mit konkreter Vorbedingung. |
 | [BUILD-009](03-build-und-repository.md) | P0 | Lokale Distribution funktioniert ohne Zugangsdaten. |
-| [BUILD-010](03-build-und-repository.md) | P0 | Gradle reproduziert die Probe; POM bleibt nur in Evidenzarchiv. |
+| [BUILD-010](03-build-und-repository.md) | P0 | Jenesis reproduziert die Produkte; POMs sind Metadaten, der historische Spike bleibt Evidenz. |
 
 ### SRC – Quellen und Positionen
 

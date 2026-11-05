@@ -19,11 +19,29 @@ public final class InterlisJvmBuild {
     public static void main(String[] args) throws Exception {
         BuildRequest request = parse(args);
         JvmBuildInputs.requireProject(request.root());
-        Path target=request.root().resolve("target/jenesis-jvm");Files.createDirectories(target);
-        try(var channel=FileChannel.open(target.resolve("project.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);
+        Path target=JvmBuildInputs.requireOutputRoot(request.root(),"target/jenesis-jvm");Files.createDirectories(target);
+        if(request.profile().equals("wasm")) {
+            build.interlis.WasmBuildRun.run(request);
+            JvmBuildInputs.requireProject(request.root());
+            return;
+        }
+        if(request.profile().equals("editor-bundle")) {
+            build.interlis.EditorBundleRun.execute(request);
+            JvmBuildInputs.requireProject(request.root());
+            return;
+        }
+        try(var channel=FileChannel.open(JvmBuildInputs.requireOutputRoot(request.root(),"target/jenesis-jvm/project.lock"),StandardOpenOption.CREATE,StandardOpenOption.WRITE);
                 var lock=channel.tryLock()) {
             if(lock==null)throw new IllegalStateException("Another project build is active");
-            if(request.profile().equals("contracts")) {
+            if(request.profile().equals("wasm-export")) {
+                var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,request.root()));
+                var snapshot=build.interlis.ConsumerSnapshot.create(request.root(),outcome);
+                System.out.println("Consumer snapshot: "+snapshot.manifest()+" SHA-256="+snapshot.manifestSha256());
+            } else if(request.profile().equals("host")) {
+                build.interlis.HostVerificationProfiles.run(request);
+            } else if(request.profile().equals("clean")) {
+                build.interlis.BuildOutputs.clean(request.root(),request.options().get("--scope"));
+            } else if(request.profile().equals("contracts")) {
                 if(request.module()!=null||request.tests()!=null)throw new IllegalArgumentException("contracts uses the full current binding selection");
                 CompilerContractRun.run(request.root());
             } else if(request.profile().equals("parity")) {
@@ -33,13 +51,22 @@ public final class InterlisJvmBuild {
                 System.out.println("Parity completed: "+target.resolve("reports/parity.json"));
             } else if(request.profile().equals("editor-check")) {
                 build.interlis.EditorCompatibilityRun.run(request);
+            } else if(request.profile().equals("runtime-check")) {
+                build.interlis.CompilerRuntimeCheck.run(request.root());
+            } else if(request.profile().equals("module-check")) {
+                build.interlis.ModulePathContract.run(request.root());
+            } else if(request.profile().equals("sdk-package")) {
+                build.interlis.ExistingJvmDistribution.generate(request.root());
+            } else if(request.profile().equals("release-check")) {
+                build.interlis.HostVerificationProfiles.release(request.root());
             } else if(request.profile().equals("sdk-check")) {
                 if(request.module()!=null||request.tests()!=null)throw new IllegalArgumentException("sdk-check uses complete runtime closures");
                 build.interlis.ExistingJvmDistribution.run(request.root());
-            } else if(request.profile().equals("build")) {
+            } else if(request.profile().equals("build")||request.profile().equals("artifacts")) {
                 var outcome = JenesisBridge.run(request);
+                if(request.profile().equals("build")&&request.module()==null)build.interlis.HostVerificationProfiles.verifyPythonFree(request.root(),outcome);
                 System.out.println("JVM build completed; scope=" + (request.module() == null ? "all" : request.module())
-                        + ", tests=" + (request.tests() == null ? "normal" : request.tests())
+                        + ", tests=" + (request.profile().equals("artifacts")?"NOT_RUN":request.tests() == null ? "normal" : request.tests())
                         + ", inventory=" + outcome.inventory());
             } else throw new IllegalArgumentException("Profile not yet available: " + request.profile());
             JvmBuildInputs.requireProject(request.root());
@@ -51,7 +78,7 @@ public final class InterlisJvmBuild {
         var options=new java.util.HashMap<String,String>();
         int i = 0;
         if (args.length > 0 && !args[0].startsWith("--")) profile = args[i++];
-        if (!List.of("build", "contracts", "sdk-check", "parity", "editor-check").contains(profile))
+        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle").contains(profile))
             throw new IllegalArgumentException("Unknown profile: " + profile);
         while (i < args.length) {
             String option = args[i++];
@@ -64,20 +91,39 @@ public final class InterlisJvmBuild {
                     module = value;
                 }
                 case "--tests" -> {
-                    if (tests != null || value.isBlank() || value.contains("/") || value.contains(","))
+                    if (tests != null || value.isBlank() || value.contains("/"))
                         throw new IllegalArgumentException("Expected one explicit class regex with optional #method");
                     tests = value;
                 }
-                case "--baseline", "--extension-dir", "--reference-bundle" -> {
+                case "--baseline", "--extension-dir", "--reference-bundle", "--inputs" -> {
                     if(options.put(option,value)!=null||!Path.of(value).isAbsolute()||!Files.exists(Path.of(value)))throw new IllegalArgumentException("Expected existing absolute path for "+option);
+                }
+                case "--application" -> {
+                    if(!value.equals("compiler")||options.put(option,value)!=null)throw new IllegalArgumentException("Expected application compiler");
+                }
+                case "--scope" -> {
+                    if(!List.of("jvm","consumer","wasm").contains(value)||options.put(option,value)!=null)
+                        throw new IllegalArgumentException("Expected exactly one clean scope: jvm|consumer|wasm");
+                }
+                case "--profile" -> {
+                    var profiles=profile.equals("release-check")?java.util.Set.of("P3"):profile.equals("wasm")?build.interlis.WasmBuildRun.PROFILES:build.interlis.HostVerificationProfiles.PROFILES;
+                    if(!profiles.contains(value)||options.put(option,value)!=null)
+                        throw new IllegalArgumentException("Unknown or duplicate host profile: "+value);
+                }
+                case "--inputs-sha256" -> {
+                    if(!value.matches("[0-9a-f]{64}")||options.put(option,value)!=null)throw new IllegalArgumentException("Expected producer manifest SHA-256");
+                }
+                case "--request-id" -> {
+                    if(!java.util.UUID.fromString(value).toString().equals(value)||options.put(option,value)!=null)throw new IllegalArgumentException("Expected unique canonical request UUID");
                 }
                 default -> throw new IllegalArgumentException("Unknown option: " + option);
             }
         }
         if (tests != null && module == null) throw new IllegalArgumentException("--tests requires --module");
-        var expected=profile.equals("parity")?java.util.Set.of("--baseline"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):java.util.Set.of();
+        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("parity")?java.util.Set.of("--baseline"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
         if(!options.keySet().equals(expected))throw new IllegalArgumentException("Expected options for "+profile+": "+expected);
-        if(!profile.equals("build")&&(module!=null||tests!=null))throw new IllegalArgumentException("Module/test restrictions are only available for build");
+        if(!List.of("build","artifacts").contains(profile)&&(module!=null||tests!=null))throw new IllegalArgumentException("Module/test restrictions are only available for build/artifacts");
+        if(profile.equals("artifacts")&&tests!=null)throw new IllegalArgumentException("artifacts never selects tests");
         return new BuildRequest(profile, module, tests, Path.of("").toAbsolutePath().normalize(),options);
     }
 }

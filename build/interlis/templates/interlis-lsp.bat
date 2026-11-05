@@ -72,13 +72,11 @@ goto exitWithErrorLevel
 :execute
 @rem Setup the command line
 
-set CLASSPATH=@CLASSPATH@
-
 
 @rem Execute interlis-lsp
 @rem endlocal doesn't take effect until after the line is parsed and variables are expanded
 @rem which allows us to clear the local environment before executing the java command
-endlocal & "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %INTERLIS_LSP_OPTS%  -classpath "%CLASSPATH%" guru.interlis.lsp.Main %* & call :exitWithErrorLevel & goto exitWithErrorLevel
+endlocal & "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %INTERLIS_LSP_OPTS%  --module-path "%APP_HOME%/lib" --module guru.interlis.lsp/guru.interlis.lsp.Main %* & call :exitWithErrorLevel & goto exitWithErrorLevel
 
 @rem This label must not be changed. We rely on old scripts being able to jump to this point.
 :exitWithErrorLevel

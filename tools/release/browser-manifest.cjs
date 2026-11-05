@@ -9,7 +9,8 @@ const fs=require('node:fs'),path=require('node:path');const {root,hash}=require(
  if(capabilities.status!=='ok'||capabilities.protocolVersion!=='1.0')throw Error('cannot obtain actual compiled capabilities');
  const walk=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(directory,e.name)):[path.join(directory,e.name)]);
  const resources={};for(const file of walk(web).sort()){const name=path.relative(web,file).split(path.sep).join('/');if(name==='build-manifest.json')continue;const bytes=fs.readFileSync(file);resources[name]={sha256:hash(bytes),bytes:bytes.length};}
- const versions=JSON.parse(fs.readFileSync(path.join(root,'build/reports/sdk/version-manifest.json'),'utf8'));
+ const versionFile=process.argv[3];if(!versionFile||!path.isAbsolute(versionFile))throw Error('explicit frozen CLI version manifest required');
+ const versions=JSON.parse(fs.readFileSync(versionFile,'utf8'));
  if(versions.version!==capabilities.result.toolVersion||versions.protocol!==capabilities.result.protocol+'/'+capabilities.result.protocolVersion)throw Error('actual CLI/compiler version manifests disagree');
  const toolchain=JSON.parse(fs.readFileSync(path.join(root,'interlis-wasm-teavm/build/tooling/teavm/generateWasmGC.json'),'utf8'));
  const pin=JSON.parse(fs.readFileSync(path.join(root,'gradle/teavm-core.json'),'utf8'));

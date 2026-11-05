@@ -73,7 +73,7 @@ public final class SemanticComparison {
         try {compare(expected,mutant);}catch(IllegalArgumentException expectedFailure){return;}throw new AssertionError("Undetected semantic mutation");
     }
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath(),out=root.resolve("build/reports/g2/semantic-comparison.json");Files.deleteIfExists(out);
+        Path root=Path.of(args[0]).toAbsolutePath(),out=VerificationLayout.forInvocation(root).rootReport("g2/semantic-comparison.json");Files.deleteIfExists(out);
         Path jar=ReferenceProcesses.prepare(root);var cases=new ArrayList<Map<String,Object>>();int mutants=0;
         try(var loader=new URLClassLoader(new java.net.URL[]{jar.toUri().toURL()},ClassLoader.getPlatformClassLoader())) {
             for(String version:List.of("2.3","2.4")) {
@@ -87,7 +87,7 @@ public final class SemanticComparison {
                 mutants+=counterchecks(good,bad);
             }
         }
-        Path input=root.resolve("build/reports/g2/a3-jvm.json");write(input,cases);
+        Path input=VerificationLayout.forInvocation(root).rootReport("g2/a3-jvm.json");write(input,cases);
         var portable=run(root,List.of(args[1],root.resolve("tools/reference/semantic-comparison.cjs").toString(),input.toString()),Duration.ofSeconds(90));
         require(portable.exitCode()==0,"Portable semantic comparison failed: "+portable);
         pin(jar,ReferenceProcesses.JAR);write(out,Map.of("status","passed","referenceJarSha256",ReferenceProcesses.JAR,"cases",cases,"mutationChecks",mutants,"portable",portable,

@@ -13,10 +13,10 @@ public final class ModuleArtifacts {
         }
     }
     public static List<Artifact> runtime(Path root,String module,JenesisBridge.BuildOutcome outcome)throws Exception {
-        Path directory=outcome.engineResults().get("build/maven/build-module-"+module+"/inventory");
-        if(directory==null)throw new IllegalStateException("Missing module inventory: "+module);
+        var result=JenesisBridge.moduleResult(outcome,module);
+        Path directory=result.inventoryDirectory();
         Properties data=new Properties();try(var reader=Files.newBufferedReader(directory.resolve("inventory.properties"))){data.load(reader);}
-        String prefix="module-"+module;var identities=new HashMap<Path,String>();
+        String prefix=result.inventoryPrefix();var identities=new HashMap<Path,String>();
         Path own=file(root,directory,data.getProperty(prefix+".artifacts.0"));identities.put(own,data.getProperty(prefix+".identity.0"));
         for(int i=0;data.containsKey(prefix+".dependency."+i);i++) {
             String[] parts=data.getProperty(prefix+".dependency."+i).split(" ");
@@ -30,13 +30,22 @@ public final class ModuleArtifacts {
             if(!module.equals("interlis-verification")&&coordinates.matches(".*(interlis-verification|junit|platform-console|antlr4/|commons-compress|archive-tool).*"))throw new IllegalStateException("Tool/runtime leak: "+coordinates);
             if(coordinates.startsWith("maven/guru.interlis/")) {
                 String[] id=coordinates.split("/");
-                if(id.length!=4||!id[3].equals("0.2.0-SNAPSHOT")||!JvmBuildInputs.MODULES.contains(id[2]))throw new IllegalStateException("Foreign own coordinates: "+coordinates);
-                Path producer=JenesisBridge.runtimeClasspath(id[2],outcome).getFirst();
+                if(id.length!=4||!id[3].equals(JvmBuildInputs.projectVersion(root))||!JvmBuildInputs.MODULES.contains(id[2]))throw new IllegalStateException("Foreign own coordinates: "+coordinates);
+                Path producer=JenesisBridge.moduleResult(outcome,id[2]).jar();
                 if(!artifact.sha256().equals(JvmBuildInputs.sha256(producer)))throw new IllegalStateException("Foreign/stale own runtime bytes: "+coordinates);
             }
             artifacts.add(artifact);
         }
         return List.copyOf(artifacts);
+    }
+    public static Path jar(JenesisBridge.BuildOutcome outcome,String projectId) throws Exception {
+        return JenesisBridge.moduleResult(outcome,projectId).jar();
+    }
+    public static Path pom(JenesisBridge.BuildOutcome outcome,String projectId) throws Exception {
+        return JenesisBridge.moduleResult(outcome,projectId).pom();
+    }
+    public static Path sources(JenesisBridge.BuildOutcome outcome,String projectId) throws Exception {
+        return JenesisBridge.moduleResult(outcome,projectId).sources().orElseThrow(()->new IllegalStateException("Sources not selected: "+projectId));
     }
     private static Path file(Path root,Path directory,String value)throws Exception {
         if(value==null)throw new IllegalStateException("Missing artifact");

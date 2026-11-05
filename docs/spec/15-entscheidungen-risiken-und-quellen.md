@@ -1,5 +1,10 @@
 # Entscheidungen, offene Nachweise und Quellen
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 L4-1-Nutzerentscheidung vom30.10.2026: Die zwölf noch offenen historischen
 Referenzfälle behalten ausdrücklich das bestehende Profil. Elf normwidrige
 Originale werden gezielt abgelehnt; das positive2.3-Toleranzoriginal0.0001 bei

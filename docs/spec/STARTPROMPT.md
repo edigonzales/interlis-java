@@ -1,5 +1,10 @@
 # Startauftrag für einen LLM-Coding-Agenten
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 Der aktuelle G2-Fertigstellungsauftrag liegt unter [docs/g2/](../g2/CODEX_STARTPROMPT.md),
 mit [Ausführungsplan](../g2/EXECUTION_PLAN.md) und [Status](../g2/STATUS.md).
 Dieser Startprompt bleibt die Vorlage für die ursprüngliche Erstimplementierung.

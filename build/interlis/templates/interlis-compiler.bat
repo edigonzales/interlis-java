@@ -72,8 +72,6 @@ goto exitWithErrorLevel
 :execute
 @rem Setup the command line
 
-set CLASSPATH=@CLASSPATH@
-
 
 @rem Execute interlis-compiler
 @rem endlocal doesn't take effect until after the line is parsed and variables are expanded
@@ -89,7 +87,7 @@ goto collectCompilerArguments
 :executeCompilerArguments
 set "_INTERLIS_COMPILER_WORKING_DIRECTORY=%CD%"
 pushd "%APP_HOME%" || goto fail
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %INTERLIS_COMPILER_OPTS%  -Dguru.interlis.cli.windowsArguments=true --module-path "lib" --add-modules ALL-MODULE-PATH,ALL-DEFAULT --module interlis.compiler.cli/guru.interlis.cli.Main & call :exitWithErrorLevel & goto exitWithErrorLevel
+"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %INTERLIS_COMPILER_OPTS%  -Dguru.interlis.cli.windowsArguments=true --module-path "lib" --module guru.interlis.compiler.cli/guru.interlis.cli.Main & call :exitWithErrorLevel & goto exitWithErrorLevel
 set "_INTERLIS_COMPILER_EXIT_CODE=%ERRORLEVEL%"
 popd
 cmd /c exit /b %_INTERLIS_COMPILER_EXIT_CODE%

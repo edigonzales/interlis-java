@@ -23,15 +23,12 @@ public final class JvmArtifactReproducibility {
         Map<String,String> files=new TreeMap<>();
         var outcome=JenesisBridge.readExistingOutcome(root);
         for(String module:JvmBuildInputs.MODULES)for(String kind:List.of("build","source")) {
-            Path directory=outcome.engineResults().get("build/maven/"+kind+"-module-"+module+"/inventory");
-            if(directory==null)throw new IllegalStateException("Missing current result: "+module+"/"+kind);
-            var data=new Properties();try(var reader=Files.newBufferedReader(directory.resolve("inventory.properties"))){data.load(reader);}
-            String key="module-"+module+"."+(kind.equals("source")?"sources":"artifacts")+".0";
-            Path file=directory.resolve(Objects.requireNonNull(data.getProperty(key),"Missing artifact")).normalize();
+            Path file=kind.equals("build")?ModuleArtifacts.jar(outcome,module):ModuleArtifacts.sources(outcome,module);
             requireFile(root,file);files.put("modules/"+module+"/"+kind+".jar",JvmBuildInputs.sha256(file));
         }
-        for(String tree:List.of("target/jenesis-jvm/engine/stage/maven/output","target/jenesis-jvm/delivery/compiler","target/jenesis-jvm/delivery/lsp")) {
-            Path directory=root.resolve(tree);if(!Files.isDirectory(directory))throw new IllegalStateException("Missing delivery tree: "+tree);
+        for(Path directory:List.of(JenesisBridge.stagedMavenRepository(outcome),root.resolve("target/jenesis-jvm/delivery/compiler"),root.resolve("target/jenesis-jvm/delivery/lsp"))) {
+            String tree=root.relativize(directory).toString().replace('\\','/');
+            if(!Files.isDirectory(directory))throw new IllegalStateException("Missing delivery tree: "+tree);
             try(var walk=Files.walk(directory)){for(Path file:walk.filter(p->!Files.isDirectory(p)).toList()){requireFile(root,file);files.put(tree+"/"+directory.relativize(file).toString().replace('\\','/'),JvmBuildInputs.sha256(file));}}
         }
         for(String name:List.of("sdk.zip","runtime-inventory.json")){Path file=root.resolve("target/jenesis-jvm/delivery/"+name);requireFile(root,file);files.put(name,JvmBuildInputs.sha256(file));}return Map.copyOf(files);

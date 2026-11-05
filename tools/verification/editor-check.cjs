@@ -1,24 +1,31 @@
 'use strict';
-const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),cp=require('node:child_process');const probe=require('./editor-compatibility.cjs');
+// The real extension owns staging, launch verification and the host harness.
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto'),cp=require('node:child_process');
+const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 (async()=>{
- const [root,extensionRoot,referenceBundle,java]=process.argv.slice(2);const prepared=process.env.INTERLIS_EDITOR_PREPARED,editor=process.env.INTERLIS_TEST_CODE;
- if(!prepared||!editor||!path.isAbsolute(prepared)||!path.isAbsolute(editor))throw Error('Set INTERLIS_EDITOR_PREPARED to an existing unchanged prepareDev result, and INTERLIS_TEST_CODE to the isolated host executable. No Gradle preparation occurs inside editor-check.');
- const before=probe.inspectConsumer(extensionRoot);const state={root,commit:cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim(),status:cp.execFileSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8'})};
- fs.mkdirSync(path.join(root,'target/jenesis-jvm/editor-compat'),{recursive:true});
- const scratchRoot=fs.mkdtempSync(path.join(root,'target/jenesis-jvm/editor-compat/run-'));
- for(const file of before.files.filter(f=>f.path.startsWith('src/')||f.path==='package-lock.json')){
-  const candidate=file.path==='package-lock.json'?path.join(path.dirname(path.dirname(prepared)),file.path):path.join(prepared,file.path);
-  const bytes=fs.readFileSync(candidate);assert.equal(require('node:crypto').createHash('sha256').update(bytes).digest('hex'),file.sha256,'Prepared consumer differs: '+file.path);
- }
- const artifacts=JSON.parse(fs.readFileSync(path.join(root,'target/jenesis-jvm/delivery/runtime-inventory.json')));
- const shadow=probe.assembleShadowBundle({referenceBundle,serverInventory:artifacts['interlis-lsp'],outputRoot:path.join(scratchRoot,'shadow'),coreState:state});
- // Keep the existing prepared checkout and its node resolution intact. Only this
- // fresh development-copy subtree receives replacement artifacts and a testlock.
- const copy=path.join(scratchRoot,'consumer');fs.mkdirSync(path.join(copy,'build'),{recursive:true});fs.cpSync(prepared,path.join(copy,'build/dev-extension'),{recursive:true,dereference:false});
- fs.cpSync(path.join(path.dirname(path.dirname(prepared)),'scripts'),path.join(copy,'scripts'),{recursive:true});fs.symlinkSync(path.join(path.dirname(path.dirname(prepared)),'node_modules'),path.join(copy,'node_modules'),'dir');
- const fixture=probe.prepareConsumerCopy({preparedExtension:path.join(copy,'build/dev-extension'),shadowBundle:shadow});
- const integrity=await probe.verifyLaunchAndIntegrity(fixture,java);const host=probe.runExtensionHostSmoke(fixture,before,editor,scratchRoot,java);
- probe.verifyIsolation(before,probe.inspectConsumer(extensionRoot));assert.deepEqual(probe.inventory(path.join(fixture.preparedExtension,'artifacts')),probe.inventory(shadow.outputRoot));
- fs.writeFileSync(path.join(scratchRoot,'receipt.json'),JSON.stringify({consumer:before,core:state,shadow,integrity,host,source:'explicit nonpackaged development runtime override',isolation:'original consumer and prepared input unchanged'},null,2));
- console.log('EDITOR_CHECK_PASS '+scratchRoot);
-})().catch(e=>{console.error(e);process.exitCode=1;});
+ const [root,extensionRoot,referenceBundle,java]=process.argv.slice(2);
+ const prepared=process.env.INTERLIS_EDITOR_PREPARED,editor=process.env.INTERLIS_TEST_CODE;
+ if(!prepared||!editor||!path.isAbsolute(prepared)||!path.isAbsolute(editor))throw Error('Select an existing prepareDev result and isolated VSCode executable');
+ const original=cp.execFileSync('git',['status','--porcelain'],{cwd:extensionRoot,encoding:'utf8'});
+ const result=JSON.parse(fs.readFileSync(path.join(root,'target/jenesis-jvm/reports/editor-bundle.json')));
+ if(path.resolve(referenceBundle)!==result.directory||hash(path.join(referenceBundle,'manifest.json'))!==result.manifestSha256||result.coreCommit!==cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim())throw Error('Reference must be the explicit current producer result');
+ const staging=require(path.join(extensionRoot,'scripts/stage-core.cjs'));
+ const bundle=staging.readAndVerifyBundle(referenceBundle,{coreCommit:result.coreCommit,manifestSha256:result.manifestSha256},{development:true});
+ const files=cp.execFileSync('git',['ls-files','-z','src'],{cwd:extensionRoot,encoding:'utf8'}).split('\0').filter(Boolean);
+ for(const file of files)if(hash(path.join(extensionRoot,file))!==hash(path.join(prepared,file)))throw Error('Prepared extension source differs: '+file);
+ const output=fs.mkdtempSync(path.join(root,'target/jenesis-jvm/editor-compat-'));
+ const extension=path.join(output,'extension');fs.cpSync(prepared,extension,{recursive:true,verbatimSymlinks:true});
+ staging.importCoreBundle(bundle,{output:extension,development:true});
+ const plan=await require(path.join(extension,'build/launch.cjs')).resolveLaunchPlan(extension,java);
+ if(plan.moduleName!=='guru.interlis.lsp'||plan.args[0]!=='--module-path'||plan.args.length!==4)throw Error('Expected finite modular launch');
+ const env={...process.env,INTERLIS_TEST_CODE:editor,INTERLIS_TEST_EXTENSION_ROOT:extension,INTERLIS_JAVA:java};
+ const command=[process.execPath,path.join(extensionRoot,'scripts/extension-host.cjs')];
+ fs.writeFileSync(path.join(output,'argv.json'),JSON.stringify(command));
+ const host=cp.spawnSync(command[0],command.slice(1),{cwd:extensionRoot,env,encoding:'utf8',timeout:90000,maxBuffer:8e6,killSignal:'SIGKILL'});
+ fs.writeFileSync(path.join(output,'host.log'),(host.stdout||'')+(host.stderr||''));
+ fs.writeFileSync(path.join(output,'process.json'),JSON.stringify({exitCode:host.status,signal:host.signal,error:host.error?.message}));
+ if(host.status!==0||host.signal||host.error)throw Error('Actual extension host failed: '+output);
+ if(cp.execFileSync('git',['status','--porcelain'],{cwd:extensionRoot,encoding:'utf8'})!==original)throw Error('Consumer inputs changed');
+ fs.writeFileSync(path.join(output,'result.json'),JSON.stringify({status:'passed',coreCommit:result.coreCommit,manifestSha256:result.manifestSha256,plan,scope:'pure import and real isolated development extension host'}));
+ console.log('EDITOR_CHECK_PASS '+output);
+})().catch(error=>{console.error(error);process.exitCode=1;});

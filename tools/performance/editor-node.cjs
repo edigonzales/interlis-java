@@ -2,7 +2,7 @@
 const sourceFingerprint=require('./profile.cjs').fingerprint(),commitInfo=require('./profile.cjs').commitInfo();
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 (async()=>{
- const directory=path.resolve(__dirname,'../../build/reports/performance/full-corpus'),prepared=JSON.parse(fs.readFileSync(directory+'/prepared.json')),root=prepared.roots.reduce((a,b)=>a.sources.reduce((n,s)=>n+s.text.length,0)>b.sources.reduce((n,s)=>n+s.text.length,0)?a:b),runtime=path.resolve(__dirname,'../../interlis-wasm-teavm/build/generated/teavm/wasm-gc');
+ const directory=require('../verification/layout.cjs').report(path.resolve(__dirname,'../..'),'performance/full-corpus'),prepared=JSON.parse(fs.readFileSync(directory+'/prepared.json')),root=prepared.roots.reduce((a,b)=>a.sources.reduce((n,s)=>n+s.text.length,0)>b.sources.reduce((n,s)=>n+s.text.length,0)?a:b),runtime=path.resolve(__dirname,'../../interlis-wasm-teavm/build/generated/teavm/wasm-gc');
  require(runtime+'/interlis-compiler.wasm-runtime.js');const api=(await TeaVM.wasmGC.load(runtime+'/interlis-compiler.wasm')).exports;
  globalThis.editorProgress=n=>console.log('EDITOR_WASM',n,'rss',process.memoryUsage().rss);
  const report=await require('./editor-contract.js')(request=>api.handle(request),root,process.env.EDITOR_SMOKE==='1'?2:1000);

@@ -17,7 +17,7 @@ public final class GeoCorpus {
         return System.getenv("GEO_CORPUS_CACHE")!=null ? cache(root,"GEO_CORPUS_CACHE","geo-corpus") : cache(root,"CONFORMANCE_CACHE","geo-corpus");
     }
     static JsonObject verify(Path root) throws Exception {
-        Path report=root.resolve("build/reports/performance/corpus-verification.json");Files.deleteIfExists(report);
+        Path report=VerificationLayout.forInvocation(root).rootReport("performance/corpus-verification.json");Files.deleteIfExists(report);
         JsonObject manifest=read(root.resolve("docs/evidence/p3/geo-corpus.json"));Path cache=cacheDirectory(root);
         var index=manifest.getAsJsonObject("index");Path indexPath=cache.resolve("ilimodels.xml");
         seed(root.resolve("docs/evidence/p3/corpus-seed.zip"),cache,manifest);

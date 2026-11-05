@@ -20,86 +20,68 @@ Vergleich.
 - Für Browserverträge: lokal installierte Playwright-Browser
 - Für das vollständige Produktprofil: Oracle GraalVM 25.0.3 und Binaryen 133 (Web Image)
 
-Der Gradle-Wrapper ist gepinnt (9.8.1). Maven/Ant sind keine Build-Einstiege.
+Jenesis 0.18.1 ist der einzige JVM-Builder. Die zehn POMs definieren GAVs,
+Scopes und Pins; Maven/Ant werden nicht ausgeführt. Der gepinnte Gradle-Wrapper
+9.8.1 baut ausschliesslich die zwei Wasm-Adapter.
 
 ## Bauen und prüfen
 
 ```sh
-./gradlew check                # JVM-Tests + SDK-Beispiel gegen gebaute JARs
-./gradlew checkPortable        # JVM + TeaVM WasmGC/JS unter Node
-./gradlew conformanceCheck     # gepinnte externe Suite und getrennte Projektbewertung
-./gradlew :interlis-compiler-cli:installDist
-./gradlew :interlis-lsp:installDist
-./gradlew referenceCheck       # gepinntes ili2c-Referenzprofil
-./gradlew pythonFreeCheck      # Quellen-/Buildpfade ohne Python-Abhängigkeit
-```
-
-Die parallele Jenesis-JVM-Spur für zehn Module verwendet dieselben Produktquellen,
-Java25 und streng gepinnte Dependencies. Gradle bleibt Gesamtbuild, Wasm- und
-Editor-Stagingpfad. Maven wird durch die POMs nicht zum Buildausführer.
-
-```sh
 java build/InterlisJvmBuild.java build
 java build/InterlisJvmBuild.java build --module interlis-compiler --tests '.*VersionScannerTest'
+java build/InterlisJvmBuild.java artifacts
 java build/InterlisJvmBuild.java contracts
 java build/InterlisJvmBuild.java sdk-check
-java build/InterlisJvmBuild.java parity --baseline /absolute/path/to/parity-input.json
+java build/InterlisJvmBuild.java host --profile conformance
+java build/InterlisJvmBuild.java host --profile reference
+java build/InterlisJvmBuild.java host --profile python-free
 ```
 
-`build` führt normale Tests ohne Compiler-Contractmethoden aus; eingeschränkte
-Filter sind keine Gesamtabnahme. `contracts` erzeugt frische ausgewählte
-Produzenten vor den Contractconsumern. Ausgaben liegen unter `target/jenesis-jvm`,
-Dependencycaches unter `.jenesis`; keine Ergänzung aus Gradleausgaben oder `~/.m2`.
-`sdk-check` erwartet ein noch freies `target/jenesis-jvm/delivery`; frühere
-Lieferungen bei Bedarf zuvor separat archivieren. Parität liest gebundene echte
-Gradle-/Jenesis-Inventare, ohne selbst eine neue Testsuite zu starten.
+`build` führt normale Tests aus; `artifacts` erzeugt ausdrücklich nur Produkte.
+`contracts` führt frische ausgewählte Produzenten vor den Contractconsumern aus.
+Ausgaben liegen unter `target/jenesis-jvm`, Dependencycaches unter `.jenesis`.
+Die gewöhnliche JVMspur benötigt weder Gradle noch Node, Browser oder GraalVM.
+`sdk-check` erstellt CLI/LSP/SDK und prüft reale Prozesse; frühere generierte
+Deliveryverzeichnisse werden in `delivery-history` aufbewahrt.
 
-[Kommandos, Grenzen und ausgeführte Belege](docs/implementation/jenesis-jvm-a/STATUS.md)
-und [Editor-Verbraucherprobe](docs/implementation/jenesis-jvm-a/EDITOR_COMPATIBILITY_REPORT.md).
-`editor-check --extension-dir /absolute/extension --reference-bundle /absolute/bundle`
-ist ein expliziter Scratch-Verbraucherlauf mit separat vorbereiteten
-Developmentressourcen, kein neuer normaler Extensionbuild. Der rohe
-`java build/jenesis/Make.java` ist nur der Engineeinstieg; er ersetzt die
-Projekt-Input-/Layout-/Contract-/Paritätsgates nicht. Compiler-APE bleibt ein
-separater Folgeauftrag; JPMS ist dafür keine Voraussetzung.
-
-Portable Browserverträge (Chromium/Firefox/WebKit):
+Consumer benötigen eine explizite Übergabe. `wasm-export` schreibt den absoluten
+Manifestpfad und dessen Producerhash nach `target/jenesis-jvm/reports/wasm-export.json`.
+Beide Werte müssen gemeinsam aus diesem Ergebnis übernommen werden:
 
 ```sh
-(cd interlis-wasm-teavm && npm ci)
-./gradlew :interlis-wasm-teavm:browserContractTest
+export INTERLIS_NODE=/absolute/node-24.22.0/bin/node
+java build/InterlisJvmBuild.java wasm-export
+java build/InterlisJvmBuild.java wasm --profile teavm-smoke --inputs /absolute/consumer-manifest.json --inputs-sha256 PRODUCER_HASH
+java build/InterlisJvmBuild.java wasm --profile webimage-smoke --inputs /absolute/consumer-manifest.json --inputs-sha256 PRODUCER_HASH
+java build/InterlisJvmBuild.java editor-bundle
+java build/InterlisJvmBuild.java host --profile portable
+java build/InterlisJvmBuild.java host --profile browser
+java build/InterlisJvmBuild.java release-check --profile P3
 ```
 
-Der echte Safari-Vertrag ist ein separates Gate. Er setzt aktivierte
-Safari-Remote-Automation voraus und schließt eine normale Safari-Sitzung vor dem
-Start, damit der WebDriver eine Automationsinstanz starten kann:
+Web Image benötigt zusätzlich `GRAALVM_HOME` und `BINARYEN_HOME`. Die breiten
+Hostprofile wählen ihre Vorbereitung ausdrücklich; sie gehören nicht zum
+Defaultbuild. `release-check` bleibt bei fehlenden aktuellen Plattform-,
+Conformance-, Browser-, Performance- oder Interpreterguardbelegen geschlossen.
+Eine lokale B-Abnahme ist keine vollständige P3-Freigabe.
 
-```sh
-./gradlew :interlis-wasm-teavm:safariContractTest
-```
+`clean --scope jvm|consumer|wasm` entfernt ausschliesslich die gewählten Outputs.
+`build/jenesis`, `build/interlis`, Spezifikation und externe Belege sind Quellen.
+Der rohe `java build/jenesis/Make.java` ersetzt die Projekteinstiegsgates nicht.
+Compiler-APE und CosmoGVM-Uhrpatch bleiben pausiert.
 
-Web-Image-Vergleich (Toolchain separat installiert):
-
-```sh
-./gradlew :interlis-wasm-webimage:webImageProbe \
-  -PgraalVmHome=$HOME/.sdkman/candidates/java/25.0.3-graal \
-  -PbinaryenHome=/path/to/binaryen
-./gradlew :interlis-wasm-webimage:webImageBrowserTest \
-  -PgraalVmHome=$HOME/.sdkman/candidates/java/25.0.3-graal \
-  -PbinaryenHome=/path/to/binaryen
-```
-
-Der Web-Image-Browsertest nutzt dieselben lokal installierten Playwright-Browser
-wie der TeaVM-Browsertest; ohne `npm ci` im TeaVM-Modul schlägt er sichtbar
-fehl, statt still zu überspringen.
+Aktueller Migrationsstand und Rohbeleggrenzen:
+[Jenesis B](docs/implementation/jenesis-migration-b/STATUS.md).
+Historischer A-Paritätsnachweis:
+[Jenesis A](docs/implementation/jenesis-jvm-a/STATUS.md).
 
 ## CLI
 
 ```sh
-interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler version
-interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler check \
+target/jenesis-jvm/delivery/compiler/bin/interlis-compiler version
+target/jenesis-jvm/delivery/compiler/bin/interlis-compiler check \
   testdata/models/base24.ili testdata/models/survey24.ili
-interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler diagram \
+target/jenesis-jvm/delivery/compiler/bin/interlis-compiler diagram \
   --root Survey --format mermaid \
   testdata/models/base24.ili testdata/models/survey24.ili
 ```
@@ -128,10 +110,10 @@ weiterhin den vollständigen Analysestand. Lokale Importdateien ausdrücklich
 angeben oder ein indexiertes Repository verwenden; kein Verzeichnisscan.
 
 ```sh
-interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler check \
+target/jenesis-jvm/delivery/compiler/bin/interlis-compiler check \
   --diagnostic-language de --root Survey \
   testdata/models/base24.ili testdata/models/survey24.ili
-./gradlew sdkPackage
+java build/InterlisJvmBuild.java sdk-package
 # Nach dem Entpacken: cli/bin/interlis-compiler (Windows: interlis-compiler.bat).
 ```
 
@@ -161,7 +143,7 @@ Die Compilerbibliothek bleibt `interlis-compiler`; Modul und CLI-JAR heissen
 ## Browserdemo
 
 ```sh
-./gradlew :interlis-wasm-teavm:prepareBrowserHarness
+./gradlew -PjvmInputs="$JVM_INPUTS" -PjvmInputsSha256="$JVM_INPUTS_SHA256" :interlis-wasm-teavm:prepareBrowserHarness
 jwebserver -p 8080 -d interlis-wasm-teavm/build/web
 # http://127.0.0.1:8080/
 ```
@@ -228,3 +210,5 @@ implementiert. Java-SDK: FetchPolicy benötigt jetzt offline, maxBytes,
 connectTimeout, readTimeout und Optional<Duration> requestTimeout; der bisherige
 Konstruktor und timeout() entfallen. Details und Nachweise:
 [HTTP-Netzwerkpolicy](docs/implementation/http-network-policy/EXECUTION_PLAN.md).
+
+Reguläre CLI-/LSP-Pakete starten über `--module-path lib --module guru.interlis.compiler.cli/guru.interlis.cli.Main` bzw. `guru.interlis.lsp/guru.interlis.lsp.Main`. Der explizite lokale Runtimecheck lautet `java build/InterlisJvmBuild.java runtime-check --application compiler`; er ist kein Bestandteil des Defaultbuilds.

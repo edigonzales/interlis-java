@@ -1,5 +1,10 @@
 # Auftrag und Arbeitsregeln für den Coding-Agenten
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 **Status:** normative Spezifikation, Version 1.0, 18. Oktober 2026. **Projekt:** `interlis-java`. **Ziel:** moderner Java-INTERLIS-Stack mit kompatiblen Werkzeugen; zuerst ein wiederverwendbarer Compiler für INTERLIS 2.3 und 2.4. Dieses Paket ist ein Implementierungsauftrag und ein Abnahmevertrag. Es behauptet keine bereits vorhandene Implementierung der beschriebenen Klassen.
 
 ## 1. Auftrag und Ergebnis

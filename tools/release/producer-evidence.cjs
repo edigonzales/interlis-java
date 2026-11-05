@@ -6,8 +6,8 @@ const {root,hash,fingerprint,commitInfo}=require('../performance/profile.cjs');
 const {validate,compilerCliCases,diagnosticCatalogVersion}=require('./evidence.cjs');
 const {fixture}=require('./test-fixtures.cjs');
 function verify(){
- const inputs=['build/reports/p3/compiler-cli/processes.json','build/reports/sdk/archive-consumer.json','build/reports/sdk/version-manifest.json'];
- const [cli,sdk,versions]=inputs.map(file=>JSON.parse(fs.readFileSync(path.join(root,file),'utf8')));
+ const inputs=['reports/p3/compiler-cli/processes.json','reports/sdk/archive-consumer.json','reports/sdk/version-manifest.json'];
+ const [cli,sdk,versions]=inputs.map(file=>JSON.parse(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,file),'utf8')));
  const state=commitInfo();
  assert.equal(cli.status,'passed');assert.equal(cli.gitCommit,state.gitCommit);
  assert.equal(cli.sourceFingerprint,fingerprint(),'CLI report must bind the current source inputs');
@@ -21,7 +21,7 @@ function verify(){
  const obsolete=structuredClone(f);obsolete.sdk.versions.diagnosticCatalogVersion='interlis-diagnostics/v1';
  assert.throws(()=>validate(obsolete),/missing delivered SDK/);
  return {status:'passed',scope:'Actual current CLI/SDK producer interoperability in synthetic release envelope; no platform/browser/release certification',producerState:state,cliCases:names.length,diagnosticCatalogVersion,archiveSha256:sdk.archiveSha256,
-  inputs:inputs.map(file=>({file,sha256:hash(fs.readFileSync(path.join(root,file)))})),negativeControls:['missing current CLI case','obsolete diagnostic catalog']};
+  inputs:inputs.map(file=>({file,sha256:hash(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,file)))})),negativeControls:['missing current CLI case','obsolete diagnostic catalog']};
 }
 module.exports={verify};
 if(require.main===module)console.log(JSON.stringify(verify(),null,2));

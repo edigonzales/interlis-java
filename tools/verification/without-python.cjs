@@ -7,7 +7,7 @@ const cp = require('node:child_process');
 const crypto = require('node:crypto');
 if (process.platform !== 'darwin') throw new Error('This Safari/Web Image phase environment requires macOS sandbox-exec');
 const root = path.resolve(__dirname, '../..');
-const out = path.join(root, 'build/reports/python-free');
+const out = require('./layout.cjs').report(root, 'python-free');
 fs.mkdirSync(out, {recursive: true});
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'interlis-without-python-'));
 const bin = path.join(temporary, 'bin'); fs.mkdirSync(bin);

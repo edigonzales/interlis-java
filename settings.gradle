@@ -5,10 +5,19 @@ pluginManagement {
     }
 }
 
+apply from: new File(settingsDir, 'gradle/jvm-inputs.gradle')
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories { mavenCentral() }
+    repositories {
+        exclusiveContent {
+            forRepository { maven { name = 'interlis-' + gradle.ext.jvmSnapshot.data.snapshotDigest; url = new File(gradle.ext.jvmSnapshot.root, 'maven').toURI() } }
+            filter { includeGroup 'guru.interlis' }
+        }
+        maven { url = new File(gradle.ext.jvmSnapshot.root, 'maven').toURI(); content { excludeGroup 'guru.interlis' } }
+        mavenCentral { content { excludeGroup 'guru.interlis' } }
+    }
 }
 
 rootProject.name = 'interlis-java'
-include('interlis-verification', 'interlis-documentation', 'interlis-model', 'interlis-compiler', 'interlis-workspace', 'interlis-projection', 'interlis-repository', 'interlis-compiler-cli', 'interlis-lsp', 'interlis-wasm-bridge', 'interlis-wasm-teavm', 'interlis-wasm-webimage')
+include('interlis-wasm-teavm', 'interlis-wasm-webimage')

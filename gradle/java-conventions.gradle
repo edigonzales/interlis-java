@@ -1,5 +1,6 @@
 group = 'guru.interlis'
-version = providers.gradleProperty('projectVersion').get()
+// Adapter version follows the verified JVM producer, never a second version declaration.
+version = gradle.ext.jvmSnapshot.data.projectVersion
 
 java {
     toolchain { languageVersion = JavaLanguageVersion.of(25) }

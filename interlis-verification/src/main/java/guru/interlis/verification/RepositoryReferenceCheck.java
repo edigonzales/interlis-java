@@ -53,7 +53,7 @@ public final class RepositoryReferenceCheck {
         """;
     public static void main(String[] args) throws Exception {
         Path root=Path.of(args[0]).toAbsolutePath(),jar=ReferenceProcesses.prepare(root);
-        Path work=root.resolve("build/repository-reference");Files.createDirectories(work);
+        Path work=VerificationLayout.forInvocation(root).rootReport("reference/repository");Files.createDirectories(work);
         Path probe=work.resolve("RepositoryProbe.java");Files.writeString(probe,PROBE);
         require(ToolProvider.getSystemJavaCompiler().run(null,null,null,"-cp",jar.toString(),"-d",work.toString(),probe.toString())==0,"reference probe compilation");
         var evidence=new ArrayList<Map<String,Object>>();

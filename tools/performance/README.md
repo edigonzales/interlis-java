@@ -3,11 +3,11 @@
 Commands:
 
 ```sh
-./gradlew geoCorpus
-./gradlew jvmBenchmark
-./gradlew wasmBenchmark
-./gradlew browserBenchmark
-./gradlew performanceCheck   # all of the above
+java build/InterlisJvmBuild.java host --profile geo-corpus
+java build/InterlisJvmBuild.java host --profile jvm-benchmark
+java build/InterlisJvmBuild.java host --profile wasm-benchmark
+java build/InterlisJvmBuild.java host --profile browser-benchmark
+java build/InterlisJvmBuild.java host --profile performance   # all of the above
 ```
 
 The corpus is pinned by `docs/evidence/p3/geo-corpus.json`. Model bytes are

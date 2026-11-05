@@ -22,12 +22,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Real stdio protocol test: stdout must contain framed LSP JSON only. */
 class LspProcessTest {
+    private static List<String> serverCommand(Path java) {
+        if (!Main.class.getModule().isNamed())
+            return List.of(java.toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main");
+        String modulePath=System.getProperty("interlis.test.modulepath");
+        assertNotNull(modulePath,"The test adapter must supply its actual product module path");
+        return List.of(java.toString(),"--module-path",modulePath,"--module","guru.interlis.lsp/guru.interlis.lsp.Main");
+    }
+
     @Test
     @SuppressWarnings("try")
     void initializeShutdownAndExitOverStdio() throws Exception {
         Path java = Path.of(System.getProperty("java.home"), "bin", "java");
-        Process process = new ProcessBuilder(java.toString(), "-cp",
-                System.getProperty("java.class.path"), "guru.interlis.lsp.Main")
+        Process process = new ProcessBuilder(serverCommand(java))
                 .redirectErrorStream(false)
                 .start();
         try (OutputStream input = process.getOutputStream();
@@ -147,7 +154,7 @@ class LspProcessTest {
         String index="<TRANSFER>";
         for(String name:List.of("Dep","Base")) index+="<ModelMetadata><Name>"+name+"</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>"+name+".ili</File></ModelMetadata>";
         java.nio.file.Files.writeString(repository.resolve("ilimodels.xml"),index+"</TRANSFER>");
-        var process=new ProcessBuilder(Path.of(System.getProperty("java.home"),"bin","java").toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main").start();
+        var process=new ProcessBuilder(serverCommand(Path.of(System.getProperty("java.home"),"bin","java"))).start();
         try(var input=process.getOutputStream();var output=new BufferedInputStream(process.getInputStream())) {
             var gson=new Gson();
             send(input,gson.toJson(Map.of("jsonrpc","2.0","id",1,"method","initialize","params",Map.of("capabilities",Map.of(),"initializationOptions",Map.of("repositories",List.of(repository.toUri().toString()))))));
@@ -170,7 +177,7 @@ class LspProcessTest {
 
     @Test void exitWithoutShutdownTerminatesWithFailureWhileInputRemainsOpen() throws Exception {
         var java=Path.of(System.getProperty("java.home"),"bin","java");
-        var process=new ProcessBuilder(java.toString(),"-cp",System.getProperty("java.class.path"),"guru.interlis.lsp.Main").start();
+        var process=new ProcessBuilder(serverCommand(java)).start();
         try {
             send(process.getOutputStream(),"{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}");
             assertTrue(process.waitFor(5,TimeUnit.SECONDS)); assertEquals(1,process.exitValue());

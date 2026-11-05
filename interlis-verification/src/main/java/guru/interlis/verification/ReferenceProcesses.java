@@ -17,7 +17,7 @@ public final class ReferenceProcesses {
     static Path prepare(Path root) throws Exception {
         Path cache=cache(root,"ILI2C_CACHE","");Path archive=cache.resolve("ili2c-5.6.9.zip");
         download(URI.create("https://downloads.interlis.ch/ili2c/ili2c-5.6.9.zip"),archive,ARCHIVE);
-        Path jar=root.resolve("build/reference/ili2c.jar");Files.createDirectories(jar.getParent());
+        Path jar=VerificationLayout.forInvocation(root).referenceCompiler();Files.createDirectories(jar.getParent());
         try(var zip=new ZipFile(archive.toFile());var in=zip.getInputStream(Objects.requireNonNull(zip.getEntry("ili2c.jar"),"Missing ili2c.jar"))) {Files.copy(in,jar,StandardCopyOption.REPLACE_EXISTING);}
         pin(jar,JAR);return jar;
     }
@@ -37,7 +37,7 @@ public final class ReferenceProcesses {
         pin(jar,JAR);
     }
     static void profile(Path root,Path jar) throws Exception {
-        Path output=root.resolve("build/reports/reference/reference-results.json");Files.deleteIfExists(output);
+        Path output=VerificationLayout.forInvocation(root).rootReport("reference/reference-results.json");Files.deleteIfExists(output);
         var original=read(root.resolve("docs/evidence/reference/reference-results.json"));List<Map<String,Object>> results=new ArrayList<>();
         Properties fixturePins=new Properties();try(var reader=Files.newBufferedReader(root.resolve("gradle/reference-fixtures.properties"))){fixturePins.load(reader);}
         var cases=rows(original,"results");require(cases.size()==5 && cases.stream().map(r->s(r,"id")).collect(java.util.stream.Collectors.toSet()).equals(Set.of("base-survey-24","legacy-23","broken-24","trailing-24","missing-import")),"Changed reference profile");
@@ -52,7 +52,7 @@ public final class ReferenceProcesses {
         System.out.println("REFERENCE_PASS "+results.size()+" cases");
     }
     static void originals(Path root,Path jar) throws Exception {
-        Path output=root.resolve("build/reports/stabilization/original-view-reference-comparison.json");Files.deleteIfExists(output);
+        Path output=VerificationLayout.forInvocation(root).rootReport("stabilization/original-view-reference-comparison.json");Files.deleteIfExists(output);
         var artifacts=artifacts(root);var properties=new Properties();Path fixture=root.resolve("testdata/conformance/b1-b3-acceptance");
         try(var reader=Files.newBufferedReader(fixture.resolve("sources.properties"))) {properties.load(reader);}
         require(properties.size()==19,"Changed original-view selection");List<Map<String,Object>> cases=new ArrayList<>();
@@ -66,11 +66,11 @@ public final class ReferenceProcesses {
         System.out.println("ORIGINAL_VIEWS_PASS 19/19 both processes");
     }
     static void shared(Path root,Path jar,String node,String kind) throws Exception {
-        require(Set.of("views","units").contains(kind),"Unknown comparison profile");Path output=root.resolve("build/reports/stabilization/"+kind+"-reference-comparison.json");Files.deleteIfExists(output);
+        require(Set.of("views","units").contains(kind),"Unknown comparison profile");Path output=VerificationLayout.forInvocation(root).rootReport("stabilization/"+kind+"-reference-comparison.json");Files.deleteIfExists(output);
         var export=run(root,List.of(node,root.resolve("tools/reference/export-comparison-cases.cjs").toString(),kind),Duration.ofSeconds(20));require(export.exitCode()==0 && export.stderr().isEmpty(),"Shared case export failed");
         List<JsonObject> input=JsonParser.parseString(export.stdout()).getAsJsonArray().asList().stream().map(JsonElement::getAsJsonObject).toList();
         require(input.size()==(kind.equals("views")?134:117),"Changed shared comparison selection");
-        Path directory=root.resolve("build/reports/stabilization/"+kind+"-cases");Files.createDirectories(directory);List<Map<String,Object>> results=new ArrayList<>();int number=0,agreements=0,errors=0;
+        Path directory=VerificationLayout.forInvocation(root).rootReport("stabilization/"+kind+"-cases");Files.createDirectories(directory);List<Map<String,Object>> results=new ArrayList<>();int number=0,agreements=0,errors=0;
         List<JsonObject> cases=new ArrayList<>(input);
         if(kind.equals("units"))try(var paths=Files.list(root.resolve("testdata/conformance/k6-units"))) {
             for(Path path:paths.filter(p->p.toString().endsWith(".ili")).sorted().toList()) {

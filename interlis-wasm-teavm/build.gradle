@@ -3,15 +3,11 @@ plugins {
     id 'org.teavm' version '0.16.0'
 }
 apply from: rootProject.file('gradle/java-conventions.gradle')
+apply from: rootProject.file('gradle/backend-inputs.gradle')
 
 def nodeExecutable = providers.gradleProperty('nodeExecutable').orElse('node')
 
 dependencies {
-    implementation project(':interlis-wasm-bridge')
-    implementation project(':interlis-workspace')
-    implementation project(':interlis-compiler')
-    implementation project(':interlis-projection')
-    implementation project(':interlis-model')
     implementation teavm.libs.jso
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
@@ -19,7 +15,6 @@ dependencies {
 }
 
 tasks.matching { it.name in ['generateWasmGC', 'generateJavaScript'] }.configureEach {
-    dependsOn ':interlis-compiler:generateTestGrammarSource'
     outOfProcess = true
     def pinFile = rootProject.file('gradle/teavm-core.json')
     inputs.file pinFile
@@ -85,7 +80,7 @@ tasks.register('wasmContractTest') {
 tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
-    dependsOn 'buildWasmGC', 'buildBrowserTools', ':sdkProcessCheck'
+    dependsOn 'buildWasmGC', 'buildBrowserTools'
     from 'src/main/web'
     from(rootProject.file('tools/performance/full-corpus-contract.js'))
     from(layout.buildDirectory.dir('browser-tools'))
@@ -108,7 +103,8 @@ tasks.register('prepareBrowserHarness', Sync) {
     doLast {
         providers.exec {
             workingDir rootProject.projectDir
-            commandLine nodeExecutable.get(), rootProject.file('tools/release/browser-manifest.cjs'), layout.buildDirectory.dir('web').get().asFile
+            commandLine nodeExecutable.get(), rootProject.file('tools/release/browser-manifest.cjs'), layout.buildDirectory.dir('web').get().asFile,
+                    new File(gradle.ext.jvmSnapshot.root,'resources/version-manifest.json')
         }.result.get().assertNormalExitValue()
     }
 }
@@ -163,9 +159,8 @@ tasks.named('prepareBrowserHarness') {
     from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt'))
 }
 
-// TypeScript and bundling remain inputs of the repository Gradle build.
+// The existing Node builder prepares the neutral renderer directly.
 tasks.register('buildBrowserTools', Exec) {
-    dependsOn ':diagramUiBuild'
     group = 'build'
     description = 'Strictly checks the pinned TypeScript client and builds ESM/declarations.'
     workingDir = projectDir

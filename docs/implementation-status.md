@@ -1,4 +1,19 @@
+## Jenesis-Migration B — operativer Stand
+
+B-I und B-II/B0–B7 sind lokal implementiert und gezielt verifiziert. Die beiden
+Kandidatencommits und der unabhängige kumulative OpenCode-Review folgen. Details, Fehlversuche,
+Rohbelege und nächste Schritte ausschliesslich im
+[aktuellen B-Status](implementation/jenesis-migration-b/STATUS.md).
+Kein Gesamt-/Release-PASS. Compiler-APE und CosmoGVM-Uhrpatch bleiben pausiert.
+
 # Implementierungsstatus interlis-java
+
+## Jenesis-Migration B vom 05.11.2026
+
+B-I und B-II beauftragt; B0 (JB-01–03/31/32/37) mit echten gepinnten
+JPMS-/Testhookproben und24 frischen Modellfällen erfolgreich. Kein
+B-I-/B-II-Gesamtabschluss. APE/Cosmo pausiert, kein Push/Release.
+[Operativer Stand und Beleggrenzen](implementation/jenesis-migration-b/STATUS.md).
 
 ## Jenesis-JVM-Auftrag A vom04.11.2026
 

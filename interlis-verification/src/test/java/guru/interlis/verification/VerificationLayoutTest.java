@@ -11,17 +11,17 @@ class VerificationLayoutTest {
         var root = Files.createDirectories(temporary.resolve("project 😀 space"));
         var layout = new VerificationLayout(root.resolve("x/.."));
         assertEquals(root, layout.repositoryRoot());
-        assertEquals(root.resolve("interlis-compiler-cli/build/install/interlis-compiler/bin/interlis-compiler.bat"), layout.compilerLauncher(true));
-        assertEquals(root.resolve("interlis-verification/build/test-results/test"), layout.verificationUnitReports());
-        assertEquals(root.resolve("interlis-verification/build/test-results/contractTest"), layout.verificationContractReports());
-        assertEquals(root.resolve("build/reports/sdk/result.json"), layout.rootReport("sdk/result.json"));
+        assertEquals(root.resolve("target/jenesis-jvm/delivery/compiler/bin/interlis-compiler.bat"), layout.compilerLauncher(true));
+        assertEquals(root.resolve("target/jenesis-jvm/reports/junit/interlis-verification/test"), layout.verificationUnitReports());
+        assertEquals(root.resolve("target/jenesis-jvm/reports/junit/interlis-verification/contractTest"), layout.verificationContractReports());
+        assertEquals(root.resolve("target/jenesis-jvm/reports/sdk/result.json"), layout.rootReport("sdk/result.json"));
         for (String bad : new String[]{"..", "/tmp", "a/b", "C:\\x", ""}) {
             assertThrows(IllegalArgumentException.class, () -> layout.junitDirectory(bad, "test"));
             assertThrows(IllegalArgumentException.class, () -> layout.junitDirectory("module", bad));
         }
         for (String bad : new String[]{"../x", "/tmp/x", "C:\\x", ""})
             assertThrows(IllegalArgumentException.class, () -> layout.rootReport(bad));
-        var reports = Files.createDirectories(root.resolve("build/reports"));
+        var reports = Files.createDirectories(root.resolve("target/jenesis-jvm/reports"));
         Files.createSymbolicLink(reports.resolve("escape"), temporary);
         assertThrows(IllegalArgumentException.class, () -> layout.rootReport("escape/result.json"));
     }
@@ -34,8 +34,7 @@ class VerificationLayoutTest {
             if (!java.util.Set.of("HostChecks", "ProfileFingerprint", "CorpusExpectations").contains(name))
                 assertEquals(void.class, type.getMethod("main", String[].class).getReturnType());
         }
-        var child = HostChecks.run(temporary, java.util.List.of(HostChecks.java().toString(), "-cp",
-                System.getProperty("java.class.path"), "guru.interlis.verification.FullCorpusCold"), java.time.Duration.ofSeconds(10));
+        var child = HostChecks.run(temporary, HostChecks.javaCommand("guru.interlis.verification.FullCorpusCold"), java.time.Duration.ofSeconds(10));
         assertNotEquals(0, child.exitCode());
         assertFalse(child.stderr().contains("ClassNotFoundException"), child.stderr());
         assertFalse(child.stderr().contains("NoClassDefFoundError"), child.stderr());

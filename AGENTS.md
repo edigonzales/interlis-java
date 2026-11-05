@@ -22,14 +22,15 @@ Die Spezifikation ist die fachliche Vertragsquelle. Kapitel 16 regelt gemeinsame
 
 ## 3. Architektur- und Qualitätsgrenzen
 
-Für den ausdrücklich beauftragten Auftrag A ist zusätzlich die POM-basierte
-Jenesis-JVM-Spur gemäss `docs/implementation/jenesis-jvm-a/` erlaubt. Gradle
-bleibt Gesamtbuild und Referenz; Wasm, Extension-Paketierung, JPMS und native
-Auslieferung werden dadurch nicht migriert. `build/jenesis/`,
-`build/InterlisJvmBuild.java`, `build/interlis/` und der Upstreampin sind Quellen:
-kein manuelles Löschen des gesamten Root-`build/`. Gradle-`clean` schützt sie.
+Seit dem ausdrücklich beauftragten Auftrag B ist Jenesis 0.18.1 der alleinige
+JVM-Builder gemäss `docs/implementation/jenesis-migration-b/`. Die POMs sind
+Metadaten; Maven wird nicht ausgeführt. Gradle/Groovy bleibt ausschliesslich
+für die zwei Wasm-Backends. Alle eigenen JVM-Produkte und regulären CLI-/LSP-
+Starts werden nach B-II explizit modular. APE und CosmoGVM-Uhrpatch bleiben pausiert.
+`build/jenesis/`, `build/InterlisJvmBuild.java`, `build/interlis/` und der Upstreampin
+sind Quellen; nie das gesamte Root-`build/` löschen.
 
-- Verwende Java 25 ohne Preview, Gradle mit Groovy-DSL und den Repository-Wrapper. Paketbasis und Group sind `guru.interlis`. Lege nur tatsächlich benötigte Module an; führe keinen parallelen Maven-/Ant-Build und kein zusätzliches Buildframework ein. Das historische POM unter `docs/evidence/` bleibt Referenzevidenz.
+- Verwende Java 25 ohne Preview und `java build/InterlisJvmBuild.java` für die zehn JVM-Module. Paketbasis und Group sind `guru.interlis`. Für Backendaufgaben ausschliesslich den Gradlewrapper mit explizitem geprüftem ConsumerSnapshot verwenden. Kein zweiter JVM-Builder und kein zusätzliches Buildframework.
 - Unterstütze ausschliesslich INTERLIS 2.3 und 2.4. ANTLR bleibt intern; öffentliche APIs verwenden eigene Quell-, Syntax- und Modelltypen.
 - Halte Compiler und Modell unabhängig von Dateisystem, HTTP, JDBC, LSP-Transport und UI. Hostzugriffe und Laufzeitintegration gehören in explizite Adapter.
 - Erhalte die Verträge von `SyntaxSnapshot`, `AnalysisSnapshot` und `CompiledSchema`. Veröffentlichte Werte bleiben unveränderlich. Quellrevisionen, UTF-16-Bereiche, Snapshotreferenzen und fachliche Reihenfolgen werden nicht durch bequemere untypisierte Werte ersetzt.
@@ -52,11 +53,11 @@ Löse Routineentscheidungen selbständig mit der einfachsten vertragskonformen U
 
 ## 5. Build und zielgerichtete Verifikation
 
-Die ausführbaren Kommandos und Phasengates stehen in Kapitel 03 und 14. Prüfe zunächst, was im aktuellen Stand bereits vorhanden ist. Nutze bei bestehendem Wrapper `./gradlew` beziehungsweise unter Windows `gradlew.bat`.
+Die ausführbaren Kommandos und Phasengates stehen in Kapitel 03 und 14. Prüfe zunächst, was im aktuellen Stand bereits vorhanden ist. Nutze für JVMprofile `java build/InterlisJvmBuild.java`, für die zwei Backendprojekte den Wrapper mit explizitem Snapshot.
 
-- Ein Compilervertrag kann beispielsweise mit `./gradlew :interlis-compiler:test` geprüft werden, sobald dieses Modul existiert.
-- `checkPortable` prüft den vorgesehenen JVM-/Node-Vertrag; `checkBrowser` die reale Browsermatrix. Verwende diese Tasks, sobald sie implementiert sind, für die davon betroffenen Änderungen und fälligen Gates.
-- `releaseCheck` gilt für den ausdrücklich beschriebenen Entwicklungsstand. Fehlende oder übersprungene Pflichtprüfungen halten das jeweilige Gate offen.
+- Ein Compilervertrag kann beispielsweise mit `java build/InterlisJvmBuild.java build --module interlis-compiler` geprüft werden, sobald dieses Modul existiert.
+- `host --profile portable` prüft den vorgesehenen JVM-/Node-Vertrag; `host --profile browser` die reale Browsermatrix. Verwende diese Tasks, sobald sie implementiert sind, für die davon betroffenen Änderungen und fälligen Gates.
+- `release-check --profile P3` gilt für den ausdrücklich beschriebenen Entwicklungsstand. Fehlende oder übersprungene Pflichtprüfungen halten das jeweilige Gate offen.
 
 Erfinde keine vorhandenen Tasks, Versionspins oder erfolgreichen Läufe. Bei reinen redaktionellen Änderungen genügt die passende Dokumentprüfung. Änderungen an Semantik, APIs, ausführbaren Beispielen oder Buildlogik erhalten die dafür notwendigen Prüfungen. Wiederhole darüber hinaus nur Tests, die eine konkrete offene Frage klären.
 

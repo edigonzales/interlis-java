@@ -42,7 +42,7 @@ public final class PythonFreeCheck {
         require(actual.equals(expected),"Added/missing vendor input");return Set.copyOf(expected);
     }
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath();Path report=root.resolve("build/reports/python-free/source-check.json");Files.deleteIfExists(report);
+        Path root=Path.of(args[0]).toAbsolutePath();Path report=VerificationLayout.forInvocation(root).rootReport("python-free/source-check.json");Files.deleteIfExists(report);
         var result=run(root,List.of("git","ls-files","-z","--cached","--others","--exclude-standard"),Duration.ofSeconds(30));require(result.exitCode()==0,"Cannot enumerate repository inputs");
         Set<String> vendor=pinnedVendor(root);
         int checked=0;Set<String> files=new HashSet<>(List.of(result.stdout().split("\u0000")));

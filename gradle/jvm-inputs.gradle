@@ -1,0 +1,104 @@
+// Settings-side verifier. No resolver, Java compiler, Node or Jenesis is started here.
+import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import java.nio.file.Files
+import java.security.MessageDigest
+import org.gradle.api.services.BuildService
+import org.gradle.api.services.BuildServiceParameters
+import org.gradle.api.file.RegularFileProperty
+
+// One consumer lease belongs to the Gradle child, never its JVM producer parent.
+abstract class InterlisConsumerLease implements BuildService<InterlisConsumerLease.Parameters>, AutoCloseable {
+    interface Parameters extends BuildServiceParameters { RegularFileProperty getLeaseFile() }
+    private java.nio.channels.FileChannel channel
+    private java.nio.channels.FileLock lease
+    InterlisConsumerLease() {
+        def file=parameters.leaseFile.get().asFile.toPath()
+        if (Files.isSymbolicLink(file)) throw new GradleException('Symlink consumer lease')
+        def boundary=file.parent.parent.parent
+        for (def parent=file.parent;parent != boundary;parent=parent.parent)
+            if (Files.isSymbolicLink(parent)) throw new GradleException('Symlink in consumer output root')
+        Files.createDirectories(file.parent)
+        channel=java.nio.channels.FileChannel.open(file,java.nio.file.StandardOpenOption.CREATE,java.nio.file.StandardOpenOption.WRITE)
+        try {
+            lease=channel.tryLock()
+            if (lease == null) throw new GradleException('Another backend consumer/clean is active')
+        } catch (Throwable failure) { channel.close(); throw failure }
+    }
+    void close() { try { lease?.close() } finally { channel?.close() } }
+}
+gradle.sharedServices.registerIfAbsent('interlisConsumerLease',InterlisConsumerLease) {
+    parameters.leaseFile.set(new File(settingsDir,'target/jenesis-jvm/consumer.lock'))
+}.get()
+
+def sha = { File file -> HexFormat.of().formatHex(MessageDigest.getInstance('SHA-256').digest(file.bytes)) }
+def selected = providers.gradleProperty('jvmInputs').orNull
+def expected = providers.gradleProperty('jvmInputsSha256').orNull
+if (!selected || !new File(selected).absolute || !(expected ==~ /[0-9a-f]{64}/)) {
+    throw new GradleException('Wasm requires an absolute -PjvmInputs and producer-provided -PjvmInputsSha256. First run java build/InterlisJvmBuild.java wasm-export.')
+}
+def manifest = new File(selected).toPath().toAbsolutePath().normalize().toFile()
+if (!manifest.isFile() || sha(manifest) != expected || Files.isSymbolicLink(manifest.toPath())) throw new GradleException('Changed/missing JVM input manifest')
+def snapshot = new JsonSlurper().parse(manifest)
+def canonical
+canonical = { value -> value instanceof Map ? new TreeMap(value.collectEntries { k,v -> [(k):canonical(v)] }) : value instanceof List ? value.collect { canonical(it) } : value }
+def keys = ['schemaVersion','kind','projectVersion','productInputDigest','enginePinDigest','artifacts','closures','files']
+if (snapshot.keySet() != (keys + ['producer','snapshotDigest']).toSet() || snapshot.schemaVersion != 1 || snapshot.kind != 'interlis-jvm-consumer-snapshot') throw new GradleException('Unknown JVM snapshot schema')
+def payload = keys.collectEntries { [(it):snapshot[it]] }
+def digest = HexFormat.of().formatHex(MessageDigest.getInstance('SHA-256').digest(JsonOutput.toJson(canonical(payload)).getBytes('UTF-8')))
+if (digest != snapshot.snapshotDigest || snapshot.producer.builder != 'jenesis' || !snapshot.files || !snapshot.artifacts || snapshot.closures.keySet() != ['teavm','webimage','lsp'].toSet()) throw new GradleException('Invalid JVM producer/payload/closure')
+def root = manifest.parentFile.toPath().toAbsolutePath().normalize()
+def contained = { String relative ->
+    if (!relative || new File(relative).absolute || relative.contains('\\') || relative.contains(':') || relative.split('/').contains('..')) throw new GradleException('Unsafe JVM inventory path')
+    def file = root.resolve(relative).normalize()
+    if (!file.startsWith(root) || !Files.isRegularFile(file) || Files.isSymbolicLink(file) || !file.toRealPath().startsWith(root.toRealPath())) throw new GradleException('Foreign/missing JVM input: '+relative)
+    file.toFile()
+}
+def verify = {
+    if (sha(manifest) != expected) throw new GradleException('JVM snapshot mutated during build')
+    def actual = new TreeSet<String>()
+    Files.walk(root).withCloseable { paths -> paths.forEach { file ->
+        if (Files.isSymbolicLink(file)) throw new GradleException('Symlink in JVM snapshot')
+        if (Files.isRegularFile(file) && file != manifest.toPath()) actual.add(root.relativize(file).toString().replace('\\','/'))
+    } }
+    if (actual != snapshot.files.keySet()) throw new GradleException('Missing/extra JVM snapshot file')
+    snapshot.files.each { relative, info ->
+        def file = contained(relative)
+        if (info.keySet() != ['sha256','bytes'].toSet() || file.length() != info.bytes || sha(file) != info.sha256) throw new GradleException('Changed JVM snapshot file: '+relative)
+    }
+}
+verify()
+def artifacts = [:]
+snapshot.artifacts.each { item ->
+    if (artifacts.put(item.coordinate,item) != null) throw new GradleException('Duplicate JVM coordinate')
+    (item.coordinate.startsWith('maven/guru.interlis/') ? ['jar','pom','sources'] : ['jar','pom']).each { role ->
+        def ref = item[role]
+        if (!ref || ref != ([path:ref.path] + snapshot.files[ref.path])) throw new GradleException('Unbound JVM artifact reference')
+    }
+    if (item.coordinate.contains('/interlis-verification/') || item.coordinate ==~ /.*(junit|archive-tool|antlr4\/|commons-compress).*/) throw new GradleException('Tool/test leak in JVM product closure')
+}
+def used = [] as Set
+snapshot.closures.each { name, closure ->
+    if (!closure || closure.size() != closure.toSet().size() || !artifacts.keySet().containsAll(closure)) throw new GradleException('Incomplete JVM closure: '+name)
+    used.addAll(closure)
+}
+if (used != artifacts.keySet()) throw new GradleException('Injected unused JVM artifact')
+gradle.ext.jvmSnapshot = [data:snapshot,root:root.toFile(),manifest:manifest,sha256:expected,artifacts:artifacts]
+gradle.ext.verifyJvmInputs = verify
+gradle.ext.verifyJvmClasspath = { configuration, String consumer ->
+    verify()
+    def required = snapshot.closures[consumer].toSet(), seen=[] as Set, rows=[]
+    configuration.resolvedConfiguration.resolvedArtifacts.each { resolved ->
+        def id=resolved.moduleVersion.id, coordinate="maven/${id.group}/${id.name}/${id.version}".toString()
+        def hash=sha(resolved.file)
+        if (required.contains(coordinate)) {
+            if (hash != artifacts[coordinate].jar.sha256) throw new GradleException('Resolved JVM artifact bytes differ: '+coordinate)
+            seen.add(coordinate)
+        } else if (id.group == 'guru.interlis' || artifacts.values().any { it.coordinate.split('/')[1..2] == [id.group,id.name] }) {
+            throw new GradleException('Foreign/conflicting JVM product dependency: '+coordinate)
+        }
+        rows.add([coordinate:coordinate,sha256:hash,path:resolved.file.absolutePath])
+    }
+    if (seen != required) throw new GradleException('Resolved JVM product closure is incomplete')
+    rows
+}

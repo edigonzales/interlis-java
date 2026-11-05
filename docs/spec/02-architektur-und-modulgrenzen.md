@@ -1,5 +1,10 @@
 # Architektur und Modulgrenzen
 
+Buildbesitz seit dem ausdrücklichen Auftrag B: Jenesis für die zehn JVM-Module,
+Gradle ausschliesslich für zwei Wasm-Backends; aktuelle Kommandos und die
+Auslegung früherer Tasknamen stehen in [Kapitel03](03-build-und-repository.md).
+Historische Phasen-/Originalbelege behalten ihren damaligen Builder.
+
 ## 1. Leitentscheidung
 
 Das semantische Modell ist der gemeinsame fachliche Kern. Der Compiler baut es aus versionierten Quellen auf. Der Workspace organisiert Änderungen, Abhängigkeiten und Wiederverwendung. Hostadapter beschaffen Modelle, transportieren LSP-Nachrichten oder exportieren Browserfunktionen. Verbraucher erstellen kompakte Pläne für Diagramme, Transfer, Validierung oder Datenbankabbildung.

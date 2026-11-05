@@ -1,12 +1,8 @@
 plugins { id 'java-library' }
 apply from: rootProject.file('gradle/java-conventions.gradle')
+apply from: rootProject.file('gradle/backend-inputs.gradle')
 
 dependencies {
-    implementation project(':interlis-wasm-bridge')
-    implementation project(':interlis-workspace')
-    implementation project(':interlis-compiler')
-    implementation project(':interlis-projection')
-    implementation project(':interlis-model')
     testImplementation platform(libs.junit.bom)
     testImplementation libs.junit.jupiter
     testRuntimeOnly libs.junit.platform.launcher

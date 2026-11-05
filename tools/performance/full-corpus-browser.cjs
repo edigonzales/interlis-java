@@ -1,7 +1,7 @@
 'use strict';
 const sourceFingerprint=require('./profile.cjs').fingerprint(),commitInfo=require('./profile.cjs').commitInfo();
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),os=require('node:os'),cp=require('node:child_process');
-const root=path.resolve(__dirname,'../..'),directory=path.join(root,'build/reports/performance/full-corpus'),web=process.env.FULL_CORPUS_WEB_ROOT?path.resolve(process.env.FULL_CORPUS_WEB_ROOT):path.join(root,'interlis-wasm-teavm/build/web');
+const root=path.resolve(__dirname,'../..'),directory=require('../verification/layout.cjs').report(root,'performance/full-corpus'),web=process.env.FULL_CORPUS_WEB_ROOT?path.resolve(process.env.FULL_CORPUS_WEB_ROOT):path.join(root,'interlis-wasm-teavm/build/web');
 const prepared=JSON.parse(fs.readFileSync(path.join(directory,'prepared.json'),'utf8')),baseline=JSON.parse(fs.readFileSync(path.join(directory,'jvm.json'),'utf8'));
 if(baseline.captureStatus!=='complete'||baseline.manifestSha256!==prepared.manifestSha256||baseline.roots.length!==347||prepared.roots.length!==347)throw Error('missing/stale/incomplete JVM parity capture');
 function setup(){

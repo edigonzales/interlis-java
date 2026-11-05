@@ -13,8 +13,8 @@ public final class SdkArchiveCheck {
     private SdkArchiveCheck() { }
     public static void main(String[] args) throws Exception {
         Path root=Path.of(args[0]).toAbsolutePath(),out=VerificationLayout.forInvocation(root).rootReport("sdk/archive-consumer.json");Files.deleteIfExists(out);
-        var properties=new Properties();try(var reader=Files.newBufferedReader(root.resolve("gradle.properties"))){properties.load(reader);}
-        Path archive=VerificationLayout.forInvocation(root).sdkArchive(properties.getProperty("projectVersion"));String archiveSha=hash(archive);
+        String productVersion=projectVersion(root);
+        Path archive=VerificationLayout.forInvocation(root).sdkArchive(productVersion);String archiveSha=hash(archive);
         boolean windows=System.getProperty("os.name").startsWith("Windows");
         Path temporary=Files.createTempDirectory("interlis SDK consumer ");var entries=new TreeMap<String,String>();
         try {
@@ -39,8 +39,8 @@ public final class SdkArchiveCheck {
                 }
             }
             for (String name : List.of("cli/bin/interlis-compiler", "cli/bin/interlis-compiler.bat",
-                    "cli/lib/interlis-compiler-cli-" + properties.getProperty("projectVersion") + ".jar",
-                    "cli/lib/interlis-compiler-" + properties.getProperty("projectVersion") + ".jar"))
+                    "cli/lib/interlis-compiler-cli-" + productVersion + ".jar",
+                    "cli/lib/interlis-compiler-" + productVersion + ".jar"))
                 require(entries.containsKey(name), "Missing compiler SDK entry: " + name);
             var source=temporary.resolve("examples/sdk/SdkExample.java");require(Files.isRegularFile(source),"SDK example absent");
             Path lib=temporary.resolve("cli/lib");List<Path> jars;try(var files=Files.list(lib)){jars=files.filter(p->p.toString().endsWith(".jar")).sorted().toList();}

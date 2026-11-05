@@ -57,7 +57,7 @@ function evaluate({assessment,budgets,manifestSha256,sourceFingerprint,reports,e
  return {status:'passed',gitCommit:productCommit,dirty:reports.some(r=>r.dirty)||editors.some(r=>r.dirty),sourceFingerprint,manifestSha256,roots:347,runtimes:6,realCorpusEdits:2000,skipped:0,semanticMismatches:0};
 }
 function main(){
- const directory=path.join(root,'build/reports/performance/full-corpus'),read=p=>JSON.parse(fs.readFileSync(p,'utf8')),output=path.join(directory,'result.json');fs.rmSync(output,{force:true});
+ const directory=require('../verification/layout.cjs').report(root,'performance/full-corpus'),read=p=>JSON.parse(fs.readFileSync(p,'utf8')),output=path.join(directory,'result.json');fs.rmSync(output,{force:true});
  const assessment=read(path.join(root,'docs/evidence/p3/full-corpus/assessment.json')),budgets=read(path.join(root,'docs/evidence/p3/full-corpus/budgets.json'));
  for(const rule of assessment.rules){assert(hash(fs.readFileSync(path.join(root,rule.control.source)))===rule.control.sourceSha256,'stale assessed control '+rule.id);}
  const reports=['jvm','wasm','chromium','firefox','webkit','safari'].map(target=>({...read(path.join(directory,target+'.json')),target}));
