@@ -13,9 +13,8 @@ import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
 import guru.interlis.syntax.NameSyntax;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,10 +23,13 @@ import java.util.Set;
 
 /** Creates and records semantic drafts in the compilation run’s existing collector. */
 final class SemanticDiagnostics {
+    record UnsupportedFeature(SourceId source, String feature) { }
+
     private final DiagnosticCollector collector;
     private final Closure closure;
     private final List<Diagnostic> syntaxErrors;
-    private final Map<SourceId, Set<String>> unsupportedBySource = new LinkedHashMap<>();
+    private final Map<DiagnosticId, UnsupportedFeature> unsupportedFeatures = new LinkedHashMap<>();
+    private final Set<DiagnosticId> fragmentTypeFailures = new HashSet<>();
 
     SemanticDiagnostics(DiagnosticCollector collector, Closure closure) {
         this.collector = Objects.requireNonNull(collector, "collector");
@@ -40,23 +42,21 @@ final class SemanticDiagnostics {
 
     List<Diagnostic> snapshot() { return collector.snapshot(); }
 
-    void importAll(List<Diagnostic> drafts) { collector.importAll(drafts); }
+    void importTypeFragmentDiagnostics(List<Diagnostic> diagnostics) {
+        var ids = collector.importAll(diagnostics);
+        for (var diagnostic : diagnostics) {
+            if (diagnostic.severity() == Severity.ERROR) fragmentTypeFailures.add(ids.get(diagnostic.id()));
+        }
+    }
+
+    Set<DiagnosticId> fragmentTypeFailures() {
+        return Set.copyOf(fragmentTypeFailures);
+    }
 
     DiagnosticId emit(DiagnosticDraft draft) { return collector.emit(draft); }
 
-    void registerUnsupportedSource(SourceId source) {
-        unsupportedBySource.computeIfAbsent(source, ignored -> new LinkedHashSet<>());
-    }
-
-    boolean recordUnsupported(SourceId source, String feature) {
-        return unsupportedBySource.computeIfAbsent(source, ignored -> new LinkedHashSet<>()).add(feature);
-    }
-
-    Map<SourceId, Set<String>> unsupportedBySource() {
-        var snapshot = new LinkedHashMap<SourceId, Set<String>>();
-        unsupportedBySource.forEach((source, features) ->
-                snapshot.put(source, Collections.unmodifiableSet(new LinkedHashSet<>(features))));
-        return Map.copyOf(snapshot);
+    Map<DiagnosticId, UnsupportedFeature> unsupportedFeatures() {
+        return Map.copyOf(unsupportedFeatures);
     }
 
     DiagnosticId unresolved(NameSyntax name) {
@@ -89,8 +89,9 @@ final class SemanticDiagnostics {
         if (range != null) {
             draft.at(range);
         }
-        recordUnsupported(source, feature);
-        return collector.emit(draft);
+        DiagnosticId id = collector.emit(draft);
+        unsupportedFeatures.putIfAbsent(id, new UnsupportedFeature(source, feature));
+        return id;
     }
 
     DiagnosticId emitTypeMismatch(SourceId source, SourceRange range, String actual, String expected) {

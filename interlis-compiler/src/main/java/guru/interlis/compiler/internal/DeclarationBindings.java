@@ -864,7 +864,6 @@ final class DeclarationBindings {
 
     private UnsupportedSymbol buildUnsupported(DeclInfo decl) {
         String feature = decl.featureId().orElse("UNKNOWN_SYNTAX");
-        diagnostics.recordUnsupported(decl.sourceId(), feature);
         diagnostics.emitUnsupported(decl.sourceId(), decl.origin() instanceof Origin.DeclaredOrigin d
                 ? d.range() : null, feature, decl.name());
         return new UnsupportedSymbol(header(decl), feature, decl.name());

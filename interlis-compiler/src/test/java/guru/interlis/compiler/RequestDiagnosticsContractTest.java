@@ -2,6 +2,7 @@ package guru.interlis.compiler;
 
 import guru.interlis.diagnostics.*;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.CoverageStatus;
 import guru.interlis.source.*;
 import java.util.*;
 import org.junit.jupiter.api.Test;
@@ -39,10 +40,18 @@ class RequestDiagnosticsContractTest {
             var out = CompilerEngines.create().compile(input("Good", sources, WarningPolicy.ALLOW_WARNINGS), TOKEN);
             var a = assertInstanceOf(CompilationOutcome.Succeeded.class, out).analysis();
             assertFalse(a.diagnostics().isEmpty()); assertTrue(a.requestDiagnostics().isEmpty());
+            assertEquals(CoverageStatus.COMPLETE,
+                    a.coverage().entry(Phase.BINDING, Optional.of(sources.getFirst().id())).status());
+            if (sources.size() == 2) {
+                assertEquals(CoverageStatus.NOT_REQUESTED,
+                        a.coverage().entry(Phase.BINDING, Optional.of(sources.getLast().id())).status());
+            }
             assertThrows(UnsupportedOperationException.class, () -> a.requestDiagnostics().clear());
             var bad = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create()
                     .compile(input("Bad", sources, WarningPolicy.ALLOW_WARNINGS), TOKEN));
             assertFalse(bad.analysis().requestDiagnostics().isEmpty());
+            assertEquals(CoverageStatus.BLOCKED_BY_ERROR,
+                    bad.analysis().coverage().entry(Phase.BINDING, Optional.of(sources.getLast().id())).status());
             assertEquals(bad.analysis().requestDiagnostics().stream().map(Diagnostic::id).sorted(Comparator.comparing(DiagnosticId::value)).toList(), bad.rejection().diagnosticIds());
             for (var diagnostic : bad.analysis().requestDiagnostics())
                 assertSame(diagnostic, bad.analysis().diagnostics().stream().filter(d -> d.id().equals(diagnostic.id())).findFirst().orElseThrow());
@@ -59,8 +68,10 @@ class RequestDiagnosticsContractTest {
                 .compile(input("Other", List.of(shared), WarningPolicy.REJECT_WARNINGS), TOKEN));
         assertTrue(relevant.rejection().reasons().contains(RejectionReason.WARNINGS_REJECTED));
         assertTrue(relevant.analysis().requestDiagnostics().stream().anyMatch(d -> d.severity() == Severity.WARNING));
-        assertInstanceOf(CompilationOutcome.Succeeded.class, CompilerEngines.create()
+        var allowed = assertInstanceOf(CompilationOutcome.Succeeded.class, CompilerEngines.create()
                 .compile(input("Other", List.of(shared), WarningPolicy.ALLOW_WARNINGS), TOKEN));
+        assertEquals(CoverageStatus.COMPLETE,
+                allowed.analysis().coverage().entry(Phase.PARSING, Optional.of(shared.id())).status());
     }
 
     @Test void requiredFileSyntaxErrorsStayVisibleEvenOutsideTheSelectedModelRange() {
@@ -73,6 +84,8 @@ class RequestDiagnosticsContractTest {
         var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create()
                 .compile(input("Good", List.of(together), WarningPolicy.ALLOW_WARNINGS), TOKEN));
         assertTrue(rejected.analysis().requestDiagnostics().stream().anyMatch(d -> d.phase() == Phase.PARSING));
+        assertEquals(CoverageStatus.BLOCKED_BY_ERROR,
+                rejected.analysis().coverage().entry(Phase.PARSING, Optional.of(together.id())).status());
     }
 
     @Test void importsAndMissingOrAmbiguousRootsRemainVisible() {
@@ -97,7 +110,29 @@ class RequestDiagnosticsContractTest {
         var request = new CompilationRequest(input.roots(), SourceSet.of(input.sources().sources(), List.of(), List.of(global), ResolutionFingerprint.none()), input.options());
         var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(request, TOKEN));
         assertTrue(rejected.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().equals(global.code()) && d.arguments().equals(global.arguments()) && d.primaryRange().isEmpty()));
-        assertTrue(rejected.rejection().reasons().contains(RejectionReason.ENVIRONMENT_FAILURE));
+        assertEquals(Set.of(RejectionReason.ENVIRONMENT_FAILURE), rejected.rejection().reasons());
+        assertTrue(rejected.analysis().coverage().incompleteEntries().isEmpty());
+    }
+
+    @Test void unlocatedOverlayBindingErrorKeepsItsGlobalDiagnosticLink() {
+        var source = source("good", model("Good", "DOMAIN D = TEXT;"));
+        var input = input("Good", List.of(source), WarningPolicy.ALLOW_WARNINGS);
+        var overlay = new SemanticOverlays.SemanticOverlay.MetaAttributeOverlay(
+                new SemanticOverlays.OverlaySource("config:/project", 1),
+                SemanticOverlays.Target.named("Good.Missing"), Map.of("label", List.of("test")));
+        var defaults = input.options();
+        var options = new CompilerOptions(defaults.semanticProfile(), defaults.allowedLanguages(),
+                defaults.warningPolicy(), defaults.budget(), new SemanticOverlays(List.of(overlay)));
+        var request = new CompilationRequest(input.roots(), input.sources(), options);
+        var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(request, TOKEN));
+        var analysis = rejected.analysis();
+        var diagnostic = analysis.requestDiagnostics().stream().filter(d -> d.code().value().equals("ILI-SEM-0011"))
+                .findFirst().orElseThrow();
+        assertTrue(diagnostic.primaryRange().isEmpty());
+        var entry = analysis.coverage().entry(Phase.BINDING, Optional.empty());
+        assertEquals(CoverageStatus.BLOCKED_BY_ERROR, entry.status());
+        assertEquals(Optional.of(diagnostic.id()), entry.diagnosticId());
+        assertEquals(CoverageStatus.COMPLETE, analysis.coverage().entry(Phase.BINDING, Optional.of(source.id())).status());
     }
 
     @Test void rootAndRevisionSwitchesWithReuseMatchFreshAndLeavePublishedSelectionsUntouched() {
@@ -142,12 +177,15 @@ class RequestDiagnosticsContractTest {
             var out = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(request, TOKEN));
             assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")));
             assertFalse(out.rejection().diagnosticIds().isEmpty());
+            assertSyntaxOnlyCoverage(out.analysis(), damaged.id());
         }
         // An unassociated file cannot acquire a model identity from its basename.
         var named = input("Lost", List.of(damaged), WarningPolicy.ALLOW_WARNINGS);
         var out = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(named, TOKEN));
         assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0001")));
         assertFalse(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")));
+        assertEquals(CoverageStatus.NOT_REQUESTED,
+                out.analysis().coverage().entry(Phase.PARSING, Optional.of(damaged.id())).status());
     }
 
     @Test void aResolvedImportKeepsItsRequiredSyntaxSourceEvenWhenThePromisedModelIsLost() {
@@ -160,10 +198,19 @@ class RequestDiagnosticsContractTest {
         assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")
                 && d.primaryRange().orElseThrow().source().equals(damaged.id())));
         assertTrue(out.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0004")));
+        assertSyntaxOnlyCoverage(out.analysis(), damaged.id());
         var unassociated = new CompilationRequest(request.roots(), SourceSet.of(request.sources().sources()), request.options());
         var missing = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(unassociated, TOKEN));
         assertTrue(missing.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-RES-0001")));
         assertFalse(missing.analysis().requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SYN-0004")));
+    }
+
+    private static void assertSyntaxOnlyCoverage(AnalysisSnapshot analysis, SourceId source) {
+        var coverage = analysis.coverage();
+        var entries = coverage.entries().stream().filter(entry -> entry.source().equals(Optional.of(source))).toList();
+        assertEquals(List.of(Phase.LEXING, Phase.PARSING), entries.stream().map(entry -> entry.phase()).toList());
+        assertEquals(CoverageStatus.COMPLETE, coverage.entry(Phase.LEXING, Optional.of(source)).status());
+        assertEquals(CoverageStatus.BLOCKED_BY_ERROR, coverage.entry(Phase.PARSING, Optional.of(source)).status());
     }
 
     @Test void namespaceConflictsCarryTheActualRevisionBoundDeclaration() {
@@ -173,6 +220,8 @@ class RequestDiagnosticsContractTest {
             var a = analysis(CompilerEngines.create().compile(input("F", List.of(source), WarningPolicy.ALLOW_WARNINGS), TOKEN));
             var d = a.requestDiagnostics().stream().filter(x -> x.code().value().equals("ILI-SEM-0010")).findFirst().orElseThrow();
             assertTrue(d.arguments().toString().contains("SCOPE_OUTER_TYPE_NAME"));
+            assertEquals(CoverageStatus.BLOCKED_BY_ERROR,
+                    a.coverage().entry(Phase.SEMANTIC_CHECKING, Optional.of(source.id())).status());
             var related = d.relatedLocations().getFirst().range(); assertEquals(source.id(), related.source()); assertEquals(source.revision(), related.revision());
             assertEquals(source.text().indexOf("Office"), related.startOffset()); assertEquals("Office", source.text().substring(related.startOffset(), related.endOffset()));
             assertTrue(d.primaryRange().orElseThrow().startOffset() > related.startOffset());

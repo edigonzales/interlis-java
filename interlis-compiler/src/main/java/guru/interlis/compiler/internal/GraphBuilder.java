@@ -2,11 +2,8 @@ package guru.interlis.compiler.internal;
 
 import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.compiler.SourceSet;
-import guru.interlis.diagnostics.DiagnosticArgument;
-import guru.interlis.diagnostics.Phase;
+import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.execution.CancellationToken;
-import guru.interlis.model.AnalysisCoverage;
-import guru.interlis.model.CoverageStatus;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.SnapshotId;
@@ -16,7 +13,6 @@ import guru.interlis.model.SymbolId;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
 import guru.interlis.source.SourceId;
-import guru.interlis.source.SourceRange;
 import guru.interlis.source.SourceText;
 
 import java.util.ArrayList;
@@ -155,14 +151,10 @@ final class GraphBuilder {
 
     GraphResult build() {
         syntaxUnsupportedBySource.forEach((source, features) -> {
-            diagnostics.registerUnsupportedSource(source);
             for (String feature : features) {
                 work.checkpoint();
-                if (diagnostics.recordUnsupported(source, feature)) {
-                    SourceText text = sourceSet.sources().get(source);
-                    SourceRange range = text == null ? null : text.range(0, 0);
-                    diagnostics.emitUnsupported(source, range, feature, feature);
-                }
+                SourceText text = sourceSet.sources().get(source);
+                diagnostics.emitUnsupported(source, text == null ? null : text.range(0, 0), feature, feature);
             }
         });
         for (IndexedDeclarations.ModelEntry entry : index.models()) {
@@ -223,71 +215,21 @@ final class GraphBuilder {
                 snapshotId, rootIds, new ArrayList<>(modelIds), languages,
                 sourceSet.sources().entrySet().stream().collect(java.util.stream.Collectors.toMap(
                         Map.Entry::getKey, e -> e.getValue().revision())));
-        AnalysisCoverage coverage = buildCoverage();
-        return new GraphResult(graph, coverage, rootIds, new ArrayList<>(modelIds),
-                diagnostics.unsupportedBySource());
+        // Charge the closure's per-source coverage work before ending the semantic run.
+        for (var source : closure.sources()) work.checkpoint();
+        return new GraphResult(graph, rootIds, new ArrayList<>(modelIds),
+                diagnostics.unsupportedFeatures(), diagnostics.fragmentTypeFailures());
     }
 
-    private AnalysisCoverage buildCoverage() {
-        List<AnalysisCoverage.CoverageEntry> entries = new ArrayList<>();
-        List<guru.interlis.diagnostics.Diagnostic> relevantDiagnostics = diagnostics.snapshot().stream()
-                .filter(d -> d.phase() == Phase.LEXING || d.phase() == Phase.PARSING
-                        || d.primaryRange().map(closure::contains).orElse(true)).toList();
-        for (SourceId source : closure.sources()) {
-            work.checkpoint();
-            boolean lexing = relevantDiagnostics.stream().noneMatch(d -> d.primaryRange()
-                    .filter(r -> r.source().equals(source)).isPresent()
-                    && d.code().value().equals("ILI-SYN-0001"));
-            boolean parsing = relevantDiagnostics.stream().noneMatch(d -> d.primaryRange()
-                    .filter(r -> r.source().equals(source)).isPresent()
-                    && d.code().value().matches("ILI-SYN-000[2-6]"));
-            boolean indexing = relevantDiagnostics.stream().noneMatch(d -> d.code().value().equals("ILI-SEM-0003")
-                    && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
-            boolean binding = relevantDiagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-000[124]")
-                    && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
-            boolean typeChecking = relevantDiagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-000[578]")
-                    && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
-            boolean semantic = relevantDiagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-0006|ILI-SEM-0010")
-                    && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
-            entries.add(entry(Phase.LEXING, source, lexing ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
-            entries.add(entry(Phase.PARSING, source, parsing ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
-            entries.add(entry(Phase.DECLARATION_INDEXING, source,
-                    indexing ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
-            entries.add(entry(Phase.BINDING, source,
-                    binding ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
-            entries.add(entry(Phase.TYPE_CHECKING, source,
-                    typeChecking ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
-            entries.add(entry(Phase.SEMANTIC_CHECKING, source,
-                    semantic ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
-        }
-        for (var diagnostic : relevantDiagnostics) {
-            if (diagnostic.code().value().equals("ILI-IMPL-0001")) {
-                var feature = diagnostic.arguments().stream()
-                        .filter(a -> a instanceof DiagnosticArgument.TextArgument)
-                        .map(a -> ((DiagnosticArgument.TextArgument) a).value()).findFirst();
-                entries.add(new AnalysisCoverage.CoverageEntry(Phase.SEMANTIC_CHECKING,
-                        diagnostic.primaryRange().map(SourceRange::source), CoverageStatus.NOT_IMPLEMENTED,
-                        feature, Optional.of(diagnostic.id())));
-            }
-        }
-        return new AnalysisCoverage(entries);
-    }
-
-    private AnalysisCoverage.CoverageEntry entry(Phase phase, SourceId source,
-                                                 CoverageStatus status) {
-        return new AnalysisCoverage.CoverageEntry(phase, Optional.of(source), status,
-                Optional.empty(), Optional.empty());
-    }
-
-    record GraphResult(SemanticGraph graph, AnalysisCoverage coverage, List<SymbolId> roots,
-                       List<SymbolId> models, Map<SourceId, Set<String>> unsupportedBySource) {
+    record GraphResult(SemanticGraph graph, List<SymbolId> roots, List<SymbolId> models,
+                       Map<DiagnosticId, SemanticDiagnostics.UnsupportedFeature> unsupportedFeatures,
+                       Set<DiagnosticId> fragmentTypeFailures) {
         GraphResult {
             Objects.requireNonNull(graph, "graph");
-            Objects.requireNonNull(coverage, "coverage");
             roots = List.copyOf(Objects.requireNonNull(roots, "roots"));
             models = List.copyOf(Objects.requireNonNull(models, "models"));
-            unsupportedBySource = Map.copyOf(Objects.requireNonNull(unsupportedBySource,
-                    "unsupportedBySource"));
+            unsupportedFeatures = Map.copyOf(unsupportedFeatures);
+            fragmentTypeFailures = Set.copyOf(fragmentTypeFailures);
         }
     }
 

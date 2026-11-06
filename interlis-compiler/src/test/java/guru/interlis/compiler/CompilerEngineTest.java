@@ -1,10 +1,13 @@
 package guru.interlis.compiler;
 
 import guru.interlis.diagnostics.Diagnostic;
+import guru.interlis.diagnostics.Phase;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.AnalysisCoverage;
 import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.CompiledSchema;
 import guru.interlis.model.ConstraintSymbol;
+import guru.interlis.model.CoverageStatus;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.EffectiveType;
 import guru.interlis.model.MandatoryConstraint;
@@ -22,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -75,6 +79,13 @@ class CompilerEngineTest {
         CompilationOutcome outcome = CompilerEngines.create().compile(request, CancellationToken.none());
         CompilationOutcome.Succeeded succeeded = assertInstanceOf(
                 CompilationOutcome.Succeeded.class, outcome, () -> describe(outcome));
+        var phases = List.of(Phase.LEXING, Phase.PARSING, Phase.DECLARATION_INDEXING, Phase.BINDING,
+                Phase.TYPE_CHECKING, Phase.SEMANTIC_CHECKING);
+        var expectedCoverage = List.of(survey.id(), base.id()).stream().flatMap(source ->
+                phases.stream().map(phase -> new AnalysisCoverage.CoverageEntry(phase, Optional.of(source),
+                        CoverageStatus.COMPLETE, Optional.empty(), Optional.empty()))).toList();
+        assertEquals(expectedCoverage, succeeded.analysis().coverage().entries());
+
         CompiledSchema schema = succeeded.schema();
         assertEquals(1, schema.rootModels().size());
         assertEquals(2, schema.models().size());
@@ -122,6 +133,75 @@ class CompilerEngineTest {
         assertTrue(rejected.rejection().reasons().contains(RejectionReason.SOURCE_ERRORS));
         assertTrue(rejected.analysis().diagnostics().stream()
                 .anyMatch(d -> d.code().value().equals("ILI-SEM-0001")));
+        var coverage = rejected.analysis().coverage();
+        assertEquals(CoverageStatus.BLOCKED_BY_ERROR, coverage.entry(Phase.BINDING, Optional.of(survey.id())).status());
+        assertEquals(CoverageStatus.COMPLETE, coverage.entry(Phase.BINDING, Optional.of(base.id())).status());
+    }
+
+    @Test
+    void boundNonBooleanConstraintBlocksTypeChecking() {
+        SourceText source = CompilerTestSupport.source("memory:/constraint.ili", """
+                INTERLIS 2.4;
+                MODEL F AT "x" VERSION "1" =
+                  TOPIC T = CLASS C =
+                    value : TEXT;
+                    MANDATORY CONSTRAINT value;
+                  END C; END T;
+                END F.
+                """);
+        var request = CompilerTestSupport.request(List.of("F"), Map.of(source.id(), source),
+                List.of(), CompilerOptions.defaults());
+        var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
+                CompilerEngines.create().compile(request, CancellationToken.none()));
+        var analysis = rejected.analysis();
+        assertTrue(analysis.requestDiagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SEM-0005")));
+        assertEquals(CoverageStatus.COMPLETE, analysis.coverage().entry(Phase.BINDING, Optional.of(source.id())).status());
+        assertEquals(CoverageStatus.BLOCKED_BY_ERROR,
+                analysis.coverage().entry(Phase.TYPE_CHECKING, Optional.of(source.id())).status());
+    }
+
+    @Test
+    void rejectedTypeDescriptorsBlockTypeCheckingEvenWithGenericRuleDiagnostics() {
+        SourceText source = CompilerTestSupport.source("memory:/invalid-type.ili",
+                "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\" = DOMAIN Empty = TEXT*0; END F.");
+        var request = CompilerTestSupport.request(List.of("F"), Map.of(source.id(), source),
+                List.of(), CompilerOptions.defaults());
+        var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
+                CompilerEngines.create().compile(request, CancellationToken.none()));
+        var analysis = rejected.analysis();
+        assertTrue(analysis.requestDiagnostics().stream().anyMatch(d -> d.phase() == Phase.SEMANTIC_CHECKING
+                && d.arguments().toString().contains("TEXT_LENGTH")));
+        assertEquals(CoverageStatus.BLOCKED_BY_ERROR,
+                analysis.coverage().entry(Phase.TYPE_CHECKING, Optional.of(source.id())).status());
+        assertEquals(CoverageStatus.COMPLETE,
+                analysis.coverage().entry(Phase.BINDING, Optional.of(source.id())).status());
+    }
+
+    @Test
+    void unsupportedExpressionHasAFeatureEntryWithTheOriginalSourceAndDiagnostic() {
+        SourceText source = CompilerTestSupport.source("memory:/unsupported-expression.ili", """
+                INTERLIS 2.4;
+                MODEL F AT "x" VERSION "1" =
+                  TOPIC T = CLASS C =
+                    value : TEXT;
+                    MANDATORY CONSTRAINT ALL OF value;
+                  END C; END T;
+                END F.
+                """);
+        var request = CompilerTestSupport.request(List.of("F"), Map.of(source.id(), source),
+                List.of(), CompilerOptions.defaults());
+        var rejected = assertInstanceOf(CompilationOutcome.Rejected.class,
+                CompilerEngines.create().compile(request, CancellationToken.none()));
+        assertEquals(Set.of(RejectionReason.INCOMPLETE_SUPPORT), rejected.rejection().reasons());
+        var analysis = rejected.analysis();
+        assertEquals(CoverageStatus.NOT_IMPLEMENTED,
+                analysis.coverage().entry(Phase.SEMANTIC_CHECKING, Optional.of(source.id())).status());
+        var entry = analysis.coverage().entries().stream()
+                .filter(e -> e.featureId().equals(Optional.of("ALL_OF_PATH"))).findFirst().orElseThrow();
+        assertEquals(Optional.of(source.id()), entry.source());
+        assertEquals(CoverageStatus.NOT_IMPLEMENTED, entry.status());
+        assertTrue(analysis.requestDiagnostics().stream().anyMatch(d -> Optional.of(d.id()).equals(entry.diagnosticId())
+                && d.code().value().equals("ILI-IMPL-0001")));
     }
 
     @Test

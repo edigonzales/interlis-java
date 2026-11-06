@@ -133,7 +133,7 @@ final class ObjectPathBindings {
     guru.interlis.syntax.FragmentSnapshot parsePathLiteral(SourceRange range, guru.interlis.model.LanguageVersion language) {
         var fragment = new guru.interlis.compiler.internal.antlr.AntlrSyntaxService().parsePathLiteral(
                 sourceSet.sources().get(range.source()), range, language, cancellation);
-        diagnostics.importAll(fragment.diagnostics());
+        diagnostics.importTypeFragmentDiagnostics(fragment.diagnostics());
         return fragment;
     }
 

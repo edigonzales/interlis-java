@@ -8,6 +8,7 @@ import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.CompilerServices;
 import guru.interlis.compiler.SourceSet;
 import guru.interlis.diagnostics.Diagnostic;
+import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
 import guru.interlis.execution.CancellationReason;
 import guru.interlis.execution.CancellationToken;
@@ -29,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /** One run-local compiler execution; mutable state is never published. */
 final class CompilationRun {
@@ -50,7 +52,7 @@ final class CompilationRun {
 
     RunOutput execute(ParseMode mode, RunLifecycle lifecycle) {
         SourceSet sourceSet = request.sources();
-        verifySourceSet(sourceSet, lifecycle);
+        var resolutionDiagnostics = verifySourceSet(sourceSet, lifecycle);
         parseSources(sourceSet, mode, lifecycle);
         token.throwIfCancellationRequested();
         IndexedDeclarations declarations = new DeclarationIndexer().index(syntax.values().stream().toList(), reuse);
@@ -121,18 +123,21 @@ final class CompilationRun {
         }
         token.throwIfCancellationRequested();
         List<Diagnostic> diagnostics = collector.freeze();
+        var syntaxSources = RequestDiagnosticSelector.syntaxSources(closure, request, token);
+        var requestDiagnostics = RequestDiagnosticSelector.select(diagnostics, closure, roots, syntaxSources, token);
+        var coverage = AnalysisCoverageBuilder.build(closure, syntaxSources, syntax, requestDiagnostics,
+                resolutionDiagnostics, graphResult, token);
         AnalysisProvenance provenance = new AnalysisProvenance(Fingerprints.COMPILER_VERSION,
                 Fingerprints.GRAMMAR_VERSION, Fingerprints.SEMANTIC_PROFILE,
                 sourceSet.fingerprint().value(), request.options().fingerprint(),
                 sourceFingerprints(sourceSet));
         AnalysisSnapshot analysis = new AnalysisSnapshot(snapshotId, graphResult.graph(),
-                revisions(sourceSet), syntax, diagnostics,
-                RequestDiagnosticSelector.select(diagnostics, closure, roots, request, token), graphResult.coverage(),
+                revisions(sourceSet), syntax, diagnostics, requestDiagnostics, coverage,
                 fingerprint, provenance);
         return new RunOutput(analysis, closure, roots, graphResult);
     }
 
-    private void verifySourceSet(SourceSet sourceSet, RunLifecycle lifecycle) {
+    private Set<DiagnosticId> verifySourceSet(SourceSet sourceSet, RunLifecycle lifecycle) {
         var phase = lifecycle.beginPhase(Phase.SOURCE_RESOLUTION,
                 new guru.interlis.execution.RunEvent.PhaseMetadata(sourceSet.sources().size()));
         PhaseStatus status = PhaseStatus.FAILED;
@@ -147,8 +152,9 @@ final class CompilationRun {
                         request.options().budget().maxTotalSourceUtf16Length());
             }
             new SourceSetVerifier().verify(sourceSet, collector);
-            collector.importAll(sourceSet.resolutionDiagnostics());
+            var importedDiagnostics = Set.copyOf(collector.importAll(sourceSet.resolutionDiagnostics()).values());
             status = PhaseStatus.SUCCEEDED;
+            return importedDiagnostics;
         } catch (OperationCancelledException | AnalysisBudgetExceededException cancelled) {
             status = PhaseStatus.CANCELLED;
             throw cancelled;

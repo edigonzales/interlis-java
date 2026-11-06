@@ -1,6 +1,7 @@
 package guru.interlis.compiler;
 
 import guru.interlis.compiler.query.*;
+import guru.interlis.diagnostics.Phase;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.*;
 import java.util.*;
@@ -14,6 +15,8 @@ class EditorPartialStateContractTest {
             String text="INTERLIS "+version+";MODEL F AT \"x\" VERSION \"1\"=TOPIC T=CLASS Broken=missing: ;END Broken;CLASS Neighbor=value:TEXT*4;END Neighbor;CLASS Use EXTENDS Neighbor=END Use;END T;END F.";
             var source=CompilerTestSupport.source("memory:/editor-partial.ili",text);var request=CompilerTestSupport.request(List.of("F"),Map.of(source.id(),source),List.of(),CompilerOptions.defaults());
             var engine=CompilerEngines.create();var analysis=engine.analyze(request,CancellationToken.none());assertFalse(analysis.diagnostics().isEmpty());
+            assertEquals(CoverageStatus.BLOCKED_BY_ERROR,
+                    analysis.coverage().entry(Phase.PARSING, Optional.of(source.id())).status());
             var neighbor=analysis.queries().findQualifiedName(QualifiedName.of("F","T","Neighbor")).getFirst();assertInstanceOf(ClassSymbol.class,analysis.queries().symbol(neighbor).known().orElseThrow());
             var value=analysis.queries().findQualifiedName(QualifiedName.of("F","T","Neighbor","value")).getFirst();
             assertEquals(4,assertInstanceOf(TextType.class,analysis.queries().declaredType(value).known().orElseThrow()).maxLength().orElseThrow());
@@ -22,6 +25,24 @@ class EditorPartialStateContractTest {
             var completed=queries.complete(analysis,new CompletionQuery(source.range(offset,offset),new NamePrefix("Nei"),20),CancellationToken.none());
             assertTrue(completed.candidates().stream().anyMatch(c->c.label().equals("Neighbor")),completed.toString());
             var rejected=assertInstanceOf(CompilationOutcome.Rejected.class,engine.compile(request,CancellationToken.none()));assertEquals(Set.of(RejectionReason.SOURCE_ERRORS),rejected.rejection().reasons());
+        }
+    }
+
+    @Test void versionRestrictedSyntaxBlocksParsingCoverageInTheEditor() {
+        for (String version : List.of("2.3", "2.4")) {
+            var source = CompilerTestSupport.source("memory:/date.ili",
+                    "INTERLIS " + version + "; MODEL F AT \"x\" VERSION \"1\" = "
+                            + "TOPIC T = CLASS C = value : DATE; END C; END T; END F.");
+            var request = CompilerTestSupport.request(List.of("F"), Map.of(source.id(), source),
+                    List.of(), CompilerOptions.defaults());
+            var analysis = CompilerEngines.create().analyze(request, CancellationToken.none());
+            boolean restricted = version.equals("2.3");
+            assertEquals(restricted, analysis.requestDiagnostics().stream()
+                    .anyMatch(d -> d.code().value().equals("ILI-SYN-0006") && d.phase() == Phase.PARSING));
+            assertEquals(CoverageStatus.COMPLETE,
+                    analysis.coverage().entry(Phase.LEXING, Optional.of(source.id())).status());
+            assertEquals(restricted ? CoverageStatus.BLOCKED_BY_ERROR : CoverageStatus.COMPLETE,
+                    analysis.coverage().entry(Phase.PARSING, Optional.of(source.id())).status());
         }
     }
 }
