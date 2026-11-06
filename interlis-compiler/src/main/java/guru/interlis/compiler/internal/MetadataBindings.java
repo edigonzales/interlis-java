@@ -14,8 +14,8 @@ final class MetadataBindings {
 
     MetadataBasketSymbol basket(DeclInfo decl) {
         var syntax = (MetadataBasketDeclarationSyntax)decl.syntax();
-        var topic = g.bindTarget(decl, syntax.topic(), Set.of(SymbolKind.TOPIC), ReferenceUsage.TYPE_USE, new ArrayList<>());
-        var base = syntax.baseBasket().flatMap(name -> g.bindTarget(decl, name, Set.of(SymbolKind.METADATA_BASKET), ReferenceUsage.BASE_TYPE, new ArrayList<>()));
+        var topic = g.names.bindTarget(decl, syntax.topic(), Set.of(SymbolKind.TOPIC), ReferenceUsage.TYPE_USE, new ArrayList<>());
+        var base = syntax.baseBasket().flatMap(name -> g.names.bindTarget(decl, name, Set.of(SymbolKind.METADATA_BASKET), ReferenceUsage.BASE_TYPE, new ArrayList<>()));
         var result = new MetadataBasketSymbol(g.header(decl), syntax.basketKind(), topic, base,
                 g.index.children(decl.id()).stream().map(DeclInfo::id).toList());
         state.defineSymbol(result);
@@ -57,7 +57,7 @@ final class MetadataBindings {
             var topicDecl = g.index.byId(topic).orElseThrow();
             topic = ((TopicSyntax)topicDecl.syntax()).baseTopic().flatMap(name -> g.resolver.resolve(topicDecl.id(), name, Set.of(SymbolKind.TOPIC)).target()).orElse(null);
         }
-        g.recordReference(decl, syntax.objectClass(), target.orElse(null), ReferenceUsage.TYPE_USE);
+        g.references.recordReference(decl, syntax.objectClass(), target.orElse(null), ReferenceUsage.TYPE_USE);
         if (target.isEmpty()) g.emitRule(decl, "metadata object class is not declared in the basket topic", "METAOBJECT_CLASS");
         target.ifPresent(id -> {
             ensureBases(id);
@@ -83,7 +83,7 @@ final class MetadataBindings {
             if (r.axis().isPresent() && r.axis().getAsInt() < 1) {
                 errors.add(g.emitRule(context, "reference-system axis numbers start at one", "REFSYSTEM_AXIS")); return Optional.empty();
             }
-            Optional<SymbolId> target = r.domain() ? g.bindTarget(context, r.target(), Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors)
+            Optional<SymbolId> target = r.domain() ? g.names.bindTarget(context, r.target(), Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors)
                     : objectReference(context, r.target(),errors);
             return target.map(id -> new NumericRange.ReferenceSystem(id, r.domain(), r.axis()));
         });
@@ -111,7 +111,7 @@ final class MetadataBindings {
             }
             if (baskets.size() == 1) target = inheritedObject(baskets.getFirst(), name.segments().getLast().text(), new HashSet<>());
         }
-        g.recordReference(context, name, target.orElse(null), ReferenceUsage.TYPE_USE);
+        g.references.recordReference(context, name, target.orElse(null), ReferenceUsage.TYPE_USE);
         if (target.isEmpty()) errors.add(g.emitRule(context, "metadata object reference is missing or ambiguous: " + name.text(), "METAOBJECT_REFERENCE"));
         target.ifPresent(id -> g.buildSymbol(g.index.byId(id).orElseThrow()));
         return target;

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /** The graph being assembled in a single compilation run. */
-final class SemanticBuildState {
+final class SemanticBuildState implements SemanticGraphRead {
     private final Map<SymbolId, Symbol> symbols = new LinkedHashMap<>();
     private final Map<TypeId, TypeDescriptor> types = new LinkedHashMap<>();
     private final Map<ExpressionId, TypedExpression> expressions = new LinkedHashMap<>();
@@ -37,7 +37,7 @@ final class SemanticBuildState {
     private int expressionCounter;
     private boolean frozen;
 
-    Symbol symbol(SymbolId id) { return symbols.get(id); }
+    public Symbol symbol(SymbolId id) { return symbols.get(id); }
 
     boolean hasSymbol(SymbolId id) { return symbols.containsKey(id); }
 
@@ -61,16 +61,16 @@ final class SemanticBuildState {
     }
 
     /** Read-only live view in insertion order. Take a snapshot before adding symbols while iterating. */
-    Collection<Symbol> symbolsInBuildOrder() { return Collections.unmodifiableCollection(symbols.values()); }
+    public Collection<Symbol> symbolsInBuildOrder() { return Collections.unmodifiableCollection(symbols.values()); }
 
-    TypeDescriptor type(TypeId id) { return types.get(id); }
+    public TypeDescriptor type(TypeId id) { return types.get(id); }
 
     void storeType(TypeDescriptor type) {
         requireOpen();
         types.put(type.id(), type);
     }
 
-    TypedExpression expression(ExpressionId id) { return expressions.get(id); }
+    public TypedExpression expression(ExpressionId id) { return expressions.get(id); }
 
     void storeExpression(TypedExpression expression) {
         requireOpen();
@@ -82,7 +82,7 @@ final class SemanticBuildState {
         references.put(reference.id(), reference);
     }
 
-    TypeId declaredType(SymbolId id) { return declaredTypes.get(id); }
+    public TypeId declaredType(SymbolId id) { return declaredTypes.get(id); }
 
     boolean hasDeclaredType(SymbolId id) { return declaredTypes.containsKey(id); }
 
@@ -98,7 +98,7 @@ final class SemanticBuildState {
     }
 
     /** Read-only live view in insertion order. */
-    Set<Map.Entry<SymbolId, TypeId>> declaredTypesInBuildOrder() {
+    public Set<Map.Entry<SymbolId, TypeId>> declaredTypesInBuildOrder() {
         return Collections.unmodifiableMap(declaredTypes).entrySet();
     }
 
@@ -122,7 +122,7 @@ final class SemanticBuildState {
         return Collections.unmodifiableMap(effectiveMembers).entrySet();
     }
 
-    SymbolId baseOf(SymbolId symbol) { return bases.get(symbol); }
+    public SymbolId baseOf(SymbolId symbol) { return bases.get(symbol); }
 
     boolean hasBase(SymbolId symbol) { return bases.containsKey(symbol); }
 

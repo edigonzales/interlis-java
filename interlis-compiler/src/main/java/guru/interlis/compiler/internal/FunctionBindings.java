@@ -169,7 +169,7 @@ final class FunctionBindings {
         boolean sameDependentValue=attribute.owner().orElse(null) instanceof AttributePathType.ClassAttribute path
                 &&formal.owner().orElse(null) instanceof AttributePathType.Argument argument
                 &&argument.function().equals(function.id())&&argument.index()<arguments.size()
-                &&g.sameBoundExpression(path.path(),arguments.get(argument.index()).id());
+                &&g.translations.sameBoundExpression(path.path(),arguments.get(argument.index()).id());
         if(!sameDependentValue&&!owners.isEmpty() && (!(attribute.owner().orElse(null) instanceof AttributePathType.Viewable value)
                 || owners.stream().anyMatch(owner->!owner.equals(value.target()))))return false;
         return formal.restrictions().isEmpty() || !attribute.restrictions().isEmpty() && attribute.restrictions().stream()

@@ -15,7 +15,7 @@ final class LineForms {
     LineFormSymbol buildForm(DeclInfo decl) {
         var syntax = (LineFormDeclarationSyntax) decl.syntax();
         List<DiagnosticId> errors = new ArrayList<>();
-        var target = g.bindTarget(decl, syntax.segmentStructure(), Set.of(SymbolKind.STRUCTURE), ReferenceUsage.TYPE_USE, errors);
+        var target = g.names.bindTarget(decl, syntax.segmentStructure(), Set.of(SymbolKind.STRUCTURE), ReferenceUsage.TYPE_USE, errors);
         target.ifPresent(id -> {
             SymbolId base = id;
             Set<SymbolId> seen = new HashSet<>();
@@ -40,11 +40,11 @@ final class LineForms {
         for (var name : syntax.lineForms()) {
             g.checkWork();
             var target = predefined(decl, name.text(), Set.of(SymbolKind.LINE_FORM));
-            if (target.isPresent()) g.recordReference(decl, name, target.orElseThrow(), ReferenceUsage.TYPE_USE);
-            else target = g.bindTarget(decl, name, Set.of(SymbolKind.LINE_FORM), ReferenceUsage.TYPE_USE, errors);
+            if (target.isPresent()) g.references.recordReference(decl, name, target.orElseThrow(), ReferenceUsage.TYPE_USE);
+            else target = g.names.bindTarget(decl, name, Set.of(SymbolKind.LINE_FORM), ReferenceUsage.TYPE_USE, errors);
             target.ifPresent(forms::add);
         }
-        var vertex = syntax.vertexDomain().flatMap(name -> g.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors));
+        var vertex = syntax.vertexDomain().flatMap(name -> g.names.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors));
         vertex.ifPresent(target -> {
             g.index.byId(target).ifPresent(g::buildSymbol);
             var domain = (DomainSymbol)state.symbol(target);
@@ -53,7 +53,7 @@ final class LineForms {
         });
         if (decl.language() == LanguageVersion.ILI24 && syntax.lineAttributes().isPresent())
             g.emitRule(decl, "LINE ATTRIBUTES are not supported by INTERLIS 2.4", "LINE_ATTRIBUTES_VERSION");
-        var attributes = syntax.lineAttributes().flatMap(name -> g.bindTarget(decl, name, Set.of(SymbolKind.STRUCTURE), ReferenceUsage.TYPE_USE, errors));
+        var attributes = syntax.lineAttributes().flatMap(name -> g.names.bindTarget(decl, name, Set.of(SymbolKind.STRUCTURE), ReferenceUsage.TYPE_USE, errors));
         Optional<GeometryType.Tolerance> overlap = syntax.overlap().map(DecimalLiteral::parse).map(GeometryType.Explicit::new);
         return new GeometryType(id, new Origin.DeclaredOrigin(syntax.range()), syntax.geometryKind(), forms,
                 vertex, attributes, syntax.directed(), syntax.withoutOverlaps(), overlap);

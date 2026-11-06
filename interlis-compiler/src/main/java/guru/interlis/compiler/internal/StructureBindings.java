@@ -13,11 +13,11 @@ final class StructureBindings {
 
     TypeDescriptor bind(TypeId id, StructureValueTypeSyntax syntax, DeclInfo declaration) {
         List<DiagnosticId> errors=new ArrayList<>();
-        Optional<SymbolId> target=syntax.target().flatMap(name -> g.bindTarget(declaration,name,
+        Optional<SymbolId> target=syntax.target().flatMap(name -> g.names.bindTarget(declaration,name,
                 Set.of(SymbolKind.STRUCTURE),ReferenceUsage.TYPE_USE,errors));
         List<SymbolId> restrictions=new ArrayList<>();
         for(var name:syntax.restrictions()) {
-            g.checkWork();g.bindTarget(declaration,name,Set.of(SymbolKind.STRUCTURE),ReferenceUsage.TYPE_USE,errors).ifPresent(restrictions::add);
+            g.checkWork();g.names.bindTarget(declaration,name,Set.of(SymbolKind.STRUCTURE),ReferenceUsage.TYPE_USE,errors).ifPresent(restrictions::add);
         }
         if(!errors.isEmpty())return new ErrorType(id,new Origin.DeclaredOrigin(syntax.range()),errors);
         target.ifPresent(g::objectInheritanceBase);

@@ -19,9 +19,9 @@ final class GraphicBuilder {
             g.emitRule(decl,"cyclic graphic inheritance","GRAPHIC_CYCLE");
             return new GraphicSymbol(g.header(decl),Optional.empty(),Optional.empty(),List.of(),List.of(),List.of());
         }
-        var base=syntax.baseGraphic().flatMap(n->g.bindTarget(decl,n,Set.of(SymbolKind.GRAPHIC),ReferenceUsage.BASE_TYPE,new ArrayList<>(),false));
+        var base=syntax.baseGraphic().flatMap(n->g.names.bindTarget(decl,n,Set.of(SymbolKind.GRAPHIC),ReferenceUsage.BASE_TYPE,new ArrayList<>(),false));
         GraphicSymbol parent=base.map(id->(GraphicSymbol)g.buildSymbol(g.index.byId(id).orElseThrow())).orElse(null);
-        var basis=syntax.basis().flatMap(n->g.bindTarget(decl,n,Set.of(SymbolKind.CLASS,SymbolKind.VIEW),ReferenceUsage.TYPE_USE,new ArrayList<>(),false));
+        var basis=syntax.basis().flatMap(n->g.names.bindTarget(decl,n,Set.of(SymbolKind.CLASS,SymbolKind.VIEW),ReferenceUsage.TYPE_USE,new ArrayList<>(),false));
         if(basis.isEmpty() && parent!=null) basis=parent.basis();
         if(basis.isEmpty()) g.emitRule(decl,"graphic requires a bound class or view basis","GRAPHIC_BASIS");
         if(parent!=null) {
@@ -66,7 +66,7 @@ final class GraphicBuilder {
         if(inherited.isPresent()!=decl.modifiers().contains(Modifier.EXTENDED))
             g.emitRule(decl,"drawing-rule override requires inherited rule and EXTENDED","GRAPHIC_RULE_OVERRIDE");
         if(parent!=null && parent.header().has(Modifier.FINAL)) g.emitRule(decl,"cannot override FINAL rule","GRAPHIC_RULE_FINAL");
-        var signature=syntax.signatureClass().flatMap(n->g.bindTarget(decl,n,Set.of(SymbolKind.CLASS),ReferenceUsage.TYPE_USE,new ArrayList<>(),false));
+        var signature=syntax.signatureClass().flatMap(n->g.names.bindTarget(decl,n,Set.of(SymbolKind.CLASS),ReferenceUsage.TYPE_USE,new ArrayList<>(),false));
         if(signature.isEmpty() && parent!=null) signature=parent.signatureClass();
         if(signature.isEmpty() && !decl.modifiers().contains(Modifier.ABSTRACT)) g.emitRule(decl,"concrete drawing rule requires signature class","GRAPHIC_SIGNATURE");
         signature.ifPresent(id->{
@@ -83,7 +83,7 @@ final class GraphicBuilder {
             List<DrawingRuleSymbol.Assignment> assignments=new ArrayList<>();
             for(var assignment:clause.assignments()) {
                 var parameter=signature.flatMap(id->g.metadata.parameter(id,assignment.parameter().text()));
-                g.recordReference(decl,assignment.parameter(),parameter.orElse(null),ReferenceUsage.EXPRESSION);
+                g.references.recordReference(decl,assignment.parameter(),parameter.orElse(null),ReferenceUsage.EXPRESSION);
                 if(parameter.isEmpty()) g.emitRule(decl,"unknown signature parameter: "+assignment.parameter().text(),"GRAPHIC_PARAMETER");
                 assignments.add(new DrawingRuleSymbol.Assignment(assignment.range(),parameter,value(decl,parameter,assignment.value())));
             }

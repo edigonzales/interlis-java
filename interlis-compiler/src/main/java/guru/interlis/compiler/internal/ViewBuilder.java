@@ -67,7 +67,7 @@ final class ViewBuilder {
         DeclInfo targetDecl = g.index.byId(target).orElseThrow();
         if (!building.contains(target)) g.buildSymbol(targetDecl);
         else g.emitRule(decl, "cyclic view formation", "VIEW_CYCLE");
-        g.recordReference(decl, targetName, target, ReferenceUsage.EXPRESSION);
+        g.references.recordReference(decl, targetName, target, ReferenceUsage.EXPRESSION);
         var ownerSyntax = g.index.byId(decl.owner().orElseThrow()).orElseThrow().syntax();
         boolean nullable = ownerSyntax instanceof ViewDeclarationSyntax syntax && syntax.formation().stream().flatMap(f -> f.bases().stream())
                 .anyMatch(b -> b.target().range().equals(targetName.range()) && b.orNull());
@@ -94,7 +94,7 @@ final class ViewBuilder {
                         : g.resolver.resolve(decl.id(), name, Set.of(SymbolKind.VIEW), false).target();
                 if (parent.isEmpty()) { if (name != null) g.unresolved(name); else g.emitRule(decl, "EXTENDED view needs an inherited view", "EXTENDED_BASE"); }
                 else {
-                    if (name != null) g.recordReference(decl, name, parent.orElseThrow(), ReferenceUsage.EXPRESSION);
+                    if (name != null) g.references.recordReference(decl, name, parent.orElseThrow(), ReferenceUsage.EXPRESSION);
                     var base = (ViewSymbol) g.buildSymbol(g.index.byId(parent.orElseThrow()).orElseThrow());
                     state.bindBase(decl.id(), base.id());
                     if (base.header().has(Modifier.FINAL)) g.emitRule(decl, "cannot extend FINAL view", "VIEW_FINAL");
@@ -121,7 +121,7 @@ final class ViewBuilder {
                 if (baseId.isEmpty() || !(state.symbol(baseId.orElseThrow()) instanceof ViewSymbol.Base original)) {
                     g.unresolved(extension.base()); continue;
                 }
-                g.recordReference(decl, extension.base(), original.id(), ReferenceUsage.EXPRESSION);
+                g.references.recordReference(decl, extension.base(), original.id(), ReferenceUsage.EXPRESSION);
                 List<SymbolId> extensions = new ArrayList<>();
                 for (var candidate : extension.extensions()) {
                     var local = member(decl.id(), candidate.alias().text());
@@ -185,7 +185,7 @@ final class ViewBuilder {
                         g.emitRule(decl, "ALL OF is not allowed in UNION or AREA INSPECTION", "VIEW_ALL_OF");
                     var base = member(decl.id(), all.base().text()).map(state::symbol).orElse(null);
                     if (!(base instanceof ViewSymbol.Base basis)) { g.unresolved(all.base()); continue; }
-                    g.recordReference(decl, all.base(), basis.nameRange().isPresent() ? basis.id() : basis.target(), ReferenceUsage.EXPRESSION);
+                    g.references.recordReference(decl, all.base(), basis.nameRange().isPresent() ? basis.id() : basis.target(), ReferenceUsage.EXPRESSION);
                     List<SymbolId> inherited;
                     if (state.symbol(basisTarget(basis)) instanceof ViewSymbol view) inherited = view.members();
                     else {
@@ -350,7 +350,7 @@ final class ViewBuilder {
             if (resolution.target().isEmpty()) g.unresolved(name);
             else {
                 var target = resolution.target().orElseThrow();
-                g.recordReference(decl, name, target, ReferenceUsage.EXPRESSION);
+                g.references.recordReference(decl, name, target, ReferenceUsage.EXPRESSION);
                 if (building.contains(target)) g.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
                 else {
                     var bound = (ViewSymbol)g.buildSymbol(g.index.byId(target).orElseThrow());
@@ -366,7 +366,7 @@ final class ViewBuilder {
             if (resolution.target().isEmpty()) g.unresolved(name);
             else {
                 source = resolution.target().orElseThrow();
-                g.recordReference(decl, name, source, ReferenceUsage.EXPRESSION);
+                g.references.recordReference(decl, name, source, ReferenceUsage.EXPRESSION);
                 if (building.contains(source)) g.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
                 else {
                     if (g.index.byId(source).orElseThrow().kind() == SymbolKind.VIEW)
