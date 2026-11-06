@@ -1,0 +1,584 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "953b84dcae7c0000abff18fc84133fe36d5b9b5b",
+  "researchedOn": "2026-11-06",
+  "profiles": {
+    "iox-api": {
+      "version": "1.0.4",
+      "commit": "c9209c8ee78225b73b2460561e326b059c40a4ac"
+    },
+    "iox-ili": {
+      "version": "1.24.4",
+      "commit": "8e966a086a72e7e2990a312b1229ee5878fd5994",
+      "laterSourceCommit": "f8d7f5695a01a9c67f13deab7d0844d267d2803f"
+    },
+    "iox-wkf": {
+      "version": "2.0.0",
+      "commit": "2098c4b4851a6c8a9911ca82a4ffdf2798868d89"
+    },
+    "ilivalidator": {
+      "version": "1.15.0",
+      "commit": "27cd81fb0d0ef2103e7afd673a7d00dd2053763f",
+      "laterSourceCommit": "cee7ee7994062128f635f182592fbdfed62f9519"
+    }
+  },
+  "assessmentValues": {
+    "correct": "Fachlich passende Beobachtung im genannten Umfang.",
+    "historical-compromise": "Bewusste oder historisch gewachsene Beschränkung des Referenzpfads.",
+    "known-defect": "Konkreter Fehler im genannten Stand oder explizit markierter historischer Fehler.",
+    "unresolved": "Befund mit offener fachlicher Entscheidung oder ohne ausreichende Reproduktion."
+  },
+  "evidenceLevels": {
+    "source": "An einer konkreten Implementierung oder an zugeordneten Änderungen geprüft.",
+    "upstream-report": "Aus Issue, Diskussion oder Log. Eingaben lokal nicht ausgeführt.",
+    "local-probe": "Mindestens eine einschlägige Gegenprobe in P4.0 ausgeführt. scope und finding nennen die Reichweite. Ein probe-Eintrag verknüpft Ergebnisse aus P4.0-B mit dem Bericht und dessen argv."
+  },
+  "cases": [
+    {
+      "id": "event-sequence",
+      "phase": "P4.1-transfer",
+      "assessment": "correct",
+      "evidenceLevel": "local-probe",
+      "scope": "IOX API 1.0.4; iox-ili 1.24.4",
+      "finding": "Basket- und Objektgrenzen sind im Ereignisstrom explizit. Die XTF-Reader liefern Referenzereignisse für eingebettete und eigenständige Assoziationen.",
+      "counterprobe": "Transfer ohne Baskets, leerer Basket, Objektstrom, vorzeitiges Ende und Close für eigenen oder übergebenen Stream vergleichen.",
+      "sources": [
+        "https://github.com/claeis/iox-api/blob/c9209c8ee78225b73b2460561e326b059c40a4ac/src/ch/interlis/iox/IoxReader.java#L52-L76",
+        "https://github.com/claeis/iox-api/blob/c9209c8ee78225b73b2460561e326b059c40a4ac/src/ch/interlis/iox/IoxWriter.java#L50-L78",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iom_j/xtf/Xtf23ReaderAssociationTest.java",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iom_j/xtf/Xtf24ReaderAssociationTest.java"
+      ]
+    },
+    {
+      "id": "iom-api-24-gaps",
+      "phase": "P4.1-transfer",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-api 1.0.4; iox-ili 1.24.4",
+      "finding": "Primitive LIST/BAG-Werte und Domänenbindungen erscheinen im konkreten IOX-Typ. Die alte abstrakte API blieb aus Kompatibilitätsgründen schmal.",
+      "counterprobe": "Zwei primitive Listenwerte mit gleicher Lexik, Fehlwert und zwei Baskets mit unterschiedlichen Konkretisierungen prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/Iom_jObject.java#L64-L165",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/xtf/Xtf24Reader.java#L724-L779",
+        "https://github.com/claeis/iox-api/issues/2",
+        "https://github.com/claeis/iox-api/pull/1#issuecomment-1309933776"
+      ]
+    },
+    {
+      "id": "duplicate-bid-report",
+      "phase": "P4.1-transfer",
+      "assessment": "unresolved",
+      "evidenceLevel": "local-probe",
+      "scope": "Bericht 1.14.7; reduzierte Probe 1.14.7 und 1.15.0",
+      "finding": "Originalbericht meldet Akzeptanz ohne BASKET OID AS. Die reduzierte Probe wird in 1.15.0 und in einem separaten Vergleichslauf mit 1.14.7 jeweils mit Exit 1 abgelehnt. Das Originalarchiv bleibt ungetestet. Die Norm fordert eindeutige IDs auch ohne deklarierte Basket-OID.",
+      "counterprobe": "validate-23-duplicate-bid aus P4.0-B und bei Bedarf das gepinnte Original mit identischen Modellen und Optionen wiederholen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L527-L582",
+        "https://github.com/claeis/ilivalidator/issues/443",
+        "https://github.com/claeis/ilivalidator/issues/443#issuecomment-2903809438"
+      ],
+      "probe": {
+        "report": "iox/observed.json",
+        "caseId": "validate-23-duplicate-bid",
+        "exitCode": 1,
+        "inputSha256": {
+          "ili23/Reference23.ili": "ea2684d715a368d431ae28f3748f6aa69a00e94a5bee7092d910ddf4c573a00c",
+          "ili23/duplicate-bid.xtf": "0d54d8a8fa085f251b95f17a05715a77ce946e1bd98b7bdefb527b195324c76d"
+        }
+      },
+      "historicalProbe": {
+        "report": "iox/observed.json",
+        "reportEntry": "historicalDuplicateBid",
+        "caseId": "validate-23-duplicate-bid",
+        "version": "1.14.7",
+        "archiveSha256": "fb4648d1dcfc31ee52eb58bdb9954424ccbed1687a096df6047d7817df9f0abb",
+        "exitCode": 1,
+        "inputSha256": {
+          "ili23/Reference23.ili": "ea2684d715a368d431ae28f3748f6aa69a00e94a5bee7092d910ddf4c573a00c",
+          "ili23/duplicate-bid.xtf": "0d54d8a8fa085f251b95f17a05715a77ce946e1bd98b7bdefb527b195324c76d"
+        }
+      }
+    },
+    {
+      "id": "transfer-id-namespace",
+      "phase": "P4.1-transfer",
+      "assessment": "correct",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4; ILI 2.3 FULL",
+      "finding": "Die BID-Prüfung unterscheidet pro Transfer erfasste IDs und stabile Basket-OIDs. Die 2.3-Norm fordert im FULL-Transfer eine gemeinsame Eindeutigkeit von TIDs und BIDs.",
+      "counterprobe": "Zwei gleiche TIDs in verschiedenen Baskets, BID gleich TID sowie erneute lokale IDs in zwei separaten Transfers prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L527-L582",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/ObjectPool.java#L40-L133",
+        "https://github.com/claeis/ilivalidator/issues/320",
+        "https://github.com/claeis/ilivalidator/issues/130",
+        "https://github.com/claeis/iox-ili/pull/42"
+      ]
+    },
+    {
+      "id": "uuid-identity-case",
+      "phase": "P4.1-transfer",
+      "assessment": "correct",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4",
+      "finding": "Bei deklarierter UUIDOID normalisiert der Objektpool für den Lookup und prüft die OID-Domäne vor einem Fallback. Fremde Text-IDs haben diese Semantik nicht.",
+      "counterprobe": "UUID in beiden Schreibweisen gegen Text-OID mit gleicher Lexik, Rolle und UNIQUE-Wert vergleichen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/ObjectPool.java#L40-L133",
+        "https://github.com/claeis/ilivalidator/issues/370",
+        "https://github.com/claeis/ilivalidator/issues/371",
+        "https://github.com/claeis/ilivalidator/issues/416"
+      ]
+    },
+    {
+      "id": "embedded-links-with-attributes",
+      "phase": "P4.1-transfer",
+      "assessment": "correct",
+      "evidenceLevel": "local-probe",
+      "scope": "iox-ili 1.24.4",
+      "finding": "Die Reader erhalten die Referenz-OID und gegebenenfalls Position der eingebetteten Rolle sowie die Attribute des Link-Unterobjekts. Die Upstream-Proben prüfen in 2.4 die OID und Attribute, für die Position ist die 2.3-Assertion explizit.",
+      "counterprobe": "EmbeddedAssociationWithAttributes.xtf, Embedded_0to1_OidAndBid.xtf und Embedded_1to1_OrderPos.xtf im 2.3-Korpus, dazu die 2.4-Gegenstücke prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/xtf/Xtf23Reader.java#L1028-L1091",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/xtf/Xtf24Reader.java#L1181-L1246",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iom_j/xtf/Xtf23ReaderAssociationTest.java",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iom_j/xtf/Xtf24ReaderAssociationTest.java",
+        "https://github.com/claeis/iox-ili/pull/76",
+        "https://github.com/claeis/ilivalidator/issues/238"
+      ]
+    },
+    {
+      "id": "xtf24-standalone-role-extra-bid",
+      "phase": "P4.1-transfer",
+      "assessment": "known-defect",
+      "evidenceLevel": "local-probe",
+      "scope": "iox-ili 1.24.4; Robustheitsfall ausserhalb der beschriebenen XTF-2.4-Rollencodierung",
+      "finding": "Ein eigenständiger Rollen-REF mit zusätzlichem ili:bid ergibt zwei IOM-Werte. Der erste hat OID, BID und optionale Position. Der zweite enthält nur BID.",
+      "counterprobe": "read-24-standalone-bid aus P4.0-B gegen den REF ohne Zusatzattribut vergleichen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/xtf/Xtf24Reader.java#L1181-L1246",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iom_j/xtf/Xtf24ReaderAssociationTest.java"
+      ],
+      "probe": {
+        "report": "iox/observed.json",
+        "caseId": "read-24-standalone-bid",
+        "exitCode": 0,
+        "inputSha256": {
+          "ili24/Reference24.ili": "a492a416e2a3e052a62d963d9c3d47072688a68a640abfc70ed33515dd30beaa",
+          "ili24/standalone-bid.xtf": "94ee46af3954654cf9c090ddbb4f15c29a323ec9b335fbc109e6f007a922cc40"
+        }
+      }
+    },
+    {
+      "id": "xtf24-repeated-role-index-zero",
+      "phase": "P4.1-transfer",
+      "assessment": "unresolved",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4; statischer Befund für wiederholt auftretenden Rollennamen",
+      "finding": "Der Standalone-Zweig hängt den REF an und setzt Position und gegebenenfalls BID über Index 0. Bei wiederholtem Rollennamen könnte das Metadaten des ersten REF überschreiben. Die Einzelrollenprobe belegt diesen Wiederholungsfall nicht.",
+      "counterprobe": "Mehrere gleichnamige XML-Rollen mit unterschiedlichen ORDER_POS und gegebenenfalls zusätzlichem BID im Reader einzeln auswerten. Transferzulässigkeit getrennt prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/xtf/Xtf24Reader.java#L1181-L1246",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iom_j/xtf/Xtf24ReaderAssociationTest.java"
+      ]
+    },
+    {
+      "id": "object-in-wrong-basket-topic",
+      "phase": "P4.1-transfer",
+      "assessment": "unresolved",
+      "evidenceLevel": "upstream-report",
+      "scope": "offener ilivalidator-Bericht",
+      "finding": "Ein bekanntes Objekt-Tag allein belegt seine Zulässigkeit im konkreten Basket-Topic nicht.",
+      "counterprobe": "Bekannte Klasse unter fremdem Topic und rechtmässig polymorphen Basket mit abgeleitetem Topic vergleichen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L527-L582",
+        "https://github.com/claeis/ilivalidator/issues/435"
+      ]
+    },
+    {
+      "id": "n-ary-multiplicity",
+      "phase": "validation",
+      "assessment": "known-defect",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4; konkrete #463-Eingaben nicht ausgeführt",
+      "finding": "Die LinkPool-Gegenbuchung für Standalone-Links erfordert genau ein Gegenende. Der n-äre Absturz wurde separat behoben. Die Kardinalitätsprüfung deckt n-äre Gegenenden unvollständig ab.",
+      "counterprobe": "Dreistellige Assoziation mit obligatorischer EXTERNAL-Rolle und fehlender bzw. vorhandener Zielinstanz prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/LinkPool.java#L15-L68",
+        "https://github.com/claeis/ilivalidator/issues/232",
+        "https://github.com/claeis/ilivalidator/issues/233",
+        "https://github.com/claeis/ilivalidator/issues/463"
+      ]
+    },
+    {
+      "id": "association-participant-identity",
+      "phase": "validation",
+      "assessment": "correct",
+      "evidenceLevel": "source",
+      "scope": "Normentscheidungen 15/16; iox-ili 1.24.4",
+      "finding": "Der Pool leitet bei Assoziationen ohne OID einen internen Schlüssel aus Rollenwerten ab. Mehrere Links derselben Teilnehmer brauchen die modellierte Zulassung und eine eigene OID.",
+      "counterprobe": "Doppelter Binärlink ohne OID, erlaubte Mehrfachinstanz mit OID sowie Assoziation als Rollenziel getrennt prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/ObjectPool.java#L40-L133",
+        "https://github.com/claeis/ilivalidator/issues/262#issuecomment-667129144"
+      ]
+    },
+    {
+      "id": "embedded-n-role-path",
+      "phase": "validation",
+      "assessment": "known-defect",
+      "evidenceLevel": "source",
+      "scope": "späterer iox-ili-Fix #163 ausserhalb von 1.24.4",
+      "finding": "Die Auswertung eines Objektpfades über die n-Rolle einer eingebetteten Assoziation war unvollständig. Späterer Commit fügt Pfadauflösung und Regressionen hinzu.",
+      "counterprobe": "Pfad über dieselbe Assoziation aus beiden Richtungen mit mehreren Zielobjekten gegen den 1.24.4-Pin und den Fix ausführen.",
+      "sources": [
+        "https://github.com/claeis/ilivalidator/issues/336",
+        "https://github.com/claeis/iox-ili/pull/163",
+        "https://github.com/claeis/iox-ili/commit/56c5beb5afa0a8611baa9b18c8e33fdb1035512a"
+      ]
+    },
+    {
+      "id": "unique-scopes",
+      "phase": "validation",
+      "assessment": "correct",
+      "evidenceLevel": "local-probe",
+      "scope": "iox-ili 1.24.4; ILI 2.3 und 2.4",
+      "finding": "Die Referenz trennt die UNIQUE-Zustände nach Constraint und Geltungsbereich. Die P4.0-B-Probe entdeckt gleiche Schlüssel über zwei Baskets.",
+      "counterprobe": "Gleicher Schlüssel im selben oder in zwei Baskets und mit LOCAL bzw. 2.4 BASKET, WHERE und undefiniertem Bestandteil.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L1161-L1174",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L1387-L1467",
+        "https://github.com/claeis/iox-ili/pull/119",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L4015-L4059"
+      ],
+      "probe": {
+        "report": "iox/observed.json",
+        "caseId": "validate-23-global-unique",
+        "exitCode": 1,
+        "inputSha256": {
+          "ili23/Reference23.ili": "ea2684d715a368d431ae28f3748f6aa69a00e94a5bee7092d910ddf4c573a00c",
+          "ili23/unique-across-baskets.xtf": "8daba1403bda402b8d085286b82d84b3bd7837cdbe906e82b1faaa6aea4a2fcf"
+        }
+      }
+    },
+    {
+      "id": "unique-external",
+      "phase": "validation",
+      "assessment": "unresolved",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4 mit #147; Bericht #448 umfasst weitere Konfigurationen",
+      "finding": "Der Pfad kann unter allObjectsAccessible am Rollenende die OID verwenden. Zielattribute und nicht geladene Referenzdaten sind ein anderer Fall. Die Diskussion berichtet auch nach 1.15.0 Unterschiede.",
+      "counterprobe": "Terminale Rolle und Zielattribut je mit/ohne Referenzdatei sowie allObjectsAccessible prüfen. CONSTRAINTS OF zusätzlich vom direkt deklarierten Constraint trennen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/pull/147",
+        "https://github.com/claeis/ilivalidator/issues/448",
+        "https://github.com/claeis/ilivalidator/issues/448#issuecomment-3733033426"
+      ]
+    },
+    {
+      "id": "existence-with-incomplete-scope",
+      "phase": "validation",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4",
+      "finding": "Die Referenz überspringt EXISTENCE ohne allObjectsAccessible. Die Option beweist für sich keine Vollständigkeit des tatsächlich geladenen Zielbestands.",
+      "counterprobe": "Gleicher Lauf mit vollständigem und partiellem Zielbestand und getrenntem Coverage-Befund. Fehlender Wert ist von nicht entscheidbar zu unterscheiden.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L3203-L3265"
+      ]
+    },
+    {
+      "id": "mandatory-external-path",
+      "phase": "validation",
+      "assessment": "known-defect",
+      "evidenceLevel": "source",
+      "scope": "Bericht #460; Fix #156 im Entwicklungsstand nach 1.24.4",
+      "finding": "Objektpfade eines MANDATORY CONSTRAINT konnten wegen nicht verfügbarer EXTERNAL-Ziele als Verletzung gewertet werden.",
+      "counterprobe": "Ein nicht mitgeliefertes EXTERNAL-Ziel und ein geladenes Ziel mit verletzendem bzw. undefiniertem Attribut getrennt prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/pull/156",
+        "https://github.com/claeis/ilivalidator/issues/460"
+      ]
+    },
+    {
+      "id": "set-empty-scope",
+      "phase": "validation",
+      "assessment": "unresolved",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4; PR #118 ohne Merge",
+      "finding": "Im Pin gibt es getrennte Zweige für leere Kandidaten mit und ohne WHERE. Der historische PR reicht als Nachweis für das konkrete Ergebnis nicht aus.",
+      "counterprobe": "Leere Klasse in vorhandenem Basket, fehlender Basket und WHERE ohne Treffer gegen eine SET-Bedingung mit Objektanzahl ausführen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L1482-L1627",
+        "https://github.com/claeis/iox-ili/pull/118",
+        "https://github.com/claeis/iox-ili/pull/118#issuecomment-3299106927"
+      ]
+    },
+    {
+      "id": "set-view-other-topic",
+      "phase": "validation",
+      "assessment": "unresolved",
+      "evidenceLevel": "upstream-report",
+      "scope": "Bericht #439; Teilkorrektur in 1.14.9 gemeldet",
+      "finding": "Ein kommentierter Test erhält eine korrigierte Meldung. Der Pfad über ein separates Validierungstopic wird weiterhin diskutiert.",
+      "counterprobe": "Identische View-Regel im ursprünglichen und im separaten Validierungstopic samt Ergebnis und Herkunft vergleichen.",
+      "sources": [
+        "https://github.com/claeis/ilivalidator/issues/439",
+        "https://github.com/claeis/ilivalidator/issues/439#issuecomment-3376779189",
+        "https://github.com/claeis/ilivalidator/issues/439#issuecomment-4969473140"
+      ]
+    },
+    {
+      "id": "geometry-rounding-before-topology",
+      "phase": "geometry",
+      "assessment": "correct",
+      "evidenceLevel": "source",
+      "scope": "iox-ili seit 2018; Rundungsoption in 1.24.4; ILI 2.4 §3.12",
+      "finding": "Der historische Diff rundet Werte vor der Topologieprüfung. In validateObject verschiebt er die Auswertung der an der Klasse deklarierten UNIQUE-Regeln und die Poolaufnahme hinter die Attributprüfung. Der numerische Attributpfad schreibt den gerundeten Wert ins IOM-Objekt zurück. In 1.24.4 kann die Rundung über Konfiguration abgeschaltet werden.",
+      "counterprobe": "Zwei Bogen-/Randlagen, die vor dem Runden verschieden und danach gleich sind, sowie symmetrische positive und negative Werte an der Rundungsgrenze.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/commit/b8192c1aec4fff9b047ab49deeba1c8921d8ecb4",
+        "https://github.com/claeis/iox-ili/blob/b8192c1aec4fff9b047ab49deeba1c8921d8ecb4/src/main/java/ch/interlis/iox_j/validator/Validator.java#L2399-L2510",
+        "https://github.com/claeis/iox-ili/blob/b8192c1aec4fff9b047ab49deeba1c8921d8ecb4/src/main/java/ch/interlis/iox_j/validator/Validator.java#L2926-L2934",
+        "https://github.com/claeis/ilivalidator/issues/112",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L5068-L5116"
+      ]
+    },
+    {
+      "id": "area-arc-overlap-tolerance",
+      "phase": "geometry",
+      "assessment": "correct",
+      "evidenceLevel": "local-probe",
+      "scope": "iox-ili 1.24.4; historischer Fehler #366",
+      "finding": "AREA-Algorithmus und direkte JUnit-Proben binden zulässige Bogenüberlappung an Modellgrenze und Stützpunkte. Beide negativen Area_2Boundaries-CLI-Fälle melden SURFACE-Schnitte und überspringen die AREA-Gruppenprüfung. Positive Läufe und AreaValidatorTest decken die eigentliche Gruppenprüfung ab.",
+      "counterprobe": "Area_1Boundary_PermissibleOverlap, Area_2Boundaries_PermissibleOverlap, Area_2Boundaries_NotAllowedOverlap und Area_3Boundaries_PermissibleOverlap_GH366 gemeinsam prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/pull/127",
+        "https://github.com/claeis/ilivalidator/issues/366",
+        "https://github.com/claeis/ilivalidator/issues/384",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/jtsext/src/main/java/ch/interlis/iom_j/itf/impl/jtsext/noding/AreaValidator.java",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iox_j/validator/Area23OverlapTest.java#L78-L145",
+        "https://github.com/claeis/ilivalidator/issues/366#issuecomment-2035031479",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iox_j/coverage/AreaValidatorTest.java"
+      ]
+    },
+    {
+      "id": "area-shared-boundary-and-containment",
+      "phase": "geometry",
+      "assessment": "correct",
+      "evidenceLevel": "local-probe",
+      "scope": "iox-ili 1.24.4",
+      "finding": "Gemeinsamer Rand mit gegenüberliegenden Innenflächen ist zulässig. Kongruenz oder echtes Enthaltensein führen zum Überlappungsbefund. Eine Fläche kann ein Loch füllen.",
+      "counterprobe": "Gleiche und umgekehrte Randrichtung, identische Flächen, Polygon im Loch, gespaltene Stützpunkte und Kreuzung vergleichen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/jtsext/src/main/java/ch/interlis/iom_j/itf/impl/jtsext/noding/AreaValidator.java",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iox_j/coverage/AreaValidatorTest.java",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iox_j/validator/AreAreas23Test.java"
+      ]
+    },
+    {
+      "id": "noder-spatial-index",
+      "phase": "geometry",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "local-probe",
+      "scope": "iox-ili 1.24.4; PR #126",
+      "finding": "Der zusätzliche Segmentindex reduziert zu testende Paare, bei dicht überlappenden Hüllen können weiterhin viele Kandidaten entstehen. Die PR-Zeit stammt aus einer einzigen Transferdatei.",
+      "counterprobe": "Schnittbefunde mit Referenz ohne Segmentindex vergleichen und dünne bzw. dichte Kandidatenverteilungen getrennt messen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/jtsext/src/main/java/ch/interlis/iom_j/itf/impl/jtsext/noding/CompoundCurveNoder.java#L34-L165",
+        "https://github.com/claeis/iox-ili/pull/126",
+        "https://github.com/claeis/iox-ili/commit/f3d25fd13f3d1702729a91937bdb6c8e81f50f6b"
+      ]
+    },
+    {
+      "id": "areareas-duplicate-collection",
+      "phase": "geometry",
+      "assessment": "known-defect",
+      "evidenceLevel": "source",
+      "scope": "historisch vor iox-ili #106; Fix in 1.24.4 enthalten",
+      "finding": "Mit definiertem Strukturpfad wurden dieselben Flächen mehrfach hinzugefügt und validiert. Der korrigierte Pfad sammelt alle Flächen einmal.",
+      "counterprobe": "Zwei Objekte mit mehreren Strukturflächen, ein Objekt ohne Flächen und zwei identische Flächen mit getrennten Ursprungsobjekten.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/pull/106",
+        "https://github.com/claeis/ilivalidator/issues/308#issuecomment-900882210",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iox_j/validator/AreAreas23Test.java"
+      ]
+    },
+    {
+      "id": "areareas-this-cache",
+      "phase": "geometry",
+      "assessment": "known-defect",
+      "evidenceLevel": "local-probe",
+      "scope": "historisch vor #107/#108; Gegenprobe iox-ili 1.24.4",
+      "finding": "Ein zu grober Cache wiederverwendete bei THIS Ergebnisse eines anderen Objekts. #108 bindet Wiederverwendung an Aufruf und ALL-Zweig. Die Diskussion verlangt konstante Pfadargumente.",
+      "counterprobe": "Jeweils gültiges und ungültiges THIS in beiden Reihenfolgen, dazu ALL mit anderem WHERE, Basket und Referenzbestand.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/issues/107",
+        "https://github.com/claeis/iox-ili/pull/108",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/functions/Interlis.java#L232-L318",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/test/java/ch/interlis/iox_j/validator/AreAreas23Test.java",
+        "https://github.com/claeis/ilivalidator/issues/338#issuecomment-1114531284"
+      ]
+    },
+    {
+      "id": "areareas-zero-overlap",
+      "phase": "geometry",
+      "assessment": "unresolved",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4; Meldung #468",
+      "finding": "AREA-Typprüfung übergibt die modellierte Toleranz. Der areAreas-Funktionspfad übergibt 0.0. Die Laufzeitpolitik für die normative Funktion bleibt zu entscheiden.",
+      "counterprobe": "Gleicher Bogenfall mit AREA und SURFACE plus areAreas, bei sonst identischen Scope-, Pfad- und Rundungsbedingungen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L879-L918",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L2590-L2663",
+        "https://github.com/claeis/ilivalidator/issues/468",
+        "https://github.com/claeis/ilivalidator/issues/468#issuecomment-5491588609"
+      ]
+    },
+    {
+      "id": "areareas-standard-names-and-gaps",
+      "phase": "geometry",
+      "assessment": "unresolved",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4; Compiler-Normentscheidung 11 gilt separat",
+      "finding": "Die alte Runtime registriert TEXT-Pfadvarianten unter INTERLIS_ext. Die Namen im 2.4-Standardmodell und die Lückenfreiheitsfunktionen sind davon getrennte Fähigkeiten.",
+      "counterprobe": "Explizite Fähigkeiten für areAreas2/3 und für areAreasWithoutGaps/2. Dasselbe disjunkte Gebiet mit und ohne innere Lücke prüfen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L2051-L2072",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/functions/Interlis_ext.java#L38-L129",
+        "https://github.com/claeis/iox-ili/issues/161",
+        "https://github.com/claeis/iox-ili/issues/162"
+      ]
+    },
+    {
+      "id": "area-skip-after-surface-error",
+      "phase": "geometry",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4 mit #112",
+      "finding": "Ein ungültiges Einzelpolygon sperrt die AREA-Prüfung der Attributgruppe. Das begrenzt Folgefehler, die Abdeckung der Gruppenprüfung sinkt.",
+      "counterprobe": "Ungültiges Einzelpolygon und unabhängig davon zwei überlappende gültige Polygone für dasselbe Attribut.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L879-L918",
+        "https://github.com/claeis/iox-ili/pull/112",
+        "https://github.com/claeis/ilivalidator/issues/296"
+      ]
+    },
+    {
+      "id": "area-overlay-diagnostic-location",
+      "phase": "geometry",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4; Issue #376 offen",
+      "finding": "Bei reinem Polygon-Overlay meldet der Algorithmus die beteiligten TIDs ohne Koordinate. Schnittbefunde unterdrücken zusätzlich gefundene Overlay-Paare in der Ausgabe.",
+      "counterprobe": "Enthaltensein ohne Schnitt, nicht äquivalente Stützpunkte und zugleich ein anderes sich kreuzendes Paar.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/jtsext/src/main/java/ch/interlis/iom_j/itf/impl/jtsext/noding/AreaValidator.java#L204-L219",
+        "https://github.com/claeis/ilivalidator/issues/376",
+        "https://github.com/claeis/ilivalidator/issues/376#issuecomment-5071334733",
+        "https://github.com/claeis/iox-ili/commit/2f9f15b6249663629541153dc7da32df62aa6cd9"
+      ]
+    },
+    {
+      "id": "spill-link-pool",
+      "phase": "resources",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-ili seit Commit 87336c29; Quellstand 1.24.4",
+      "finding": "Dateibasierte Link-Zähler entlasten den Heap. Schlüssel- und Wertedatei plus Append bei Updates erhöhen das Temp- und I/O-Budget.",
+      "counterprobe": "Gleiche Zähler bei Heap und Spill nachweisen. Hohe Updatezahl je Schlüssel und viele verschiedene Schlüssel getrennt messen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/LinkPool.java#L15-L68",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/ehi/iox/objpool/impl/BTreeImpl.java",
+        "https://github.com/claeis/ili2db/issues/363",
+        "https://github.com/claeis/iox-ili/commit/87336c2999188e7dae6fa088e02deab5cdec7cf8"
+      ]
+    },
+    {
+      "id": "spill-disk-exhaustion",
+      "phase": "resources",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "upstream-report",
+      "scope": "historische ilivalidator-Läufe 1.11.x",
+      "finding": "Ein Heapgewinn kann die Platte stärker belasten. #335 dokumentiert einen Plattenplatzfehler, überproportionale LinkPool-Schlüssel und grössere Noder-Wertedateien.",
+      "counterprobe": "Definiertes Temp-Limit und Abbruch im Indexaufbau bei -Xmx2g. Peak, Writes, Restdateien und getrennten Ressourcenstatus messen.",
+      "sources": [
+        "https://github.com/claeis/ilivalidator/issues/335#issuecomment-1161662135",
+        "https://github.com/claeis/iox-ili/commit/9f8d7d0ad5ba62c88af9dc69ebaa2275f56f2768",
+        "https://github.com/claeis/iox-ili/commit/7d068188ddd90b2380edb807d44a427ba7f65724",
+        "https://github.com/claeis/ilivalidator/issues/335#issuecomment-1508113825"
+      ]
+    },
+    {
+      "id": "spill-serializer-boundary",
+      "phase": "resources",
+      "assessment": "known-defect",
+      "evidenceLevel": "source",
+      "scope": "historische Defekte vor 1.24.4",
+      "finding": "Standardserialisierung scheiterte in Native Image. Unzulässige null-Attributnamen konnten einen Lauf im Serializer abbrechen. Beide Pfade erhielten konkrete Korrekturen.",
+      "counterprobe": "Fehlerhafte Daten und nicht darstellbare Werte vor und nach Spill sowie Schliessen nach Teilfehler abgleichen.",
+      "sources": [
+        "https://github.com/claeis/ili2db/issues/354",
+        "https://github.com/claeis/iox-ili/commit/13c289555b04f69bfd60f16276ad6b68853e7919",
+        "https://github.com/claeis/ili2db/issues/401",
+        "https://github.com/claeis/iox-ili/commit/2589deda56a3b414e7cda8267a5ecbb5c44a0ce6"
+      ]
+    },
+    {
+      "id": "pool-gc-and-in-heap-state",
+      "phase": "resources",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-ili 1.24.4",
+      "finding": "Kumulierte GC-Zeit steuert Wertcaches. Dateipools erfassen weder Heap-Indizes noch alle Objektmengen, Views, Diagnosen und AREA-Geometrien.",
+      "counterprobe": "Denselben Lauf mit Cache an/aus, grossem Einzelobjekt, vielen Objekt-IDs und vielen komplexen Ringen messen.",
+      "sources": [
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/ehi/iox/objpool/ObjectPoolManager.java#L36-L129",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/ehi/iox/objpool/impl/ObjPoolImpl2.java",
+        "https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/itf/impl/ItfAreaPolygon2Linetable.java#L38-L190",
+        "https://github.com/claeis/ilivalidator/issues/428"
+      ]
+    },
+    {
+      "id": "wkf-json-basket-and-curves",
+      "phase": "format-adapters",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-wkf 2.0.0",
+      "finding": "JSON/GeoJSON synthetisieren Basket-Grenzen aus geordneten Datensätzen. GeoJSON benutzt lineare Koordinaten, sodass Bogeninformation umgewandelt werden muss.",
+      "counterprobe": "BID-Reihenfolge A/B/A, identische Ziel-ID in verschiedenen Kontexten und Kurve mit/ohne deklarierte Linearisierung.",
+      "sources": [
+        "https://github.com/claeis/iox-wkf/blob/2098c4b4851a6c8a9911ca82a4ffdf2798868d89/src/main/java/ch/interlis/ioxwkf/json/JsonReader.java#L119-L196",
+        "https://github.com/claeis/iox-wkf/blob/2098c4b4851a6c8a9911ca82a4ffdf2798868d89/src/main/java/ch/interlis/ioxwkf/json/Json2iox.java#L89-L135",
+        "https://github.com/claeis/iox-wkf/blob/2098c4b4851a6c8a9911ca82a4ffdf2798868d89/src/main/java/ch/interlis/ioxwkf/json/Iox2geoJson.java#L80-L115"
+      ]
+    },
+    {
+      "id": "wkf-first-feature-and-field-names",
+      "phase": "format-adapters",
+      "assessment": "known-defect",
+      "evidenceLevel": "source",
+      "scope": "historische Fehler; iox-wkf 2.0.0 enthält Korrekturen",
+      "finding": "Das erste Shapefile-Feature konnte die Wahl zwischen Polygon und MultiPolygon verzerren. Kürzen von Feldnamen konnte Attributwerte durch Kollision verlieren.",
+      "counterprobe": "Multisurface mit erst einem und danach mehreren Polygonen in beiden Reihenfolgen. Zwei lange gleich beginnende Attributnamen.",
+      "sources": [
+        "https://github.com/claeis/iox-wkf/pull/45",
+        "https://github.com/claeis/iox-wkf/pull/46"
+      ]
+    },
+    {
+      "id": "wkf-db-identity",
+      "phase": "database",
+      "assessment": "historical-compromise",
+      "evidenceLevel": "source",
+      "scope": "iox-wkf 2.0.0",
+      "finding": "GeoPackage generiert eindeutige Objekt-IDs aus seinem Adapterkontext. Db2Ili erfasst Fremdschlüssel als Assoziationen. Diese Abbildungen hängen von Profil und Quelldaten ab.",
+      "counterprobe": "Datei mit zwei Tabellen und gleichen lokalen IDs, dazu zusammengesetzter Fremdschlüssel, Nullable und Namenskollision.",
+      "sources": [
+        "https://github.com/claeis/iox-wkf/blob/2098c4b4851a6c8a9911ca82a4ffdf2798868d89/src/test/java/ch/interlis/ioxwkf/gpkg/GeoPackageReaderTest.java#L228-L253",
+        "https://github.com/claeis/iox-wkf/issues/27",
+        "https://github.com/claeis/iox-wkf/blob/2098c4b4851a6c8a9911ca82a4ffdf2798868d89/build.gradle#L21-L44"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "archive": {
+    "url": "https://downloads.interlis.ch/ilivalidator/ilivalidator-1.15.0.zip",
+    "sha256": "df7ee8961743e3dfc586f646af4f63d49dabf920e98a4836a32edf676d0b20c7",
+    "entrypoint": "ilivalidator-1.15.0.jar"
+  },
+  "versions": {
+    "ilivalidator": "1.15.0-27cd81fb0d0ef2103e7afd673a7d00dd2053763f",
+    "ili2c": "5.6.8-e6f7ab6dd5cdba29afc9b24866ecb98c057d82b2",
+    "iox-ili": "1.24.4-8e966a086a72e7e2990a312b1229ee5878fd5994",
+    "iox-api": "1.0.4"
+  },
+  "jarSha256": {
+    "ilivalidator-1.15.0.jar": "93be2ba749c8125092db4f51dd2cff09367d8a43e6411621cd9640414f452c1a",
+    "libs/activation-1.1.1.jar": "ae475120e9fcd99b4b00b38329bd61cdc5eb754eee03fe66c01f50e137724f99",
+    "libs/antlr-2.7.7.jar": "88fbda4b912596b9f56e8e12e580cc954bacfb51776ecfddd3e18fc1cf56dc4c",
+    "libs/base64-2.3.9.jar": "f1a0e359eee29a5939c35e5fdedc574dd7e8ca065b056fc14b2b29e3ed3cd54d",
+    "libs/ehibasics-1.4.1.jar": "16e60db8d18224b72ad95f369dbca3bd4df4f15546e4f1afd95b88a15f62d456",
+    "libs/ili2c-core-5.6.8.jar": "cbf610c0b38839cb2d3574c531216275af673f1d5738b531ef93d88034344cd5",
+    "libs/ili2c-tool-5.6.8.jar": "4f0cc6622182fdcf4475fa4aa3a32e2a288a9446b9ea05a322eaeb4e5b5340c3",
+    "libs/iox-api-1.0.4.jar": "b907c23309df9ce63aeb4dca845fda09e1784e8396eab4d62573358a73febd68",
+    "libs/iox-ili-1.24.4.jar": "7c315dcb2f2f0ac6dfa535db06eb52bc100395b73d570a5612609acf7da5eeef",
+    "libs/javax.activation-api-1.2.0.jar": "43fdef0b5b6ceb31b0424b208b930c74ab58fac2ceeb7b3f6fd3aeb8b5ca4393",
+    "libs/jaxb-api-2.3.1.jar": "88b955a0df57880a26a74708bc34f74dcaf8ebf4e78843a28b50eae945732b06",
+    "libs/jaxb-core-2.3.0.1.jar": "d2ecba63615f317a11fb55c6468f6a9480f6411c10951d9881bafd9a9a8d0467",
+    "libs/jaxb-impl-2.3.2.jar": "b3a3d3aeaa5503cadc24dca9539b87efcd7bc3bd8c48018887a1489f2a77bdc0",
+    "libs/jts-core-1.14.0.jar": "2667c80bdef0e879f8c78f659ae6d24e8d0a9006f29c6a4e824345c677a1b1d1"
+  }
+}

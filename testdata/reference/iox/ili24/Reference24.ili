@@ -1,0 +1,24 @@
+INTERLIS 2.4;
+
+MODEL Reference24 (en) AT "https://example.invalid/iox-reference" VERSION "2026-11-06" =
+  TOPIC Records =
+    DOMAIN Point = COORD 0.00 .. 100.00 [INTERLIS.m], 0.00 .. 100.00 [INTERLIS.m];
+
+    STRUCTURE Detail =
+      description : MANDATORY TEXT*40;
+    END Detail;
+
+    CLASS Item =
+      details : LIST {0..*} OF Detail;
+      line : POLYLINE WITH (STRAIGHTS, ARCS) VERTEX Point;
+    END Item;
+
+    CLASS Target =
+    END Target;
+
+    ASSOCIATION Link =
+      targets (ORDERED) -- {0..*} Target;
+      items -- {0..*} Item;
+    END Link;
+  END Records;
+END Reference24.

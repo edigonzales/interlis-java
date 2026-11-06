@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TRANSFER xmlns="http://www.interlis.ch/INTERLIS2.3">
+  <HEADERSECTION VERSION="2.3" SENDER="iox-reference">
+    <MODELS>
+      <MODEL NAME="Reference23" VERSION="2026-11-06" URI="https://example.invalid/iox-reference"/>
+    </MODELS>
+  </HEADERSECTION>
+  <DATASECTION>
+    <Reference23.Records BID="records-1">
+      <Reference23.Records.Parent TID="parent-1"/>
+      <Reference23.Records.Item TID="item-1">
+        <code>same</code>
+        <details>
+          <Reference23.Records.Detail><description>zéro &amp; \</description></Reference23.Records.Detail>
+          <Reference23.Records.Detail><description>alpha</description></Reference23.Records.Detail>
+        </details>
+        <parent REF="parent-1" BID="records-1"/>
+      </Reference23.Records.Item>
+    </Reference23.Records>
+    <Reference23.Records BID="records-2">
+      <Reference23.Records.Item TID="item-2"><code>same</code></Reference23.Records.Item>
+    </Reference23.Records>
+  </DATASECTION>
+</TRANSFER>

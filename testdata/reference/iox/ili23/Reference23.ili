@@ -1,0 +1,29 @@
+INTERLIS 2.3;
+
+MODEL Reference23 (en) AT "https://example.invalid/iox-reference" VERSION "2026-11-06" =
+  TOPIC Records =
+    DOMAIN Point = COORD 0.00 .. 100.00 [INTERLIS.m], 0.00 .. 100.00 [INTERLIS.m];
+
+    STRUCTURE Detail =
+      description : MANDATORY TEXT*40;
+    END Detail;
+
+    CLASS Parent =
+    END Parent;
+
+    CLASS Item =
+      code : MANDATORY TEXT*16;
+      details : LIST {0..*} OF Detail;
+      UNIQUE code;
+    END Item;
+
+    ASSOCIATION ParentLink =
+      parent -- {0..1} Parent;
+      children -- {0..*} Item;
+    END ParentLink;
+
+    CLASS Parcel =
+      shape : MANDATORY AREA WITH (STRAIGHTS, ARCS) VERTEX Point WITHOUT OVERLAPS > 0.01;
+    END Parcel;
+  END Records;
+END Reference23.
