@@ -1,6 +1,6 @@
 # Entwurf für Transfer, Validierung und Datenbanken
 
-Status **geplant**. Der Compiler stellt die semantische Grundlage bereit. Transfer, Datenvalidierung und Datenbankabbildung sind künftige Verbraucher mit eigenen Plänen, Fähigkeiten und Abnahmen. Die API-Skizzen beschreiben Entwurfsrollen.
+Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die API-Skizzen beschreiben den vorgesehenen Ausbau.
 
 Die Verantwortung wird entlang fachlicher Produkte geschnitten:
 
@@ -13,7 +13,7 @@ CompiledSchema + explizite Verbraucheroptionen
 
 Ein `CompiledSchema` bleibt ein unveränderliches, fachlich geprüftes Modell. Projektionen erzeugen weitere unveränderliche Pläne. Laufzeitdaten, Caches, Objektidentitäten, Datenbankverbindungen und Zwischenergebnisse einer Datenvalidierung gehören in laufgebundene Kontexte.
 
-Die späteren Module heissen vorläufig `interlis-transfer`, `interlis-validation` und `interlis-db`. Sie werden erst angelegt, wenn reale implementierte Funktionalität vorliegt. Der Compiler hängt niemals von diesen Modulen ab. Die öffentlichen Plan- und Laufzeitverträge sind geplant. Der heutige Compiler erhält die nötigen Modellinformationen und belegt sie mit Metamodell- und Projektionstests.
+`interlis-transfer` verwendet die öffentliche, snapshotgebundene Modellsicht. Als weitere Verbraucher sind `interlis-validation` und `interlis-db` vorgesehen. Der Compiler stellt die Modellinformationen bereit und belegt sie mit Metamodell- und Projektionstests.
 
 <a id="gemeinsame-planverträge"></a>
 ## Gemeinsame Planverträge
@@ -71,28 +71,14 @@ Pläne werden vollständig geprüft veröffentlicht. Ein abgebrochener Aufbau ve
 <a id="eingaben-und-planner"></a>
 ### Eingaben und Planner
 
-`TransferOptions` enthält das explizite `TransferProfileId`, Namens-/Übersetzungswahl, relevante Formatoptionen und Ressourcenlimits. Die konkrete Liste kompatibler Optionen wird gegen die bisherigen Werkzeuge aufgenommen. Eine unbestimmte Option `legacy=true` genügt nicht.
+`TransferPlanner.plan(CompiledSchema)` verwendet die Namen der kanonischen Originaldeklarationen. Die Überladung mit `TransferPlanner.Names.DECLARED` wählt die deklarierten Namen und behält die kanonische Identität. Der Planner übernimmt Typen, Reihenfolge und Herkunft aus dem geprüften Schema. `TransferPlanningResult.Ready` enthält den vollständigen Plan im unterstützten Umfang. `Unsupported` nennt betroffene Pfade und Merkmale. Legale generische Bindungen werden für die spätere Basketkonkretisierung erhalten.
 
-`TransferMetadata` enthält benötigte Originalmodellinformationen und provenance-bezogene Daten, die nicht zwingend dauerhaft in jedem semantischen Objekt gespeichert werden müssen. Die Quellenhaltung wird mit [Repository-Auflösung](../contracts/repositories.md) abgestimmt. Ein späterer Writer darf kein Modell aus dem Netz nachladen, nur um fehlende ursprüngliche Modelltexte zu rekonstruieren.
-
-`TransferPlanner` besitzt:
-
-```java
-PlanningOutcome<TransferPlan> plan(
-    CompiledSchema schema,
-    TransferOptions options,
-    TransferMetadata metadata,
-    CancellationToken cancellation);
-```
-
-**Vorbedingungen:** Das Schema wurde durch das Compilation-Gate erzeugt; Optionen und Metadaten entsprechen ihren Schemaversionen; Quell- und Symbolbezüge passen zur Schemaherkunft.
-
-**Nachbedingungen:** `Ready` enthält eine kompakte, selbstkonsistente Beschreibung aller für den gewählten Transfer nötigen Topics, Klassen, Strukturen, Attribute, Rollen und Namen. Die Reihenfolge ist explizit. Symbolbindung und Typinformationen werden aus dem geprüften Schema übernommen und nicht aus Text erneut geraten.
-
-**Fehler:** Fehlende Verbraucherfähigkeit ergibt `Unsupported`. Unzulässige Kombinationen von Transferoptionen ergeben `Rejected`. Unbekannte interne Graphreferenzen ergeben `Failed`. Eine rechtmässig zur Laufzeit zu konkretisierende Domäne ist für sich kein Planungsfehler.
+Explizite Transferprofile und zusätzliche Quellmetadaten gehören zum späteren Ausbau an den Adaptergrenzen. Die Quellenhaltung wird mit der [Repository-Auflösung](../contracts/repositories.md) abgestimmt.
 
 <a id="planstrukturen"></a>
 ### Planstrukturen
+
+Die folgende Tabelle beschreibt den vorgesehenen Ausbau der Deskriptoren.
 
 | Typ | Wesentliche Informationen |
 |---|---|
@@ -104,23 +90,16 @@ PlanningOutcome<TransferPlan> plan(
 | `RuntimeTypeDescriptor` | Aufgelöste statische Typinformation plus gegebenenfalls rechtmässige Laufzeitbindung |
 | `BasketBindingRequirements` | Erwartete generische beziehungsweise aufgeschobene Konkretisierungen |
 
-`TransferPlan.findObjectByTag(String tag)` liefert ein explizites Treffer-/Nichttrefferergebnis. `TransferPlan.object(SymbolRef ref)` prüft sowohl Snapshotzugehörigkeit als auch die enthaltene Symbol-ID. Eine nackte `SymbolId` genügt an dieser öffentlichen Grenze nicht. Ein Übersetzungsname darf nicht als kanonischer Schlüssel intern die ursprüngliche Identität ersetzen.
+Die Zuordnung formatspezifischer Tags gehört zum späteren Adapter. `TransferPlan.object(SymbolRef ref)` prüft die Snapshotzugehörigkeit und liefert den Deskriptor für die enthaltene Symbol-ID, falls er im Plan liegt. Der Plan hält kanonische Identität und gewählte Transferbezeichnung getrennt.
 
 `ObjectDescriptor.effectiveSlots()` liefert die fachlich richtige, unveränderliche Reihenfolge. Die Position eines überschriebenen Attributes darf nicht allein durch das Auftauchen in einer neuen lokalen Liste verändert werden. Eine Assoziation mit eigenen Attributen oder höherer Stelligkeit muss als eigenständiger semantischer Sachverhalt erhalten bleiben.
 
 <a id="transferereignisse-und-objektmodell"></a>
 ### Transferereignisse und Objektmodell
 
-Die initiale Streaming-API orientiert sich an einem Ereignisstrom mit `StartTransfer`, `StartBasket`, `ObjectEvent`, `EndBasket` und `EndTransfer`. Die genaue historische Ereignisreihenfolge und Zusatzinformationen werden als iox-Kompatibilitätsvertrag aufgenommen. Ein `TransferReader` besitzt konzeptionell:
+`TransferReader.readNext(CancellationToken)` und `TransferWriter.write(...)` prüfen die Folge `StartTransfer`, Baskets mit `StartBasket`, `ObjectEvent` und `EndBasket`, sowie `EndTransfer`. `Optional.empty()` bestätigt das Quellenende nach `EndTransfer`. Ereignisse sind unveränderlich und bleiben nach dem nächsten Aufruf lesbar. Assoziationsereignisse erhalten die Rollen und die eigenen Attribute der Beziehung. Die Einbettung im konkreten Format bestimmt der Adapter.
 
-```java
-Optional<TransferEvent> readNext(CancellationToken cancellation);
-void close();
-```
-
-I/O-Ausnahmen werden im konkreten I/O-Modul definiert und in ein strukturiertes Laufzeitergebnis überführt. Der neutrale Compilerkern ist davon unabhängig. Der Reader darf das nach aussen gegebene Ereignis nicht beim nächsten `readNext` heimlich wiederverwenden und verändern. Für hohe Leistung kann später eine ausdrücklich ausgeliehene Cursor-API hinzukommen; sie muss eine andere, dokumentierte Besitzsemantik besitzen.
-
-Ein `TransferObject` hält Identität, Typdeskriptorbezug und Attribut-/Rollenwerte eines Objekts. Ein einzelnes Objekt darf verschachtelte Strukturen besitzen. Das ist keine Aufforderung, einen ganzen Basket im Speicher zu halten. Ein übergrosses Einzelobjekt unterliegt einem eigenen Budget und einer eindeutigen Fehlerbehandlung.
+Ein `TransferObject` hält Identität, Typbezug und Attribut-/Rollenwerte eines einzelnen Objekts. Adapter legen Grössen- und Tiefengrenzen für einzelne Objekte fest. Der Kern hält die Modelldeklarationen, den aktiven Basketkontext und getrennte Mengen für BID und FULL-TID. Der Speicher für diese Kennungen wächst mit ihrer Anzahl und wird bei Transferende, Fehler oder Close freigegeben.
 
 Das Datenmodell unterscheidet mindestens:
 
@@ -134,7 +113,7 @@ Das Datenmodell unterscheidet mindestens:
 
 Eine Java-`null`-Sammlung ist kein Ersatz für diese Unterscheidungen. Ein allgemeines `Map<String,Object>` darf an einer Adaptergrenze hilfreich sein, aber nicht der einzige typisierte Vertrag des neuen Stacks werden.
 
-`BasketRuntimeContext` verbindet Basketidentität, Topic, Laufzeitdomänen und Transferprofil. Die Prüfung von GENERIC-/DEFERRED-Bindungen erzeugt einen unveränderlichen `ResolvedBasketContext`; sie verändert das globale Schema nicht. Unterschiedliche Baskets dürfen unterschiedliche rechtmässige Konkretisierungen besitzen.
+`StartBasket` erhält Basketidentität, Topics, Zustandsmetadaten und Laufzeitdomänen. Das Protokoll prüft die Zuordnungen gegen die vom Modell veröffentlichten Alternativen. Unterschiedliche Baskets dürfen unterschiedliche rechtmässige Konkretisierungen besitzen. Die Auswertung inkrementeller Änderungen gehört zum späteren Verbraucher.
 
 <a id="iom-iox-adapter"></a>
 ### IOM-/iox-Adapter

@@ -10,6 +10,7 @@ import java.util.Objects;
 
 /**
  * An effective attribute in a plan object type. All references belong to the plan snapshot.
+ * Transient attributes describe schema metadata. Adapters omit them from transferred payloads.
  *
  * @param symbol attribute declaration
  * @param name attribute names and original identity
