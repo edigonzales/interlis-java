@@ -44,3 +44,14 @@ Die vorbereitete Extension und das isolierte VS-Code-Programm werden über
 `INTERLIS_EDITOR_PREPARED` und `INTERLIS_TEST_CODE` ausgewählt. Die Extension
 besitzt den Host-Harness. Die Pythonfreiheitsprüfung läuft im JVM-Gesamtbuild
 über `without-python.cjs` und die JVM-Quellenprüfung.
+
+## Repositoryhygiene
+
+```sh
+node tools/verification/repository-hygiene.cjs
+node --test tools/verification/repository-hygiene.test.cjs
+```
+
+Die Prüfung validiert aktive Markdown-Pfade und Anker, deklarierte
+Testinputs sowie gepinnte Referenzpfade. Sie erkennt wieder eingeführte
+abgeschlossene Dokumentationsablagen und phasenbezogene Testklassennamen.
