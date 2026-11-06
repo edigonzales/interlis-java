@@ -427,12 +427,12 @@
       "modelSet": "suite2",
       "ruleGroup": "object-identity",
       "phases": ["P4.4"],
-      "norm": {"sections": ["2.8.9", "3.3.1", "3.3.6", "3.3.7"]},
+      "norm": {"sections": ["2.5.2", "2.8.9", "3.3.1", "3.3.6", "3.3.7"]},
       "expectedAcceptance": false,
       "oracleStatus": "AGREES",
       "java": {"path": "routine/src/test/java/ch/interlis/testsuite/AttributeTest.java", "method": "RAt_T11a", "line": 636},
       "documentation": {"path": "doc/attributes.md", "line": 108, "expectedAcceptance": false},
-      "notes": ["TestSuite2 uses OID declarations without CONTRACTED. Compiler decision 01 covers that model declaration."]
+      "notes": ["The contracted TestSuite2 model declares UUIDOID for basket and object identifiers (data/models/TestSuite2.ili:3,10–12)."]
     },
     {
       "id": "RAt.T11b",
@@ -441,12 +441,12 @@
       "modelSet": "suite2",
       "ruleGroup": "object-identity",
       "phases": ["P4.4"],
-      "norm": {"sections": ["2.8.9", "3.3.1", "3.3.6", "3.3.7"]},
+      "norm": {"sections": ["2.5.2", "2.8.9", "3.3.1", "3.3.6", "3.3.7"]},
       "expectedAcceptance": false,
       "oracleStatus": "AGREES",
       "java": {"path": "routine/src/test/java/ch/interlis/testsuite/AttributeTest.java", "method": "RAt_T11b", "line": 657},
       "documentation": {"path": "doc/attributes.md", "line": 108, "expectedAcceptance": false},
-      "notes": ["TestSuite2 uses OID declarations without CONTRACTED. Compiler decision 01 covers that model declaration."]
+      "notes": ["The contracted TestSuite2 model declares UUIDOID for basket and object identifiers (data/models/TestSuite2.ili:3,10–12)."]
     },
     {
       "id": "RAt.T11c",
@@ -481,7 +481,7 @@
       "modelSet": "suite",
       "ruleGroup": "object-identity",
       "phases": ["P4.4"],
-      "norm": {"sections": ["2.8.9", "3.3.1", "3.3.6", "3.3.7"]},
+      "norm": {"sections": ["2.8.9", "3.3.1", "3.3.11.16"]},
       "expectedAcceptance": false,
       "oracleStatus": "AGREES",
       "java": {"path": "routine/src/test/java/ch/interlis/testsuite/AttributeTest.java", "method": "RAt_T11e", "line": 720},
@@ -495,7 +495,7 @@
       "modelSet": "suite",
       "ruleGroup": "object-identity",
       "phases": ["P4.4"],
-      "norm": {"sections": ["2.8.9", "3.3.1", "3.3.6", "3.3.7"]},
+      "norm": {"sections": ["2.8.9", "3.3.1", "3.3.11.16"]},
       "expectedAcceptance": false,
       "oracleStatus": "AGREES",
       "java": {"path": "routine/src/test/java/ch/interlis/testsuite/AttributeTest.java", "method": "RAt_T11f", "line": 742},

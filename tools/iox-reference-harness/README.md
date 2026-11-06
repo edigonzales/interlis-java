@@ -111,8 +111,9 @@ python3 -B tools/iox-reference-harness/test_suite_result.py
 Der Runner verlangt das lokale ZIP aus [dem bestehenden Lock](legacy-lock.json).
 Er prüft den Git-Pin und die Eingabehashes der ausgewählten Fälle. Pro Fall
 startet er ilivalidator 1.15.0 mit `-Xmx2g`, einem isolierten Arbeitsverzeichnis
-und ausschliesslich den geprüften lokalen Modellen. Das neue Ausgabeverzeichnis
-enthält `report.json` und die gehashten Rohstreams je ausgeführtem Fall.
+und ausschliesslich den geprüften lokalen Modellen. `--output` bezeichnet ein
+neues Verzeichnis ausserhalb des Produktrepositorys und des Suite-Checkouts.
+Dort stehen `report.json` und die gehashten Rohstreams je ausgeführtem Fall.
 Ohne `--output` wird ein temporäres Verzeichnis angelegt. Pro Aufruf sind bis
 zu zwölf IDs und pro Prozess bis zu 30 Sekunden vorgesehen.
 
