@@ -6,6 +6,8 @@ import guru.interlis.compiler.*;
 import guru.interlis.source.*;
 import guru.interlis.workspace.*;
 import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 import java.net.*;
@@ -27,6 +29,9 @@ class RepositoryEditorTest {
     static final String URI="untitled:Root.ili";
     @AfterEach void stopHttp() { if(http!=null)http.stop(0); }
     String serve() throws Exception {
+        return serve(DEP);
+    }
+    private String serve(String dependency) throws Exception {
         http=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);
         String index="<TRANSFER>"+List.of("Dep","Base").stream().map(n -> "<ModelMetadata><Name>"+n+"</Name><SchemaLanguage>ili2_4</SchemaLanguage><Version>1</Version><File>"+n+".ili</File></ModelMetadata>").reduce("",String::concat)+"</TRANSFER>";
         http.createContext("/",e -> {
@@ -35,7 +40,7 @@ class RepositoryEditorTest {
                 try { if (!releaseIndex.await(5, TimeUnit.SECONDS)) throw new java.io.IOException("controlled index release timed out"); }
                 catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); throw new java.io.IOException(interrupted); }
             }
-            requests.incrementAndGet();String body=switch(e.getRequestURI().getPath()) {case "/ilimodels.xml" -> index;case "/Dep.ili" -> DEP;case "/Base.ili" -> BASE;default -> null;};
+            requests.incrementAndGet();String body=switch(e.getRequestURI().getPath()) {case "/ilimodels.xml" -> index;case "/Dep.ili" -> dependency;case "/Base.ili" -> BASE;default -> null;};
             if(body==null) {e.sendResponseHeaders(404,-1);e.close();return;}
             e.getResponseHeaders().set("ETag","\"frozen\"");
             if("\"frozen\"".equals(e.getRequestHeaders().getFirst("If-None-Match"))) {e.sendResponseHeaders(304,-1);e.close();return;}
@@ -167,6 +172,63 @@ class RepositoryEditorTest {
             assertEquals("untitled:local-dependency.ili",definitions(s,URI,3,ROOT.split("\n")[3].indexOf("Value")).getFirst().getUri());
             assertEquals("succeeded",compile(s,URI,1).outcome());
         } finally { s.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void remoteDiagnosticsFollowOpenVersionsAndClearWhenTheHandleExpires() throws Exception {
+        String duplicate = "STRUCTURE Duplicate = END Duplicate;";
+        String dependency = DEP.replace("DOMAIN Value=0..10;\n",
+                "DOMAIN Value=0..10;\n" + duplicate + "\n" + duplicate + "\n").replace("\n", "\r\n");
+        var s = server(serve(dependency), false, directory.resolve("cache"));
+        var publications = new CopyOnWriteArrayList<PublishDiagnosticsParams>();
+        s.textDocumentsForTest().sink(publications::add);
+        try {
+            open(s, URI, 7, ROOT);
+            String remoteUri = definitions(s, URI, 3, ROOT.split("\n")[3].indexOf("Value")).getFirst().getUri();
+            assertTrue(remoteUri.startsWith("interlis-source:/"));
+            String revision = java.net.URI.create(remoteUri).getQuery();
+            var content = s.sourceContent(new SourceContentParams(remoteUri, revision)).get(5, TimeUnit.SECONDS);
+            assertEquals(dependency, content.text());
+            assertTrue(content.readonly());
+            var closed = publications.stream().filter(p -> remoteUri.equals(p.getUri())).findFirst().orElseThrow();
+            assertNull(closed.getVersion());
+            var diagnostic = closed.getDiagnostics().stream()
+                    .filter(d -> !d.getRelatedInformation().isEmpty()).findFirst().orElseThrow();
+            assertEquals(new Range(new Position(5, 0), new Position(5, duplicate.length())), diagnostic.getRange());
+            assertEquals(new Location(remoteUri, new Range(new Position(4, 10), new Position(4, 19))),
+                    diagnostic.getRelatedInformation().getFirst().getLocation());
+
+            var service = s.getTextDocumentService();
+            var remote = new TextDocumentIdentifier(remoteUri);
+            open(s, remoteUri, 11, content.text());
+            service.documentSymbol(new DocumentSymbolParams(remote)).get(5, TimeUnit.SECONDS);
+            var opened = publications.stream().filter(p -> remoteUri.equals(p.getUri())
+                    && Integer.valueOf(11).equals(p.getVersion())).findFirst().orElseThrow();
+            assertTrue(opened.getDiagnostics().contains(diagnostic));
+
+            int beforeClose = publications.size();
+            service.didClose(new DidCloseTextDocumentParams(remote));
+            var rootOutline = new DocumentSymbolParams(new TextDocumentIdentifier(URI));
+            service.documentSymbol(rootOutline).get(5, TimeUnit.SECONDS);
+            var afterClose = publications.stream().skip(beforeClose).filter(p -> remoteUri.equals(p.getUri())).toList();
+            assertTrue(afterClose.getFirst().getDiagnostics().isEmpty());
+            assertTrue(afterClose.stream().allMatch(p -> p.getVersion() == null));
+            assertTrue(afterClose.getLast().getDiagnostics().contains(diagnostic));
+
+            int beforeConfiguration = publications.size();
+            s.getWorkspaceService().didChangeConfiguration(new DidChangeConfigurationParams(
+                    Map.of("offline", true, "analysisBudget", Map.of("maxTokens", 1))));
+            var invalidated = publications.stream().skip(beforeConfiguration)
+                    .filter(p -> remoteUri.equals(p.getUri())).toList();
+            assertEquals(1, invalidated.size());
+            assertNull(invalidated.getFirst().getVersion());
+            assertTrue(invalidated.getFirst().getDiagnostics().isEmpty());
+            var unavailable = assertThrows(ExecutionException.class,
+                    () -> service.documentSymbol(rootOutline).get(5, TimeUnit.SECONDS));
+            assertEquals(ResponseErrorCode.RequestCancelled.getValue(),
+                    assertInstanceOf(ResponseErrorException.class, unavailable.getCause()).getResponseError().getCode());
+            assertThrows(ExecutionException.class, () ->
+                    s.sourceContent(new SourceContentParams(remoteUri, revision)).get(5, TimeUnit.SECONDS));
+        } finally { s.shutdown().get(5, TimeUnit.SECONDS); }
     }
 
     @Test void multipleModelsRequireExplicitSelectionAndExactPinsAreCheckedForLoadedSources() throws Exception {

@@ -148,6 +148,35 @@ class ProjectRenameConsistencyTest {
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
+    @Test void removingTheLastClosedFileClearsItsDiagnosticsWithoutAnotherAnalysis() throws Exception {
+        Path folder = Files.createDirectory(temporary.resolve("last-file"));
+        Path file = Files.writeString(folder.resolve("Broken.ili"),
+                "INTERLIS 2.4; MODEL Broken AT \"x\" VERSION \"1\" = DOMAIN D = Missing; END Broken.");
+        String uri = file.toUri().toString();
+        var publications = new LinkedBlockingQueue<PublishDiagnosticsParams>();
+        var server = new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
+        server.textDocumentsForTest().sink(publications::add);
+        var initialize = new InitializeParams();
+        initialize.setWorkspaceFolders(List.of(new WorkspaceFolder(folder.toUri().toString(), "Project")));
+        server.initialize(initialize).get(5, TimeUnit.SECONDS);
+        try {
+            var first = publications.poll(5, TimeUnit.SECONDS);
+            assertNotNull(first);
+            assertEquals(uri, first.getUri());
+            assertNull(first.getVersion());
+            assertFalse(first.getDiagnostics().isEmpty());
+
+            Files.delete(file);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(uri, FileChangeType.Deleted))));
+            var clear = publications.poll(5, TimeUnit.SECONDS);
+            assertNotNull(clear);
+            assertEquals(uri, clear.getUri());
+            assertNull(clear.getVersion());
+            assertTrue(clear.getDiagnostics().isEmpty());
+            assertTrue(server.workspaceForTest().state().sourceRevisions().isEmpty());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
     @Test void watcherAliasesReferToTheExistingPhysicalSourceAndKeepOpenClientAuthority() throws Exception {
         Path folder=project(),alias=temporary.resolve("project-alias");
         Files.createSymbolicLink(alias,folder);

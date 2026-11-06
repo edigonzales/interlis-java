@@ -95,6 +95,35 @@ class DocumentSynchronizationTest {
         }
     }
 
+    @Test void diagnosticsForANewerCoreRevisionDoNotBecomeUnversionedOpenDiagnostics() throws Exception {
+        var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults());
+        var server = new InterlisLanguageServer(workspace);
+        server.initialize(new InitializeParams()).get(5, TimeUnit.SECONDS);
+        var publications = new LinkedBlockingQueue<PublishDiagnosticsParams>();
+        server.textDocumentsForTest().sink(publications::add);
+        try {
+            var service = server.getTextDocumentService();
+            var sourceId = new SourceId(URI);
+            service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(URI, "interlis", 7, TEXT)));
+            var opened = publications.poll(5, TimeUnit.SECONDS);
+            assertNotNull(opened);
+            assertEquals(7, opened.getVersion());
+            var revision = workspace.source(sourceId).orElseThrow().revision();
+            workspace.update(new SourceUpdate(sourceId, new SourceExpectation.At(revision),
+                    new SourceChange.Replace(TEXT.replace("= END F.", "= DOMAIN D = Missing; END F."))));
+
+            String otherUri = "memory:/other.ili";
+            String otherText = TEXT.replace("MODEL F", "MODEL G").replace("END F.", "END G.");
+            service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(otherUri, "interlis", 2, otherText)));
+            assertFalse(service.documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(otherUri)))
+                    .get(5, TimeUnit.SECONDS).isEmpty());
+            assertTrue(publications.stream().anyMatch(p -> otherUri.equals(p.getUri()) && Integer.valueOf(2).equals(p.getVersion())));
+            assertTrue(publications.stream().noneMatch(p -> URI.equals(p.getUri()) && !p.getDiagnostics().isEmpty()));
+            assertEquals(ResponseErrorCode.ContentModified.getValue(), error(() -> service.documentSymbol(
+                    new DocumentSymbolParams(new TextDocumentIdentifier(URI)))).getResponseError().getCode());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
     @Test void closingWhileAnalysisIsInFlightDiscardsTheAnswerAndAllowsANewVersionSequence() throws Exception {
         var oldAnalysisComputed = new CountDownLatch(1);
         var releaseOldAnalysis = new CountDownLatch(1);

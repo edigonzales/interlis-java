@@ -25,6 +25,7 @@ final class ExternalSourceRegistry {
         handles.put(uri,entry);current.put(source.id(),entry);units+=source.length();
     }
     boolean contains(SourceId id) { return current.containsKey(id); }
+    Optional<String> currentUri(SourceId id) { return Optional.ofNullable(current.get(id)).map(Entry::uri); }
     Optional<Entry> lookup(String uri) { return Optional.ofNullable(handles.get(uri)); }
     Map<SourceId,String> uris() { var result=new LinkedHashMap<SourceId,String>();current.forEach((id,e) -> result.put(id,e.uri));return Map.copyOf(result); }
     Entry read(String uri,String revision) {

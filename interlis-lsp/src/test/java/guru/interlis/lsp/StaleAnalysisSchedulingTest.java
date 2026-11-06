@@ -27,7 +27,7 @@ class StaleAnalysisSchedulingTest {
 
     @Test void detachedLanguageWorkDoesNotBlockEditsAndCannotReturnAnOldAnswer() throws Exception {
         var workspace=Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults());
-        var scheduler=new AnalysisScheduler(workspace,CompilerEngines.create(),CompilerServices.defaults(),ignored -> { },ignored -> { });
+        var scheduler=new AnalysisScheduler(workspace,CompilerEngines.create(),CompilerServices.defaults(),(analysis, repositoryFailure) -> { },ignored -> { });
         var entered=new CountDownLatch(1); var release=new CountDownLatch(1);
         var ownerCaller=Executors.newSingleThreadExecutor();
         try {
@@ -54,7 +54,7 @@ class StaleAnalysisSchedulingTest {
 
     @Test void shutdownCancelsActiveLanguageWorkAndCompletesItsRequest() throws Exception {
         var workspace=Workspaces.create(CompilerEngines.create(),WorkspaceConfiguration.defaults());
-        var scheduler=new AnalysisScheduler(workspace,CompilerEngines.create(),CompilerServices.defaults(),ignored -> { },ignored -> { });
+        var scheduler=new AnalysisScheduler(workspace,CompilerEngines.create(),CompilerServices.defaults(),(analysis, repositoryFailure) -> { },ignored -> { });
         var entered=new CountDownLatch(1); var ended=new CountDownLatch(1);
         var reason=new AtomicReference<CancellationReason>();
         try {

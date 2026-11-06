@@ -16,8 +16,7 @@ import guru.interlis.format.FormatOutcome;
 import guru.interlis.format.ModelFormatters;
 import guru.interlis.compiler.query.LanguageQueries;
 import guru.interlis.diagnostics.Diagnostic;
-import guru.interlis.diagnostics.DiagnosticArgument;
-import guru.interlis.diagnostics.Severity;
+import guru.interlis.repository.RepositoryResolutionOutcome;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.NamePrefix;
 import guru.interlis.model.Symbol;
@@ -32,6 +31,7 @@ import guru.interlis.projection.DiagramProjectors;
 import guru.interlis.projection.DiagramSelection;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
+import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
 import guru.interlis.syntax.SyntaxToken;
 import guru.interlis.workspace.AnalysisRequest;
@@ -39,6 +39,7 @@ import guru.interlis.workspace.SourceChange;
 import guru.interlis.workspace.SourceExpectation;
 import guru.interlis.workspace.SourceUpdate;
 import guru.interlis.workspace.Workspace;
+import guru.interlis.workspace.WorkspaceState;
 import guru.interlis.lsp.LspDocumentRegistry.Synchronized;
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionParams;
@@ -48,7 +49,6 @@ import org.eclipse.lsp4j.CompletionItemKind;
 import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DefinitionParams;
-import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
@@ -76,7 +76,6 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
-import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SymbolKind;
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
@@ -90,10 +89,12 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -104,8 +105,9 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private guru.interlis.workspace.WorkspaceConfiguration userConfiguration;
     private RepositorySettings repositorySettings=RepositorySettings.defaults();
     private guru.interlis.diagnostics.DiagnosticLanguage localeLanguage=guru.interlis.diagnostics.DiagnosticLanguage.EN;
-    private guru.interlis.repository.RepositoryResolutionOutcome.Rejected repositoryFailure;
-    private final java.util.Set<String> publishedExternal=new java.util.HashSet<>();
+    private record ClosedPublication(String uri, SourceRevision revision) { }
+
+    private final Map<SourceId, ClosedPublication> publishedClosed = new LinkedHashMap<>();
     private final LspDiagnosticMapper diagnosticMapper=new LspDiagnosticMapper();
     private guru.interlis.diagnostics.DiagnosticLanguage diagnosticLanguage=guru.interlis.diagnostics.DiagnosticLanguage.EN;
     private final LspDocumentRegistry documents = new LspDocumentRegistry();
@@ -134,7 +136,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         this.userConfiguration=workspace.configuration();
         scheduler = new AnalysisScheduler(workspace, engine, services, this::accepted,
                 message -> operations.accept(message));
-        scheduler.repositoryResult(this::repositoryResolved,id -> !externalSources.contains(id));
+        scheduler.repositorySources(this::repositoryResolved, id -> !externalSources.contains(id));
         readiness = new LspInputReadiness(documents::generation, scheduler::completeOnOwner, this::operation);
     }
 
@@ -148,9 +150,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     void close() { scheduler.close(() -> {
         readiness.cancelPendingOnClose();
-        externalSources.close(); publishedExternal.clear();
+        var retired = new LinkedHashSet<>(documents.synchronizedDocuments().keySet());
+        retireClosedDiagnostics(retired);
+        externalSources.close();
         diagrams.close();analysisReady=ignored -> { };
         fileIdentities.clear(); documents.clear();
+        retired.forEach(this::clearDocumentDiagnostics);
     }); }
 
     CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
@@ -283,11 +288,23 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 .orElseGet(() -> closedFiles.containsKey(id.value())?closedFiles.get(id.value()).path().toUri().toString():id.value()); }
     }
 
+    private Map<SourceId, SourceText> captureWorkspaceSources(WorkspaceState state) {
+        var sources = new LinkedHashMap<SourceId, SourceText>();
+        state.sourceRevisions().forEach((id, revision) -> workspace.source(id)
+                .filter(source -> source.revision().equals(revision))
+                .ifPresent(source -> sources.put(id, source)));
+        return sources;
+    }
+
     private HostView captureView() {
-        var sources=new LinkedHashMap<SourceId,SourceText>();
-        for(var id:workspace.state().sourceRevisions().keySet()) workspace.source(id).ifPresent(source -> sources.put(id,source));
-        return new HostView(documents.synchronizedDocuments(),Map.copyOf(sources),fileIdentities.installedClosedFiles(),versionedEdits,
-                externalSources.uris(),Long.toString(workspace.currentRevision().value()),documents.generation());
+        var state = workspace.state();
+        return captureView(state, captureWorkspaceSources(state), documents.synchronizedDocuments());
+    }
+
+    private HostView captureView(WorkspaceState state, Map<SourceId, SourceText> sources,
+                                 Map<String, Synchronized> open) {
+        return new HostView(open,Map.copyOf(sources),fileIdentities.installedClosedFiles(),versionedEdits,
+                externalSources.uris(),Long.toString(state.revision().value()),documents.generation());
     }
 
     private <T> CompletableFuture<T> afterFiles(java.util.function.Supplier<CompletableFuture<T>> start) {
@@ -421,13 +438,21 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 if (!open) replaceSource(id, loaded.loaded().text());
                 if (requestedMissing) forgetMissingFileAlias(requestedUri);
                 fileIdentities.rememberPhysicalIdentity(loaded.identity(), canonical);
-                if (!open) fileIdentities.installClosed(canonical, loaded);
+                if (!open) {
+                    fileIdentities.installClosed(canonical, loaded);
+                    var publication = publishedClosed.get(id);
+                    if (publication != null && (!publication.uri().equals(loaded.path().toUri().toString())
+                            || workspace.source(id).filter(source -> source.revision().equals(publication.revision())).isEmpty())) {
+                        clearClosedDiagnostics(id);
+                    }
+                }
             } else {
                 if (openSource(id)) {
                     forgetMissingFileAlias(requestedUri);
                 } else {
                     workspace.source(id).ifPresent(source -> workspace.remove(id, source.revision()));
                     fileIdentities.removeClosed(canonical);
+                    clearClosedDiagnostics(id);
                 }
             }
             readiness.completeExternal(uri, request, null, this::reanalyzeOpenNow);
@@ -549,14 +574,19 @@ final class InterlisTextDocumentService implements TextDocumentService {
             operation("Document is already open under another URI");
             return;
         }
-        if (uri.startsWith("interlis-source:") && externalSources.lookup(uri).isEmpty()) {
+        if (uri.startsWith("interlis-source:") && externalSources.currentUri(id).filter(uri::equals).isEmpty()) {
             operation("Unknown or expired readonly source handle; navigate again.");
             return;
         }
         if (externalSources.contains(id)) {
-            var source = workspace.source(id).orElseThrow();
-            if (externalSources.lookup(uri).filter(entry -> !entry.source().revision().equals(source.revision())).isPresent()
-                    || !source.text().equals(text)) {
+            var source = workspace.source(id);
+            if (source.isEmpty()) {
+                operation("Readonly source is unavailable for analysis.");
+                return;
+            }
+            var installed = source.orElseThrow();
+            if (!installed.text().equals(text) || externalSources.lookup(uri)
+                    .filter(entry -> !entry.source().revision().equals(installed.revision())).isPresent()) {
                 operation("Readonly source content differs; reopen through definition.");
                 return;
             }
@@ -574,7 +604,21 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private void clearDocumentDiagnostics(String uri) {
         var current = sink.get();
-        if (current != null) current.publish(new PublishDiagnosticsParams(uri, List.of()));
+        if (current != null) publish(current, new PublishDiagnosticsParams(uri, List.of()));
+    }
+
+    private void clearClosedDiagnostics(SourceId id) {
+        var publication = publishedClosed.remove(id);
+        if (publication != null) clearDocumentDiagnostics(publication.uri());
+    }
+
+    private void retireClosedDiagnostics(Set<String> retired) {
+        publishedClosed.values().forEach(publication -> retired.add(publication.uri()));
+        publishedClosed.clear();
+    }
+
+    private static void publish(DiagnosticSink sink, PublishDiagnosticsParams params) {
+        try { sink.publish(params); } catch (RuntimeException disconnected) { /* disconnected client */ }
     }
 
     private void replaceSource(SourceId id,String text) {
@@ -584,8 +628,10 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void rejectDocument(String uri, SourceId id, int version, String code) {
+        boolean wasOpen = documents.synchronizedDocument(uri) != null;
         var retiredAlias = documents.reject(uri, id, version);
         reportRejectedDocument(code);
+        if (wasOpen) clearDocumentDiagnostics(uri);
         retiredAlias.ifPresent(this::clearDocumentDiagnostics);
     }
 
@@ -665,6 +711,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
         }
         documents.remove(uri);
         documents.advanceGeneration();
+        var publication = publishedClosed.get(id);
+        if (publication != null && publication.uri().equals(uri)) publishedClosed.remove(id);
         if (reload) reloadExternal(id.value());
         reanalyzeOpenNow();
         clearDocumentDiagnostics(uri);
@@ -977,12 +1025,13 @@ final class InterlisTextDocumentService implements TextDocumentService {
             boolean repositoryChanged=!host.options().equals(repositorySettings.options()) || !host.cache().equals(repositorySettings.cache());
             boolean compilerChanged=!configuration.equals(userConfiguration);
             var current=workspace.configuration();
-            List<String> expiredDocuments = List.of();
+            var expiredPublications = new LinkedHashSet<String>();
             if(repositoryChanged) {
                 // An expired virtual editor must not reserve its old SourceId as
                 // an active open alias when fresh navigation opens a new handle.
                 for(var id:externalSources.uris().keySet()) workspace.source(id).ifPresent(source -> workspace.remove(id,source.revision()));
-                expiredDocuments = documents.removeSources(externalSources::contains);
+                expiredPublications.addAll(documents.removeSources(externalSources::contains));
+                retireClosedDiagnostics(expiredPublications);
                 externalSources.close();
                 current=configuration;
             } else if(compilerChanged) {
@@ -994,7 +1043,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             var receipt=workspace.configure(current,workspace.state().revision());
             userConfiguration=configuration; applyHostSettings(host);
             if(receipt.changed() || hostChanged) { documents.advanceGeneration(); reanalyzeOpenNow(); }
-            expiredDocuments.forEach(this::clearDocumentDiagnostics);
+            expiredPublications.forEach(this::clearDocumentDiagnostics);
             return null;
         });
     }
@@ -1227,8 +1276,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private void analyze(String uri, SourceId sourceId, int version) {
         SourceText source = workspace.source(sourceId).orElseThrow();
         var retiredAlias = documents.synchronize(uri, version, source);
+        var closed = publishedClosed.get(sourceId);
+        boolean retireClosed = closed != null && (!closed.uri().equals(uri) || !closed.revision().equals(source.revision()))
+                && publishedClosed.remove(sourceId, closed);
         scheduleOpenAnalysis();
-        retiredAlias.ifPresent(this::clearDocumentDiagnostics);
+        if (retireClosed) clearDocumentDiagnostics(closed.uri());
+        retiredAlias.filter(alias -> !retireClosed || !alias.equals(closed.uri())).ifPresent(this::clearDocumentDiagnostics);
     }
 
     private void applyHostSettings(RepositorySettings settings) {
@@ -1240,11 +1293,21 @@ final class InterlisTextDocumentService implements TextDocumentService {
         };
     }
 
-    private void repositoryResolved(guru.interlis.repository.RepositoryResolutionOutcome result) {
-        repositoryFailure=result instanceof guru.interlis.repository.RepositoryResolutionOutcome.Rejected rejected?rejected:null;
-        if(result instanceof guru.interlis.repository.RepositoryResolutionOutcome.Prepared prepared) {
-            for(var update:prepared.update().sources()) workspace.source(update.source()).ifPresent(source ->
-                    externalSources.register(source,workspace.configuration().compilerOptions().budget().maxTotalSourceUtf16Length()));
+    private void repositoryResolved(RepositoryResolutionOutcome.Prepared prepared) {
+        var retired = new LinkedHashSet<String>();
+        for (var update : prepared.update().sources()) {
+            workspace.source(update.source()).ifPresent(source -> registerReadonlySource(source, retired));
+        }
+        retired.forEach(this::clearDocumentDiagnostics);
+    }
+
+    private void registerReadonlySource(SourceText source, Set<String> retired) {
+        var previous = externalSources.currentUri(source.id());
+        externalSources.register(source, workspace.configuration().compilerOptions().budget().maxTotalSourceUtf16Length());
+        if (previous.isPresent() && !previous.equals(externalSources.currentUri(source.id()))) {
+            retired.addAll(documents.removeSources(source.id()::equals));
+            var publication = publishedClosed.remove(source.id());
+            if (publication != null) retired.add(publication.uri());
         }
     }
 
@@ -1259,78 +1322,110 @@ final class InterlisTextDocumentService implements TextDocumentService {
         } catch(RuntimeException invalid) { return CompletableFuture.failedFuture(LspFailures.response(invalid,operations)); }
     }
 
-    private void accepted(AnalysisSnapshot analysis) {
+    private void accepted(AnalysisSnapshot analysis, Optional<RepositoryResolutionOutcome.Rejected> rejection) {
         if (!readiness.isReady() || documents.needsResync()) return;
-        long generation = documents.generation();
-        publishClosedDiagnostics(analysis);
-        for(var diagnostic:analysis.diagnostics()) if(diagnostic.primaryRange().isEmpty())
-            operation(diagnosticMapper.global(diagnostic,diagnosticLanguage));
-        for (String uri : documents.synchronizedDocuments().keySet()) {
-            if (documents.generation() != generation) return;
-            var previous = documents.synchronizedDocument(uri);
-            var source = workspace.source(previous.sourceId());
-            if (source.isEmpty() || !source.orElseThrow().revision().equals(previous.source().revision())
-                    || !source.orElseThrow().revision().equals(analysis.sourceRevisions().get(previous.sourceId()))) continue;
-            publish(uri, documents.acceptAnalysis(uri, previous, analysis));
-        }
-        if (documents.generation() != generation) return;
-        var view=captureView();
-        analysisReady.accept(new AnalysisReady(1,diagrams.serverInstanceId(),view.workspaceRevision(),analysis.snapshotId().value(),documentVersions(view)));
-    }
-
-    private void publishClosedDiagnostics(AnalysisSnapshot analysis) {
-        var current=sink.get();if(current==null) return;
-        var view=captureView();var sources=new LinkedHashMap<>(view.sources());
-        var diagnostics=new ArrayList<>(analysis.diagnostics());
-        if(repositoryFailure!=null) {
-            repositoryFailure.sources().forEach((id,source) -> {
-                sources.putIfAbsent(id,source);
-                if(!view.sources().containsKey(id)) externalSources.register(source,workspace.configuration().compilerOptions().budget().maxTotalSourceUtf16Length());
+        var output = sink.get();
+        var state = workspace.state();
+        var sources = captureWorkspaceSources(state);
+        if (!state.revision().equals(workspace.currentRevision())) return;
+        var retired = new LinkedHashSet<String>();
+        var diagnostics = new ArrayList<>(analysis.diagnostics());
+        rejection.ifPresent(rejected -> {
+            diagnostics.addAll(rejected.diagnostics());
+            if (output == null) return;
+            rejected.sources().forEach((id, source) -> {
+                if (!state.sourceRevisions().containsKey(id)) {
+                    registerReadonlySource(source, retired);
+                    sources.put(id, source);
+                }
             });
-            diagnostics.addAll(repositoryFailure.diagnostics());
+        });
+
+        var open = documents.synchronizedDocuments();
+        var openUris = new LinkedHashMap<SourceId, String>();
+        var versionedSources = new LinkedHashSet<SourceId>();
+        open.forEach((uri, previous) -> {
+            SourceId id = previous.sourceId();
+            openUris.put(id, uri);
+            var source = sources.get(id);
+            if (source != null && !source.revision().equals(previous.source().revision())) {
+                // This editor cannot display ranges from the newer Workspace text.
+                sources.remove(id);
+            } else if (source != null && source.revision().equals(analysis.sourceRevisions().get(id))) {
+                documents.acceptAnalysis(uri, previous, analysis);
+                versionedSources.add(id);
+            }
+        });
+        var view = captureView(state, sources, open);
+
+        retired.forEach(this::clearDocumentDiagnostics);
+        for (var diagnostic : diagnostics) {
+            if (!publicationCurrent(view)) return;
+            if (diagnostic.primaryRange().isEmpty()) operation(diagnosticMapper.global(diagnostic, diagnosticLanguage));
         }
-        var externalUris=externalSources.uris();
-        java.util.function.Function<SourceId,String> uri=id -> externalUris.getOrDefault(id,view.uri(id));
-        var byUri=new LinkedHashMap<String,List<org.eclipse.lsp4j.Diagnostic>>();
-        for(var d:diagnostics) {
-            if(d.primaryRange().isEmpty()) { if(repositoryFailure!=null && repositoryFailure.diagnostics().contains(d)) operation(diagnosticMapper.global(d,diagnosticLanguage));continue; }
-            var range=d.primaryRange().orElseThrow();
-            if(view.open(range.source())!=null) continue;
-            var source=sources.get(range.source());
-            if(source==null || !source.revision().equals(range.revision())) continue;
-            byUri.computeIfAbsent(uri.apply(range.source()),ignored -> new ArrayList<>()).add(diagnosticMapper.toLsp(d,sources,diagnosticLanguage,uri));
+        if (output != null && publicationCurrent(view)) {
+            publishDiagnostics(output, view, openUris, versionedSources, diagnostics);
         }
-        for(String old:publishedExternal) if(!byUri.containsKey(old)) current.publish(new PublishDiagnosticsParams(old,List.of()));
-        byUri.forEach((address,items) -> current.publish(new PublishDiagnosticsParams(address,items)));
-        publishedExternal.clear();publishedExternal.addAll(byUri.keySet());
+        if (publicationCurrent(view)) {
+            analysisReady.accept(new AnalysisReady(1, diagrams.serverInstanceId(), view.workspaceRevision(),
+                    analysis.snapshotId().value(), documentVersions(view)));
+        }
     }
 
-    private void publish(String uri,Synchronized state) {
-        DiagnosticSink current = sink.get();
-        if (current == null) {
-            return;
+    private void publishDiagnostics(DiagnosticSink output, HostView view, Map<SourceId, String> openUris,
+                                    Set<SourceId> versionedSources, List<Diagnostic> diagnostics) {
+        java.util.function.Function<SourceId, String> address = id -> {
+            String openUri = openUris.get(id);
+            return openUri != null ? openUri : view.uri(id);
+        };
+        var bySource = new LinkedHashMap<SourceId, List<org.eclipse.lsp4j.Diagnostic>>();
+        for (var diagnostic : diagnostics) {
+            diagnostic.primaryRange().ifPresent(range -> {
+                var id = range.source();
+                if ((!openUris.containsKey(id) || versionedSources.contains(id))
+                        && view.source(id).filter(source -> source.revision().equals(range.revision())).isPresent()) {
+                    bySource.computeIfAbsent(range.source(), ignored -> new ArrayList<>())
+                            .add(diagnosticMapper.toLsp(diagnostic, view.sources(), diagnosticLanguage, address));
+                }
+            });
         }
-        List<org.eclipse.lsp4j.Diagnostic> diagnostics = new ArrayList<>();
-        var displayed=new ArrayList<>(state.analysis().diagnostics());
-        if(repositoryFailure!=null) displayed.addAll(repositoryFailure.diagnostics());
-        for (Diagnostic diagnostic : displayed) {
-            if (diagnostic.primaryRange().isEmpty()) {
-                continue;
+
+        for (var id : List.copyOf(publishedClosed.keySet())) {
+            if (!publicationCurrent(view)) return;
+            var previous = publishedClosed.get(id);
+            if (previous == null) continue;
+            String openUri = openUris.get(id);
+            if (openUri != null && versionedSources.contains(id) && previous.uri().equals(openUri)) continue;
+            if (openUri != null || !bySource.containsKey(id) || !previous.uri().equals(address.apply(id))) {
+                clearClosedDiagnostics(id);
             }
-            SourceRange range = diagnostic.primaryRange().get();
-            if (!range.source().equals(state.sourceId())) {
-                continue;
-            }
-            var view=captureView();
-            org.eclipse.lsp4j.Diagnostic lsp=diagnosticMapper.toLsp(diagnostic,view.sources(),diagnosticLanguage,view::uri);
-            diagnostics.add(lsp);
         }
-        diagnostics.sort(Comparator.comparingInt((org.eclipse.lsp4j.Diagnostic d) ->
-                        d.getRange().getStart().getLine())
-                .thenComparingInt(d -> d.getRange().getStart().getCharacter()));
-        var publication = new PublishDiagnosticsParams(uri, diagnostics);
-        publication.setVersion(state.lspVersion());
-        current.publish(publication);
+        for (var entry : bySource.entrySet()) {
+            if (!publicationCurrent(view)) return;
+            SourceId id = entry.getKey();
+            if (openUris.containsKey(id)) continue;
+            String uri = address.apply(id);
+            publishedClosed.put(id, new ClosedPublication(uri, view.source(id).orElseThrow().revision()));
+            publish(output, new PublishDiagnosticsParams(uri, entry.getValue()));
+        }
+        for (var id : versionedSources) {
+            if (!publicationCurrent(view)) return;
+            String uri = openUris.get(id);
+            var items = bySource.getOrDefault(id, List.of()).stream()
+                    .sorted(Comparator.comparingInt((org.eclipse.lsp4j.Diagnostic diagnostic) ->
+                                    diagnostic.getRange().getStart().getLine())
+                            .thenComparingInt(diagnostic -> diagnostic.getRange().getStart().getCharacter()))
+                    .toList();
+            var publication = new PublishDiagnosticsParams(uri, items);
+            publication.setVersion(view.documents().get(uri).lspVersion());
+            publishedClosed.remove(id);
+            publish(output, publication);
+        }
+    }
+
+    private boolean publicationCurrent(HostView view) {
+        return readiness.isReady() && documents.generation() == view.documentGeneration()
+                && Long.toString(workspace.currentRevision().value()).equals(view.workspaceRevision());
     }
 
     void locale(String locale) {
