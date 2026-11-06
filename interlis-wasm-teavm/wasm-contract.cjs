@@ -94,7 +94,7 @@ END Wasm.
     sessionId, operation: 'closeSession', params: {}
   })));
   if (closed.status !== 'ok') throw new Error('closeSession failed');
-  const stabilizationCases = await require('./stabilization-contract.cjs')(api);
+  const stabilizationCases = await require('./contracts/runner.cjs').runContracts(api);
   const corpusRegressionCases = await require('./token-classification-contract.cjs')(api);
   const summary = {...runtimeEvidence.finish(evidence),
     stabilizationCases,

@@ -1,0 +1,1878 @@
+[
+  {
+    "id": "views-e09ee4241d0dbb9177b1",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE DEFINED(a->x); = ALL OF a; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-8d96dab85c7ac1020661",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE a->x; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-71db0deab2e090bbd4c2",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = w := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-e3222cd60d7d63024ed5",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->missing; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-7a64cb1170b24bbe8e16",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = ALL OF a; x := a->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-4f1560e3351525f630d2",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; BASE a EXTENDED BY b~B = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0901c9ea99d6782a9dd6",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = ALL OF a; ALL OF b; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-bee6e6ea4a1661cc70d3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = z : MANDATORY TEXT*20 := b->y; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-ca3445d878e40590cc33",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,a~B; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-9990df46e16a8e69e7af",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x,b->y; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-5c20a43cb3105b3d760a",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-baf4c98e3c9552a967a8",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = ALL OF a; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-7bb01122dcfd246ce31e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-d1c317a3d3210efafd1b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x,a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-48e76f3865c8546658db",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->missing); = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-798d1e53f264f8ee7197",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = z (EXTENDED) : TEXT := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-a143ffd9d6fd2af99068",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = ALL OF child; label := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-01d9e719c1abdfa6dca6",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->label; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-6129bb6687e91a201eb9",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = value := THISAREA->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-3ba6355f48fff807d1b9",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V PROJECTION OF A; = value := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-d398f661321123f6ef69",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = x := child->missing; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-8dd7643f933101e6338f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF AB; = MANDATORY CONSTRAINT a->x == b->y; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0a1bae32332546cd16a2",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF B; = MANDATORY CONSTRAINT a->x == \"x\"; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-468c32343b14fdd85288",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->A; b -- B := V->B; END AB; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0fa18c9e1b77a715aa53",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A =  x : TEXT; END A; CLASS B =  y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->B; b -- B := V->B; END AB; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-6b5de985431af44accf1",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00 .. 100.00, 0.00 .. 100.00; TOPIC T = CLASS A = start : Coord; line : POLYLINE WITH (STRAIGHTS,ARCS) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = MANDATORY CONSTRAINT line->Segments[FIRST]->SegmentEndPoint == PARENT->start; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-1f48e2ad146253a78c57",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE DEFINED(a->x); = ALL OF a; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-03e09b04718ba26dc73f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; WHERE a->x; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-055eb20d64eb8cf5f65f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = w := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-68564a332574b738827e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->missing; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-7f6537feb0d5ea9d5f57",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = ALL OF a; x := a->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0a1c58978e2465676136",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; BASE a EXTENDED BY b~B = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-a1e891109d2e626aa4af",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = ALL OF a; ALL OF b; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-f7b5bb4cb73de255d5cb",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,b~B (OR NULL); = z : MANDATORY TEXT*20 := b->y; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-afc24f8f4e8ed56cca6b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V JOIN OF a~A,a~B; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-c61fec5f6c104d73f125",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x,b->y; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-40c01aca61819d0d5747",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = z : MANDATORY TEXT*20 := a->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-3d049afd292585757ba9",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V UNION OF a~A,b~B; = ALL OF a; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-befb26fb25937b41a213",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-3b172cf221b585cccac6",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x,a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-d5dff70e823a3b4230d4",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V AGGREGATION OF a~A EQUAL (a->missing); = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-a7afda8d5260a35aa90d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : MANDATORY TEXT*20; END A; CLASS B = y : MANDATORY TEXT*10; END B; VIEW V PROJECTION OF a~A; = z := a->x; END V; VIEW W EXTENDS V = z (EXTENDED) : TEXT := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-52272dd137e84ff8215f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = ALL OF child; label := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-c1e66c97fc7256b69523",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->label; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-8c6e741d21e3a21fc55e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = value := THISAREA->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-2abb14ac0cd7e3644388",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V PROJECTION OF A; = value := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-bd2a70736b4fca1aec8d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; CLASS A = label : TEXT; children : BAG OF S; END A; VIEW V INSPECTION OF child~A->children; = x := child->missing; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-cdfad187b62048572a68",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF AB; = MANDATORY CONSTRAINT a->x == b->y; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-39e0f9a4a31a2736a583",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; ASSOCIATION AB = a -- {0..1} A; b -- {0..*} B; END AB; VIEW V PROJECTION OF B; = MANDATORY CONSTRAINT a->x == \"x\"; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-7858373e093f2e0b3ebc",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->A; b -- B := V->B; END AB; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-41a1454353edd5dbca2d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = OID AS INTERLIS.STANDARDOID; x : TEXT; END A; CLASS B = OID AS INTERLIS.STANDARDOID; y : TEXT; END B; VIEW V JOIN OF A,B; = END V; ASSOCIATION AB DERIVED FROM V = a -- A := V->B; b -- B := V->B; END AB; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-5208d6cf51bb3bcfebe0",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN Coord = COORD 0.00 .. 100.00, 0.00 .. 100.00; TOPIC T = CLASS A = start : Coord; line : POLYLINE WITH (STRAIGHTS,ARCS) VERTEX Coord; END A; VIEW V INSPECTION OF line~A->line; = MANDATORY CONSTRAINT line->Segments[FIRST]->SegmentEndPoint == PARENT->start; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-ae7c6004cfd5649063fc",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION I); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-4633887d1eab8ac877a3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION I OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-4bbf080b3fc2813a9009",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~Child; = n := INTERLIS.elementCount(INSPECTION I OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-c103b23af905368ca553",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->items->children); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0ecbce4dfff2dc8ec7de",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->items->children OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-5c733772e16d5ff9da03",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~Child; = n := INTERLIS.elementCount(INSPECTION OF local~A->items->children OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-de3393431eff379cfb29",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~Other; = n := INTERLIS.elementCount(INSPECTION I OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0ba76f5d57c956967846",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION I OF p->label); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-38b6c0dae56b120de2ed",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION Missing); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-eb3df746f5a0843b95b1",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION A); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-6232167517899ae2f595",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->label); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-9ab0ffc2f10de3616efe",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(AREA INSPECTION OF A->items); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-24bbe0bc0d0667ebee2e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->missing); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-ed89efed39692bbe1d32",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = n : TEXT := INSPECTION I; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-7b4bf0effa4f70a09e36",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; WHERE INSPECTION I; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-20039566b18ff433492e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW J EXTENDS I = END J; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION J OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-a4fe777bd8cad6519937",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = n := PARENT; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-84a47651ff77185c3c1c",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V EXTENDS I = n := part->value->PARENT; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-886545bbe0830580c16c",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = x := A->label; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->label; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-64e9ef02bbde247a348b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = x (EXTENDED) : TEXT := A->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-bb42070c2ff1d08330f3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = x : TEXT; END S; CLASS A = items : BAG OF S; MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->items OF THIS) > 0; END A; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-26612e0dc797df117d2c",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION I); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0ff7257d3a222061804b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION I OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-6494b6e1fcb40d4919a0",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~Child; = n := INTERLIS.elementCount(INSPECTION I OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-bf1aa71e14e7e224fab3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->items->children); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-42f4409ea914782826ed",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->items->children OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-b7369d692680fdc9cdb7",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~Child; = n := INTERLIS.elementCount(INSPECTION OF local~A->items->children OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-ebed426e5203d3ad81be",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~Other; = n := INTERLIS.elementCount(INSPECTION I OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-8c11e88c820232a429d0",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION I OF p->label); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-29087ed38133868b85dc",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION Missing); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-3540b4ae992f1f3f09c4",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION A); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-a6a81a2666a6835ef6c4",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->label); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-69b661e4a6ae18356add",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(AREA INSPECTION OF A->items); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-41c99b4bf1e0a3ea589f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION OF A->missing); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-328ec11f65c66620f2ae",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = n : TEXT := INSPECTION I; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-5ab66e60c834e7e1a8e8",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; WHERE INSPECTION I; = END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-fb2ee437fae02405b489",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW J EXTENDS I = END J; VIEW V PROJECTION OF p~A; = n := INTERLIS.elementCount(INSPECTION J OF p); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-37c0020bb690f75b3e97",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = n := PARENT; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-7026691e042f50214262",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V EXTENDS I = n := part->value->PARENT; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-4317fb501763de7eb0e0",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = x := A->label; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->label; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-88acc9e753179e1289d3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = value : TEXT; END S; STRUCTURE R = children : BAG OF S; END R; CLASS A = items : BAG OF R; label : TEXT; END A; CLASS Child EXTENDS A = END Child; CLASS Other = END Other; VIEW I INSPECTION OF part~A->items->children; = ALL OF part; END I; VIEW V PROJECTION OF A; = x (EXTENDED) : TEXT := A->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-ce9888909afb4c8ccc6d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = STRUCTURE S = x : TEXT; END S; CLASS A = items : BAG OF S; MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION OF A->items OF THIS) > 0; END A; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-a7d29c86362b82b3d159",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : MANDATORY TEXT := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-869a0f904221499be7c0",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W EXTENDS V = x (EXTENDED) : MANDATORY; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-bc83111ffb27e9ef4342",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : TEXT := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->x; END W; VIEW Z EXTENDS W = END Z; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-8d7deb17e4d35d39d089",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V UNION OF a~A,b~B; = x : MANDATORY TEXT := a->x,b->x; END V; VIEW W EXTENDS V = x (EXTENDED) : MANDATORY TEXT := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-f18e216001f466321eb6",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V UNION OF a~A,b~B; = x : TEXT := a->x; END V; VIEW W EXTENDS V = x (EXTENDED) : MANDATORY TEXT := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0102b31c798e9a5aa3d1",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x (TRANSIENT) : TEXT := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-223630e543a233821911",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V (FINAL) PROJECTION OF A; = END V; VIEW W EXTENDS V = END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-8c1618051b8af4aafb1d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : TEXT := A->x; END V; VIEW W EXTENDS V = x : TEXT := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-118bc3b54f5ff8cd6d4e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A ALL; = END V; VIEW W EXTENDS V = count := INTERLIS.elementCount(AGGREGATES); END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-b3c31ca43414965b52ef",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : First := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : Second := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-1d3b0fc74099d22cd678",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3;  MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-5e576d62a2c3b8d0d28c",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3;  MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-82f7da926a92def78316",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.V = END X; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.V = END X; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-144d3ea18cbf4a393f7a",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.V = END X; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.W = END X; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-1950f75248ec71783912",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.First := A->x; END V; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.First := A->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-c8fc3480c9c7790d7323",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.First := A->x; END V; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.Second := A->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-aeed7d2b79003d1c5d02",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : MANDATORY TEXT := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-5b094851574a4bb7f2bb",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W EXTENDS V = x (EXTENDED) : MANDATORY; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-2af0628e0669beb930c4",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : TEXT := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->x; END W; VIEW Z EXTENDS W = END Z; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-c7717ac6d51805b85e38",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V UNION OF a~A,b~B; = x : MANDATORY TEXT := a->x,b->x; END V; VIEW W EXTENDS V = x (EXTENDED) : MANDATORY TEXT := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-f2970809466b9cd9146c",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V UNION OF a~A,b~B; = x : TEXT := a->x; END V; VIEW W EXTENDS V = x (EXTENDED) : MANDATORY TEXT := a->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-b053626c0e3e7a902c4b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x (TRANSIENT) : TEXT := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : TEXT := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-bde31277bf5b8216b901",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V (FINAL) PROJECTION OF A; = END V; VIEW W EXTENDS V = END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-79667f0070fbd4a5a89d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : TEXT := A->x; END V; VIEW W EXTENDS V = x : TEXT := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-4c9e5ad55fadb59bddf2",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A ALL; = END V; VIEW W EXTENDS V = count := INTERLIS.elementCount(AGGREGATES); END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-684143391f4369eada0f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : First := A->x; END V; VIEW W EXTENDS V = x (EXTENDED) : Second := A->x; END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-c14978280647d2d3e819",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4;  MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A ALL; = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-4709ab94ba67ab35cd53",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4;  MODEL Base AT \"https://example.org\" VERSION \"1\" = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V AGGREGATION OF a~A EQUAL (a->x); = count := INTERLIS.elementCount(AGGREGATES); END V; VIEW W EXTENDS V = END W; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-6bfc1af0e80b4408c911",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.V = END X; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.V = END X; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-f32aa97bca83dba222be",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.V = END X; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = DEPENDS ON Shared.T; VIEW X EXTENDS Shared.T.W = END X; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-dd5ff59d27b30dd4085c",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.First := A->x; END V; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.First := A->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-3614dd0ccccafe67e89d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Shared AT \"https://example.org\" VERSION \"1\" = DOMAIN First = TEXT; Second = TEXT; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = ALL OF A; END V; VIEW W PROJECTION OF A; = ALL OF A; END W; END T; END Shared. MODEL Base AT \"https://example.org\" VERSION \"1\" = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.First := A->x; END V; END T; END Base. MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Base [\"1\"] = IMPORTS Shared; TOPIC T = CLASS A = x : TEXT; END A; CLASS B = x : TEXT; END B; VIEW V PROJECTION OF A; = x : Shared.Second := A->x; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-0ed3956a2b27e965ab24",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = TOPIC T = STRUCTURE S = END S; CLASS A = items: BAG OF S; label: TEXT*20; END A; VIEW V INSPECTION OF a~A->items; = name: TEXT*10 := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-2a8d3f69f03e9c4b863f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = TOPIC T = STRUCTURE S = END S; CLASS A = items: BAG OF S; label: TEXT*20; END A; VIEW V INSPECTION OF a~A->items; = name: TEXT*20 := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-f924a4c091078ec8adbe",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = FUNCTION f(text: TEXT): TEXT; TOPIC T = CLASS A = END A; VIEW V PROJECTION OF A; = name: TEXT*80 := f(\"short\"); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-8c2fcd49c948615720ca",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = FUNCTION f(text: TEXT): TEXT*80; TOPIC T = CLASS A = END A; VIEW V PROJECTION OF A; = name: TEXT*80 := f(\"short\"); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-b1f6c81a92eea87184cd",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = TOPIC T = STRUCTURE S = END S; CLASS A = items: BAG OF S; label: TEXT*20; END A; VIEW V INSPECTION OF a~A->items; = name: TEXT*10 := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-d63969f06dc30627a36b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = TOPIC T = STRUCTURE S = END S; CLASS A = items: BAG OF S; label: TEXT*20; END A; VIEW V INSPECTION OF a~A->items; = name: TEXT*20 := PARENT->label; END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-a40898151200f65ef76f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = FUNCTION f(text: TEXT): TEXT; TOPIC T = CLASS A = END A; VIEW V PROJECTION OF A; = name: TEXT*80 := f(\"short\"); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "views-26a5a2ca5730df10cef3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; CONTRACTED MODEL F AT \"x\" VERSION \"1\" = FUNCTION f(text: TEXT): TEXT*80; TOPIC T = CLASS A = END A; VIEW V PROJECTION OF A; = name: TEXT*80 := f(\"short\"); END V; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  }
+]

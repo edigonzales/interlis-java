@@ -77,19 +77,27 @@ tasks.register('wasmContractTest') {
     }
 }
 
+def portableContractsBundle = layout.buildDirectory.file('portable-contracts/portable-contracts.js')
+tasks.register('bundlePortableContracts', Exec) {
+    group = 'verification'
+    workingDir = projectDir
+    inputs.dir 'contracts'
+    inputs.files 'bundle-contracts.cjs', 'package-lock.json'
+    outputs.file portableContractsBundle
+    commandLine nodeExecutable.get(), 'bundle-contracts.cjs', portableContractsBundle.get().asFile
+}
+
 tasks.register('prepareBrowserHarness', Sync) {
     group = 'verification'
     description = 'Copies the browser harness, WasmGC module and runtime into build/web.'
-    dependsOn 'buildWasmGC', 'buildBrowserTools'
+    dependsOn 'buildWasmGC', 'buildBrowserTools', 'bundlePortableContracts'
     from 'src/main/web'
     from(rootProject.file('tools/performance/full-corpus-contract.js'))
     from(layout.buildDirectory.dir('browser-tools'))
     from('token-classification-contract.cjs') {
         rename { 'token-classification-contract.js' }
     }
-    from('stabilization-contract.cjs') {
-        rename { 'stabilization-contract.js' }
-    }
+    from(portableContractsBundle)
     from(layout.buildDirectory.dir('generated/teavm/wasm-gc')) {
         include 'interlis-compiler.wasm'
         include 'interlis-compiler.wasm-runtime.js'

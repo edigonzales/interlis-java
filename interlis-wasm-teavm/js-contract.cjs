@@ -43,7 +43,7 @@ END JsTarget.
     throw new Error('compile failed: ' + JSON.stringify(compiled));
   }
   handle(envelope('closeSession', sessionId));
-  const stabilizationCases = await require('./stabilization-contract.cjs')(api);
+  const stabilizationCases = await require('./contracts/runner.cjs').runContracts(api);
   const corpusRegressionCases = await require('./token-classification-contract.cjs')(api);
   const result = {...runtimeEvidence.finish(evidence),stabilizationCases, corpusRegressionCases, status: 'passed', tool: capabilities.result.toolVersion,
     outcome: compiled.result ? compiled.result.outcome : compiled.status,

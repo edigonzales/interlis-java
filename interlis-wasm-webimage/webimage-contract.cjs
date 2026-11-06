@@ -45,7 +45,7 @@ END WebImage.
   }
   const closed = handle(envelope('closeSession', sessionId));
   if (closed.status !== 'ok') throw new Error('closeSession failed');
-  const stabilizationCases = await require('../interlis-wasm-teavm/stabilization-contract.cjs')({
+  const stabilizationCases = await require('../interlis-wasm-teavm/contracts/runner.cjs').runContracts({
     handle: globalThis.interlisCompilerHandle
   });
   const corpusRegressionCases = await require('../interlis-wasm-teavm/token-classification-contract.cjs')({handle:globalThis.interlisCompilerHandle});

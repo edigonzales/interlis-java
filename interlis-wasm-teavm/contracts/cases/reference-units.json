@@ -1,0 +1,1410 @@
+[
+  {
+    "id": "units-67e64adeed589b193835",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-7e25db6340f4a4782cb2",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * 0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-2d52df96138ec40f8b32",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-5ec9f8d983f392314ff3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = -0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-67d1d427ccda72fd54a6",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * -0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-5b47574419eeeee5dc79",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / -0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-a03cd063c7948ed6963b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0.000 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-3309ebd6410bfea03db7",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * 0.000 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-f506a1a044b470707ab4",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0.000 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-31c3553ecd802b454698",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0.0e20 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-73f2a3ab7105421f3262",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * 0.0e20 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-a1e90d9fb6aab037657c",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0.0e20 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-60e16c6f8ff52e4ef914",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-d2f7ae4cda2b27bbf4d9",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = -1 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-59ebb28facbf269d0169",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 3 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-2385ed63a799ebfe1ed7",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 9007199254740993.0010 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-e442720ea50851e258be",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0.1e-50 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-33d9ca41fea877f022d4",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = PI [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-10032658cf2c3235dd06",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = LNBASE [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-aca207fa8a4d44d04ccc",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 / PI * LNBASE [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-6662e8876cb6c076c259",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-e1802b314f74888cd2f9",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = FUNCTION // x + 0 // [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-8a34d988dca990178236",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Z = 2 [Missing]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-c6f35b21b81e29212e6d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Z = FUNCTION // x // [Missing]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-e98ec6d3e0fc9637b260",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-00fd38afcbd545e29b0b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [km]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-f77f76e7879c40117406",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-8a68b02dc807e89db700",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-a3b35a0f846ebd929959",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-0465ba4c2f8ea86f1476",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC [Length]; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-82baef6a76e06fdbbd50",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC [Length]; X EXTENDS D = 0..10 [s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-ae51f5d5f270cbe6e806",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-8a8f1756b921910e6ac1",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC [INTERLIS.ANYUNIT]; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-7ac79176dc9185556f29",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; Alias EXTENDS D = 0..100; X EXTENDS Alias = 0..10; TOPIC T = CLASS C = n: X; MANDATORY CONSTRAINT n > 0; END C; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-74ad251ca2a5549d678f",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; TOPIC T = CLASS C = n: 0..100 [m]; END C; CLASS Child EXTENDS C = n (EXTENDED): 0..10; MANDATORY CONSTRAINT n > 0; END Child; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-eed68dc653efa5b8760d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; TOPIC T = CLASS C = n: 0..100 [m]; END C; CLASS Child EXTENDS C = n (EXTENDED): 0..10 [s]; END Child; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-ae44b80510fa2b15600e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; TOPIC T = CLASS C = n: 0..100 [m]; END C; CLASS Child EXTENDS C = n (EXTENDED): 0..10 [km]; END Child; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-5d865e1aa25808a18840",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 2 / PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-a71b64b2ef586dc14745",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 2.0 / PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-39983a754b3eda713ea1",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 3 / PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-efa88aa6295f45af9760",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 2 * PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-85eb1c7c07f0af0cb055",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Root (ABSTRACT); U EXTENDS Root; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Racine (ABSTRACT); V EXTENDS Racine; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-bf566ee02771df32a491",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.3; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Root (ABSTRACT); U EXTENDS Root; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Racine (ABSTRACT); V (ABSTRACT) EXTENDS Racine; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-7c763a7879859257fb26",
+    "sources": [
+      {
+        "sourceId": "memory:/a-base.ili",
+        "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/z-use.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 [Base.m]; DOMAIN X EXTENDS Base.D = 0..10; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded"
+  },
+  {
+    "id": "units-afb0047f653e0293fab2",
+    "sources": [
+      {
+        "sourceId": "memory:/a-base.ili",
+        "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/z-use.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 * 0 [Base.m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  },
+  {
+    "id": "units-904c56b14c0bed874cba",
+    "sources": [
+      {
+        "sourceId": "memory:/a-base.ili",
+        "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/z-use.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN X EXTENDS Base.D = 0..10 [Base.s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  },
+  {
+    "id": "units-a4c51fe91fe897f3cb63",
+    "sources": [
+      {
+        "sourceId": "memory:/z-base.ili",
+        "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/a-use.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 [Base.m]; DOMAIN X EXTENDS Base.D = 0..10; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded"
+  },
+  {
+    "id": "units-2af1976dc16260083576",
+    "sources": [
+      {
+        "sourceId": "memory:/z-base.ili",
+        "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/a-use.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 * 0 [Base.m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  },
+  {
+    "id": "units-853d3823ef0f1057b1a2",
+    "sources": [
+      {
+        "sourceId": "memory:/z-base.ili",
+        "text": "INTERLIS 2.3; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/a-use.ili",
+        "text": "INTERLIS 2.3; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN X EXTENDS Base.D = 0..10 [Base.s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  },
+  {
+    "id": "units-8101fb6b08b9341268b8",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-700ea26060b3bbcfca9e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * 0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-5238a6e8b2c30e4dcc52",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-900309523c7929db1127",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = -0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-6ac06993d0fa3ea7ffad",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * -0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-bc262b02e38818ecaaf9",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / -0 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-fdb88f80232741fe74e4",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0.000 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-8504f03c31e68032c067",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * 0.000 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-72a73f2af16a3ad100eb",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0.000 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-ed8b76bde5ba3451b245",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0.0e20 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-9ab2b912aa3dee2c32d6",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 * 0.0e20 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-e3eebe217187d4cdc4d3",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 0.0e20 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-2e15dba57df6abc0e83d",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-1e21ba09755e4a385fbd",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = -1 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-8257142b4d2f79f2c542",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 1 / 3 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-85baa7ca1aaeb5b39a50",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 9007199254740993.0010 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-02a82379b8cf59dd3174",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 0.1e-50 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-a5f0f00234e7475f7e6b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = PI [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-5db0c369649d3dc3177b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = LNBASE [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-7b3f4bf4385f4d957cec",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = 2 / PI * LNBASE [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-42f2226a8d8ddf4383ef",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-b9c04716c08d11755420",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT M [m]; Z = FUNCTION // x + 0 // [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-3a09c38ff30fa3b62a03",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Z = 2 [Missing]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-03010fb9678909768668",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Z = FUNCTION // x // [Missing]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-4625a47f3e10678162f6",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-000e67fa1704411a8204",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [km]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-54c2bd44f3e1a74e5d0b",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-b2e197c294dfbc62daf2",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; X EXTENDS D = 0..10; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-6c8297a681c3cb4a753e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-fdbb17c6b6f7199c128a",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC [Length]; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-cd9e84e3d1726eb77db0",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC [Length]; X EXTENDS D = 0..10 [s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-5d7df3c41b6935156327",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-be23ed27746112fb96b2",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D (ABSTRACT) = NUMERIC [INTERLIS.ANYUNIT]; X EXTENDS D = 0..10 [m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-f888072bc8c5e739177e",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; Alias EXTENDS D = 0..100; X EXTENDS Alias = 0..10; TOPIC T = CLASS C = n: X; MANDATORY CONSTRAINT n > 0; END C; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-43b732c0694f85ac7984",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; TOPIC T = CLASS C = n: 0..100 [m]; END C; CLASS Child EXTENDS C = n (EXTENDED): 0..10; MANDATORY CONSTRAINT n > 0; END Child; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-d0fb9229257072da7ec5",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; TOPIC T = CLASS C = n: 0..100 [m]; END C; CLASS Child EXTENDS C = n (EXTENDED): 0..10 [s]; END Child; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-9ec351967d06eba09a68",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; TOPIC T = CLASS C = n: 0..100 [m]; END C; CLASS Child EXTENDS C = n (EXTENDED): 0..10 [km]; END Child; END T; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-3322eea4b02629922548",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 2 / PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-9fcb3fd95392e74c6455",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 2.0 / PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-ffa118fd8ae366de351a",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 3 / PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-8fd6a991df8737d011b7",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Meter [m]; X = 2 / PI [m]; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Metre [met]; Y = 2 * PI [met]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-455e566d845eeca567bd",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Root (ABSTRACT); U EXTENDS Root; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Racine (ABSTRACT); V EXTENDS Racine; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-88644631dabde81eb797",
+    "sources": [
+      {
+        "sourceId": "memory:/stabilization.ili",
+        "text": "INTERLIS 2.4; MODEL Original AT \"https://example.org\" VERSION \"1\" = UNIT Root (ABSTRACT); U EXTENDS Root; END Original.MODEL F AT \"https://example.org\" VERSION \"1\" TRANSLATION OF Original [\"1\"] = UNIT Racine (ABSTRACT); V (ABSTRACT) EXTENDS Racine; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected",
+    "referenceSourceId": "memory:/case.ili"
+  },
+  {
+    "id": "units-ab7319bf59f9caa5cc32",
+    "sources": [
+      {
+        "sourceId": "memory:/a-base.ili",
+        "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/z-use.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 [Base.m]; DOMAIN X EXTENDS Base.D = 0..10; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded"
+  },
+  {
+    "id": "units-1c883554891cc1b4b031",
+    "sources": [
+      {
+        "sourceId": "memory:/a-base.ili",
+        "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/z-use.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 * 0 [Base.m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  },
+  {
+    "id": "units-b3e720f06dc22ff4963a",
+    "sources": [
+      {
+        "sourceId": "memory:/a-base.ili",
+        "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/z-use.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN X EXTENDS Base.D = 0..10 [Base.s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  },
+  {
+    "id": "units-9571683ce55978cdab37",
+    "sources": [
+      {
+        "sourceId": "memory:/z-base.ili",
+        "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/a-use.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 [Base.m]; DOMAIN X EXTENDS Base.D = 0..10; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "succeeded"
+  },
+  {
+    "id": "units-fe94531f255c5d5d7091",
+    "sources": [
+      {
+        "sourceId": "memory:/z-base.ili",
+        "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/a-use.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; UNIT U = 2 * 0 [Base.m]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  },
+  {
+    "id": "units-2f0731d4003a87b29339",
+    "sources": [
+      {
+        "sourceId": "memory:/z-base.ili",
+        "text": "INTERLIS 2.4; MODEL Base AT \"https://example.org\" VERSION \"1\" = UNIT Length (ABSTRACT); Time (ABSTRACT); Meter [m] EXTENDS Length; Second [s] EXTENDS Time; Kilometre [km] = 1000 [m]; DOMAIN D = 0..100 [m]; END Base."
+      },
+      {
+        "sourceId": "memory:/a-use.ili",
+        "text": "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = IMPORTS Base; DOMAIN X EXTENDS Base.D = 0..10 [Base.s]; END F."
+      }
+    ],
+    "roots": [
+      "F"
+    ],
+    "expected": "rejected"
+  }
+]

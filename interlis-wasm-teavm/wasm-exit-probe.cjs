@@ -22,7 +22,7 @@ process.on('exit', () => report('exit'));
       })));
       if (result.status !== 'ok') throw new Error(JSON.stringify(result));
     } else if (mode === 'semantics') {
-      const cases = await require('./stabilization-contract.cjs')(api);
+      const cases = await require('./contracts/runner.cjs').runContracts(api);
       console.log(JSON.stringify({semanticCases: cases}));
     } else if (mode !== 'load') {
       throw new Error(`Unknown probe mode: ${mode}`);

@@ -16,13 +16,8 @@ class OriginalViewFixtureContractTest {
             if (line.isBlank() || line.startsWith("#")) continue;
             String[] pair = line.split("=", 2); assertNull(pins.put(pair[0], pair[1].split("\\|", 3)));
         }
-        String shared = Files.readString(root.resolve("interlis-wasm-teavm/stabilization-contract.cjs"));
-        String begin = "// BEGIN PINNED B1-B3 ORIGINALS JSON", end = "// END PINNED B1-B3 ORIGINALS JSON";
-        assertEquals(shared.indexOf(begin), shared.lastIndexOf(begin)); assertTrue(shared.contains(begin));
-        assertEquals(shared.indexOf(end), shared.lastIndexOf(end)); assertTrue(shared.contains(end));
-        String block = shared.substring(shared.indexOf(begin) + begin.length(), shared.indexOf(end)).strip();
-        String prefix = "const originalViewFixtures = "; assertTrue(block.startsWith(prefix)); assertTrue(block.endsWith(";"));
-        var entries = JsonParser.parseString(block.substring(prefix.length(), block.length() - 1)).getAsJsonArray();
+        var cases = root.resolve("interlis-wasm-teavm/contracts/cases/original-views.json");
+        var entries = JsonParser.parseString(Files.readString(cases)).getAsJsonArray();
         assertEquals(19, pins.size()); assertEquals(19, entries.size()); var seen = new HashSet<String>();
         for (var value : entries) {
             var entry = value.getAsJsonObject(); String id = entry.get("testId").getAsString(); assertTrue(seen.add(id));

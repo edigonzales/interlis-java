@@ -526,7 +526,7 @@ Ausdrucksverträge stellen auch eigene kontextualisierte Segmente dar; es gibt
 keine zusätzliche öffentliche Segmentfassade. Vertragstests:
 `GeometryRulesContractTest`, `GeometryInspectionContractTest`,
 `LineFormBindingContractTest`; gemeinsame portable Fälle in
-`stabilization-contract.cjs`. Eine ausgeführte Annahmeprobe belegt allein noch
+`interlis-wasm-teavm/contracts/runner.cjs`. Eine ausgeführte Annahmeprobe belegt allein noch
 keine vollständige graphische JVM-/TeaVM-Parität.
 
 

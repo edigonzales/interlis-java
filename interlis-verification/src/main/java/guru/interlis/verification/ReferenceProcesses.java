@@ -77,22 +77,29 @@ public final class ReferenceProcesses {
         var export=run(root,List.of(node,root.resolve("tools/reference/export-comparison-cases.cjs").toString(),kind),Duration.ofSeconds(20));require(export.exitCode()==0 && export.stderr().isEmpty(),"Shared case export failed");
         List<JsonObject> input=JsonParser.parseString(export.stdout()).getAsJsonArray().asList().stream().map(JsonElement::getAsJsonObject).toList();
         require(input.size()==(kind.equals("views")?134:117),"Changed shared comparison selection");
-        Path directory=VerificationLayout.forInvocation(root).rootReport("stabilization/"+kind+"-cases");Files.createDirectories(directory);List<Map<String,Object>> results=new ArrayList<>();int number=0,agreements=0,errors=0;
+        Path directory=VerificationLayout.forInvocation(root).rootReport("stabilization/"+kind+"-cases");Files.createDirectories(directory);List<Map<String,Object>> results=new ArrayList<>();int agreements=0,errors=0;
         List<JsonObject> cases=new ArrayList<>(input);
         if(kind.equals("units"))try(var paths=Files.list(root.resolve("testdata/conformance/units"))) {
             for(Path path:paths.filter(p->p.toString().endsWith(".ili")).sorted().toList()) {
-                JsonObject row=new JsonObject();row.addProperty("expected","rejected");JsonArray sources=new JsonArray();JsonObject source=new JsonObject();source.addProperty("sourceId",path.getFileName().toString());source.addProperty("text",Files.readString(path));sources.add(source);row.add("sources",sources);cases.add(row);
+                JsonObject row=new JsonObject();row.addProperty("id","fixture-"+path.getFileName());row.addProperty("expected","rejected");JsonArray sources=new JsonArray();JsonObject source=new JsonObject();source.addProperty("sourceId",path.getFileName().toString());source.addProperty("text",Files.readString(path));sources.add(source);row.add("sources",sources);cases.add(row);
             }
         }
+        Set<String> ids=new HashSet<>();
         for(var row:cases) {
-            Path folder=directory.resolve(String.format("%03d",number++));Files.createDirectories(folder);List<String> paths=new ArrayList<>();Map<String,String> hashes=new LinkedHashMap<>();
+            String id=s(row,"id");
+            require(id.matches("[a-zA-Z0-9][a-zA-Z0-9_.-]*") && ids.add(id),"Invalid or duplicate comparison case: "+id);
+            Path folder=directory.resolve(id);Files.createDirectories(folder);List<String> paths=new ArrayList<>();Map<String,String> hashes=new LinkedHashMap<>();
             for(var source:rows(row,"sources")) {
                 Path file=folder.resolve(Path.of(URI.create(s(source,"sourceId")).getPath()).getFileName());require(!paths.contains(file.toString()),"Duplicate shared source filename");Files.writeString(file,s(source,"text"));paths.add(file.toString());hashes.put(file.toString(),hash(file));
             }
             var ownArgs=new ArrayList<>(List.of("check","--json"));ownArgs.addAll(paths);var current=cli(root,ownArgs);checkPayload(current,!s(row,"expected").equals("succeeded"));
             var refArgs=new ArrayList<>(List.of("-o0"));refArgs.addAll(paths);var ref=reference(root,jar,refArgs);boolean error=processError(ref);if(error)errors++;if(!error&&ref.exitCode()==current.exitCode())agreements++;
             for(var entry:hashes.entrySet())pin(Path.of(entry.getKey()),entry.getValue());
-            results.add(Map.of("id",number-1,"expected",s(row,"expected"),"sourceHashes",hashes,"current",current,"ili2c",ref,"referenceProcessError",error));
+            var result=new LinkedHashMap<String,Object>();
+            result.put("id",id);result.put("expected",s(row,"expected"));result.put("sourceHashes",hashes);
+            if(row.has("roots"))result.put("roots",strings(row.get("roots")));
+            result.put("current",current);result.put("ili2c",ref);result.put("referenceProcessError",error);
+            results.add(result);
         }
         write(output,Map.of("total",cases.size(),"ownExpected",cases.size(),"referenceAgreement",agreements,"referenceProcessErrors",errors,"referenceJarSha256",JAR,"cases",results,
                 "scope","Own expectations verified; reference observations are not normative approvals."));

@@ -38,7 +38,7 @@ async function serve(root) {
       await page.goto(url, {waitUntil: 'load'});
       let timeout;
       const result = await Promise.race([
-        page.evaluate(() => window.webImageProbe),
+        page.evaluate(() => window.runWebImageProbe()),
         new Promise((_, reject) => {
           timeout = setTimeout(() => reject(new Error('Web Image browser probe exceeded 60 seconds')), 60000);
         })

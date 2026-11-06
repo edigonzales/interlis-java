@@ -5035,7 +5035,7 @@
         },
         {
           "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",
-          "sha256": "20e39e09348eff1b154723a8e9b2928ea732417e721a0da0bba553cd425592b3",
+          "sha256": "b58085de539edb7b8cb94f95e9738dfc774de5ed67fb5c663b66cfb61a842b33",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         },
         {
@@ -5145,7 +5145,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "ddd4641220672cf00cbd3967b81cadd61b771d8ce90a1b10c618b88e55b8427f",
+          "sha256": "63c50a122cd19c449855b7f45abed5a13fd3323d7dd9e02213e6e0a3c2a643d1",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
@@ -5201,7 +5201,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "ddd4641220672cf00cbd3967b81cadd61b771d8ce90a1b10c618b88e55b8427f",
+          "sha256": "63c50a122cd19c449855b7f45abed5a13fd3323d7dd9e02213e6e0a3c2a643d1",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
