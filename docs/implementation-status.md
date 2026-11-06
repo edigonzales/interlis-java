@@ -9,6 +9,11 @@ Kein Gesamt-/Release-PASS. Compiler-APE und CosmoGVM-Uhrpatch bleiben pausiert.
 
 # Implementierungsstatus interlis-java
 
+## Compiler GUI Swing
+
+Der separate Produktbranch und die phasenweisen Abnahmen stehen im
+[GUI-Status](implementation/compiler-gui-swing/STATUS.md).
+
 ## Jenesis-Migration B vom 05.11.2026
 
 B-I und B-II beauftragt; B0 (JB-01–03/31/32/37) mit echten gepinnten

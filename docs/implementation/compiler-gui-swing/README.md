@@ -20,6 +20,7 @@ Die enthaltene `review-verdict.schema.json` gehört ebenfalls in dieses Verzeich
 |---|---|
 | `CODEX_STARTPROMPT.md` | Ausführbarer Arbeitsauftrag für Codex, Branchregeln und Abnahmebedingungen |
 | `SPECIFICATION.md` | Produktumfang, Fensteraufbau, Verhalten und 52 Abnahmekriterien |
+| `USER_GUIDE.md` | Bedienung, Build und macOS-App |
 | `ARCHITECTURE.md` | Modulgrenzen, Klassen-/Methodenverantwortung, Datenfluss, Nebenläufigkeit und Packaging |
 | `EXECUTION_PLAN.md` | Sieben sequenzielle Phasen, Tests, Lieferobjekte und unabhängige Gates |
 | `TEST_AND_EVIDENCE_POLICY.md` | Risikobasierte Testauswahl, echte GUI-Prüfungen und Nachweisbindung |

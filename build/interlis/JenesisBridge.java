@@ -136,7 +136,7 @@ public final class JenesisBridge {
         return normalized;
     }
 
-    /** Isolated build-only library/ZIP helper; never part of the ten product projects or their staging. */
+    /** Isolated build-only library/ZIP helper; never part of the product projects or their staging. */
     public static List<Path> buildArchiveTool(Path root,boolean refreshPins) throws Exception {
         Path tool=root.resolve("build/interlis/archive-tool");
         var keys=new LinkedHashMap<>(Make.settings(tool).keys());keys.put("maven.local","");keys.put("module.local","");
@@ -260,7 +260,7 @@ public final class JenesisBridge {
         var results = project.build(selectors);
         if (results.isEmpty()) throw new IllegalStateException("Empty engine result");
         if (!discovered.equals(Set.copyOf(JvmBuildInputs.MODULES)))
-            throw new IllegalStateException("Discovery differs from the ten-module scope: " + discovered);
+            throw new IllegalStateException("Discovery differs from the registered module scope: " + discovered);
         var index = new Properties();
         index.setProperty("scope", request.module() == null ? "all" : request.module());
         index.setProperty("tests", Objects.toString(request.tests(), "normal"));

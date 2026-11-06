@@ -12,7 +12,7 @@ import org.w3c.dom.Document;
 public final class JvmBuildInputs {
     public static final List<String> MODULES = List.of("interlis-model", "interlis-compiler",
             "interlis-workspace", "interlis-repository", "interlis-projection", "interlis-documentation",
-            "interlis-wasm-bridge", "interlis-compiler-cli", "interlis-lsp", "interlis-verification");
+            "interlis-wasm-bridge", "interlis-compiler-cli", "interlis-lsp", "interlis-compiler-gui", "interlis-verification");
 
     public static void requireProject(Path root) throws Exception {
         if (Runtime.version().feature() != 25) throw new IllegalStateException("Java25 required");
@@ -22,7 +22,7 @@ public final class JvmBuildInputs {
         var actual = new ArrayList<String>();
         for (int i = 0; i < nodes.getLength(); i++) actual.add(nodes.item(i).getTextContent());
         if (actual.size() != MODULES.size() || !new HashSet<>(actual).equals(new HashSet<>(MODULES)))
-            throw new IllegalStateException("Expected exactly ten JVM modules: " + actual);
+            throw new IllegalStateException("Unexpected JVM module inventory: " + actual);
         for (String module : MODULES) {
             var child = xml(root.resolve(module + "/pom.xml"));
             var parent = child.getElementsByTagName("parent").item(0);
