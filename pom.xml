@@ -12,6 +12,7 @@
     <module>interlis-projection</module>
     <module>interlis-documentation</module>
     <module>interlis-transfer</module>
+    <module>interlis-xtf23</module>
     <module>interlis-wasm-bridge</module>
     <module>interlis-compiler-cli</module>
     <module>interlis-lsp</module>

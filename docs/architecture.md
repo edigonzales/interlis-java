@@ -21,13 +21,14 @@ Die zugehörigen POMs beschreiben die konkreten Abhängigkeiten und Scopes.
 | `interlis-projection` | compiler, model | Diagramm-DTOs und reine Projektion |
 | `interlis-documentation` | model, projection | Lesende Dokumentationsprojektion und Rendering |
 | `interlis-transfer` | model | Formatunabhängige Transferpläne, Objektwerte und Streaming-Protokoll |
+| `interlis-xtf23` | transfer, model | XML-Adapter für INTERLIS 2.3 |
 | `interlis-compiler-cli` | compiler, model, repository, workspace, projection | CLI, Prozessgrenzen, Präsentation und Ausgabe |
 | `interlis-compiler-gui` | model, compiler, workspace, repository | Desktop-Modellprüfung, Diagnosen, Abhängigkeiten und Repositoryexplorer |
 | `interlis-lsp` | workspace, compiler, projection, model, repository, documentation | LSP-/Editorhost, Scheduling und Ausgaben |
 | `interlis-wasm-bridge` | workspace, compiler, projection, model | Gemeinsames JSON-Protokoll und Sitzungen |
 | `interlis-verification` | compiler, model, workspace, repository, wasm-bridge | Prüfwerkzeuge ausserhalb der SDK-Auslieferung |
 
-Alle zwölf JVM-Module werden über denselben Builder erzeugt. Die
+Alle dreizehn JVM-Module werden über denselben Builder erzeugt. Die
 jeweils ausgewählten JPMS-Closures stehen im
 [Buildvertrag](development/build.md). TeaVM und Web Image konsumieren
 denselben expliziten JVM-Snapshot. Browser und Editor teilen den neutralen
