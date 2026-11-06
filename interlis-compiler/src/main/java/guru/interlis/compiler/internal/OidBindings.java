@@ -76,7 +76,7 @@ final class OidBindings {
                 ? bindOidRules(state.baseOf(id), bound, active) : List.of();
         List<guru.interlis.model.OidRule> rules = new ArrayList<>(inherited);
         if (!(symbol instanceof TopicSymbol) && rules.isEmpty()) {
-            SymbolId topic = g.scopeRoot(id);
+            SymbolId topic = g.paths.scopeRoot(id);
             if (topic != null && !topic.equals(id) && state.symbol(topic) instanceof TopicSymbol)
                 bindOidRules(topic, bound, active).stream().filter(r -> !r.basket()).forEach(rules::add);
         }

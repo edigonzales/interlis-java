@@ -215,7 +215,7 @@ final class MetadataBindings {
             var required = predefined(decl, ref.axis().isPresent() ? "INTERLIS.COORDSYSTEM" : "INTERLIS.REFSYSTEM", Set.of(SymbolKind.CLASS)).orElseThrow();
             if (!specializes(cls, required)) { g.emitRule(decl, "reference-system object has the wrong scalar/coordinate family", "REFSYSTEM_OBJECT"); return; }
             if (ref.axis().isPresent()) {
-                var attribute = g.findMember(cls, "Axis").map(state::symbol).orElse(null);
+                var attribute = g.paths.findMember(cls, "Axis").map(state::symbol).orElse(null);
                 if (attribute instanceof AttributeSymbol a && g.types.effectiveDescriptor(a.declaredType()) instanceof CollectionType list) {
                     if (list.cardinality().upper() instanceof CardinalityUpper.Finite max && java.math.BigInteger.valueOf(ref.axis().getAsInt()).compareTo(max.value()) > 0)
                         g.emitRule(decl, "reference-system axis is outside the declared axis list", "REFSYSTEM_AXIS");

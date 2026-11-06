@@ -287,16 +287,16 @@ final class TypeBindings {
             return type;
         }
         try {
-            decl.owner().flatMap(g::objectInheritanceBase).flatMap(base->g.findMember(base,decl.name()))
+            decl.owner().flatMap(g::objectInheritanceBase).flatMap(base->g.paths.findMember(base,decl.name()))
                     .filter(base->state.symbol(base) instanceof AttributeSymbol || index.byId(base).filter(d->d.kind()==SymbolKind.ATTRIBUTE).isPresent())
                     .ifPresent(base->state.bindBase(decl.id(),base));
             if (syntax.type() instanceof GenericTypeSyntax inferred && "INFERRED".equals(inferred.name())) {
-                var result = g.buildExpression(syntax.derivations().getFirst(), decl.owner().orElseThrow());
+                var result = g.expressions.buildExpression(syntax.derivations().getFirst(), decl.owner().orElseThrow());
                 inferredDerivations.put(decl.id(), List.of(result.id()));
                 type = result.typeId();
             } else if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name())) {
                 Optional<SymbolId> base = decl.owner().flatMap(g::objectInheritanceBase)
-                        .flatMap(owner -> g.findMember(owner, decl.name()));
+                        .flatMap(owner -> g.paths.findMember(owner, decl.name()));
                 DeclInfo inherited = base.flatMap(index::byId).orElse(null);
                 if (inherited != null && inherited.kind() == SymbolKind.ATTRIBUTE) {
                     type = attributeType(inherited);
@@ -312,7 +312,7 @@ final class TypeBindings {
                 type = buildType(syntax.type(), decl.id(), decl.sourceId());
                 TypeDescriptor inheritedGeometry = null;
                 if (decl.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-                    var base = decl.owner().flatMap(g::objectInheritanceBase).flatMap(owner -> g.findMember(owner, decl.name()));
+                    var base = decl.owner().flatMap(g::objectInheritanceBase).flatMap(owner -> g.paths.findMember(owner, decl.name()));
                     TypeId baseType = base.flatMap(index::byId).filter(d -> d.kind() == SymbolKind.ATTRIBUTE)
                             .map(this::attributeType).orElseGet(() -> base.map(state::symbol)
                                     .filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
@@ -435,7 +435,7 @@ final class TypeBindings {
                         diagnostics.emitRule(declaration, "ATTRIBUTE OF @ argument must describe objects, classes or an attribute path", "ATTRIBUTE_ARGUMENT_TYPE");
                     owner = Optional.of(new guru.interlis.model.AttributePathType.Argument(context, position));
                 }
-                Optional<GraphBuilder.ExpressionResult> ownerClass = path.ownerClass().map(expression -> g.buildExpression(expression, index.byId(context).orElseThrow().owner().orElse(context)));
+                Optional<ExpressionBindings.ExpressionResult> ownerClass = path.ownerClass().map(expression -> g.expressions.buildExpression(expression, index.byId(context).orElseThrow().owner().orElse(context)));
                 List<TypeId> restrictions = path.restrictions().stream().map(t -> buildType(t, context, source)).toList();
                 if (ownerClass.isPresent() && !(effectiveDescriptor(ownerClass.orElseThrow().typeId()) instanceof ClassValueType))
                     diagnostics.emitRule(index.byId(context).orElseThrow(), "ATTRIBUTE OF requires a class-valued attribute path", "ATTRIBUTE_PATH_TYPE");

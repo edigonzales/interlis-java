@@ -238,7 +238,7 @@ final class GenericBindings {
             for (Symbol symbol : state.symbolsInBuildOrder()) if (symbol instanceof StructureSymbol candidate
                     && visible.contains(index.modelOfSymbol(candidate.id()).orElse(null))
                     && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> g.baseChain(candidate.id()).contains(root)))
-                    && (!(state.symbol(g.scopeRoot(candidate.id())) instanceof TopicSymbol) || g.baseChain(topic).contains(g.scopeRoot(candidate.id()))))
+                    && (!(state.symbol(g.paths.scopeRoot(candidate.id())) instanceof TopicSymbol) || g.baseChain(topic).contains(g.paths.scopeRoot(candidate.id()))))
                 collectViewableGenerics(candidate.id(), visible, topic, used, referenceUses, seen);
         }
     }

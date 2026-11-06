@@ -256,7 +256,7 @@ final class LineForms {
         state.storeExpression(new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
         TypeId bool = g.types.nextTypeId(); state.storeType(new BooleanType(bool, structure.origin()));
         ExpressionId call = new ExpressionId(line.value() + ":isStart");
-        state.storeExpression(new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(g.builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
+        state.storeExpression(new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(g.expressions.builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
         SymbolId constraint = new SymbolId(line.value() + ":startConstraint");
         Origin constraintOrigin = structure.origin() instanceof Origin.PredefinedOrigin predefined
                 ? new Origin.PredefinedOrigin(predefined.language(), predefined.key() + ".StartSegment")

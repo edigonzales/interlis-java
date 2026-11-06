@@ -32,7 +32,7 @@ final class StructureBindings {
 
     SymbolId target(TypeDescriptor type) {
         if(type instanceof CollectionType collection)type=g.types.effectiveDescriptor(collection.elementType());
-        return type instanceof StructureValueType structure?g.commonObjectScope(structure.targetRoots()):null;
+        return type instanceof StructureValueType structure?g.paths.commonObjectScope(structure.targetRoots()):null;
     }
 
     void validate() {
@@ -66,15 +66,15 @@ final class StructureBindings {
         for(SymbolId root:type.targetRoots())
             if(state.symbol(root) instanceof StructureSymbol structure && !structure.header().has(Modifier.ABSTRACT))return true;
         var visible=g.generics.importedModels(g.index.modelOfSymbol(declaration.id()).orElseThrow());
-        SymbolId topic=g.scopeRoot(declaration.id());
+        SymbolId topic=g.paths.scopeRoot(declaration.id());
         for(Symbol symbol:state.symbolsInBuildOrder()) {
             g.checkWork();
             if(!(symbol instanceof StructureSymbol structure) || structure.header().has(Modifier.ABSTRACT))continue;
             if(!(structure.origin() instanceof Origin.PredefinedOrigin)
                     && !visible.contains(g.index.modelOfSymbol(structure.id()).orElse(null)))continue;
-            SymbolId candidateTopic=g.scopeRoot(structure.id());
+            SymbolId candidateTopic=g.paths.scopeRoot(structure.id());
             boolean available=!(state.symbol(candidateTopic) instanceof TopicSymbol) || Objects.equals(candidateTopic,topic)
-                    || type.targetRoots().stream().anyMatch(root -> Objects.equals(g.scopeRoot(root),candidateTopic));
+                    || type.targetRoots().stream().anyMatch(root -> Objects.equals(g.paths.scopeRoot(root),candidateTopic));
             if(available && type.targetRoots().stream().anyMatch(root -> g.targetSpecializes(structure.id(),root)))return true;
         }
         return false;

@@ -70,7 +70,7 @@ final class FormattedTypeBindings {
                 // INHERITANCE keeps the layout and provenance, but uses the effective
                 // attribute of the specialized structure (including its precision).
                 Optional<SymbolId> attribute = part.attribute().isEmpty() ? Optional.empty()
-                        : g.findMember(structure.orElseThrow(), state.symbol(part.attribute().orElseThrow()).name().value());
+                        : g.paths.findMember(structure.orElseThrow(), state.symbol(part.attribute().orElseThrow()).name().value());
                 parts.add(new FormattedType.Part(attribute, part.width(), part.format(), part.literal(), part.origin()));
             }
         } else if (base != null) errors.add(diagnostics.emitRule(owner, "extended FORMAT must retain its inherited prefix", "FORMAT_INHERITANCE"));
@@ -82,7 +82,7 @@ final class FormattedTypeBindings {
                     errors.add(diagnostics.emitRule(owner, "FORMAT separator must not start with a digit", "FORMAT_SEPARATOR"));
             } else {
                 var name = part.attribute().orElseThrow();
-                attribute = structure.flatMap(st -> g.findMember(st, name.text()));
+                attribute = structure.flatMap(st -> g.paths.findMember(st, name.text()));
                 g.references.recordReference(owner, name, attribute.orElse(null), ReferenceUsage.TYPE_USE);
                 if (attribute.isEmpty()) errors.add(diagnostics.unresolved(name));
                 attribute.flatMap(index::byId).ifPresent(g.types::attributeType);
@@ -90,8 +90,8 @@ final class FormattedTypeBindings {
                 if (part.format().isPresent()) {
                     nested = bindFormatName(context, part.format().orElseThrow(), Set.of(SymbolKind.DOMAIN));
                     TypeDescriptor nestedType = nested.map(state::declaredType).map(g.types::effectiveDescriptor).orElse(null);
-                    SymbolId selected = value instanceof CollectionType c && !g.isMany(c.cardinality()) ? g.structures.target(c) : g.structures.target(value);
-                    if (value instanceof CollectionType c && g.isMany(c.cardinality())) selected = null;
+                    SymbolId selected = value instanceof CollectionType c && !g.paths.isMany(c.cardinality()) ? g.structures.target(c) : g.structures.target(value);
+                    if (value instanceof CollectionType c && g.paths.isMany(c.cardinality())) selected = null;
                     if (!(nestedType instanceof FormattedType f) || f.structure().isEmpty() || selected == null
                             || !g.targetSpecializes(selected, f.structure().orElseThrow()))
                         errors.add(diagnostics.emitRule(owner, "nested FORMAT requires a compatible singleton structure", "FORMAT_ATTRIBUTE"));

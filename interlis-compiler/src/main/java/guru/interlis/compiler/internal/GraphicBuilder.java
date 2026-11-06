@@ -55,7 +55,7 @@ final class GraphicBuilder {
     }
 
     private ExpressionId condition(DeclInfo decl,ExpressionSyntax syntax) {
-        var result=g.buildExpression(syntax,decl.id());
+        var result=g.expressions.buildExpression(syntax,decl.id());
         if(!result.error() && !g.types.isBoolean(result.typeId())) g.emitRule(decl,"graphic condition must be Boolean","GRAPHIC_CONDITION");
         return result.id();
     }
@@ -249,7 +249,7 @@ final class GraphicBuilder {
         if (value instanceof DrawingRuleSymbol.ExpressionValue expression) {
             var actual = state.expression(expression.expression());
             checkMandatoryValue(decl,parameter,actual);
-            if (actual.typeState() != ExpressionTypeState.ERROR && !g.valueAssignable(actual, expected.id()))
+            if (actual.typeState() != ExpressionTypeState.ERROR && !g.expressions.valueAssignable(actual, expected.id()))
                 g.emitRule(decl, "incompatible signature parameter assignment", "GRAPHIC_PARAMETER_TYPE");
         } else if (value instanceof DrawingRuleSymbol.MetaObjectValue object && expected instanceof MetaObjectType type) {
             var actual = object.object().map(state::symbol).filter(MetaObjectSymbol.class::isInstance)
@@ -280,15 +280,15 @@ final class GraphicBuilder {
             return new DrawingRuleSymbol.MetaObjectValue(target);
         }
         if(syntax instanceof GraphicDeclarationSyntax.ExpressionValue e) {
-            var expression=g.buildExpression(e.expression(),decl.id());
-            if(expected!=null)expression=g.contextualValue(expression,expected.id(),decl.id());
+            var expression=g.expressions.buildExpression(e.expression(),decl.id());
+            if(expected!=null)expression=g.expressions.contextualValue(expression,expected.id(),decl.id());
             if(!expression.error() && parameter.isPresent())checkMandatoryValue(decl,(ParameterSymbol)state.symbol(parameter.orElseThrow()),state.expression(expression.id()));
             if(expected!=null && !expression.error() && !g.types.assignable(expression.typeId(),expected.id()))
                 g.emitRule(decl,"incompatible signature parameter assignment","GRAPHIC_PARAMETER_TYPE");
             return new DrawingRuleSymbol.ExpressionValue(expression.id());
         }
         var according=(GraphicDeclarationSyntax.AccordingValue)syntax;
-        var selector=g.buildExpression(according.selector(),decl.id());
+        var selector=g.expressions.buildExpression(according.selector(),decl.id());
         var type=g.types.effectiveDescriptor(selector.typeId());
         if(!(type instanceof EnumerationType)) g.emitRule(decl,"ACCORDING requires an enumeration attribute","GRAPHIC_ENUM_SELECTOR");
         List<DrawingRuleSymbol.EnumAssignment> cases=new ArrayList<>();
@@ -312,7 +312,7 @@ final class GraphicBuilder {
         for(var symbol:state.symbolsInBuildOrder()) if(symbol instanceof GraphicSymbol graphic && graphic.basis().isPresent()) {
             var decl=g.index.byId(graphic.id()).orElseThrow();
             for (var id : graphic.rules()) responsibility(g.index.byId(id).orElseThrow(), (DrawingRuleSymbol)state.symbol(id));
-            var source=g.scopeRoot(graphic.id()); var target=g.scopeRoot(graphic.basis().get());
+            var source=g.paths.scopeRoot(graphic.id()); var target=g.paths.scopeRoot(graphic.basis().get());
             if(state.symbol(source) instanceof TopicSymbol && state.symbol(target) instanceof TopicSymbol
                     && !g.isTopicSubtype(source,target) && !g.topicDependencies(source).contains(target))
                 g.emitRule(decl,"graphic basis topic requires DEPENDS ON","GRAPHIC_TOPIC_DEPENDENCY");

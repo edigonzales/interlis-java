@@ -20,10 +20,10 @@ final class FunctionBindings {
     /** Bind actuals in dependency order while preserving their source positions.
      * A formal ATTRIBUTE OF may refer to a later formal; traversal is iterative
      * and memoized, with no current-call state outside this invocation. */
-    List<GraphBuilder.ExpressionResult> arguments(FunctionSymbol function,List<ExpressionSyntax> syntax,
+    List<ExpressionBindings.ExpressionResult> arguments(FunctionSymbol function,List<ExpressionSyntax> syntax,
             DeclInfo owner,BuiltinFunctions.Rule rule) {
-        if(function==null)return syntax.stream().map(s->g.buildExpression(s,owner.id())).toList();
-        var values=new GraphBuilder.ExpressionResult[syntax.size()];
+        if(function==null)return syntax.stream().map(s->g.expressions.buildExpression(s,owner.id())).toList();
+        var values=new ExpressionBindings.ExpressionResult[syntax.size()];
         var arguments=Arrays.asList(values);
         for(int i=0;i<values.length;i++) {
             g.checkWork();var chain=new ArrayList<Integer>();var active=new HashSet<Integer>();int current=i;
@@ -31,7 +31,7 @@ final class FunctionBindings {
                 g.checkWork();
                 if(!active.add(current)) {
                     var cause=g.emitRule(owner,"cyclic actual attribute argument dependency","FUNCTION_ARGUMENT_CYCLE",syntax.get(current).range());
-                    values[current]=g.failedFunctionArgument(syntax.get(current).range(),List.of(cause));break;
+                    values[current]=g.expressions.failedFunctionArgument(syntax.get(current).range(),List.of(cause));break;
                 }
                 chain.add(current);int dependency=dependency(function,current);
                 if(dependency<0||dependency>=values.length||values[dependency]!=null)break;
@@ -42,13 +42,13 @@ final class FunctionBindings {
                 var formal=position<function.parameters().size()?g.types.effectiveDescriptor(function.parameters().get(position).typeId()):null;
                 int dependency=dependency(function,position);
                 if(dependency>=0&&dependency<values.length&&values[dependency]!=null&&values[dependency].error()) {
-                    values[position]=g.blockedFunctionArgument(syntax.get(position).range(),values[dependency],owner);continue;
+                    values[position]=g.expressions.blockedFunctionArgument(syntax.get(position).range(),values[dependency],owner);continue;
                 }
                 var expression=syntax.get(position);
                 while(expression instanceof ParenthesizedExpressionSyntax parenthesized) {g.checkWork();expression=parenthesized.inner();}
                 var roots=formal instanceof AttributePathType attribute?argumentRoots(attribute,position,function,arguments,rule):List.<SymbolId>of();
                 values[position]=expression instanceof AttributeConstantExpressionSyntax constant&&constant.viewable().isEmpty()&&roots.size()==1
-                        ?g.contextualAttributeConstant(constant,owner.id(),roots.getFirst()):g.buildExpression(syntax.get(position),owner.id());
+                        ?g.expressions.contextualAttributeConstant(constant,owner.id(),roots.getFirst()):g.expressions.buildExpression(syntax.get(position),owner.id());
             }
         }
         return List.copyOf(arguments);
@@ -65,7 +65,7 @@ final class FunctionBindings {
      * only. Undefined or unrestricted object roots retain their formal symbolic
      * dependency, with the actual still reachable through the call's children.
      * The declaration stays immutable; no external function is evaluated. */
-    TypeId returnType(FunctionSymbol function,List<GraphBuilder.ExpressionResult> arguments,SourceRange range) {
+    TypeId returnType(FunctionSymbol function,List<ExpressionBindings.ExpressionResult> arguments,SourceRange range) {
         var descriptor=g.types.effectiveDescriptor(function.returnType());
         if(!(descriptor instanceof AttributePathType attribute)
                 ||!(attribute.owner().orElse(null) instanceof AttributePathType.Argument dependency)
@@ -88,13 +88,13 @@ final class FunctionBindings {
     }
 
     private List<SymbolId> argumentRoots(AttributePathType attribute,int position,FunctionSymbol function,
-            List<GraphBuilder.ExpressionResult> arguments,BuiltinFunctions.Rule rule) {
+            List<ExpressionBindings.ExpressionResult> arguments,BuiltinFunctions.Rule rule) {
         if(rule==BuiltinFunctions.Rule.AREAS_ATTRIBUTE&&position==2&&arguments.size()>1&&arguments.get(1)!=null&&undefined(arguments.get(1)))
             return roots(arguments.getFirst().typeId(),new HashSet<>());
         return ownerRoots(attribute.owner(),function,arguments,new HashSet<>());
     }
 
-    Result bind(FunctionSymbol function,List<GraphBuilder.ExpressionResult> arguments,DeclInfo owner,
+    Result bind(FunctionSymbol function,List<ExpressionBindings.ExpressionResult> arguments,DeclInfo owner,
             SourceRange range,BuiltinFunctions.Rule rule) {
         boolean error=false;
         var paths=new LinkedHashMap<Integer,FunctionCallExpression.ArgumentPath>();
@@ -120,7 +120,7 @@ final class FunctionBindings {
                 if(!(value instanceof LiteralExpression literal) || literal.textValue().isEmpty()) {
                     error=true;g.emitRule(owner,"area path argument requires a constant TEXT path","FUNCTION_PATH_CONSTANT",value.range());continue;
                 }
-                var fragment=g.parsePathLiteral(literal.range(),owner.language());
+                var fragment=g.paths.parsePathLiteral(literal.range(),owner.language());
                 if(!fragment.consumedEntireFragment() || fragment.diagnostics().stream().anyMatch(d->d.severity()==guru.interlis.diagnostics.Severity.ERROR)
                         || !(fragment.root() instanceof PathExpressionSyntax path)) { error=true;continue; }
                 var dependency=paths.get(root);
@@ -129,9 +129,9 @@ final class FunctionBindings {
                 TypeId expected=areaPathType(i,owner.language());
                 Optional<ExpressionId> binding=Optional.empty();
                 if(!roots.isEmpty()) {
-                    SymbolId scope=g.commonObjectScope(roots);
+                    SymbolId scope=g.paths.commonObjectScope(roots);
                     if(scope==null) {error=true;g.emitRule(owner,"path roots have no common object context","FUNCTION_PATH_OWNER",literal.range());continue;}
-                    var bound=g.valuePath(path,owner.id(),scope);binding=Optional.of(bound.id());
+                    var bound=g.paths.valuePath(path,owner.id(),scope);binding=Optional.of(bound.id());
                     if(bound.error())error=true;
                     else if(!assign(bound.typeId(),expected)) {error=true;g.emitRule(owner,"area path has an incompatible value type","FUNCTION_PATH_TYPE",literal.range());}
                 }
@@ -146,14 +146,14 @@ final class FunctionBindings {
     private TypeId areaPathType(int index,LanguageVersion language) {
         // Reuse the ATTRIBUTE signatures of the same operation, not a second type family.
         var signature=BuiltinFunctions.find("areAreas").orElseThrow();
-        var formal=g.builtinDeclaration(signature,language).parameters().get(index).typeId();
+        var formal=g.expressions.builtinDeclaration(signature,language).parameters().get(index).typeId();
         return ((AttributePathType)g.types.effectiveDescriptor(formal)).restrictions().getFirst();
     }
 
-    private boolean undefined(GraphBuilder.ExpressionResult argument) { return guru.interlis.model.internal.TypeCompatibility.isUndefined(g.types.effectiveDescriptor(argument.typeId())); }
+    private boolean undefined(ExpressionBindings.ExpressionResult argument) { return guru.interlis.model.internal.TypeCompatibility.isUndefined(g.types.effectiveDescriptor(argument.typeId())); }
 
     private List<SymbolId> ownerRoots(Optional<AttributePathType.Owner> owner,FunctionSymbol function,
-            List<GraphBuilder.ExpressionResult> arguments,Set<TypeId> visited) {
+            List<ExpressionBindings.ExpressionResult> arguments,Set<TypeId> visited) {
         if(owner.isEmpty())return List.of();
         return switch(owner.orElseThrow()) {
             case AttributePathType.Viewable v -> List.of(v.target());
@@ -164,7 +164,7 @@ final class FunctionBindings {
     }
 
     private boolean attributeMatches(TypeId actual,AttributePathType formal,List<SymbolId> owners,
-            FunctionSymbol function,List<GraphBuilder.ExpressionResult> arguments) {
+            FunctionSymbol function,List<ExpressionBindings.ExpressionResult> arguments) {
         if(!(g.types.effectiveDescriptor(actual) instanceof AttributePathType attribute))return false;
         boolean sameDependentValue=attribute.owner().orElse(null) instanceof AttributePathType.ClassAttribute path
                 &&formal.owner().orElse(null) instanceof AttributePathType.Argument argument

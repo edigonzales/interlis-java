@@ -111,7 +111,7 @@ final class PredefinedTemporal {
             members.add(attribute(context, h, "Month", number(context, "1", "12", "M", false, null), true, false, Optional.empty(), 1));
             members.add(attribute(context, h, "Day", number(context, "1", "31", "d", false, null), true, false, Optional.empty(), 2));
         } else {
-            Optional<SymbolId> override = name.equals("UTC") ? g.findMember(base.orElseThrow(), "Hours") : Optional.empty();
+            Optional<SymbolId> override = name.equals("UTC") ? g.paths.findMember(base.orElseThrow(), "Hours") : Optional.empty();
             members.add(attribute(context, h, "Hours", number(context, "0", "23", "h", true,
                     name.equals("TimeOfDay") ? null : "UTC"), name.equals("GregorianDateTime"), false, override, 0));
             if (!name.equals("UTC")) {
@@ -173,7 +173,7 @@ final class PredefinedTemporal {
         field(parts, structure, "Day", context.language() == LanguageVersion.ILI24 ? 2 : 0, origin);
     }
     private void field(List<FormattedType.Part> parts, SymbolId structure, String name, int width, Origin origin) {
-        parts.add(new FormattedType.Part(Optional.of(g.findMember(structure, name).orElseThrow()),
+        parts.add(new FormattedType.Part(Optional.of(g.paths.findMember(structure, name).orElseThrow()),
                 width == 0 ? Optional.empty() : Optional.of(BigInteger.valueOf(width)), Optional.empty(), "", origin));
     }
     private void literal(List<FormattedType.Part> parts, String value, Origin origin) {

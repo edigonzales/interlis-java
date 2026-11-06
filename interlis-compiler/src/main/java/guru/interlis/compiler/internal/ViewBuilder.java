@@ -149,7 +149,7 @@ final class ViewBuilder {
                         case UNION -> formation = Optional.of(new ViewSymbol.Union(formationBases));
                         case AGGREGATION -> {
                             List<ExpressionId> equal = new ArrayList<>();
-                            for (var path : f.paths()) equal.add(g.buildExpression(path, decl.id()).id());
+                            for (var path : f.paths()) equal.add(g.expressions.buildExpression(path, decl.id()).id());
                             formation = Optional.of(new ViewSymbol.Aggregation(formationBases.getFirst(), equal));
                             var basis = (ViewSymbol.Base)state.symbol(formationBases.getFirst());
                             TypeId element = g.types.nextTypeId();
@@ -235,7 +235,7 @@ final class ViewBuilder {
                 }
             }
             for (var selection : syntax.selections()) {
-                var expression = g.buildExpression(selection, decl.id()); selections.add(expression.id());
+                var expression = g.expressions.buildExpression(selection, decl.id()); selections.add(expression.id());
                 if (!decl.modifiers().contains(Modifier.ABSTRACT)) validateConcreteExpression(decl, expression.id(), new HashSet<>());
                 if (!expression.error() && !g.types.isBoolean(expression.typeId()))
                     g.emitTypeMismatch(decl.sourceId(), selection.range(), g.types.typeName(expression.typeId()), "BOOLEAN");
@@ -298,7 +298,7 @@ final class ViewBuilder {
     private void includeRole(DeclInfo owner,ViewSymbol.Base basis,ViewDeclarationSyntax.AllOf all,
             RoleSymbol role,List<SymbolId> result,List<SymbolId> scope) {
         var id=new SymbolId(owner.id().value()+":all:"+basis.id().value()+":"+role.id().value());
-        var type=g.roleValueType(role,owner.id(),all.base().range());
+        var type=g.paths.roleValueType(role,owner.id(),all.base().range());
         var modifiers=new HashSet<>(role.header().modifiers());modifiers.retainAll(Set.of(Modifier.ABSTRACT,Modifier.FINAL));
         var header=new SymbolHeader(id,SymbolKind.ATTRIBUTE,role.name(),Optional.of(owner.id()),result.size(),
                 new Origin.DerivedOrigin(role.id(),DerivationKind.ALIAS),Optional.empty(),owner.language(),
@@ -314,13 +314,13 @@ final class ViewBuilder {
 
     /** The same decomposition binding is used by view formations and factors. */
     Inspected bindInspection(DeclInfo decl, SymbolId source, PathExpressionSyntax path, boolean area) {
-        var expression = g.inspectionPath(path, decl.id(), source);
+        var expression = g.paths.inspectionPath(path, decl.id(), source);
         if (expression.error()) return null;
         TypeDescriptor descriptor = g.types.effectiveDescriptor(expression.typeId());
         SymbolId parent = source;
         if (path.segments().size() > 1) {
             var prefix = new PathExpressionSyntax(path.id(), path.range(), path.segments().subList(0, path.segments().size()-1));
-            var result = g.inspectionPath(prefix, decl.id(), source);
+            var result = g.paths.inspectionPath(prefix, decl.id(), source);
             if (result.error()) return null;
             var type = g.types.effectiveDescriptor(result.typeId());
             if (type instanceof CollectionType c) type = g.types.effectiveDescriptor(c.elementType());
@@ -341,7 +341,7 @@ final class ViewBuilder {
         return new Inspected(expression.id(), element, parent, area);
     }
 
-    GraphBuilder.ExpressionResult factor(ExpressionId id, InspectionExpressionSyntax syntax, SymbolId owner) {
+    ExpressionBindings.ExpressionResult factor(ExpressionId id, InspectionExpressionSyntax syntax, SymbolId owner) {
         DeclInfo decl = g.index.byId(owner).orElseThrow();
         Optional<SymbolId> view = Optional.empty(); SymbolId source = null; Inspected inspected = null;
         if (syntax.view().isPresent()) {
@@ -375,15 +375,15 @@ final class ViewBuilder {
                 }
             }
         }
-        var restriction = syntax.restriction().map(r -> g.buildExpression(r, owner));
+        var restriction = syntax.restriction().map(r -> g.expressions.buildExpression(r, owner));
         if (inspected == null) {
             var diagnostic = g.emitRule(decl, "factor requires a bound inspection", "INSPECTION_FACTOR_TARGET");
             TypeId type = g.types.nextTypeId(); state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
-            state.storeExpression(new ErrorExpression(id, type, ExpressionTypeState.ERROR, syntax.range(), restriction.stream().map(GraphBuilder.ExpressionResult::id).toList(), List.of(diagnostic)));
-            return new GraphBuilder.ExpressionResult(id, type, true);
+            state.storeExpression(new ErrorExpression(id, type, ExpressionTypeState.ERROR, syntax.range(), restriction.stream().map(ExpressionBindings.ExpressionResult::id).toList(), List.of(diagnostic)));
+            return new ExpressionBindings.ExpressionResult(id, type, true);
         }
         factorSources.computeIfAbsent(decl.id(), ignored -> new LinkedHashSet<>()).add(view.orElse(source));
-        boolean error = restriction.map(GraphBuilder.ExpressionResult::error).orElse(false);
+        boolean error = restriction.map(ExpressionBindings.ExpressionResult::error).orElse(false);
         if (restriction.isPresent() && !error) {
             TypeId expected = g.types.nextTypeId();
             state.storeType(new ObjectArgumentType(expected, decl.origin(), Optional.of(source), List.of(), false));
@@ -395,12 +395,12 @@ final class ViewBuilder {
         TypeId element = g.types.nextTypeId(); state.storeType(new StructureValueType(element, decl.origin(), Optional.of(inspected.element()), List.of()));
         TypeId bag = g.types.nextTypeId(); state.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG, Cardinality.unboundedFrom(0), element));
         state.storeExpression(new InspectionExpression(id, bag, error ? ExpressionTypeState.ERROR : ExpressionTypeState.RESOLVED,
-                syntax.range(), view, source, inspected.element(), inspected.path(), restriction.map(GraphBuilder.ExpressionResult::id), inspected.area()));
-        return new GraphBuilder.ExpressionResult(id, bag, error);
+                syntax.range(), view, source, inspected.element(), inspected.path(), restriction.map(ExpressionBindings.ExpressionResult::id), inspected.area()));
+        return new ExpressionBindings.ExpressionResult(id, bag, error);
     }
 
     private void requireDependency(DeclInfo decl, SymbolId source) {
-        SymbolId topic = g.scopeRoot(decl.id()), target = g.scopeRoot(source);
+        SymbolId topic = g.paths.scopeRoot(decl.id()), target = g.paths.scopeRoot(source);
         if (g.index.byId(topic).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
                 && g.index.byId(target).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
                 && !g.isTopicSubtype(topic, target) && !g.topicDependencies(topic).contains(target))
@@ -508,11 +508,11 @@ final class ViewBuilder {
         }
         for (Symbol symbol : state.symbolsInBuildOrder()) if (symbol instanceof ViewSymbol view) {
             var decl = g.index.byId(view.id()).orElseThrow();
-            SymbolId topic = g.scopeRoot(view.id());
+            SymbolId topic = g.paths.scopeRoot(view.id());
             if (!(state.symbol(topic) instanceof TopicSymbol)) continue;
             for (var id : view.bases()) {
                 var base = (ViewSymbol.Base)state.symbol(id);
-                SymbolId target = g.scopeRoot(base.target());
+                SymbolId target = g.paths.scopeRoot(base.target());
                 if (state.symbol(target) instanceof TopicSymbol && !g.isTopicSubtype(topic, target)
                         && !g.topicDependencies(topic).contains(target))
                     g.emitRule(decl, "view basis topic requires DEPENDS ON", "VIEW_TOPIC_DEPENDENCY");
