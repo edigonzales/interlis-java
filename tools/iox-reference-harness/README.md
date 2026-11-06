@@ -75,7 +75,8 @@ python3 -B tools/iox-reference-harness/test_run.py
 
 Der [Fallkatalog](../../testdata/reference/suite-interlis/cases.json) erschliesst
 223 Originalfälle aus [suite-interlis](https://github.com/geostandards-ch/suite-interlis).
-Lege den gepinnten Checkout ausserhalb des Produktrepositorys an.
+Am Pin ist keine eigenständige Lizenzdatei verzeichnet. Lege den
+gepinnten Checkout ausserhalb des Produktrepositorys an.
 
 ```sh
 git clone --no-checkout https://github.com/geostandards-ch/suite-interlis.git /tmp/suite-interlis
@@ -97,6 +98,34 @@ Originalprofilen, darunter ilivalidator 1.11.14.
 folgende) zu. Bei mehreren Phasen braucht jede ihren eigenen Nachweis.
 Für P4.3 werden getrennte XTF-2.4-Fälle nach versionsspezifischer Prüfung
 benötigt. Ein erfolgreicher Inventarlauf bestätigt Quellen und Erwartungen.
+
+### Einzelne Originalfälle mit ilivalidator ausführen
+
+```sh
+python3 -B tools/iox-reference-harness/suite_run.py \
+  --checkout /tmp/suite-interlis --archive /absolute/ilivalidator-1.15.0.zip \
+  --case RXW.T02b --case RKo.T06c --output /tmp/suite-interlis-run
+python3 -B tools/iox-reference-harness/test_suite_result.py
+```
+
+Der Runner verlangt das lokale ZIP aus [dem bestehenden Lock](legacy-lock.json).
+Er prüft den Git-Pin und die Eingabehashes der ausgewählten Fälle. Pro Fall
+startet er ilivalidator 1.15.0 mit `-Xmx2g`, einem isolierten Arbeitsverzeichnis
+und ausschliesslich den geprüften lokalen Modellen. Das neue Ausgabeverzeichnis
+enthält `report.json` und die gehashten Rohstreams je ausgeführtem Fall.
+Ohne `--output` wird ein temporäres Verzeichnis angelegt. Pro Aufruf sind bis
+zu zwölf IDs und pro Prozess bis zu 30 Sekunden vorgesehen.
+
+Der Bericht trennt die Upstream-Erwartung, den Normbezug, die tatsächliche
+Beobachtung und den Vergleich. Eine bestätigte Akzeptanz setzt beide
+Validierungspässe voraus. Bei einer erwarteten Ablehnung müssen der
+kontrollierte Prozessabschluss und die fallspezifische Diagnose
+übereinstimmen. Für weitere Negativfälle kann der Runner den Prozess
+beobachten, auch wenn die fachliche Ablehnung noch keinen Vergleichsmassstab
+für 1.15.0 hat. Bei `RHE.T01a` endet 1.15.0 beispielsweise bereits bei der
+Modellerkennung. Der JVM-Exit allein bestätigt die beabsichtigte
+Headerprüfung nicht. Der Runner liefert Exit 0, wenn alle ausgewählten
+Fälle `PASS` erreichen.
 
 ## Korpus und beobachteter Lauf
 
