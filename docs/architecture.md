@@ -32,6 +32,13 @@ jeweils ausgewählten JPMS-Closures stehen im
 denselben expliziten JVM-Snapshot. Browser und Editor teilen den neutralen
 Renderer unter `frontend/diagram-ui`.
 
+Artefaktkoordinate, Dateiname und Modulname sind getrennte Identitäten.
+Die JVM-Deskriptoren bestimmen die tatsächlichen Packageexports.
+`guru.interlis.model.internal` ist ausschliesslich für das Compilermodul
+exportiert. Die Gson-Reflection ist für LSP- und interne
+Verifikationsdatentypen qualifiziert geöffnet. ANTLR und interne
+Compilerklassen bleiben in der Implementierung.
+
 ## Quellen, Identitäten und Zustände
 
 `SourceText` enthält opake `SourceId`, Revision und exakten Text.

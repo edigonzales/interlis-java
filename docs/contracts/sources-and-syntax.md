@@ -2,6 +2,25 @@
 
 Quell- und Syntaxwerte bezeichnen genau eine Revision. Die öffentlichen Typen gehören zu Modell und Compiler. Die Java-Signaturen stehen in der jeweiligen Javadoc.
 
+<a id="parserbudgets"></a>
+## Parserbudgets
+
+Der Syntaxdienst erhält bereits dekodierten Text. Er führt keine
+Datei-, Repository- oder Logzugriffe aus. Lexer und Parser erzeugen die
+eigene Syntaxrepräsentation ohne Metamodellmutationen oder Typprüfung.
+
+Der interne ANTLR-Adapter prüft `maxParseRuleDepth` an der aktiven
+Regeltiefe, `maxSyntaxNodes` an erzeugten eigenen Knoten und
+`maxRecoveryEvents` an gemeldeten Recoveryereignissen. Bei einem
+Ressourcenabbruch tragen vollständige Eingabesnapshots die Budgetdiagnose
+und `budgetExceeded`. Die Compilerpipeline liefert
+`Cancelled/RESOURCE_LIMIT`. Fragmentanalyse verwendet die Defaultgrenzen
+und meldet `ILI-INF-0002`, ohne ein erfolgreich konsumiertes Fragment
+auszugeben. Nutzerabbruch und interne Parserdefekte behalten ihren eigenen
+Fehlerpfad. `LifecycleBoundaryContractTest` prüft tiefe gültige und
+wiederholt fehlerhafte Quellen, alle drei Grenzen, Fragmente und einen
+erfolgreichen Folgelauf.
+
 <a id="quelltexttypen-in-interlis-model"></a>
 ## Quelltexttypen in `interlis-model`
 
