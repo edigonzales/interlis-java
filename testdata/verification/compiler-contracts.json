@@ -51,7 +51,7 @@
         "LexicalProfileContractTest.nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
         "TextLiteralContractTest.stringEscapesAndLineBoundariesAreLexicalContracts",
         "FormatterContractTest.preservesTokensAndIsIdempotentAcrossVersionsAndLineEndings",
-        "RemainingLanguageContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles"
+        "LanguageSurfaceContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles"
       ],
       "resolution": "Implementierungsdefinierter Whitespace-Vorrat explizit geprüft; Unicode in Strings/Kommentaren separat."
     },
@@ -563,9 +563,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -578,9 +578,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -593,9 +593,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -608,9 +608,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -621,7 +621,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -1038,7 +1038,7 @@
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "resolution": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft."
     },
@@ -1050,7 +1050,7 @@
       "scope": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft.",
       "links": [
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "resolution": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft."
     },
@@ -1264,11 +1264,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -1280,11 +1280,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -1296,11 +1296,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -1312,11 +1312,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -1328,11 +1328,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -1344,11 +1344,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -1415,7 +1415,7 @@
       "quoteSha256": "85f5893de289c474c641d2942c15aaf30fce990bf72124bfab6b43299cbc568f",
       "section": "2.15",
       "disposition": "COMPILER_REQUIRED",
-      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "ViewBindingContractTest.joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
@@ -1429,7 +1429,7 @@
       "quoteSha256": "d314bff6d678faf60dbff20876b30d3f230ac7c8f8d06bced4df926d2661ad8f",
       "section": "2.15",
       "disposition": "COMPILER_REQUIRED",
-      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "ViewBindingContractTest.joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
@@ -1443,7 +1443,7 @@
       "quoteSha256": "0763898d69bbb689d313bc3885667bf03d66a6fe8f5dabf5ff329737507b7a8b",
       "section": "2.15",
       "disposition": "COMPILER_REQUIRED",
-      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "ViewBindingContractTest.joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
@@ -1457,7 +1457,7 @@
       "quoteSha256": "940cd02c64c7695f7daee9d2ff81ed3ccaf33a4a6a8c6bc2cfed05ef7ec7aaeb",
       "section": "2.15",
       "disposition": "COMPILER_REQUIRED",
-      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "ViewBindingContractTest.joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
@@ -1471,7 +1471,7 @@
       "quoteSha256": "4af41640d96fb62e573182b96cec2c0d56b772e859e08472ca7153d72b9d25c1",
       "section": "2.15",
       "disposition": "COMPILER_REQUIRED",
-      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "ViewBindingContractTest.joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
@@ -1485,7 +1485,7 @@
       "quoteSha256": "cbcd5115380e7c8f90fe171ec39eb40864f1337bde1183bcc5d8f962a68431f1",
       "section": "2.15",
       "disposition": "COMPILER_REQUIRED",
-      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "ViewBindingContractTest.joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
@@ -1499,7 +1499,7 @@
       "quoteSha256": "364f293832b866a7acf3a3796a4a7ed7d0c05479635530fbadfa3596e3efdda0",
       "section": "2.15",
       "disposition": "COMPILER_REQUIRED",
-      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "C08/C09 sind Beispielbloecke; die abgeleitete Assoziation ist durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "ViewBindingContractTest.joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
@@ -1521,7 +1521,7 @@
       "quoteSha256": "50843b662bb8e52e38a9a9ace0c29e21e27e517ad25f9d69ee0e62439ef7ea15",
       "section": "2.15",
       "disposition": "NOT_APPLICABLE",
-      "scope": "Beispiel (abgeleitete Assoziation); durch B3OriginalAcceptanceTest abgedeckt.",
+      "scope": "Beispiel (abgeleitete Assoziation); durch ViewInspectionAndAssociationAcceptanceTest abgedeckt.",
       "links": []
     },
     {
@@ -1705,7 +1705,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -1718,7 +1718,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -1731,7 +1731,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -1744,7 +1744,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -1838,7 +1838,7 @@
         "LexicalProfileContractTest.nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
         "FormatterContractTest.preservesTokensAndIsIdempotentAcrossVersionsAndLineEndings",
         "TextLiteralContractTest.stringEscapesAndLineBoundariesAreLexicalContracts",
-        "RemainingLanguageContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles"
+        "LanguageSurfaceContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles"
       ],
       "resolution": "Implementierungsdefinierter Whitespace-Vorrat explizit geprüft; Unicode in Strings/Kommentaren separat."
     },
@@ -2563,9 +2563,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -2578,9 +2578,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -2593,9 +2593,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -2608,9 +2608,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -2623,9 +2623,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -2638,9 +2638,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -2651,7 +2651,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln.",
       "links": [
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "resolution": "Enum-, ORDERED-, CIRCULAR- und FINAL-Compilerteile direkt geprüft; Beispielbilder erklären dieselben Regeln."
     },
@@ -3277,7 +3277,7 @@
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "resolution": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft."
     },
@@ -3290,7 +3290,7 @@
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "resolution": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft."
     },
@@ -3303,7 +3303,7 @@
       "links": [
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
         "ComposedUnitContractTest.builtinUnitsAndTheirBasesHaveRealIdentities",
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "resolution": "Anhang-A-Einheiten sind mit öffentlichen Werten statt Source-only-Inspektion geprüft."
     },
@@ -3587,11 +3587,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3603,11 +3603,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3619,11 +3619,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3635,11 +3635,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3651,11 +3651,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3667,11 +3667,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3683,11 +3683,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3699,11 +3699,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3715,11 +3715,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3731,11 +3731,11 @@
       "scope": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links.",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "resolution": "Präzedenz wird am tatsächlichen öffentlichen Ausdrucksgraph geprüft; Funktions-/Pfad-/Konstantenregeln zusätzlich in den vorhandenen Links."
     },
@@ -3750,7 +3750,7 @@
         "FunctionContractTest.contractedIsRequiredOnlyIn23",
         "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
         "AreaFunctionContractTest.attributeFunctionsBindDirectAndNestedSurfaceOwnersAndPublicSignatures",
-        "E4EnumOperatorContractTest.enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes"
+        "EnumAndOperatorContractTest.enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes"
       ],
       "resolution": "Der Compilerteil wird durch die angegebenen öffentlichen Assertions geprüft. Signaturen inventarisiert; Laufzeitbedeutung nicht ausgefuehrt. Dokumentarische SOLL-Aussagen, Beispielillustrationen und tatsächliche Transfer-/Funktions-/Geometrieausführung sind kein weiterer Compilerentscheid (Kapitel01/05/13; P4-Ausführung bleibt offen)."
     },
@@ -4213,7 +4213,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -4226,7 +4226,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -4239,7 +4239,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -4252,7 +4252,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -4265,7 +4265,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     },
@@ -4278,7 +4278,7 @@
       "links": [
         "TextLengthsTest.canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
         "LexicalProfileContractTest.nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-        "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
+        "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral"
       ],
       "resolution": "G2: vollständiger Quellen-/Literal-Roundtrip der Normtabellen. XML-Codierung, Ersatzzeichen, Speichern/Suchen/Sortieren/Ausdruck gehören zu P4 und werden hier nicht als ausgeführt behauptet."
     }
@@ -4379,7 +4379,7 @@
       "line": 34,
       "links": [
         "SyntaxContractTest.editorRecoveryKeepsFollowingDeclarations",
-        "E1ProfileSafetyContractTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments"
+        "SyntaxProfileSafetyTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments"
       ],
       "scope": "Tatsächliche öffentliche Assertion(en) des Vertrags."
     },
@@ -4458,7 +4458,7 @@
       "links": [
         "CompiledSchemaSelectionTest.unrelatedBrokenModelStaysOutsideTheCompiledClosure",
         "SemanticOverlayContractTest.overlayOnlyEditsMatchFreshAnalysisAndDoNotMutatePublishedSnapshots",
-        "Phase4WorkspaceContractTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph"
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph"
       ],
       "scope": "Parallele Verbraucher mit unterschiedlicher Konfiguration sind nicht als echter Nebenlaeufigkeitstest assertiert.",
       "resolution": "Beide Ergebnisse und gehaltener Grundgraph behalten ihre eigenen Metadaten."
@@ -4469,7 +4469,7 @@
       "line": 29,
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
-        "Phase2ClosureContractTest.abstractLineCoordFieldsAndExternalParametersStayLegalAndCanonical"
+        "CrossModelSemanticClosureContractTest.abstractLineCoordFieldsAndExternalParametersStayLegalAndCanonical"
       ],
       "scope": "Tatsächliche öffentliche Assertion(en) des Vertrags."
     },
@@ -4547,7 +4547,7 @@
       "links": [
         "WorkspaceIsolationTest.parallelWorkspacesKeepIndependentRevisionsAndAnalyses",
         "EngineContractTest.reuseIsOptionalAndFreshSemanticsMatch",
-        "Phase4WorkspaceContractTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph"
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph"
       ],
       "scope": "Tatsächliche öffentliche Assertion(en) des Vertrags.",
       "resolution": "Beide Ergebnisse und gehaltener Grundgraph behalten ihre eigenen Metadaten."
@@ -4634,7 +4634,7 @@
       "links": [
         "EngineContractTest.reuseIsOptionalAndFreshSemanticsMatch",
         "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly",
-        "Phase4WorkspaceContractTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
       ],
       "scope": "Ein expliziter Test, der einen alten Snapshot nach mehreren weiteren Aenderungen unveraendert abfragt, fehlt.",
       "resolution": "Ausgeführte verzögerte Capture-/Edit-/Accept-/Reuse-/Eviction-Sequenz."
@@ -4749,7 +4749,7 @@
       "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
       "line": 28,
       "links": [
-        "Phase4WorkspaceContractTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction",
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction",
         "WorkspaceTest.syntaxIsSharedWithResolverAndBoundedAfterAcceptance"
       ],
       "scope": "Keine Eviction-/Cachelimit-Pruefung mit Ergebnisverlustfreiheit gefunden.",
@@ -4772,7 +4772,7 @@
       "links": [
         "SemanticOverlayContractTest.overlayOnlyEditsMatchFreshAnalysisAndDoNotMutatePublishedSnapshots",
         "OverlayWorkspaceContractTest.anOverlayRoundTripRestoresContentIdentityWithoutReusingOldResults",
-        "Phase4WorkspaceContractTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction",
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction",
         "WorkspaceTest.syntaxIsSharedWithResolverAndBoundedAfterAcceptance"
       ],
       "scope": "Cache-Eviction ohne Semantikaenderung nicht separat assertiert.",
@@ -4802,7 +4802,7 @@
       "line": 32,
       "links": [
         "WorkspaceTest.staleDetachedAnalysisIsNotCommitted",
-        "Phase4WorkspaceContractTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
       ],
       "scope": "Ergebnis von Revision n nach n+1 nicht als expliziter Reihenfolgetest belegt.",
       "resolution": "Ausgeführte verzögerte Capture-/Edit-/Accept-/Reuse-/Eviction-Sequenz."
@@ -4813,7 +4813,7 @@
       "line": 33,
       "links": [
         "WorkspaceTest.missingImportAppearsLaterWithoutEdit",
-        "Phase4WorkspaceContractTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
       ],
       "scope": "Gleicher Quelltext mit anderem Importstand nicht isoliert assertiert.",
       "resolution": "Ausgeführte verzögerte Capture-/Edit-/Accept-/Reuse-/Eviction-Sequenz."
@@ -4824,7 +4824,7 @@
       "line": 34,
       "links": [
         "WorkspaceIsolationTest.parallelWorkspacesKeepIndependentRevisionsAndAnalyses",
-        "Phase4WorkspaceContractTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph"
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph"
       ],
       "scope": "Tatsächliche öffentliche Assertion(en) des Vertrags.",
       "resolution": "Beide Ergebnisse und gehaltener Grundgraph behalten ihre eigenen Metadaten."
@@ -4845,7 +4845,7 @@
       "links": [
         "ResolutionBoundaryContractTest.analysisWithOtherRootSelectionCannotBeAcceptedIntoACapture",
         "OverlayWorkspaceContractTest.overlayOnlyChangesInvalidateCapturesWhileCachePolicyDoesNotChangeSemantics",
-        "Phase4WorkspaceContractTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
+        "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
       ],
       "scope": "Capture + paralleles Quellupdate + verspaetete Analyse + Reuse nicht als eine durchgaengige Sequenz assertiert.",
       "resolution": "Ausgeführte verzögerte Capture-/Edit-/Accept-/Reuse-/Eviction-Sequenz."
@@ -4889,7 +4889,7 @@
       "line": 31,
       "links": [
         "DiagnosticPresentationTest.fullListRemainsAvailableWhenPolicyDoesNotSuppress",
-        "E1ProfileSafetyContractTest.repeatedPropertiesAreVisibleWarningsRatherThanHiddenSetDeduplication"
+        "SyntaxProfileSafetyTest.repeatedPropertiesAreVisibleWarningsRatherThanHiddenSetDeduplication"
       ],
       "scope": "Warnungsablehnung als eigener Nicht-Sprachfehler-Fall nicht isoliert assertiert.",
       "resolution": "Warnungsablehnung ist kein SOURCE_ERRORS."
@@ -4922,7 +4922,7 @@
       "line": 34,
       "links": [
         "OutcomeContractTest.successRejectionAndCancellationRemainDistinct",
-        "E1ProfileSafetyContractTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments",
+        "SyntaxProfileSafetyTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments",
         "LifecycleBoundaryContractTest.internalFailuresAreTypedAndNeitherEventsNorSafeDiagnosticsExposeSecretInputs"
       ],
       "scope": "Injizierter interner Defekt mit Failed/FailureId nicht als eigener Test gefunden.",
@@ -4981,7 +4981,7 @@
         },
         {
           "source": "build/interlis/HostVerificationProfiles.java",
-          "sha256": "0d9cd03deb0132fe60bfc647e2f939df38d969cfc4ad39003028b458ce42cd56",
+          "sha256": "8758fb14d8e2d14a5fb6ce7c2664a9465089573dcb857f18001f79e03ca6b8b1",
           "reason": "Auftrag B Reviewkorrektur: portable Layoutproduktion, einheitliche echte CLI-Versionsbytes und kontrollierter Consumer-Lockumfang; ursprüngliche Assertions bleiben unverändert."
         }
       ],
@@ -5035,7 +5035,7 @@
         },
         {
           "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",
-          "sha256": "4ebe8f8972ce965a1e288d24f39d85efc8e5ed6e48858c7c1d0df470da4d39fc",
+          "sha256": "dd78471feb063d9c6a1a0e17bfe69f5e61dee2ccbe3966ceef280607c49f199d",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         },
         {
@@ -5145,12 +5145,12 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "3b72f48b7de8f89043bb782ad03c581f348fa5c2b48f4033734e5870aeb1594d",
+          "sha256": "ddd4641220672cf00cbd3967b81cadd61b771d8ce90a1b10c618b88e55b8427f",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
           "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-          "sha256": "c1b16628120135224aa7ec492eaf8ba0119ad864fde963e255661374f265cccf"
+          "sha256": "b002466fc540c1c513df61a832e1b011869d428979dfc86e939fda73f88ccf0b"
         },
         {
           "source": "docs/spec/05-metamodell-und-typensystem.md",
@@ -5158,7 +5158,7 @@
         },
         {
           "source": "docs/spec/06-kompilierung-und-semantik.md",
-          "sha256": "6d9c2cbd9c31cbf352b0440e49c5b496f390ebf8967a6e420e73b0213c9ea04a"
+          "sha256": "12111193f8be47078e3057fc887475502345a331c60da4d69ddd6e69cce67ab5"
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
@@ -5201,7 +5201,7 @@
       "processEvidence": [
         {
           "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "3b72f48b7de8f89043bb782ad03c581f348fa5c2b48f4033734e5870aeb1594d",
+          "sha256": "ddd4641220672cf00cbd3967b81cadd61b771d8ce90a1b10c618b88e55b8427f",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
@@ -5211,7 +5211,7 @@
         },
         {
           "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "7cee7d10c29e93080cab50a3eef663e1347c03b5b6c1efaca9e89f50d9dcfe4b",
+          "sha256": "bb2f2a2294af06d543aeba8c934b60c8d732fa897d271083a7e885520e6eaf45",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         }
       ],
@@ -9060,7 +9060,7 @@
     "3.3": {
       "id": "3.3",
       "links": [
-        "E1ProfileSafetyContractTest.completeDocumentsConsumeAllTokensAfterTheirModels",
+        "SyntaxProfileSafetyTest.completeDocumentsConsumeAllTokensAfterTheirModels",
         "SyntaxContractTest.rejectsTrailingContentAndUnsupportedVersion"
       ],
       "conditionIds": [
@@ -9194,9 +9194,9 @@
         "TextLiteralContractTest.zeroDeclarationWidthsAndTextControlCharactersAreSourceErrors",
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced",
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced",
         "PredefinedBindingContractTest.predefinedDomainsRetainTypesFinalityOriginAndNavigationTargets",
         "EnumerationConstantContractTest.logicalEnumerationConstantIsBoolean",
         "NumericSubdivisionContractTest.standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
@@ -9305,9 +9305,9 @@
       "links": [
         "ExistenceValueFamiliesContractTest.inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
         "ExistenceValueFamiliesContractTest.enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-        "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
+        "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget",
         "DuplicateNameContractTest.duplicateEnumerationValueIsRejected",
-        "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
+        "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced"
       ],
       "conditionIds": [
         "NORM:2.4:3.8.2:C01",
@@ -9561,11 +9561,11 @@
       "id": "3.13",
       "links": [
         "ExpressionConstraintContractTest.builtinFunctionAndImplicationCompile",
-        "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-        "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
+        "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange",
+        "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule",
         "ConstraintPathBindingContractTest.listSelectionPreservesTypesReferencesAndNestedContinuation",
         "ObjectFunctionContractTest.thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-        "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
+        "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence"
       ],
       "conditionIds": [
         "NORM:2.4:3.13:C01",
@@ -9588,7 +9588,7 @@
         "FunctionContractTest.contractedIsRequiredOnlyIn23",
         "BuiltinSignatureFoundationContractTest.allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
         "AreaFunctionContractTest.attributeFunctionsBindDirectAndNestedSurfaceOwnersAndPublicSignatures",
-        "E4EnumOperatorContractTest.enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes"
+        "EnumAndOperatorContractTest.enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes"
       ],
       "conditionIds": [
         "NORM:2.4:3.14:C01",
@@ -9648,7 +9648,7 @@
       "links": [
         "LexicalProfileContractTest.completeReservedTablesRejectIdentifiersAndPermitMixedCaseNames",
         "LexicalProfileContractTest.regeneratedLexerAndParserShareTheirTokenVocabulary",
-        "RemainingLanguageContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles",
+        "LanguageSurfaceContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles",
         "TextLiteralContractTest.stringEscapesAndLineBoundariesAreLexicalContracts",
         "NestedBlockCommentContractTest.balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations",
         "NumericConstantBindingContractTest.explicitUnitsHaveActualTargetsAndExactNumbersInBothVersions"
@@ -9906,7 +9906,7 @@
       "path": "INTERLIS.ANYUNIT",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9915,7 +9915,7 @@
       "path": "INTERLIS.DIMENSIONLESS",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9924,7 +9924,7 @@
       "path": "INTERLIS.LENGTH",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9933,7 +9933,7 @@
       "path": "INTERLIS.MASS",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9942,7 +9942,7 @@
       "path": "INTERLIS.TIME",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9951,7 +9951,7 @@
       "path": "INTERLIS.ELECTRIC_CURRENT",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9960,7 +9960,7 @@
       "path": "INTERLIS.TEMPERATURE",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9969,7 +9969,7 @@
       "path": "INTERLIS.AMOUNT_OF_MATTER",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9978,7 +9978,7 @@
       "path": "INTERLIS.ANGLE",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9987,7 +9987,7 @@
       "path": "INTERLIS.SOLID_ANGLE",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -9996,7 +9996,7 @@
       "path": "INTERLIS.LUMINOUS_INTENSITY",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10005,7 +10005,7 @@
       "path": "INTERLIS.MONEY",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10014,7 +10014,7 @@
       "path": "INTERLIS.METER",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10023,7 +10023,7 @@
       "path": "INTERLIS.KILOGRAM",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10032,7 +10032,7 @@
       "path": "INTERLIS.SECOND",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10041,7 +10041,7 @@
       "path": "INTERLIS.AMPERE",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10050,7 +10050,7 @@
       "path": "INTERLIS.DEGREE_KELVIN",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10059,7 +10059,7 @@
       "path": "INTERLIS.MOLE",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10068,7 +10068,7 @@
       "path": "INTERLIS.RADIAN",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10077,7 +10077,7 @@
       "path": "INTERLIS.STERADIAN",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10086,7 +10086,7 @@
       "path": "INTERLIS.CANDELA",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10095,7 +10095,7 @@
       "path": "INTERLIS.Minute",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10104,7 +10104,7 @@
       "path": "INTERLIS.Hour",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10113,7 +10113,7 @@
       "path": "INTERLIS.Day",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10122,7 +10122,7 @@
       "path": "INTERLIS.Month",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10131,7 +10131,7 @@
       "path": "INTERLIS.Year",
       "kind": "UNIT",
       "links": [
-        "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
+        "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10401,7 +10401,7 @@
       "path": "INTERLIS.METAOBJECT_TRANSLATION",
       "kind": "CLASS",
       "links": [
-        "E1FunctionMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
+        "FunctionAndMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10624,7 +10624,7 @@
       "path": "INTERLIS.METAOBJECT_TRANSLATION.Name",
       "kind": "ATTRIBUTE",
       "links": [
-        "E1FunctionMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
+        "FunctionAndMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10633,7 +10633,7 @@
       "path": "INTERLIS.METAOBJECT_TRANSLATION.NameInBaseLanguage",
       "kind": "ATTRIBUTE",
       "links": [
-        "E1FunctionMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
+        "FunctionAndMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10865,7 +10865,7 @@
       "path": "INTERLIS.METAOBJECT_TRANSLATION.UNIQUE:Name",
       "kind": "CONSTRAINT",
       "links": [
-        "E1FunctionMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
+        "FunctionAndMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -10874,7 +10874,7 @@
       "path": "INTERLIS.METAOBJECT_TRANSLATION.UNIQUE:NameInBaseLanguage",
       "kind": "CONSTRAINT",
       "links": [
-        "E1FunctionMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
+        "FunctionAndMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys"
       ],
       "scope": "Öffentlicher deklarativer Wert beziehungsweise effektiv materialisierte Eigenschaft; Katalogidentität ist kein zweiter Sprachcompiler."
     },
@@ -11255,10 +11255,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
-      "methodStart": 5399,
-      "methodEnd": 6039,
+      "methodStart": 5396,
+      "methodEnd": 6036,
       "methodSha256": "faa1fb80e0f62e422fe91084236da846f68513934078e2cc7e3419a0a667b039",
-      "sourceSha256": "de12aa013c1e577ec33a1d3f55ab710a1b860b0f2280cbde4c2faae6e8f4173d",
+      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "invalid characters rejected in syntax and rename",
         "invalid characters"
@@ -11315,10 +11315,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-      "methodStart": 6044,
-      "methodEnd": 9756,
+      "methodStart": 6041,
+      "methodEnd": 9753,
       "methodSha256": "af358f19f42a59dbca14f4bd511f528f240adcbb41d1803b5efede58d44aee05",
-      "sourceSha256": "de12aa013c1e577ec33a1d3f55ab710a1b860b0f2280cbde4c2faae6e8f4173d",
+      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "255 length, alphabet, case, rename",
         "identifier alphabet",
@@ -11334,10 +11334,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "completeReservedTablesRejectIdentifiersAndPermitMixedCaseNames",
-      "methodStart": 1655,
-      "methodEnd": 2542,
+      "methodStart": 1652,
+      "methodEnd": 2539,
       "methodSha256": "fb21a37250cd0c44da681b14778fd0e7e22045866ef722b98c053dfc754b19ad",
-      "sourceSha256": "de12aa013c1e577ec33a1d3f55ab710a1b860b0f2280cbde4c2faae6e8f4173d",
+      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "reserved words and mixed case",
         "full 2.3 reserved table",
@@ -11466,10 +11466,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "new24WordsAreOrdinary23NamesAndRemainReservedIn24",
-      "methodStart": 2547,
-      "methodEnd": 3332,
+      "methodStart": 2544,
+      "methodEnd": 3329,
       "methodSha256": "30e792b8b9e8c5d87b9edcc62568e38a1a437f98bbdf5feaafa9a30ca5986fe1",
-      "sourceSha256": "de12aa013c1e577ec33a1d3f55ab710a1b860b0f2280cbde4c2faae6e8f4173d",
+      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "versioned reserved words",
         "new 2.4 words"
@@ -11504,10 +11504,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NestedBlockCommentContractTest.java",
       "suite": "guru.interlis.compiler.NestedBlockCommentContractTest",
       "method": "balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations",
-      "methodStart": 1914,
-      "methodEnd": 4775,
+      "methodStart": 1922,
+      "methodEnd": 4783,
       "methodSha256": "d4b9fa72ee9d5e37c225eae87dc676f87f82b70a402b7cbc4adad2e14f230de7",
-      "sourceSha256": "4041428513673b8c7771c4710f3a9f26b04991466c910b0caa1e45450d6e087f",
+      "sourceSha256": "20258e206b0331c7a7fd5af4c6c587e167aaf53fd0b8dcfc4b24f30662044359",
       "observations": [
         "nested comments preserved",
         "nested comments",
@@ -11542,10 +11542,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NestedBlockCommentContractTest.java",
       "suite": "guru.interlis.compiler.NestedBlockCommentContractTest",
       "method": "unfinishedCommentsHaveOriginalSyntaxErrorsInBothParseModes",
-      "methodStart": 4781,
-      "methodEnd": 7507,
+      "methodStart": 4789,
+      "methodEnd": 7515,
       "methodSha256": "2fae5ba27f3f35477dbae1719c7f7e0db32d30b03346acfa4ff5e52fbf8b48f6",
-      "sourceSha256": "4041428513673b8c7771c4710f3a9f26b04991466c910b0caa1e45450d6e087f",
+      "sourceSha256": "20258e206b0331c7a7fd5af4c6c587e167aaf53fd0b8dcfc4b24f30662044359",
       "observations": [
         "unterminated outer/inner comment",
         "unterminated"
@@ -12479,14 +12479,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "E4EnumOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E4EnumOperatorContractTest.java",
-      "suite": "guru.interlis.compiler.E4EnumOperatorContractTest",
+    "EnumAndOperatorContractTest.sameNamedEnumElementsKeepTheirDomainTarget": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
+      "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "sameNamedEnumElementsKeepTheirDomainTarget",
-      "methodStart": 5384,
-      "methodEnd": 6747,
+      "methodStart": 5385,
+      "methodEnd": 6748,
       "methodSha256": "fc41b348e3681f1285ec3baec8ca8dbae59c1fd499ca92b80aab77f998e777c3",
-      "sourceSha256": "964cf9a9d1fcbd47af807e2cf2f212e549bc1313d91808c971f07444eb53ccfa",
+      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "enum constants"
       ],
@@ -12680,10 +12680,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedTemporalContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedTemporalContractTest",
       "method": "predefinedFormatsExposeStructuresAttributesInheritanceAndReferences",
-      "methodStart": 4903,
-      "methodEnd": 7928,
+      "methodStart": 4907,
+      "methodEnd": 7932,
       "methodSha256": "5ca9f34c6b240db754a67cb9c816bcb525b71f1539264796a1c843efb4697674",
-      "sourceSha256": "22a939d262986786cd9f56288aad5d9be05c56f6b5a09b8f44e9914e5985982d",
+      "sourceSha256": "bbf53479317ee85c53d902a76dd3139d1b7a3960e73d4388add1396a97aa629d",
       "observations": [
         "predefined date/time structures",
         "GregorianDate structures",
@@ -12719,10 +12719,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedTemporalContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedTemporalContractTest",
       "method": "timeWidthsAndSecondPrecisionComeFromTheDeclarations",
-      "methodStart": 4203,
-      "methodEnd": 4897,
+      "methodStart": 4207,
+      "methodEnd": 4901,
       "methodSha256": "63b6da81e39b4f5dcde88b5b95c70b50e50955ec99b47f9ab73860473ac5484e",
-      "sourceSha256": "22a939d262986786cd9f56288aad5d9be05c56f6b5a09b8f44e9914e5985982d",
+      "sourceSha256": "bbf53479317ee85c53d902a76dd3139d1b7a3960e73d4388add1396a97aa629d",
       "observations": [
         "GregorianDateTime subdivisions"
       ],
@@ -12846,10 +12846,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "contextualBlackboxXmlAndVersionedRefsysKeepTheirOwnMeaning",
-      "methodStart": 3337,
-      "methodEnd": 4027,
+      "methodStart": 3334,
+      "methodEnd": 4024,
       "methodSha256": "2e518b1772ee12a02e0260cd9294bada86209e3cfa8309c687e7de29c47af7b9",
-      "sourceSha256": "de12aa013c1e577ec33a1d3f55ab710a1b860b0f2280cbde4c2faae6e8f4173d",
+      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "XML/BINARY blackbox"
       ],
@@ -13105,10 +13105,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericUnitConversionContractTest.java",
       "suite": "guru.interlis.compiler.NumericUnitConversionContractTest",
       "method": "conversionOperandsRetainExactValuesOperatorsPrecisionAndRanges",
-      "methodStart": 6536,
-      "methodEnd": 9416,
+      "methodStart": 6533,
+      "methodEnd": 9413,
       "methodSha256": "1e344e38a43b642ca3aee3e3bc1837537b18d0840eb00f9da0939087330d69d4",
-      "sourceSha256": "04881c41938bc799bc163cfaf4bc4acfa4c73a6ad1cc1dcfb95c6c35071b4ff9",
+      "sourceSha256": "83ffbed45da6a8d99ac06586537d43fe398ab68ddd7b24d20525f815a8de7415",
       "observations": [
         "derived unit factors",
         "derived factors"
@@ -13254,9 +13254,9 @@
       "suite": "guru.interlis.compiler.GraphicResponsibilityContractTest",
       "method": "exactOriginalsRetainDeclaredSignatureAndBoundObjectAndParameters",
       "methodStart": 1971,
-      "methodEnd": 4896,
-      "methodSha256": "24be3e2c0c0f4c96c255219d7b5513c32809584a4dcf738fa5c1e93a4efb83ef",
-      "sourceSha256": "3c8a8d4b4a207e3b0251805cc10b75a690d110ba738353e3ebaf061f807947f1",
+      "methodEnd": 4893,
+      "methodSha256": "efd73f5a4213a13ff99a7a9463d13e2beccf65c921f2776f1c708ae403a3333f",
+      "sourceSha256": "d63c37173e0c8d3d1af8e57c283e03a4cc32ee2c51ef0866651bcd0627ddc4d3",
       "observations": [
         "parameter responsibility",
         "responsibility"
@@ -13446,14 +13446,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "E4EnumOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E4EnumOperatorContractTest.java",
-      "suite": "guru.interlis.compiler.E4EnumOperatorContractTest",
+    "EnumAndOperatorContractTest.everyRelationSpellingRetainsItsOperatorAndOriginalRange": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
+      "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-      "methodStart": 397,
-      "methodEnd": 1420,
+      "methodStart": 398,
+      "methodEnd": 1421,
       "methodSha256": "109e9f2736df3c702c67e82e96be7b4395571d62ce9c7893ef5235dd67c7cf26",
-      "sourceSha256": "964cf9a9d1fcbd47af807e2cf2f212e549bc1313d91808c971f07444eb53ccfa",
+      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "relation operators",
         "relations"
@@ -13464,14 +13464,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "E4EnumOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E4EnumOperatorContractTest.java",
-      "suite": "guru.interlis.compiler.E4EnumOperatorContractTest",
+    "EnumAndOperatorContractTest.booleanAndCoordinateOperatorsUseThePublicRule": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
+      "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "booleanAndCoordinateOperatorsUseThePublicRule",
-      "methodStart": 3866,
-      "methodEnd": 4777,
+      "methodStart": 3867,
+      "methodEnd": 4778,
       "methodSha256": "8fba19026f29f4f4811c4d60d027f63563f1d1ad78e08a731820532822dfecd4",
-      "sourceSha256": "964cf9a9d1fcbd47af807e2cf2f212e549bc1313d91808c971f07444eb53ccfa",
+      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "boolean/geometry operators",
         "operators"
@@ -13706,10 +13706,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicResponsibilityContractTest.java",
       "suite": "guru.interlis.compiler.GraphicResponsibilityContractTest",
       "method": "conditionalAndAccordingSignAlternativesRetainTheirOwnBoundObjects",
-      "methodStart": 8919,
-      "methodEnd": 10031,
+      "methodStart": 8916,
+      "methodEnd": 10028,
       "methodSha256": "32286433f80bdd645db23879ace2f961c61715e84d3f7b59cfc188629df9ad03",
-      "sourceSha256": "3c8a8d4b4a207e3b0251805cc10b75a690d110ba738353e3ebaf061f807947f1",
+      "sourceSha256": "d63c37173e0c8d3d1af8e57c283e03a4cc32ee2c51ef0866651bcd0627ddc4d3",
       "observations": [
         "ACCORDING/WHEN IN",
         "conditions"
@@ -13895,14 +13895,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "E4EnumOperatorContractTest.enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E4EnumOperatorContractTest.java",
-      "suite": "guru.interlis.compiler.E4EnumOperatorContractTest",
+    "EnumAndOperatorContractTest.enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
+      "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes",
-      "methodStart": 8862,
-      "methodEnd": 9597,
+      "methodStart": 8863,
+      "methodEnd": 9598,
       "methodSha256": "b01a2e6b8f251f1a0ca3a980210334ff2b0621d35e42c02652ac618272c91d4e",
-      "sourceSha256": "964cf9a9d1fcbd47af807e2cf2f212e549bc1313d91808c971f07444eb53ccfa",
+      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "enum functions"
       ],
@@ -13953,7 +13953,7 @@
       "methodStart": 1628,
       "methodEnd": 2318,
       "methodSha256": "2f273c7a2874b3855e9387b984e5a74e8d263197acac56c2240ca3bd942b7636",
-      "sourceSha256": "297fc314d4f3da9e33aa427a5f761bdb23dac202552c0fe00696830621125ad3",
+      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "Typed two-role aggregation and exact AGGREGATION_ARITY rejection"
       ],
@@ -13970,7 +13970,7 @@
       "methodStart": 2323,
       "methodEnd": 3524,
       "methodSha256": "a9411b086f567ee9de7bce4a3e29c4989bbbe165496a3da40012731c0116e6bb",
-      "sourceSha256": "297fc314d4f3da9e33aa427a5f761bdb23dac202552c0fe00696830621125ad3",
+      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "ORDERED value, public effective order and ROLE_ORDER_EXTENSION rejection"
       ],
@@ -13987,7 +13987,7 @@
       "methodStart": 3529,
       "methodEnd": 4381,
       "methodSha256": "0e12d6ae0d15a628e6e11acdc2e3927d537b2096fb47e1ce119154b44e772560",
-      "sourceSha256": "297fc314d4f3da9e33aa427a5f761bdb23dac202552c0fe00696830621125ad3",
+      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "Public COMPOSITION plus weakening, multiple whole roles and bad composition cardinality"
       ],
@@ -14004,7 +14004,7 @@
       "methodStart": 4386,
       "methodEnd": 6377,
       "methodSha256": "852f86af0a0acdf632eb6c5c488dfc7f0146ac28b18fdf93e29aac2982f16e27",
-      "sourceSha256": "297fc314d4f3da9e33aa427a5f761bdb23dac202552c0fe00696830621125ad3",
+      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "Approved model-level role target and exact model/topic target identity"
       ],
@@ -14014,14 +14014,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "RemainingLanguageContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RemainingLanguageContractTest.java",
-      "suite": "guru.interlis.compiler.RemainingLanguageContractTest",
+    "LanguageSurfaceContractTest.enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
+      "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced",
-      "methodStart": 1947,
-      "methodEnd": 3107,
+      "methodStart": 1950,
+      "methodEnd": 3110,
       "methodSha256": "295a9b86de5ead6d30fd93055af4ab1dd05a473049859ee9169e3abb874aae6a",
-      "sourceSha256": "1518cc4f534f44000d96bee22f91312a500fb75bf6db0b75730e26013b5fc7a0",
+      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "Ordered/circular flags, inherited preorder and exact circular/finality errors"
       ],
@@ -14031,14 +14031,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "RemainingLanguageContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RemainingLanguageContractTest.java",
-      "suite": "guru.interlis.compiler.RemainingLanguageContractTest",
+    "LanguageSurfaceContractTest.publicExpressionTreePreservesComparisonAndBooleanPrecedence": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
+      "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "publicExpressionTreePreservesComparisonAndBooleanPrecedence",
-      "methodStart": 3112,
-      "methodEnd": 4601,
+      "methodStart": 3115,
+      "methodEnd": 4604,
       "methodSha256": "7c1d9010a902d776fc7c1a6c284654e366e83d7469af669d2eea89143b6a1ecf",
-      "sourceSha256": "1518cc4f534f44000d96bee22f91312a500fb75bf6db0b75730e26013b5fc7a0",
+      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "Actual BinaryExpression OR/AND/EQ tree, boolean type and exact range"
       ],
@@ -14048,14 +14048,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "RemainingLanguageContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RemainingLanguageContractTest.java",
-      "suite": "guru.interlis.compiler.RemainingLanguageContractTest",
+    "LanguageSurfaceContractTest.acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
+      "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles",
-      "methodStart": 6009,
-      "methodEnd": 7256,
+      "methodStart": 6033,
+      "methodEnd": 7280,
       "methodSha256": "0c8ffc2eacfd493ad8d65ca93850942ed1aa8e674897a67ee8100d969911c439",
-      "sourceSha256": "1518cc4f534f44000d96bee22f91312a500fb75bf6db0b75730e26013b5fc7a0",
+      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "Five accepted whitespace spellings and FF/VT/NBSP rejected",
         "Actual whitespace profile"
@@ -14066,14 +14066,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "RemainingLanguageContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RemainingLanguageContractTest.java",
-      "suite": "guru.interlis.compiler.RemainingLanguageContractTest",
+    "LanguageSurfaceContractTest.everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
+      "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral",
-      "methodStart": 4606,
-      "methodEnd": 6004,
-      "methodSha256": "86a543f99c686af591f421dd36e8954b4d9ea8e4087c1be1cede9d9ae4d1a43f",
-      "sourceSha256": "1518cc4f534f44000d96bee22f91312a500fb75bf6db0b75730e26013b5fc7a0",
+      "methodStart": 4609,
+      "methodEnd": 6028,
+      "methodSha256": "c8f9f5a1e05c8fe10fe4461ccfadf1d9c2183f4dfe63c9627dbe05380bee3800",
+      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "All131/162 pinned table characters retained in SourceText and decoded public LiteralExpression"
       ],
@@ -14083,14 +14083,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "RemainingLanguageContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RemainingLanguageContractTest.java",
-      "suite": "guru.interlis.compiler.RemainingLanguageContractTest",
+    "LanguageSurfaceContractTest.everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
+      "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase",
-      "methodStart": 7261,
-      "methodEnd": 9498,
+      "methodStart": 7285,
+      "methodEnd": 9522,
       "methodSha256": "26e5be487c306312e41be6869d9b6e7dd7e09249ebcb9199ff1a0bc4117d972c",
-      "sourceSha256": "1518cc4f534f44000d96bee22f91312a500fb75bf6db0b75730e26013b5fc7a0",
+      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "All26 units, canonical owner, SI bases and versioned kg designation",
         "All26 concrete public units with versioned labels, canonical owners and bases"
@@ -14586,14 +14586,14 @@
         "INC-005"
       ]
     },
-    "E1ProfileSafetyContractTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E1ProfileSafetyContractTest.java",
-      "suite": "guru.interlis.compiler.E1ProfileSafetyContractTest",
+    "SyntaxProfileSafetyTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxProfileSafetyTest.java",
+      "suite": "guru.interlis.compiler.SyntaxProfileSafetyTest",
       "method": "syntaxRecoveryDoesNotHideInvalidFunctionArguments",
-      "methodStart": 5223,
-      "methodEnd": 6258,
+      "methodStart": 5219,
+      "methodEnd": 6254,
       "methodSha256": "958e1ac5d2dc6a1a0aac53c54e212551251432487a799aa651276496aeaea598",
-      "sourceSha256": "9a0fec8d3034b3a6ec0c4a86d00e7a73233d86de1d62d5633c317107c57bd696",
+      "sourceSha256": "58900d9ec9345011940bdba2e5f97323caa890e2b616497a1557f7a1237a49fa",
       "observations": [
         "recovery does not hide invalid arguments",
         "no internal failure for user error"
@@ -14763,14 +14763,14 @@
         "INC-016"
       ]
     },
-    "Phase2ClosureContractTest.abstractLineCoordFieldsAndExternalParametersStayLegalAndCanonical": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/Phase2ClosureContractTest.java",
-      "suite": "guru.interlis.compiler.Phase2ClosureContractTest",
+    "CrossModelSemanticClosureContractTest.abstractLineCoordFieldsAndExternalParametersStayLegalAndCanonical": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CrossModelSemanticClosureContractTest.java",
+      "suite": "guru.interlis.compiler.CrossModelSemanticClosureContractTest",
       "method": "abstractLineCoordFieldsAndExternalParametersStayLegalAndCanonical",
-      "methodStart": 4088,
-      "methodEnd": 5400,
+      "methodStart": 4100,
+      "methodEnd": 5412,
       "methodSha256": "282c74dedf5927da39d16de0d3bf78514818a1d360d78d617b64586f355e28a5",
-      "sourceSha256": "b23e3f179046a390ba3d8696e4bbdb597ba5319f7581e7689061d91785311cd8",
+      "sourceSha256": "f51a42e193f044448e22e5b884d7bc2cf17f8476abf41f18eda814bd367b1468",
       "observations": [
         "view not rejected for missing exporter"
       ],
@@ -14898,10 +14898,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ImportedTranslationContractTest.java",
       "suite": "guru.interlis.compiler.ImportedTranslationContractTest",
       "method": "translationCyclesHaveNoCanonicalIdentity",
-      "methodStart": 5715,
-      "methodEnd": 6196,
+      "methodStart": 5712,
+      "methodEnd": 6193,
       "methodSha256": "5c5ceded48879fa7a3565f81a5a322d767d17dab76f655939ef7be7821bb0d30",
-      "sourceSha256": "8b0643edeeb7f0a6b197c466bc173af4e8365d524635b38366877ed0e4860162",
+      "sourceSha256": "9adae834d3e47d3c4bc63bd5a0a0af9a93a72ef97d581930dc56cb350e7bebc2",
       "observations": [
         "translation cycle"
       ],
@@ -15390,14 +15390,14 @@
         "DIAG-004"
       ]
     },
-    "E1ProfileSafetyContractTest.repeatedPropertiesAreVisibleWarningsRatherThanHiddenSetDeduplication": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E1ProfileSafetyContractTest.java",
-      "suite": "guru.interlis.compiler.E1ProfileSafetyContractTest",
+    "SyntaxProfileSafetyTest.repeatedPropertiesAreVisibleWarningsRatherThanHiddenSetDeduplication": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxProfileSafetyTest.java",
+      "suite": "guru.interlis.compiler.SyntaxProfileSafetyTest",
       "method": "repeatedPropertiesAreVisibleWarningsRatherThanHiddenSetDeduplication",
-      "methodStart": 3144,
-      "methodEnd": 4566,
+      "methodStart": 3140,
+      "methodEnd": 4562,
       "methodSha256": "cef0ef5db553578d4ec58a9795091cec745f6ad94b1948f3fe202cb49b25a3f3",
-      "sourceSha256": "9a0fec8d3034b3a6ec0c4a86d00e7a73233d86de1d62d5633c317107c57bd696",
+      "sourceSha256": "58900d9ec9345011940bdba2e5f97323caa890e2b616497a1557f7a1237a49fa",
       "observations": [
         "warning vs error",
         "Warning rejection produces only WARNINGS_REJECTED; allowed-warning compile succeeds"
@@ -16000,14 +16000,14 @@
         "INC-011"
       ]
     },
-    "Phase4WorkspaceContractTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph": {
-      "source": "interlis-workspace/src/test/java/guru/interlis/workspace/Phase4WorkspaceContractTest.java",
-      "suite": "guru.interlis.workspace.Phase4WorkspaceContractTest",
+    "WorkspaceConcurrencyAndSnapshotIsolationTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph": {
+      "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceConcurrencyAndSnapshotIsolationTest.java",
+      "suite": "guru.interlis.workspace.WorkspaceConcurrencyAndSnapshotIsolationTest",
       "method": "parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph",
-      "methodStart": 3480,
-      "methodEnd": 5433,
+      "methodStart": 3497,
+      "methodEnd": 5450,
       "methodSha256": "6c24582beae8053a427c904ff61cebacb9aa23486e21ecaecf4ddd26c0e16cd6",
-      "sourceSha256": "2d2493f690640cd79c3d9c9078f948b13d8cfca2f46042bc75590c778b3d4311",
+      "sourceSha256": "4eefbb8ac518ca45e01a3f0ab932182114883ad64055eae448fd62ee329420f6",
       "observations": [
         "Actual parallel compilations with shared immutable sources and distinct overlay values"
       ],
@@ -16021,14 +16021,14 @@
         "INC-020"
       ]
     },
-    "Phase4WorkspaceContractTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction": {
-      "source": "interlis-workspace/src/test/java/guru/interlis/workspace/Phase4WorkspaceContractTest.java",
-      "suite": "guru.interlis.workspace.Phase4WorkspaceContractTest",
+    "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction": {
+      "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceConcurrencyAndSnapshotIsolationTest.java",
+      "suite": "guru.interlis.workspace.WorkspaceConcurrencyAndSnapshotIsolationTest",
       "method": "lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction",
-      "methodStart": 1104,
-      "methodEnd": 3475,
+      "methodStart": 1121,
+      "methodEnd": 3492,
       "methodSha256": "afa9f45e2c003f40a97794b7bed213e350ac25e2307dab2eb291a47c8e7865f1",
-      "sourceSha256": "2d2493f690640cd79c3d9c9078f948b13d8cfca2f46042bc75590c778b3d4311",
+      "sourceSha256": "4eefbb8ac518ca45e01a3f0ab932182114883ad64055eae448fd62ee329420f6",
       "observations": [
         "Late worker result rejected, new analysis/reuse correct, zero cache eviction and held old graphs remain valid"
       ],
@@ -16131,10 +16131,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "regeneratedLexerAndParserShareTheirTokenVocabulary",
-      "methodStart": 9761,
-      "methodEnd": 10147,
+      "methodStart": 9758,
+      "methodEnd": 10144,
       "methodSha256": "149ce148674c39500402b1ac295350c52a3cf1f4b399cfad4174419ebb939fb5",
-      "sourceSha256": "de12aa013c1e577ec33a1d3f55ab710a1b860b0f2280cbde4c2faae6e8f4173d",
+      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "Generated lexer/parser token vocabulary equality"
       ],
@@ -16144,14 +16144,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "E1ProfileSafetyContractTest.completeDocumentsConsumeAllTokensAfterTheirModels": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E1ProfileSafetyContractTest.java",
-      "suite": "guru.interlis.compiler.E1ProfileSafetyContractTest",
+    "SyntaxProfileSafetyTest.completeDocumentsConsumeAllTokensAfterTheirModels": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxProfileSafetyTest.java",
+      "suite": "guru.interlis.compiler.SyntaxProfileSafetyTest",
       "method": "completeDocumentsConsumeAllTokensAfterTheirModels",
-      "methodStart": 381,
-      "methodEnd": 1305,
+      "methodStart": 377,
+      "methodEnd": 1301,
       "methodSha256": "2868b1347378f9086dc3457dbb48293a5a8739f823dd2bc2dd9719da1b136712",
-      "sourceSha256": "9a0fec8d3034b3a6ec0c4a86d00e7a73233d86de1d62d5633c317107c57bd696",
+      "sourceSha256": "58900d9ec9345011940bdba2e5f97323caa890e2b616497a1557f7a1237a49fa",
       "observations": [
         "Whole input EOF, exact trailing diagnostic and schema gate"
       ],
@@ -16182,10 +16182,10 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "booleanOriginsFollowEachOwnerInMixedLanguageClosuresAndReuse",
-      "methodStart": 10152,
-      "methodEnd": 11625,
+      "methodStart": 10149,
+      "methodEnd": 11622,
       "methodSha256": "f47baa7de7cd814253aff9ccc6eef5e9c1c1e5b1a7c61938e11ee329c3392875",
-      "sourceSha256": "de12aa013c1e577ec33a1d3f55ab710a1b860b0f2280cbde4c2faae6e8f4173d",
+      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "Boolean value origins and language-specific identities"
       ],
@@ -16212,14 +16212,14 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "E1FunctionMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/E1FunctionMetadataContractTest.java",
-      "suite": "guru.interlis.compiler.E1FunctionMetadataContractTest",
+    "FunctionAndMetadataContractTest.predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FunctionAndMetadataContractTest.java",
+      "suite": "guru.interlis.compiler.FunctionAndMetadataContractTest",
       "method": "predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys",
-      "methodStart": 9768,
-      "methodEnd": 13215,
+      "methodStart": 9767,
+      "methodEnd": 13214,
       "methodSha256": "3d1e0ad9f760be4cab4919ecb79af71e90bdd32e53a4cf5f0ac987ab80ee18f6",
-      "sourceSha256": "610eee4c9f817840d129dadef97fc4f46992aed58ad387bb95c06b091cb51175",
+      "sourceSha256": "fb72ad627c5e01668cd299b9069ef070e501c511f55fffcebc82d3ed8475fee5",
       "observations": [
         "Actual mandatory NAME fields, ordered uniqueness constraints and bound paths"
       ],
@@ -16281,18 +16281,18 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "A2R3CaseSensitivityCounterProbeTest.exactCaseControlsIdentityBindingAndPublicNavigation": {
-      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/A2R3CaseSensitivityCounterProbeTest.java",
-      "suite": "guru.interlis.compiler.A2R3CaseSensitivityCounterProbeTest",
+    "CaseSensitiveIdentifierBindingTest.exactCaseControlsIdentityBindingAndPublicNavigation": {
+      "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CaseSensitiveIdentifierBindingTest.java",
+      "suite": "guru.interlis.compiler.CaseSensitiveIdentifierBindingTest",
       "method": "exactCaseControlsIdentityBindingAndPublicNavigation",
       "observations": [
         "assertNotEquals(",
         "ILI-SEM-0001",
         "definition("
       ],
-      "sourceSha256": "3771b678a0458bd8b543d8c2763c1fc78ba93d9a185a99a90ea2f59268cbde08",
-      "methodStart": 1299,
-      "methodEnd": 4529,
+      "sourceSha256": "403f6ac68222204ca6e49d0f04d16b26d613686167429e0b7ecafda030ee7748",
+      "methodStart": 1298,
+      "methodEnd": 4528,
       "methodSha256": "6cfe9628660e86117cb380bac9905687abdcec3f2d3a26249abd6bf549f88235",
       "invocations": [
         "exactCaseControlsIdentityBindingAndPublicNavigation()"
@@ -16378,11 +16378,11 @@
     }
   },
   "sourcePins": {
-    "testdata/reference/norms/norm-conditions.json": "2c583819d1f04151db8bf38566c207458eb576ad28b696bb375aef573e457c62",
+    "testdata/reference/norms/norm-conditions.json": "b1a533a669d7a56698a89b26493686bc6c4fbdadb2e1239e2aae41121d72a43f",
     "testdata/reference/norms/grammar-inventory.json": "982bd191d22bb8e026a15ed2879c784b3936fab908d75dee4cec180428676d2e",
     "testdata/reference/norms/builtin-inventory.json": "be9dc5e65b20c15163ebaf42829961bb632105f88d57d6c2f4ead7175ba2451b",
     "testdata/reference/norms/spec-contract-inventory.json": "3d1d41e9f5049cc8ed73488563416dd29766fdd5da9dd594c5afa80336ea31cd",
-    "testdata/g2/predefined-catalogue.json": "ea279974005f7dace7922099e8ea8ea499bb96ddcac9a9c5eeacb19721911e85",
-    "testdata/g2/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
+    "testdata/verification/predefined-catalogue.json": "ea279974005f7dace7922099e8ea8ea499bb96ddcac9a9c5eeacb19721911e85",
+    "testdata/compiler/character-sets/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
   }
 }

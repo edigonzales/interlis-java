@@ -23,7 +23,7 @@ class LexicalProfileContractTest {
         return assertInstanceOf(CompilationOutcome.Succeeded.class,r,()->r instanceof CompilationOutcome.Rejected x?x.analysis().diagnostics().toString():r.toString());
     }
     private static List<String> words(String v) throws Exception {
-        var path=Path.of("../testdata/conformance/g2-lexical/reserved-"+v+".txt");
+        var path=Path.of("../testdata/conformance/lexical/reserved-"+v+".txt");
         assertEquals(v.equals("23")?"cddfa17d2232cf109fe0096a99b6e7b814c9fdd5a18467e07ef9f4cc4f55e7d3":"25c1d536c990f547a3cbad2f314d47ad731b8616843f5de38db9b1a7467b838e",HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(path))));
         return Files.readAllLines(path);
     }

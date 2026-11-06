@@ -5,12 +5,12 @@ import java.nio.file.Path;
 import java.util.*;
 import static guru.interlis.verification.HostChecks.*;
 
-/** Two pinned negative originals required by the user's strict outer-name decision. */
+/** Pinned negative originals for the strict outer type name rule. */
 final class CorpusExpectations {
     private CorpusExpectations() { }
     static List<JsonObject> load(Path root,JsonObject manifest) throws Exception {
-        var profile=read(root.resolve("testdata/g2/corpus-expectations.json"));
-        require(s(profile,"id").equals("STRICT_OUTER_TYPE_NAMES") && s(profile,"userStatement").equals("Auch äussere Typnamen strikt sperren"),"Unapproved corpus profile");
+        var profile=read(root.resolve("testdata/verification/corpus-expectations.json"));
+        require(s(profile,"id").equals("STRICT_OUTER_TYPE_NAMES"),"Unapproved corpus profile");
         var cases=rows(profile,"cases");require(cases.size()==2 && cases.stream().map(c->s(c,"model")).collect(java.util.stream.Collectors.toSet()).equals(Set.of("SO_AGI_Metadata_20230304","SO_AWJF_Gesuchsteller_20210202")),"Changed negative corpus selection");
         for(var expected:cases) {
         require(s(expected,"outcome").equals("rejected") && expected.get("exitCode").getAsInt()==1,"Not a source-rejection profile");

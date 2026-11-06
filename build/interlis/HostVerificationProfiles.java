@@ -27,7 +27,7 @@ public final class HostVerificationProfiles {
         Map.entry("reference-views",new Host("ReferenceProcesses","stabilization/views-reference-comparison.json","views","@node")),
         Map.entry("reference-units",new Host("ReferenceProcesses","stabilization/units-reference-comparison.json","units","@node")),
         Map.entry("repository-reference",new Host("RepositoryReferenceCheck","reference/repository/results.json")),
-        Map.entry("semantic-comparison",new Host("SemanticComparison","g2/semantic-comparison.json","@node")));
+        Map.entry("semantic-comparison",new Host("SemanticComparison","reference/semantic-comparison.json","@node")));
     public static final Set<String> PROFILES;
     static {var profiles=new TreeSet<>(HOSTS.keySet());profiles.addAll(List.of("conformance","sdk","performance","performance-checker-test","release-evidence-checker-test","wasm-benchmark","browser-benchmark","full-corpus-wasm","full-corpus-browsers","full-corpus-safari","full-corpus-editor-wasm","full-corpus-artifacts","portable","browser","reproducibility"));PROFILES=Set.copyOf(profiles);}
 

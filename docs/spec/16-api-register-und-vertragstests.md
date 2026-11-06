@@ -491,7 +491,7 @@ nullfrei und graphgebunden; fehlende Namen ergeben erklärbare Quellfehler.
 Die bestehenden Fabriken, Snapshot-Verträge sowie `FunctionDeclarationSyntax`,
 `FunctionSymbol`, `FunctionCallExpression`, `ClassSymbol`, `AttributeSymbol`,
 `ConstraintSymbol`, `UniquenessConstraint` und `PathExpression` behalten ihre
-Signaturen und Besitzer. `E1FunctionMetadataContractTest` prüft Versionsprofile,
+Signaturen und Besitzer. `FunctionAndMetadataContractTest` prüft Versionsprofile,
 Originalbereiche, Recovery, Ausdrucksfragmente, typisierte Aufrufe, beide
 Pflichtattribute und unabhängigen UNIQUE-Schlüssel, Reihenfolgen, vordefinierte
 Herkunft, Vererbung, Übersetzungen, Imports, Queries und Wiederverwendung.
@@ -606,7 +606,7 @@ NameSyntax statt String; seine Kinder enthalten Name und Argumente in
 Quellreihenfolge. Vollständige Standardsignaturen erscheinen als FunctionSymbol,
 Aufrufe tragen targetFunction und gebundene NameReferences. Die Bindung gehört
 zum Compilerlauf; veröffentlichte Werte bleiben snapshotgebunden.
-E4EnumOperatorContractTest prüft Signaturen, Identitäten, Operatoren, Quellbereiche,
+EnumAndOperatorContractTest prüft Signaturen, Identitäten, Operatoren, Quellbereiche,
 Imports, Übersetzungsgegenfälle und frische/wiederverwendete Analyse.
 
 E4-Fortsetzung in API 0.2: FunctionCallExpression (interlis-model) erhält
@@ -670,7 +670,7 @@ Beschränkung auf einen Transfer. `StructuredTranslationContractTest` prüft
 Syntax, Modell, Korrespondenzen und Navigation; NumericLiteralBudgetContractTest
 prüft kontrollierte Compiler-/Fragmentgrenzen.
 
-Phase-2-Closure-Verträge werden zusätzlich durch `Phase2ClosureContractTest`
+Phase-2-Closure-Verträge werden zusätzlich durch `CrossModelSemanticClosureContractTest`
 gesichert: übersetzte Rollen-ALL-OF-Korrespondenzen, ursprüngliche importierte
 Metadaten-/Linienform-/Generic-Ziele und Reihenfolgen, gleichnamige getrennte
 Generic-Domains, Fresh/Reuse nach Fehler und Erholung, geerbte Viewbasen mit
@@ -726,12 +726,12 @@ Konfigurationsklasse führt Sprachsemantik aus.
 `compiledSchemaProduced` nach Kapitel 09 mit bisherigem
 Dreiparameterkonstruktor für erfolgreiche Compiler-Gate-Läufe. Nullfreiheit,
 defensive Kopien, Reihenfolge, Abbruch und Besitz stehen in Kapitel 18/09.
-`P3CliBoundaryContractTest`, `P3CliLifecycleContractTest`,
-`P3ConfigurationContractTest`, `P3AtomicOutputContractTest` und
-`P3OutcomePriorityContractTest` prüfen die beobachtbaren Grenzen. Formatter-
-Präzisierung und Werterhalt: `P3FormatterPolicyContractTest`.
+`CliInputValidationContractTest`, `CliRunLifecycleContractTest`,
+`CliConfigurationContractTest`, `AtomicFileOutputContractTest` und
+`CliOutcomePrecedenceContractTest` prüfen die beobachtbaren Grenzen. Formatter-
+Präzisierung und Werterhalt: `FormatterPolicyContractTest`.
 
-Das CLI-Package besitzt den einzigen Prozessentry Main und die Standard-ExitCodePolicy. OutputPlanner.plan(ParsedCommand,CliEnvironment) liefert OutputPlan(fileTargets,writesStdout); CliOutputWriter.write führt eine synchrone atomare Dateiersetzung aus. CliExecutionResult ergänzt List<Artifact> artifacts mit Artifact(ArtifactKind,URI,long byteCount); fertiggestellte Dateien bleiben bei späteren Fehlern sichtbar. CompilerCliIdentityContractTest, P3AtomicOutputContractTest und compilerCliCheck sichern die Grenzen. Keine zweite fachliche Gateentscheidung im Adapter.
+Das CLI-Package besitzt den einzigen Prozessentry Main und die Standard-ExitCodePolicy. OutputPlanner.plan(ParsedCommand,CliEnvironment) liefert OutputPlan(fileTargets,writesStdout); CliOutputWriter.write führt eine synchrone atomare Dateiersetzung aus. CliExecutionResult ergänzt List<Artifact> artifacts mit Artifact(ArtifactKind,URI,long byteCount); fertiggestellte Dateien bleiben bei späteren Fehlern sichtbar. CompilerCliIdentityContractTest, AtomicFileOutputContractTest und compilerCliCheck sichern die Grenzen. Keine zweite fachliche Gateentscheidung im Adapter.
 `CliExecutionResult.rejectionSummary()` liefert zusätzlich
 `Optional<RejectionSummary>` für alle ursprünglichen Compiler-Gate-Gründe;
 bisherige Konstruktoren verwenden Optional.empty().
@@ -752,9 +752,9 @@ wird geändert. `InterlisLanguageServer(Workspace, CompilerEngine, CompilerServi
 ist der explizite JVM-Hosteinstieg mit injizierter reentranter Engine und
 Laufdiensten; der bisherige Konstruktor bleibt mit Standarddiensten verfügbar.
 `shutdown`/`exit` schliessen Scheduler, Datei-I/O und den übergebenen Workspace.
-`P3CompletionScopeContractTest`, `P3DocumentSynchronizationTest`,
-`P3AnalysisSchedulingTest`, `P3ProjectRenameTest`,
-`P3CompletionProtocolTest`, `P3PresentationConfigurationTest`,
+`CompletionScopeContractTest`, `DocumentSynchronizationTest`,
+`StaleAnalysisSchedulingTest`, `ProjectRenameConsistencyTest`,
+`CompletionResponseProtocolTest`, `LspPresentationConfigurationTest`,
 `LspErrorContractTest`, `LspProtocolCancellationTest` und der echte
 `LspProcessTest` prüfen positive und negative öffentliche Pfade.
 

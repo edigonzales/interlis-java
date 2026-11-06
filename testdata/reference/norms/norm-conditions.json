@@ -443,7 +443,7 @@
               "caseCoverage": "PARTIAL_EVIDENCE",
               "independentAcceptance": "MISSING_EVIDENCE",
               "observedMethods": [
-                "A2R3CaseSensitivityCounterProbeTest.exactCaseControlsIdentityBindingAndPublicNavigation"
+                "CaseSensitiveIdentifierBindingTest.exactCaseControlsIdentityBindingAndPublicNavigation"
               ],
               "remainingCause": "PARTIAL: durable compiler and navigation case test; independent B3 acceptance open."
             }
@@ -958,7 +958,7 @@
               "caseCoverage": "PARTIAL_EVIDENCE",
               "independentAcceptance": "MISSING_EVIDENCE",
               "observedMethods": [
-                "A2R3CaseSensitivityCounterProbeTest.exactCaseControlsIdentityBindingAndPublicNavigation"
+                "CaseSensitiveIdentifierBindingTest.exactCaseControlsIdentityBindingAndPublicNavigation"
               ],
               "remainingCause": "PARTIAL: durable compiler and navigation case test; independent B3 acceptance open."
             }
@@ -6757,7 +6757,7 @@
               "caseCoverage": "PARTIAL_EVIDENCE",
               "independentAcceptance": "MISSING_EVIDENCE",
               "observedMethods": [
-                "A2R3CaseSensitivityCounterProbeTest.exactCaseControlsIdentityBindingAndPublicNavigation"
+                "CaseSensitiveIdentifierBindingTest.exactCaseControlsIdentityBindingAndPublicNavigation"
               ],
               "remainingCause": "PARTIAL: durable compiler and navigation case test; independent B3 acceptance open."
             }
@@ -6808,7 +6808,7 @@
               "caseCoverage": "PARTIAL_EVIDENCE",
               "independentAcceptance": "MISSING_EVIDENCE",
               "observedMethods": [
-                "A2R3CaseSensitivityCounterProbeTest.exactCaseControlsIdentityBindingAndPublicNavigation"
+                "CaseSensitiveIdentifierBindingTest.exactCaseControlsIdentityBindingAndPublicNavigation"
               ],
               "remainingCause": "PARTIAL: durable compiler and navigation case test; independent B3 acceptance open."
             }
@@ -7479,7 +7479,7 @@
               "caseCoverage": "PARTIAL_EVIDENCE",
               "independentAcceptance": "MISSING_EVIDENCE",
               "observedMethods": [
-                "A2R3CaseSensitivityCounterProbeTest.exactCaseControlsIdentityBindingAndPublicNavigation"
+                "CaseSensitiveIdentifierBindingTest.exactCaseControlsIdentityBindingAndPublicNavigation"
               ],
               "remainingCause": "PARTIAL: durable compiler and navigation case test; independent B3 acceptance open."
             }

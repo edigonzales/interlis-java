@@ -339,7 +339,15 @@ public final class FormatStructure {
         String text = offsets.source().text();
         int start = offsets.tokenRange(node.getStart()).startOffset();
         int end = offsets.tokenRange(node.getStop()).endOffset();
-        boolean multiline = text.indexOf('\n', start, end) >= 0 || text.indexOf('\r', start, end) >= 0;
+        // Use a bounded scan supported by both the JVM and TeaVM.
+        boolean multiline = false;
+        for (int offset = start; offset < end; offset++) {
+            char character = text.charAt(offset);
+            if (character == '\n' || character == '\r') {
+                multiline = true;
+                break;
+            }
+        }
         boolean nested = node.enumElement().stream().anyMatch(item -> item.enumeration() != null)
                 || node.getParent() instanceof EnumElementContext;
         if (!multiline && !nested) return;

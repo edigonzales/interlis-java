@@ -599,7 +599,7 @@ Wiederholte Properties liefern ILI-SYN-0007 am zweiten Token; Warnungsablehnung
 verwendet das gemeinsame Gate. EXTENDED und explizites EXTENDS am selben
 Klassen-/Strukturkopf sind unzulässig. Fehlende Attributtypen nach Parser-Recovery
 behalten die ursprüngliche Syntaxursache als ErrorType; sie erzeugen keine
-Implementierungssperre. E1ProfileSafetyContractTest und ModelKindContractTest
+Implementierungssperre. SyntaxProfileSafetyTest und ModelKindContractTest
 prüfen diese Regeln; dies ist keine pauschale E1-/G2-Abnahme.
 
 ### E2: Einheitenrelationen und Domäneneinschränkungen
@@ -966,7 +966,7 @@ werden im aktuellen Topic kontextualisiert. Die Quelle selbst deklarierter
 LineCoord-Attribute benötigt ABSTRACT; eine spätere Inspektionskonkretisierung
 ist keine Ausnahme vom Quellvertrag (Kapitel05). Import-/Translations-Closures
 behalten tatsächliche Korrespondenzen und geordnete Generic-/Metadaten-/Linienformziele.
-Öffentliche Gegenfälle: `Phase2ClosureContractTest`; keine Runtimeausführung.
+Öffentliche Gegenfälle: `CrossModelSemanticClosureContractTest`; keine Runtimeausführung.
 
 ### L3-1: Fachliche SemanticOverlays
 

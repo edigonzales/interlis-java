@@ -532,7 +532,7 @@ Wiederholte Properties liefern ILI-SYN-0007 am zweiten Token; Warnungsablehnung
 verwendet das gemeinsame Gate. EXTENDED und explizites EXTENDS am selben
 Klassen-/Strukturkopf sind unzulässig. Fehlende Attributtypen nach Parser-Recovery
 behalten die ursprüngliche Syntaxursache als ErrorType; sie erzeugen keine
-Implementierungssperre. E1ProfileSafetyContractTest und ModelKindContractTest
+Implementierungssperre. SyntaxProfileSafetyTest und ModelKindContractTest
 prüfen diese Regeln; dies ist keine pauschale E1-/G2-Abnahme.
 
 P3-4 ergänzt nach Nutzerentscheid vom31.10.2026 das bestehende TYPE-MODEL-

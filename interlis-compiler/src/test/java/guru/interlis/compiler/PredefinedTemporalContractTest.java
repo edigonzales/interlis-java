@@ -34,7 +34,7 @@ class PredefinedTemporalContractTest {
     }
 
     @Test void unchangedPinnedOriginalIsAcceptedWithBothAttributeBounds() throws Exception {
-        byte[] bytes = java.nio.file.Files.readAllBytes(java.nio.file.Path.of("../testdata/conformance/g2-xml-date/FormattedType.ili"));
+        byte[] bytes = java.nio.file.Files.readAllBytes(java.nio.file.Path.of("../testdata/conformance/formatted-types/FormattedType.ili"));
         assertEquals("df09fe0b6a252b0c5a5cbca847406c6d67a961f04acf12aca12dcf901fb658e1",
                 java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)));
         var source = CompilerTestSupport.source("memory:/original.ili", new String(bytes, java.nio.charset.StandardCharsets.UTF_8));

@@ -59,7 +59,7 @@ class ImportedTranslationContractTest {
         var pins=Map.of("2.3","39a8f3f6bbd5287f0608d3208fc53a799f188d43bac43c5f65ec9ba3e59e0629",
                 "2.4","d5705603281688cf11b88f3b18c2dc1b9e0692f436bccc0fe53e443c86556477");
         for (var version:List.of("2.3","2.4")) {
-            var path=java.nio.file.Path.of("../testdata/conformance/g2-translations/translated-import-"+version+".ili");
+            var path=java.nio.file.Path.of("../testdata/conformance/translations/translated-import-"+version+".ili");
             var bytes=java.nio.file.Files.readAllBytes(path);
             assertEquals(pins.get(version),java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)));
             var result=success(request(version,List.of(new String(bytes,java.nio.charset.StandardCharsets.UTF_8)),false,1));
@@ -101,7 +101,7 @@ class ImportedTranslationContractTest {
                 "mandCstrtEnumerationConstant","bbe28fac1295bb07930e51c9fc991d4477377a25db951832dbd540066ecdebd6",
                 "enumComplete","6ec704d575fefe5e94b7aec3ececb2fd0326b60704e85b7d5831dbfce7b901db");
         for (var entry:pins.entrySet()) {
-            var bytes=java.nio.file.Files.readAllBytes(java.nio.file.Path.of("../testdata/conformance/g2-translations/enums/"+entry.getKey()+".ili"));
+            var bytes=java.nio.file.Files.readAllBytes(java.nio.file.Path.of("../testdata/conformance/translations/enums/"+entry.getKey()+".ili"));
             assertEquals(entry.getValue(),java.util.HexFormat.of().formatHex(java.security.MessageDigest.getInstance("SHA-256").digest(bytes)));
             var input=request("2.3",List.of(new String(bytes,java.nio.charset.StandardCharsets.UTF_8)),false,1);
             var result=success(new CompilationRequest(List.of(new ModelSelector.ByName("ModelB",Optional.empty(),Optional.empty())),input.sources(),input.options()));

@@ -182,7 +182,7 @@ Im Compiler-Testbaum fachliche Tests pro Vertragsbereich, z.B.:
 - `FormatterConstraintFamiliesTest`, `FormatterExpressionLayoutTest`, `FormatterMetadataBindingTest`;
 - `FormatterIdempotenceTest`, `FormatterCancellationTest`, `FormatterOptionsCompatibilityTest`.
 
-Namen können an lokale Konventionen angepasst werden, aber keine neue SourceSet-Erfindung. Bestehende `FormatterContractTest`/`P3FormatterPolicyContractTest` methodengenau migrieren oder vereinigen; relevante Fälle nicht verlieren.
+Namen können an lokale Konventionen angepasst werden, aber keine neue SourceSet-Erfindung. Bestehende `FormatterContractTest`/`FormatterPolicyContractTest` methodengenau migrieren oder vereinigen; relevante Fälle nicht verlieren.
 
 Ein kleines explizites `FormatterCorpusCheck` unter `interlis-verification` ist zulässig, wenn es die vollständigen Korpusdateien und Diffs ausführt. Vorgesehene Verantwortlichkeiten:
 

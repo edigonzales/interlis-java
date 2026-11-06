@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Exact upstream inputs plus shared public-query checks; case expectations stay in their tests. */
 final class OriginalViewAcceptanceSupport {
-    private static final Path DIRECTORY = Path.of("../testdata/conformance/b1-b3-acceptance");
+    private static final Path DIRECTORY = Path.of("../testdata/conformance/views");
     private static final CancellationToken TOKEN = CancellationToken.none();
     private OriginalViewAcceptanceSupport() { }
 

@@ -1611,7 +1611,7 @@ CLASS A = value: Pair; MANDATORY CONSTRAINT value == "15-5/5"; END A; END T;`;
     }
   }
   // Exact unchanged upstream inputs from ili2c commit 4ea207f388ef7d91b03d968cc1636f4de84e36ea.
-  // Generated from testdata/conformance/b1-b3-acceptance/sources.properties; sha256 covers UTF-8 source bytes.
+  // Generated from testdata/conformance/views/sources.properties; sha256 covers UTF-8 source bytes.
   // Portable checks prove compile parity; detailed model/query acceptance is in the JVM original-case tests.
   // BEGIN PINNED B1-B3 ORIGINALS JSON
   const originalViewFixtures = [

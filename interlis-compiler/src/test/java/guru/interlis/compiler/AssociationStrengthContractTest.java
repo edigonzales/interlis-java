@@ -68,7 +68,7 @@ class AssociationStrengthContractTest {
         assertEquals("Inside",graph.symbol(role.targetRoots().getFirst()).orElseThrow().name().value());
     }
     @Test void pinnedOriginalModelClassAssociationRetainsItsCompletePublicTargetAndStrength() throws Exception {
-        var bytes=java.nio.file.Files.readAllBytes(java.nio.file.Path.of(System.getProperty("testdata.dir"),"g2/a3/association-model-class23.ili"));
+        var bytes=java.nio.file.Files.readAllBytes(java.nio.file.Path.of(System.getProperty("testdata.dir"),"compiler/name-resolution/association-model-class23.ili"));
         assertEquals("41eadc08d51b09a7f23860267f8b8bf8e7a7b3a2805a68e5fa3f9380f717fa29",guru.interlis.source.Hex.encode(guru.interlis.source.Sha256.digest(bytes)));
         var source=CompilerTestSupport.source("memory:/original-model-class.ili",new String(bytes,java.nio.charset.StandardCharsets.UTF_8));
         var request=CompilerTestSupport.request(List.of("Basis"),Map.of(source.id(),source),List.of(),CompilerOptions.defaults());

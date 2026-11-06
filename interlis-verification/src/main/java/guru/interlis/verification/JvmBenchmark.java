@@ -50,7 +50,7 @@ public final class JvmBenchmark {
                 "corpus","testdata/corpus/seed/manifest.json","corpusIndexSha256",manifest.getAsJsonObject("index").get("sha256"),"models",models,
                 "machine",Map.of("platform",System.getProperty("os.name"),"machine",System.getProperty("os.arch"),"cpus",Runtime.getRuntime().availableProcessors(),"java",System.getProperty("java.runtime.version")),
                 "notes","Wall-clock subprocess measurements; warmup excluded. Eleven successful compiles and two exact approved source rejections; format succeeds for all. RSS in bytes per child via /usr/bin/time. No production claim."));
-        report.put("expectations","testdata/g2/corpus-expectations.json");report.put("expectationsSha256",hash(root.resolve("testdata/g2/corpus-expectations.json")));write(output,report);
+        report.put("expectations","testdata/verification/corpus-expectations.json");report.put("expectationsSha256",hash(root.resolve("testdata/verification/corpus-expectations.json")));write(output,report);
         System.out.println("JVM_BENCHMARK_PASS "+models.size()+" models");
     }
     static double median(List<Double> samples) {require(samples.size()==3 && samples.stream().allMatch(v->Double.isFinite(v)&&v>0),"Missing benchmark sample");return samples.stream().sorted().toList().get(1);}

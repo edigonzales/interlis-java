@@ -27,8 +27,8 @@ class NestedBlockCommentContractTest {
     @ValueSource(strings = {"2.3", "2.4"})
     void openOuterCommentAfterClosedInnerCommentNeverProducesCompiledSchema(String version) throws Exception {
         String original = Files.readString(Path.of(System.getProperty("testdata.dir"),
-                "g2/a2-unterminated-nested-comment.ili"));
-        var invalid = new SourceText(new SourceId("memory:/a2-unterminated-nested-comment.ili"),
+                "compiler/lexical/unterminated-nested-comment.ili"));
+        var invalid = new SourceText(new SourceId("memory:/unterminated-nested-comment.ili"),
                 new SourceRevision(7), original.replace("INTERLIS 2.3;", "INTERLIS " + version + ";"));
         var outcome = CompilerEngines.create().compile(
                 request(List.of("F"), Map.of(invalid.id(), invalid), List.of(), CompilerOptions.defaults()),

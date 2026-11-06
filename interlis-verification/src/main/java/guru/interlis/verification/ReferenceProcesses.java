@@ -60,7 +60,7 @@ public final class ReferenceProcesses {
     }
     static void originals(Path root,Path jar) throws Exception {
         Path output=VerificationLayout.forInvocation(root).rootReport("stabilization/original-view-reference-comparison.json");Files.deleteIfExists(output);
-        var artifacts=artifacts(root);var properties=new Properties();Path fixture=root.resolve("testdata/conformance/b1-b3-acceptance");
+        var artifacts=artifacts(root);var properties=new Properties();Path fixture=root.resolve("testdata/conformance/views");
         try(var reader=Files.newBufferedReader(fixture.resolve("sources.properties"))) {properties.load(reader);}
         require(properties.size()==19,"Changed original-view selection");List<Map<String,Object>> cases=new ArrayList<>();
         for(String id:new TreeSet<>(properties.stringPropertyNames())) {
@@ -79,7 +79,7 @@ public final class ReferenceProcesses {
         require(input.size()==(kind.equals("views")?134:117),"Changed shared comparison selection");
         Path directory=VerificationLayout.forInvocation(root).rootReport("stabilization/"+kind+"-cases");Files.createDirectories(directory);List<Map<String,Object>> results=new ArrayList<>();int number=0,agreements=0,errors=0;
         List<JsonObject> cases=new ArrayList<>(input);
-        if(kind.equals("units"))try(var paths=Files.list(root.resolve("testdata/conformance/k6-units"))) {
+        if(kind.equals("units"))try(var paths=Files.list(root.resolve("testdata/conformance/units"))) {
             for(Path path:paths.filter(p->p.toString().endsWith(".ili")).sorted().toList()) {
                 JsonObject row=new JsonObject();row.addProperty("expected","rejected");JsonArray sources=new JsonArray();JsonObject source=new JsonObject();source.addProperty("sourceId",path.getFileName().toString());source.addProperty("text",Files.readString(path));sources.add(source);row.add("sources",sources);cases.add(row);
             }

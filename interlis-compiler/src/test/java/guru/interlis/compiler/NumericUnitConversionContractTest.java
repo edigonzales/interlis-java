@@ -82,7 +82,7 @@ class NumericUnitConversionContractTest {
         for (String version : VERSIONS) {
             for (var sample : Map.of("zero-factor", "UNIT_CONVERSION_ZERO_FACTOR", "zero-divisor", "UNIT_CONVERSION_ZERO_DIVISOR",
                     "numeric-unit-mismatch", "NUMERIC_UNIT_EXTENSION").entrySet()) {
-                String text = Files.readString(Path.of("../testdata/conformance/k6-units/" + version + "-" + sample.getKey() + ".ili"));
+                String text = Files.readString(Path.of("../testdata/conformance/units/" + version + "-" + sample.getKey() + ".ili"));
                 var result = rejected(request(text), sample.getValue());
                 assertTrue(result.analysis().diagnostics().stream().filter(d -> hasReason(d, sample.getValue()))
                         .allMatch(d -> d.code().value().equals("ILI-SEM-0010")));

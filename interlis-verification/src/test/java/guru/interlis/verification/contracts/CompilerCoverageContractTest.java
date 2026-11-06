@@ -40,7 +40,7 @@ class CompilerCoverageContractTest {
         var grammar=data("grammar-inventory");sameIds(rows(document,"grammar"),rows(grammar,"productions"));
         for(var row:rows(document,"grammar"))require(new LinkedHashSet<>(strings(row.get("occurrenceIds"))).equals(rows(grammar,"occurrences").stream().filter(o->s(o,"production").equals(s(row,"production"))).map(o->s(o,"id")).collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new))),"Missing grammar branch");
         sameIds(rows(document,"builtins"),rows(data("builtin-inventory"),"functions"));
-        var catalogue=json("testdata/g2/predefined-catalogue.json");sameIds(rows(document,"predefined"),rows(catalogue,"declarations"));sameIds(rows(document,"special"),rows(catalogue,"specialValuesAndTypes"));
+        var catalogue=json("testdata/verification/predefined-catalogue.json");sameIds(rows(document,"predefined"),rows(catalogue,"declarations"));sameIds(rows(document,"special"),rows(catalogue,"specialValuesAndTypes"));
         var groups=document.getAsJsonObject("grammarGroups");
         for(var production:rows(document,"grammar"))require(groups.has(s(production,"group")),"Missing grammar family");
         links(document,groups.entrySet().stream().map(e->e.getValue().getAsJsonObject()).toList(),true);

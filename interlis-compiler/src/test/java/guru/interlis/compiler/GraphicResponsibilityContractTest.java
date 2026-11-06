@@ -40,7 +40,7 @@ class GraphicResponsibilityContractTest {
                 "2.4-Derived.ili","6b258a1474625b82f64b0470331235daeb080d997a6352a80987561d8ace2db9",
                 "2.4-Other.ili","77a421d920fd6ff7e62efa45755fab69ea18fb5002bb6ac848f9eae4c42de6c4");
         for(var entry:pins.entrySet()) {
-            var bytes=Files.readAllBytes(Path.of("../testdata/conformance/g2-signatures",entry.getKey()));
+            var bytes=Files.readAllBytes(Path.of("../testdata/conformance/signatures",entry.getKey()));
             assertEquals(entry.getValue(),HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
             var text=new String(bytes,java.nio.charset.StandardCharsets.UTF_8);
             if(entry.getKey().contains("Other")) {

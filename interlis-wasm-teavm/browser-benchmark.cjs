@@ -30,7 +30,7 @@ function serve(root) {
   const repoRoot = path.resolve(__dirname, '..');
   const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot,
     'testdata/corpus/seed/manifest.json'), 'utf8'));
-  const profilePath = path.join(repoRoot, 'testdata/g2/corpus-expectations.json');
+  const profilePath = path.join(repoRoot, 'testdata/verification/corpus-expectations.json');
   const profile = JSON.parse(fs.readFileSync(profilePath, 'utf8'));
   if (profile.id !== 'STRICT_OUTER_TYPE_NAMES' || profile.cases.length !== 2
       || profile.cases.some(c => !manifest.models.some(m => m.file === c.file && m.model === c.model && m.sha256 === c.sha256)))
@@ -90,7 +90,7 @@ function serve(root) {
   const result = {schemaVersion: '1.0', runtime: 'browser', iterationsPerModel: 3,
     warmupPerModel: 1, corpus: 'testdata/corpus/seed/manifest.json',
     corpusIndexSha256: manifest.index.sha256, results,
-    expectations: 'testdata/g2/corpus-expectations.json',
+    expectations: 'testdata/verification/corpus-expectations.json',
     expectationsSha256: crypto.createHash('sha256').update(fs.readFileSync(profilePath)).digest('hex'),
     notes: 'Playwright browser pages; warmup excluded. The approved outer-name source rejection is measured explicitly. Existing per-browser stack exclusions remain visible.'};
   fs.mkdirSync(path.join(repoRoot, 'build/reports/performance'), {recursive: true});

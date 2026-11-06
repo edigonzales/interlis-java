@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class OriginalViewFixtureContractTest {
     @Test void portableOriginalsMatchPinnedBytesAndAllModelRoots() throws Exception {
         Path root = Path.of(System.getProperty("repo.root"));
-        Path fixtures = root.resolve("testdata/conformance/b1-b3-acceptance");
+        Path fixtures = root.resolve("testdata/conformance/views");
         var pins = new LinkedHashMap<String, String[]>();
         for (String line : Files.readAllLines(fixtures.resolve("sources.properties"))) {
             if (line.isBlank() || line.startsWith("#")) continue;

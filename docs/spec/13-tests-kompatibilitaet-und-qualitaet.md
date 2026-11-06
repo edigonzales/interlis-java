@@ -20,7 +20,7 @@ Die ausdrücklich gewählte strikte äussere Typnamensregel gilt auch im
 historischen13-Modelle-Corpus. Metadata/FileFormat und Gesuchsteller/Gesuchsteller
 bleiben bytegleich und werden mit exakten strukturierten Quellfehlern gemessen;
 die übrigen elf Compilefälle und alle13Formatierungen bleiben erfolgreich.
-`testdata/g2/corpus-expectations.json` bindet die zwei Negativausgänge und
+`testdata/verification/corpus-expectations.json` bindet die zwei Negativausgänge und
 separat umbenannte Positivkontrollen an Originalhashes. Die Kontrollschemas
 müssen tatsächliche Basisbindungen und geordnete Member bei Fresh/Reuse zeigen.
 Ein beliebiger Fehler oder ein fälschlich erfolgreicher Compile genügt nicht.
@@ -276,21 +276,21 @@ Konkrete Fälle und Normabschnitte werden mit der Implementierung einer Regel er
 
 `SourceOrderDeterminismTest` übergibt dieselben Quellen in verschieden aufgebauten Maps. Die kanonische Verarbeitung und Diagnoseordnung verwendet `SourceId.value()` nach `String.compareTo`, also lexikografisch nach UTF-16-Codeeinheiten ohne Locale-Kollation. Ergebnisse bleiben gleich. Fachliche Deklarations-/Transferreihenfolgen innerhalb eines Modells werden durch diese Sortierung nicht umgeordnet; eine abweichende historische CLI-Darstellung ist ein gesonderter Profilvertrag.
 
-`P3CliLifecycleContractTest` verwendet eine injizierte Factory und einen aufzeichnenden Observer. Kurze und volle Engine-Aufrufe erzeugen jeweils genau einen Lauf. Ein Workspace-Adapter emittiert unter der weitergereichten Engine-RunId keine zusätzliche Start-/Endfolge. Zwei parallele Host-Eltern mit jeweils frischen Enginekind-Kontexten behalten Parent-ID, Korrelationsattribute und lauflokale Ereignisreihenfolge. Eine erfolgreiche Kompilierung und ein anschliessender Ausgabe-/Formatierungsfehler dürfen korrekt einen erfolgreichen Kindlauf und fehlgeschlagenen Elternlauf ergeben. ThreadLocal- beziehungsweise globale aktuelle Kontexte sind kein zulässiger Implementierungstrick.
+`CliRunLifecycleContractTest` verwendet eine injizierte Factory und einen aufzeichnenden Observer. Kurze und volle Engine-Aufrufe erzeugen jeweils genau einen Lauf. Ein Workspace-Adapter emittiert unter der weitergereichten Engine-RunId keine zusätzliche Start-/Endfolge. Zwei parallele Host-Eltern mit jeweils frischen Enginekind-Kontexten behalten Parent-ID, Korrelationsattribute und lauflokale Ereignisreihenfolge. Eine erfolgreiche Kompilierung und ein anschliessender Ausgabe-/Formatierungsfehler dürfen korrekt einen erfolgreichen Kindlauf und fehlgeschlagenen Elternlauf ergeben. ThreadLocal- beziehungsweise globale aktuelle Kontexte sind kein zulässiger Implementierungstrick.
 
 Ein Gettertest für jeden Record ist nicht erforderlich. Geprüft werden die tatsächlichen Grenzen: defensive Ownership, ID-Zugehörigkeit, Graphkonsistenz, geordnete Eigenschaften und Gate-Zugriff.
 
 ## 7. Workspace, LSP und Editierfolgen
 
 P3-2 ergänzt die konkreten öffentlichen Abnahmen:
-`P3DocumentSynchronizationTest` (atomare ungültige Batches, Vollersatz,
+`DocumentSynchronizationTest` (atomare ungültige Batches, Vollersatz,
 Clientversionen, CRLF/UTF-16 und protokollgemässe Spaltenbegrenzung),
-`P3AnalysisSchedulingTest` (blockierte Engine, aktuelle Veröffentlichung und
-Supersedierung), `P3CompletionScopeContractTest`/`P3CompletionProtocolTest`
+`StaleAnalysisSchedulingTest` (blockierte Engine, aktuelle Veröffentlichung und
+Supersedierung), `CompletionScopeContractTest`/`CompletionResponseProtocolTest`
 (Scope, Qualifizierer, Sprachversion, Ersetzungsbereich und echte Trunkierung),
-`P3ProjectRenameTest` (geschlossene Quellen, ungespeicherter Clienttext,
+`ProjectRenameConsistencyTest` (geschlossene Quellen, ungespeicherter Clienttext,
 Versionsedits, Diskänderung, Schreibrecht und Watcherdiagnostik) und
-`P3PresentationConfigurationTest` (gebundene Tokens, mehrzeilige Kommentare,
+`LspPresentationConfigurationTest` (gebundene Tokens, mehrzeilige Kommentare,
 Formatoptionen und atomare Konfiguration). `LspErrorContractTest` prüft falsch
 typisierte Diagrammargumente ohne Exceptiondaten; `LspProcessTest` prüft echte
 stdio-Requests vor Initialisierung und Exit auch bei weiterhin offener Eingabe.
@@ -353,7 +353,7 @@ Externe Sprach-/Metamodellprüfungen starten das Referenzwerkzeug mit Argumentli
 
 compilerCliCheck prüft echte Standardprozesse je Kanal und Exitcode. Erlaubte Normalisierungen sind einzeln begründet, etwa ein temporärer absoluter Arbeitsordner. Sie dürfen keine Diagnoseposition, keinen Modellnamen, keine Reihenfolge oder fachlich relevante Meldung entfernen.
 
-`P3OutcomePriorityContractTest` prüft die Abbildung der vom Compiler gelieferten `RejectionSummary` auf die internen CLI-Zustände und anschliessend auf Standard-Exitcodes. Fehlende Implementierung und abgelehnte Warnungen dürfen nicht als nachgewiesener ungültiger Quelltext ausgegeben werden. Ein erfolgreicher Compile mit anschliessendem Ausgabe-, Formatierungs- oder Flushfehler ergibt keinen erfolgreichen Gesamtaufruf. Bei mehreren Ablehnungsgründen gilt die in Kapitel 18 ausdrücklich festgelegte Priorität, während alle Gründe im strukturierten Resultat erhalten bleiben.
+`CliOutcomePrecedenceContractTest` prüft die Abbildung der vom Compiler gelieferten `RejectionSummary` auf die internen CLI-Zustände und anschliessend auf Standard-Exitcodes. Fehlende Implementierung und abgelehnte Warnungen dürfen nicht als nachgewiesener ungültiger Quelltext ausgegeben werden. Ein erfolgreicher Compile mit anschliessendem Ausgabe-, Formatierungs- oder Flushfehler ergibt keinen erfolgreichen Gesamtaufruf. Bei mehreren Ablehnungsgründen gilt die in Kapitel 18 ausdrücklich festgelegte Priorität, während alle Gründe im strukturierten Resultat erhalten bleiben.
 
 Zu erfassen sind mindestens gültiger Compile, Syntaxfehler, Semantikfehler, fehlende Datei, fehlender Import, ungültige Option, Hilfe-/Versionsaufruf und mehrere Eingabedateien. Formatierungsoptionen erhalten eigene Profile und Fixtures; ein nicht implementierter Formatierungsmodus darf nicht still als vorhandener CLI-Umfang gelten.
 

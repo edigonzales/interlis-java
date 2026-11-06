@@ -9,8 +9,8 @@ class SemanticComparisonTest {
     @Test void actualGraphProjectionDetectsLossWrongEqualNamedTargetOrderAndFalseValidity() throws Exception {
         Path root=Path.of(System.getProperty("repo.root"));
         for(String version:List.of("2.3","2.4")) {
-            var good=SemanticComparison.project(root.resolve("testdata/g2/a3/ordered-targets-"+version+".ili"));
-            var bad=SemanticComparison.project(root.resolve("testdata/g2/a3/invalid-"+version+".ili"));
+            var good=SemanticComparison.project(root.resolve("testdata/compiler/semantic-projection/ordered-members-and-role-targets-"+version+".ili"));
+            var bad=SemanticComparison.project(root.resolve("testdata/compiler/semantic-projection/reversed-numeric-range-"+version+".ili"));
             assertEquals("succeeded",good.get("outcome").getAsString());assertEquals("rejected",bad.get("outcome").getAsString());
             assertEquals(List.of("first","second","third"),HostChecks.rows(good.getAsJsonObject("elements"),"F.Child").stream().map(m->m.get("name").getAsString()).toList());
             for(String topic:List.of("T","U")) {

@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** The unchanged upstream B1–B3 cases remain useful through the diagram consumer. */
 class OriginalViewProjectionTest {
-    private static final Path DIRECTORY = Path.of("../testdata/conformance/b1-b3-acceptance");
+    private static final Path DIRECTORY = Path.of("../testdata/conformance/views");
     private static final CancellationToken TOKEN = CancellationToken.none();
 
     @Test void allOriginalViewsRetainMembersAndSupportedRelationsInTheDiagram() throws Exception {

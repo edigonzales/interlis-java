@@ -73,21 +73,21 @@ public final class SemanticComparison {
         try {compare(expected,mutant);}catch(IllegalArgumentException expectedFailure){return;}throw new AssertionError("Undetected semantic mutation");
     }
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath(),out=VerificationLayout.forInvocation(root).rootReport("g2/semantic-comparison.json");Files.deleteIfExists(out);
+        Path root=Path.of(args[0]).toAbsolutePath(),out=VerificationLayout.forInvocation(root).rootReport("reference/semantic-comparison.json");Files.deleteIfExists(out);
         Path jar=ReferenceProcesses.prepare(root);var cases=new ArrayList<Map<String,Object>>();int mutants=0;
         try(var loader=new URLClassLoader(new java.net.URL[]{jar.toUri().toURL()},ClassLoader.getPlatformClassLoader())) {
             for(String version:List.of("2.3","2.4")) {
                 JsonObject good=null,bad=null;
-                for(String name:List.of("ordered-targets-","invalid-")) {
-                    Path file=root.resolve("testdata/g2/a3/"+name+version+".ili");var jvm=project(file);var ref=reference(loader,file);compare(ref,jvm);
-                    String expected=name.startsWith("invalid")?"rejected":"succeeded";require(s(jvm,"outcome").equals(expected),"Wrong gate: "+file);
+                for(String name:List.of("ordered-members-and-role-targets-","reversed-numeric-range-")) {
+                    Path file=root.resolve("testdata/compiler/semantic-projection/"+name+version+".ili");var jvm=project(file);var ref=reference(loader,file);compare(ref,jvm);
+                    String expected=name.startsWith("reversed-numeric-range")?"rejected":"succeeded";require(s(jvm,"outcome").equals(expected),"Wrong gate: "+file);
                     if(expected.equals("succeeded")) {good=jvm;require(jvm.getAsJsonObject("elements").getAsJsonArray("F.Child").size()==3,"Lost inherited member");}else bad=jvm;
                     cases.add(Map.of("source",root.relativize(file).toString(),"sha256",hash(file),"jvm",jvm,"reference",ref));
                 }
                 mutants+=counterchecks(good,bad);
             }
         }
-        Path input=VerificationLayout.forInvocation(root).rootReport("g2/a3-jvm.json");write(input,cases);
+        Path input=VerificationLayout.forInvocation(root).rootReport("reference/semantic-comparison-jvm.json");write(input,cases);
         var portable=run(root,List.of(args[1],root.resolve("tools/reference/semantic-comparison.cjs").toString(),input.toString()),Duration.ofSeconds(90));
         require(portable.exitCode()==0,"Portable semantic comparison failed: "+portable);
         pin(jar,ReferenceProcesses.JAR);write(out,Map.of("status","passed","referenceJarSha256",ReferenceProcesses.JAR,"cases",cases,"mutationChecks",mutants,"portable",portable,

@@ -21,7 +21,7 @@ class GeometryOriginalAcceptanceTest {
                 "missing-overlap-47.ili","b27c9870817000d9fd33b9e81e738da73f2772b27a14ef3c427b4fc75163f14c",
                 "missing-overlap-49.ili","6ea78e720c7abce9a4fe2403999277430fad73ad5952868a0c72cd47894589d8");
         for(var pin:pins.entrySet()) {
-            var bytes=Files.readAllBytes(Path.of("../testdata/conformance/g2-geometry",pin.getKey()));
+            var bytes=Files.readAllBytes(Path.of("../testdata/conformance/geometry",pin.getKey()));
             assertEquals(pin.getValue(),HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
             var source=CompilerTestSupport.source("memory:/"+pin.getKey(),new String(bytes,java.nio.charset.StandardCharsets.UTF_8));
             var input=CompilerTestSupport.request(List.of(pin.getKey().startsWith("fine")?"M":"F"),Map.of(source.id(),source),List.of(),CompilerOptions.defaults());

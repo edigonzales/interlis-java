@@ -726,7 +726,7 @@ SEM-005/010/014, TEST-011/012: versionsgerechte leere Deklarations-/Aufruflisten
 Recovery und Fragmente sowie die vordefinierte Übersetzungsklasse mit zwei
 Pflichtattributen, getrennten UNIQUE-Regeln, gebundenen Pfaden, Herkunft,
 Reihenfolge, Imports/Vererbung/Übersetzungen und öffentlichen Queries.
-Verträge stehen in Kapitel 04/05/06/16; `E1FunctionMetadataContractTest`
+Verträge stehen in Kapitel 04/05/06/16; `FunctionAndMetadataContractTest`
 sichert den Teilumfang. Die übrigen E1–E5-Pflichten bleiben offen.
 
 E1-Modellkopfoptionen konkretisieren SYN-004/013/015, META-003/006/011/014/015/017,
@@ -743,7 +743,7 @@ Wiederholte Properties liefern ILI-SYN-0007 am zweiten Token; Warnungsablehnung
 verwendet das gemeinsame Gate. EXTENDED und explizites EXTENDS am selben
 Klassen-/Strukturkopf sind unzulässig. Fehlende Attributtypen nach Parser-Recovery
 behalten die ursprüngliche Syntaxursache als ErrorType; sie erzeugen keine
-Implementierungssperre. E1ProfileSafetyContractTest und ModelKindContractTest
+Implementierungssperre. SyntaxProfileSafetyTest und ModelKindContractTest
 prüfen diese Regeln; dies ist keine pauschale E1-/G2-Abnahme.
 
 E2 konkretisiert META-003/006/009/014 und SEM-005/010/014 gemäss Kapitel 05/06:
@@ -872,7 +872,7 @@ SEM-005/006/008/010/011/014/017/019 sowie TEST-002/003/009/011/012. Kapitel05/06
 bleiben Vertragsquelle: tatsächliche übersetzte Importziele, Korrespondenzen und
 Reihenfolge, getrennte gleichnamige Generic-Bindungen, Quellenabstraktion vor
 Inspektionskonkretisierung und gemeinsame geerbte Namensauflösung.
-`Phase2ClosureContractTest` ergänzt die bestehenden Translation-/Generic-/Metadaten-/
+`CrossModelSemanticClosureContractTest` ergänzt die bestehenden Translation-/Generic-/Metadaten-/
 Linienform-/Grafikverträge; das Phasenurteil verlangt frische volle T1/T2/T3-Nachweise.
 
 L3-1 (AC3-01/02, META-012, SEM-016, INC-007/016, TEST-006/007/014):
