@@ -54,27 +54,66 @@ import java.util.Set;
 
 /** Builds indexed declarations on demand and completes model metadata. */
 final class DeclarationBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead.Symbols state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
+    private final NameResolver resolver;
     private final Closure closure;
     private final OverlayBindings overlays;
+    private final UnitBindings units;
+    private final LineForms lineForms;
+    private final MetadataBindings metadata;
+    private final GenericBindings generics;
+    private final ConstraintBindings constraints;
+    private final GraphicBuilder graphics;
     private final ViewBuilder views;
+    private final NameBindings names;
+    private final InheritanceBindings inheritance;
+    private final ReferenceBindings references;
+    private final TypeBindings typeBindings;
+    private final ExpressionBindings expressions;
     private final Set<SymbolId> buildingAssociations = new HashSet<>();
     private final Map<String, DeclInfo> modelNames = new LinkedHashMap<>();
 
-    DeclarationBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics, Closure closure, OverlayBindings overlays, ViewBuilder views) {
-        this.g = graph;
+    DeclarationBindings(SemanticGraphRead.Symbols state,
+                        SemanticWork work,
+                        IndexedDeclarations index,
+                        SemanticDiagnostics diagnostics,
+                        NameResolver resolver,
+                        Closure closure,
+                        OverlayBindings overlays,
+                        UnitBindings units,
+                        LineForms lineForms,
+                        MetadataBindings metadata,
+                        GenericBindings generics,
+                        ConstraintBindings constraints,
+                        GraphicBuilder graphics,
+                        ViewBuilder views,
+                        NameBindings names,
+                        InheritanceBindings inheritance,
+                        ReferenceBindings references,
+                        TypeBindings typeBindings,
+                        ExpressionBindings expressions) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
+        this.resolver = resolver;
         this.closure = closure;
         this.overlays = overlays;
+        this.units = units;
+        this.lineForms = lineForms;
+        this.metadata = metadata;
+        this.generics = generics;
+        this.constraints = constraints;
+        this.graphics = graphics;
         this.views = views;
+        this.names = names;
+        this.inheritance = inheritance;
+        this.references = references;
+        this.typeBindings = typeBindings;
+        this.expressions = expressions;
     }
 
     void validateTypeNamespaces() {
@@ -201,7 +240,7 @@ final class DeclarationBindings {
                 if (edge.importer().sourceId().equals(entry.model().sourceId())
                         && edge.importer().declarationOffset() == entry.model().declarationOffset()
                         && edge.site().range().equals(site.range())) {
-                    target = g.findModelId(edge.target().name(), edge.target().declarationOffset(),
+                    target = index.findModelId(edge.target().name(), edge.target().declarationOffset(),
                             edge.target().sourceId()).orElse(null);
                     break;
                 }
@@ -273,19 +312,19 @@ final class DeclarationBindings {
             case STRUCTURE -> buildStructure(decl);
             case ASSOCIATION -> buildAssociation(decl);
             case DOMAIN -> buildDomain(decl);
-            case UNIT -> g.units.buildUnit(decl);
-            case LINE_FORM -> g.lines.buildForm(decl);
-            case METADATA_BASKET -> g.metadata.basket(decl);
-            case METAOBJECT -> g.metadata.object(decl);
+            case UNIT -> units.buildUnit(decl);
+            case LINE_FORM -> lineForms.buildForm(decl);
+            case METADATA_BASKET -> metadata.basket(decl);
+            case METAOBJECT -> metadata.object(decl);
             case FUNCTION -> buildFunction(decl);
             case PARAMETER -> buildParameter(decl);
-            case CONTEXT -> g.generics.buildContext(decl);
+            case CONTEXT -> generics.buildContext(decl);
             case ATTRIBUTE -> buildAttribute(decl);
             case ROLE -> buildRole(decl);
-            case CONSTRAINT -> g.constraints.buildConstraint(decl);
+            case CONSTRAINT -> constraints.buildConstraint(decl);
             case ENUM_ELEMENT -> buildEnumElement(decl);
             case UNSUPPORTED -> buildUnsupported(decl);
-            case GRAPHIC -> g.graphics.build(decl);
+            case GRAPHIC -> graphics.build(decl);
             case DRAWING_RULE -> {
                 buildSymbol(index.byId(decl.owner().orElseThrow()).orElseThrow());
                 yield state.symbol(decl.id());
@@ -310,7 +349,7 @@ final class DeclarationBindings {
             diagnostics.emitRule(decl, "TOPIC end name does not match declaration", "TOPIC_END_NAME");
         }
         Optional<SymbolId> base = syntax.baseTopic().flatMap(name -> {
-            Optional<SymbolId> resolved = g.names.tryResolve(decl, name, Set.of(SymbolKind.TOPIC));
+            Optional<SymbolId> resolved = names.tryResolve(decl, name, Set.of(SymbolKind.TOPIC));
             if (resolved.isEmpty()) {
                 List<SymbolId> matches = state.symbolsInBuildOrder().stream()
                         .filter(TopicSymbol.class::isInstance).map(TopicSymbol.class::cast)
@@ -322,8 +361,8 @@ final class DeclarationBindings {
             }
             return resolved;
         });
-        base.ifPresent(id -> state.bindBase(decl.id(), id));
-        if (base.filter(g.inheritance::isFinalDeclaration).isPresent())
+        base.ifPresent(id -> inheritance.bindBase(decl.id(), id));
+        if (base.filter(inheritance::isFinalDeclaration).isPresent())
             diagnostics.emitRule(decl, "cannot extend FINAL topic", "TOPIC_FINAL");
         if (base.isPresent() && state.symbol(base.orElseThrow()) instanceof TopicSymbol baseTopic) {
             boolean abstractBase = baseTopic.header().modifiers()
@@ -400,10 +439,10 @@ final class DeclarationBindings {
         List<SymbolId> dependencies = new ArrayList<>();
         for (guru.interlis.syntax.NameSyntax dependency : syntax.dependencies()) {
             work.checkpoint();
-            Optional<SymbolId> resolved = g.resolver.resolve(decl.id(), dependency, Set.of(SymbolKind.TOPIC)).target();
+            Optional<SymbolId> resolved = resolver.resolve(decl.id(), dependency, Set.of(SymbolKind.TOPIC)).target();
             if (resolved.isEmpty()) diagnostics.unresolved(dependency);
             resolved.ifPresent(dependencies::add);
-            g.references.recordReference(decl, dependency, resolved.orElse(null), ReferenceUsage.TYPE_USE);
+            references.recordReference(decl, dependency, resolved.orElse(null), ReferenceUsage.TYPE_USE);
         }
         Set<String> memberNames = new LinkedHashSet<>();
         for (DeclInfo child : index.children(decl.id())) {
@@ -422,14 +461,14 @@ final class DeclarationBindings {
                 if (child.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)
                         && classes.stream().noneMatch(candidate ->
                             !candidate.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)
-                            && g.inheritance.baseChain(candidate.id()).contains(child.id())))
+                            && inheritance.baseChain(candidate.id()).contains(child.id())))
                     diagnostics.emitRule(decl, "abstract class requires an abstract topic or a concrete specialization",
                             "ABSTRACT_TOPIC");
             }
         }
         List<SymbolId> members = index.children(decl.id()).stream().map(DeclInfo::id).toList();
         List<SymbolId> deferred = new ArrayList<>();
-        for (var name : syntax.deferredGenerics()) g.names.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN),
+        for (var name : syntax.deferredGenerics()) names.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN),
                 ReferenceUsage.TYPE_USE, new ArrayList<>()).ifPresent(deferred::add);
         return new TopicSymbol(header(decl), base, members, dependencies, deferred, List.of());
     }
@@ -439,7 +478,7 @@ final class DeclarationBindings {
         if (syntax.endName().isPresent() && !syntax.endName().orElseThrow().equals(syntax.name())) {
             diagnostics.emitRule(decl, "CLASS end name does not match declaration", "CLASS_END_NAME");
         }
-        Optional<SymbolId> base = g.inheritance.objectInheritanceBase(decl.id());
+        Optional<SymbolId> base = inheritance.objectInheritanceBase(decl.id());
         for (DeclInfo child : index.children(decl.id())) {
             work.checkpoint();
             buildSymbol(child);
@@ -467,7 +506,7 @@ final class DeclarationBindings {
 
     private StructureSymbol buildStructure(DeclInfo decl) {
         StructureDeclarationSyntax syntax = (StructureDeclarationSyntax) decl.syntax();
-        Optional<SymbolId> base = g.inheritance.objectInheritanceBase(decl.id());
+        Optional<SymbolId> base = inheritance.objectInheritanceBase(decl.id());
         for (DeclInfo child : index.children(decl.id())) {
             work.checkpoint();
             buildSymbol(child);
@@ -485,12 +524,12 @@ final class DeclarationBindings {
         AssociationDeclarationSyntax syntax = (AssociationDeclarationSyntax) decl.syntax();
         buildingAssociations.add(decl.id());
         Optional<SymbolId> base = syntax.baseAssociation().flatMap(name -> {
-            var resolved = g.resolver.resolve(decl.id(), name, Set.of(SymbolKind.ASSOCIATION)).target();
+            var resolved = resolver.resolve(decl.id(), name, Set.of(SymbolKind.ASSOCIATION)).target();
             if (resolved.isEmpty()) diagnostics.unresolved(name);
             return resolved;
         });
         if (base.isEmpty() && syntax.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-            base = g.inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.ASSOCIATION));
+            base = inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.ASSOCIATION));
             if (base.isEmpty()) diagnostics.emitRule(decl, "EXTENDED association needs an inherited base", "ASSOCIATION_BASE");
         }
         if (base.isPresent()) {
@@ -500,7 +539,7 @@ final class DeclarationBindings {
                 base = Optional.empty();
             } else {
                 buildSymbol(index.byId(parent).orElseThrow());
-                state.bindBase(decl.id(), parent);
+                inheritance.bindBase(decl.id(), parent);
                 if (state.symbol(parent).header().modifiers().contains(guru.interlis.model.Modifier.FINAL)) {
                     diagnostics.emitRule(decl, "cannot extend FINAL association", "ASSOCIATION_FINAL");
                 }
@@ -551,16 +590,16 @@ final class DeclarationBindings {
         if (index.byId(decl.owner().orElseThrow()).orElseThrow().kind() == SymbolKind.MODEL
                 && decl.language() == guru.interlis.model.LanguageVersion.ILI23 && !model.contracted())
             diagnostics.emitRule(decl, "runtime parameters require CONTRACTED in INTERLIS 2.3", "PARAMETER_CONTRACTED");
-        TypeId type = g.types.buildType(syntax.type(), decl.id(), decl.sourceId());
+        TypeId type = typeBindings.buildType(syntax.type(), decl.id(), decl.sourceId());
         if (index.byId(decl.owner().orElseThrow()).orElseThrow().kind() == SymbolKind.MODEL && containsArea(type, new HashSet<>()))
             diagnostics.emitRule(decl, "runtime parameters cannot contain AREA values", "PARAMETER_AREA");
-        state.bindDeclaredType(decl.id(), type);
-        return new guru.interlis.model.ParameterSymbol(header(decl), type, syntax.mandatory() || g.types.mandatoryType(type), Optional.empty());
+        typeBindings.bindDeclaredType(decl.id(), type);
+        return new guru.interlis.model.ParameterSymbol(header(decl), type, syntax.mandatory() || typeBindings.mandatoryType(type), Optional.empty());
     }
 
     private boolean containsArea(TypeId type, Set<TypeId> seen) {
         if (!seen.add(type)) return false;
-        TypeDescriptor descriptor = g.types.effectiveDescriptor(type);
+        TypeDescriptor descriptor = typeBindings.effectiveDescriptor(type);
         if (descriptor instanceof GeometryType geometry)
             return geometry.geometryKind() == guru.interlis.model.GeometryKind.AREA
                     || geometry.geometryKind() == guru.interlis.model.GeometryKind.MULTIAREA;
@@ -568,13 +607,13 @@ final class DeclarationBindings {
         if (descriptor instanceof StructureValueType structure) {
             for(SymbolId root:structure.targetRoots()) {
                 Set<SymbolId> visited=new HashSet<>();
-                for(SymbolId current=root;current!=null && visited.add(current);current=g.inheritance.objectInheritanceBase(current).orElse(null)) {
+                for(SymbolId current=root;current!=null && visited.add(current);current=inheritance.objectInheritanceBase(current).orElse(null)) {
                     work.checkpoint();
                     if(state.symbol(current) instanceof StructureSymbol known) {
                         for(SymbolId member:known.members())
                             if(state.symbol(member) instanceof AttributeSymbol attribute && containsArea(attribute.declaredType(),seen))return true;
                     } else for(var child:index.children(current))
-                        if(child.kind()==SymbolKind.ATTRIBUTE && containsArea(g.types.attributeType(child),seen))return true;
+                        if(child.kind()==SymbolKind.ATTRIBUTE && containsArea(typeBindings.attributeType(child),seen))return true;
                 }
             }
         }
@@ -597,13 +636,13 @@ final class DeclarationBindings {
             }
         }
         List<FunctionParameter> parameters = java.util.stream.IntStream.range(0, syntax.parameters().size())
-                .mapToObj(i -> new FunctionParameter(syntax.parameters().get(i).name(), g.types.functionArgumentType(decl, i), syntax.parameters().get(i).mandatory() || g.types.mandatoryType(g.types.functionArgumentType(decl,i)))).toList();
-        TypeId result=g.types.buildType(syntax.returnType(), decl.id(), decl.sourceId());
-        return new FunctionSymbol(header(decl), parameters,result,syntax.returnMandatory() || g.types.mandatoryType(result),syntax.explanation().map(e->new Documentation(e.text(),List.of(e.range()))).orElseGet(Documentation::empty));
+                .mapToObj(i -> new FunctionParameter(syntax.parameters().get(i).name(), typeBindings.functionArgumentType(decl, i), syntax.parameters().get(i).mandatory() || typeBindings.mandatoryType(typeBindings.functionArgumentType(decl,i)))).toList();
+        TypeId result=typeBindings.buildType(syntax.returnType(), decl.id(), decl.sourceId());
+        return new FunctionSymbol(header(decl), parameters,result,syntax.returnMandatory() || typeBindings.mandatoryType(result),syntax.explanation().map(e->new Documentation(e.text(),List.of(e.range()))).orElseGet(Documentation::empty));
     }
 
     private DomainSymbol buildDomain(DeclInfo decl) {
-        TypeId type = g.types.domainType(decl);
+        TypeId type = typeBindings.domainType(decl);
         Set<String> constraintNames = new LinkedHashSet<>();
         for (DeclInfo child : index.children(decl.id())) {
             work.checkpoint();
@@ -618,29 +657,29 @@ final class DeclarationBindings {
 
     private AttributeSymbol buildAttribute(DeclInfo decl) {
         AttributeDeclarationSyntax syntax = (AttributeDeclarationSyntax) decl.syntax();
-        TypeId type = g.types.attributeType(decl);
+        TypeId type = typeBindings.attributeType(decl);
         for(var child:index.children(decl.id()))if(child.kind()==SymbolKind.ENUM_ELEMENT)buildSymbol(child);
         if (syntax.transientAttribute() && !syntax.assigned()
                 && !syntax.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)) {
             diagnostics.emitRule(decl, "transient attribute requires an assignment", "TRANSIENT_ASSIGNMENT");
         }
-        return new AttributeSymbol(header(decl), type, syntax.mandatory() || g.types.mandatoryType(type),
+        return new AttributeSymbol(header(decl), type, syntax.mandatory() || typeBindings.mandatoryType(type),
                 syntax.transientAttribute(), syntax.continuous(), syntax.subdivision(),
                 Optional.empty(), bindAttributeDerivations(decl, syntax, type));
     }
 
     private List<ExpressionId> bindAttributeDerivations(DeclInfo decl, AttributeDeclarationSyntax syntax, TypeId type) {
-        List<ExpressionId> inferred = g.types.inferredDerivations(decl.id());
+        List<ExpressionId> inferred = typeBindings.inferredDerivations(decl.id());
         if (inferred != null) return inferred;
         List<ExpressionId> result = new ArrayList<>();
         for (var expression : syntax.derivations()) {
-            var bound = g.expressions.contextualValue(g.expressions.buildExpression(expression, decl.owner().orElseThrow()),type,decl.id());
+            var bound = expressions.contextualValue(expressions.buildExpression(expression, decl.owner().orElseThrow()),type,decl.id());
             result.add(bound.id());
-            if(!bound.error() && (syntax.mandatory() || g.types.mandatoryType(type))
-                    && guru.interlis.model.internal.TypeCompatibility.isUndefined(g.types.effectiveDescriptor(bound.typeId())))
+            if(!bound.error() && (syntax.mandatory() || typeBindings.mandatoryType(type))
+                    && guru.interlis.model.internal.TypeCompatibility.isUndefined(typeBindings.effectiveDescriptor(bound.typeId())))
                 diagnostics.emitRule(decl,"MANDATORY attribute excludes an explicitly undefined derived value","MANDATORY_VALUE",expression.range());
-            if (!bound.error() && !g.types.assignable(bound.typeId(), type))
-                g.emitTypeMismatch(decl.sourceId(), expression.range(), g.types.typeName(bound.typeId()), g.types.typeName(type));
+            if (!bound.error() && !typeBindings.assignable(bound.typeId(), type))
+                diagnostics.emitTypeMismatch(decl.sourceId(), expression.range(), typeBindings.typeName(bound.typeId()), typeBindings.typeName(type));
         }
         return List.copyOf(result);
     }
@@ -654,12 +693,12 @@ final class DeclarationBindings {
             List<SymbolId> restrictions = target.restrictions().stream()
                     .map(name -> bindRoleTarget(decl, name)).toList();
             for (SymbolId restriction : restrictions) {
-                if (!g.inheritance.targetSpecializes(restriction, base)) {
+                if (!inheritance.targetSpecializes(restriction, base)) {
                     diagnostics.emitRule(decl, "restriction must specialize its role target", "ROLE_TARGET_RESTRICTION");
                 }
             }
             for (var previous : targets) {
-                if (g.inheritance.targetSpecializes(base, previous.base()) || g.inheritance.targetSpecializes(previous.base(), base)) {
+                if (inheritance.targetSpecializes(base, previous.base()) || inheritance.targetSpecializes(previous.base(), base)) {
                     diagnostics.emitRule(decl, "role alternatives must not specialize each other", "ROLE_TARGET_OVERLAP");
                 }
             }
@@ -667,7 +706,7 @@ final class DeclarationBindings {
         }
         Cardinality cardinality = syntax.cardinality();
         SymbolId associationBase = state.baseOf(decl.owner().orElseThrow());
-        RoleSymbol inherited = associationBase == null ? null : g.inheritance.associationRoles(associationBase).stream()
+        RoleSymbol inherited = associationBase == null ? null : inheritance.associationRoles(associationBase).stream()
                 .filter(r -> r.name().value().equals(decl.name())).findFirst().orElse(null);
         if (inherited == null) {
             if (associationBase != null) diagnostics.emitRule(decl, "extended association must not add roles", "ASSOCIATION_EXTENDED_ROLE");
@@ -694,7 +733,7 @@ final class DeclarationBindings {
             if (inherited.ordered() && !decl.modifiers().contains(guru.interlis.model.Modifier.ORDERED)) {
                 diagnostics.emitRule(decl, "an ordered role cannot become unordered in an extension", "ROLE_ORDER_EXTENSION");
             }
-            if (targets.stream().flatMap(t -> t.allowedRoots().stream()).anyMatch(t -> !g.inheritance.roleAccepts(inherited, t))) {
+            if (targets.stream().flatMap(t -> t.allowedRoots().stream()).anyMatch(t -> !inheritance.roleAccepts(inherited, t))) {
                 diagnostics.emitRule(decl, "extended role widens its target set", "ROLE_TARGET_EXTENSION");
             }
         }
@@ -706,13 +745,13 @@ final class DeclarationBindings {
 
     private Optional<ExpressionId> bindRoleDerivation(DeclInfo decl, RoleDeclarationSyntax syntax, List<guru.interlis.model.RoleTarget> targets) {
         return syntax.derivation().map(expression -> {
-            var bound = g.expressions.buildExpression(expression, decl.owner().orElseThrow());
-            var actual = g.types.effectiveDescriptor(bound.typeId());
+            var bound = expressions.buildExpression(expression, decl.owner().orElseThrow());
+            var actual = typeBindings.effectiveDescriptor(bound.typeId());
             if (!bound.error()) {
                 var roots = targets.stream().flatMap(t -> t.allowedRoots().stream()).toList();
-                var expected = new guru.interlis.model.ObjectArgumentType(g.types.nextTypeId(), decl.origin(), Optional.empty(), roots, false);
-                state.storeType(expected);
-                if (!g.types.assignable(bound.typeId(), expected.id())) g.emitTypeMismatch(decl.sourceId(), expression.range(), g.types.typeName(bound.typeId()), "single role target");
+                var expected = new guru.interlis.model.ObjectArgumentType(typeBindings.nextTypeId(), decl.origin(), Optional.empty(), roots, false);
+                typeBindings.storeType(expected);
+                if (!typeBindings.assignable(bound.typeId(), expected.id())) diagnostics.emitTypeMismatch(decl.sourceId(), expression.range(), typeBindings.typeName(bound.typeId()), "single role target");
             }
             return bound.id();
         });
@@ -720,12 +759,12 @@ final class DeclarationBindings {
 
     SymbolId bindObjectTarget(DeclInfo decl, guru.interlis.syntax.NameSyntax name, ReferenceUsage usage) {
         Optional<SymbolId> target = name.text().equals("ANYCLASS") ? Optional.of(anyClass(decl))
-                : g.resolver.resolve(decl.id(), name, Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION)).target();
+                : resolver.resolve(decl.id(), name, Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION)).target();
         if (target.isEmpty() && name.segments().size() == 1) {
-            target = g.inheritance.baseTopicMember(decl.id(), name.text(), Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION));
+            target = inheritance.baseTopicMember(decl.id(), name.text(), Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION));
         }
         if (target.isEmpty()) diagnostics.unresolved(name);
-        g.references.recordReference(decl, name, target.orElse(null), usage);
+        references.recordReference(decl, name, target.orElse(null), usage);
         return target.orElseGet(() -> syntheticClass(decl, name));
     }
 
@@ -748,7 +787,7 @@ final class DeclarationBindings {
     }
 
     private SymbolId syntheticClass(DeclInfo owner, guru.interlis.syntax.NameSyntax name) {
-        SymbolId id = new SymbolId("sym-unresolved-" + state.nextTypeSequence());
+        SymbolId id = new SymbolId("sym-unresolved-" + typeBindings.nextTypeSequence());
         SymbolId model = index.modelOfSymbol(owner.id()).orElse(owner.id());
         SymbolHeader header = new SymbolHeader(id, SymbolKind.CLASS,
                 DeclaredName.synthetic("<unresolved-role-target>"),
@@ -781,7 +820,7 @@ final class DeclarationBindings {
     private EnumElementSymbol buildEnumElement(DeclInfo decl) {
         String path = decl.name();
         List<String> segments = List.of(path.split("\\."));
-        TypeDescriptor type = decl.owner().map(state::declaredType).map(g.types::effectiveDescriptor).orElse(null);
+        TypeDescriptor type = decl.owner().map(state::declaredType).map(typeBindings::effectiveDescriptor).orElse(null);
         int ordinal = type instanceof EnumerationType enumeration ? enumeration.values().stream()
                 .filter(value -> value.path().equals(path)).mapToInt(EnumerationValue::order).findFirst().orElse(-1) : -1;
         if (ordinal < 0) {
@@ -825,7 +864,7 @@ final class DeclarationBindings {
                 && attribute.transientAttribute()) {
             modifiers.add(guru.interlis.model.Modifier.TRANSIENT);
         }
-        if (decl.kind() == SymbolKind.DOMAIN && g.types.mandatoryDomain(decl.id())) modifiers.add(guru.interlis.model.Modifier.MANDATORY);
+        if (decl.kind() == SymbolKind.DOMAIN && typeBindings.mandatoryDomain(decl.id())) modifiers.add(guru.interlis.model.Modifier.MANDATORY);
         return new SymbolHeader(decl.id(), decl.kind(), declaredName, decl.owner(),
                 decl.order(), decl.origin(), decl.nameRange(), decl.language(),
                 documentation, new MetaAttributeSet(values,entries), modifiers, List.of());
@@ -838,6 +877,6 @@ final class DeclarationBindings {
 
     Optional<SymbolId> bindObjectTarget(DeclInfo owner,
             guru.interlis.syntax.NameSyntax name, List<DiagnosticId> errors) {
-        return g.names.bindTarget(owner, name, Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW), ReferenceUsage.TYPE_USE, errors);
+        return names.bindTarget(owner, name, Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW), ReferenceUsage.TYPE_USE, errors);
     }
 }

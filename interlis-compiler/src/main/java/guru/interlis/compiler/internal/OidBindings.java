@@ -31,22 +31,43 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Binds object identification rules and their predefined domains. */
 final class OidBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
+    private final NameBindings names;
+    private final Supplier<TypeBindings> typeBindings;
+    private final Supplier<InheritanceBindings> inheritance;
+    private final Consumer<DomainSymbol> defineOidDomain;
+    private final Consumer<Symbol> replaceOidOwner;
+    private final Function<SymbolId, SymbolId> scopeRoot;
 
-    OidBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics) {
-        this.g = graph;
+    OidBindings(SemanticGraphRead state,
+                SemanticWork work,
+                IndexedDeclarations index,
+                SemanticDiagnostics diagnostics,
+                NameBindings names,
+                Supplier<TypeBindings> typeBindings,
+                Supplier<InheritanceBindings> inheritance,
+                Consumer<DomainSymbol> defineOidDomain,
+                Consumer<Symbol> replaceOidOwner,
+                Function<SymbolId, SymbolId> scopeRoot) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
+        this.names = names;
+        this.typeBindings = typeBindings;
+        this.inheritance = inheritance;
+        this.defineOidDomain = defineOidDomain;
+        this.replaceOidOwner = replaceOidOwner;
+        this.scopeRoot = scopeRoot;
     }
 
     void bindOidRules() {
@@ -76,7 +97,7 @@ final class OidBindings {
                 ? bindOidRules(state.baseOf(id), bound, active) : List.of();
         List<guru.interlis.model.OidRule> rules = new ArrayList<>(inherited);
         if (!(symbol instanceof TopicSymbol) && rules.isEmpty()) {
-            SymbolId topic = g.paths.scopeRoot(id);
+            SymbolId topic = scopeRoot.apply(id);
             if (topic != null && !topic.equals(id) && state.symbol(topic) instanceof TopicSymbol)
                 bindOidRules(topic, bound, active).stream().filter(r -> !r.basket()).forEach(rules::add);
         }
@@ -89,9 +110,9 @@ final class OidBindings {
             Optional<SymbolId> domain = Optional.empty();
             if (rule.domain().isPresent()) {
                 var name = rule.domain().orElseThrow();
-                domain=g.names.bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.TYPE_USE,new ArrayList<>());
+                domain=names.bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.TYPE_USE,new ArrayList<>());
                 if (domain.isEmpty()) continue;
-                if (!(g.types.effectiveDescriptor(state.declaredType(domain.orElseThrow())) instanceof guru.interlis.model.OidType)) {
+                if (!(typeBindings.get().effectiveDescriptor(state.declaredType(domain.orElseThrow())) instanceof guru.interlis.model.OidType)) {
                     diagnostics.emitRule(decl, "OID AS must bind an OID domain", "OID_DOMAIN"); continue;
                 }
             }
@@ -116,7 +137,7 @@ final class OidBindings {
             boolean multiple = !(cardinality.upper() instanceof guru.interlis.model.CardinalityUpper.Finite finite)
                     || finite.value().compareTo(java.math.BigInteger.ONE) > 0;
             boolean identified = rules.isEmpty()
-                    ? g.inheritance.baseChain(id).stream().map(index::byId).flatMap(Optional::stream)
+                    ? inheritance.get().baseChain(id).stream().map(index::byId).flatMap(Optional::stream)
                         .anyMatch(d -> d.modifiers().contains(guru.interlis.model.Modifier.OID))
                     : rules.stream().anyMatch(r -> !r.basket() && oidState(r) != 0);
             if (multiple && !identified)
@@ -131,7 +152,7 @@ final class OidBindings {
             case AssociationSymbol a -> new AssociationSymbol(header, a.baseAssociation(), a.cardinality(), a.roles(), a.attributes(), a.constraints(), a.derivedFrom());
             default -> symbol;
         };
-        state.replaceSymbol(replacement); active.remove(id);
+        replaceOidOwner.accept(replacement); active.remove(id);
         var result = List.copyOf(rules); bound.put(id, result); return result;
     }
 
@@ -139,7 +160,7 @@ final class OidBindings {
         if (rule.domain().isEmpty()) return 0;
         Symbol domain = state.symbol(rule.domain().orElseThrow());
         if (domain != null && domain.name().value().equals("INTERLIS.NOOID")) return 0;
-        return g.types.effectiveDescriptor(state.declaredType(rule.domain().orElseThrow())) instanceof guru.interlis.model.OidType oid
+        return typeBindings.get().effectiveDescriptor(state.declaredType(rule.domain().orElseThrow())) instanceof guru.interlis.model.OidType oid
                 && oid.oidKind() == guru.interlis.model.OidKind.ANY ? 1 : 2;
     }
 
@@ -174,15 +195,15 @@ final class OidBindings {
                 : name.equals("INTERLIS.STANDARDOID") ? guru.interlis.model.OidKind.TEXT : guru.interlis.model.OidKind.ANY;
         Optional<TypeId> carrier = Optional.empty();
         if (kind != guru.interlis.model.OidKind.ANY) {
-            TypeId value = g.types.nextTypeId();
-            state.storeType(kind == guru.interlis.model.OidKind.NUMERIC
+            TypeId value = typeBindings.get().nextTypeId();
+            typeBindings.get().storeType(kind == guru.interlis.model.OidKind.NUMERIC
                     ? new NumericType(value, origin, NumericRange.of(guru.interlis.model.DecimalLiteral.parse("0"), guru.interlis.model.DecimalLiteral.parse("2147483647")))
                     : new TextType(value, origin, TextKind.TEXT, java.util.OptionalInt.of(kind == guru.interlis.model.OidKind.UUID ? 36 : 16)));
             carrier = Optional.of(value);
         }
-        TypeId type = g.types.nextTypeId(); state.storeType(new guru.interlis.model.OidType(type, origin, kind, carrier));
-        state.bindDeclaredType(symbol, type); base.ifPresent(b -> state.bindBase(symbol, b));
-        state.defineSymbol(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN, DeclaredName.synthetic(name),
+        TypeId type = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new guru.interlis.model.OidType(type, origin, kind, carrier));
+        typeBindings.get().bindDeclaredType(symbol, type); base.ifPresent(b -> inheritance.get().bindBase(symbol, b));
+        defineOidDomain.accept(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN, DeclaredName.synthetic(name),
                 Optional.empty(), 0, origin, Optional.empty(), language,
                 Documentation.empty(), MetaAttributeSet.empty(), language == guru.interlis.model.LanguageVersion.ILI24 && name.equals("INTERLIS.ANYOID")
                         ? Set.of(guru.interlis.model.Modifier.ABSTRACT) : Set.of(), List.of()), type, base, false));

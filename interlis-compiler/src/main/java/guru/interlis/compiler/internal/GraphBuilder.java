@@ -1,265 +1,179 @@
 package guru.interlis.compiler.internal;
 
-import guru.interlis.compiler.ImportResolution;
+import guru.interlis.compiler.AnalysisBudget;
 import guru.interlis.compiler.SourceSet;
-import guru.interlis.compiler.internal.ExpressionBindings.ExpressionResult;
 import guru.interlis.diagnostics.DiagnosticArgument;
-import guru.interlis.diagnostics.DiagnosticCode;
-import guru.interlis.diagnostics.DiagnosticDraft;
-import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
-import guru.interlis.diagnostics.Severity;
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.AnalysisCoverage;
-import guru.interlis.model.AssociationSymbol;
-import guru.interlis.model.AttributeSymbol;
-import guru.interlis.model.Cardinality;
-import guru.interlis.model.CardinalityUpper;
-import guru.interlis.model.ClassSymbol;
-import guru.interlis.model.ClassValueType;
-import guru.interlis.model.CoordinateType;
-import guru.interlis.model.FormattedType;
-import guru.interlis.model.internal.FormattedValues;
-import guru.interlis.model.GenericType;
-import guru.interlis.model.GeometryType;
-import guru.interlis.model.StructureValueType;
-import guru.interlis.model.CollectionType;
-import guru.interlis.model.ConstraintDefinition;
-import guru.interlis.model.ConstraintSymbol;
 import guru.interlis.model.CoverageStatus;
-import guru.interlis.model.DecimalLiteral;
-import guru.interlis.model.DeclaredName;
-import guru.interlis.model.Documentation;
-import guru.interlis.model.DomainConstraint;
-import guru.interlis.model.DomainReferenceType;
-import guru.interlis.model.DomainSymbol;
-import guru.interlis.model.EffectiveMember;
-import guru.interlis.model.EffectiveMemberOrigin;
-import guru.interlis.model.EffectiveType;
-import guru.interlis.model.EnumElementSymbol;
-import guru.interlis.model.EnumerationType;
-import guru.interlis.model.EnumerationValue;
-import guru.interlis.model.ExpressionId;
-import guru.interlis.model.ErrorExpression;
-import guru.interlis.model.ErrorType;
-import guru.interlis.model.MandatoryConstraint;
-import guru.interlis.model.MetaAttributeSet;
-import guru.interlis.model.ModelImport;
 import guru.interlis.model.ModelSymbol;
-import guru.interlis.model.NumericRange;
-import guru.interlis.model.NumericType;
-import guru.interlis.model.Origin;
-import guru.interlis.model.PendingReason;
-import guru.interlis.model.PendingType;
-import guru.interlis.model.PlausibilityConstraint;
-import guru.interlis.model.ReferenceType;
-import guru.interlis.model.ReferenceSegment;
-import guru.interlis.model.ReferenceUsage;
-import guru.interlis.model.RoleAggregation;
-import guru.interlis.model.RoleSymbol;
 import guru.interlis.model.SemanticGraph;
-import guru.interlis.model.StructureSymbol;
+import guru.interlis.model.SnapshotId;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
-import guru.interlis.model.SymbolKind;
-import guru.interlis.model.TextKind;
-import guru.interlis.model.TextType;
-import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
-import guru.interlis.model.TypedExpression;
-import guru.interlis.model.UnitSymbol;
-import guru.interlis.model.FunctionSymbol;
-import guru.interlis.model.AlignmentType;
-import guru.interlis.model.BlackboxType;
-import guru.interlis.model.BooleanType;
-import guru.interlis.model.FunctionParameter;
-import guru.interlis.model.UniquenessConstraint;
-import guru.interlis.model.UnsupportedSymbol;
-import guru.interlis.model.ViewSymbol;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
-import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
-import guru.interlis.syntax.AssociationDeclarationSyntax;
-import guru.interlis.syntax.AttributeDeclarationSyntax;
-import guru.interlis.syntax.BinaryExpressionSyntax;
-import guru.interlis.syntax.BooleanTypeSyntax;
-import guru.interlis.syntax.ClassDeclarationSyntax;
-import guru.interlis.syntax.AlignmentTypeSyntax;
-import guru.interlis.syntax.BlackboxTypeSyntax;
-import guru.interlis.syntax.ClassValueTypeSyntax;
-import guru.interlis.syntax.CollectionTypeSyntax;
-import guru.interlis.syntax.OidTypeSyntax;
-import guru.interlis.syntax.ConstantExpressionSyntax;
-import guru.interlis.syntax.ConstraintDeclarationSyntax;
-import guru.interlis.syntax.CoordinateTypeSyntax;
-import guru.interlis.syntax.DefinedExpressionSyntax;
-import guru.interlis.syntax.DomainDeclarationSyntax;
-import guru.interlis.syntax.ExternalConstraintSyntax;
-import guru.interlis.syntax.FormattedTypeSyntax;
-import guru.interlis.syntax.BuiltinFunctionExpressionSyntax;
-import guru.interlis.syntax.ClassConstantExpressionSyntax;
-import guru.interlis.syntax.GenericConstantExpressionSyntax;
-import guru.interlis.syntax.GenericTypeSyntax;
-import guru.interlis.syntax.EnumTreeValueSyntax;
-import guru.interlis.syntax.EnumerationConstantExpressionSyntax;
-import guru.interlis.syntax.FunctionCallExpressionSyntax;
-import guru.interlis.syntax.LineTypeSyntax;
-import guru.interlis.syntax.ViewDeclarationSyntax;
-import guru.interlis.syntax.UnitDeclarationSyntax;
-import guru.interlis.syntax.NumericTypeSyntax;
-import guru.interlis.syntax.FunctionDeclarationSyntax;
-import guru.interlis.syntax.DomainReferenceSyntax;
-import guru.interlis.syntax.EnumerationTypeSyntax;
-import guru.interlis.syntax.ExpressionSyntax;
-import guru.interlis.syntax.LiteralExpressionSyntax;
-import guru.interlis.syntax.ParenthesizedExpressionSyntax;
-import guru.interlis.syntax.PathExpressionSyntax;
-import guru.interlis.syntax.ReferenceTypeSyntax;
-import guru.interlis.syntax.RoleDeclarationSyntax;
-import guru.interlis.syntax.StructureDeclarationSyntax;
-import guru.interlis.syntax.TemporalTypeSyntax;
-import guru.interlis.syntax.TextTypeSyntax;
-import guru.interlis.syntax.TopicSyntax;
-import guru.interlis.syntax.TypeSyntax;
-import guru.interlis.syntax.UnaryExpressionSyntax;
-import guru.interlis.syntax.UndefinedExpressionSyntax;
-import guru.interlis.syntax.UnsupportedExpressionSyntax;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
-/** Builds the immutable semantic graph for the parsed declarations. */
+/** Coordinates the ordered construction and publication of one semantic graph. */
 final class GraphBuilder {
-    final IndexedDeclarations index;
+    private final IndexedDeclarations index;
     private final SourceSet sourceSet;
     private final Closure closure;
-    private final guru.interlis.model.SnapshotId snapshotId;
-    final NameResolver resolver;
-    final NameBindings names;
-    final ReferenceBindings references;
-    final TranslationBindings translations;
-    final DeclarationBindings declarations;
-    final InheritanceBindings inheritance;
-    final ConstraintBindings constraints;
-    final TopicBindings topics;
-    final ExpressionBindings expressions;
-    final ObjectPathBindings paths;
-    final TypeBindings types;
-    final UnitBindings units;
-    final OidBindings oid;
-    final FormattedTypeBindings formats;
-    final GenericBindings generics;
-    private final SemanticDiagnostics diagnostics;
-    private final Map<SourceId, Set<String>> syntaxUnsupportedBySource;
-
-    private final guru.interlis.execution.CancellationToken cancellation;
+    private final SnapshotId snapshotId;
     private final SemanticBuildState state = new SemanticBuildState();
     private final SemanticWork work;
+    private final SemanticDiagnostics diagnostics;
     private final OverlayBindings overlays;
+    private final Map<SourceId, Set<String>> syntaxUnsupportedBySource;
+    private final DeclarationBindings declarations;
+    private final InheritanceBindings inheritance;
+    private final ConstraintBindings constraints;
+    private final TopicBindings topics;
+    private final ExpressionBindings expressions;
+    private final ObjectPathBindings paths;
+    private final TypeBindings types;
+    private final UnitBindings units;
+    private final OidBindings oid;
+    private final FormattedTypeBindings formats;
+    private final GenericBindings generics;
+    private final LineForms lines;
+    private final GraphicBuilder graphics;
+    private final MetadataBindings metadata;
+    private final StructureBindings structures;
+    private final PredefinedTemporal temporal;
+    private final ViewBuilder views;
+    private final ReferenceBindings references;
+    private final TranslationBindings translations;
 
     GraphBuilder(IndexedDeclarations index, SourceSet sourceSet, Closure closure,
-                 DiagnosticCollector collector, guru.interlis.model.SnapshotId snapshotId,
+                 DiagnosticCollector collector, SnapshotId snapshotId,
                  Map<SourceId, Set<String>> syntaxUnsupportedBySource,
-                 guru.interlis.execution.CancellationToken cancellation,
-                 guru.interlis.compiler.AnalysisBudget budget, OverlayBindings overlays) {
+                 CancellationToken cancellation, AnalysisBudget budget, OverlayBindings overlays) {
         this.overlays = overlays;
-        this.cancellation = Objects.requireNonNull(cancellation, "cancellation");
-        this.work = new SemanticWork(this.cancellation,
+        this.work = new SemanticWork(cancellation,
                 Objects.requireNonNull(budget, "budget").maxSemanticWorkUnits(), overlays.workUnits());
         this.index = Objects.requireNonNull(index, "index");
         this.sourceSet = Objects.requireNonNull(sourceSet, "sourceSet");
         this.closure = Objects.requireNonNull(closure, "closure");
         this.diagnostics = new SemanticDiagnostics(collector, this.closure);
         this.snapshotId = Objects.requireNonNull(snapshotId, "snapshotId");
-        this.syntaxUnsupportedBySource = Map.copyOf(
-                Objects.requireNonNull(syntaxUnsupportedBySource, "syntaxUnsupportedBySource"));
-        this.resolver = new NameResolver(index, closure);
-        this.declarations = new DeclarationBindings(this, state, work, index, diagnostics, closure, overlays, views);
-        this.inheritance = new InheritanceBindings(this, state, work, index, diagnostics, views);
-        this.constraints = new ConstraintBindings(this, state, work, index, diagnostics);
-        this.topics = new TopicBindings(this, state, work, index, diagnostics);
-        this.expressions = new ExpressionBindings(this, state, work, index, diagnostics, sourceSet, views);
-        this.paths = new ObjectPathBindings(this, state, work, index, diagnostics, sourceSet, cancellation, views, structures);
-        this.types = new TypeBindings(this, state, work, index, diagnostics);
-        this.units = new UnitBindings(this, state, work, index, diagnostics);
-        this.oid = new OidBindings(this, state, work, index, diagnostics);
-        this.formats = new FormattedTypeBindings(this, state, work, index, diagnostics);
-        this.generics = new GenericBindings(this, state, work, index, diagnostics);
+        this.syntaxUnsupportedBySource = Map.copyOf(Objects.requireNonNull(syntaxUnsupportedBySource, "syntaxUnsupportedBySource"));
+        var resolver = new NameResolver(index, closure);
         this.references = new ReferenceBindings(index, state, work, state::storeReference,
                 language -> PredefinedModels.ensure(state, language));
-        this.names = new NameBindings(index, resolver, work, diagnostics, references, temporal, metadata, lines,
-                oid::builtinOidDomain, types::builtinSimpleDomain, units::builtinUnit, expressions::builtinDeclaration);
-        this.translations = new TranslationBindings(index, state, work, diagnostics,
-                types::effectiveDescriptor, paths::findMember, views, state::replaceSymbol);
+        var names = new NameBindings(index, resolver, work, diagnostics, references,
+                (owner, name, kinds) -> temporal().find(owner, name, kinds),
+                (owner, name, kinds) -> metadata().predefined(owner, name, kinds),
+                (owner, name, kinds) -> lines().predefined(owner, name, kinds),
+                (owner, name) -> oid().builtinOidDomain(owner, name),
+                (owner, name) -> types().builtinSimpleDomain(owner, name),
+                (owner, name) -> units().builtinUnit(owner, name),
+                (signature, language) -> expressions().builtinDeclaration(signature, language));
+        Function<DeclInfo, Symbol> ensureSymbol = declaration -> declarations().buildSymbol(declaration);
+        Function<DeclInfo, SymbolHeader> symbolHeader = declaration -> declarations().header(declaration);
+        Function<TypeId, TypeDescriptor> effectiveDescriptor = id -> types().effectiveDescriptor(id);
+        Function<SymbolId, SymbolId> scopeRoot = id -> paths().scopeRoot(id);
+
+        this.units = new UnitBindings(state, work, index, diagnostics, names, this::temporal,
+                state::defineSymbol, symbolHeader, ensureSymbol, effectiveDescriptor);
+        this.oid = new OidBindings(state, work, index, diagnostics, names, this::types, this::inheritance,
+                state::defineSymbol, state::replaceSymbol, scopeRoot);
+        this.topics = new TopicBindings(state, work, index, diagnostics, this::inheritance, this::paths, oid,
+                effectiveDescriptor);
+        this.inheritance = new InheritanceBindings(state, work, index, diagnostics, names, this::types, topics,
+                this::metadata, state::replaceSymbol, scopeRoot, ensureSymbol);
+        this.generics = new GenericBindings(state, work, index, diagnostics, names, inheritance, this::metadata,
+                state::replaceSymbol, symbolHeader, effectiveDescriptor, scopeRoot);
+        this.structures = new StructureBindings(state, work, index, diagnostics, names, inheritance,
+                this::paths, generics, effectiveDescriptor);
+        this.formats = new FormattedTypeBindings(state, work, index, diagnostics, names, this::types,
+                inheritance, this::paths, references, structures);
+        this.lines = new LineForms(state, work, index, diagnostics, names, inheritance, references, this::types,
+                units, this::expressions, symbolHeader, ensureSymbol);
+        this.constraints = new ConstraintBindings(state, work, index, diagnostics, resolver, this::paths, names,
+                inheritance, references, this::expressions, this::types, structures, symbolHeader);
+        this.paths = new ObjectPathBindings(state, work, index, diagnostics, resolver, sourceSet, cancellation,
+                this::expressions, this::views, this::types, inheritance, references, structures,
+                owner -> graphics().context(owner), ensureSymbol);
+        this.metadata = new MetadataBindings(state, work, index, diagnostics, resolver, names, references,
+                inheritance, units, this::types, paths, structures, this::expressions, symbolHeader,
+                ensureSymbol);
+        this.temporal = new PredefinedTemporal(state, units, this::types, metadata, inheritance, paths);
+        this.types = new TypeBindings(state, work, index, diagnostics, units, names, inheritance, lines, paths,
+                this::expressions, temporal, structures, metadata, references, formats, this::declarations,
+                state::defineSymbol);
+        this.graphics = new GraphicBuilder(state, work, index, diagnostics, names, metadata, inheritance,
+                this::expressions, types, references, topics, symbolHeader, ensureSymbol, scopeRoot);
+        var functions = new FunctionBindings(state, work, index, diagnostics, this::expressions, types, paths,
+                (left, right) -> translations().sameBoundExpression(left, right));
+        this.expressions = new ExpressionBindings(state, work, index, diagnostics, sourceSet, paths,
+                this::views, types, lines, metadata, names, references, functions, units, formats,
+                state::defineSymbol,
+                (constraint, fallback) -> constraints().externalConstraintTarget(constraint, fallback),
+                owner -> graphics().context(owner), ensureSymbol);
+        this.views = new ViewBuilder(state, work, index, diagnostics, resolver, references, inheritance,
+                expressions, types, paths, structures, topics, lines, ensureSymbol, symbolHeader);
+        this.declarations = new DeclarationBindings(state, work, index, diagnostics, resolver, closure,
+                overlays, units, lines, metadata, generics, constraints, graphics, views, names, inheritance,
+                references, types, expressions);
+        this.translations = new TranslationBindings(index, state, work, diagnostics, types::effectiveDescriptor,
+                paths::findMember, views, state::replaceSymbol);
         for (var _ : index.models()) {
-            checkWork();
+            work.checkpoint();
         }
     }
 
-    void checkWork() {
-        work.checkpoint();
-    }
-
-    DiagnosticId unresolved(guru.interlis.syntax.NameSyntax name) {
-        return diagnostics.unresolved(name);
-    }
-
-    DiagnosticId emitUnsupported(SourceId source, SourceRange range, String feature, String construct) {
-        return diagnostics.emitUnsupported(source, range, feature, construct);
-    }
-
-    DiagnosticId emitTypeMismatch(SourceId source, SourceRange range, String actual, String expected) {
-        return diagnostics.emitTypeMismatch(range, actual, expected);
-    }
-
-    DiagnosticId emitRule(DeclInfo decl, String rule, String reason) {
-        return diagnostics.emitRule(decl, rule, reason);
-    }
-
-    DiagnosticId emitRule(DeclInfo decl, String rule, String reason, SourceRange range) {
-        return diagnostics.emitRule(decl, rule, reason, range);
-    }
-
-    final LineForms lines = new LineForms(this, state);
-    final GraphicBuilder graphics = new GraphicBuilder(this, state);
-    final MetadataBindings metadata = new MetadataBindings(this, state);
-    final StructureBindings structures = new StructureBindings(this, state);
-    final FunctionBindings functions = new FunctionBindings(this, state);
-    final PredefinedTemporal temporal = new PredefinedTemporal(this, state);
+    // Recursive collaborators are invoked only after construction.
+    private ConstraintBindings constraints() { return constraints; }
+    private DeclarationBindings declarations() { return declarations; }
+    private ExpressionBindings expressions() { return expressions; }
+    private GraphicBuilder graphics() { return graphics; }
+    private InheritanceBindings inheritance() { return inheritance; }
+    private LineForms lines() { return lines; }
+    private MetadataBindings metadata() { return metadata; }
+    private OidBindings oid() { return oid; }
+    private ObjectPathBindings paths() { return paths; }
+    private PredefinedTemporal temporal() { return temporal; }
+    private TranslationBindings translations() { return translations; }
+    private TypeBindings types() { return types; }
+    private UnitBindings units() { return units; }
+    private ViewBuilder views() { return views; }
 
     GraphResult build() {
         syntaxUnsupportedBySource.forEach((source, features) -> {
             diagnostics.registerUnsupportedSource(source);
             for (String feature : features) {
-                checkWork();
+                work.checkpoint();
                 if (diagnostics.recordUnsupported(source, feature)) {
                     SourceText text = sourceSet.sources().get(source);
                     SourceRange range = text == null ? null : text.range(0, 0);
-                    emitUnsupported(source, range, feature, feature);
+                    diagnostics.emitUnsupported(source, range, feature, feature);
                 }
             }
         });
         for (IndexedDeclarations.ModelEntry entry : index.models()) {
-            checkWork();
+            work.checkpoint();
             for (DeclInfo child : index.children(entry.id())) {
-                checkWork();
+                work.checkpoint();
                 declarations.buildSymbol(child);
             }
         }
         for (IndexedDeclarations.ModelEntry entry : index.models()) {
-            checkWork();
+            work.checkpoint();
             declarations.buildModel(entry);
         }
         inheritance.validateTopicInheritanceCycles();
@@ -277,22 +191,22 @@ final class GraphBuilder {
         types.buildEffectiveTypes();
         formats.validateFormattedUses();
         units.validateNumericUses();
-        new NumericSubdivisions(this, state).validate();
+        new NumericSubdivisions(state, work, index, diagnostics, types::effectiveDescriptor).validate();
         references.complete();
         inheritance.validateAssociationRules();
         inheritance.validateAttributeOverrides();
         inheritance.validateClassExtensions();
         declarations.validateTypeNamespaces();
         constraints.validateConstraintNames();
-        overlays.validateCrs(this, state);
+        overlays.validateCrs(state, work, types);
         translations.complete();
         declarations.bindTransferNamespaces();
         Set<SymbolId> modelIds = closure.models().stream()
-                .map(m -> findModelId(m.name(), m.declarationOffset(), m.sourceId()).orElse(null))
+                .map(m -> index.findModelId(m.name(), m.declarationOffset(), m.sourceId()).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         List<SymbolId> rootIds = closure.roots().stream()
-                .map(m -> findModelId(m.name(), m.declarationOffset(), m.sourceId()).orElse(null))
+                .map(m -> index.findModelId(m.name(), m.declarationOffset(), m.sourceId()).orElse(null))
                 .filter(Objects::nonNull)
                 .toList();
         Set<guru.interlis.model.LanguageVersion> languages = new LinkedHashSet<>();
@@ -301,7 +215,7 @@ final class GraphBuilder {
                 .map(s -> (ModelSymbol) s)
                 .filter(s -> modelIds.contains(s.id()))
                 .toList()) {
-            checkWork();
+            work.checkpoint();
             languages.add(model.header().languageVersion());
         }
         PredefinedModels.finish(work, state, languages);
@@ -314,18 +228,13 @@ final class GraphBuilder {
                 diagnostics.unsupportedBySource());
     }
 
-    // EXISTENCE compares values, it does not assign the complete source domain.
-    // Numeric/text bounds are data restrictions, not an assignment precondition.
-
-    private final ViewBuilder views = new ViewBuilder(this, state);
-
     private AnalysisCoverage buildCoverage() {
         List<AnalysisCoverage.CoverageEntry> entries = new ArrayList<>();
         List<guru.interlis.diagnostics.Diagnostic> relevantDiagnostics = diagnostics.snapshot().stream()
                 .filter(d -> d.phase() == Phase.LEXING || d.phase() == Phase.PARSING
                         || d.primaryRange().map(closure::contains).orElse(true)).toList();
         for (SourceId source : closure.sources()) {
-            checkWork();
+            work.checkpoint();
             boolean lexing = relevantDiagnostics.stream().noneMatch(d -> d.primaryRange()
                     .filter(r -> r.source().equals(source)).isPresent()
                     && d.code().value().equals("ILI-SYN-0001"));
@@ -368,19 +277,6 @@ final class GraphBuilder {
                                                  CoverageStatus status) {
         return new AnalysisCoverage.CoverageEntry(phase, Optional.of(source), status,
                 Optional.empty(), Optional.empty());
-    }
-
-    Optional<SymbolId> findModelId(String name, int offset, SourceId source) {
-        return index.models().stream()
-                .filter(e -> e.model().sourceId().equals(source))
-                .filter(e -> e.model().name().equals(name))
-                .filter(e -> e.model().declarationOffset() == offset)
-                .map(IndexedDeclarations.ModelEntry::id)
-                .findFirst();
-    }
-
-    static String unquote(String text) {
-        return InterlisStrings.decode(text).text();
     }
 
     record GraphResult(SemanticGraph graph, AnalysisCoverage coverage, List<SymbolId> roots,

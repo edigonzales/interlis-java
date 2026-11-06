@@ -20,14 +20,19 @@ import java.util.function.BiFunction;
 
 /** Applies source-level predefined and visibility rules to indexed name resolution. */
 final class NameBindings {
+    @FunctionalInterface
+    interface PredefinedLookup {
+        Optional<SymbolId> lookup(DeclInfo owner, String name, Set<SymbolKind> kinds);
+    }
+
     private final IndexedDeclarations index;
     private final NameResolver resolver;
     private final SemanticWork work;
     private final SemanticDiagnostics diagnostics;
     private final ReferenceBindings references;
-    private final PredefinedTemporal temporal;
-    private final MetadataBindings metadata;
-    private final LineForms lines;
+    private final PredefinedLookup temporal;
+    private final PredefinedLookup metadata;
+    private final PredefinedLookup lines;
     private final BiFunction<SymbolId, String, Optional<SymbolId>> predefinedOid;
     private final BiFunction<DeclInfo, String, Optional<SymbolId>> predefinedDomain;
     private final BiFunction<SymbolId, String, Optional<SymbolId>> predefinedUnit;
@@ -35,7 +40,7 @@ final class NameBindings {
             FunctionSymbol> predefinedFunction;
 
     NameBindings(IndexedDeclarations index, NameResolver resolver, SemanticWork work, SemanticDiagnostics diagnostics,
-                 ReferenceBindings references, PredefinedTemporal temporal, MetadataBindings metadata, LineForms lines,
+                 ReferenceBindings references, PredefinedLookup temporal, PredefinedLookup metadata, PredefinedLookup lines,
                  BiFunction<SymbolId, String, Optional<SymbolId>> predefinedOid,
                  BiFunction<DeclInfo, String, Optional<SymbolId>> predefinedDomain,
                  BiFunction<SymbolId, String, Optional<SymbolId>> predefinedUnit,
@@ -82,9 +87,9 @@ final class NameBindings {
         if(!qualified.startsWith("INTERLIS."))return Optional.empty();
         Optional<SymbolId> target=kinds.contains(SymbolKind.DOMAIN)?predefinedOid.apply(owner.id(),qualified):Optional.empty();
         if(target.isEmpty() && kinds.contains(SymbolKind.DOMAIN))target=predefinedDomain.apply(owner,qualified);
-        if(target.isEmpty())target=temporal.find(owner,qualified,kinds);
-        if(target.isEmpty())target=metadata.predefined(owner,qualified,kinds);
-        if(target.isEmpty())target=lines.predefined(owner,qualified,kinds);
+        if(target.isEmpty())target=temporal.lookup(owner,qualified,kinds);
+        if(target.isEmpty())target=metadata.lookup(owner,qualified,kinds);
+        if(target.isEmpty())target=lines.lookup(owner,qualified,kinds);
         if(target.isEmpty() && kinds.contains(SymbolKind.UNIT))target=predefinedUnit.apply(owner.id(),qualified);
         if(target.isEmpty() && kinds.contains(SymbolKind.FUNCTION) && qualified.indexOf('.',9)<0) {
             var signature=BuiltinFunctions.find(qualified.substring(9)).filter(f->f.since()!=LanguageVersion.ILI24 || owner.language()==LanguageVersion.ILI24);

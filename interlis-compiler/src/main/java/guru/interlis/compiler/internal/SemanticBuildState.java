@@ -24,7 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 /** The graph being assembled in a single compilation run. */
-final class SemanticBuildState implements SemanticGraphRead {
+final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGraphRead.Types,
+        SemanticGraphRead.Expressions, SemanticGraphRead.Inheritance {
     private final Map<SymbolId, Symbol> symbols = new LinkedHashMap<>();
     private final Map<TypeId, TypeDescriptor> types = new LinkedHashMap<>();
     private final Map<ExpressionId, TypedExpression> expressions = new LinkedHashMap<>();
@@ -39,21 +40,21 @@ final class SemanticBuildState implements SemanticGraphRead {
 
     public Symbol symbol(SymbolId id) { return symbols.get(id); }
 
-    boolean hasSymbol(SymbolId id) { return symbols.containsKey(id); }
+    public boolean hasSymbol(SymbolId id) { return symbols.containsKey(id); }
 
-    void defineSymbol(Symbol symbol) {
+    public void defineSymbol(Symbol symbol) {
         requireOpen();
         if (symbols.putIfAbsent(symbol.id(), symbol) != null) {
             throw new IllegalStateException("Symbol already defined: " + symbol.id());
         }
     }
 
-    void defineSymbolIfAbsent(Symbol symbol) {
+    public void defineSymbolIfAbsent(Symbol symbol) {
         requireOpen();
         symbols.putIfAbsent(symbol.id(), symbol);
     }
 
-    void replaceSymbol(Symbol symbol) {
+    public void replaceSymbol(Symbol symbol) {
         requireOpen();
         if (symbols.replace(symbol.id(), symbol) == null) {
             throw new IllegalStateException("Symbol not defined: " + symbol.id());
@@ -65,14 +66,14 @@ final class SemanticBuildState implements SemanticGraphRead {
 
     public TypeDescriptor type(TypeId id) { return types.get(id); }
 
-    void storeType(TypeDescriptor type) {
+    public void storeType(TypeDescriptor type) {
         requireOpen();
         types.put(type.id(), type);
     }
 
     public TypedExpression expression(ExpressionId id) { return expressions.get(id); }
 
-    void storeExpression(TypedExpression expression) {
+    public void storeExpression(TypedExpression expression) {
         requireOpen();
         expressions.put(expression.id(), expression);
     }
@@ -84,15 +85,15 @@ final class SemanticBuildState implements SemanticGraphRead {
 
     public TypeId declaredType(SymbolId id) { return declaredTypes.get(id); }
 
-    boolean hasDeclaredType(SymbolId id) { return declaredTypes.containsKey(id); }
+    public boolean hasDeclaredType(SymbolId id) { return declaredTypes.containsKey(id); }
 
 
-    void bindDeclaredType(SymbolId symbol, TypeId type) {
+    public void bindDeclaredType(SymbolId symbol, TypeId type) {
         requireOpen();
         declaredTypes.put(symbol, type);
     }
 
-    void bindDeclaredTypeIfAbsent(SymbolId symbol, TypeId type) {
+    public void bindDeclaredTypeIfAbsent(SymbolId symbol, TypeId type) {
         requireOpen();
         declaredTypes.putIfAbsent(symbol, type);
     }
@@ -102,43 +103,43 @@ final class SemanticBuildState implements SemanticGraphRead {
         return Collections.unmodifiableMap(declaredTypes).entrySet();
     }
 
-    void setEffectiveType(SymbolId symbol, EffectiveType type) {
+    public void setEffectiveType(SymbolId symbol, EffectiveType type) {
         requireOpen();
         effectiveTypes.put(symbol, type);
     }
 
     /** Returns the members in effective order, or an empty list if none have been recorded. */
-    List<EffectiveMember> effectiveMembers(SymbolId owner) {
+    public List<EffectiveMember> effectiveMembers(SymbolId owner) {
         return effectiveMembers.getOrDefault(owner, List.of());
     }
 
-    void setEffectiveMembers(SymbolId owner, List<EffectiveMember> members) {
+    public void setEffectiveMembers(SymbolId owner, List<EffectiveMember> members) {
         requireOpen();
         effectiveMembers.put(owner, List.copyOf(members));
     }
 
     /** Read-only live view in insertion order, with immutable member lists. */
-    Set<Map.Entry<SymbolId, List<EffectiveMember>>> effectiveMembersInBuildOrder() {
+    public Set<Map.Entry<SymbolId, List<EffectiveMember>>> effectiveMembersInBuildOrder() {
         return Collections.unmodifiableMap(effectiveMembers).entrySet();
     }
 
     public SymbolId baseOf(SymbolId symbol) { return bases.get(symbol); }
 
-    boolean hasBase(SymbolId symbol) { return bases.containsKey(symbol); }
+    public boolean hasBase(SymbolId symbol) { return bases.containsKey(symbol); }
 
-    void bindBase(SymbolId symbol, SymbolId base) {
+    public void bindBase(SymbolId symbol, SymbolId base) {
         requireOpen();
         bases.put(symbol, base);
     }
 
-    TypeId nextTypeId() { return new TypeId("type-" + nextTypeSequence()); }
+    public TypeId nextTypeId() { return new TypeId("type-" + nextTypeSequence()); }
 
-    int nextTypeSequence() {
+    public int nextTypeSequence() {
         requireOpen();
         return ++typeCounter;
     }
 
-    ExpressionId nextExpressionId() {
+    public ExpressionId nextExpressionId() {
         requireOpen();
         return new ExpressionId("expr-" + (++expressionCounter));
     }

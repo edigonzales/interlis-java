@@ -1,18 +1,19 @@
 package guru.interlis.compiler.internal;
 
 import guru.interlis.model.AttributeSymbol;
-import guru.interlis.model.CoordinateType;
-import guru.interlis.model.GeometryType;
-import guru.interlis.model.StructureValueType;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceUsage;
 import guru.interlis.model.StructureSymbol;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
+import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.TopicSymbol;
@@ -27,22 +28,46 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Binds ordered generic contexts and applies their visibility rules. */
 final class GenericBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
+    private final NameBindings names;
+    private final InheritanceBindings inheritance;
+    private final Supplier<MetadataBindings> metadata;
+    private final Consumer<TopicSymbol> replaceContextTopic;
+    private final Function<DeclInfo, SymbolHeader> symbolHeader;
+    private final Function<TypeId, TypeDescriptor> effectiveDescriptor;
+    private final Function<SymbolId, SymbolId> scopeRoot;
 
-    GenericBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics) {
-        this.g = graph;
+    GenericBindings(SemanticGraphRead state,
+                    SemanticWork work,
+                    IndexedDeclarations index,
+                    SemanticDiagnostics diagnostics,
+                    NameBindings names,
+                    InheritanceBindings inheritance,
+                    Supplier<MetadataBindings> metadata,
+                    Consumer<TopicSymbol> replaceContextTopic,
+                    Function<DeclInfo, SymbolHeader> symbolHeader,
+                    Function<TypeId, TypeDescriptor> effectiveDescriptor,
+                    Function<SymbolId, SymbolId> scopeRoot) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
+        this.names = names;
+        this.inheritance = inheritance;
+        this.metadata = metadata;
+        this.replaceContextTopic = replaceContextTopic;
+        this.symbolHeader = symbolHeader;
+        this.effectiveDescriptor = effectiveDescriptor;
+        this.scopeRoot = scopeRoot;
     }
 
     guru.interlis.model.ContextSymbol buildContext(DeclInfo decl) {
@@ -56,10 +81,10 @@ final class GenericBindings {
         Set<SymbolId> own = new HashSet<>();
         for (var mapping : syntax.mappings()) {
             work.checkpoint();
-            var generic = g.names.bindTarget(decl, mapping.genericDomain(), Set.of(SymbolKind.DOMAIN),
+            var generic = names.bindTarget(decl, mapping.genericDomain(), Set.of(SymbolKind.DOMAIN),
                     ReferenceUsage.TYPE_USE, new ArrayList<>());
             List<SymbolId> alternatives = new ArrayList<>();
-            for (var name : mapping.alternatives()) g.names.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN),
+            for (var name : mapping.alternatives()) names.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN),
                     ReferenceUsage.TYPE_USE, new ArrayList<>()).ifPresent(alternatives::add);
             if (generic.isEmpty()) continue;
             if (!own.add(generic.get())) diagnostics.emitRule(decl, "duplicate generic mapping in context", "CONTEXT_DUPLICATE");
@@ -67,7 +92,7 @@ final class GenericBindings {
                 diagnostics.emitRule(decl, "duplicate concrete alternative", "CONTEXT_DUPLICATE");
             mappings.add(new guru.interlis.model.ContextSymbol.Mapping(generic.get(), alternatives, mapping.genericDomain().range()));
         }
-        return new guru.interlis.model.ContextSymbol(g.declarations.header(decl), mappings);
+        return new guru.interlis.model.ContextSymbol(symbolHeader.apply(decl), mappings);
     }
 
     /** Bound contexts are model-local; their effects flow only along explicit import edges. */
@@ -75,26 +100,26 @@ final class GenericBindings {
         for (Symbol symbol : state.symbolsInBuildOrder()) {
             work.checkpoint();
             if (symbol instanceof DomainSymbol d && d.generic()
-                    && !(g.types.effectiveDescriptor(d.typeId()) instanceof CoordinateType))
+                    && !(effectiveDescriptor.apply(d.typeId()) instanceof CoordinateType))
                 diagnostics.emitRule(index.byId(d.id()).orElseThrow(), "GENERIC requires a coordinate domain", "GENERIC_TYPE");
             if (!(symbol instanceof guru.interlis.model.ContextSymbol context)) continue;
             DeclInfo decl = index.byId(context.id()).orElseThrow();
             for (var mapping : context.mappings()) {
                 var generic = (DomainSymbol) state.symbol(mapping.genericDomain());
-                if (!generic.generic() || !(g.types.effectiveDescriptor(generic.typeId()) instanceof CoordinateType base)) {
+                if (!generic.generic() || !(effectiveDescriptor.apply(generic.typeId()) instanceof CoordinateType base)) {
                     diagnostics.emitRule(decl, "CONTEXT domain must be GENERIC coordinates", "CONTEXT_GENERIC"); continue;
                 }
                 for (SymbolId id : mapping.alternatives()) {
                     work.checkpoint();
                     var concrete = (DomainSymbol) state.symbol(id);
                     if (concrete.generic() || concrete.header().modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)
-                            || !(g.types.effectiveDescriptor(concrete.typeId()) instanceof CoordinateType target)
+                            || !(effectiveDescriptor.apply(concrete.typeId()) instanceof CoordinateType target)
                             || target.axes().stream().anyMatch(a -> a.minimum().isEmpty() || a.maximum().isEmpty())) {
                         diagnostics.emitRule(decl, "CONTEXT alternative must be concrete coordinates", "CONTEXT_CONCRETE"); continue;
                     }
-                    for (SymbolId parent : g.inheritance.baseChain(concrete.id()).stream().skip(1).toList()) {
+                    for (SymbolId parent : inheritance.baseChain(concrete.id()).stream().skip(1).toList()) {
                         if (state.symbol(parent) instanceof DomainSymbol ancestor
-                                && g.types.effectiveDescriptor(ancestor.typeId()) instanceof CoordinateType inherited
+                                && effectiveDescriptor.apply(ancestor.typeId()) instanceof CoordinateType inherited
                                 && !guru.interlis.model.internal.TypeCompatibility.coordinateRefines(target, inherited))
                             diagnostics.emitRule(decl, "CONTEXT alternative widens its declared coordinate base", "CONTEXT_ALTERNATIVE_EXTENSION");
                     }
@@ -115,19 +140,19 @@ final class GenericBindings {
             Set<SymbolId> visible = importedModels(model);
             Set<SymbolId> used = new LinkedHashSet<>();
             Set<SymbolId> viewables = new LinkedHashSet<>();
-            for (SymbolId id : g.inheritance.baseChain(topic.id())) for (DeclInfo child : index.children(id))
+            for (SymbolId id : inheritance.baseChain(topic.id())) for (DeclInfo child : index.children(id))
                 if (Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW).contains(child.kind())) viewables.add(child.id());
             // EXTENDED replaces the inherited declaration in this topic's effective population.
             var overridden = new HashSet<SymbolId>();
             for (SymbolId id : viewables) if (state.symbol(id).header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED))
-                overridden.addAll(g.inheritance.baseChain(id).stream().filter(base -> !base.equals(id)).toList());
+                overridden.addAll(inheritance.baseChain(id).stream().filter(base -> !base.equals(id)).toList());
             viewables.removeAll(overridden);
             Set<TypeId> seen = new HashSet<>();
             Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses=new LinkedHashMap<>();
             for (SymbolId id : viewables) collectViewableGenerics(id, visible, topic.id(), used, referenceUses, seen);
             var available = contexts.getOrDefault(model, Map.of());
             Set<SymbolId> declaredDeferred = new LinkedHashSet<>();
-            for (SymbolId id : g.inheritance.baseChain(topic.id())) if (state.symbol(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
+            for (SymbolId id : inheritance.baseChain(topic.id())) if (state.symbol(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
             for (SymbolId id : topic.deferredGenerics()) {
                 if (!(state.symbol(id) instanceof DomainSymbol domain) || !domain.generic())
                     diagnostics.emitRule(decl, "DEFERRED GENERICS references a non-generic domain", "GENERIC_DEFERRED_UNKNOWN");
@@ -142,7 +167,7 @@ final class GenericBindings {
                     var concrete=new guru.interlis.model.NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),range.unit(),
                             Optional.of(new guru.interlis.model.NumericRange.ReferenceSystem(alternative,true,reference.axis())));
                     // Validate known alternatives without rewriting the published generic identity.
-                    g.metadata.validateRange(decl,concrete);
+                    metadata.get().validateRange(decl,concrete);
                 }
                 if (binding == null) {
                     if (topic.header().modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
@@ -152,7 +177,7 @@ final class GenericBindings {
                     diagnostics.emitRule(decl, "multiple CONTEXT alternatives require DEFERRED GENERICS", "GENERIC_DEFERRED_REQUIRED");
                 } else if (!binding.alternatives().isEmpty()) bindings.add(binding);
             }
-            state.replaceSymbol(new TopicSymbol(topic.header(), topic.baseTopic(), topic.members(), topic.dependencies(),
+            replaceContextTopic.accept(new TopicSymbol(topic.header(), topic.baseTopic(), topic.members(), topic.dependencies(),
                     topic.deferredGenerics(), bindings));
         }
     }
@@ -172,8 +197,8 @@ final class GenericBindings {
                 if (previous == null) result.put(entry.getKey(), incoming);
                 else {
                     var candidates = new LinkedHashSet<>(previous.alternatives()); candidates.addAll(incoming.alternatives());
-                    candidates.removeIf(id -> previous.alternatives().stream().noneMatch(base -> g.inheritance.domainExtends(id, base))
-                            || incoming.alternatives().stream().noneMatch(base -> g.inheritance.domainExtends(id, base)));
+                    candidates.removeIf(id -> previous.alternatives().stream().noneMatch(base -> inheritance.domainExtends(id, base))
+                            || incoming.alternatives().stream().noneMatch(base -> inheritance.domainExtends(id, base)));
                     var origins = new LinkedHashSet<>(previous.contexts()); origins.addAll(incoming.contexts());
                     if (candidates.isEmpty()) diagnostics.emitRule(decl, "imported contexts have incompatible alternatives", "CONTEXT_CONFLICT");
                     result.put(entry.getKey(), genericBinding(entry.getKey(), List.copyOf(candidates), List.copyOf(origins)));
@@ -185,7 +210,7 @@ final class GenericBindings {
                 work.checkpoint();
                 var previous = result.get(mapping.genericDomain());
                 if (previous != null && mapping.alternatives().stream().anyMatch(id ->
-                        previous.alternatives().stream().noneMatch(base -> g.inheritance.domainExtends(id, base))))
+                        previous.alternatives().stream().noneMatch(base -> inheritance.domainExtends(id, base))))
                     diagnostics.emitRule(index.byId(context.id()).orElseThrow(), "CONTEXT target must extend an existing alternative", "GENERIC_CONTEXT_EXTENDS");
                 result.put(mapping.genericDomain(), genericBinding(mapping.genericDomain(), mapping.alternatives(), List.of(context.id())));
             }
@@ -237,8 +262,8 @@ final class GenericBindings {
         } else if (descriptor instanceof StructureValueType structure) {
             for (Symbol symbol : state.symbolsInBuildOrder()) if (symbol instanceof StructureSymbol candidate
                     && visible.contains(index.modelOfSymbol(candidate.id()).orElse(null))
-                    && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> g.inheritance.baseChain(candidate.id()).contains(root)))
-                    && (!(state.symbol(g.paths.scopeRoot(candidate.id())) instanceof TopicSymbol) || g.inheritance.baseChain(topic).contains(g.paths.scopeRoot(candidate.id()))))
+                    && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> inheritance.baseChain(candidate.id()).contains(root)))
+                    && (!(state.symbol(scopeRoot.apply(candidate.id())) instanceof TopicSymbol) || inheritance.baseChain(topic).contains(scopeRoot.apply(candidate.id()))))
                 collectViewableGenerics(candidate.id(), visible, topic, used, referenceUses, seen);
         }
     }

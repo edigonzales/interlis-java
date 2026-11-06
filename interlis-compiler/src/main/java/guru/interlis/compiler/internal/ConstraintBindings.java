@@ -3,36 +3,37 @@ package guru.interlis.compiler.internal;
 import guru.interlis.compiler.internal.ExpressionBindings.ExpressionResult;
 import guru.interlis.model.AssociationSymbol;
 import guru.interlis.model.ClassSymbol;
-import guru.interlis.model.CoordinateType;
-import guru.interlis.model.FormattedType;
-import guru.interlis.model.GeometryType;
-import guru.interlis.model.StructureValueType;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.ConstraintDefinition;
 import guru.interlis.model.ConstraintSymbol;
+import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DomainConstraint;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
 import guru.interlis.model.ExpressionId;
+import guru.interlis.model.FormattedType;
+import guru.interlis.model.FunctionSymbol;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.MandatoryConstraint;
 import guru.interlis.model.NumericRange;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.PlausibilityConstraint;
 import guru.interlis.model.ReferenceUsage;
 import guru.interlis.model.StructureSymbol;
+import guru.interlis.model.StructureValueType;
+import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.TextType;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
 import guru.interlis.model.TypedExpression;
-import guru.interlis.model.FunctionSymbol;
 import guru.interlis.model.UniquenessConstraint;
 import guru.interlis.model.ViewSymbol;
 import guru.interlis.source.SourceRange;
 import guru.interlis.syntax.ConstraintDeclarationSyntax;
-import guru.interlis.syntax.ExternalConstraintSyntax;
 import guru.interlis.syntax.ExpressionSyntax;
+import guru.interlis.syntax.ExternalConstraintSyntax;
 import guru.interlis.syntax.PathExpressionSyntax;
 import guru.interlis.syntax.TopicSyntax;
 
@@ -45,24 +46,52 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import guru.interlis.compiler.internal.ExpressionBindings.ExpressionResult;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Binds typed constraint definitions in their actual object context. */
 final class ConstraintBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
+    private final NameResolver resolver;
+    private final Supplier<ObjectPathBindings> paths;
+    private final NameBindings names;
+    private final InheritanceBindings inheritance;
+    private final ReferenceBindings references;
+    private final Supplier<ExpressionBindings> expressions;
+    private final Supplier<TypeBindings> typeBindings;
+    private final StructureBindings structures;
+    private final Function<DeclInfo, SymbolHeader> symbolHeader;
     private final Map<SymbolId, SymbolId> externalConstraintTargets = new LinkedHashMap<>();
 
-    ConstraintBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics) {
-        this.g = graph;
+    ConstraintBindings(SemanticGraphRead state,
+                       SemanticWork work,
+                       IndexedDeclarations index,
+                       SemanticDiagnostics diagnostics,
+                       NameResolver resolver,
+                       Supplier<ObjectPathBindings> paths,
+                       NameBindings names,
+                       InheritanceBindings inheritance,
+                       ReferenceBindings references,
+                       Supplier<ExpressionBindings> expressions,
+                       Supplier<TypeBindings> typeBindings,
+                       StructureBindings structures,
+                       Function<DeclInfo, SymbolHeader> symbolHeader) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
+        this.resolver = resolver;
+        this.paths = paths;
+        this.names = names;
+        this.inheritance = inheritance;
+        this.references = references;
+        this.expressions = expressions;
+        this.typeBindings = typeBindings;
+        this.structures = structures;
+        this.symbolHeader = symbolHeader;
     }
 
     /** Named constraints share the declaring viewable's local namespace, including
@@ -83,7 +112,7 @@ final class ConstraintBindings {
             var symbol = state.symbol(target);
             if (!(symbol instanceof ClassSymbol || symbol instanceof StructureSymbol
                     || symbol instanceof AssociationSymbol || symbol instanceof ViewSymbol)) continue;
-            var scope = new ConstraintScope(target, g.paths.scopeRoot(declaration.id()));
+            var scope = new ConstraintScope(target, paths.get().scopeRoot(declaration.id()));
             if (!names.computeIfAbsent(scope, ignored -> new LinkedHashSet<>()).add(syntax.name().orElseThrow()))
                 diagnostics.emitRule(declaration, "constraint names must be unique within their declaring class",
                         "CONSTRAINT_NAME", declaration.nameRange().orElse(syntax.range()));
@@ -95,21 +124,21 @@ final class ConstraintBindings {
         Optional<SymbolId> externalTarget = Optional.empty();
         if (decl.syntax() instanceof ExternalConstraintSyntax external) {
             syntax = external.constraint();
-            externalTarget = g.names.tryResolve(decl, external.target(),
+            externalTarget = names.tryResolve(decl, external.target(),
                     Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION));
             if (externalTarget.isEmpty() && external.target().segments().size() == 1) {
-                externalTarget = g.inheritance.baseTopicMember(decl.id(), external.target().text(),
+                externalTarget = inheritance.baseTopicMember(decl.id(), external.target().text(),
                         Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION));
             }
             if (externalTarget.isEmpty()) {
                 diagnostics.unresolved(external.target());
             } else {
                 SymbolId target = externalTarget.orElseThrow();
-                g.references.recordReference(decl, external.target(), target, ReferenceUsage.EXPRESSION);
-                boolean inherited = g.inheritance.baseTopicMember(decl.id(),
+                references.recordReference(decl, external.target(), target, ReferenceUsage.EXPRESSION);
+                boolean inherited = inheritance.baseTopicMember(decl.id(),
                         index.byId(target).orElseThrow().name(),
                         Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION)).filter(target::equals).isPresent();
-                if (!Objects.equals(g.paths.scopeRoot(decl.id()), g.paths.scopeRoot(target)) && !inherited) {
+                if (!Objects.equals(paths.get().scopeRoot(decl.id()), paths.get().scopeRoot(target)) && !inherited) {
                     diagnostics.emitRule(decl, "external constraints must be declared in the target's topic",
                             "CONSTRAINT_TARGET_TOPIC");
                 }
@@ -118,7 +147,7 @@ final class ConstraintBindings {
             syntax = (ConstraintDeclarationSyntax) decl.syntax();
         }
         externalTarget.ifPresent(target -> externalConstraintTargets.put(decl.id(), target));
-        SymbolId context = g.paths.contextualObject(g.expressions.expressionContext(decl.id()), g.paths.scopeRoot(decl.id()));
+        SymbolId context = paths.get().contextualObject(expressions.get().expressionContext(decl.id()), paths.get().scopeRoot(decl.id()));
         if (syntax.existence().isPresent()) {
             var existence = syntax.existence().orElseThrow();
             ExpressionResult source = constraintPath(existence.source(), decl, context, false);
@@ -126,41 +155,41 @@ final class ConstraintBindings {
             List<guru.interlis.model.ExistenceConstraint.ExistenceTarget> targets = new ArrayList<>();
             for (var target : existence.targets()) {
                 work.checkpoint();
-                var resolved = g.resolver.resolve(decl.id(), target.viewable(),
+                var resolved = resolver.resolve(decl.id(), target.viewable(),
                         Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW), false).target();
                 if (resolved.isEmpty() && target.viewable().segments().size() == 1)
-                    resolved = g.inheritance.baseTopicMember(decl.id(), target.viewable().text(),
+                    resolved = inheritance.baseTopicMember(decl.id(), target.viewable().text(),
                             Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW));
-                g.references.recordReference(decl, target.viewable(), resolved.orElse(null), ReferenceUsage.EXPRESSION);
+                references.recordReference(decl, target.viewable(), resolved.orElse(null), ReferenceUsage.EXPRESSION);
                 if (resolved.isEmpty()) { diagnostics.unresolved(target.viewable()); continue; }
                 SymbolId targetScope = resolved.orElseThrow();
-                SymbolId ownerTopic = g.paths.scopeRoot(decl.id());
-                SymbolId targetTopic = g.paths.scopeRoot(targetScope);
+                SymbolId ownerTopic = paths.get().scopeRoot(decl.id());
+                SymbolId targetTopic = paths.get().scopeRoot(targetScope);
                 boolean depends = ownerTopic == null || targetTopic == null
                         || index.byId(ownerTopic).map(d -> d.kind() != SymbolKind.TOPIC).orElse(true)
                         || index.byId(targetTopic).map(d -> d.kind() != SymbolKind.TOPIC).orElse(true)
-                        || g.paths.topicAvailable(ownerTopic, targetTopic)
-                        || g.inheritance.baseChain(ownerTopic).stream().map(index::byId).flatMap(Optional::stream)
+                        || paths.get().topicAvailable(ownerTopic, targetTopic)
+                        || inheritance.baseChain(ownerTopic).stream().map(index::byId).flatMap(Optional::stream)
                         .filter(d -> d.syntax() instanceof TopicSyntax)
                         .anyMatch(d -> ((TopicSyntax) d.syntax()).dependencies().stream()
-                                .anyMatch(n -> g.resolver.resolve(d.id(), n, Set.of(SymbolKind.TOPIC)).target()
+                                .anyMatch(n -> resolver.resolve(d.id(), n, Set.of(SymbolKind.TOPIC)).target()
                                         .filter(targetTopic::equals).isPresent()));
                 if (!depends) diagnostics.emitRule(decl, "EXISTENCE target topic requires DEPENDS ON", "EXISTENCE_DEPENDS");
                 ExpressionResult path = constraintPath(target.path(), decl, targetScope, false);
                 requireConstraintValue(decl, path, false);
                 if (!source.error() && !path.error() && !existenceCompatible(source.typeId(), path.typeId())) {
-                    TypeDescriptor from = g.types.effectiveDescriptor(source.typeId()), to = g.types.effectiveDescriptor(path.typeId());
+                    TypeDescriptor from = typeBindings.get().effectiveDescriptor(source.typeId()), to = typeBindings.get().effectiveDescriptor(path.typeId());
                     boolean familyPending = from.kind() == to.kind() && switch (from.kind()) {
                         case GENERIC, DEFERRED, PENDING -> true;
                         default -> false;
                     };
                     if (familyPending) diagnostics.emitUnsupported(decl.sourceId(), target.path().range(),
                             "EXISTENCE_TYPE_COMPATIBILITY", "EXISTENCE compatibility for " + from.kind());
-                    else g.emitTypeMismatch(decl.sourceId(), target.path().range(), g.types.typeName(source.typeId()), g.types.typeName(path.typeId()));
+                    else diagnostics.emitTypeMismatch(decl.sourceId(), target.path().range(), typeBindings.get().typeName(source.typeId()), typeBindings.get().typeName(path.typeId()));
                 }
                 targets.add(new guru.interlis.model.ExistenceConstraint.ExistenceTarget(targetScope, path.id()));
             }
-            return new ConstraintSymbol(g.declarations.header(decl), new guru.interlis.model.ExistenceConstraint(
+            return new ConstraintSymbol(symbolHeader.apply(decl), new guru.interlis.model.ExistenceConstraint(
                     syntax.name(), source.id(), targets), externalTarget);
         }
         if (syntax.constraintKind() == guru.interlis.syntax.ConstraintKind.SET
@@ -168,9 +197,9 @@ final class ConstraintBindings {
             diagnostics.emitRule(decl, "SET CONSTRAINT is not allowed in a structure", "SET_IN_STRUCTURE");
         if (syntax.constraintKind() == guru.interlis.syntax.ConstraintKind.UNIQUENESS) {
             Optional<ExpressionId> where = syntax.expression().map(e -> {
-                ExpressionResult condition = g.expressions.buildExpression(e, decl.id());
-                if (!condition.error() && !g.types.isBoolean(condition.typeId()))
-                    g.emitTypeMismatch(decl.sourceId(), e.range(), g.types.typeName(condition.typeId()), "BOOLEAN");
+                ExpressionResult condition = expressions.get().buildExpression(e, decl.id());
+                if (!condition.error() && !typeBindings.get().isBoolean(condition.typeId()))
+                    diagnostics.emitTypeMismatch(decl.sourceId(), e.range(), typeBindings.get().typeName(condition.typeId()), "BOOLEAN");
                 return condition.id();
             });
             List<ExpressionId> keys = new ArrayList<>();
@@ -178,7 +207,7 @@ final class ConstraintBindings {
             if (syntax.localPrefix().isPresent()) {
                 if (syntax.basket()) diagnostics.emitRule(decl, "UNIQUE cannot combine BASKET and LOCAL", "UNIQUE_KEY");
                 ExpressionResult prefix = constraintPath(syntax.localPrefix().orElseThrow(), decl, context, true);
-                SymbolId structure = g.structures.target(g.types.effectiveDescriptor(prefix.typeId()));
+                SymbolId structure = structures.target(typeBindings.get().effectiveDescriptor(prefix.typeId()));
                 if (!prefix.error() && structure == null)
                     diagnostics.emitRule(decl, "LOCAL prefix must select a structure attribute", "UNIQUE_LOCAL_PREFIX");
                 for (var key : syntax.uniqueKeys()) {
@@ -197,31 +226,31 @@ final class ConstraintBindings {
                     keys.add(path.id());
                 }
             }
-            return new ConstraintSymbol(g.declarations.header(decl), new UniquenessConstraint(syntax.name(),
+            return new ConstraintSymbol(symbolHeader.apply(decl), new UniquenessConstraint(syntax.name(),
                     syntax.basket(), where, keys, localKeys), externalTarget);
         }
         Optional<ExpressionId> setWhere=syntax.where().map(e->{
-            var condition=g.expressions.buildExpression(e,decl.id());
-            if(!condition.error() && !g.types.isBoolean(condition.typeId()))g.emitTypeMismatch(decl.sourceId(),e.range(),g.types.typeName(condition.typeId()),"BOOLEAN");
+            var condition=expressions.get().buildExpression(e,decl.id());
+            if(!condition.error() && !typeBindings.get().isBoolean(condition.typeId()))diagnostics.emitTypeMismatch(decl.sourceId(),e.range(),typeBindings.get().typeName(condition.typeId()),"BOOLEAN");
             return condition.id();
         });
         if(syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.PLAUSIBILITY && syntax.plausibility().isEmpty()) {
             var error=missingConstraintExpression(decl,syntax.range());
-            return new ConstraintSymbol(g.declarations.header(decl),new MandatoryConstraint(syntax.name(),error.id()),externalTarget);
+            return new ConstraintSymbol(symbolHeader.apply(decl),new MandatoryConstraint(syntax.name(),error.id()),externalTarget);
         }
         SymbolId expressionOwner = decl.id();
         ExpressionResult expression = syntax.expression()
-                .map(e -> g.expressions.buildExpression(e, expressionOwner))
+                .map(e -> expressions.get().buildExpression(e, expressionOwner))
                 .orElseGet(() -> missingConstraintExpression(decl,syntax.range()));
-        if (!expression.error() && !g.types.isBoolean(expression.typeId())) {
-            g.emitTypeMismatch(decl.sourceId(), syntax.range(), g.types.typeName(expression.typeId()),
+        if (!expression.error() && !typeBindings.get().isBoolean(expression.typeId())) {
+            diagnostics.emitTypeMismatch(decl.sourceId(), syntax.range(), typeBindings.get().typeName(expression.typeId()),
                     "BOOLEAN");
         }
-        if (!expression.error() && g.types.isBoolean(expression.typeId()) && syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.SET
+        if (!expression.error() && typeBindings.get().isBoolean(expression.typeId()) && syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.SET
                 && decl.language()==guru.interlis.model.LanguageVersion.ILI24 && !hasObjectSetFunction(expression.id())) {
-            var cause=g.emitTypeMismatch(decl.sourceId(),state.expression(expression.id()).range(),
+            var cause=diagnostics.emitTypeMismatch(decl.sourceId(),state.expression(expression.id()).range(),
                     "SET condition without OBJECTS function","SET condition with OBJECTS function");
-            expression=g.expressions.failedFunctionArgument(state.expression(expression.id()).range(),List.of(cause));
+            expression=expressions.get().failedFunctionArgument(state.expression(expression.id()).range(),List.of(cause));
         }
         ConstraintDefinition definition = switch (syntax.constraintKind()) {
             case MANDATORY -> new MandatoryConstraint(syntax.name(), expression.id());
@@ -234,7 +263,7 @@ final class ConstraintBindings {
                     expression.id());
             default -> new MandatoryConstraint(syntax.name(), expression.id());
         };
-        return new ConstraintSymbol(g.declarations.header(decl), definition, externalTarget);
+        return new ConstraintSymbol(symbolHeader.apply(decl), definition, externalTarget);
     }
 
     /** 2.4 requires an actual call with an OBJECTS formal somewhere in the set
@@ -245,7 +274,7 @@ final class ConstraintBindings {
             work.checkpoint();var id=pending.removeFirst();if(!seen.add(id))continue;var expression=state.expression(id);
             if(expression instanceof guru.interlis.model.FunctionCallExpression call
                     && call.targetFunction().map(state::symbol).filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast)
-                    .stream().flatMap(f->f.parameters().stream()).map(p->g.types.effectiveDescriptor(p.typeId()))
+                    .stream().flatMap(f->f.parameters().stream()).map(p->typeBindings.get().effectiveDescriptor(p.typeId()))
                     .anyMatch(t->t instanceof guru.interlis.model.ObjectArgumentType objects&&objects.objects()))return true;
             pending.addAll(expression.children());
         }
@@ -255,14 +284,14 @@ final class ConstraintBindings {
     private ExpressionResult constraintPath(ExpressionSyntax syntax, DeclInfo owner,
             SymbolId start, boolean localPrefix) {
         if (syntax instanceof PathExpressionSyntax path)
-            return g.paths.pathExpression(state.nextExpressionId(), path, owner.id(), start, localPrefix);
-        return g.expressions.buildExpression(syntax, owner.id()); // Unsupported operators keep their explicit diagnostic.
+            return paths.get().pathExpression(expressions.get().nextExpressionId(), path, owner.id(), start, localPrefix);
+        return expressions.get().buildExpression(syntax, owner.id()); // Unsupported operators keep their explicit diagnostic.
     }
 
     private void requireConstraintValue(DeclInfo owner, ExpressionResult result, boolean unique) {
         if (result.error()) return;
         TypedExpression expression = state.expression(result.id());
-        TypeDescriptor type = g.types.effectiveDescriptor(result.typeId());
+        TypeDescriptor type = typeBindings.get().effectiveDescriptor(result.typeId());
         boolean invalid = unique && type instanceof CollectionType || type instanceof guru.interlis.model.ObjectArgumentType o && o.objects();
         if (unique) invalid |= type instanceof StructureValueType;
         else invalid |= !(expression instanceof guru.interlis.model.PathExpression p
@@ -273,12 +302,12 @@ final class ConstraintBindings {
     }
 
     private boolean existenceCompatible(TypeId source, TypeId target) {
-        TypeDescriptor actual = g.types.effectiveDescriptor(source);
-        TypeDescriptor expected = g.types.effectiveDescriptor(target);
+        TypeDescriptor actual = typeBindings.get().effectiveDescriptor(source);
+        TypeDescriptor expected = typeBindings.get().effectiveDescriptor(target);
         if (actual instanceof CollectionType a && expected instanceof CollectionType b)
             return a.collectionKind() == b.collectionKind() && existenceCompatible(a.elementType(), b.elementType());
-        if (actual instanceof CollectionType a && !g.paths.isMany(a.cardinality())) actual = g.types.effectiveDescriptor(a.elementType());
-        if (expected instanceof CollectionType b && !g.paths.isMany(b.cardinality())) expected = g.types.effectiveDescriptor(b.elementType());
+        if (actual instanceof CollectionType a && !paths.get().isMany(a.cardinality())) actual = typeBindings.get().effectiveDescriptor(a.elementType());
+        if (expected instanceof CollectionType b && !paths.get().isMany(b.cardinality())) expected = typeBindings.get().effectiveDescriptor(b.elementType());
         if (actual == null || expected == null) return false;
         if (actual instanceof guru.interlis.model.OidType a && expected instanceof guru.interlis.model.OidType b)
             return a.oidKind() == guru.interlis.model.OidKind.ANY || b.oidKind() == guru.interlis.model.OidKind.ANY
@@ -287,7 +316,7 @@ final class ConstraintBindings {
                     && existenceCompatible(a.valueType().orElseThrow(), b.valueType().orElseThrow()));
         if (actual.id().equals(expected.id())) return true;
         if (actual instanceof GeometryType geometry && expected instanceof CoordinateType) {
-            actual = geometry.vertexDomain().map(state::declaredType).map(g.types::effectiveDescriptor).orElse(null);
+            actual = geometry.vertexDomain().map(state::declaredType).map(typeBindings.get()::effectiveDescriptor).orElse(null);
         }
         if (actual instanceof NumericType a && expected instanceof NumericType b)
             return numericValueCompatible(a.range(), b.range());
@@ -309,11 +338,11 @@ final class ConstraintBindings {
                     .equals(b.parts().stream().map(p -> List.of(p.attribute(), p.width(), p.format(), p.literal())).toList());
         }
         if (actual instanceof EnumerationType a && expected instanceof EnumerationType b)
-            return guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a, b, g.types::effectiveDescriptor) || a.ordered() == b.ordered() && a.circular() == b.circular()
+            return guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a, b, typeBindings.get()::effectiveDescriptor) || a.ordered() == b.ordered() && a.circular() == b.circular()
                     && a.values().stream().map(EnumerationValue::path).toList()
                     .equals(b.values().stream().map(EnumerationValue::path).toList());
         return guru.interlis.model.internal.TypeCompatibility.assign(actual, expected,
-                g.types::effectiveDescriptor, state::baseOf, domain -> g.types.effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
+                typeBindings.get()::effectiveDescriptor, state::baseOf, domain -> typeBindings.get().effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
     }
 
     private boolean numericValueCompatible(NumericRange a, NumericRange b) {
@@ -327,7 +356,7 @@ final class ConstraintBindings {
                 && r.revision().equals(range.revision()) && r.startOffset()<=range.endOffset() && r.endOffset()>=range.startOffset()).isPresent())
                 .map(guru.interlis.diagnostics.Diagnostic::id).toList();
         if(causes.isEmpty())causes=List.of(diagnostics.emitRule(owner,"constraint syntax is incomplete","SOURCE_MISSING_CONSTRAINT",range));
-        return g.expressions.failedValueExpression(state.nextExpressionId(),range,causes);
+        return expressions.get().failedValueExpression(expressions.get().nextExpressionId(),range,causes);
     }
 
     SymbolId externalConstraintTarget(SymbolId constraint, SymbolId fallback) {

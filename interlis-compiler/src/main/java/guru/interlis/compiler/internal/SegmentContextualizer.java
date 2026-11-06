@@ -2,13 +2,20 @@ package guru.interlis.compiler.internal;
 
 import guru.interlis.model.*;
 import java.util.*;
+import java.util.function.Function;
 
 /** One geometry's substitution of INTERLIS.LineCoord. Canonical declarations and
  * foreign targets remain unchanged; only dependent structures/domains are copied.
  * State belongs to one ViewBuilder run, never to a published graph or global cache. */
 final class SegmentContextualizer {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead.Symbols state;
+    private final SemanticWork work;
+    private final IndexedDeclarations index;
+    private final InheritanceBindings inheritance;
+    private final TypeBindings typeBindings;
+    private final ExpressionBindings expressionBindings;
+    private final LineForms lineForms;
+    private final Function<DeclInfo, Symbol> ensureSymbol;
     private final ViewBuilder views;
     private final DeclInfo owner;
     private final String prefix;
@@ -19,18 +26,31 @@ final class SegmentContextualizer {
     private final Map<TypeId, TypeId> types = new HashMap<>();
     private final Map<ExpressionId, ExpressionId> expressions = new HashMap<>();
 
-    SegmentContextualizer(GraphBuilder graph, SemanticBuildState state, ViewBuilder views, DeclInfo owner, GeometryType geometry) {
-        g = graph; this.state = state; this.views = views; this.owner = owner;
+    SegmentContextualizer(SemanticGraphRead.Symbols state, SemanticWork work, IndexedDeclarations index,
+                          ViewBuilder views, DeclInfo owner, GeometryType geometry,
+                          InheritanceBindings inheritance, TypeBindings typeBindings,
+                          ExpressionBindings expressionBindings, LineForms lineForms,
+                          Function<DeclInfo, Symbol> ensureSymbol) {
+        this.state = state;
+        this.work = work;
+        this.index = index;
+        this.views = views;
+        this.owner = owner;
+        this.inheritance = inheritance;
+        this.typeBindings = typeBindings;
+        this.expressionBindings = expressionBindings;
+        this.lineForms = lineForms;
+        this.ensureSymbol = ensureSymbol;
         prefix = owner.id().value() + ":inspection:" + geometry.id().value() + ":context:";
-        placeholder = g.lines.predefined(owner, "INTERLIS.LineCoord", Set.of(SymbolKind.DOMAIN)).orElseThrow();
+        placeholder = lineForms.predefined(owner, "INTERLIS.LineCoord", Set.of(SymbolKind.DOMAIN)).orElseThrow();
         SymbolId vertex = geometry.vertexDomain().orElseThrow();
         placeholderType = state.declaredType(placeholder);
         symbols.put(placeholder, vertex); types.put(placeholderType, state.declaredType(vertex));
         List<SymbolId> roots = new ArrayList<>();
-        roots.add(g.lines.predefined(owner, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
-        roots.add(g.lines.predefined(owner, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
+        roots.add(lineForms.predefined(owner, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
+        roots.add(lineForms.predefined(owner, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
         for (SymbolId form : geometry.lineForms()) {
-            g.index.byId(form).ifPresent(g.declarations::buildSymbol);
+            index.byId(form).ifPresent(ensureSymbol::apply);
             if (state.symbol(form) instanceof LineFormSymbol line) line.segmentStructure().ifPresent(roots::add);
         }
         roots.forEach(this::discover);
@@ -41,7 +61,7 @@ final class SegmentContextualizer {
         do {
             changed = false;
             for (var entry : dependencies.entrySet()) {
-                g.checkWork();
+                work.checkpoint();
                 if (!affected.contains(entry.getKey()) && entry.getValue().stream().anyMatch(affected::contains))
                     changed |= affected.add(entry.getKey());
             }
@@ -52,7 +72,7 @@ final class SegmentContextualizer {
                 s.members().forEach(member -> symbols.put(member, new SymbolId(prefix + member.value())));
                 s.constraints().forEach(member -> symbols.put(member, new SymbolId(prefix + member.value())));
             } else if (state.symbol(id) instanceof DomainSymbol) {
-                g.index.children(id).stream().filter(d -> d.kind() == SymbolKind.CONSTRAINT)
+                index.children(id).stream().filter(d -> d.kind() == SymbolKind.CONSTRAINT)
                         .forEach(d -> symbols.put(d.id(), new SymbolId(prefix + d.id().value())));
             }
         }
@@ -62,7 +82,7 @@ final class SegmentContextualizer {
             var effective = state.effectiveMembers(id).stream().map(m -> new EffectiveMember(
                     symbol(m.declaredSymbol()), symbol(m.effectiveOwner()), m.inheritancePath().stream().map(this::symbol).toList(),
                     m.position(), m.origin(), m.overridden())).toList();
-            state.setEffectiveMembers(symbol(id), effective);
+            inheritance.setEffectiveMembers(symbol(id), effective);
             views.contextualMembers(symbol(id), effective.stream().map(EffectiveMember::declaredSymbol).toList());
         }
     }
@@ -83,17 +103,17 @@ final class SegmentContextualizer {
     }
 
     private void discover(SymbolId id) {
-        g.checkWork();
+        work.checkpoint();
         if (dependencies.containsKey(id)) return;
-        g.index.byId(id).ifPresent(g.declarations::buildSymbol);
+        index.byId(id).ifPresent(ensureSymbol::apply);
         var value = state.symbol(id);
         if (!(value instanceof StructureSymbol) && !(value instanceof DomainSymbol)) return;
         Set<SymbolId> refs = new LinkedHashSet<>(); dependencies.put(id, refs);
         if (value instanceof StructureSymbol s) {
-            g.index.byId(id).ifPresent(g.inheritance::collectEffective);
+            index.byId(id).ifPresent(inheritance::collectEffective);
             s.baseType().ifPresent(refs::add);
             for (SymbolId member : s.members()) {
-                g.checkWork();
+                work.checkpoint();
                 typeDependencies(state.declaredType(member), refs, new HashSet<>());
                 if (state.symbol(member) instanceof AttributeSymbol a)
                     a.derivations().forEach(e -> expressionDependencies(e, refs, new HashSet<>()));
@@ -107,7 +127,7 @@ final class SegmentContextualizer {
     private void typeDependencies(TypeId id, Set<SymbolId> refs, Set<TypeId> seen) {
         if (id == null || !seen.add(id)) return;
         if (id.equals(placeholderType)) { refs.add(placeholder); return; }
-        g.checkWork();
+        work.checkpoint();
         switch (state.type(id)) {
             case DomainReferenceType t -> refs.add(t.targetDomain());
             case StructureValueType t -> { t.target().ifPresent(refs::add); refs.addAll(t.restrictions()); }
@@ -125,7 +145,7 @@ final class SegmentContextualizer {
 
     private void expressionDependencies(ExpressionId id, Set<SymbolId> refs, Set<ExpressionId> seen) {
         if (!seen.add(id)) return;
-        g.checkWork(); var e = state.expression(id);
+        work.checkpoint(); var e = state.expression(id);
         typeDependencies(e.typeId(), refs, new HashSet<>());
         if (e instanceof SymbolValueExpression s) refs.add(s.target());
         if(e instanceof FunctionCallExpression call) for(var path:call.argumentPaths().values()) {
@@ -145,9 +165,9 @@ final class SegmentContextualizer {
     }
 
     private void copySymbol(Symbol original) {
-        g.checkWork(); Symbol result = switch (original) {
+        work.checkpoint(); Symbol result = switch (original) {
             case StructureSymbol s -> {
-                s.baseType().ifPresent(base -> state.bindBase(symbol(s.id()), symbol(base)));
+                s.baseType().ifPresent(base -> inheritance.bindBase(symbol(s.id()), symbol(base)));
                 yield new StructureSymbol(header(s), s.baseType().map(this::symbol),
                         s.members().stream().map(this::symbol).toList(), s.constraints().stream().map(this::symbol).toList());
             }
@@ -160,14 +180,14 @@ final class SegmentContextualizer {
         };
         state.defineSymbol(result);
         TypeId declared = state.declaredType(original.id());
-        if (declared != null) state.bindDeclaredType(result.id(), type(declared));
+        if (declared != null) typeBindings.bindDeclaredType(result.id(), type(declared));
     }
 
     private TypeId type(TypeId original) {
         if (types.containsKey(original)) return types.get(original);
         Set<SymbolId> refs = new HashSet<>(); typeDependencies(original, refs, new HashSet<>());
         if (refs.stream().noneMatch(symbols::containsKey)) return original;
-        g.checkWork(); TypeId id = g.types.nextTypeId(); types.put(original, id);
+        work.checkpoint(); TypeId id = typeBindings.nextTypeId(); types.put(original, id);
         var origin = state.type(original).origin();
         TypeDescriptor result = switch (state.type(original)) {
             case DomainReferenceType t -> new DomainReferenceType(id, origin, symbol(t.targetDomain()));
@@ -186,12 +206,12 @@ final class SegmentContextualizer {
             }), t.restrictions().stream().map(this::type).toList());
             default -> throw new IllegalStateException("unhandled segment type: " + state.type(original).kind());
         };
-        state.storeType(result); return id;
+        typeBindings.storeType(result); return id;
     }
 
     private ExpressionId expression(ExpressionId original) {
         if (expressions.containsKey(original)) return expressions.get(original);
-        g.checkWork(); var e = state.expression(original);
+        work.checkpoint(); var e = state.expression(original);
         var id = new ExpressionId(prefix + original.value()); expressions.put(original, id);
         var type = type(e.typeId()); var state = e.typeState(); var range = e.range();
         var children = e.children().stream().map(this::expression).toList();
@@ -209,7 +229,7 @@ final class SegmentContextualizer {
             case UndefinedExpression x -> new UndefinedExpression(id, type, state, range, children);
             case ErrorExpression x -> new ErrorExpression(id, type, state, range, children, x.causes());
         };
-        this.state.storeExpression(result); return id;
+        expressionBindings.storeExpression(result); return id;
     }
 
     private PathStep step(PathStep step) {

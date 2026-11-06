@@ -3,42 +3,57 @@ package guru.interlis.compiler.internal;
 import guru.interlis.model.AssociationSymbol;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.ClassSymbol;
-import guru.interlis.model.StructureValueType;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.RoleSymbol;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.TopicSymbol;
 import guru.interlis.model.TypeDescriptor;
+import guru.interlis.model.TypeId;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Checks topic dependencies and bound reference scopes. */
 final class TopicBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
+    private final Supplier<InheritanceBindings> inheritance;
+    private final Supplier<ObjectPathBindings> paths;
+    private final OidBindings oid;
+    private final Function<TypeId, TypeDescriptor> effectiveDescriptor;
 
-    TopicBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics) {
-        this.g = graph;
+    TopicBindings(SemanticGraphRead state,
+                  SemanticWork work,
+                  IndexedDeclarations index,
+                  SemanticDiagnostics diagnostics,
+                  Supplier<InheritanceBindings> inheritance,
+                  Supplier<ObjectPathBindings> paths,
+                  OidBindings oid,
+                  Function<TypeId, TypeDescriptor> effectiveDescriptor) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
+        this.inheritance = inheritance;
+        this.paths = paths;
+        this.oid = oid;
+        this.effectiveDescriptor = effectiveDescriptor;
     }
 
     List<SymbolId> topicDependencies(SymbolId topic) {
         Set<SymbolId> result = new LinkedHashSet<>();
-        for (SymbolId id : g.inheritance.baseChain(topic)) {
+        for (SymbolId id : inheritance.get().baseChain(topic)) {
             work.checkpoint();
             if (state.symbol(id) instanceof TopicSymbol owner) result.addAll(owner.dependencies());
         }
@@ -65,7 +80,7 @@ final class TopicBindings {
 
     private void validateReferenceScope(DeclInfo site, SymbolId sourceTopic, SymbolId target,
                                         boolean external, String externalRule) {
-        SymbolId targetTopic = g.paths.scopeRoot(target);
+        SymbolId targetTopic = paths.get().scopeRoot(target);
         if (!(state.symbol(sourceTopic) instanceof TopicSymbol)
                 || !(state.symbol(targetTopic) instanceof TopicSymbol)
                 || isTopicSubtype(sourceTopic, targetTopic)) return;
@@ -125,7 +140,7 @@ final class TopicBindings {
             }
             if (sourceOwner == null) continue; // Predefined declarations are checked at their source uses.
             DeclInfo owner = index.byId(sourceOwner).orElseThrow();
-            SymbolId topic = g.paths.scopeRoot(owner.id());
+            SymbolId topic = paths.get().scopeRoot(owner.id());
             Set<SymbolId> seen = new HashSet<>();
             var pending = new java.util.ArrayDeque<SymbolId>();
             pending.add(entry.getKey());
@@ -142,9 +157,9 @@ final class TopicBindings {
                         roots = role.targetRoots(); external = role.external();
                     }
                     else if (declaration instanceof AttributeSymbol attribute) {
-                        TypeDescriptor type = g.types.effectiveDescriptor(attribute.declaredType());
+                        TypeDescriptor type = effectiveDescriptor.apply(attribute.declaredType());
                         while (type instanceof CollectionType collection) {
-                            work.checkpoint(); type = g.types.effectiveDescriptor(collection.elementType());
+                            work.checkpoint(); type = effectiveDescriptor.apply(collection.elementType());
                         }
                         if (type instanceof StructureValueType structure) pending.addAll(structure.targetRoots());
                         if (type instanceof ReferenceType reference) {
@@ -155,16 +170,16 @@ final class TopicBindings {
                             ? index.byId(declaration.id()).orElse(owner) : owner;
                     for (SymbolId root : roots) {
                         work.checkpoint();
-                        Symbol target = state.symbol(g.paths.contextualObject(root, topic));
+                        Symbol target = state.symbol(paths.get().contextualObject(root, topic));
                         if (target == null || index.byId(target.id()).isEmpty()) continue; // ANYCLASS/unresolved: no invented OID.
                         validateReferenceScope(site, topic, target.id(), external,
                                 declaration instanceof RoleSymbol ? "ROLE_EXTERNAL" : "REFERENCE_EXTERNAL");
-                        boolean objectOid = target.header().oidRules().stream().anyMatch(r -> !r.basket() && g.oid.oidState(r) != 0);
+                        boolean objectOid = target.header().oidRules().stream().anyMatch(r -> !r.basket() && oid.oidState(r) != 0);
                         if (target instanceof ClassSymbol && owner.language() == guru.interlis.model.LanguageVersion.ILI24 && !objectOid)
                             diagnostics.emitRule(site, "reference target " + target.name().value() + " has NO OID in INTERLIS 2.4", "REFERENCE_TARGET_NO_OID");
                         if (target instanceof AssociationSymbol) {
                             boolean identified = target.header().oidRules().isEmpty()
-                                    ? g.inheritance.baseChain(target.id()).stream().map(index::byId).flatMap(Optional::stream)
+                                    ? inheritance.get().baseChain(target.id()).stream().map(index::byId).flatMap(Optional::stream)
                                         .anyMatch(d -> d.modifiers().contains(guru.interlis.model.Modifier.OID)) : objectOid;
                             if (!identified) diagnostics.emitRule(site, "association target " + target.name().value() + " requires its own OID", "REFERENCE_ASSOCIATION_OID");
                         }

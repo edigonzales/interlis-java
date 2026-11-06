@@ -2,12 +2,27 @@ package guru.interlis.compiler.internal;
 
 import guru.interlis.model.*;
 import guru.interlis.syntax.*;
-import java.util.*;
 
-/** View construction within one GraphBuilder run; reuses its type, path and reference binders. */
+import java.util.*;
+import java.util.function.Function;
+
+/** View construction within one run using the shared type, path and reference binders. */
 final class ViewBuilder {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead.Symbols state;
+    private final SemanticWork work;
+    private final IndexedDeclarations index;
+    private final SemanticDiagnostics diagnostics;
+    private final NameResolver resolver;
+    private final ReferenceBindings references;
+    private final InheritanceBindings inheritance;
+    private final ExpressionBindings expressions;
+    private final TypeBindings typeBindings;
+    private final ObjectPathBindings paths;
+    private final StructureBindings structures;
+    private final TopicBindings topics;
+    private final LineForms lineForms;
+    private final Function<DeclInfo, Symbol> ensureSymbol;
+    private final Function<DeclInfo, SymbolHeader> symbolHeader;
     private final Map<String, SegmentContextualizer> segmentContexts = new HashMap<>();
     /** Semantic roles of wrappers created below; these are not source names. */
     enum GeometryElementRole { LINE_GEOMETRY, SURFACE_EDGE, SURFACE_BOUNDARY }
@@ -38,7 +53,38 @@ final class ViewBuilder {
     private final Map<SymbolId, Set<SymbolId>> factorSources = new LinkedHashMap<>();
     private final Set<SymbolId> building = new HashSet<>();
     private final Map<SymbolId, List<SymbolId>> members = new LinkedHashMap<>();
-    ViewBuilder(GraphBuilder graph, SemanticBuildState state) { g = graph; this.state = state; }
+
+    ViewBuilder(SemanticGraphRead.Symbols state,
+                SemanticWork work,
+                IndexedDeclarations index,
+                SemanticDiagnostics diagnostics,
+                NameResolver resolver,
+                ReferenceBindings references,
+                InheritanceBindings inheritance,
+                ExpressionBindings expressions,
+                TypeBindings typeBindings,
+                ObjectPathBindings paths,
+                StructureBindings structures,
+                TopicBindings topics,
+                LineForms lineForms,
+                Function<DeclInfo, Symbol> ensureSymbol,
+                Function<DeclInfo, SymbolHeader> symbolHeader) {
+        this.state = state;
+        this.work = work;
+        this.index = index;
+        this.diagnostics = diagnostics;
+        this.resolver = resolver;
+        this.references = references;
+        this.inheritance = inheritance;
+        this.expressions = expressions;
+        this.typeBindings = typeBindings;
+        this.paths = paths;
+        this.structures = structures;
+        this.topics = topics;
+        this.lineForms = lineForms;
+        this.ensureSymbol = ensureSymbol;
+        this.symbolHeader = symbolHeader;
+    }
 
     void contextualMembers(SymbolId owner, List<SymbolId> attributes) { members.put(owner, List.copyOf(attributes)); }
 
@@ -54,31 +100,31 @@ final class ViewBuilder {
 
     Symbol buildBase(DeclInfo decl) {
         NameSyntax targetName = (NameSyntax) decl.syntax();
-        var resolution = g.resolver.resolve(decl.id(), targetName,
+        var resolution = resolver.resolve(decl.id(), targetName,
                 Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE, SymbolKind.ASSOCIATION, SymbolKind.VIEW), false);
         if (resolution.target().isEmpty()) {
-            g.unresolved(targetName);
+            diagnostics.unresolved(targetName);
             // An invalid basis remains explicitly unsupported in partial analysis.
             return new UnsupportedSymbol(new SymbolHeader(decl.id(), SymbolKind.UNSUPPORTED,
                     DeclaredName.declared(decl.name()), decl.owner(), decl.order(), decl.origin(), decl.nameRange(),
                     decl.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of()), "VIEW_BASE", targetName.text());
         }
         SymbolId target = resolution.target().orElseThrow();
-        DeclInfo targetDecl = g.index.byId(target).orElseThrow();
-        if (!building.contains(target)) g.declarations.buildSymbol(targetDecl);
-        else g.emitRule(decl, "cyclic view formation", "VIEW_CYCLE");
-        g.references.recordReference(decl, targetName, target, ReferenceUsage.EXPRESSION);
-        var ownerSyntax = g.index.byId(decl.owner().orElseThrow()).orElseThrow().syntax();
+        DeclInfo targetDecl = index.byId(target).orElseThrow();
+        if (!building.contains(target)) ensureSymbol.apply(targetDecl);
+        else diagnostics.emitRule(decl, "cyclic view formation", "VIEW_CYCLE");
+        references.recordReference(decl, targetName, target, ReferenceUsage.EXPRESSION);
+        var ownerSyntax = index.byId(decl.owner().orElseThrow()).orElseThrow().syntax();
         boolean nullable = ownerSyntax instanceof ViewDeclarationSyntax syntax && syntax.formation().stream().flatMap(f -> f.bases().stream())
                 .anyMatch(b -> b.target().range().equals(targetName.range()) && b.orNull());
-        return new ViewSymbol.Base(g.declarations.header(decl), target, nullable);
+        return new ViewSymbol.Base(symbolHeader.apply(decl), target, nullable);
     }
 
     ViewSymbol build(DeclInfo decl) {
         var syntax = (ViewDeclarationSyntax) decl.syntax();
         if (!building.add(decl.id())) {
-            g.emitRule(decl, "cyclic view inheritance", "VIEW_CYCLE");
-            return new ViewSymbol(g.declarations.header(decl), Optional.empty(), Optional.empty(), List.of(), List.of(), List.of(), List.of(), List.of());
+            diagnostics.emitRule(decl, "cyclic view inheritance", "VIEW_CYCLE");
+            return new ViewSymbol(symbolHeader.apply(decl), Optional.empty(), Optional.empty(), List.of(), List.of(), List.of(), List.of(), List.of());
         }
         try {
             List<SymbolId> bases = new ArrayList<>();
@@ -90,27 +136,27 @@ final class ViewBuilder {
             Optional<ViewSymbol.Formation> formation = Optional.empty();
             if (syntax.baseView().isPresent() || syntax.modifiers().contains(Modifier.EXTENDED)) {
                 var name = syntax.baseView().orElse(null);
-                parent = name == null ? g.inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.VIEW))
-                        : g.resolver.resolve(decl.id(), name, Set.of(SymbolKind.VIEW), false).target();
-                if (parent.isEmpty()) { if (name != null) g.unresolved(name); else g.emitRule(decl, "EXTENDED view needs an inherited view", "EXTENDED_BASE"); }
+                parent = name == null ? inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.VIEW))
+                        : resolver.resolve(decl.id(), name, Set.of(SymbolKind.VIEW), false).target();
+                if (parent.isEmpty()) { if (name != null) diagnostics.unresolved(name); else diagnostics.emitRule(decl, "EXTENDED view needs an inherited view", "EXTENDED_BASE"); }
                 else {
-                    if (name != null) g.references.recordReference(decl, name, parent.orElseThrow(), ReferenceUsage.EXPRESSION);
-                    var base = (ViewSymbol) g.declarations.buildSymbol(g.index.byId(parent.orElseThrow()).orElseThrow());
-                    state.bindBase(decl.id(), base.id());
-                    if (base.header().has(Modifier.FINAL)) g.emitRule(decl, "cannot extend FINAL view", "VIEW_FINAL");
+                    if (name != null) references.recordReference(decl, name, parent.orElseThrow(), ReferenceUsage.EXPRESSION);
+                    var base = (ViewSymbol) ensureSymbol.apply(index.byId(parent.orElseThrow()).orElseThrow());
+                    inheritance.bindBase(decl.id(), base.id());
+                    if (base.header().has(Modifier.FINAL)) diagnostics.emitRule(decl, "cannot extend FINAL view", "VIEW_FINAL");
                     bases.addAll(base.bases()); result.addAll(base.members()); selections.addAll(base.selections()); extensionsByBase.addAll(base.baseExtensions()); formation = base.formation();
                     if (formation.orElse(null) instanceof ViewSymbol.Projection projected) projections.put(decl.id(), projected.base());
                     if (formation.orElse(null) instanceof ViewSymbol.Inspection inspected) inspections.put(decl.id(), inspected);
                 }
             }
             members.put(decl.id(), result);
-            for (DeclInfo child : g.index.children(decl.id())) if (child.kind() == SymbolKind.VIEW_BASE) {
-                g.checkWork();
-                var bound = g.declarations.buildSymbol(child);
+            for (DeclInfo child : index.children(decl.id())) if (child.kind() == SymbolKind.VIEW_BASE) {
+                work.checkpoint();
+                var bound = ensureSymbol.apply(child);
                 if (bound instanceof ViewSymbol.Base) {
                     if (syntax.formation().stream().flatMap(f -> f.bases().stream()).anyMatch(b -> b.target() == child.syntax())) formationBases.add(child.id());
                     if (bases.stream().anyMatch(id -> state.symbol(id).name().equals(bound.name())))
-                        g.emitRule(child, "duplicate view basis", "VIEW_ALIAS_CONFLICT");
+                        diagnostics.emitRule(child, "duplicate view basis", "VIEW_ALIAS_CONFLICT");
                     bases.add(child.id());
                 }
             }
@@ -119,24 +165,24 @@ final class ViewBuilder {
             for (var extension : syntax.baseExtensions()) {
                 var baseId = member(decl.id(), extension.base().text());
                 if (baseId.isEmpty() || !(state.symbol(baseId.orElseThrow()) instanceof ViewSymbol.Base original)) {
-                    g.unresolved(extension.base()); continue;
+                    diagnostics.unresolved(extension.base()); continue;
                 }
-                g.references.recordReference(decl, extension.base(), original.id(), ReferenceUsage.EXPRESSION);
+                references.recordReference(decl, extension.base(), original.id(), ReferenceUsage.EXPRESSION);
                 List<SymbolId> extensions = new ArrayList<>();
                 for (var candidate : extension.extensions()) {
                     var local = member(decl.id(), candidate.alias().text());
                     if (local.isEmpty() || !(state.symbol(local.orElseThrow()) instanceof ViewSymbol.Base target)) continue;
                     SymbolId current = target.target(); Set<SymbolId> seen = new HashSet<>();
                     while (current != null && !current.equals(original.target()) && seen.add(current)) {
-                        g.checkWork(); current = g.inheritance.objectInheritanceBase(current).orElse(null);
+                        work.checkpoint(); current = inheritance.objectInheritanceBase(current).orElse(null);
                     }
                     if (current == null || !current.equals(original.target()))
-                        g.emitRule(decl, "view base extension must specialize its base", "VIEW_BASE_EXTENSION");
+                        diagnostics.emitRule(decl, "view base extension must specialize its base", "VIEW_BASE_EXTENSION");
                     extensions.add(target.id());
                 }
                 extensionsByBase.add(new ViewSymbol.BaseExtension(original.id(), extensions));
             }
-            if (parent.isPresent() && syntax.formation().isPresent()) g.emitRule(decl, "extended view cannot change formation", "VIEW_FORMATION_OVERRIDE");
+            if (parent.isPresent() && syntax.formation().isPresent()) diagnostics.emitRule(decl, "extended view cannot change formation", "VIEW_FORMATION_OVERRIDE");
             if (syntax.formation().isPresent()) {
                 var f = syntax.formation().orElseThrow();
                 if (!formationBases.isEmpty()) {
@@ -149,20 +195,20 @@ final class ViewBuilder {
                         case UNION -> formation = Optional.of(new ViewSymbol.Union(formationBases));
                         case AGGREGATION -> {
                             List<ExpressionId> equal = new ArrayList<>();
-                            for (var path : f.paths()) equal.add(g.expressions.buildExpression(path, decl.id()).id());
+                            for (var path : f.paths()) equal.add(expressions.buildExpression(path, decl.id()).id());
                             formation = Optional.of(new ViewSymbol.Aggregation(formationBases.getFirst(), equal));
                             var basis = (ViewSymbol.Base)state.symbol(formationBases.getFirst());
-                            TypeId element = g.types.nextTypeId();
-                            state.storeType(new StructureValueType(element, decl.origin(), Optional.of(basis.target()), List.of()));
-                            TypeId bag = g.types.nextTypeId();
-                            state.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG,
+                            TypeId element = typeBindings.nextTypeId();
+                            typeBindings.storeType(new StructureValueType(element, decl.origin(), Optional.of(basis.target()), List.of()));
+                            TypeId bag = typeBindings.nextTypeId();
+                            typeBindings.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG,
                                     new Cardinality(java.math.BigInteger.ZERO, new CardinalityUpper.Unbounded()), element));
                             SymbolId aggregateId = new SymbolId(decl.id().value() + ":AGGREGATES");
                             var h = new SymbolHeader(aggregateId, SymbolKind.ATTRIBUTE, DeclaredName.synthetic("AGGREGATES"),
                                     Optional.of(decl.id()), 0, new Origin.DerivedOrigin(basis.id(), DerivationKind.ALIAS), Optional.empty(),
                                     decl.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(Modifier.TRANSIENT), List.of());
                             state.defineSymbol(new AttributeSymbol(h, bag, false, true, false, false, Optional.empty(), List.of()));
-                            state.bindDeclaredType(aggregateId, bag); scope.add(aggregateId);
+                            typeBindings.bindDeclaredType(aggregateId, bag); scope.add(aggregateId);
                         }
                         case INSPECTION, AREA_INSPECTION -> {
                             var basis = (ViewSymbol.Base)state.symbol(formationBases.getFirst());
@@ -175,25 +221,25 @@ final class ViewBuilder {
                         }
                     }
                 }
-            } else if (parent.isEmpty()) g.emitRule(decl, "view needs a formation or inherited view", "VIEW_FORMATION");
+            } else if (parent.isEmpty()) diagnostics.emitRule(decl, "view needs a formation or inherited view", "VIEW_FORMATION");
             for (var item : syntax.members()) {
-                g.checkWork();
+                work.checkpoint();
                 if (item instanceof ViewDeclarationSyntax.AllOf all) {
                     if (formation.orElse(null) instanceof ViewSymbol.Union
                             || formation.orElse(null) instanceof ViewSymbol.Inspection inherited && inherited.area()
                             || syntax.formation().map(f -> f.kind() == ViewDeclarationSyntax.FormationKind.AREA_INSPECTION).orElse(false))
-                        g.emitRule(decl, "ALL OF is not allowed in UNION or AREA INSPECTION", "VIEW_ALL_OF");
+                        diagnostics.emitRule(decl, "ALL OF is not allowed in UNION or AREA INSPECTION", "VIEW_ALL_OF");
                     var base = member(decl.id(), all.base().text()).map(state::symbol).orElse(null);
-                    if (!(base instanceof ViewSymbol.Base basis)) { g.unresolved(all.base()); continue; }
-                    g.references.recordReference(decl, all.base(), basis.nameRange().isPresent() ? basis.id() : basis.target(), ReferenceUsage.EXPRESSION);
+                    if (!(base instanceof ViewSymbol.Base basis)) { diagnostics.unresolved(all.base()); continue; }
+                    references.recordReference(decl, all.base(), basis.nameRange().isPresent() ? basis.id() : basis.target(), ReferenceUsage.EXPRESSION);
                     List<SymbolId> inherited;
                     if (state.symbol(basisTarget(basis)) instanceof ViewSymbol view) inherited = view.members();
                     else {
-                        g.index.byId(basisTarget(basis)).ifPresent(g.inheritance::collectEffective);
+                        index.byId(basisTarget(basis)).ifPresent(inheritance::collectEffective);
                         inherited = state.effectiveMembers(basisTarget(basis)).stream().map(EffectiveMember::declaredSymbol).toList();
                     }
                     for (SymbolId id : inherited) {
-                        g.checkWork();
+                        work.checkpoint();
                         if (state.symbol(id) instanceof RoleSymbol role && decl.language()==LanguageVersion.ILI24) {
                             includeRole(decl,basis,all,role,result,scope);
                             continue;
@@ -204,7 +250,7 @@ final class ViewBuilder {
                                 new Origin.DerivedOrigin(id, DerivationKind.ALIAS), Optional.empty(), decl.language(),
                                 attribute.header().documentation(), attribute.header().metaAttributes(), attribute.header().modifiers(), List.of());
                         var expressionId = new ExpressionId(copyId.value() + ":expression");
-                        state.storeExpression(new PathExpression(expressionId, attribute.declaredType(), ExpressionTypeState.RESOLVED,
+                        expressions.storeExpression(new PathExpression(expressionId, attribute.declaredType(), ExpressionTypeState.RESOLVED,
                                 all.base().range(), List.of(), new ObjectPath(List.of(new PathStep.ViewBaseStep(basis.id(), basisTarget(basis), all.base().range()),
                                 new PathStep.AttributeStep(attribute.name().value(), attribute.id(), all.base().range())))));
                         var copy = new AttributeSymbol(h, attribute.declaredType(), attribute.mandatory() && !basis.orNull(),
@@ -213,49 +259,49 @@ final class ViewBuilder {
                     }
                 } else {
                     var attributeSyntax = ((ViewDeclarationSyntax.Attribute)item).declaration();
-                    var child = g.index.children(decl.id()).stream().filter(d -> d.syntax() == attributeSyntax).findFirst().orElseThrow();
-                    var attribute = (AttributeSymbol) g.declarations.buildSymbol(child);
+                    var child = index.children(decl.id()).stream().filter(d -> d.syntax() == attributeSyntax).findFirst().orElseThrow();
+                    var attribute = (AttributeSymbol) ensureSymbol.apply(child);
                     var previous = result.stream().filter(id -> state.symbol(id).name().equals(attribute.name())).findFirst();
                     if (previous.isPresent() && attribute.header().has(Modifier.EXTENDED)) {
                         var old = (AttributeSymbol)state.symbol(previous.orElseThrow());
                         if (old.owner().filter(decl.id()::equals).isPresent())
-                            g.emitRule(child, "EXTENDED requires an inherited attribute", "EXTENDED_BASE");
-                        g.inheritance.validateAttributeOverrideProperties(child, attribute, old);
-                        if (old.header().has(Modifier.FINAL)) g.emitRule(child, "cannot override FINAL attribute", "VIEW_FINAL");
-                        if (!g.types.assignable(attribute.declaredType(), old.declaredType()))
-                            g.emitRule(child, "view override must specialize the inherited type", "VIEW_ATTRIBUTE_TYPE");
+                            diagnostics.emitRule(child, "EXTENDED requires an inherited attribute", "EXTENDED_BASE");
+                        inheritance.validateAttributeOverrideProperties(child, attribute, old);
+                        if (old.header().has(Modifier.FINAL)) diagnostics.emitRule(child, "cannot override FINAL attribute", "VIEW_FINAL");
+                        if (!typeBindings.assignable(attribute.declaredType(), old.declaredType()))
+                            diagnostics.emitRule(child, "view override must specialize the inherited type", "VIEW_ATTRIBUTE_TYPE");
                         result.set(result.indexOf(old.id()), attribute.id()); scope.remove(old.id()); scope.add(attribute.id());
                         state.replaceSymbol(new AttributeSymbol(attribute.header(), attribute.declaredType(), attribute.mandatory(),
                                 attribute.transientAttribute(), attribute.continuous(), attribute.subdivision(), Optional.of(old.id()), attribute.derivations()));
                     } else {
                         if (attribute.header().has(Modifier.EXTENDED))
-                            g.emitRule(child, "EXTENDED attribute needs an inherited member", "EXTENDED_BASE");
+                            diagnostics.emitRule(child, "EXTENDED attribute needs an inherited member", "EXTENDED_BASE");
                         add(decl, attribute, result, scope);
                     }
                 }
             }
             for (var selection : syntax.selections()) {
-                var expression = g.expressions.buildExpression(selection, decl.id()); selections.add(expression.id());
+                var expression = expressions.buildExpression(selection, decl.id()); selections.add(expression.id());
                 if (!decl.modifiers().contains(Modifier.ABSTRACT)) validateConcreteExpression(decl, expression.id(), new HashSet<>());
-                if (!expression.error() && !g.types.isBoolean(expression.typeId()))
-                    g.emitTypeMismatch(decl.sourceId(), selection.range(), g.types.typeName(expression.typeId()), "BOOLEAN");
+                if (!expression.error() && !typeBindings.isBoolean(expression.typeId()))
+                    diagnostics.emitTypeMismatch(decl.sourceId(), selection.range(), typeBindings.typeName(expression.typeId()), "BOOLEAN");
             }
             List<SymbolId> constraints = new ArrayList<>();
-            for (var child : g.index.children(decl.id())) if (child.kind() == SymbolKind.CONSTRAINT) { g.declarations.buildSymbol(child); constraints.add(child.id()); }
+            for (var child : index.children(decl.id())) if (child.kind() == SymbolKind.CONSTRAINT) { ensureSymbol.apply(child); constraints.add(child.id()); }
             if (syntax.endName().isPresent() && !syntax.name().equals(syntax.endName().orElseThrow()))
-                g.emitRule(decl, "view end name mismatch", "VIEW_END_NAME");
+                diagnostics.emitRule(decl, "view end name mismatch", "VIEW_END_NAME");
             List<EffectiveMember> effective = new ArrayList<>();
             for (var id : result) {
                 var attribute = (AttributeSymbol) state.symbol(id);
                 if (!decl.modifiers().contains(Modifier.ABSTRACT) && attribute.header().has(Modifier.ABSTRACT))
-                    g.emitRule(decl, "concrete view contains abstract attribute", "VIEW_ABSTRACT_ATTRIBUTE");
+                    diagnostics.emitRule(decl, "concrete view contains abstract attribute", "VIEW_ABSTRACT_ATTRIBUTE");
                 if (attribute.mandatory()) {
                     var used = new HashSet<SymbolId>();
                     for (var expression : effectiveDerivations(attribute)) collectBases(expression, used, new HashSet<>());
                     if (used.stream().anyMatch(base -> ((ViewSymbol.Base)state.symbol(base)).orNull()))
-                        g.emitRule(decl, "mandatory view attribute uses an optional join basis", "VIEW_NULLABLE_ATTRIBUTE");
+                        diagnostics.emitRule(decl, "mandatory view attribute uses an optional join basis", "VIEW_NULLABLE_ATTRIBUTE");
                     if (formation.orElse(null) instanceof ViewSymbol.Union union && !used.containsAll(union.bases()))
-                        g.emitRule(decl, "mandatory union attribute needs every basis", "VIEW_UNION_ATTRIBUTE");
+                        diagnostics.emitRule(decl, "mandatory union attribute needs every basis", "VIEW_UNION_ATTRIBUTE");
                 }
                 if (!decl.modifiers().contains(Modifier.ABSTRACT)) {
                     for (var expression : effectiveDerivations(attribute)) validateConcreteExpression(decl, expression, new HashSet<>());
@@ -272,8 +318,8 @@ final class ViewBuilder {
                         local ? (attribute.overrides().isPresent() ? EffectiveMemberOrigin.OVERRIDDEN : EffectiveMemberOrigin.LOCAL)
                                 : EffectiveMemberOrigin.INHERITED, attribute.overrides().isPresent()));
             }
-            state.setEffectiveMembers(decl.id(), List.copyOf(effective));
-            return new ViewSymbol(g.declarations.header(decl), parent, formation, bases, extensionsByBase, selections, result, constraints);
+            inheritance.setEffectiveMembers(decl.id(), List.copyOf(effective));
+            return new ViewSymbol(symbolHeader.apply(decl), parent, formation, bases, extensionsByBase, selections, result, constraints);
         } finally { building.remove(decl.id()); }
     }
 
@@ -282,7 +328,7 @@ final class ViewBuilder {
         List<AttributeSymbol> chain = new ArrayList<>();
         Set<SymbolId> seen = new HashSet<>();
         while (attribute != null && seen.add(attribute.id())) {
-            g.checkWork(); chain.add(attribute);
+            work.checkpoint(); chain.add(attribute);
             attribute = attribute.overrides().map(state::symbol).filter(AttributeSymbol.class::isInstance)
                     .map(AttributeSymbol.class::cast).orElse(null);
         }
@@ -298,13 +344,13 @@ final class ViewBuilder {
     private void includeRole(DeclInfo owner,ViewSymbol.Base basis,ViewDeclarationSyntax.AllOf all,
             RoleSymbol role,List<SymbolId> result,List<SymbolId> scope) {
         var id=new SymbolId(owner.id().value()+":all:"+basis.id().value()+":"+role.id().value());
-        var type=g.paths.roleValueType(role,owner.id(),all.base().range());
+        var type=paths.roleValueType(role,owner.id(),all.base().range());
         var modifiers=new HashSet<>(role.header().modifiers());modifiers.retainAll(Set.of(Modifier.ABSTRACT,Modifier.FINAL));
         var header=new SymbolHeader(id,SymbolKind.ATTRIBUTE,role.name(),Optional.of(owner.id()),result.size(),
                 new Origin.DerivedOrigin(role.id(),DerivationKind.ALIAS),Optional.empty(),owner.language(),
                 role.header().documentation(),role.header().metaAttributes(),modifiers,List.of());
         var expressionId=new ExpressionId(id.value()+":expression");
-        state.storeExpression(new PathExpression(expressionId,type,ExpressionTypeState.RESOLVED,all.base().range(),List.of(),
+        expressions.storeExpression(new PathExpression(expressionId,type,ExpressionTypeState.RESOLVED,all.base().range(),List.of(),
                 new ObjectPath(List.of(new PathStep.ViewBaseStep(basis.id(),basisTarget(basis),all.base().range()),
                         new PathStep.RoleStep(role.name().value(),role.id(),all.base().range())))));
         add(owner,new AttributeSymbol(header,type,false,false,false,false,Optional.empty(),List.of(expressionId)),result,scope);
@@ -314,46 +360,46 @@ final class ViewBuilder {
 
     /** The same decomposition binding is used by view formations and factors. */
     Inspected bindInspection(DeclInfo decl, SymbolId source, PathExpressionSyntax path, boolean area) {
-        var expression = g.paths.inspectionPath(path, decl.id(), source);
+        var expression = paths.inspectionPath(path, decl.id(), source);
         if (expression.error()) return null;
-        TypeDescriptor descriptor = g.types.effectiveDescriptor(expression.typeId());
+        TypeDescriptor descriptor = typeBindings.effectiveDescriptor(expression.typeId());
         SymbolId parent = source;
         if (path.segments().size() > 1) {
             var prefix = new PathExpressionSyntax(path.id(), path.range(), path.segments().subList(0, path.segments().size()-1));
-            var result = g.paths.inspectionPath(prefix, decl.id(), source);
+            var result = paths.inspectionPath(prefix, decl.id(), source);
             if (result.error()) return null;
-            var type = g.types.effectiveDescriptor(result.typeId());
-            if (type instanceof CollectionType c) type = g.types.effectiveDescriptor(c.elementType());
-            if (type instanceof StructureValueType st) parent = g.structures.target(st);
+            var type = typeBindings.effectiveDescriptor(result.typeId());
+            if (type instanceof CollectionType c) type = typeBindings.effectiveDescriptor(c.elementType());
+            if (type instanceof StructureValueType st) parent = structures.target(st);
             else if (type instanceof GeometryType geometry) parent = geometryElement(decl, geometry, false);
         }
         SymbolId element = null;
-        if (descriptor instanceof CollectionType collection) descriptor = g.types.effectiveDescriptor(collection.elementType());
-        if (descriptor instanceof StructureValueType structure && !area) element = g.structures.target(structure);
+        if (descriptor instanceof CollectionType collection) descriptor = typeBindings.effectiveDescriptor(collection.elementType());
+        if (descriptor instanceof StructureValueType structure && !area) element = structures.target(structure);
         else if (descriptor instanceof GeometryType geometry) {
             if (!area || geometry.geometryKind() == GeometryKind.AREA || geometry.geometryKind() == GeometryKind.MULTIAREA)
                 element = geometryElement(decl, geometry, area);
         }
         if (element == null) {
-            g.emitRule(decl, "inspection requires a structure/geometry attribute, AREA requires an area", "VIEW_INSPECTION_TYPE");
+            diagnostics.emitRule(decl, "inspection requires a structure/geometry attribute, AREA requires an area", "VIEW_INSPECTION_TYPE");
             return null;
         }
         return new Inspected(expression.id(), element, parent, area);
     }
 
     ExpressionBindings.ExpressionResult factor(ExpressionId id, InspectionExpressionSyntax syntax, SymbolId owner) {
-        DeclInfo decl = g.index.byId(owner).orElseThrow();
+        DeclInfo decl = index.byId(owner).orElseThrow();
         Optional<SymbolId> view = Optional.empty(); SymbolId source = null; Inspected inspected = null;
         if (syntax.view().isPresent()) {
             var name = syntax.view().orElseThrow();
-            var resolution = g.resolver.resolve(owner, name, Set.of(SymbolKind.VIEW), false);
-            if (resolution.target().isEmpty()) g.unresolved(name);
+            var resolution = resolver.resolve(owner, name, Set.of(SymbolKind.VIEW), false);
+            if (resolution.target().isEmpty()) diagnostics.unresolved(name);
             else {
                 var target = resolution.target().orElseThrow();
-                g.references.recordReference(decl, name, target, ReferenceUsage.EXPRESSION);
-                if (building.contains(target)) g.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
+                references.recordReference(decl, name, target, ReferenceUsage.EXPRESSION);
+                if (building.contains(target)) diagnostics.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
                 else {
-                    var bound = (ViewSymbol)g.declarations.buildSymbol(g.index.byId(target).orElseThrow());
+                    var bound = (ViewSymbol)ensureSymbol.apply(index.byId(target).orElseThrow());
                     if (bound.formation().orElse(null) instanceof ViewSymbol.Inspection i) {
                         view = Optional.of(target); source = ((ViewSymbol.Base)state.symbol(i.base())).target();
                         inspected = new Inspected(i.path(), i.element(), i.parent(), i.area());
@@ -362,86 +408,86 @@ final class ViewBuilder {
             }
         } else {
             var f = syntax.formation().orElseThrow(); var name = f.bases().getFirst().target();
-            var resolution = g.resolver.resolve(owner, name, Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE, SymbolKind.VIEW, SymbolKind.ASSOCIATION), false);
-            if (resolution.target().isEmpty()) g.unresolved(name);
+            var resolution = resolver.resolve(owner, name, Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE, SymbolKind.VIEW, SymbolKind.ASSOCIATION), false);
+            if (resolution.target().isEmpty()) diagnostics.unresolved(name);
             else {
                 source = resolution.target().orElseThrow();
-                g.references.recordReference(decl, name, source, ReferenceUsage.EXPRESSION);
-                if (building.contains(source)) g.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
+                references.recordReference(decl, name, source, ReferenceUsage.EXPRESSION);
+                if (building.contains(source)) diagnostics.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
                 else {
-                    if (g.index.byId(source).orElseThrow().kind() == SymbolKind.VIEW)
-                        g.declarations.buildSymbol(g.index.byId(source).orElseThrow());
+                    if (index.byId(source).orElseThrow().kind() == SymbolKind.VIEW)
+                        ensureSymbol.apply(index.byId(source).orElseThrow());
                     inspected = bindInspection(decl, source, f.paths().getFirst(), f.kind() == ViewDeclarationSyntax.FormationKind.AREA_INSPECTION);
                 }
             }
         }
-        var restriction = syntax.restriction().map(r -> g.expressions.buildExpression(r, owner));
+        var restriction = syntax.restriction().map(r -> expressions.buildExpression(r, owner));
         if (inspected == null) {
-            var diagnostic = g.emitRule(decl, "factor requires a bound inspection", "INSPECTION_FACTOR_TARGET");
-            TypeId type = g.types.nextTypeId(); state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
-            state.storeExpression(new ErrorExpression(id, type, ExpressionTypeState.ERROR, syntax.range(), restriction.stream().map(ExpressionBindings.ExpressionResult::id).toList(), List.of(diagnostic)));
+            var diagnostic = diagnostics.emitRule(decl, "factor requires a bound inspection", "INSPECTION_FACTOR_TARGET");
+            TypeId type = typeBindings.nextTypeId(); typeBindings.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
+            expressions.storeExpression(new ErrorExpression(id, type, ExpressionTypeState.ERROR, syntax.range(), restriction.stream().map(ExpressionBindings.ExpressionResult::id).toList(), List.of(diagnostic)));
             return new ExpressionBindings.ExpressionResult(id, type, true);
         }
         factorSources.computeIfAbsent(decl.id(), ignored -> new LinkedHashSet<>()).add(view.orElse(source));
         boolean error = restriction.map(ExpressionBindings.ExpressionResult::error).orElse(false);
         if (restriction.isPresent() && !error) {
-            TypeId expected = g.types.nextTypeId();
-            state.storeType(new ObjectArgumentType(expected, decl.origin(), Optional.of(source), List.of(), false));
-            if (!g.types.assignable(restriction.orElseThrow().typeId(), expected)) {
-                g.emitRule(decl, "inspection restriction requires one object specializing its source", "INSPECTION_FACTOR_RESTRICTION");
+            TypeId expected = typeBindings.nextTypeId();
+            typeBindings.storeType(new ObjectArgumentType(expected, decl.origin(), Optional.of(source), List.of(), false));
+            if (!typeBindings.assignable(restriction.orElseThrow().typeId(), expected)) {
+                diagnostics.emitRule(decl, "inspection restriction requires one object specializing its source", "INSPECTION_FACTOR_RESTRICTION");
                 error = true;
             }
         }
-        TypeId element = g.types.nextTypeId(); state.storeType(new StructureValueType(element, decl.origin(), Optional.of(inspected.element()), List.of()));
-        TypeId bag = g.types.nextTypeId(); state.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG, Cardinality.unboundedFrom(0), element));
-        state.storeExpression(new InspectionExpression(id, bag, error ? ExpressionTypeState.ERROR : ExpressionTypeState.RESOLVED,
+        TypeId element = typeBindings.nextTypeId(); typeBindings.storeType(new StructureValueType(element, decl.origin(), Optional.of(inspected.element()), List.of()));
+        TypeId bag = typeBindings.nextTypeId(); typeBindings.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG, Cardinality.unboundedFrom(0), element));
+        expressions.storeExpression(new InspectionExpression(id, bag, error ? ExpressionTypeState.ERROR : ExpressionTypeState.RESOLVED,
                 syntax.range(), view, source, inspected.element(), inspected.path(), restriction.map(ExpressionBindings.ExpressionResult::id), inspected.area()));
         return new ExpressionBindings.ExpressionResult(id, bag, error);
     }
 
     private void requireDependency(DeclInfo decl, SymbolId source) {
-        SymbolId topic = g.paths.scopeRoot(decl.id()), target = g.paths.scopeRoot(source);
-        if (g.index.byId(topic).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
-                && g.index.byId(target).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
-                && !g.topics.isTopicSubtype(topic, target) && !g.topics.topicDependencies(topic).contains(target))
-            g.emitRule(decl, "inspection source topic requires DEPENDS ON", "VIEW_TOPIC_DEPENDENCY");
+        SymbolId topic = paths.scopeRoot(decl.id()), target = paths.scopeRoot(source);
+        if (index.byId(topic).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
+                && index.byId(target).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
+                && !topics.isTopicSubtype(topic, target) && !topics.topicDependencies(topic).contains(target))
+            diagnostics.emitRule(decl, "inspection source topic requires DEPENDS ON", "VIEW_TOPIC_DEPENDENCY");
     }
 
     private void add(DeclInfo owner, AttributeSymbol attribute, List<SymbolId> result, List<SymbolId> scope) {
         if (scope.stream().anyMatch(id -> state.symbol(id).name().equals(attribute.name())))
-            g.emitRule(owner, "duplicate view attribute or basis name", "VIEW_ATTRIBUTE_DUPLICATE");
+            diagnostics.emitRule(owner, "duplicate view attribute or basis name", "VIEW_ATTRIBUTE_DUPLICATE");
         if (state.hasSymbol(attribute.id())) state.replaceSymbol(attribute);
         else state.defineSymbol(attribute);
-        state.bindDeclaredType(attribute.id(), attribute.declaredType());
+        typeBindings.bindDeclaredType(attribute.id(), attribute.declaredType());
         result.add(attribute.id()); scope.add(attribute.id());
     }
 
     SymbolId geometryElement(DeclInfo owner, GeometryType geometry, boolean area) {
         TypeId vertex = geometry.vertexDomain().map(id -> {
-            g.index.byId(id).ifPresent(g.declarations::buildSymbol); return state.declaredType(id);
+            index.byId(id).ifPresent(ensureSymbol::apply); return state.declaredType(id);
         }).orElse(null);
         if (vertex == null) {
-            g.emitUnsupported(owner.sourceId(), owner.syntax().range(), "INSPECTION_GEOMETRY_VERTEX", "geometry inspection needs a bound vertex type");
+            diagnostics.emitUnsupported(owner.sourceId(), owner.syntax().range(), "INSPECTION_GEOMETRY_VERTEX", "geometry inspection needs a bound vertex type");
             return syntheticStructure(owner, geometry, "LineSegment", Map.of());
         }
         var context = segmentContexts.computeIfAbsent(owner.id().value() + ":" + geometry.id().value(),
-                key -> new SegmentContextualizer(g, state, this, owner, geometry));
-        var segment = context.symbol(g.lines.predefined(owner, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
-        var start = context.symbol(g.lines.predefined(owner, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
+                key -> new SegmentContextualizer(state, work, index, this, owner, geometry, inheritance, typeBindings, expressions, lineForms, ensureSymbol));
+        var segment = context.symbol(lineForms.predefined(owner, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
+        var start = context.symbol(lineForms.predefined(owner, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
         TypeId segments = collection(owner, segment);
         var lineGeometry = syntheticStructure(owner, geometry, "LineGeometry", Map.of("Segments", segments));
-        g.lines.startConstraint(owner, lineGeometry, segment, start, owner.syntax().range());
+        lineForms.startConstraint(owner, lineGeometry, segment, start, owner.syntax().range());
         registerGeometryElement(lineGeometry, geometry, context, GeometryElementRole.LINE_GEOMETRY);
         if (geometry.geometryKind() == GeometryKind.POLYLINE || geometry.geometryKind() == GeometryKind.MULTIPOLYLINE) return lineGeometry;
-        TypeId polyline = g.types.nextTypeId();
-        state.storeType(new GeometryType(polyline, geometry.origin(), GeometryKind.POLYLINE, geometry.lineForms(), geometry.vertexDomain(), geometry.lineAttributes(), true, geometry.withoutOverlaps(), geometry.overlap()));
+        TypeId polyline = typeBindings.nextTypeId();
+        typeBindings.storeType(new GeometryType(polyline, geometry.origin(), GeometryKind.POLYLINE, geometry.lineForms(), geometry.vertexDomain(), geometry.lineAttributes(), true, geometry.withoutOverlaps(), geometry.overlap()));
         Map<String, TypeId> fields = new LinkedHashMap<>(); fields.put("Geometry", polyline);
         if (owner.language() == LanguageVersion.ILI23) {
-            TypeId lineAttrs = g.types.nextTypeId();
+            TypeId lineAttrs = typeBindings.nextTypeId();
             if (geometry.lineAttributes().isPresent()) {
-                SymbolId target = geometry.lineAttributes().orElseThrow(); g.index.byId(target).ifPresent(g.declarations::buildSymbol);
-                state.storeType(new StructureValueType(lineAttrs, geometry.origin(), Optional.of(target), List.of()));
-            } else state.storeType(new GenericType(lineAttrs, geometry.origin(), "ANYSTRUCTURE"));
+                SymbolId target = geometry.lineAttributes().orElseThrow(); index.byId(target).ifPresent(ensureSymbol::apply);
+                typeBindings.storeType(new StructureValueType(lineAttrs, geometry.origin(), Optional.of(target), List.of()));
+            } else typeBindings.storeType(new GenericType(lineAttrs, geometry.origin(), "ANYSTRUCTURE"));
             fields.put("LineAttrs", lineAttrs);
         }
         var edge = syntheticStructure(owner, geometry, "SurfaceEdge", fields);
@@ -453,15 +499,15 @@ final class ViewBuilder {
     }
 
     private TypeId collection(DeclInfo owner, SymbolId structure) {
-        TypeId element = g.types.nextTypeId(); state.storeType(new StructureValueType(element, owner.origin(), Optional.of(structure), List.of()));
-        TypeId list = g.types.nextTypeId(); state.storeType(new CollectionType(list, owner.origin(), CollectionKind.LIST,
+        TypeId element = typeBindings.nextTypeId(); typeBindings.storeType(new StructureValueType(element, owner.origin(), Optional.of(structure), List.of()));
+        TypeId list = typeBindings.nextTypeId(); typeBindings.storeType(new CollectionType(list, owner.origin(), CollectionKind.LIST,
                 Cardinality.unboundedFrom(0), element)); return list;
     }
 
     private SymbolId syntheticStructure(DeclInfo owner, GeometryType geometry, String name, Map<String, TypeId> fields) {
         SymbolId id = new SymbolId(owner.id().value() + ":inspection:" + geometry.id().value() + ":" + name);
         if (state.hasSymbol(id)) return id;
-        var canonical = g.lines.predefined(owner, "INTERLIS." + name, Set.of(SymbolKind.STRUCTURE)).orElseThrow();
+        var canonical = lineForms.predefined(owner, "INTERLIS." + name, Set.of(SymbolKind.STRUCTURE)).orElseThrow();
         var header = new SymbolHeader(id, SymbolKind.STRUCTURE, DeclaredName.synthetic(name), Optional.of(owner.id()), 0,
                 new Origin.DerivedOrigin(canonical, DerivationKind.CONTEXTUALIZATION), Optional.empty(), owner.language(),
                 Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
@@ -473,16 +519,16 @@ final class ViewBuilder {
             var h = new SymbolHeader(attr, SymbolKind.ATTRIBUTE, DeclaredName.synthetic(field.getKey()), Optional.of(id), attributes.size(),
                     new Origin.DerivedOrigin(original, DerivationKind.CONTEXTUALIZATION), Optional.empty(), owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
             state.defineSymbol(new AttributeSymbol(h, field.getValue(), field.getKey().equals("SegmentEndPoint") || field.getKey().equals("ArcPoint"), false, false, false, Optional.empty(), List.of()));
-            state.bindDeclaredType(attr, field.getValue()); attributes.add(attr);
+            typeBindings.bindDeclaredType(attr, field.getValue()); attributes.add(attr);
             effective.add(new EffectiveMember(attr, id, List.of(id), effective.size(), EffectiveMemberOrigin.LOCAL, false));
         }
-        members.put(id, attributes); state.setEffectiveMembers(id, effective);
+        members.put(id, attributes); inheritance.setEffectiveMembers(id, effective);
         state.defineSymbol(new StructureSymbol(header, Optional.empty(), attributes, List.of())); return id;
     }
 
     private void collectBases(ExpressionId id, Set<SymbolId> bases, Set<ExpressionId> seen) {
         if (!seen.add(id)) return;
-        g.checkWork(); var expression = state.expression(id);
+        work.checkpoint(); var expression = state.expression(id);
         if (expression instanceof PathExpression path) for (var step : path.path().steps())
             if (step instanceof PathStep.ViewBaseStep base) bases.add(base.base());
         if(expression instanceof FunctionCallExpression call)call.argumentPaths().values().forEach(p->p.binding().ifPresent(binding->collectBases(binding,bases,seen)));
@@ -491,10 +537,10 @@ final class ViewBuilder {
 
     private void validateConcreteExpression(DeclInfo owner, ExpressionId id, Set<ExpressionId> seen) {
         if (!seen.add(id)) return;
-        g.checkWork(); var expression = state.expression(id);
+        work.checkpoint(); var expression = state.expression(id);
         if (expression instanceof PathExpression path) for (var step : path.path().steps()) {
             if (step instanceof PathStep.AttributeStep attribute && state.symbol(attribute.target()).header().has(Modifier.ABSTRACT))
-                g.emitRule(owner, "concrete view refers to an abstract attribute", "VIEW_ABSTRACT_ATTRIBUTE");
+                diagnostics.emitRule(owner, "concrete view refers to an abstract attribute", "VIEW_ABSTRACT_ATTRIBUTE");
         }
         if(expression instanceof FunctionCallExpression call)call.argumentPaths().values().forEach(p->p.binding().ifPresent(binding->validateConcreteExpression(owner,binding,seen)));
         expression.children().forEach(child -> validateConcreteExpression(owner, child, seen));
@@ -502,20 +548,20 @@ final class ViewBuilder {
 
     void validateDependencies() {
         for (var use : factorSources.entrySet()) {
-            g.checkWork();
-            var decl = g.index.byId(use.getKey()).orElseThrow();
-            for (var target : use.getValue()) { g.checkWork(); requireDependency(decl, target); }
+            work.checkpoint();
+            var decl = index.byId(use.getKey()).orElseThrow();
+            for (var target : use.getValue()) { work.checkpoint(); requireDependency(decl, target); }
         }
         for (Symbol symbol : state.symbolsInBuildOrder()) if (symbol instanceof ViewSymbol view) {
-            var decl = g.index.byId(view.id()).orElseThrow();
-            SymbolId topic = g.paths.scopeRoot(view.id());
+            var decl = index.byId(view.id()).orElseThrow();
+            SymbolId topic = paths.scopeRoot(view.id());
             if (!(state.symbol(topic) instanceof TopicSymbol)) continue;
             for (var id : view.bases()) {
                 var base = (ViewSymbol.Base)state.symbol(id);
-                SymbolId target = g.paths.scopeRoot(base.target());
-                if (state.symbol(target) instanceof TopicSymbol && !g.topics.isTopicSubtype(topic, target)
-                        && !g.topics.topicDependencies(topic).contains(target))
-                    g.emitRule(decl, "view basis topic requires DEPENDS ON", "VIEW_TOPIC_DEPENDENCY");
+                SymbolId target = paths.scopeRoot(base.target());
+                if (state.symbol(target) instanceof TopicSymbol && !topics.isTopicSubtype(topic, target)
+                        && !topics.topicDependencies(topic).contains(target))
+                    diagnostics.emitRule(decl, "view basis topic requires DEPENDS ON", "VIEW_TOPIC_DEPENDENCY");
             }
         }
     }

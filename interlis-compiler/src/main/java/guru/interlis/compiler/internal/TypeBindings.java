@@ -8,11 +8,8 @@ import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.Severity;
 import guru.interlis.model.AttributeSymbol;
 import guru.interlis.model.ClassValueType;
-import guru.interlis.model.CoordinateType;
-import guru.interlis.model.GenericType;
-import guru.interlis.model.GeometryType;
-import guru.interlis.model.StructureValueType;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DeclaredName;
 import guru.interlis.model.Documentation;
 import guru.interlis.model.DomainReferenceType;
@@ -20,14 +17,17 @@ import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.EffectiveType;
 import guru.interlis.model.EnumerationType;
 import guru.interlis.model.EnumerationValue;
-import guru.interlis.model.ExpressionId;
 import guru.interlis.model.ErrorType;
+import guru.interlis.model.ExpressionId;
+import guru.interlis.model.GenericType;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.MetaAttributeSet;
 import guru.interlis.model.NumericRange;
 import guru.interlis.model.NumericType;
 import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.ReferenceUsage;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
@@ -38,23 +38,23 @@ import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
-import guru.interlis.syntax.AttributeDeclarationSyntax;
-import guru.interlis.syntax.BooleanTypeSyntax;
 import guru.interlis.syntax.AlignmentTypeSyntax;
+import guru.interlis.syntax.AttributeDeclarationSyntax;
 import guru.interlis.syntax.BlackboxTypeSyntax;
+import guru.interlis.syntax.BooleanTypeSyntax;
 import guru.interlis.syntax.ClassValueTypeSyntax;
 import guru.interlis.syntax.CollectionTypeSyntax;
-import guru.interlis.syntax.OidTypeSyntax;
 import guru.interlis.syntax.CoordinateTypeSyntax;
 import guru.interlis.syntax.DomainDeclarationSyntax;
-import guru.interlis.syntax.FormattedTypeSyntax;
-import guru.interlis.syntax.GenericTypeSyntax;
+import guru.interlis.syntax.DomainReferenceSyntax;
 import guru.interlis.syntax.EnumTreeValueSyntax;
+import guru.interlis.syntax.EnumerationTypeSyntax;
+import guru.interlis.syntax.FormattedTypeSyntax;
+import guru.interlis.syntax.FunctionDeclarationSyntax;
+import guru.interlis.syntax.GenericTypeSyntax;
 import guru.interlis.syntax.LineTypeSyntax;
 import guru.interlis.syntax.NumericTypeSyntax;
-import guru.interlis.syntax.FunctionDeclarationSyntax;
-import guru.interlis.syntax.DomainReferenceSyntax;
-import guru.interlis.syntax.EnumerationTypeSyntax;
+import guru.interlis.syntax.OidTypeSyntax;
 import guru.interlis.syntax.ReferenceTypeSyntax;
 import guru.interlis.syntax.TemporalTypeSyntax;
 import guru.interlis.syntax.TextTypeSyntax;
@@ -69,14 +69,28 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /** Binds declared types on demand and completes their effective descriptors. */
 final class TypeBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead.Types state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
+    private final UnitBindings units;
+    private final NameBindings names;
+    private final InheritanceBindings inheritance;
+    private final LineForms lineForms;
+    private final ObjectPathBindings paths;
+    private final Supplier<ExpressionBindings> expressions;
+    private final PredefinedTemporal temporal;
+    private final StructureBindings structures;
+    private final MetadataBindings metadata;
+    private final ReferenceBindings references;
+    private final FormattedTypeBindings formats;
+    private final Supplier<DeclarationBindings> declarations;
+    private final Consumer<DomainSymbol> definePredefinedDomain;
     private final Set<SymbolId> resolvingDomainTypes = new HashSet<>();
     private final Set<SymbolId> resolvingAttributeTypes = new HashSet<>();
     private final Map<guru.interlis.model.AttributePathType.Argument, TypeId> functionArgumentTypes = new LinkedHashMap<>();
@@ -84,18 +98,45 @@ final class TypeBindings {
     private final Map<SymbolId, List<ExpressionId>> inferredDerivations = new LinkedHashMap<>();
     private final Map<guru.interlis.model.LanguageVersion,TypeId> booleanTypes = new java.util.EnumMap<>(guru.interlis.model.LanguageVersion.class);
 
-    TypeBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics) {
-        this.g = graph;
+    TypeBindings(SemanticGraphRead.Types state,
+                 SemanticWork work,
+                 IndexedDeclarations index,
+                 SemanticDiagnostics diagnostics,
+                 UnitBindings units,
+                 NameBindings names,
+                 InheritanceBindings inheritance,
+                 LineForms lineForms,
+                 ObjectPathBindings paths,
+                 Supplier<ExpressionBindings> expressions,
+                 PredefinedTemporal temporal,
+                 StructureBindings structures,
+                 MetadataBindings metadata,
+                 ReferenceBindings references,
+                 FormattedTypeBindings formats,
+                 Supplier<DeclarationBindings> declarations,
+                 Consumer<DomainSymbol> definePredefinedDomain) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
+        this.units = units;
+        this.names = names;
+        this.inheritance = inheritance;
+        this.lineForms = lineForms;
+        this.paths = paths;
+        this.expressions = expressions;
+        this.temporal = temporal;
+        this.structures = structures;
+        this.metadata = metadata;
+        this.references = references;
+        this.formats = formats;
+        this.declarations = declarations;
+        this.definePredefinedDomain = definePredefinedDomain;
     }
 
     guru.interlis.model.TypeRelation extension(TypeDescriptor derived, TypeDescriptor base, guru.interlis.model.LanguageVersion language) {
         return guru.interlis.model.internal.TypeCompatibility.extend(derived,base,language,this::effectiveDescriptor,
-                state::baseOf,id->effectiveDescriptor(state.declaredType(id)),g.units::extensionUnit);
+                state::baseOf,id->effectiveDescriptor(state.declaredType(id)),units::extensionUnit);
     }
 
     TypeId functionArgumentType(DeclInfo function, int position) {
@@ -128,10 +169,10 @@ final class TypeBindings {
         }
         try {
             DomainDeclarationSyntax syntax = (DomainDeclarationSyntax) decl.syntax();
-            Optional<SymbolId> base=syntax.baseDomain().flatMap(name->g.names.bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.BASE_TYPE,new ArrayList<>()));
+            Optional<SymbolId> base=syntax.baseDomain().flatMap(name->names.bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.BASE_TYPE,new ArrayList<>()));
 
             base.ifPresent(id -> {
-                state.bindBase(decl.id(), id);
+                inheritance.bindBase(decl.id(), id);
                 index.byId(id).ifPresent(this::domainType);
                 if ((state.symbol(id) != null && state.symbol(id).header().has(guru.interlis.model.Modifier.FINAL))
                         || index.byId(id).filter(d -> d.modifiers().contains(guru.interlis.model.Modifier.FINAL)).isPresent())
@@ -144,11 +185,11 @@ final class TypeBindings {
             } else type = buildType(syntax.type(), decl.id(), decl.sourceId());
             TypeDescriptor inherited = base.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
             inheritTypeProperties(type, syntax.type(), inherited,decl);
-            if (syntax.type() instanceof LineTypeSyntax) g.lines.effective(type, inherited, decl);
+            if (syntax.type() instanceof LineTypeSyntax) lineForms.effective(type, inherited, decl);
             else if (inherited instanceof GeometryType && !(effectiveDescriptor(type) instanceof GeometryType))
                 diagnostics.emitRule(decl, "geometry base requires a geometric extension", "GEOMETRY_EXTENSION");
             if (effectiveDescriptor(type) instanceof NumericType numeric && inherited instanceof NumericType parent) {
-                var relation = g.units.numericExtension(numeric, parent, decl.language());
+                var relation = units.numericExtension(numeric, parent, decl.language());
                 if (relation.decision() == guru.interlis.model.RelationDecision.DISALLOWED)
                     diagnostics.emitRule(decl, "numeric type does not specialize its base: " + relation.reason(), relation.reason().startsWith("numeric-unit") || relation.reason().contains("unit-") ? "NUMERIC_UNIT_EXTENSION" : "NUMERIC_EXTENSION");
             }
@@ -247,14 +288,14 @@ final class TypeBindings {
     private void inheritTypeProperties(TypeId id, TypeSyntax syntax, TypeDescriptor base,DeclInfo declaration) {
         if (syntax instanceof NumericTypeSyntax own && state.type(id) instanceof NumericType numeric && base instanceof NumericType parent) {
             var range=inheritRange(numeric.range(),parent.range(),own);var errors=new ArrayList<DiagnosticId>();
-            g.units.validateNumericUnit(range,declaration,syntax.range(),errors);
+            units.validateNumericUnit(range,declaration,syntax.range(),errors);
             state.storeType(errors.isEmpty()?new NumericType(id,numeric.origin(),range):new ErrorType(id,numeric.origin(),errors));
         }
         else if(syntax instanceof CoordinateTypeSyntax own && state.type(id) instanceof CoordinateType coordinate && base instanceof CoordinateType parent) {
             List<NumericRange> axes=new ArrayList<>(coordinate.axes());
             for(int i=0;i<Math.min(axes.size(),parent.axes().size());i++)axes.set(i,inheritRange(axes.get(i),parent.axes().get(i),own.axes().get(i)));
             var errors=new ArrayList<DiagnosticId>();
-            for(int i=0;i<axes.size();i++)g.units.validateNumericUnit(axes.get(i),declaration,own.axes().get(i).range(),errors);
+            for(int i=0;i<axes.size();i++)units.validateNumericUnit(axes.get(i),declaration,own.axes().get(i).range(),errors);
             state.storeType(errors.isEmpty()?new CoordinateType(id,coordinate.origin(),coordinate.dimensions(),axes,coordinate.multiCoordinate(),
                     coordinate.referenceSystem().isPresent()?coordinate.referenceSystem():parent.referenceSystem(),
                     coordinate.rotation().isPresent()?coordinate.rotation():parent.rotation()):new ErrorType(id,coordinate.origin(),errors));
@@ -287,16 +328,16 @@ final class TypeBindings {
             return type;
         }
         try {
-            decl.owner().flatMap(g.inheritance::objectInheritanceBase).flatMap(base->g.paths.findMember(base,decl.name()))
+            decl.owner().flatMap(inheritance::objectInheritanceBase).flatMap(base->paths.findMember(base,decl.name()))
                     .filter(base->state.symbol(base) instanceof AttributeSymbol || index.byId(base).filter(d->d.kind()==SymbolKind.ATTRIBUTE).isPresent())
-                    .ifPresent(base->state.bindBase(decl.id(),base));
+                    .ifPresent(base->inheritance.bindBase(decl.id(),base));
             if (syntax.type() instanceof GenericTypeSyntax inferred && "INFERRED".equals(inferred.name())) {
-                var result = g.expressions.buildExpression(syntax.derivations().getFirst(), decl.owner().orElseThrow());
+                var result = expressions.get().buildExpression(syntax.derivations().getFirst(), decl.owner().orElseThrow());
                 inferredDerivations.put(decl.id(), List.of(result.id()));
                 type = result.typeId();
             } else if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name())) {
-                Optional<SymbolId> base = decl.owner().flatMap(g.inheritance::objectInheritanceBase)
-                        .flatMap(owner -> g.paths.findMember(owner, decl.name()));
+                Optional<SymbolId> base = decl.owner().flatMap(inheritance::objectInheritanceBase)
+                        .flatMap(owner -> paths.findMember(owner, decl.name()));
                 DeclInfo inherited = base.flatMap(index::byId).orElse(null);
                 if (inherited != null && inherited.kind() == SymbolKind.ATTRIBUTE) {
                     type = attributeType(inherited);
@@ -312,7 +353,7 @@ final class TypeBindings {
                 type = buildType(syntax.type(), decl.id(), decl.sourceId());
                 TypeDescriptor inheritedGeometry = null;
                 if (decl.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-                    var base = decl.owner().flatMap(g.inheritance::objectInheritanceBase).flatMap(owner -> g.paths.findMember(owner, decl.name()));
+                    var base = decl.owner().flatMap(inheritance::objectInheritanceBase).flatMap(owner -> paths.findMember(owner, decl.name()));
                     TypeId baseType = base.flatMap(index::byId).filter(d -> d.kind() == SymbolKind.ATTRIBUTE)
                             .map(this::attributeType).orElseGet(() -> base.map(state::symbol)
                                     .filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
@@ -320,7 +361,7 @@ final class TypeBindings {
                     inheritTypeProperties(type, syntax.type(), effectiveDescriptor(baseType),decl);
                     inheritedGeometry = effectiveDescriptor(baseType);
                 }
-                if (syntax.type() instanceof LineTypeSyntax) g.lines.effective(type, inheritedGeometry, decl);
+                if (syntax.type() instanceof LineTypeSyntax) lineForms.effective(type, inheritedGeometry, decl);
             }
             state.bindDeclaredType(decl.id(), type);
             return type;
@@ -347,7 +388,7 @@ final class TypeBindings {
         };
         state.storeType(descriptor);
         state.bindDeclaredType(symbol, type);
-        state.defineSymbol(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN,
+        definePredefinedDomain.accept(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN,
                 DeclaredName.synthetic(name), Optional.empty(), 0, origin, Optional.empty(), context.language(),
                 Documentation.empty(), MetaAttributeSet.empty(), Set.of(guru.interlis.model.Modifier.FINAL), List.of()),
                 type, Optional.empty(), false));
@@ -376,7 +417,7 @@ final class TypeBindings {
                 String name = switch (syntaxTime.temporalKind()) {
                     case DATE -> "XMLDate"; case TIMEOFDAY -> "XMLTime"; case DATETIME -> "XMLDateTime";
                 };
-                var domain = g.temporal.find(index.byId(context).orElseThrow(), "INTERLIS." + name, Set.of(SymbolKind.DOMAIN)).orElseThrow();
+                var domain = temporal.find(index.byId(context).orElseThrow(), "INTERLIS." + name, Set.of(SymbolKind.DOMAIN)).orElseThrow();
                 yield new DomainReferenceType(id, new Origin.DeclaredOrigin(syntaxTime.range()), domain);
             }
             case OidTypeSyntax oid -> {
@@ -393,7 +434,7 @@ final class TypeBindings {
                     new Origin.DeclaredOrigin(alignment.range()), alignment.alignment());
             case EnumTreeValueSyntax enumTree -> {
                 List<DiagnosticId> errors = new ArrayList<>();
-                Optional<SymbolId> domain = g.names.bindTarget(index.byId(context).orElseThrow(), enumTree.target(),
+                Optional<SymbolId> domain = names.bindTarget(index.byId(context).orElseThrow(), enumTree.target(),
                         Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors);
                 if (domain.isEmpty()) yield new ErrorType(id, new Origin.DeclaredOrigin(enumTree.range()), errors);
                 index.byId(domain.orElseThrow()).ifPresent(this::domainType);
@@ -406,7 +447,7 @@ final class TypeBindings {
             case guru.interlis.syntax.EnumArgumentTypeSyntax argument ->
                 new guru.interlis.model.EnumArgumentType(id,new Origin.DeclaredOrigin(argument.range()),argument.treeValues());
 
-            case guru.interlis.syntax.StructureValueTypeSyntax structure -> g.structures.bind(id,structure,index.byId(context).orElseThrow());
+            case guru.interlis.syntax.StructureValueTypeSyntax structure -> structures.bind(id,structure,index.byId(context).orElseThrow());
             case GenericTypeSyntax generic -> {
                 if ("INHERITED".equals(generic.name())) {
                     yield new ErrorType(id, new Origin.DeclaredOrigin(generic.range()), List.of(diagnostics.emitRule(
@@ -435,7 +476,7 @@ final class TypeBindings {
                         diagnostics.emitRule(declaration, "ATTRIBUTE OF @ argument must describe objects, classes or an attribute path", "ATTRIBUTE_ARGUMENT_TYPE");
                     owner = Optional.of(new guru.interlis.model.AttributePathType.Argument(context, position));
                 }
-                Optional<ExpressionBindings.ExpressionResult> ownerClass = path.ownerClass().map(expression -> g.expressions.buildExpression(expression, index.byId(context).orElseThrow().owner().orElse(context)));
+                Optional<ExpressionBindings.ExpressionResult> ownerClass = path.ownerClass().map(expression -> expressions.get().buildExpression(expression, index.byId(context).orElseThrow().owner().orElse(context)));
                 List<TypeId> restrictions = path.restrictions().stream().map(t -> buildType(t, context, source)).toList();
                 if (ownerClass.isPresent() && !(effectiveDescriptor(ownerClass.orElseThrow().typeId()) instanceof ClassValueType))
                     diagnostics.emitRule(index.byId(context).orElseThrow(), "ATTRIBUTE OF requires a class-valued attribute path", "ATTRIBUTE_PATH_TYPE");
@@ -448,10 +489,10 @@ final class TypeBindings {
                 var kinds = classValue.structureValue() ? Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE)
                         : Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW);
                 for (var name : classValue.restrictions()) {
-                    g.names.bindTarget(index.byId(context).orElseThrow(), name, kinds, ReferenceUsage.TYPE_USE, errors).ifPresent(target -> {
+                    names.bindTarget(index.byId(context).orElseThrow(), name, kinds, ReferenceUsage.TYPE_USE, errors).ifPresent(target -> {
                         SymbolId current = target;
                         Set<SymbolId> visited = new HashSet<>();
-                        while (current != null && visited.add(current)) { work.checkpoint(); current = g.inheritance.objectInheritanceBase(current).orElse(null); }
+                        while (current != null && visited.add(current)) { work.checkpoint(); current = inheritance.objectInheritanceBase(current).orElse(null); }
                         restrictions.add(target);
                     });
                 }
@@ -463,25 +504,25 @@ final class TypeBindings {
             case guru.interlis.syntax.MetaObjectTypeSyntax meta -> {
                 var declaration = index.byId(context).orElseThrow();
                 var target = meta.target().flatMap(name -> {
-                    var predefined = g.metadata.predefined(declaration, name.text(), Set.of(SymbolKind.CLASS));
-                    if (predefined.isPresent()) g.references.recordReference(declaration, name, predefined.get(), ReferenceUsage.TYPE_USE);
-                    return predefined.isPresent() ? predefined : g.names.bindTarget(declaration, name, Set.of(SymbolKind.CLASS), ReferenceUsage.TYPE_USE, new ArrayList<>());
+                    var predefined = metadata.predefined(declaration, name.text(), Set.of(SymbolKind.CLASS));
+                    if (predefined.isPresent()) references.recordReference(declaration, name, predefined.get(), ReferenceUsage.TYPE_USE);
+                    return predefined.isPresent() ? predefined : names.bindTarget(declaration, name, Set.of(SymbolKind.CLASS), ReferenceUsage.TYPE_USE, new ArrayList<>());
                 });
                 target.ifPresent(idTarget -> {
-                    g.metadata.ensureBases(idTarget);
-                    var root = g.metadata.predefined(declaration, "INTERLIS.METAOBJECT", Set.of(SymbolKind.CLASS)).orElseThrow();
+                    metadata.ensureBases(idTarget);
+                    var root = metadata.predefined(declaration, "INTERLIS.METAOBJECT", Set.of(SymbolKind.CLASS)).orElseThrow();
                     if (!guru.interlis.model.internal.TypeCompatibility.specializes(idTarget, root, state::baseOf))
                         diagnostics.emitRule(declaration, "METAOBJECT OF requires a metadata class", "PARAMETER_METAOBJECT_TARGET");
                 });
                 yield new guru.interlis.model.MetaObjectType(id, new Origin.DeclaredOrigin(meta.range()), target);
             }
-            case LineTypeSyntax line -> g.lines.buildType(id, line, index.byId(context).orElseThrow());
-            case FormattedTypeSyntax formatted -> g.formats.buildFormattedType(id, formatted, context);
+            case LineTypeSyntax line -> lineForms.buildType(id, line, index.byId(context).orElseThrow());
+            case FormattedTypeSyntax formatted -> formats.buildFormattedType(id, formatted, context);
             case guru.interlis.syntax.NumericTypeSyntax numeric -> {
-                var invalid = new ArrayList<>(g.units.numericErrors(numeric, index.byId(context).orElseThrow()));
+                var invalid = new ArrayList<>(units.numericErrors(numeric, index.byId(context).orElseThrow()));
                 if (!invalid.isEmpty()) yield new ErrorType(id, new Origin.DeclaredOrigin(numeric.range()), invalid);
-                var range=g.metadata.numeric(numeric,index.byId(context).orElseThrow(),invalid);
-                g.units.validateNumericUnit(range,index.byId(context).orElseThrow(),numeric.range(),invalid);
+                var range=metadata.numeric(numeric,index.byId(context).orElseThrow(),invalid);
+                units.validateNumericUnit(range,index.byId(context).orElseThrow(),numeric.range(),invalid);
                 yield invalid.isEmpty()?new NumericType(id,new Origin.DeclaredOrigin(numeric.range()),range)
                         :new ErrorType(id,new Origin.DeclaredOrigin(numeric.range()),invalid);
             }
@@ -490,7 +531,7 @@ final class TypeBindings {
                 TypeDescriptor inherited = null;
                 if (declaration.kind() == SymbolKind.ATTRIBUTE && declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
                     SymbolId owner = declaration.owner().orElse(null);
-                    AttributeSymbol baseAttribute = owner == null ? null : g.inheritance.findBaseAttribute(state.baseOf(owner), declaration.name());
+                    AttributeSymbol baseAttribute = owner == null ? null : inheritance.findBaseAttribute(state.baseOf(owner), declaration.name());
                     if (baseAttribute != null) inherited = effectiveDescriptor(baseAttribute.declaredType());
                 }
                 // Domains are merged after their base reference has been bound.
@@ -501,7 +542,7 @@ final class TypeBindings {
             }
             case DomainReferenceSyntax reference -> {
                 var declaration=index.byId(context).orElseThrow();var errors=new ArrayList<DiagnosticId>();
-                var target=g.names.bindTarget(declaration,reference.name(),Set.of(SymbolKind.DOMAIN,SymbolKind.STRUCTURE),ReferenceUsage.TYPE_USE,errors);
+                var target=names.bindTarget(declaration,reference.name(),Set.of(SymbolKind.DOMAIN,SymbolKind.STRUCTURE),ReferenceUsage.TYPE_USE,errors);
                 if(target.isEmpty())yield new ErrorType(id,new Origin.DeclaredOrigin(reference.range()),errors);
                 SymbolId selected=target.orElseThrow();
                 var sourceDeclaration=index.byId(selected);
@@ -513,12 +554,12 @@ final class TypeBindings {
             case ReferenceTypeSyntax reference -> {
                 DeclInfo declaration = index.byId(context).orElseThrow();
                 Optional<SymbolId> target = reference.target().text().equals("ANYCLASS") ? Optional.empty()
-                        : Optional.of(g.declarations.bindObjectTarget(declaration, reference.target(), ReferenceUsage.TYPE_USE));
+                        : Optional.of(declarations.get().bindObjectTarget(declaration, reference.target(), ReferenceUsage.TYPE_USE));
                 List<SymbolId> restrictions = reference.restrictions().stream()
-                        .map(name -> g.declarations.bindObjectTarget(declaration, name, ReferenceUsage.TYPE_USE)).toList();
+                        .map(name -> declarations.get().bindObjectTarget(declaration, name, ReferenceUsage.TYPE_USE)).toList();
                 for (SymbolId restriction : restrictions) {
                     work.checkpoint();
-                    if (target.isPresent() && !g.inheritance.targetSpecializes(restriction, target.orElseThrow()))
+                    if (target.isPresent() && !inheritance.targetSpecializes(restriction, target.orElseThrow()))
                         diagnostics.emitRule(declaration, "reference restriction must specialize its primary target", "REFERENCE_TARGET_RESTRICTION");
                 }
                 yield new ReferenceType(id, new Origin.DeclaredOrigin(reference.range()), target, restrictions, reference.external());
@@ -534,12 +575,12 @@ final class TypeBindings {
             }
             case CoordinateTypeSyntax coordinate -> {
                 List<DiagnosticId> invalid = new ArrayList<>();
-                for (var axis : coordinate.axes()) invalid.addAll(g.units.numericErrors(axis, index.byId(context).orElseThrow()));
+                for (var axis : coordinate.axes()) invalid.addAll(units.numericErrors(axis, index.byId(context).orElseThrow()));
                 if (!invalid.isEmpty()) yield new ErrorType(id, new Origin.DeclaredOrigin(coordinate.range()), invalid);
                 var axes=new ArrayList<NumericRange>();
                 for(var axis:coordinate.axes()) {
-                    var range=g.metadata.numeric(axis,index.byId(context).orElseThrow(),invalid);
-                    g.units.validateNumericUnit(range,index.byId(context).orElseThrow(),axis.range(),invalid);axes.add(range);
+                    var range=metadata.numeric(axis,index.byId(context).orElseThrow(),invalid);
+                    units.validateNumericUnit(range,index.byId(context).orElseThrow(),axis.range(),invalid);axes.add(range);
                 }
                 yield invalid.isEmpty()?new guru.interlis.model.CoordinateType(id,
                     new Origin.DeclaredOrigin(coordinate.range()),coordinate.dimensions(),axes,coordinate.multiCoordinate(),coordinate.referenceSystem(),coordinate.rotation())
@@ -576,10 +617,10 @@ final class TypeBindings {
         List<DiagnosticId> errors = new ArrayList<>();
         List<SymbolId> restrictions = new ArrayList<>();
         Optional<SymbolId> base = syntax.base().flatMap(name ->
-                g.declarations.bindObjectTarget(owner, name, errors));
+                declarations.get().bindObjectTarget(owner, name, errors));
         for (var name : syntax.restrictions()) {
             work.checkpoint();
-            Optional<SymbolId> restriction = g.declarations.bindObjectTarget(owner, name, errors);
+            Optional<SymbolId> restriction = declarations.get().bindObjectTarget(owner, name, errors);
             restriction.ifPresent(restrictions::add);
             if (base.isPresent() && restriction.isPresent()
                     && !guru.interlis.model.internal.TypeCompatibility.specializes(
@@ -682,4 +723,10 @@ final class TypeBindings {
     List<ExpressionId> inferredDerivations(SymbolId declaration) {
         return inferredDerivations.get(declaration);
     }
+
+    void storeType(TypeDescriptor type) { state.storeType(type); }
+
+    void bindDeclaredType(SymbolId symbol, TypeId type) { state.bindDeclaredType(symbol, type); }
+
+    int nextTypeSequence() { return state.nextTypeSequence(); }
 }

@@ -1,22 +1,39 @@
 package guru.interlis.compiler.internal;
 
 import guru.interlis.model.*;
+
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Function;
 
 /** Contextual subdivision rules over the final, alias-resolved effective attribute order. */
 final class NumericSubdivisions {
-    private final GraphBuilder graph;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead state;
+    private final SemanticWork work;
+    private final IndexedDeclarations index;
+    private final SemanticDiagnostics diagnostics;
+    private final Function<TypeId, TypeDescriptor> effectiveDescriptor;
     private final ExactUnitFactors factors;
-    NumericSubdivisions(GraphBuilder graph, SemanticBuildState state) { this.graph=graph; this.state = state;this.factors=new ExactUnitFactors(graph, state); }
+
+    NumericSubdivisions(SemanticGraphRead state,
+                        SemanticWork work,
+                        IndexedDeclarations index,
+                        SemanticDiagnostics diagnostics,
+                        Function<TypeId, TypeDescriptor> effectiveDescriptor) {
+        this.state = state;
+        this.work = work;
+        this.index = index;
+        this.diagnostics = diagnostics;
+        this.effectiveDescriptor = effectiveDescriptor;
+        this.factors = new ExactUnitFactors(state, work);
+    }
 
     void validate() {
         Map<SymbolId,Optional<SymbolId>> originalPredecessors=new HashMap<>();
         for(var owner:state.effectiveMembersInBuildOrder()) {
             Optional<SymbolId> previous=Optional.empty();
             for(var member:owner.getValue()) {
-                graph.checkWork();
+                work.checkpoint();
                 if(!(state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attribute))continue;
                 if(attribute.owner().filter(owner.getKey()::equals).isPresent())originalPredecessors.put(attribute.id(),previous);
                 previous=Optional.of(attribute.id());
@@ -25,17 +42,17 @@ final class NumericSubdivisions {
         record Relation(SymbolId attribute,Optional<SymbolId> previous) { }
         Set<Relation> checked=new HashSet<>();
         for(var owner:state.effectiveMembersInBuildOrder()) {
-            graph.checkWork();AttributeSymbol previous=null;
+            work.checkpoint();AttributeSymbol previous=null;
             for(var member:owner.getValue()) {
-                graph.checkWork();
+                work.checkpoint();
                 if(!(state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attribute))continue;
                 if(attribute.subdivision()) {
                     var preceding=previous==null?Optional.<SymbolId>empty():Optional.of(previous.id());
                     var relation=new Relation(attribute.id(),preceding);
                     boolean unchanged=preceding.equals(originalPredecessors.get(attribute.id()));
-                    var declaration=unchanged?graph.index.byId(attribute.id()).orElse(null)
-                            :previous==null?null:previous.owner().flatMap(graph.index::byId).orElse(null);
-                    if(declaration==null)declaration=graph.index.byId(owner.getKey()).orElse(null);
+                    var declaration=unchanged?index.byId(attribute.id()).orElse(null)
+                            :previous==null?null:previous.owner().flatMap(index::byId).orElse(null);
+                    if(declaration==null)declaration=index.byId(owner.getKey()).orElse(null);
                     // Predefined declarations have no user source. Their inherited
                     // uses are checked in the context of each declared extension.
                     if(declaration!=null&&checked.add(relation))validate(attribute,previous,declaration);
@@ -46,8 +63,8 @@ final class NumericSubdivisions {
     }
     private void validate(AttributeSymbol attribute,AttributeSymbol previous,DeclInfo declaration) {
         if(previous==null) { error(declaration,"subdivision needs a preceding attribute","SUBDIVISION_PREDECESSOR");return; }
-        var own=graph.types.effectiveDescriptor(attribute.declaredType());
-        var predecessor=graph.types.effectiveDescriptor(previous.declaredType());
+        var own=effectiveDescriptor.apply(attribute.declaredType());
+        var predecessor=effectiveDescriptor.apply(previous.declaredType());
         if(unknown(own)||unknown(predecessor))return;
         if(!(own instanceof NumericType number)) {error(declaration,"subdivision must have a scalar numeric type","SUBDIVISION_NUMERIC");return;}
         if(!(predecessor instanceof NumericType parent)) {error(declaration,"subdivision predecessor must have a scalar numeric type","SUBDIVISION_PREDECESSOR_NUMERIC");return;}
@@ -66,13 +83,13 @@ final class NumericSubdivisions {
         var parentUnit=state.symbol(parent.range().unit().orElseThrow());
         if(parentUnit instanceof UnitSymbol unit && unit.abstractUnit()) {
             var specialization=guru.interlis.model.internal.TypeCompatibility.numericUnitExtension(number,parent,id->{
-                graph.checkWork();return state.symbol(id) instanceof UnitSymbol value?value:null;
+                work.checkpoint();return state.symbol(id) instanceof UnitSymbol value?value:null;
             });
             if(specialization.decision()==RelationDecision.DISALLOWED)
                 error(declaration,"subdivision unit cannot specialize the abstract predecessor unit","SUBDIVISION_FACTOR");
             return; // The concrete predecessor unit, and hence its factor, is still deferred.
         }
-        graph.checkWork();var maximum=number.range().maximum().orElseThrow();
+        work.checkpoint();var maximum=number.range().maximum().orElseThrow();
         var quantum=BigDecimal.ONE.scaleByPowerOfTen(maximum.precision().exponent()-maximum.precision().fractionalDigits());
         var minimum=number.range().minimum().orElseThrow().exactValue();
         chargeAlignment(minimum,maximum.exactValue(),quantum);
@@ -87,9 +104,9 @@ final class NumericSubdivisions {
         long digits=Math.max(Math.max((long)minimum.precision()+scale-minimum.scale(),
                 (long)maximum.precision()+scale-maximum.scale()),1L+scale-quantum.scale());
         long words=1+digits/16,work=1+words*words;
-        for(long i=0;i<work;i++)graph.checkWork();
+        for(long i=0;i<work;i++)this.work.checkpoint();
     }
     private static boolean unknown(TypeDescriptor type) {return type==null||type instanceof ErrorType||type instanceof PendingType;}
     private static boolean integerPrecision(DecimalLiteral value) {return value.precision().exponent()>=value.precision().fractionalDigits();}
-    private void error(DeclInfo declaration,String message,String reason) {graph.emitRule(declaration,message,reason);}
+    private void error(DeclInfo declaration,String message,String reason) {diagnostics.emitRule(declaration,message,reason);}
 }

@@ -33,31 +33,53 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Binds inheritance and effective members in their declared order. */
 final class InheritanceBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead.Inheritance state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
-    private final ViewBuilder views;
+    private final NameBindings names;
+    private final Supplier<TypeBindings> typeBindings;
+    private final TopicBindings topics;
+    private final Supplier<MetadataBindings> metadata;
+    private final Consumer<AttributeSymbol> replaceOverride;
+    private final Function<SymbolId, SymbolId> scopeRoot;
+    private final Function<DeclInfo, Symbol> ensureSymbol;
     private final Set<SymbolId> resolvedObjectBases = new HashSet<>();
     private final Set<SymbolId> effectiveProcessed = new HashSet<>();
 
-    InheritanceBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics, ViewBuilder views) {
-        this.g = graph;
+    InheritanceBindings(SemanticGraphRead.Inheritance state,
+                        SemanticWork work,
+                        IndexedDeclarations index,
+                        SemanticDiagnostics diagnostics,
+                        NameBindings names,
+                        Supplier<TypeBindings> typeBindings,
+                        TopicBindings topics,
+                        Supplier<MetadataBindings> metadata,
+                        Consumer<AttributeSymbol> replaceOverride,
+                        Function<SymbolId, SymbolId> scopeRoot,
+                        Function<DeclInfo, Symbol> ensureSymbol) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
-        this.views = views;
+        this.names = names;
+        this.typeBindings = typeBindings;
+        this.topics = topics;
+        this.metadata = metadata;
+        this.replaceOverride = replaceOverride;
+        this.scopeRoot = scopeRoot;
+        this.ensureSymbol = ensureSymbol;
     }
 
     Optional<SymbolId> baseTopicMember(SymbolId context, String name,
                                                Set<SymbolKind> expected) {
-        SymbolId current = g.paths.scopeRoot(context);
+        SymbolId current = scopeRoot.apply(context);
         Set<SymbolId> seen = new HashSet<>();
         while (current != null && seen.add(current)) {
             work.checkpoint();
@@ -66,7 +88,7 @@ final class InheritanceBindings {
                     || syntax.baseTopic().isEmpty()) {
                 return Optional.empty();
             }
-            Optional<SymbolId> base = g.names.tryResolve(topicDecl, syntax.baseTopic().orElseThrow(),
+            Optional<SymbolId> base = names.tryResolve(topicDecl, syntax.baseTopic().orElseThrow(),
                     Set.of(SymbolKind.TOPIC));
             if (base.isEmpty()) {
                 return Optional.empty();
@@ -104,7 +126,7 @@ final class InheritanceBindings {
             work.checkpoint();
             if (symbol instanceof ClassSymbol clazz
                     && clazz.header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-                SymbolId topic = g.paths.scopeRoot(clazz.id());
+                SymbolId topic = scopeRoot.apply(clazz.id());
                 if (topic != null) {
                     extendedByTopic.put(topic + ":" + clazz.name().value(), clazz.id());
                 }
@@ -117,7 +139,7 @@ final class InheritanceBindings {
             }
             SymbolId base = clazz.baseType().orElseThrow();
             Symbol baseSymbol = state.symbol(base);
-            SymbolId topic = g.paths.scopeRoot(clazz.id());
+            SymbolId topic = scopeRoot.apply(clazz.id());
             if (baseSymbol != null && topic != null) {
                 SymbolId localExtended = extendedByTopic.get(topic + ":" + baseSymbol.name().value());
                 if (localExtended != null && !localExtended.equals(base) && !localExtended.equals(clazz.id())) {
@@ -139,7 +161,7 @@ final class InheritanceBindings {
                     || !clazz.header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
                 continue;
             }
-            SymbolId topic = g.paths.scopeRoot(clazz.id());
+            SymbolId topic = scopeRoot.apply(clazz.id());
             if (!(state.symbol(topic) instanceof TopicSymbol topicSymbol)
                     || topicSymbol.baseTopic().isEmpty()) {
                 continue;
@@ -190,8 +212,8 @@ final class InheritanceBindings {
                     continue;
                 }
                 validateAttributeOverrideProperties(attributeDecl, attribute, baseAttribute);
-                TypeDescriptor baseType = g.types.effectiveDescriptor(baseAttribute.declaredType());
-                TypeDescriptor derivedType = g.types.effectiveDescriptor(attribute.declaredType());
+                TypeDescriptor baseType = typeBindings.get().effectiveDescriptor(baseAttribute.declaredType());
+                TypeDescriptor derivedType = typeBindings.get().effectiveDescriptor(attribute.declaredType());
                 if (baseType != null && derivedType != null) {
                     String problem = overrideProblem(baseType, derivedType, attributeDecl.language());
                     if (problem != null) {
@@ -256,7 +278,7 @@ final class InheritanceBindings {
     }
 
     private String overrideProblem(TypeDescriptor base, TypeDescriptor derived, guru.interlis.model.LanguageVersion language) {
-        var relation=g.types.extension(derived,base,language);
+        var relation=typeBindings.get().extension(derived,base,language);
         return relation.decision()==guru.interlis.model.RelationDecision.ALLOWED?null:relation.reason();
     }
 
@@ -419,11 +441,11 @@ final class InheritanceBindings {
                 ignored -> new LinkedHashMap<>());
         DeclInfo previous = names.putIfAbsent(roleDecl.name(), roleDecl);
         if (previous != null && !previous.id().equals(roleDecl.id())) {
-            SymbolId firstTopic = g.paths.scopeRoot(role.id());
-            SymbolId secondTopic = g.paths.scopeRoot(previous.id());
+            SymbolId firstTopic = scopeRoot.apply(role.id());
+            SymbolId secondTopic = scopeRoot.apply(previous.id());
             boolean sharedBase = firstTopic != null && secondTopic != null
                     && !firstTopic.equals(secondTopic)
-                    && g.topics.shareBaseTopic(firstTopic, secondTopic);
+                    && topics.shareBaseTopic(firstTopic, secondTopic);
             SymbolId currentOwner = role.header().owner().orElseThrow();
             SymbolId previousOwner = previous.owner().orElseThrow();
             boolean sameFamily = baseChain(currentOwner).stream().anyMatch(baseChain(previousOwner)::contains);
@@ -453,7 +475,7 @@ final class InheritanceBindings {
             diagnostics.emitRule(decl, "EXTENDED and EXTENDS cannot be combined in one declaration", "EXTENDED_EXPLICIT_BASE");
         Set<SymbolKind> kinds = decl.kind() == SymbolKind.CLASS
                 ? Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE) : Set.of(SymbolKind.STRUCTURE);
-        Optional<SymbolId> base=name.flatMap(n->g.names.bindTarget(decl,n,kinds,ReferenceUsage.BASE_TYPE,new ArrayList<>()));
+        Optional<SymbolId> base=name.flatMap(n->names.bindTarget(decl,n,kinds,ReferenceUsage.BASE_TYPE,new ArrayList<>()));
 
         if (base.isEmpty() && decl.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
             base = baseTopicMember(owner, decl.name(), Set.of(decl.kind()));
@@ -480,7 +502,7 @@ final class InheritanceBindings {
             for (DeclInfo child : index.children(chain.get(i))) {
                 work.checkpoint();
                 if (child.kind() == SymbolKind.ROLE) {
-                    roles.put(child.name(), (RoleSymbol) g.declarations.buildSymbol(child));
+                    roles.put(child.name(), (RoleSymbol) ensureSymbol.apply(child));
                 }
             }
         }
@@ -518,7 +540,7 @@ final class InheritanceBindings {
         }
         if (decl.kind() == SymbolKind.CLASS || decl.kind() == SymbolKind.STRUCTURE
                 || decl.kind() == SymbolKind.ASSOCIATION) {
-            if (decl.kind() != SymbolKind.ASSOCIATION) g.metadata.ensureBases(decl.id());
+            if (decl.kind() != SymbolKind.ASSOCIATION) metadata.get().ensureBases(decl.id());
             List<SymbolId> chain = baseChain(decl.id());
             if (hasCycle(chain)) {
                 emitCycle(decl);
@@ -549,7 +571,7 @@ final class InheritanceBindings {
                     if (attribute.kind() != SymbolKind.ATTRIBUTE && attribute.kind() != SymbolKind.ROLE) {
                         continue;
                     }
-                    g.declarations.buildSymbol(attribute);
+                    ensureSymbol.apply(attribute);
                     Integer existing = positions.get(attribute.name());
                     if (existing != null) {
                         if (depth == 0 && !attribute.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
@@ -564,7 +586,7 @@ final class InheritanceBindings {
                         AttributeSymbol override = attribute.kind() == SymbolKind.ATTRIBUTE
                                 ? overrideAttribute(attribute.id(), old.declaredSymbol()) : null;
                         if (override != null) {
-                            state.replaceSymbol(override);
+                            replaceOverride.accept(override);
                         }
                     } else {
                         if (depth == 0 && attribute.kind() == SymbolKind.ATTRIBUTE
@@ -643,4 +665,8 @@ final class InheritanceBindings {
         }
         return List.copyOf(result);
     }
+
+    void bindBase(SymbolId symbol, SymbolId base) { state.bindBase(symbol, base); }
+
+    void setEffectiveMembers(SymbolId owner, List<EffectiveMember> members) { state.setEffectiveMembers(owner, members); }
 }

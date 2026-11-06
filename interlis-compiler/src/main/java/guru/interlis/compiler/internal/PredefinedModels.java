@@ -17,7 +17,7 @@ final class PredefinedModels {
             "min","h","d","M","Y","BaseTimeSystems","TimeOfDay","UTC","GregorianYear","GregorianDate","GregorianDateTime","XMLTime","XMLDate","XMLDateTime",
             "LineSegment","StartSegment","StraightSegment","ArcSegment","SurfaceEdge","SurfaceBoundary","LineGeometry",
             "areAreasWithoutGaps","areAreasWithoutGaps2");
-    static void finish(SemanticWork work, SemanticBuildState state, Set<LanguageVersion> languages) {
+    static void finish(SemanticWork work, SemanticGraphRead.Symbols state, Set<LanguageVersion> languages) {
         // Analysis also publishes declarations outside the requested closure.
         // Their predefined values need owners even when their language is not
         // part of the selected schema's language set.
@@ -43,7 +43,7 @@ final class PredefinedModels {
             else state.defineSymbol(declaration);
         }
     }
-    static SymbolId ensure(SemanticBuildState state, LanguageVersion language) {
+    static SymbolId ensure(SemanticGraphRead.Symbols state, LanguageVersion language) {
         state.defineSymbolIfAbsent(declaration(language, List.of())); return id(language);
     }
     private static ModelSymbol declaration(LanguageVersion language, List<SymbolId> members) {

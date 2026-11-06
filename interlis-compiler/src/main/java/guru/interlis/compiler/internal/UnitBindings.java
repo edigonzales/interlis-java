@@ -1,8 +1,8 @@
 package guru.interlis.compiler.internal;
 
 import guru.interlis.diagnostics.DiagnosticId;
-import guru.interlis.model.CoordinateType;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DeclaredName;
 import guru.interlis.model.Documentation;
 import guru.interlis.model.DomainReferenceType;
@@ -16,35 +16,57 @@ import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
+import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
 import guru.interlis.model.UnitSymbol;
 import guru.interlis.source.SourceRange;
 import guru.interlis.syntax.AttributeDeclarationSyntax;
 import guru.interlis.syntax.GenericTypeSyntax;
-import guru.interlis.syntax.UnitDeclarationSyntax;
 import guru.interlis.syntax.NumericTypeSyntax;
+import guru.interlis.syntax.UnitDeclarationSyntax;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /** Builds and checks the bound unit graph and numeric unit requirements. */
 final class UnitBindings {
-    private final GraphBuilder g;
-    private final SemanticBuildState state;
+    private final SemanticGraphRead state;
     private final SemanticWork work;
     private final IndexedDeclarations index;
     private final SemanticDiagnostics diagnostics;
+    private final NameBindings names;
+    private final Supplier<PredefinedTemporal> temporal;
+    private final Consumer<UnitSymbol> definePredefinedUnit;
+    private final Function<DeclInfo, SymbolHeader> symbolHeader;
+    private final Function<DeclInfo, Symbol> ensureSymbol;
+    private final Function<TypeId, TypeDescriptor> effectiveDescriptor;
 
-    UnitBindings(GraphBuilder graph, SemanticBuildState state, SemanticWork work,
-                   IndexedDeclarations index, SemanticDiagnostics diagnostics) {
-        this.g = graph;
+    UnitBindings(SemanticGraphRead state,
+                 SemanticWork work,
+                 IndexedDeclarations index,
+                 SemanticDiagnostics diagnostics,
+                 NameBindings names,
+                 Supplier<PredefinedTemporal> temporal,
+                 Consumer<UnitSymbol> definePredefinedUnit,
+                 Function<DeclInfo, SymbolHeader> symbolHeader,
+                 Function<DeclInfo, Symbol> ensureSymbol,
+                 Function<TypeId, TypeDescriptor> effectiveDescriptor) {
         this.state = state;
         this.work = work;
         this.index = index;
         this.diagnostics = diagnostics;
+        this.names = names;
+        this.temporal = temporal;
+        this.definePredefinedUnit = definePredefinedUnit;
+        this.symbolHeader = symbolHeader;
+        this.ensureSymbol = ensureSymbol;
+        this.effectiveDescriptor = effectiveDescriptor;
     }
 
     UnitSymbol buildUnit(DeclInfo decl) {
@@ -56,7 +78,7 @@ final class UnitBindings {
             work.checkpoint();
             bindUnit(decl, component.unit()).ifPresent(id -> components.add(new UnitSymbol.Component(component.operator(), id)));
         }
-        return new UnitSymbol(g.declarations.header(decl), syntax.designation(), syntax.abstractUnit(), base, derived,
+        return new UnitSymbol(symbolHeader.apply(decl), syntax.designation(), syntax.abstractUnit(), base, derived,
                 components, syntax.conversionFactors(), syntax.conversionFunction(), syntax.definition().isBlank() ? Optional.empty() : Optional.of(syntax.definition()));
     }
 
@@ -65,12 +87,12 @@ final class UnitBindings {
     }
 
     Optional<SymbolId> bindUnit(DeclInfo decl, guru.interlis.syntax.NameSyntax name, List<DiagnosticId> errors) {
-        return g.names.bindTarget(decl,name,Set.of(SymbolKind.UNIT),ReferenceUsage.TYPE_USE,errors,false);
+        return names.bindTarget(decl,name,Set.of(SymbolKind.UNIT),ReferenceUsage.TYPE_USE,errors,false);
     }
 
     Optional<SymbolId> builtinUnit(SymbolId context, String name) {
         if (!name.startsWith("INTERLIS.")) return Optional.empty();
-        var timeUnit = g.temporal.find(index.byId(context).orElseThrow(), name, Set.of(SymbolKind.UNIT));
+        var timeUnit = temporal.get().find(index.byId(context).orElseThrow(), name, Set.of(SymbolKind.UNIT));
         if (timeUnit.isPresent()) return timeUnit;
         String shortName = name.substring("INTERLIS.".length());
         String parent = switch (shortName) {
@@ -95,7 +117,7 @@ final class UnitBindings {
             default -> shortName;
         };
         Origin origin = new Origin.PredefinedOrigin(language, name);
-        state.defineSymbol(new UnitSymbol(new SymbolHeader(id, SymbolKind.UNIT, DeclaredName.synthetic(name),
+        definePredefinedUnit.accept(new UnitSymbol(new SymbolHeader(id, SymbolKind.UNIT, DeclaredName.synthetic(name),
                 Optional.empty(), 0, origin, Optional.empty(), language,
                 Documentation.empty(), MetaAttributeSet.empty(), abstractUnit
                     ? Set.of(guru.interlis.model.Modifier.ABSTRACT) : Set.of(), List.of()),
@@ -192,7 +214,7 @@ final class UnitBindings {
     UnitSymbol extensionUnit(SymbolId id) {
         work.checkpoint();
         Symbol symbol = state.symbol(id);
-        if (symbol == null) symbol = index.byId(id).map(g.declarations::buildSymbol).orElse(null);
+        if (symbol == null) symbol = index.byId(id).map(ensureSymbol::apply).orElse(null);
         return symbol instanceof UnitSymbol unit ? unit : null;
     }
 
@@ -223,8 +245,8 @@ final class UnitBindings {
         for(var entry:state.declaredTypesInBuildOrder()) {
             work.checkpoint();var declaration=index.byId(entry.getKey()).orElse(null);
             if(declaration==null || declaration.kind()!=SymbolKind.DOMAIN && declaration.kind()!=SymbolKind.ATTRIBUTE)continue;
-            var type=g.types.effectiveDescriptor(entry.getValue());
-            while(type instanceof CollectionType collection)type=g.types.effectiveDescriptor(collection.elementType());
+            var type=effectiveDescriptor.apply(entry.getValue());
+            while(type instanceof CollectionType collection)type=effectiveDescriptor.apply(collection.elementType());
             boolean incomplete=type instanceof NumericType number && (number.range().minimum().isEmpty() || number.range().maximum().isEmpty())
                     || type instanceof CoordinateType coordinate && coordinate.axes().stream().anyMatch(axis->axis.minimum().isEmpty() || axis.maximum().isEmpty());
             if(!incomplete || declaration.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))continue;
