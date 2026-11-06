@@ -56,7 +56,7 @@ java build/InterlisJvmBuild.java wasm --profile webimage-smoke --inputs /absolut
 java build/InterlisJvmBuild.java editor-bundle
 java build/InterlisJvmBuild.java host --profile portable
 java build/InterlisJvmBuild.java host --profile browser
-java build/InterlisJvmBuild.java release-check --profile P3
+java build/InterlisJvmBuild.java release-check --profile compiler
 ```
 
 Web Image benötigt zusätzlich `GRAALVM_HOME` und `BINARYEN_HOME`. Die breiten

@@ -28,7 +28,7 @@ public final class CompilerCliProcesses {
     public static void main(String[] args) throws Exception {
         Path root = Path.of(args[0]).toAbsolutePath();
         Path suppliedLauncher = args.length > 1 ? Path.of(args[1]).toAbsolutePath() : null;
-        Path output = VerificationLayout.forInvocation(root).rootReport("p3/compiler-cli/processes.json");
+        Path output = VerificationLayout.forInvocation(root).rootReport("release/compiler-cli/processes.json");
         Files.deleteIfExists(output);
         var before = artifacts(root);
         Path folder = Files.createTempDirectory("interlis compiler ä 😀 ");

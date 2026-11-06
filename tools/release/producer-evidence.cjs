@@ -1,12 +1,12 @@
 'use strict';
 // Explicit small integration check: actual local CLI/SDK producers in an otherwise
-// synthetic release envelope. This validates interoperability, not a P3 release.
+// synthetic release envelope. This validates interoperability, not a release.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
 const {root,hash,fingerprint,commitInfo}=require('../verification/source-fingerprint.cjs');
 const {validate,compilerCliCases,diagnosticCatalogVersion}=require('./evidence.cjs');
 const {fixture}=require('./test-fixtures.cjs');
 function verify(){
- const inputs=['reports/p3/compiler-cli/processes.json','reports/sdk/archive-consumer.json','reports/sdk/version-manifest.json'];
+ const inputs=['reports/release/compiler-cli/processes.json','reports/sdk/archive-consumer.json','reports/sdk/version-manifest.json'];
  const [cli,sdk,versions]=inputs.map(file=>JSON.parse(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,file),'utf8')));
  const state=commitInfo();
  assert.equal(cli.status,'passed');assert.equal(cli.gitCommit,state.gitCommit);

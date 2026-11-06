@@ -13,8 +13,8 @@ public final class HostVerificationProfiles {
     }
     private static final Map<String,Host> HOSTS=Map.ofEntries(
         Map.entry("python-free",new Host("PythonFreeCheck","python-free/source-check.json")),
-        Map.entry("cli",new Host("CompilerCliProcesses","p3/compiler-cli/processes.json")),
-        Map.entry("platform",new Host("PlatformProcesses","p3/platform/result.json")),
+        Map.entry("cli",new Host("CompilerCliProcesses","release/compiler-cli/processes.json")),
+        Map.entry("platform",new Host("PlatformProcesses","platform/result.json")),
         Map.entry("conformance-evidence",new Host("ConformanceEvidence","conformance/candidate.json")),
         Map.entry("geo-corpus",new Host("GeoCorpus","performance/corpus-verification.json")),
         Map.entry("full-corpus",new Host("FullCorpus","performance/full-corpus/prepared.json")),
@@ -28,21 +28,88 @@ public final class HostVerificationProfiles {
         Map.entry("reference-units",new Host("ReferenceProcesses","stabilization/units-reference-comparison.json","units","@node")),
         Map.entry("repository-reference",new Host("RepositoryReferenceCheck","reference/repository/results.json")),
         Map.entry("semantic-comparison",new Host("SemanticComparison","reference/semantic-comparison.json","@node")));
+    private static final Map<String,List<String>> DEPENDENCIES=Map.ofEntries(
+        Map.entry("cli",List.of("sdk")),
+        Map.entry("jvm-benchmark",List.of("sdk","geo-corpus")),
+        Map.entry("reference-originals",List.of("sdk")),
+        Map.entry("reference-views",List.of("sdk")),
+        Map.entry("reference-units",List.of("sdk")),
+        Map.entry("full-corpus-jvm",List.of("full-corpus")),
+        Map.entry("jvm",List.of("python-free")),
+        Map.entry("platform",List.of("python-free","sdk")),
+        Map.entry("conformance",List.of("sdk")),
+        Map.entry("conformance-evidence",List.of("conformance")),
+        Map.entry("portable",List.of("jvm")),
+        Map.entry("wasm-benchmark",List.of("geo-corpus")),
+        Map.entry("browser-benchmark",List.of("geo-corpus")),
+        Map.entry("full-corpus-wasm",List.of("full-corpus-jvm")),
+        Map.entry("full-corpus-browsers",List.of("full-corpus-jvm")),
+        Map.entry("full-corpus-safari",List.of("full-corpus-jvm")),
+        Map.entry("full-corpus-editor-wasm",List.of("full-corpus")),
+        Map.entry("performance",List.of("full-corpus-wasm","full-corpus-browsers","full-corpus-safari",
+                "full-corpus-artifacts","full-corpus-editor-wasm","editor-pressure","observation-pressure",
+                "performance-checker-test"))
+    );
+    private static final List<String> RELEASE_PROFILES=List.of("platform","conformance-evidence","portable",
+            "browser","reproducibility","release-evidence-checker-test","performance");
+    private static final Map<String,List<String>> BACKENDS=Map.ofEntries(
+        Map.entry("semantic-comparison",List.of("teavm-smoke")),
+        Map.entry("portable",List.of("teavm-contracts","webimage-contracts")),
+        Map.entry("browser",List.of("browser-contracts")),
+        Map.entry("wasm-benchmark",List.of("wasm-prepare")),
+        Map.entry("browser-benchmark",List.of("browser-prepare")),
+        Map.entry("full-corpus-wasm",List.of("wasm-prepare")),
+        Map.entry("full-corpus-browsers",List.of("browser-prepare")),
+        Map.entry("full-corpus-safari",List.of("browser-prepare")),
+        Map.entry("full-corpus-artifacts",List.of("browser-prepare")),
+        Map.entry("full-corpus-editor-wasm",List.of("wasm-prepare"))
+    );
     public static final Set<String> PROFILES;
-    static {var profiles=new TreeSet<>(HOSTS.keySet());profiles.addAll(List.of("conformance","sdk","performance","performance-checker-test","release-evidence-checker-test","wasm-benchmark","browser-benchmark","full-corpus-wasm","full-corpus-browsers","full-corpus-safari","full-corpus-editor-wasm","full-corpus-artifacts","portable","browser","reproducibility"));PROFILES=Set.copyOf(profiles);}
+    static {
+        var profiles=new TreeSet<>(HOSTS.keySet());
+        profiles.addAll(List.of("conformance","sdk","performance","performance-checker-test",
+                "release-evidence-checker-test","wasm-benchmark","browser-benchmark","full-corpus-wasm",
+                "full-corpus-browsers","full-corpus-safari","full-corpus-editor-wasm","full-corpus-artifacts",
+                "portable","browser","reproducibility"));
+        PROFILES=Set.copyOf(profiles);
+    }
+
+    public static List<String> plan(List<String> profiles) {
+        var ordered=new LinkedHashSet<String>();
+        for(String profile:profiles) visit(profile,ordered,new HashSet<>());
+        return List.copyOf(ordered);
+    }
+    public static List<String> releasePlan(){return plan(RELEASE_PROFILES);}
+    public static List<String> backends(String profile){return BACKENDS.getOrDefault(profile,List.of());}
+    public static List<String> backendCoverage(String profile) {
+        return switch(profile) {
+            case "teavm-contracts" -> List.of(profile,"teavm-smoke","wasm-prepare");
+            case "browser-contracts" -> List.of(profile,"browser-prepare","wasm-prepare");
+            case "browser-prepare","teavm-smoke" -> List.of(profile,"wasm-prepare");
+            default -> List.of(profile);
+        };
+    }
+    private static void visit(String profile,Set<String> ordered,Set<String> visiting) {
+        if(ordered.contains(profile))return;
+        if(!PROFILES.contains(profile)&&!profile.equals("jvm"))throw new IllegalArgumentException("Unknown host profile: "+profile);
+        if(!visiting.add(profile))throw new IllegalStateException("Host profile dependency cycle: "+profile);
+        for(String dependency:DEPENDENCIES.getOrDefault(profile,List.of()))visit(dependency,ordered,visiting);
+        visiting.remove(profile);
+        ordered.add(profile);
+    }
 
     public static void verifyPythonFree(Path root,JenesisBridge.BuildOutcome outcome)throws Exception {
         Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/host/python-free-"+UUID.randomUUID());Files.createDirectories(run);
         var context=new Context(root,run,outcome);context.perform("python-free");context.finish("python-free");
     }
     public static void release(Path root,JvmBuildLock lease)throws Exception {
-        Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/host/P3-"+UUID.randomUUID());Files.createDirectories(run);
+        Path run=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/host/compiler-release-"+UUID.randomUUID());Files.createDirectories(run);
         var context=new Context(root,run,null,lease);
         // External platform and active OS guard evidence must already exist for this candidate.
         Path external=root.resolve("target/jenesis-jvm/reports");
-        for(String directory:List.of("p3/platform-evidence","python-free")) {
+        for(String directory:List.of("platform/github","python-free")) {
             Path source=JvmBuildInputs.requireOutputRoot(root,root.relativize(external.resolve(directory)).toString());
-            if(!Files.isDirectory(source))throw new IllegalStateException("Missing P3 preflight evidence: "+source);
+            if(!Files.isDirectory(source))throw new IllegalStateException("Missing compiler release preflight evidence: "+source);
             try(var walk=Files.walk(source)) {for(Path file:walk.sorted().toList()) {
                 if(Files.isSymbolicLink(file))throw new IllegalStateException("Symlink preflight evidence");
                 Path destination=context.reports.resolve(directory).resolve(source.relativize(file));
@@ -54,9 +121,8 @@ public final class HostVerificationProfiles {
         context.initialInputs=Map.copyOf(JenesisBridge.inputFingerprints(context.outcome));
         context.producerInventorySha256=JvmBuildInputs.sha256(context.outcome.inventory());
         Files.copy(context.outcome.inventory(),run.resolve("producer-index.properties"));
-        for(String profile:List.of("platform","conformance-evidence","portable","browser","reproducibility","release-evidence-checker-test"))context.perform(profile);
-        context.node("tools/release/reproducibility.cjs");context.perform("performance");
-        context.node("tools/release/evidence.cjs");context.finish("P3");
+        context.performPlan(releasePlan());
+        context.node("tools/release/evidence.cjs");context.finish("compiler");
     }
     public static void run(BuildRequest request,JvmBuildLock lease) throws Exception {
         String profile=request.options().get("--profile");
@@ -88,14 +154,20 @@ public final class HostVerificationProfiles {
         }
         void store()throws Exception{try(var writer=Files.newBufferedWriter(layoutFile)){layout.store(writer,"Explicit current host inputs");}}
         void perform(String profile)throws Exception {
-            if(done.contains(profile))return;
+            performPlan(plan(List.of(profile)));
+        }
+        void performPlan(List<String> profiles)throws Exception {
+            for(String profile:profiles) if(!done.contains(profile)) {
+                for(String backend:backends(profile))backend(backend);
+                executeProfile(profile);
+                done.add(profile);
+            }
+        }
+        void executeProfile(String profile)throws Exception {
             switch(profile) {
                 case "sdk" -> ExistingJvmDistribution.generateAt(root,outcome,run.resolve("delivery"),reports,true);
-                case "cli","jvm-benchmark","reference-originals","reference-views","reference-units" -> {perform("sdk");if(profile.equals("jvm-benchmark"))perform("geo-corpus");host(profile);}
-                case "full-corpus-jvm" -> {perform("full-corpus");host(profile);}
-                case "jvm" -> {perform("python-free");JenesisBridge.run(new BuildRequest("build",null,null,root));}
+                case "jvm" -> JenesisBridge.run(new BuildRequest("build",null,null,root));
                 case "platform" -> {
-                    perform("python-free");
                     var normal=JenesisBridge.run(new BuildRequest("build",null,null,root));done.add("jvm");
                     for(String module:JvmBuildInputs.MODULES) {
                         var result=JenesisBridge.moduleResult(normal,module);
@@ -112,27 +184,24 @@ public final class HostVerificationProfiles {
                         Path destination=reports.resolve("jvm/"+parts[1]+"/"+parts[2]);copyXml(source,destination);
                         layout.setProperty(key,JvmBuildInputs.portableRelative(root,destination));
                     }
-                    store();perform("sdk");host(profile);
-                    Files.writeString(reports.resolve("p3/platform/commit.txt"),git("rev-parse","HEAD")+"\n");
+                    store();host(profile);
+                    Files.writeString(reports.resolve("platform/commit.txt"),git("rev-parse","HEAD")+"\n");
                 }
                 case "conformance" -> conformance();
-                case "conformance-evidence" -> {perform("conformance");host(profile);}
-                case "semantic-comparison" -> {backend("teavm-smoke");host(profile);}
                 case "reproducibility" -> node("tools/release/reproducibility.cjs");
-                case "portable" -> {perform("jvm");backend("teavm-contracts");backend("webimage-contracts");}
-                case "browser" -> {backend("browser-contracts");}
-                case "wasm-benchmark","browser-benchmark" -> {perform("geo-corpus");backend(profile.equals("wasm-benchmark")?"teavm-smoke":"browser-prepare");node(profile.equals("wasm-benchmark")?"interlis-wasm-teavm/wasm-benchmark.cjs":"interlis-wasm-teavm/browser-benchmark.cjs");}
-                case "full-corpus-wasm" -> {perform("full-corpus-jvm");backend("teavm-smoke");node("tools/performance/full-corpus-node.cjs");}
-                case "full-corpus-browsers" -> {perform("full-corpus-wasm");backend("browser-prepare");node("tools/performance/full-corpus-browser.cjs");}
-                case "full-corpus-safari" -> {perform("full-corpus-browsers");node("tools/performance/full-corpus-browser.cjs","safari");}
-                case "full-corpus-artifacts" -> {backend("browser-prepare");node("tools/performance/artifacts.cjs");}
-                case "full-corpus-editor-wasm" -> {perform("full-corpus-safari");perform("full-corpus-artifacts");node("tools/performance/editor-node.cjs");}
-                case "performance" -> {perform("full-corpus-editor-wasm");perform("editor-pressure");perform("observation-pressure");perform("performance-checker-test");node("tools/performance/check.cjs");}
+                case "portable","browser" -> { } // Their required backend tasks run above.
+                case "wasm-benchmark" -> node("interlis-wasm-teavm/wasm-benchmark.cjs");
+                case "browser-benchmark" -> node("interlis-wasm-teavm/browser-benchmark.cjs");
+                case "full-corpus-wasm" -> node("tools/performance/full-corpus-node.cjs");
+                case "full-corpus-browsers" -> node("tools/performance/full-corpus-browser.cjs");
+                case "full-corpus-safari" -> node("tools/performance/full-corpus-browser.cjs","safari");
+                case "full-corpus-artifacts" -> node("tools/performance/artifacts.cjs");
+                case "full-corpus-editor-wasm" -> node("tools/performance/editor-node.cjs");
+                case "performance" -> node("tools/performance/check.cjs");
                 case "performance-checker-test" -> node("--test","tools/performance/check.test.cjs");
-                case "release-evidence-checker-test" -> node("--test","tools/release/artifact-comparison.test.cjs","tools/release/evidence.test.cjs","tools/release/distribution-files.test.cjs","tools/verification/node-junit.test.cjs");
+                case "release-evidence-checker-test" -> node("--test","tools/release/artifact-comparison.test.cjs","tools/release/evidence.test.cjs","tools/release/platform-evidence.test.cjs","tools/release/distribution-files.test.cjs","tools/verification/node-junit.test.cjs");
                 default -> host(profile);
             }
-            done.add(profile);
         }
         void host(String profile)throws Exception {
             Host host=HOSTS.get(profile);if(host==null)throw new IllegalArgumentException("Unknown fixed host");
@@ -158,8 +227,10 @@ public final class HostVerificationProfiles {
         }
         void node(String... args)throws Exception{var command=new ArrayList<String>();command.add(node());command.addAll(List.of(args));consume(()->{execute(command,Duration.ofHours(2),Set.of(0));return null;});}
         void backend(String profile)throws Exception {
+            if(done.contains("backend:"+profile))return;
             if(snapshot==null)snapshot=ConsumerSnapshot.create(root,outcome);
             consume(()->{WasmBuildRun.run(new BuildRequest("wasm",null,null,root,Map.of("--profile",profile,"--inputs",snapshot.manifest().toString(),"--inputs-sha256",snapshot.manifestSha256())));return null;});
+            for(String covered:backendCoverage(profile))done.add("backend:"+covered);
         }
         void requireOriginalInputs()throws Exception {
             if(initialInputs!=null)for(var entry:initialInputs.entrySet())if(!JvmBuildInputs.fingerprint(root,entry.getKey()).equals(entry.getValue()))throw new IllegalStateException("Host inputs changed");
@@ -187,7 +258,7 @@ public final class HostVerificationProfiles {
             return output;
         }
         void conformance()throws Exception {
-            perform("sdk");var pin=new Properties();try(var reader=Files.newBufferedReader(root.resolve("testdata/conformance/suite.properties"))){pin.load(reader);}
+            var pin=new Properties();try(var reader=Files.newBufferedReader(root.resolve("testdata/conformance/suite.properties"))){pin.load(reader);}
             String override=System.getenv("CONFORMANCE_CACHE");Path cache=override==null?Path.of(System.getProperty("user.home"),".cache/interlis-java/conformance"):Path.of(override).toAbsolutePath();
             Files.createDirectories(cache);Path archive=cache.resolve("suite-"+pin.getProperty("commit")+".tar.gz");
             if(!Files.exists(archive)) {

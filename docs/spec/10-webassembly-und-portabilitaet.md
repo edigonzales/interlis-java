@@ -88,7 +88,7 @@ Aktuelle Aufrufe aus dem Repository-Root mit Java25 und der explizit gewählten 
 ```sh
 java build/InterlisJvmBuild.java host --profile portable
 java build/InterlisJvmBuild.java host --profile browser
-java build/InterlisJvmBuild.java release-check --profile P3
+java build/InterlisJvmBuild.java release-check --profile compiler
 ```
 
 Für einzelne Backendaufrufe erzeugt `java build/InterlisJvmBuild.java wasm-export` den verifizierten Snapshot. `wasm --profile teavm-contracts` beziehungsweise `wasm --profile webimage-contracts` erhalten dessen tatsächlichen absoluten Manifestpfad über `--inputs` und dessen Producerhash über `--inputs-sha256`. Direkte Gradle-Debugaufrufe erhalten dieselbe Referenz mit `-PjvmInputs`/`-PjvmInputsSha256` und die gepinnte Node-Auswahl mit `-PnodeExecutable`; fehlende Inputs sind ein Fehler, kein JVM-Quellfallback.
@@ -100,7 +100,7 @@ Für einzelne Backendaufrufe erzeugt `java build/InterlisJvmBuild.java wasm-expo
 | `:interlis-wasm-teavm:wasmContractTest` mit expliziten Snapshotinputs | Vertragstests des gebauten TeaVM-Moduls unter der gepinnten Node-Version, einschliesslich Bridge und exakter Zahlen. |
 | `host --profile portable` | Gemeinsame JVM-Prüfungen und die Node-Vertragstests der für die Phase vorgesehenen Zielprofile. |
 | `host --profile browser` | Reale gepinnte Chrome-/Firefox-/Safari-Matrix des ausgewählten TeaVM-Produktionspfads. |
-| `release-check --profile P3` | Beide vorstehenden Aggregate ab G1 sowie Web-Image-Nachweis und sämtliche weiteren fälligen Gates aus Kapitel 03/14. |
+| `release-check --profile compiler` | Beide vorstehenden Aggregate ab G1 sowie Web-Image-Nachweis und sämtliche weiteren fälligen Gates aus Kapitel 03/14. |
 
 Browserprüfungen haben dokumentierte Laufzeitvoraussetzungen. Der Default-JVM-`build` darf keinen ungeplanten Browser-/SDK-Download auslösen. Ein lokaler Lauf darf fehlende Browser als NOT_RUN dokumentieren; dieser Bericht erfüllt G1 und die entsprechende Releaseabnahme nicht. Ein realer, begründet blockierter Web-Image-Versuch erfüllt lediglich den gesonderten Untersuchungsauftrag und wird nicht zu PASS umetikettiert.
 

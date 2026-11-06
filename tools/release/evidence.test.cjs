@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');const {validate,validatePreflight,definitions,browser}=require('./evidence.cjs');
 const {fixture}=require('./test-fixtures.cjs');
 const jvmProfile=require('../../testdata/verification/jvm-profile.json');
-test('complete current P3 candidate evidence validates',()=>assert.equal(validate(fixture()).status,'passed'));
+test('complete current compiler candidate evidence validates',()=>assert.equal(validate(fixture()).status,'passed'));
 test('real guard combines unavailable PATH names with absolute OS execution denials',()=>{
  const f=fixture();f.guard.probes.unshift({command:'absent-command',status:null,error:'ENOENT'});
  assert.equal(validate(f).status,'passed');assert.equal(validatePreflight(f.candidate,f.sourceFingerprint,f.github,f.guard).status,'passed');
@@ -11,6 +11,7 @@ test('preflight accepts current CI and active guard before runtime results exist
  const f=fixture();assert.equal(validatePreflight(f.candidate,f.sourceFingerprint,f.github,f.guard).status,'passed');
 });
 for(const [name,mutate]of [
+ ['old profile',f=>f.github.profile='P3'],['old workflow path',f=>f.github.run.path='.github/workflows/p3-platforms.yml'],
  ['previous candidate',f=>f.github.gitCommit='old'],['stale CI sources',f=>f.github.artifacts[0].proof.sourceFingerprint='old'],
  ['missing Windows evidence',f=>f.github.artifacts.pop()],['old finished wrapper',f=>f.guard.status='passed'],['inactive wrapper',f=>f.guard.active=false]
 ])test('preflight rejects '+name,()=>{const f=fixture();mutate(f);assert.throws(()=>validatePreflight(f.candidate,f.sourceFingerprint,f.github,f.guard));});
@@ -38,6 +39,8 @@ for(const [name,mutate]of [
  ['missing named logical suite',f=>{f.platforms[0].logicalReports=f.platforms[0].logicalReports.filter(p=>p!==jvmProfile.requiredLogicalReports[0]);f.platforms[0].suites--;}],['duplicate logical suite',f=>f.platforms[0].logicalReports[1]=f.platforms[0].logicalReports[0]],['wrong raw file count',f=>f.platforms[0].rawReportFiles++],
  ['missing standard process',f=>f.platforms[0].compilerCliCases.pop()],['foreign standard process',f=>f.platforms[0].compilerCliCases[0]='foreign'],
  ['ANSI in machine platform report',f=>f.platforms[0].extra='\u001b[31mbad\u001b[0m'],['missing color verification',f=>delete f.platforms[0].compilerCliColorVerified],
+ ['old profile',f=>f.github.profile='P3'],['old workflow path',f=>f.github.run.path='.github/workflows/p3-platforms.yml'],
+ ['old JVM profile',f=>f.platforms[0].profile='P3-jvm-distribution-v3-jpms'],
  ['foreign workflow',f=>f.github.repository='other/project'],['failed workflow',f=>f.github.run.conclusion='failure'],['failed job',f=>f.github.jobs[0].conclusion='failure'],['unhashed artifact',f=>f.github.artifacts[0].digest=''],
  ['inconsistent SDK version',f=>f.sdk.versions.apiVersion='0.1'],['different platform package',f=>f.platforms[2].sdkArchiveSha256='old'],['single build',f=>f.reproducibility.cleanBuilds=1],['empty repro comparison',f=>f.reproducibility.artifacts={}],
  ['partial repro with self-consistent reduced count',f=>{delete f.reproducibility.artifacts.file0;f.reproducibility.shippedFiles--;}],
@@ -52,7 +55,7 @@ for(const [name,mutate]of [
  ['unbound compiler tool',f=>delete f.browserManifest.toolchain],['foreign compiler tool',f=>f.browserManifest.toolchain.core.sha256='other'],
  ['old completed guard',f=>f.guard.status='passed'],['dead guard',f=>f.guard.active=false],['unproved execution denial',f=>f.guard.probes=[]],['successful interpreter',f=>f.guard.probes[0].status=0],
  ['absolute absence without execution denial',f=>f.guard.probes[0].error='ENOENT'],['unexpected PATH execution error',f=>f.guard.probes.push({command:'unavailable',status:null,error:'EACCES'})]
-])test('P3 fails closed: '+name,()=>{const f=fixture();mutate(f);assert.throws(()=>validate(f));});
+])test('Compiler release fails closed: '+name,()=>{const f=fixture();mutate(f);assert.throws(()=>validate(f));});
 
 test('downloaded platform XML must match the recorded hashes',()=>{
  const {validateJvmReports}=require('./evidence.cjs'),{hash}=require('../verification/source-fingerprint.cjs');

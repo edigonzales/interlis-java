@@ -1,4 +1,4 @@
-# P3-4 performance harness
+# Compiler performance harness
 
 Commands:
 

@@ -2,7 +2,7 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 // These fixtures deliberately select the canonical target layout, independent of a surrounding host run.
 delete process.env.VERIFICATION_LAYOUT; delete process.env.VERIFICATION_LAYOUT_SHA256;
-const {distributionFiles,browserResources}=require('./distribution-files.cjs');
+const {distributionFile,distributionFiles,browserResources}=require('./distribution-files.cjs');
 function fixture(t){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'interlis inventory '));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
  fs.writeFileSync(path.join(root,'pom.xml'),'<project><version>1-test</version></project>');
@@ -12,14 +12,15 @@ function fixture(t){
   'target/jenesis-jvm/delivery/sdk.zip',tea+'/generated/teavm/js/interlis-compiler.js',tea+'/generated/teavm/wasm-gc/interlis-compiler.wasm',tea+'/generated/teavm/wasm-gc/interlis-compiler.wasm-runtime.js',
   tea+'/browser-tools/z/nested.js',tea+'/browser-tools/a.js',tea+'/web/index.html',tea+'/web/build-manifest.json'];
  for(const file of [...files].reverse()){const output=path.join(root,file);fs.mkdirSync(path.dirname(output),{recursive:true});fs.writeFileSync(output,'fixture');if(file.endsWith('/bin/interlis-compiler'))fs.chmodSync(output,0o755);}
- return {root,files,cli,tea};
+ const roles=files.map(file=>file.startsWith(cli+'/')?file.slice(cli.lastIndexOf('/')+1):file==='target/jenesis-jvm/delivery/sdk.zip'?'sdk':file);
+ return {root,files,roles,cli,tea};
 }
 test('inventory includes all actual shipped files once in deterministic relative order',t=>{
- const f=fixture(t);assert.deepEqual(distributionFiles(f.root),[...f.files].sort());
+ const f=fixture(t);assert.deepEqual(distributionFiles(f.root),[...f.roles].sort());
 });
 test('an additional actual library is independently required in the report inventory',t=>{
  const f=fixture(t),extra=f.cli+'/lib/additional.jar';fs.writeFileSync(path.join(f.root,extra),'library');
- assert.deepEqual(distributionFiles(f.root),[...f.files,extra].sort());
+ assert.deepEqual(distributionFiles(f.root),[...f.roles,'compiler/lib/additional.jar'].sort());
 });
 test('browser resources come from all actual files with hashes/sizes and no self-reference',t=>{
  const f=fixture(t),extra=f.tea+'/web/new-resource.js';fs.writeFileSync(path.join(f.root,extra),'new bytes');
@@ -43,3 +44,16 @@ if(process.platform!=='win32')test('non-executable delivered launcher fails inve
 });
 
 test('internal verification jar is rejected from delivery',t=>{const f=fixture(t);fs.writeFileSync(path.join(f.root,f.cli,'lib/interlis-verification-1-test.jar'),'internal');assert.throws(()=>distributionFiles(f.root),/Verification artifact/);});
+
+test('clean and invocation-specific layouts use the same delivery keys',t=>{
+ const f=fixture(t),relative='target/jenesis-jvm/host/run/delivery';
+ const inputs={root:f.root,paths:{compiler:relative+'/compiler',sdk:relative+'/sdk.zip'}};
+ const expected=distributionFiles(f.root);
+ fs.mkdirSync(path.join(f.root,relative),{recursive:true});
+ fs.renameSync(path.join(f.root,f.cli),path.join(f.root,inputs.paths.compiler));
+ fs.renameSync(path.join(f.root,'target/jenesis-jvm/delivery/sdk.zip'),path.join(f.root,inputs.paths.sdk));
+ assert.deepEqual(distributionFiles(f.root,inputs),expected);
+ assert.equal(distributionFile(f.root,'compiler/bin/interlis-compiler',inputs),
+   path.join(f.root,relative,'compiler/bin/interlis-compiler'));
+ assert.equal(distributionFile(f.root,'sdk',inputs),path.join(f.root,relative,'sdk.zip'));
+});

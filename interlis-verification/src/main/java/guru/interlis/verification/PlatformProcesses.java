@@ -10,14 +10,14 @@ import static guru.interlis.verification.HostChecks.*;
 public final class PlatformProcesses {
     private PlatformProcesses() { }
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath(),out=VerificationLayout.forInvocation(root).rootReport("p3/platform/result.json");Files.deleteIfExists(out);
+        Path root=Path.of(args[0]).toAbsolutePath(),out=VerificationLayout.forInvocation(root).rootReport("platform/result.json");Files.deleteIfExists(out);
         var profile=read(root.resolve("testdata/verification/jvm-profile.json"));
         Path reportRoot=VerificationLayout.forInvocation(root).rootReport("jvm").getParent();
         var directories=strings(profile.get("requiredDirectories")).stream().map(reportRoot::resolve).toList();
         var summary=inspectJUnitReports(reportRoot,directories);
         verifyRequiredProfile(summary,profile);
         long tests=summary.tests();int suites=summary.suites();var xmlHashes=summary.xmlHashes();
-        var sdk=read(VerificationLayout.forInvocation(root).rootReport("sdk/sdk-process-comparison.json"));var archive=read(VerificationLayout.forInvocation(root).rootReport("sdk/archive-consumer.json"));var cli=read(VerificationLayout.forInvocation(root).rootReport("p3/compiler-cli/processes.json"));
+        var sdk=read(VerificationLayout.forInvocation(root).rootReport("sdk/sdk-process-comparison.json"));var archive=read(VerificationLayout.forInvocation(root).rootReport("sdk/archive-consumer.json"));var cli=read(VerificationLayout.forInvocation(root).rootReport("release/compiler-cli/processes.json"));
         require(s(sdk,"status").equals("passed")&&rows(sdk,"commands").size()==9,"Missing SDK processes");
         require(s(archive,"status").equals("passed")&&s(cli,"status").equals("passed")&&cli.getAsJsonObject("cases").keySet().equals(CompilerCliProcesses.REQUIRED),"Missing installed consumer/standard CLI processes");
         require(s(cli,"profile").equals("compiler-cli/v1") && s(cli,"gitCommit").equals(ProfileFingerprint.commit(root))

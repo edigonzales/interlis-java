@@ -1,13 +1,13 @@
-name: P3 platform contracts
+name: Compiler platform contracts
 on:
   push:
-    branches: [main, codex/jenesis-migration-b]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: p3-platforms-${{ github.ref }}
+  group: compiler-platforms-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   platform:
@@ -41,7 +41,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p3-${{ matrix.platform }}-${{ github.sha }}
+          name: compiler-${{ matrix.platform }}-${{ github.sha }}
           if-no-files-found: error
           retention-days: 30
           path: ${{ steps.jvm.outputs.evidence }}

@@ -4981,7 +4981,7 @@
         },
         {
           "source": "build/interlis/HostVerificationProfiles.java",
-          "sha256": "c390fd1d0705387be4109a727c6bc29aaced27fa00a76bc52212c0e68d1b4fae",
+          "sha256": "fed39ef6b0901dfd56fe69a5dfc9b0196d6969087ccd52b538e4f14de8551008",
           "reason": "Auftrag B Reviewkorrektur: portable Layoutproduktion, einheitliche echte CLI-Versionsbytes und kontrollierter Consumer-Lockumfang; ursprüngliche Assertions bleiben unverändert."
         }
       ],
@@ -5206,7 +5206,7 @@
         },
         {
           "source": "docs/spec/10-webassembly-und-portabilitaet.md",
-          "sha256": "46813f9a9c8210099ef341b14b16c2ad463f909ae43072fee0f7e66e20113ed8",
+          "sha256": "1919dadc32ec793c07c3c902e527fbdfa2081301ae985c827c02ce1e3fb3577b",
           "reason": "Redaktioneller Reviewhinweis O-01: bestehende Jenesis-/Backend-Einstiege statt entfernter Gradle-Roottasknamen; Sprach-/Bridge-/Abnahmeverträge unverändert."
         },
         {

@@ -93,7 +93,7 @@ Alle JVMkommandos verwenden `java build/InterlisJvmBuild.java` (Java25).
 | `wasm --profile webimage-smoke --inputs ABSOLUT --inputs-sha256 HASH` | Web Image mit expliziter externer Toolchain und echter Laufzeitprobe. |
 | `host --profile portable` / `host --profile browser` | Explizite portable Vertrags- bzw. reale Browserabnahme. |
 | `host --profile performance` | Vollständige bestehende P3-Leistungspflichten. |
-| `release-check --profile P3` | Vollständiger fachlicher Freigabeplan; fehlende Pflichtbelege sind Fehler. |
+| `release-check --profile compiler` | Vollständiger fachlicher Freigabeplan; fehlende Pflichtbelege sind Fehler. |
 | `editor-bundle` | Node-Renderer und echte Jenesis-LSP-Closure, reiner Bundleassembler. |
 | `clean --scope jvm\|consumer\|wasm` | Endliche Outputbesitzer; niemals Root-build-Quellen oder Caches löschen. |
 
@@ -120,7 +120,7 @@ ausdrücklich mit Stand, Werkzeugversionen und Artefakthashes nach
 Erwartungen. Für P3 gehören Konformitäts-, Performance-, Distributions- und
 Plattformnachweise zu den Pflichtprüfungen; fehlende Nachweise halten G3 offen.
 
-Das aktuelle P3-Profil wird ausdrücklich mit `release-check --profile P3` gewählt. `release-check` ohne Profil und
+Das aktuelle Compiler-Freigabeprofil wird ausdrücklich mit `release-check --profile compiler` gewählt. `release-check` ohne Profil und
 unbekannte Profile scheitern bereits bei der Konfiguration. Vor dem Gesamtlauf
 werden erfolgreiche Windows-/Linux-Actions desselben sauberen Produktcommits
 mit `tools/release/platform-evidence.cjs` bezogen und gegen die von GitHub

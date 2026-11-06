@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 /** Fixed backend steps consuming an already verified snapshot; never builds shared JVM sources. */
 public final class WasmBuildRun {
-    public static final Set<String> PROFILES=Set.of("teavm-smoke","webimage-smoke","teavm-contracts","webimage-contracts","browser-prepare","browser-contracts");
+    public static final Set<String> PROFILES=Set.of("teavm-smoke","wasm-prepare","webimage-smoke","teavm-contracts","webimage-contracts","browser-prepare","browser-contracts");
 
     public static void run(BuildRequest request) throws Exception {
         Path root=request.root(),manifest=Path.of(request.options().get("--inputs"));
@@ -35,8 +35,12 @@ public final class WasmBuildRun {
             if(!Files.readString(run.resolve("node-version.stdout")).trim().equals("v"+pins.getProperty("nodeVersion")))throw new IllegalStateException("Wrong Node runtime");
             var command=new ArrayList<String>();command.add(root.resolve(System.getProperty("os.name").startsWith("Windows")?"gradlew.bat":"gradlew").toString());
             boolean webimage=profile.startsWith("webimage");
+            boolean wasmOnly=profile.equals("wasm-prepare");
             if(webimage)command.add(":interlis-wasm-webimage:webImageBuild");
-            else command.addAll(List.of(":interlis-wasm-teavm:generateJavaScript",":interlis-wasm-teavm:buildWasmGC"));
+            else {
+                if(!wasmOnly)command.add(":interlis-wasm-teavm:generateJavaScript");
+                command.add(":interlis-wasm-teavm:buildWasmGC");
+            }
             switch(profile) {
                 case "teavm-contracts" -> command.addAll(List.of(":interlis-wasm-teavm:check",":interlis-wasm-teavm:jsContractTest",":interlis-wasm-teavm:wasmContractTest",":interlis-wasm-teavm:diagramAdapterTest",":interlis-wasm-teavm:browserClientTest"));
                 case "webimage-contracts" -> command.addAll(List.of(":interlis-wasm-webimage:check",":interlis-wasm-webimage:webImageProbe"));
@@ -49,7 +53,8 @@ public final class WasmBuildRun {
             ConsumerSnapshot.read(snapshot.manifest(),snapshot.manifestSha256());
             verifyCodegen(root,snapshot,profile);
             var reports=new TreeMap<String,String>();
-            for(String backend:!webimage?List.of("teavm-js","teavm-wasm"):List.of("webimage")) {
+            var backends=webimage?List.of("webimage"):wasmOnly?List.of("teavm-wasm"):List.of("teavm-js","teavm-wasm");
+            for(String backend:backends) {
                 Path report=JvmBuildInputs.requireOutputRoot(root,(backend.equals("webimage")?"interlis-wasm-webimage":"interlis-wasm-teavm")+"/build/consumer-smoke-"+backend+".json");
                 Files.deleteIfExists(report);
                 var smoke=new ArrayList<String>();smoke.add(selectedNode);
@@ -74,7 +79,9 @@ public final class WasmBuildRun {
 
     private static void verifyCodegen(Path root,ConsumerSnapshot.Snapshot snapshot,String profile) throws Exception {
         String project=!profile.startsWith("webimage")?"interlis-wasm-teavm":"interlis-wasm-webimage";
-        for(String task:!profile.startsWith("webimage")?List.of("generateJavaScript","generateWasmGC","buildWasmGC"):List.of("webImageBuild")) {
+        var tasks=profile.startsWith("webimage")?List.of("webImageBuild"):profile.equals("wasm-prepare")
+                ?List.of("generateWasmGC","buildWasmGC"):List.of("generateJavaScript","generateWasmGC","buildWasmGC");
+        for(String task:tasks) {
             Path file=root.resolve(project+"/build/consumer-inputs/"+task+".json");
             var receipt=object(build.jenesis.Json.parse(Files.readString(file)));
             if(!snapshot.manifestSha256().equals(receipt.get("manifestSha256"))||!snapshot.digest().equals(receipt.get("snapshotDigest")))

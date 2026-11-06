@@ -1,6 +1,6 @@
 {
   "schemaVersion": "2.0",
-  "profile": "P3-jvm-distribution-v3-jpms",
+  "profile": "jvm-distribution/v3-jpms",
   "minimumTests": 1411,
   "minimumSuites": 352,
   "delta": {

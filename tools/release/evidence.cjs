@@ -1,6 +1,8 @@
 'use strict';
 const fs=require('node:fs'),path=require('node:path');const {root,hash,fingerprint,commitInfo}=require('../verification/source-fingerprint.cjs');
 const comparison=require('./artifact-comparison.cjs');
+const {distributionFile,distributionFiles,browserResources}=require('./distribution-files.cjs');
+const platformContract=require('./platform-contract.cjs');
 const jvmProfile=require('../../testdata/verification/jvm-profile.json');
 const assert=(condition,message)=>{if(!condition)throw Error(message);};
 const equal=(a,b)=>JSON.stringify(Object.keys(a).sort().map(k=>[k,a[k]]))===JSON.stringify(Object.keys(b).sort().map(k=>[k,b[k]]));
@@ -29,21 +31,49 @@ function activeGuard(guard,candidate){
   &&guard.probes.every(p=>p.status!==0&&(p.error==='EPERM'||p.status===126||(!path.isAbsolute(p.command)&&p.error==='ENOENT')))
   &&guard.probes.some(p=>path.isAbsolute(p.command)&&p.error==='EPERM');
 }
+function validateGitHub(github,candidate,sourceFingerprint){
+ const {profile,repository,workflowPath,remotePlatforms,jobName,artifactName}=platformContract;
+ assert(github.schemaVersion==='1.0'&&github.profile===profile&&github.repository===repository&&
+   github.gitCommit===candidate&&github.run.headSha===candidate&&github.run.status==='completed'&&
+   github.run.conclusion==='success'&&github.run.path===workflowPath,'invalid GitHub run provenance');
+ assert(Number.isSafeInteger(github.run.id)&&github.run.id>0,'missing GitHub run identity');
+ assert(github.jobs.length===remotePlatforms.length&&github.artifacts.length===remotePlatforms.length&&
+   new Set(github.artifacts.map(a=>a.artifactId)).size===remotePlatforms.length,'incomplete actual GitHub jobs/artifacts');
+ for(const platform of remotePlatforms){
+  const artifact=github.artifacts.find(a=>a.platform===platform);
+  const job=github.jobs.find(j=>j.name===jobName(platform));
+  assert(job&&job.status==='completed'&&job.conclusion==='success'&&Number.isSafeInteger(job.id)&&job.id>0&&artifact?.jobId===job.id,
+    'missing/foreign GitHub job: '+platform);
+  assert(artifact.name===artifactName(platform,candidate)&&Number.isSafeInteger(artifact.artifactId)&&artifact.artifactId>0&&
+    /^sha256:[a-f0-9]{64}$/.test(artifact.digest),'missing/foreign GitHub artifact: '+platform);
+  const proof=artifact.proof;
+  assert(proof.gitCommit===candidate&&proof.dirty===false&&proof.sourceFingerprint===sourceFingerprint&&proof.status==='passed',
+    'foreign/incomplete platform preflight');
+  validateJvmReports(proof);
+ }
+}
 /** Preconditions deliberately exclude runtime results produced by this invocation. */
 function validatePreflight(candidate,sourceFingerprint,github,guard){
  assert(/^[a-f0-9]{40}$/.test(candidate)&&/^[a-f0-9]{64}$/.test(sourceFingerprint),'missing exact candidate binding');
- assert(github.gitCommit===candidate&&github.run.headSha===candidate&&github.run.status==='completed'&&github.run.conclusion==='success'&&github.run.path==='.github/workflows/p3-platforms.yml','collect successful current-candidate GitHub evidence before releaseCheckP3');
- assert(github.artifacts.length===2&&github.artifacts.map(a=>a.platform).sort().join(',')==='linux-x64,windows-x64'&&github.artifacts.every(a=>a.proof.gitCommit===candidate&&a.proof.dirty===false&&a.proof.sourceFingerprint===sourceFingerprint&&a.proof.status==='passed'),'foreign/incomplete platform preflight');
- assert(activeGuard(guard,candidate),'run releaseCheckP3 through the active OS interpreter guard');
+ validateGitHub(github,candidate,sourceFingerprint);
+ assert(activeGuard(guard,candidate),'run the compiler release check through the active OS interpreter guard');
  return {status:'passed',gitCommit:candidate};
 }
 function read(file){return JSON.parse(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,file),'utf8'));}
-function githubEvidence(){
- const github=read('reports/p3/platform-evidence/result.json');
+function githubEvidence(candidate,sourceFingerprint){
+ const role=platformContract.collectedRole;
+ const github=read('reports/'+role+'/result.json');
+ validateGitHub(github,candidate,sourceFingerprint);
+ const lookup=file=>require('../verification/layout.cjs').report(root,role+'/'+file);
  for(const a of github.artifacts){
-  assert('sha256:'+hash(fs.readFileSync(path.resolve(root,a.zip)))===a.digest,'changed downloaded artifact');
-  assert(hash(fs.readFileSync(path.resolve(root,a.report)))===a.reportSha256,'changed platform report');
-  assert(equal(read(a.report),a.proof),'embedded platform proof differs from verified report');
+  const base=github.run.id+'/'+a.platform+'/'+a.artifactId+'/';
+  const archive=base+'artifact.zip', proof=base+'extracted/'+platformContract.platformReport;
+  assert(a.zip===archive&&a.report===proof,'foreign downloaded artifact paths');
+  assert('sha256:'+hash(fs.readFileSync(lookup(archive)))===a.digest,'changed downloaded artifact');
+  const bytes=fs.readFileSync(lookup(proof));
+  assert(hash(bytes)===a.reportSha256,'changed platform report');
+  assert(equal(JSON.parse(bytes),a.proof),'embedded platform proof differs from verified report');
+  validateJvmReports(a.proof,file=>fs.readFileSync(lookup(base+'extracted/reports/'+file)));
  }
  return github;
 }
@@ -53,10 +83,11 @@ function guardEvidence(){
  assert(hash(guard.profile)===guard.profileSha256,'changed OS guard profile');return guard;
 }
 function preflight(){
- fs.rmSync(require('../verification/layout.cjs').report(root,'p3/release/result.json'),{force:true});
- const candidate=commitInfo();assert(!candidate.dirty,'P3 release candidate must be clean');
- validatePreflight(candidate.gitCommit,fingerprint(),githubEvidence(),guardEvidence());
- console.log('P3_RELEASE_PREFLIGHT_PASS',candidate.gitCommit);
+ fs.rmSync(require('../verification/layout.cjs').report(root,'release/result.json'),{force:true});
+ const candidate=commitInfo();assert(!candidate.dirty,'Compiler release candidate must be clean');
+ const sourceFingerprint=fingerprint();
+ validatePreflight(candidate.gitCommit,sourceFingerprint,githubEvidence(candidate.gitCommit,sourceFingerprint),guardEvidence());
+ console.log('COMPILER_RELEASE_PREFLIGHT_PASS',candidate.gitCommit);
 }
 function validate(input){
  const {candidate,sourceFingerprint,currentArtifacts,expectedShippedFiles,expectedBrowserResources,proofs,platforms,github,performance,conformance,sdk,reproducibility,browserManifest,guard}=input;
@@ -76,9 +107,7 @@ function validate(input){
  assert(conformance.status==='passed'&&conformance.gitCommit===candidate&&!conformance.dirty&&conformance.sourceFingerprint===sourceFingerprint,'stale conformance');const counts=conformance.summary.summary;assert(counts.PASS===577&&counts.XFAIL===16&&counts.FAIL===0&&counts.XPASS===0&&counts.ERROR===0&&counts.TOTAL===593&&conformance.summary.normativeAssessments.length===21,'changed/incomplete conformance contract');
  assert(platforms.length===3,'missing JVM target');const targets=new Set();for(const p of platforms){assert(p.status==='passed'&&p.profile===jvmProfile.profile&&p.gitCommit===candidate&&!p.dirty&&p.sourceFingerprint===sourceFingerprint,'stale/foreign platform');assert(p.java.startsWith('25.0.3')&&p.tests>=jvmProfile.minimumTests&&p.suites>=jvmProfile.minimumSuites&&p.failures===0&&p.errors===0&&p.skipped===0&&Array.isArray(p.logicalReports)&&p.logicalReports.length===p.suites&&p.sdkCommands===9&&Array.isArray(p.compilerCliCases)&&JSON.stringify([...p.compilerCliCases].sort())===JSON.stringify(compilerCliCases),'incomplete actual JVM/distribution processes');validateJvmReports(p);assert(p.compilerCliColorVerified===true&&!JSON.stringify(p).includes('\\u001b'),'unverified color processes or ANSI in machine platform proof');const target=p.os.startsWith('Windows')&&['amd64','x86_64'].includes(p.arch)?'windows':p.os==='Linux'&&['amd64','x86_64'].includes(p.arch)?'linux':p.os==='Mac OS X'&&['aarch64','arm64'].includes(p.arch)?'mac':null;assert(target&&!targets.has(target),'wrong/duplicate JVM target');targets.add(target);assert(p.sdkArchiveSha256===sdk.archiveSha256,'platform SDK archive differs');}
  assert(targets.has('windows')&&targets.has('linux')&&targets.has('mac'),'incomplete supported platform matrix');
- assert(github.profile==='P3'&&github.repository==='edigonzales/interlis-java'&&github.gitCommit===candidate&&github.run.headSha===candidate&&github.run.status==='completed'&&github.run.conclusion==='success'&&github.run.path==='.github/workflows/p3-platforms.yml','invalid GitHub run provenance');
- assert(github.jobs.length===2&&github.jobs.every(j=>j.status==='completed'&&j.conclusion==='success')&&github.artifacts.map(a=>a.platform).sort().join(',')==='linux-x64,windows-x64','incomplete actual GitHub jobs');
- assert(github.artifacts.length===2&&github.artifacts.every(a=>/^sha256:[a-f0-9]{64}$/.test(a.digest)&&a.proof.gitCommit===candidate),'missing verified GitHub artifacts');
+ validateGitHub(github,candidate,sourceFingerprint);
  assert(sdk.status==='passed'&&sdk.versions.apiVersion==='0.2'&&sdk.versions.protocol==='interlis.compiler/1.0'&&sdk.versions.diagnosticCatalogVersion===diagnosticCatalogVersion&&sdk.versions.formatVersion==='2.0'&&sdk.versions.diagramSchemaVersion==='1.0','missing delivered SDK/version separation');
  comparison.validateComparison(reproducibility,expectedShippedFiles,candidate,sourceFingerprint);
  assert(browserManifest.schemaVersion==='1.0'&&browserManifest.gitCommit===candidate&&!browserManifest.dirty&&browserManifest.sourceFingerprint===sourceFingerprint&&Object.keys(browserManifest.resources).length>20,'missing current shipped browser build manifest');
@@ -89,19 +118,23 @@ function validate(input){
  assert(equal(browserManifest.versions,sdk.versions),'inconsistent delivered version manifests');
  assert(equal(browserManifest.toolchain?.core||{},require('../../gradle/teavm-core.json')),'missing pinned upstream compiler-tool binding');
  assert(activeGuard(guard,candidate),'missing active inherited OS interpreter guard');
- return {status:'passed',profile:'P3',gitCommit:candidate,sourceFingerprint,runtimes:6,platforms:['linux-x64','windows-x64','macos-arm64'],note:'Internal gate passed; formal acceptance additionally requires finished outer guard/independent review, both with exit0 and passed manifests.'};
+ return {status:'passed',profile:platformContract.profile,gitCommit:candidate,sourceFingerprint,runtimes:6,platforms:['linux-x64','windows-x64','macos-arm64'],note:'Internal gate passed; formal acceptance additionally requires finished outer guard/independent review, both with exit0 and passed manifests.'};
 }
 function main(){
- const out=require('../verification/layout.cjs').report(root,'p3/release/result.json');fs.rmSync(out,{force:true});const read=file=>JSON.parse(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,file),'utf8'));const commit=commitInfo();assert(!commit.dirty,'P3 release candidate must be clean');
+ const out=require('../verification/layout.cjs').report(root,'release/result.json');fs.rmSync(out,{force:true});const read=file=>JSON.parse(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,file),'utf8'));const commit=commitInfo();assert(!commit.dirty,'Compiler release candidate must be clean');
  const currentArtifacts={};for(const file of new Set([...Object.values(definitions).flatMap(d=>d.artifacts),...browser,'interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js','interlis-wasm-webimage/build/webimage-browser/interlis-compiler.js.wasm']))currentArtifacts[file]=hash(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,file)));
- const github=githubEvidence();
- const repro=read('reports/p3/P3-5/reproducibility/result.json');for(const [file,meta]of Object.entries(repro.artifacts)){const absolute=require('../verification/layout.cjs').inputPath(root,file);assert(absolute.startsWith(root+path.sep),'unsafe comparison path');const bytes=fs.readFileSync(absolute);assert((fs.statSync(absolute).mode&0o777)===meta.mode,'changed delivered permissions');if(!comparison.variableFiles.has(file)&&file!==comparison.manifestFile)assert(hash(bytes)===meta.sha256&&bytes.length===meta.bytes,'reproducible artifact differs from delivered output');}
+ const sourceFingerprint=fingerprint();
+ const github=githubEvidence(commit.gitCommit,sourceFingerprint);
+ const repro=read('reports/reproducibility/result.json');
+ const expectedShippedFiles=distributionFiles(root);
+ comparison.validateComparison(repro,expectedShippedFiles,commit.gitCommit,sourceFingerprint);
+ for(const [file,meta]of Object.entries(repro.artifacts)){const absolute=distributionFile(root,file);assert(absolute.startsWith(root+path.sep),'unsafe comparison path');const bytes=fs.readFileSync(absolute);assert((fs.statSync(absolute).mode&0o777)===meta.mode,'changed delivered permissions');if(!comparison.variableFiles.has(file)&&file!==comparison.manifestFile)assert(hash(bytes)===meta.sha256&&bytes.length===meta.bytes,'reproducible artifact differs from delivered output');}
  const manifest=read('interlis-wasm-teavm/build/web/build-manifest.json');for(const [file,meta]of Object.entries(manifest.resources)){const base=path.join(root,'interlis-wasm-teavm/build/web'),absolute=path.resolve(base,file);assert(absolute.startsWith(base+path.sep)&&hash(fs.readFileSync(absolute))===meta.sha256,'shipped browser resource changed');}
- comparison.compareBuilds(repro.builds[0],{artifacts:Object.fromEntries(Object.keys(repro.artifacts).map(file=>{const absolute=require('../verification/layout.cjs').inputPath(root,file),bytes=fs.readFileSync(absolute);return [file,{sha256:hash(bytes),bytes:bytes.length,mode:fs.statSync(absolute).mode&0o777}];})),browserManifest:manifest});
+ comparison.compareBuilds(repro.builds[0],{artifacts:Object.fromEntries(Object.keys(repro.artifacts).map(file=>{const absolute=distributionFile(root,file),bytes=fs.readFileSync(absolute);return [file,{sha256:hash(bytes),bytes:bytes.length,mode:fs.statSync(absolute).mode&0o777}];})),browserManifest:manifest});
  const sdk=read('reports/sdk/archive-consumer.json');assert(/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(sdk.versions.version)&&hash(fs.readFileSync(require('../verification/layout.cjs').resolveRole(require('../verification/layout.cjs').readVerificationInputs(root),'sdk')))===sdk.archiveSha256,'changed delivered SDK archive');
  const conformance=read('reports/conformance/candidate.json');assert(hash(fs.readFileSync(require('../verification/layout.cjs').report(root,'conformance/conformance-summary.json')))===conformance.summarySha256&&hash(fs.readFileSync(require('../verification/layout.cjs').inputPath(root,'conformance/report.json')))===conformance.rawReportSha256,'changed conformance raw evidence');
  const guard=guardEvidence();
- const result=validate({candidate:commit.gitCommit,sourceFingerprint:fingerprint(),currentArtifacts,expectedShippedFiles:require('./distribution-files.cjs').distributionFiles(root),expectedBrowserResources:require('./distribution-files.cjs').browserResources(root),proofs:{...Object.fromEntries(Object.entries(definitions).map(([name,d])=>[name,read(d.file)])),browsers:read('interlis-wasm-teavm/build/browser-results.json'),nativeBrowsers:read('interlis-wasm-webimage/build/webimage-browser/browser-results.json'),safari:read('interlis-wasm-teavm/build/safari-result.json'),ui:read('interlis-wasm-teavm/build/ui-projection-results.json')},performance:read('reports/performance/full-corpus/result.json'),conformance,platforms:[read('reports/p3/platform/result.json'),...github.artifacts.map(a=>a.proof)],github,sdk,reproducibility:repro,browserManifest:manifest,guard});
- fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(result,null,2)+'\n');console.log('P3_RELEASE_EVIDENCE_PASS',result.gitCommit);
+ const result=validate({candidate:commit.gitCommit,sourceFingerprint,currentArtifacts,expectedShippedFiles,expectedBrowserResources:browserResources(root,expectedShippedFiles),proofs:{...Object.fromEntries(Object.entries(definitions).map(([name,d])=>[name,read(d.file)])),browsers:read('interlis-wasm-teavm/build/browser-results.json'),nativeBrowsers:read('interlis-wasm-webimage/build/webimage-browser/browser-results.json'),safari:read('interlis-wasm-teavm/build/safari-result.json'),ui:read('interlis-wasm-teavm/build/ui-projection-results.json')},performance:read('reports/performance/full-corpus/result.json'),conformance,platforms:[read('reports/platform/result.json'),...github.artifacts.map(a=>a.proof)],github,sdk,reproducibility:repro,browserManifest:manifest,guard});
+ fs.mkdirSync(path.dirname(out),{recursive:true});fs.writeFileSync(out,JSON.stringify(result,null,2)+'\n');console.log('COMPILER_RELEASE_EVIDENCE_PASS',result.gitCommit);
 }
-module.exports={compilerCliCases,diagnosticCatalogVersion,validateJvmReports,validate,validatePreflight,definitions,browser};if(require.main===module)try{if(process.argv.includes('--preflight'))preflight();else main();}catch(error){console.error('P3_RELEASE_EVIDENCE_FAIL',error);process.exitCode=1;}
+module.exports={compilerCliCases,diagnosticCatalogVersion,validateJvmReports,validate,validatePreflight,definitions,browser};if(require.main===module)try{if(process.argv.includes('--preflight'))preflight();else main();}catch(error){console.error('COMPILER_RELEASE_EVIDENCE_FAIL',error);process.exitCode=1;}

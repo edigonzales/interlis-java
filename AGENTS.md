@@ -57,7 +57,7 @@ Die ausführbaren Kommandos und Phasengates stehen in Kapitel 03 und 14. Prüfe 
 
 - Ein Compilervertrag kann beispielsweise mit `java build/InterlisJvmBuild.java build --module interlis-compiler` geprüft werden, sobald dieses Modul existiert.
 - `host --profile portable` prüft den vorgesehenen JVM-/Node-Vertrag; `host --profile browser` die reale Browsermatrix. Verwende diese Tasks, sobald sie implementiert sind, für die davon betroffenen Änderungen und fälligen Gates.
-- `release-check --profile P3` gilt für den ausdrücklich beschriebenen Entwicklungsstand. Fehlende oder übersprungene Pflichtprüfungen halten das jeweilige Gate offen.
+- `release-check --profile compiler` gilt für den ausdrücklich beschriebenen Entwicklungsstand. Fehlende oder übersprungene Pflichtprüfungen halten das jeweilige Gate offen.
 
 Erfinde keine vorhandenen Tasks, Versionspins oder erfolgreichen Läufe. Bei reinen redaktionellen Änderungen genügt die passende Dokumentprüfung. Änderungen an Semantik, APIs, ausführbaren Beispielen oder Buildlogik erhalten die dafür notwendigen Prüfungen. Wiederhole darüber hinaus nur Tests, die eine konkrete offene Frage klären.
 
