@@ -4,7 +4,7 @@ package guru.interlis.xtf23;
 public final class Xtf23Exception extends IllegalStateException {
     /** Distinguishes format failures from an unsupported feature or host failure. */
     public enum Reason {
-        MALFORMED_XML, UNSAFE_XML, INVALID_WIRE, UNSUPPORTED, LIMIT_EXCEEDED, IO, CONFIGURATION
+        MALFORMED_XML, UNSAFE_XML, INVALID_WIRE, DUPLICATE_ID, UNSUPPORTED, LIMIT_EXCEEDED, IO, CONFIGURATION
     }
 
     private final Reason reason;

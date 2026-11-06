@@ -1,13 +1,25 @@
 package guru.interlis.xtf23;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.CollectionType;
+import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
+import guru.interlis.model.Modifier;
+import guru.interlis.model.ReferenceType;
+import guru.interlis.model.StructureValueType;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TextKind;
+import guru.interlis.model.TextType;
+import guru.interlis.model.TypeDescriptor;
+import guru.interlis.model.TypeRef;
 import guru.interlis.source.SourceId;
+import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ModelDescriptor;
 import guru.interlis.transfer.ObjectDescriptor;
+import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent;
 import guru.interlis.transfer.TransferIdentity;
@@ -20,6 +32,7 @@ import guru.interlis.transfer.TransferValue;
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -43,6 +57,8 @@ import static javax.xml.stream.XMLStreamConstants.*;
  * Events are immutable and can be retained after the reader advances.
  * The XML reader bounds depth to 128 elements, scalar text to 1,048,576 UTF-16
  * code units, and input read during any individual parser advance to 8 MiB.
+ * The reader holds a transfer-wide index of occurrence IDs whose size grows with
+ * the number of distinct BIDs and TIDs.
  */
 public final class Xtf23Reader extends TransferReader {
     static final String NAMESPACE = "http://www.interlis.ch/INTERLIS2.3";
@@ -57,7 +73,11 @@ public final class Xtf23Reader extends TransferReader {
     private final Map<String, ModelDescriptor> models;
     private final Map<String, TopicDescriptor> topics;
     private final Map<String, ObjectDescriptor> objects;
+    private final Xtf23Layout layout;
+    private final Xtf23IdentityScope identities = new Xtf23IdentityScope();
+    private final Map<SymbolRef, Map<String, PositionedField>> fieldIndexes = new HashMap<>();
     private Map<String, Xtf23OidSpace> oidSpaces = Map.of();
+    private Set<SymbolRef> activeTypes = Set.of();
     private List<Xtf23OidSpace> oidSpaceDeclarations = List.of();
     private State state = State.BEFORE_TRANSFER;
     private BasketId basket;
@@ -76,6 +96,7 @@ public final class Xtf23Reader extends TransferReader {
         models = index(plan.models(), ModelDescriptor::name);
         topics = index(plan.topics(), TopicDescriptor::name);
         objects = index(plan.objects(), ObjectDescriptor::name);
+        layout = new Xtf23Layout(plan);
     }
 
     /** Returns the immutable, ordered OIDSPACE declarations after reading the header.
@@ -100,7 +121,11 @@ public final class Xtf23Reader extends TransferReader {
                 case DONE -> Optional.empty();
             };
         } catch (XMLStreamException failure) {
+            clearTransferState();
             throw xml.translate(failure);
+        } catch (RuntimeException failure) {
+            clearTransferState();
+            throw failure;
         } finally {
             xml.finish();
         }
@@ -108,9 +133,20 @@ public final class Xtf23Reader extends TransferReader {
 
     @Override
     protected void release() {
+        clearTransferState();
+        xml.close();
+    }
+
+    private void clearTransferState() {
         basket = null;
         oidSpaces = Map.of();
-        xml.close();
+        identities.release();
+        clearBasketState();
+    }
+
+    private void clearBasketState() {
+        activeTypes = Set.of();
+        fieldIndexes.clear();
     }
 
     private StartTransfer startTransfer() throws XMLStreamException {
@@ -228,7 +264,7 @@ public final class Xtf23Reader extends TransferReader {
                 throw xml.error(INVALID_WIRE, "Unexpected XML after the XTF transfer");
             }
             state = State.DONE;
-            oidSpaces = Map.of();
+            clearTransferState();
             return new EndTransfer();
         }
         String tag = elementName(token);
@@ -255,6 +291,14 @@ public final class Xtf23Reader extends TransferReader {
             }
         }
         var consistency = consistency(attributes);
+        if (!identities.claim(id)) {
+            throw xml.error(DUPLICATE_ID, "XTF FULL BID/TID collision for " + id.value());
+        }
+        var allowed = new HashSet<>(topic.objectTypes());
+        for (var extension : extensions) {
+            allowed.addAll(plan.topic(extension).orElseThrow().objectTypes());
+        }
+        activeTypes = Set.copyOf(allowed);
         basket = id;
         state = State.IN_BASKET;
         return new StartBasket(id, topic.symbol(), extensions, BasketKind.FULL, consistency,
@@ -266,6 +310,7 @@ public final class Xtf23Reader extends TransferReader {
         if (token == END_ELEMENT) {
             var event = new EndBasket(basket);
             basket = null;
+            clearBasketState();
             state = State.BETWEEN_BASKETS;
             return event;
         }
@@ -274,25 +319,238 @@ public final class Xtf23Reader extends TransferReader {
         if (descriptor == null || !descriptor.transferable()) {
             throw xml.error(INVALID_WIRE, "Unknown or nontransferable XTF object tag " + tag);
         }
-        if (descriptor.kind() != SymbolKind.CLASS) {
-            throw xml.error(UNSUPPORTED, "XTF association payloads are unsupported");
+        if (layout.embedded(descriptor).isPresent()) {
+            throw xml.error(INVALID_WIRE, "Embedded XTF association cannot occur as a standalone object: " + tag);
         }
         var attributes = attributes(false, "TID", "BID", "OPERATION", "CONSISTENCY");
         if (attributes.containsKey("OPERATION")) {
             throw xml.error(INVALID_WIRE, "A FULL object cannot carry an incremental OPERATION");
         }
-        String tid = identifier(required(attributes, "TID"));
+        boolean requiresTid = descriptor.kind() == SymbolKind.CLASS || layout.identified(descriptor);
+        if (requiresTid != attributes.containsKey("TID")) {
+            throw xml.error(INVALID_WIRE, requiresTid ? "Missing XTF attribute TID"
+                    : "A link without its own identification cannot carry TID");
+        }
+        var tid = Optional.ofNullable(attributes.get("TID"))
+                .map(value -> new TransferId(identifier(value), IdOrigin.SOURCE));
+        tid.ifPresent(value -> {
+            if (!identities.claim(value)) {
+                throw xml.error(DUPLICATE_ID, "XTF FULL BID/TID collision for " + value.value());
+            }
+        });
         var originalBasket = Optional.ofNullable(attributes.get("BID")).map(this::basketId);
         var consistency = consistency(attributes);
-        var identity = new TransferIdentity(basket, originalBasket, Optional.of(new TransferId(tid, IdOrigin.SOURCE)),
-                stableId(tid).map(ObjectOid::new), source);
-        token = xml.nextTag();
-        if (token == START_ELEMENT) {
-            throw xml.error(UNSUPPORTED, "XTF object field " + elementName(token) + " is unsupported");
-        }
-        require(END_ELEMENT, token, tag);
+        var identity = new TransferIdentity(basket, originalBasket, tid,
+                tid.flatMap(value -> stableId(value.value())).map(ObjectOid::new), source);
+        var data = readFields(descriptor, tag, false);
         return new ObjectEvent(new TransferObject(identity,
-                new TransferValue.Structured(descriptor.symbol(), Map.of())), Optional.empty(), consistency);
+                new TransferValue.Structured(descriptor.symbol(), data)), Optional.empty(), consistency);
+    }
+
+    private record PositionedField(Xtf23Layout.Field field, int position) { }
+
+    private static Map<String, PositionedField> indexFields(List<Xtf23Layout.Field> fields) {
+        var index = new HashMap<String, PositionedField>();
+        for (int i = 0; i < fields.size(); i++) {
+            var field = fields.get(i);
+            if (index.putIfAbsent(field.name(), new PositionedField(field, i)) != null) {
+                index.put(field.name(), new PositionedField(field, -1));
+            }
+        }
+        return index;
+    }
+
+    private Map<SymbolRef, TransferValue> readFields(ObjectDescriptor descriptor, String tag, boolean payloadOnly)
+            throws XMLStreamException {
+        var fields = payloadOnly ? indexFields(layout.fields(descriptor, activeTypes, true))
+                : fieldIndexes.computeIfAbsent(descriptor.symbol(), unused -> indexFields(layout.fields(descriptor, activeTypes, false)));
+        var data = new LinkedHashMap<SymbolRef, TransferValue>();
+        int lastPosition = -1;
+        int token = xml.nextTag();
+        while (!is(END_ELEMENT, token, tag)) {
+            String name = elementName(token);
+            var positioned = fields.get(name);
+            if (positioned == null) {
+                throw xml.error(INVALID_WIRE, "Unknown XTF field " + name + " on " + tag);
+            }
+            if (positioned.position() < 0) {
+                throw xml.error(UNSUPPORTED, "Ambiguous XTF field " + name + " on " + tag);
+            }
+            if (positioned.position() <= lastPosition) {
+                throw xml.error(INVALID_WIRE, "Repeated or out-of-order XTF field " + name);
+            }
+            lastPosition = positioned.position();
+            var field = positioned.field();
+            var value = field.embeddings().isEmpty() ? switch (field.slot()) {
+                case AttributeSlot attribute -> readValue(type(attribute.effectiveType()), name);
+                case RoleSlot role -> readRole(role, name);
+            } : readEmbedded(field, name);
+            data.put(field.slot().symbol(), value);
+            token = xml.nextTag();
+        }
+        return data;
+    }
+
+    private TypeDescriptor type(TypeRef ref) {
+        var descriptor = plan.type(ref).known().orElseThrow();
+        while (descriptor instanceof DomainReferenceType alias) {
+            var domain = (DomainSymbol) plan.symbol(new SymbolRef(plan.snapshotId(), alias.targetDomain()))
+                    .known().orElseThrow();
+            descriptor = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
+        }
+        return descriptor;
+    }
+
+    private TransferValue readValue(TypeDescriptor type, String tag) throws XMLStreamException {
+        return switch (type.kind()) {
+            case TEXT -> readText(((TextType) type).textKind() == TextKind.MTEXT);
+            case FORMATTED -> readText(false);
+            case BOOLEAN -> readBoolean();
+            case ENUMERATION, ALIGNMENT -> readEnumeration();
+            case NUMERIC -> {
+                attributes(false);
+                yield readNumber();
+            }
+            case REFERENCE -> {
+                var result = reference(attributes(false, "REF", "BID"), ((ReferenceType) type).external(), false);
+                require(END_ELEMENT, xml.nextTag(), tag);
+                yield result;
+            }
+            case STRUCTURE_VALUE -> {
+                attributes(false);
+                var result = readStructure((StructureValueType) type, xml.nextTag());
+                require(END_ELEMENT, xml.nextTag(), tag);
+                yield result;
+            }
+            case COLLECTION -> readCollection((CollectionType) type, tag);
+            default -> throw xml.error(UNSUPPORTED, "Unsupported XTF type " + type.kind() + " for " + tag);
+        };
+    }
+
+    private TransferValue.Text readText(boolean multiline) throws XMLStreamException {
+        attributes(false);
+        String value = xml.text();
+        if (!multiline && !Xtf23Lexemes.singleLine(value)) {
+            throw xml.error(INVALID_WIRE, "Expected single-line XTF text");
+        }
+        return new TransferValue.Text(value);
+    }
+
+    private TransferValue.BooleanValue readBoolean() throws XMLStreamException {
+        attributes(false);
+        return switch (xml.text()) {
+            case "true" -> new TransferValue.BooleanValue(true);
+            case "false" -> new TransferValue.BooleanValue(false);
+            default -> throw xml.error(INVALID_WIRE, "Expected XTF BOOLEAN true or false");
+        };
+    }
+
+    private TransferValue.Enumeration readEnumeration() throws XMLStreamException {
+        attributes(false);
+        String value = xml.text();
+        if (!Xtf23Lexemes.enumeration(value)) {
+            throw xml.error(INVALID_WIRE, "Invalid XTF enumeration path");
+        }
+        return new TransferValue.Enumeration(List.of(value.split("\\.")));
+    }
+
+    private TransferValue.NumberValue readNumber() throws XMLStreamException {
+        String value = xml.text();
+        if (value.length() > Xtf23Lexemes.MAX_NUMERIC_LENGTH) {
+            throw xml.error(LIMIT_EXCEEDED, "XTF numeric lexeme exceeds the numeric length limit");
+        }
+        if (Xtf23Lexemes.nonDecimalNumber(value)) {
+            throw xml.error(UNSUPPORTED, "Nondecimal XTF numbers are unsupported");
+        }
+        try {
+            return Xtf23Lexemes.number(value);
+        } catch (NumberFormatException e) {
+            throw xml.error(INVALID_WIRE, "Invalid XTF decimal value");
+        }
+    }
+
+    private TransferValue.Structured readStructure(StructureValueType expected, int token) throws XMLStreamException {
+        String tag = elementName(token);
+        var descriptor = objects.get(tag);
+        if (descriptor == null || descriptor.kind() != SymbolKind.STRUCTURE
+                || descriptor.modifiers().contains(Modifier.ABSTRACT) || !layout.matchesRoots(descriptor, expected.targetRoots())) {
+            throw xml.error(INVALID_WIRE, "Unexpected concrete XTF structure " + tag);
+        }
+        attributes(false);
+        return new TransferValue.Structured(descriptor.symbol(), readFields(descriptor, tag, false));
+    }
+
+    private TransferValue.Repeated readCollection(CollectionType collection, String tag) throws XMLStreamException {
+        attributes(false);
+        if (!(type(new TypeRef(plan.snapshotId(), collection.elementType())) instanceof StructureValueType structure)) {
+            throw xml.error(UNSUPPORTED, "XTF 2.3 collections require structure values");
+        }
+        var values = new ArrayList<TransferValue>();
+        int token = xml.nextTag();
+        while (!is(END_ELEMENT, token, tag)) {
+            values.add(readStructure(structure, token));
+            token = xml.nextTag();
+        }
+        if (values.isEmpty()) {
+            throw xml.error(INVALID_WIRE, "Present XTF collection requires at least one structure");
+        }
+        return new TransferValue.Repeated(collection.collectionKind(), values);
+    }
+
+    private TransferValue.Reference readRole(RoleSlot role, String tag) throws XMLStreamException {
+        var value = reference(attributes(false, "REF", "BID", "ORDER_POS"), role.role().external(), role.role().ordered());
+        require(END_ELEMENT, xml.nextTag(), tag);
+        return value;
+    }
+
+    private TransferValue readEmbedded(Xtf23Layout.Field field, String tag) throws XMLStreamException {
+        var attributes = attributes(false, "REF", "BID", "ORDER_POS");
+        var variants = field.embeddings();
+        var first = variants.getFirst();
+        if (variants.stream().anyMatch(value -> !value.rootOpposite().symbol().equals(first.rootOpposite().symbol()))) {
+            throw xml.error(UNSUPPORTED, "Ambiguous embedded XTF role " + tag);
+        }
+        int token = xml.nextTag();
+        if (is(END_ELEMENT, token, tag)) {
+            var role = first.opposite().role();
+            if (variants.stream().anyMatch(value -> value.opposite().role().external() != role.external()
+                    || value.opposite().role().ordered() != role.ordered())) {
+                throw xml.error(UNSUPPORTED, "Embedded XTF role needs a concrete association tag: " + tag);
+            }
+            return reference(attributes, role.external(), role.ordered());
+        }
+        String associationTag = elementName(token);
+        var variant = variants.stream().filter(value -> value.association().name().declared().toString().equals(associationTag))
+                .findFirst().orElseThrow(() -> xml.error(INVALID_WIRE, "Unexpected embedded XTF association " + associationTag));
+        attributes(false);
+        var role = variant.opposite();
+        var reference = reference(attributes, role.role().external(), role.role().ordered());
+        var fields = readFields(variant.association(), associationTag, true);
+        require(END_ELEMENT, xml.nextTag(), tag);
+        var values = new LinkedHashMap<SymbolRef, TransferValue>();
+        values.put(role.symbol(), reference);
+        values.putAll(fields);
+        return new TransferValue.Structured(variant.association().symbol(), values);
+    }
+
+    private TransferValue.Reference reference(Map<String, String> attributes, boolean external, boolean ordered) {
+        String ref = identifier(required(attributes, "REF"));
+        ObjectKey key = stableId(ref).<ObjectKey>map(ObjectOid::new).orElseGet(() -> new TransferId(ref, IdOrigin.SOURCE));
+        var targetBasket = Optional.ofNullable(attributes.get("BID")).map(this::basketId);
+        var position = Optional.ofNullable(attributes.get("ORDER_POS")).map(value -> {
+            if (value.length() > Xtf23Lexemes.MAX_NUMERIC_LENGTH) {
+                throw xml.error(LIMIT_EXCEEDED, "XTF ORDER_POS exceeds the numeric length limit");
+            }
+            if (!ordered || !Xtf23Lexemes.POSITION.matcher(value).matches()) {
+                throw xml.error(INVALID_WIRE, "ORDER_POS requires an ordered role and a positive integer");
+            }
+            var parsed = new BigInteger(value);
+            if (parsed.signum() <= 0) {
+                throw xml.error(INVALID_WIRE, "ORDER_POS requires a positive integer");
+            }
+            return parsed;
+        });
+        return new TransferValue.Reference(key, targetBasket, external, position);
     }
 
     private TopicDescriptor topic(String name) {
@@ -370,7 +628,7 @@ public final class Xtf23Reader extends TransferReader {
             if (!attribute.getNamespaceURI().isEmpty() || !allowed.contains(name)) {
                 throw xml.error(INVALID_WIRE, "Unexpected XTF attribute " + attribute);
             }
-            if (value.indexOf('\r') >= 0 || value.indexOf('\n') >= 0 || value.indexOf('\t') >= 0) {
+            if (!Xtf23Lexemes.singleLine(value)) {
                 throw xml.error(INVALID_WIRE, "XTF attribute " + name + " must be single-line text");
             }
             values.put(name, value);

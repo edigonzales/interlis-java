@@ -46,6 +46,10 @@ final class Xtf23TestData {
                 new SourceRevision(1), Files.readString(path)));
     }
 
+    static TransferPlan compileInline(String model, String text) {
+        return compile(model, new SourceText(new SourceId("memory:/" + model + ".ili"), new SourceRevision(1), text));
+    }
+
     private static TransferPlan compile(String model, SourceText source) {
         var request = new CompilationRequest(List.of(new ModelSelector.ByName(model, Optional.empty(), Optional.empty())),
                 SourceSet.of(Map.of(source.id(), source)), CompilerOptions.defaults());
