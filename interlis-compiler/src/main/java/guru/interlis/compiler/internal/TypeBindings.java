@@ -287,7 +287,7 @@ final class TypeBindings {
             return type;
         }
         try {
-            decl.owner().flatMap(g::objectInheritanceBase).flatMap(base->g.paths.findMember(base,decl.name()))
+            decl.owner().flatMap(g.inheritance::objectInheritanceBase).flatMap(base->g.paths.findMember(base,decl.name()))
                     .filter(base->state.symbol(base) instanceof AttributeSymbol || index.byId(base).filter(d->d.kind()==SymbolKind.ATTRIBUTE).isPresent())
                     .ifPresent(base->state.bindBase(decl.id(),base));
             if (syntax.type() instanceof GenericTypeSyntax inferred && "INFERRED".equals(inferred.name())) {
@@ -295,7 +295,7 @@ final class TypeBindings {
                 inferredDerivations.put(decl.id(), List.of(result.id()));
                 type = result.typeId();
             } else if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name())) {
-                Optional<SymbolId> base = decl.owner().flatMap(g::objectInheritanceBase)
+                Optional<SymbolId> base = decl.owner().flatMap(g.inheritance::objectInheritanceBase)
                         .flatMap(owner -> g.paths.findMember(owner, decl.name()));
                 DeclInfo inherited = base.flatMap(index::byId).orElse(null);
                 if (inherited != null && inherited.kind() == SymbolKind.ATTRIBUTE) {
@@ -312,7 +312,7 @@ final class TypeBindings {
                 type = buildType(syntax.type(), decl.id(), decl.sourceId());
                 TypeDescriptor inheritedGeometry = null;
                 if (decl.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-                    var base = decl.owner().flatMap(g::objectInheritanceBase).flatMap(owner -> g.paths.findMember(owner, decl.name()));
+                    var base = decl.owner().flatMap(g.inheritance::objectInheritanceBase).flatMap(owner -> g.paths.findMember(owner, decl.name()));
                     TypeId baseType = base.flatMap(index::byId).filter(d -> d.kind() == SymbolKind.ATTRIBUTE)
                             .map(this::attributeType).orElseGet(() -> base.map(state::symbol)
                                     .filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
@@ -451,7 +451,7 @@ final class TypeBindings {
                     g.names.bindTarget(index.byId(context).orElseThrow(), name, kinds, ReferenceUsage.TYPE_USE, errors).ifPresent(target -> {
                         SymbolId current = target;
                         Set<SymbolId> visited = new HashSet<>();
-                        while (current != null && visited.add(current)) { work.checkpoint(); current = g.objectInheritanceBase(current).orElse(null); }
+                        while (current != null && visited.add(current)) { work.checkpoint(); current = g.inheritance.objectInheritanceBase(current).orElse(null); }
                         restrictions.add(target);
                     });
                 }
@@ -490,7 +490,7 @@ final class TypeBindings {
                 TypeDescriptor inherited = null;
                 if (declaration.kind() == SymbolKind.ATTRIBUTE && declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
                     SymbolId owner = declaration.owner().orElse(null);
-                    AttributeSymbol baseAttribute = owner == null ? null : g.findBaseAttribute(state.baseOf(owner), declaration.name());
+                    AttributeSymbol baseAttribute = owner == null ? null : g.inheritance.findBaseAttribute(state.baseOf(owner), declaration.name());
                     if (baseAttribute != null) inherited = effectiveDescriptor(baseAttribute.declaredType());
                 }
                 // Domains are merged after their base reference has been bound.
@@ -513,12 +513,12 @@ final class TypeBindings {
             case ReferenceTypeSyntax reference -> {
                 DeclInfo declaration = index.byId(context).orElseThrow();
                 Optional<SymbolId> target = reference.target().text().equals("ANYCLASS") ? Optional.empty()
-                        : Optional.of(g.bindObjectTarget(declaration, reference.target(), ReferenceUsage.TYPE_USE));
+                        : Optional.of(g.declarations.bindObjectTarget(declaration, reference.target(), ReferenceUsage.TYPE_USE));
                 List<SymbolId> restrictions = reference.restrictions().stream()
-                        .map(name -> g.bindObjectTarget(declaration, name, ReferenceUsage.TYPE_USE)).toList();
+                        .map(name -> g.declarations.bindObjectTarget(declaration, name, ReferenceUsage.TYPE_USE)).toList();
                 for (SymbolId restriction : restrictions) {
                     work.checkpoint();
-                    if (target.isPresent() && !g.targetSpecializes(restriction, target.orElseThrow()))
+                    if (target.isPresent() && !g.inheritance.targetSpecializes(restriction, target.orElseThrow()))
                         diagnostics.emitRule(declaration, "reference restriction must specialize its primary target", "REFERENCE_TARGET_RESTRICTION");
                 }
                 yield new ReferenceType(id, new Origin.DeclaredOrigin(reference.range()), target, restrictions, reference.external());
@@ -576,10 +576,10 @@ final class TypeBindings {
         List<DiagnosticId> errors = new ArrayList<>();
         List<SymbolId> restrictions = new ArrayList<>();
         Optional<SymbolId> base = syntax.base().flatMap(name ->
-                g.bindObjectTarget(owner, name, errors));
+                g.declarations.bindObjectTarget(owner, name, errors));
         for (var name : syntax.restrictions()) {
             work.checkpoint();
-            Optional<SymbolId> restriction = g.bindObjectTarget(owner, name, errors);
+            Optional<SymbolId> restriction = g.declarations.bindObjectTarget(owner, name, errors);
             restriction.ifPresent(restrictions::add);
             if (base.isPresent() && restriction.isPresent()
                     && !guru.interlis.model.internal.TypeCompatibility.specializes(

@@ -16,19 +16,19 @@ final class MetadataBindings {
         var syntax = (MetadataBasketDeclarationSyntax)decl.syntax();
         var topic = g.names.bindTarget(decl, syntax.topic(), Set.of(SymbolKind.TOPIC), ReferenceUsage.TYPE_USE, new ArrayList<>());
         var base = syntax.baseBasket().flatMap(name -> g.names.bindTarget(decl, name, Set.of(SymbolKind.METADATA_BASKET), ReferenceUsage.BASE_TYPE, new ArrayList<>()));
-        var result = new MetadataBasketSymbol(g.header(decl), syntax.basketKind(), topic, base,
+        var result = new MetadataBasketSymbol(g.declarations.header(decl), syntax.basketKind(), topic, base,
                 g.index.children(decl.id()).stream().map(DeclInfo::id).toList());
         state.defineSymbol(result);
         active.add(decl.id());
         base.ifPresent(id -> {
             if (active.contains(id)) { g.emitRule(decl, "cyclic metadata basket inheritance", "METADATA_BASKET_CYCLE"); return; }
-            var parent = (MetadataBasketSymbol)g.buildSymbol(g.index.byId(id).orElseThrow());
+            var parent = (MetadataBasketSymbol)g.declarations.buildSymbol(g.index.byId(id).orElseThrow());
             if (parent.header().has(Modifier.FINAL)) g.emitRule(decl, "cannot extend FINAL metadata basket", "METADATA_BASKET_FINAL");
             if (parent.basketKind() != syntax.basketKind()) g.emitRule(decl, "metadata basket kind differs from base", "METADATA_BASKET_KIND");
             if (topic.isPresent() && parent.topic().isPresent() && !topicSpecializes(topic.get(), parent.topic().get()))
                 g.emitRule(decl, "metadata basket topic must equal or extend its base topic", "METADATA_BASKET_TOPIC");
         });
-        for (var child : g.index.children(decl.id())) { g.checkWork(); g.buildSymbol(child); }
+        for (var child : g.index.children(decl.id())) { g.checkWork(); g.declarations.buildSymbol(child); }
         active.remove(decl.id());
         return result;
     }
@@ -66,12 +66,12 @@ final class MetadataBindings {
         });
         if (g.index.children(owner.id()).stream().filter(d -> d.name().equals(decl.name())).count() > 1)
             g.emitRule(decl, "duplicate metadata object name", "METAOBJECT_NAME");
-        return new MetaObjectSymbol(g.header(decl), target);
+        return new MetaObjectSymbol(g.declarations.header(decl), target);
     }
 
     void ensureBases(SymbolId id) {
         Set<SymbolId> seen = new HashSet<>();
-        while (id != null && seen.add(id)) { g.checkWork(); id = g.objectInheritanceBase(id).orElse(null); }
+        while (id != null && seen.add(id)) { g.checkWork(); id = g.inheritance.objectInheritanceBase(id).orElse(null); }
     }
     private boolean specializes(SymbolId actual, SymbolId expected) {
         return guru.interlis.model.internal.TypeCompatibility.specializes(actual, expected, state::baseOf);
@@ -113,13 +113,13 @@ final class MetadataBindings {
         }
         g.references.recordReference(context, name, target.orElse(null), ReferenceUsage.TYPE_USE);
         if (target.isEmpty()) errors.add(g.emitRule(context, "metadata object reference is missing or ambiguous: " + name.text(), "METAOBJECT_REFERENCE"));
-        target.ifPresent(id -> g.buildSymbol(g.index.byId(id).orElseThrow()));
+        target.ifPresent(id -> g.declarations.buildSymbol(g.index.byId(id).orElseThrow()));
         return target;
     }
 
     private Optional<SymbolId> inheritedObject(SymbolId basketId, String name, Set<SymbolId> seen) {
         if (!seen.add(basketId)) return Optional.empty();
-        var basket = (MetadataBasketSymbol)g.buildSymbol(g.index.byId(basketId).orElseThrow());
+        var basket = (MetadataBasketSymbol)g.declarations.buildSymbol(g.index.byId(basketId).orElseThrow());
         var local = g.index.children(basketId).stream().filter(d -> d.name().equals(name)).map(DeclInfo::id).toList();
         if (!local.isEmpty()) return local.size() == 1 ? Optional.of(local.getFirst()) : Optional.empty();
         return basket.baseBasket().flatMap(id -> inheritedObject(id, name, seen));

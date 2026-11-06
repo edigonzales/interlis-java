@@ -19,7 +19,7 @@ final class LineForms {
         target.ifPresent(id -> {
             SymbolId base = id;
             Set<SymbolId> seen = new HashSet<>();
-            while (base != null && seen.add(base)) { g.checkWork(); base = g.objectInheritanceBase(base).orElse(null); }
+            while (base != null && seen.add(base)) { g.checkWork(); base = g.inheritance.objectInheritanceBase(base).orElse(null); }
             SymbolId required = predefined(decl, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
             if (id.equals(required) || !guru.interlis.model.internal.TypeCompatibility.specializes(id, required, state::baseOf))
                 g.emitRule(decl, "line form structure must extend INTERLIS.LineSegment", "LINE_FORM_STRUCTURE");
@@ -31,7 +31,7 @@ final class LineForms {
         if (g.index.children(decl.owner().orElseThrow()).stream().anyMatch(other -> !other.id().equals(decl.id())
                 && other.name().equals(decl.name()) && other.kind() != SymbolKind.PARAMETER))
             g.emitRule(decl, "line form name is not unique in its scope", "LINE_FORM_NAME");
-        return new LineFormSymbol(g.header(decl), target);
+        return new LineFormSymbol(g.declarations.header(decl), target);
     }
 
     GeometryType buildType(TypeId id, LineTypeSyntax syntax, DeclInfo decl) {
@@ -46,7 +46,7 @@ final class LineForms {
         }
         var vertex = syntax.vertexDomain().flatMap(name -> g.names.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors));
         vertex.ifPresent(target -> {
-            g.index.byId(target).ifPresent(g::buildSymbol);
+            g.index.byId(target).ifPresent(g.declarations::buildSymbol);
             var domain = (DomainSymbol)state.symbol(target);
             if (!(g.types.effectiveDescriptor(domain.typeId()) instanceof CoordinateType coordinate) || coordinate.multiCoordinate())
                 g.emitRule(decl, "VERTEX must reference a coordinate domain", "LINE_VERTEX_COORDINATE");

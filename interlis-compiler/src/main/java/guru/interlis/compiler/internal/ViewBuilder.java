@@ -65,20 +65,20 @@ final class ViewBuilder {
         }
         SymbolId target = resolution.target().orElseThrow();
         DeclInfo targetDecl = g.index.byId(target).orElseThrow();
-        if (!building.contains(target)) g.buildSymbol(targetDecl);
+        if (!building.contains(target)) g.declarations.buildSymbol(targetDecl);
         else g.emitRule(decl, "cyclic view formation", "VIEW_CYCLE");
         g.references.recordReference(decl, targetName, target, ReferenceUsage.EXPRESSION);
         var ownerSyntax = g.index.byId(decl.owner().orElseThrow()).orElseThrow().syntax();
         boolean nullable = ownerSyntax instanceof ViewDeclarationSyntax syntax && syntax.formation().stream().flatMap(f -> f.bases().stream())
                 .anyMatch(b -> b.target().range().equals(targetName.range()) && b.orNull());
-        return new ViewSymbol.Base(g.header(decl), target, nullable);
+        return new ViewSymbol.Base(g.declarations.header(decl), target, nullable);
     }
 
     ViewSymbol build(DeclInfo decl) {
         var syntax = (ViewDeclarationSyntax) decl.syntax();
         if (!building.add(decl.id())) {
             g.emitRule(decl, "cyclic view inheritance", "VIEW_CYCLE");
-            return new ViewSymbol(g.header(decl), Optional.empty(), Optional.empty(), List.of(), List.of(), List.of(), List.of(), List.of());
+            return new ViewSymbol(g.declarations.header(decl), Optional.empty(), Optional.empty(), List.of(), List.of(), List.of(), List.of(), List.of());
         }
         try {
             List<SymbolId> bases = new ArrayList<>();
@@ -90,12 +90,12 @@ final class ViewBuilder {
             Optional<ViewSymbol.Formation> formation = Optional.empty();
             if (syntax.baseView().isPresent() || syntax.modifiers().contains(Modifier.EXTENDED)) {
                 var name = syntax.baseView().orElse(null);
-                parent = name == null ? g.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.VIEW))
+                parent = name == null ? g.inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.VIEW))
                         : g.resolver.resolve(decl.id(), name, Set.of(SymbolKind.VIEW), false).target();
                 if (parent.isEmpty()) { if (name != null) g.unresolved(name); else g.emitRule(decl, "EXTENDED view needs an inherited view", "EXTENDED_BASE"); }
                 else {
                     if (name != null) g.references.recordReference(decl, name, parent.orElseThrow(), ReferenceUsage.EXPRESSION);
-                    var base = (ViewSymbol) g.buildSymbol(g.index.byId(parent.orElseThrow()).orElseThrow());
+                    var base = (ViewSymbol) g.declarations.buildSymbol(g.index.byId(parent.orElseThrow()).orElseThrow());
                     state.bindBase(decl.id(), base.id());
                     if (base.header().has(Modifier.FINAL)) g.emitRule(decl, "cannot extend FINAL view", "VIEW_FINAL");
                     bases.addAll(base.bases()); result.addAll(base.members()); selections.addAll(base.selections()); extensionsByBase.addAll(base.baseExtensions()); formation = base.formation();
@@ -106,7 +106,7 @@ final class ViewBuilder {
             members.put(decl.id(), result);
             for (DeclInfo child : g.index.children(decl.id())) if (child.kind() == SymbolKind.VIEW_BASE) {
                 g.checkWork();
-                var bound = g.buildSymbol(child);
+                var bound = g.declarations.buildSymbol(child);
                 if (bound instanceof ViewSymbol.Base) {
                     if (syntax.formation().stream().flatMap(f -> f.bases().stream()).anyMatch(b -> b.target() == child.syntax())) formationBases.add(child.id());
                     if (bases.stream().anyMatch(id -> state.symbol(id).name().equals(bound.name())))
@@ -128,7 +128,7 @@ final class ViewBuilder {
                     if (local.isEmpty() || !(state.symbol(local.orElseThrow()) instanceof ViewSymbol.Base target)) continue;
                     SymbolId current = target.target(); Set<SymbolId> seen = new HashSet<>();
                     while (current != null && !current.equals(original.target()) && seen.add(current)) {
-                        g.checkWork(); current = g.objectInheritanceBase(current).orElse(null);
+                        g.checkWork(); current = g.inheritance.objectInheritanceBase(current).orElse(null);
                     }
                     if (current == null || !current.equals(original.target()))
                         g.emitRule(decl, "view base extension must specialize its base", "VIEW_BASE_EXTENSION");
@@ -189,7 +189,7 @@ final class ViewBuilder {
                     List<SymbolId> inherited;
                     if (state.symbol(basisTarget(basis)) instanceof ViewSymbol view) inherited = view.members();
                     else {
-                        g.index.byId(basisTarget(basis)).ifPresent(g::collectEffective);
+                        g.index.byId(basisTarget(basis)).ifPresent(g.inheritance::collectEffective);
                         inherited = state.effectiveMembers(basisTarget(basis)).stream().map(EffectiveMember::declaredSymbol).toList();
                     }
                     for (SymbolId id : inherited) {
@@ -214,13 +214,13 @@ final class ViewBuilder {
                 } else {
                     var attributeSyntax = ((ViewDeclarationSyntax.Attribute)item).declaration();
                     var child = g.index.children(decl.id()).stream().filter(d -> d.syntax() == attributeSyntax).findFirst().orElseThrow();
-                    var attribute = (AttributeSymbol) g.buildSymbol(child);
+                    var attribute = (AttributeSymbol) g.declarations.buildSymbol(child);
                     var previous = result.stream().filter(id -> state.symbol(id).name().equals(attribute.name())).findFirst();
                     if (previous.isPresent() && attribute.header().has(Modifier.EXTENDED)) {
                         var old = (AttributeSymbol)state.symbol(previous.orElseThrow());
                         if (old.owner().filter(decl.id()::equals).isPresent())
                             g.emitRule(child, "EXTENDED requires an inherited attribute", "EXTENDED_BASE");
-                        g.validateAttributeOverrideProperties(child, attribute, old);
+                        g.inheritance.validateAttributeOverrideProperties(child, attribute, old);
                         if (old.header().has(Modifier.FINAL)) g.emitRule(child, "cannot override FINAL attribute", "VIEW_FINAL");
                         if (!g.types.assignable(attribute.declaredType(), old.declaredType()))
                             g.emitRule(child, "view override must specialize the inherited type", "VIEW_ATTRIBUTE_TYPE");
@@ -241,7 +241,7 @@ final class ViewBuilder {
                     g.emitTypeMismatch(decl.sourceId(), selection.range(), g.types.typeName(expression.typeId()), "BOOLEAN");
             }
             List<SymbolId> constraints = new ArrayList<>();
-            for (var child : g.index.children(decl.id())) if (child.kind() == SymbolKind.CONSTRAINT) { g.buildSymbol(child); constraints.add(child.id()); }
+            for (var child : g.index.children(decl.id())) if (child.kind() == SymbolKind.CONSTRAINT) { g.declarations.buildSymbol(child); constraints.add(child.id()); }
             if (syntax.endName().isPresent() && !syntax.name().equals(syntax.endName().orElseThrow()))
                 g.emitRule(decl, "view end name mismatch", "VIEW_END_NAME");
             List<EffectiveMember> effective = new ArrayList<>();
@@ -273,7 +273,7 @@ final class ViewBuilder {
                                 : EffectiveMemberOrigin.INHERITED, attribute.overrides().isPresent()));
             }
             state.setEffectiveMembers(decl.id(), List.copyOf(effective));
-            return new ViewSymbol(g.header(decl), parent, formation, bases, extensionsByBase, selections, result, constraints);
+            return new ViewSymbol(g.declarations.header(decl), parent, formation, bases, extensionsByBase, selections, result, constraints);
         } finally { building.remove(decl.id()); }
     }
 
@@ -353,7 +353,7 @@ final class ViewBuilder {
                 g.references.recordReference(decl, name, target, ReferenceUsage.EXPRESSION);
                 if (building.contains(target)) g.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
                 else {
-                    var bound = (ViewSymbol)g.buildSymbol(g.index.byId(target).orElseThrow());
+                    var bound = (ViewSymbol)g.declarations.buildSymbol(g.index.byId(target).orElseThrow());
                     if (bound.formation().orElse(null) instanceof ViewSymbol.Inspection i) {
                         view = Optional.of(target); source = ((ViewSymbol.Base)state.symbol(i.base())).target();
                         inspected = new Inspected(i.path(), i.element(), i.parent(), i.area());
@@ -370,7 +370,7 @@ final class ViewBuilder {
                 if (building.contains(source)) g.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
                 else {
                     if (g.index.byId(source).orElseThrow().kind() == SymbolKind.VIEW)
-                        g.buildSymbol(g.index.byId(source).orElseThrow());
+                        g.declarations.buildSymbol(g.index.byId(source).orElseThrow());
                     inspected = bindInspection(decl, source, f.paths().getFirst(), f.kind() == ViewDeclarationSyntax.FormationKind.AREA_INSPECTION);
                 }
             }
@@ -403,7 +403,7 @@ final class ViewBuilder {
         SymbolId topic = g.paths.scopeRoot(decl.id()), target = g.paths.scopeRoot(source);
         if (g.index.byId(topic).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
                 && g.index.byId(target).map(d -> d.kind() == SymbolKind.TOPIC).orElse(false)
-                && !g.isTopicSubtype(topic, target) && !g.topicDependencies(topic).contains(target))
+                && !g.topics.isTopicSubtype(topic, target) && !g.topics.topicDependencies(topic).contains(target))
             g.emitRule(decl, "inspection source topic requires DEPENDS ON", "VIEW_TOPIC_DEPENDENCY");
     }
 
@@ -418,7 +418,7 @@ final class ViewBuilder {
 
     SymbolId geometryElement(DeclInfo owner, GeometryType geometry, boolean area) {
         TypeId vertex = geometry.vertexDomain().map(id -> {
-            g.index.byId(id).ifPresent(g::buildSymbol); return state.declaredType(id);
+            g.index.byId(id).ifPresent(g.declarations::buildSymbol); return state.declaredType(id);
         }).orElse(null);
         if (vertex == null) {
             g.emitUnsupported(owner.sourceId(), owner.syntax().range(), "INSPECTION_GEOMETRY_VERTEX", "geometry inspection needs a bound vertex type");
@@ -439,7 +439,7 @@ final class ViewBuilder {
         if (owner.language() == LanguageVersion.ILI23) {
             TypeId lineAttrs = g.types.nextTypeId();
             if (geometry.lineAttributes().isPresent()) {
-                SymbolId target = geometry.lineAttributes().orElseThrow(); g.index.byId(target).ifPresent(g::buildSymbol);
+                SymbolId target = geometry.lineAttributes().orElseThrow(); g.index.byId(target).ifPresent(g.declarations::buildSymbol);
                 state.storeType(new StructureValueType(lineAttrs, geometry.origin(), Optional.of(target), List.of()));
             } else state.storeType(new GenericType(lineAttrs, geometry.origin(), "ANYSTRUCTURE"));
             fields.put("LineAttrs", lineAttrs);
@@ -513,8 +513,8 @@ final class ViewBuilder {
             for (var id : view.bases()) {
                 var base = (ViewSymbol.Base)state.symbol(id);
                 SymbolId target = g.paths.scopeRoot(base.target());
-                if (state.symbol(target) instanceof TopicSymbol && !g.isTopicSubtype(topic, target)
-                        && !g.topicDependencies(topic).contains(target))
+                if (state.symbol(target) instanceof TopicSymbol && !g.topics.isTopicSubtype(topic, target)
+                        && !g.topics.topicDependencies(topic).contains(target))
                     g.emitRule(decl, "view basis topic requires DEPENDS ON", "VIEW_TOPIC_DEPENDENCY");
             }
         }

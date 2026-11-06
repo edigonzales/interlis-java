@@ -20,10 +20,10 @@ final class StructureBindings {
             g.checkWork();g.names.bindTarget(declaration,name,Set.of(SymbolKind.STRUCTURE),ReferenceUsage.TYPE_USE,errors).ifPresent(restrictions::add);
         }
         if(!errors.isEmpty())return new ErrorType(id,new Origin.DeclaredOrigin(syntax.range()),errors);
-        target.ifPresent(g::objectInheritanceBase);
+        target.ifPresent(g.inheritance::objectInheritanceBase);
         for(SymbolId restriction:restrictions) {
-            g.objectInheritanceBase(restriction);
-            if(target.isPresent()&&!g.targetSpecializes(restriction,target.orElseThrow()))
+            g.inheritance.objectInheritanceBase(restriction);
+            if(target.isPresent()&&!g.inheritance.targetSpecializes(restriction,target.orElseThrow()))
                 errors.add(g.emitRule(declaration,"structure restriction must specialize the primary structure","STRUCTURE_RESTRICTION",syntax.range()));
         }
         return errors.isEmpty()?new StructureValueType(id,new Origin.DeclaredOrigin(syntax.range()),target,restrictions)
@@ -75,7 +75,7 @@ final class StructureBindings {
             SymbolId candidateTopic=g.paths.scopeRoot(structure.id());
             boolean available=!(state.symbol(candidateTopic) instanceof TopicSymbol) || Objects.equals(candidateTopic,topic)
                     || type.targetRoots().stream().anyMatch(root -> Objects.equals(g.paths.scopeRoot(root),candidateTopic));
-            if(available && type.targetRoots().stream().anyMatch(root -> g.targetSpecializes(structure.id(),root)))return true;
+            if(available && type.targetRoots().stream().anyMatch(root -> g.inheritance.targetSpecializes(structure.id(),root)))return true;
         }
         return false;
     }

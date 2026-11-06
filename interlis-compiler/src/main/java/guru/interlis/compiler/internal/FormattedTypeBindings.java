@@ -64,7 +64,7 @@ final class FormattedTypeBindings {
             else { structure = base.structure(); predefined = base.predefined(); parts.addAll(base.parts()); }
         } else if (syntax.inheritance()) {
             if (base == null || structure.isEmpty() || base.structure().isEmpty()
-                    || !g.targetSpecializes(structure.orElseThrow(), base.structure().orElseThrow()))
+                    || !g.inheritance.targetSpecializes(structure.orElseThrow(), base.structure().orElseThrow()))
                 errors.add(diagnostics.emitRule(owner, "FORMAT INHERITANCE requires the base structure or a specialization", "FORMAT_INHERITANCE"));
             else for (var part : base.parts()) {
                 // INHERITANCE keeps the layout and provenance, but uses the effective
@@ -93,7 +93,7 @@ final class FormattedTypeBindings {
                     SymbolId selected = value instanceof CollectionType c && !g.paths.isMany(c.cardinality()) ? g.structures.target(c) : g.structures.target(value);
                     if (value instanceof CollectionType c && g.paths.isMany(c.cardinality())) selected = null;
                     if (!(nestedType instanceof FormattedType f) || f.structure().isEmpty() || selected == null
-                            || !g.targetSpecializes(selected, f.structure().orElseThrow()))
+                            || !g.inheritance.targetSpecializes(selected, f.structure().orElseThrow()))
                         errors.add(diagnostics.emitRule(owner, "nested FORMAT requires a compatible singleton structure", "FORMAT_ATTRIBUTE"));
                 } else if (!(value instanceof NumericType)) errors.add(diagnostics.emitRule(owner, "FORMAT attribute must be numeric", "FORMAT_ATTRIBUTE"));
                 else {

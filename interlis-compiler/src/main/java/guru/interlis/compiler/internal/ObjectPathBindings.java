@@ -194,7 +194,7 @@ final class ObjectPathBindings {
                 if (segment.associationQualifier().isPresent()) {
                     var qualifier = segment.associationQualifier().orElseThrow();
                     var target = g.resolver.resolve(owner, qualifier, Set.of(SymbolKind.ASSOCIATION)).target();
-                    if (target.isEmpty()) target = g.baseTopicMember(owner, qualifier.text(), Set.of(SymbolKind.ASSOCIATION));
+                    if (target.isEmpty()) target = g.inheritance.baseTopicMember(owner, qualifier.text(), Set.of(SymbolKind.ASSOCIATION));
                     g.references.recordReference(index.byId(owner).orElseThrow(), qualifier, target.orElse(null), ReferenceUsage.EXPRESSION);
                     if (target.isEmpty()) diagnostics.unresolved(qualifier);
                     SymbolId selected = target.orElse(null);
@@ -259,7 +259,7 @@ final class ObjectPathBindings {
                 break;
             }
             if (kind == SymbolKind.VIEW_BASE) {
-                ViewSymbol.Base base = (ViewSymbol.Base) g.buildSymbol(index.byId(member.get()).orElseThrow());
+                ViewSymbol.Base base = (ViewSymbol.Base) g.declarations.buildSymbol(index.byId(member.get()).orElseThrow());
                 steps.add(new guru.interlis.model.PathStep.ViewBaseStep(base.id(), views.basisTarget(base), name.range()));
                 currentScope = views.basisTarget(base); currentType = objectPathType(currentScope, name.range());
             } else if (kind == SymbolKind.ROLE) {
@@ -268,7 +268,7 @@ final class ObjectPathBindings {
                 // A role declared on this association selects one participant of
                 // the association instance. Its relationship cardinality does
                 // not turn that participant into an object set.
-                RoleSymbol role = (RoleSymbol) g.buildSymbol(index.byId(member.get()).orElseThrow());
+                RoleSymbol role = (RoleSymbol) g.declarations.buildSymbol(index.byId(member.get()).orElseThrow());
                 currentScope = commonRoleScope(role, contextTopic);
                 currentType = g.types.nextTypeId();
                 state.storeType(rolePathType(currentType, role, contextTopic, name.range(), incomingMany));
@@ -380,7 +380,7 @@ final class ObjectPathBindings {
     }
 
     private Cardinality accessCardinality(RoleAccess access, boolean associationObject) {
-        var roles = g.associationRoles(access.association());
+        var roles = g.inheritance.associationRoles(access.association());
         // A role bound only for one participant does not constrain the remaining
         // combinations in an n-ary relation. Never infer a singleton from it.
         if (roles.size() != 2) return Cardinality.unboundedFrom(0);
@@ -389,7 +389,7 @@ final class ObjectPathBindings {
         Cardinality cardinality = target.cardinality();
         if (associationObject) {
             Cardinality links = Cardinality.exactly(1);
-            for (SymbolId base : g.baseChain(access.association())) {
+            for (SymbolId base : g.inheritance.baseChain(access.association())) {
                 var syntax = (AssociationDeclarationSyntax) index.byId(base).orElseThrow().syntax();
                 if (syntax.cardinality().isPresent()) { links = syntax.cardinality().orElseThrow(); break; }
             }
@@ -420,7 +420,7 @@ final class ObjectPathBindings {
             // A declaration appearing later cannot retroactively add an access to a constraint.
             if (association.sourceId().equals(name.range().source())
                     && association.syntax().range().startOffset() > name.range().startOffset()) continue;
-            List<RoleSymbol> roles = g.associationRoles(association.id());
+            List<RoleSymbol> roles = g.inheritance.associationRoles(association.id());
             for (RoleSymbol target : roles) {
                 work.checkpoint();
                 if (!outgoing && !target.name().value().equals(name.text())) continue;
@@ -428,12 +428,12 @@ final class ObjectPathBindings {
                     work.checkpoint();
                     if (outgoing ? !source.id().equals(target.id()) : source.id().equals(target.id())) continue;
                     if (outgoing && !source.name().value().equals(name.text())) continue;
-                    if (!fromTargets.stream().allMatch(from -> g.roleAccepts(source, from))) continue;
+                    if (!fromTargets.stream().allMatch(from -> g.inheritance.roleAccepts(source, from))) continue;
                     if (first) {
                         if (source.external()) continue;
                         if (!fromTargets.stream().allMatch(from -> {
                             boolean originalAccess = source.targetRoots().stream()
-                                    .anyMatch(t -> g.targetSpecializes(from, t) && Objects.equals(scopeRoot(source.id()), scopeRoot(t)));
+                                    .anyMatch(t -> g.inheritance.targetSpecializes(from, t) && Objects.equals(scopeRoot(source.id()), scopeRoot(t)));
                             boolean extendedHere = Objects.equals(topic, scopeRoot(from))
                                     && index.byId(from).map(d -> d.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)).orElse(false);
                             return originalAccess || extendedHere;
@@ -446,8 +446,8 @@ final class ObjectPathBindings {
         List<RoleAccess> candidates = List.copyOf(result);
         result.removeIf(candidate -> candidates.stream().anyMatch(other -> {
             if (candidate == other) return false;
-            boolean derived = g.baseChain(other.association()).contains(candidate.association());
-            boolean base = g.baseChain(candidate.association()).contains(other.association());
+            boolean derived = g.inheritance.baseChain(other.association()).contains(candidate.association());
+            boolean base = g.inheritance.baseChain(candidate.association()).contains(other.association());
             boolean localExtension = index.byId(other.association()).orElseThrow().modifiers()
                     .contains(guru.interlis.model.Modifier.EXTENDED);
             boolean candidateExtension = index.byId(candidate.association()).orElseThrow().modifiers()
@@ -496,8 +496,8 @@ final class ObjectPathBindings {
     SymbolId commonObjectScope(List<SymbolId> roots) {
         if (roots.isEmpty()) return null;
         // Only a common hierarchy admits a subsequent statically bound member.
-        for (SymbolId candidate : g.baseChain(roots.getFirst())) {
-            if (roots.stream().allMatch(t -> g.targetSpecializes(t, candidate))) return candidate;
+        for (SymbolId candidate : g.inheritance.baseChain(roots.getFirst())) {
+            if (roots.stream().allMatch(t -> g.inheritance.targetSpecializes(t, candidate))) return candidate;
         }
         return null;
     }
@@ -505,7 +505,7 @@ final class ObjectPathBindings {
     private guru.interlis.model.ObjectArgumentType rolePathType(TypeId id, RoleSymbol role,
             SymbolId topic, SourceRange range, boolean many) {
         List<SymbolId> roots = role.targetRoots().stream().map(t -> contextualObject(t, topic)).toList();
-        boolean any = roots.stream().anyMatch(t -> g.objectBase(t).isEmpty());
+        boolean any = roots.stream().anyMatch(t -> g.inheritance.objectBase(t).isEmpty());
         return new guru.interlis.model.ObjectArgumentType(id, new Origin.DeclaredOrigin(range),
                 !any && roots.size() == 1 ? Optional.of(roots.getFirst()) : Optional.empty(),
                 any || roots.size() == 1 ? List.of() : roots, many);
@@ -519,7 +519,7 @@ final class ObjectPathBindings {
 
     TypeId objectPathType(SymbolId target, SourceRange range) {
         TypeId type = g.types.nextTypeId();
-        if (g.objectBase(target).isEmpty()) {
+        if (g.inheritance.objectBase(target).isEmpty()) {
             state.storeType(new guru.interlis.model.ObjectArgumentType(type, new Origin.DeclaredOrigin(range),
                     Optional.empty(), List.of(), false));
         } else if (index.byId(target).map(DeclInfo::kind).orElse(null) == SymbolKind.STRUCTURE) {
@@ -549,7 +549,7 @@ final class ObjectPathBindings {
             }
             var viewMember = views.member(current, name);
             if (viewMember.isPresent()) return viewMember;
-            current = g.objectInheritanceBase(current).orElse(null);
+            current = g.inheritance.objectInheritanceBase(current).orElse(null);
         }
         return Optional.empty();
     }

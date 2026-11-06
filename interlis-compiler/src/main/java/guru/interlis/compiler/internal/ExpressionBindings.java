@@ -145,7 +145,7 @@ final class ExpressionBindings {
         SymbolId context = owner;
         while (index.byId(context).map(DeclInfo::kind).orElse(null) == SymbolKind.CONSTRAINT) {
             work.checkpoint();
-            context = g.externalConstraintTarget(context,
+            context = g.constraints.externalConstraintTarget(context,
                     index.byId(context).orElseThrow().owner().orElseThrow());
         }
         return g.graphics.context(context);
@@ -217,7 +217,7 @@ final class ExpressionBindings {
         List<DiagnosticId> errors = new ArrayList<>();
         var target = g.names.bindTarget(index.byId(owner).orElseThrow(), syntax.parameter(), Set.of(SymbolKind.PARAMETER), ReferenceUsage.EXPRESSION, errors);
         if (target.isEmpty()) return failedValueExpression(id, syntax.range(), errors);
-        var parameter = (guru.interlis.model.ParameterSymbol) g.buildSymbol(index.byId(target.orElseThrow()).orElseThrow());
+        var parameter = (guru.interlis.model.ParameterSymbol) g.declarations.buildSymbol(index.byId(target.orElseThrow()).orElseThrow());
         boolean error = g.types.effectiveDescriptor(parameter.typeId()) instanceof ErrorType;
         state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, parameter.typeId(),
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
@@ -437,7 +437,7 @@ final class ExpressionBindings {
         List<DiagnosticId> bindingErrors = new ArrayList<>();
         Optional<SymbolId> target = g.names.bindTarget(index.byId(owner).orElseThrow(), syntax.functionName(),
                 Set.of(SymbolKind.FUNCTION), ReferenceUsage.EXPRESSION, bindingErrors);
-        FunctionSymbol function = target.flatMap(index::byId).map(g::buildSymbol)
+        FunctionSymbol function = target.flatMap(index::byId).map(g.declarations::buildSymbol)
                 .filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast).orElse(null);
         List<ExpressionResult> arguments=new ArrayList<>(g.functions.arguments(function,syntax.arguments(),index.byId(owner).orElseThrow(),BuiltinFunctions.Rule.SIMPLE));
         List<ExpressionId> children = arguments.stream().map(ExpressionResult::id).toList();

@@ -56,7 +56,7 @@ final class UnitBindings {
             work.checkpoint();
             bindUnit(decl, component.unit()).ifPresent(id -> components.add(new UnitSymbol.Component(component.operator(), id)));
         }
-        return new UnitSymbol(g.header(decl), syntax.designation(), syntax.abstractUnit(), base, derived,
+        return new UnitSymbol(g.declarations.header(decl), syntax.designation(), syntax.abstractUnit(), base, derived,
                 components, syntax.conversionFactors(), syntax.conversionFunction(), syntax.definition().isBlank() ? Optional.empty() : Optional.of(syntax.definition()));
     }
 
@@ -192,7 +192,7 @@ final class UnitBindings {
     UnitSymbol extensionUnit(SymbolId id) {
         work.checkpoint();
         Symbol symbol = state.symbol(id);
-        if (symbol == null) symbol = index.byId(id).map(g::buildSymbol).orElse(null);
+        if (symbol == null) symbol = index.byId(id).map(g.declarations::buildSymbol).orElse(null);
         return symbol instanceof UnitSymbol unit ? unit : null;
     }
 

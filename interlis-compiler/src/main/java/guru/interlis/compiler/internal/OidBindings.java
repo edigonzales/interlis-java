@@ -116,7 +116,7 @@ final class OidBindings {
             boolean multiple = !(cardinality.upper() instanceof guru.interlis.model.CardinalityUpper.Finite finite)
                     || finite.value().compareTo(java.math.BigInteger.ONE) > 0;
             boolean identified = rules.isEmpty()
-                    ? g.baseChain(id).stream().map(index::byId).flatMap(Optional::stream)
+                    ? g.inheritance.baseChain(id).stream().map(index::byId).flatMap(Optional::stream)
                         .anyMatch(d -> d.modifiers().contains(guru.interlis.model.Modifier.OID))
                     : rules.stream().anyMatch(r -> !r.basket() && oidState(r) != 0);
             if (multiple && !identified)

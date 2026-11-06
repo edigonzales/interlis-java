@@ -30,7 +30,7 @@ final class SegmentContextualizer {
         roots.add(g.lines.predefined(owner, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
         roots.add(g.lines.predefined(owner, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow());
         for (SymbolId form : geometry.lineForms()) {
-            g.index.byId(form).ifPresent(g::buildSymbol);
+            g.index.byId(form).ifPresent(g.declarations::buildSymbol);
             if (state.symbol(form) instanceof LineFormSymbol line) line.segmentStructure().ifPresent(roots::add);
         }
         roots.forEach(this::discover);
@@ -85,12 +85,12 @@ final class SegmentContextualizer {
     private void discover(SymbolId id) {
         g.checkWork();
         if (dependencies.containsKey(id)) return;
-        g.index.byId(id).ifPresent(g::buildSymbol);
+        g.index.byId(id).ifPresent(g.declarations::buildSymbol);
         var value = state.symbol(id);
         if (!(value instanceof StructureSymbol) && !(value instanceof DomainSymbol)) return;
         Set<SymbolId> refs = new LinkedHashSet<>(); dependencies.put(id, refs);
         if (value instanceof StructureSymbol s) {
-            g.index.byId(id).ifPresent(g::collectEffective);
+            g.index.byId(id).ifPresent(g.inheritance::collectEffective);
             s.baseType().ifPresent(refs::add);
             for (SymbolId member : s.members()) {
                 g.checkWork();

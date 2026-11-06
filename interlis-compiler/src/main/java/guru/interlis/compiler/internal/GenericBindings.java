@@ -67,7 +67,7 @@ final class GenericBindings {
                 diagnostics.emitRule(decl, "duplicate concrete alternative", "CONTEXT_DUPLICATE");
             mappings.add(new guru.interlis.model.ContextSymbol.Mapping(generic.get(), alternatives, mapping.genericDomain().range()));
         }
-        return new guru.interlis.model.ContextSymbol(g.header(decl), mappings);
+        return new guru.interlis.model.ContextSymbol(g.declarations.header(decl), mappings);
     }
 
     /** Bound contexts are model-local; their effects flow only along explicit import edges. */
@@ -92,7 +92,7 @@ final class GenericBindings {
                             || target.axes().stream().anyMatch(a -> a.minimum().isEmpty() || a.maximum().isEmpty())) {
                         diagnostics.emitRule(decl, "CONTEXT alternative must be concrete coordinates", "CONTEXT_CONCRETE"); continue;
                     }
-                    for (SymbolId parent : g.baseChain(concrete.id()).stream().skip(1).toList()) {
+                    for (SymbolId parent : g.inheritance.baseChain(concrete.id()).stream().skip(1).toList()) {
                         if (state.symbol(parent) instanceof DomainSymbol ancestor
                                 && g.types.effectiveDescriptor(ancestor.typeId()) instanceof CoordinateType inherited
                                 && !guru.interlis.model.internal.TypeCompatibility.coordinateRefines(target, inherited))
@@ -115,19 +115,19 @@ final class GenericBindings {
             Set<SymbolId> visible = importedModels(model);
             Set<SymbolId> used = new LinkedHashSet<>();
             Set<SymbolId> viewables = new LinkedHashSet<>();
-            for (SymbolId id : g.baseChain(topic.id())) for (DeclInfo child : index.children(id))
+            for (SymbolId id : g.inheritance.baseChain(topic.id())) for (DeclInfo child : index.children(id))
                 if (Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW).contains(child.kind())) viewables.add(child.id());
             // EXTENDED replaces the inherited declaration in this topic's effective population.
             var overridden = new HashSet<SymbolId>();
             for (SymbolId id : viewables) if (state.symbol(id).header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED))
-                overridden.addAll(g.baseChain(id).stream().filter(base -> !base.equals(id)).toList());
+                overridden.addAll(g.inheritance.baseChain(id).stream().filter(base -> !base.equals(id)).toList());
             viewables.removeAll(overridden);
             Set<TypeId> seen = new HashSet<>();
             Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses=new LinkedHashMap<>();
             for (SymbolId id : viewables) collectViewableGenerics(id, visible, topic.id(), used, referenceUses, seen);
             var available = contexts.getOrDefault(model, Map.of());
             Set<SymbolId> declaredDeferred = new LinkedHashSet<>();
-            for (SymbolId id : g.baseChain(topic.id())) if (state.symbol(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
+            for (SymbolId id : g.inheritance.baseChain(topic.id())) if (state.symbol(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
             for (SymbolId id : topic.deferredGenerics()) {
                 if (!(state.symbol(id) instanceof DomainSymbol domain) || !domain.generic())
                     diagnostics.emitRule(decl, "DEFERRED GENERICS references a non-generic domain", "GENERIC_DEFERRED_UNKNOWN");
@@ -172,8 +172,8 @@ final class GenericBindings {
                 if (previous == null) result.put(entry.getKey(), incoming);
                 else {
                     var candidates = new LinkedHashSet<>(previous.alternatives()); candidates.addAll(incoming.alternatives());
-                    candidates.removeIf(id -> previous.alternatives().stream().noneMatch(base -> g.domainExtends(id, base))
-                            || incoming.alternatives().stream().noneMatch(base -> g.domainExtends(id, base)));
+                    candidates.removeIf(id -> previous.alternatives().stream().noneMatch(base -> g.inheritance.domainExtends(id, base))
+                            || incoming.alternatives().stream().noneMatch(base -> g.inheritance.domainExtends(id, base)));
                     var origins = new LinkedHashSet<>(previous.contexts()); origins.addAll(incoming.contexts());
                     if (candidates.isEmpty()) diagnostics.emitRule(decl, "imported contexts have incompatible alternatives", "CONTEXT_CONFLICT");
                     result.put(entry.getKey(), genericBinding(entry.getKey(), List.copyOf(candidates), List.copyOf(origins)));
@@ -185,7 +185,7 @@ final class GenericBindings {
                 work.checkpoint();
                 var previous = result.get(mapping.genericDomain());
                 if (previous != null && mapping.alternatives().stream().anyMatch(id ->
-                        previous.alternatives().stream().noneMatch(base -> g.domainExtends(id, base))))
+                        previous.alternatives().stream().noneMatch(base -> g.inheritance.domainExtends(id, base))))
                     diagnostics.emitRule(index.byId(context.id()).orElseThrow(), "CONTEXT target must extend an existing alternative", "GENERIC_CONTEXT_EXTENDS");
                 result.put(mapping.genericDomain(), genericBinding(mapping.genericDomain(), mapping.alternatives(), List.of(context.id())));
             }
@@ -237,8 +237,8 @@ final class GenericBindings {
         } else if (descriptor instanceof StructureValueType structure) {
             for (Symbol symbol : state.symbolsInBuildOrder()) if (symbol instanceof StructureSymbol candidate
                     && visible.contains(index.modelOfSymbol(candidate.id()).orElse(null))
-                    && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> g.baseChain(candidate.id()).contains(root)))
-                    && (!(state.symbol(g.paths.scopeRoot(candidate.id())) instanceof TopicSymbol) || g.baseChain(topic).contains(g.paths.scopeRoot(candidate.id()))))
+                    && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> g.inheritance.baseChain(candidate.id()).contains(root)))
+                    && (!(state.symbol(g.paths.scopeRoot(candidate.id())) instanceof TopicSymbol) || g.inheritance.baseChain(topic).contains(g.paths.scopeRoot(candidate.id()))))
                 collectViewableGenerics(candidate.id(), visible, topic, used, referenceUses, seen);
         }
     }

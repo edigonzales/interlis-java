@@ -17,10 +17,10 @@ final class GraphicBuilder {
         var syntax=(GraphicDeclarationSyntax)decl.syntax();
         if (!building.add(decl.id())) {
             g.emitRule(decl,"cyclic graphic inheritance","GRAPHIC_CYCLE");
-            return new GraphicSymbol(g.header(decl),Optional.empty(),Optional.empty(),List.of(),List.of(),List.of());
+            return new GraphicSymbol(g.declarations.header(decl),Optional.empty(),Optional.empty(),List.of(),List.of(),List.of());
         }
         var base=syntax.baseGraphic().flatMap(n->g.names.bindTarget(decl,n,Set.of(SymbolKind.GRAPHIC),ReferenceUsage.BASE_TYPE,new ArrayList<>(),false));
-        GraphicSymbol parent=base.map(id->(GraphicSymbol)g.buildSymbol(g.index.byId(id).orElseThrow())).orElse(null);
+        GraphicSymbol parent=base.map(id->(GraphicSymbol)g.declarations.buildSymbol(g.index.byId(id).orElseThrow())).orElse(null);
         var basis=syntax.basis().flatMap(n->g.names.bindTarget(decl,n,Set.of(SymbolKind.CLASS,SymbolKind.VIEW),ReferenceUsage.TYPE_USE,new ArrayList<>(),false));
         if(basis.isEmpty() && parent!=null) basis=parent.basis();
         if(basis.isEmpty()) g.emitRule(decl,"graphic requires a bound class or view basis","GRAPHIC_BASIS");
@@ -33,7 +33,7 @@ final class GraphicBuilder {
             }
         }
         if(syntax.endName().filter(n->!n.equals(decl.name())).isPresent()) g.emitRule(decl,"graphic END name mismatch","GRAPHIC_END_NAME");
-        basis.ifPresent(id->{ g.index.byId(id).ifPresent(g::buildSymbol); contexts.put(decl.id(),id); });
+        basis.ifPresent(id->{ g.index.byId(id).ifPresent(g.declarations::buildSymbol); contexts.put(decl.id(),id); });
         List<ExpressionId> selections=new ArrayList<>(parent==null?List.of():parent.selections());
         for(var selection:syntax.selections()) selections.add(condition(decl,selection));
         LinkedHashMap<String,SymbolId> effective=new LinkedHashMap<>();
@@ -50,7 +50,7 @@ final class GraphicBuilder {
             var rule=(DrawingRuleSymbol)state.symbol(id);
             if(rule.header().has(Modifier.ABSTRACT)) g.emitRule(decl,"concrete graphic retains abstract drawing rule","GRAPHIC_ABSTRACT_RULE");
         }
-        var result=new GraphicSymbol(g.header(decl),base,basis,selections,local,List.copyOf(effective.values()));
+        var result=new GraphicSymbol(g.declarations.header(decl),base,basis,selections,local,List.copyOf(effective.values()));
         base.ifPresent(id->state.bindBase(decl.id(),id)); building.remove(decl.id()); return result;
     }
 
@@ -89,13 +89,13 @@ final class GraphicBuilder {
             }
             clauses.add(new DrawingRuleSymbol.Clause(clause.range(),condition,assignments));
         }
-        var result=new DrawingRuleSymbol(g.header(decl),signature,inherited,clauses);
+        var result=new DrawingRuleSymbol(g.declarations.header(decl),signature,inherited,clauses);
         return result;
     }
 
     private void ensureBuilt(SymbolId id) {
         Set<SymbolId> seen=new HashSet<>();
-        while(id!=null && seen.add(id)) { g.checkWork(); g.index.byId(id).ifPresent(g::buildSymbol); id=state.baseOf(id); }
+        while(id!=null && seen.add(id)) { g.checkWork(); g.index.byId(id).ifPresent(g.declarations::buildSymbol); id=state.baseOf(id); }
     }
     private List<SymbolId> parameters(SymbolId owner) {
         LinkedHashMap<String,SymbolId> result=new LinkedHashMap<>(); Set<SymbolId> seen=new HashSet<>();
@@ -314,7 +314,7 @@ final class GraphicBuilder {
             for (var id : graphic.rules()) responsibility(g.index.byId(id).orElseThrow(), (DrawingRuleSymbol)state.symbol(id));
             var source=g.paths.scopeRoot(graphic.id()); var target=g.paths.scopeRoot(graphic.basis().get());
             if(state.symbol(source) instanceof TopicSymbol && state.symbol(target) instanceof TopicSymbol
-                    && !g.isTopicSubtype(source,target) && !g.topicDependencies(source).contains(target))
+                    && !g.topics.isTopicSubtype(source,target) && !g.topics.topicDependencies(source).contains(target))
                 g.emitRule(decl,"graphic basis topic requires DEPENDS ON","GRAPHIC_TOPIC_DEPENDENCY");
         }
     }
