@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 /** Owner-queue document state. Entries are immutable and keyed by the exact client URI. */
@@ -101,6 +102,11 @@ final class LspDocumentRegistry {
 
     boolean hasClientAuthority(SourceId sourceId) {
         return entries.values().stream().anyMatch(entry -> entry.hasClientAuthority() && entry.sourceId().equals(sourceId));
+    }
+
+    boolean anyClientSource(BiPredicate<SourceId, String> matches) {
+        return entries.entrySet().stream().anyMatch(entry -> entry.getValue().hasClientAuthority()
+                && matches.test(entry.getValue().sourceId(), entry.getKey()));
     }
 
     void forEachClientSource(BiConsumer<SourceId, String> consumer) {

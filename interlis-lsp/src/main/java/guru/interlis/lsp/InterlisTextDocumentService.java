@@ -111,9 +111,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private final LspDocumentRegistry documents = new LspDocumentRegistry();
     private volatile java.util.function.Consumer<String> operations = ignored -> { };
     private final AnalysisScheduler scheduler;
-    private final Map<String,ProjectSourceLoader.FileContent> closedFiles = new LinkedHashMap<>();
-    private final Map<java.nio.file.Path,String> fileIdentities=new LinkedHashMap<>();
-    private final Map<Object,String> fileKeys=new LinkedHashMap<>();
+    private final LspFileIdentityRegistry fileIdentities = new LspFileIdentityRegistry();
     private final java.util.ArrayDeque<Runnable> documentOperations=new java.util.ArrayDeque<>();
     private boolean resolvingOpen;
     private long nextOpen;
@@ -160,7 +158,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         filesReady.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing"));
         externalSources.close(); publishedExternal.clear();
         diagrams.close();analysisReady=ignored -> { };
-        pendingFiles.clear(); closedFiles.clear(); fileIdentities.clear(); fileKeys.clear(); documentOperations.clear(); documents.clear();
+        pendingFiles.clear(); fileIdentities.clear(); documentOperations.clear(); documents.clear();
     }); }
 
     CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
@@ -281,7 +279,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private HostView captureView() {
         var sources=new LinkedHashMap<SourceId,SourceText>();
         for(var id:workspace.state().sourceRevisions().keySet()) workspace.source(id).ifPresent(source -> sources.put(id,source));
-        return new HostView(documents.synchronizedDocuments(),Map.copyOf(sources),Map.copyOf(closedFiles),versionedEdits,
+        return new HostView(documents.synchronizedDocuments(),Map.copyOf(sources),fileIdentities.installedClosedFiles(),versionedEdits,
                 externalSources.uris(),Long.toString(workspace.currentRevision().value()),documents.generation());
     }
 
@@ -321,45 +319,38 @@ final class InterlisTextDocumentService implements TextDocumentService {
         return result;
     }
 
-    boolean isOpen(String uri) { return scheduler.onOwner(() -> openSource(new SourceId(canonicalUriNow(uri)))); }
-    String canonicalUri(String uri) { return scheduler.onOwner(() -> canonicalUriNow(uri)); }
-    Map<SourceId,String> fileSources() {
+    private Map<SourceId, String> fileSources() {
+        var result = new LinkedHashMap<SourceId, String>();
+        fileIdentities.addClosedSourceUris(result);
+        documents.forEachClientSource(result::put);
+        return Map.copyOf(result);
+    }
+
+    record FileReload(String canonicalUri, Map<SourceId, String> knownSources,
+                      Map<String, ProjectSourceLoader.FileContent> closedFiles, List<String> aliases) { }
+
+    FileReload beginFileReload(String requestedUri, long request, java.util.function.Predicate<String> register) {
+        if (requestedUri == null) return null;
+        var address = LspFileIdentityRegistry.path(requestedUri);
+        if (address.isEmpty()) return null;
         return scheduler.onOwner(() -> {
-            var result=new LinkedHashMap<SourceId,String>();
-            closedFiles.forEach((uri,file) -> result.put(new SourceId(uri),file.path().toUri().toString()));
-            documents.forEachClientSource(result::put); return Map.copyOf(result);
+            if (documents.anyClientSource((id, client) -> LspFileIdentityRegistry.path(client).equals(address))) return null;
+            String canonical = canonicalUriNow(requestedUri);
+            if (!register.test(canonical)) return null;
+            var capture = new FileReload(canonical, fileSources(), fileIdentities.installedClosedFiles(),
+                    fileIdentities.aliasesOf(canonical));
+            beginExternal(canonical, request);
+            return capture;
         });
     }
-    Map<String,ProjectSourceLoader.FileContent> fileContents() { return scheduler.onOwner(() -> Map.copyOf(closedFiles)); }
-    List<String> fileAliases(String uri) {
-        return scheduler.onOwner(() -> {
-            String canonical=canonicalUriNow(uri);
-            var paths=new java.util.LinkedHashSet<String>();
-            var primary=closedFiles.get(canonical);
-            if(primary!=null) paths.add(primary.path().toUri().toString());
-            fileIdentities.forEach((path,id) -> { if(id.equals(canonical)) paths.add(path.toUri().toString()); });
-            return List.copyOf(paths);
-        });
-    }
+
     private boolean openSource(SourceId id) { return documents.hasClientAuthority(id); }
-    private static Optional<java.nio.file.Path> filePath(String uri) {
-        try { var value=java.net.URI.create(uri); return "file".equalsIgnoreCase(value.getScheme())
-                ? Optional.of(java.nio.file.Path.of(value).toAbsolutePath().normalize()) : Optional.empty(); }
-        catch(IllegalArgumentException invalid) { return Optional.empty(); }
-    }
+
     private String canonicalUriNow(String uri) {
-        return externalSources.lookup(uri).map(e -> e.source().id().value()).orElseGet(() -> filePath(uri).map(path -> fileIdentities.getOrDefault(path,uri)).orElse(uri));
-    }
-    private String rememberFile(ProjectSourceLoader.FileContent file,Optional<SourceId> openAlias) {
-        String uri=openAlias.map(SourceId::value).orElseGet(() -> file.fileKey().map(fileKeys::get).orElseGet(() ->
-                fileIdentities.getOrDefault(file.realPath(),canonicalUriNow(file.path().toUri().toString()))));
-        int added=(fileIdentities.containsKey(file.path())?0:1)
-                +(file.path().equals(file.realPath()) || fileIdentities.containsKey(file.realPath())?0:1);
-        if(fileIdentities.size()+added>40_000)
-            throw LspFailures.error(ResponseErrorCode.RequestFailed,"file identity limit reached");
-        fileIdentities.put(file.path(),uri); fileIdentities.put(file.realPath(),uri);
-        fileKeys.values().removeIf(uri::equals);
-        file.fileKey().ifPresent(key -> fileKeys.put(key,uri)); return uri;
+        var open = documents.find(uri);
+        if (open != null && open.hasClientAuthority()) return open.sourceId().value();
+        return externalSources.lookup(uri).map(e -> e.source().id().value())
+                .orElseGet(() -> fileIdentities.canonicalUri(uri));
     }
 
     void beginExternal(String uri,long request) {
@@ -385,11 +376,8 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     void externalFailed(String uri,long request,Throwable failure) {
         scheduler.onOwner(() -> {
-            String canonical=canonicalUriNow(uri);
-            if(Objects.equals(pendingFiles.get(uri),request) && !openSource(new SourceId(canonical))) {
-                closedFiles.remove(canonical); deleteExternalNow(canonical);
-            }
-            finishExternal(uri,request,failure); return null;
+            finishExternal(uri, request, failure);
+            return null;
         });
     }
 
@@ -402,40 +390,94 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     void versionedEdits(boolean supported) { scheduler.onOwner(() -> { versionedEdits=supported; return null; }); }
 
-    void installProject(ProjectSourceLoader.Project project,java.util.function.Predicate<String> current) {
+    void installProject(ProjectSourceLoader.Project project, java.util.function.Predicate<String> current) {
         scheduler.onOwner(() -> {
-            var updates=new ArrayList<SourceUpdate>();
-            var acceptedFiles=new LinkedHashMap<String,ProjectSourceLoader.FileContent>();
-            for(var file:project.files()) {
-                var source=file.loaded(); if(!current.test(source.sourceId().value())) continue;
-                String primary=project.primaryPaths().get(file.path()).toUri().toString();
-                String uri=rememberFile(file,Optional.of(new SourceId(canonicalUriNow(primary)))); var id=new SourceId(uri);
-                if(acceptedFiles.putIfAbsent(uri,file)!=null || openSource(id)) continue;
-                var previous=workspace.source(id);
-                updates.add(new SourceUpdate(id,previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
-                        .orElseGet(SourceExpectation.Absent::new),new SourceChange.Replace(source.text())));
+            var admitted = project.files().stream().filter(file -> current.test(file.loaded().sourceId().value())
+                    && current.test(project.primaryPaths().get(file.path()).toUri().toString())).toList();
+            fileIdentities.checkCapacity(admitted.stream().map(ProjectSourceLoader.FileContent::identity).toList());
+            var updates = new ArrayList<SourceUpdate>();
+            var primaries = new LinkedHashMap<java.nio.file.Path, String>();
+            var aliases = new LinkedHashMap<ProjectSourceLoader.FileIdentity, String>();
+            var acceptedFiles = new LinkedHashMap<String, ProjectSourceLoader.FileContent>();
+            for (var file : admitted) {
+                var primary = project.primaryPaths().get(file.path());
+                String uri = primaries.computeIfAbsent(primary, address -> fileIdentities.sourceForKey(file.identity())
+                        .orElseGet(() -> canonicalUriNow(address.toUri().toString())));
+                if (!current.test(uri) || wouldRebindOpenFile(file.identity(), uri)) continue;
+                aliases.put(file.identity(), uri);
+                var id = new SourceId(uri);
+                if (acceptedFiles.putIfAbsent(uri, file) != null || openSource(id)) continue;
+                var previous = workspace.source(id);
+                updates.add(new SourceUpdate(id, previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
+                        .orElseGet(SourceExpectation.Absent::new), new SourceChange.Replace(file.loaded().text())));
             }
-            workspace.applyBatch(updates,workspace.currentRevision());
-            closedFiles.putAll(acceptedFiles); reanalyzeOpenNow(); return null;
+            workspace.applyBatch(updates, workspace.currentRevision());
+            aliases.forEach(fileIdentities::rememberPhysicalIdentity);
+            acceptedFiles.forEach(fileIdentities::installClosed);
+            reanalyzeOpenNow();
+            return null;
         });
     }
 
-    void applyExternal(String uri,long request,Optional<ProjectSourceLoader.FileContent> file,Optional<SourceId> openAlias,java.util.function.BooleanSupplier current) {
+    void applyExternal(String uri, String requestedUri, long request, Optional<ProjectSourceLoader.FileContent> file,
+                       Optional<SourceId> verifiedSource, boolean requestedMissing, java.util.function.Predicate<String> claimCurrent) {
         scheduler.onOwner(() -> {
-            if(!current.getAsBoolean()) return null;
-            String canonical=file.map(value -> rememberFile(value,openAlias)).orElseGet(() -> canonicalUriNow(uri));
-            if(openSource(new SourceId(canonical))) { finishExternal(uri,request,null); return null; }
-            if(file.isPresent()) {
-                closedFiles.put(canonical,file.orElseThrow());
-            } else closedFiles.remove(canonical);
-            if(file.isEmpty()) deleteExternalNow(canonical);
-            else {
-                var id=new SourceId(canonical); var previous=workspace.source(id);
-                workspace.update(new SourceUpdate(id,previous.<SourceExpectation>map(value -> new SourceExpectation.At(value.revision()))
-                        .orElseGet(SourceExpectation.Absent::new),new SourceChange.Replace(file.get().loaded().text())));
+            if (!Objects.equals(pendingFiles.get(uri), request)) return null;
+            // Closing the last client can leave only the catalog's physical aliases.
+            var established = file.flatMap(value -> verifiedSource.map(SourceId::value)
+                    .or(() -> fileIdentities.sourceForKey(value.identity()))
+                    .or(() -> requestedMissing && fileIdentities.isRegisteredKeylessAlias(value.identity(), uri)
+                            ? Optional.of(uri) : Optional.empty()));
+            String canonical = file.map(value -> established.orElseGet(() -> value.path().toUri().toString()))
+                    .orElseGet(() -> canonicalUriNow(requestedUri));
+            if (!claimCurrent.test(canonical)) {
+                finishExternal(uri, request, null);
+                return null;
             }
-            finishExternal(uri,request,null); return null;
+            var id = new SourceId(canonical);
+            if (file.isPresent()) {
+                var loaded = file.orElseThrow();
+                if (requestedMissing && !uri.equals(canonical)) {
+                    throw LspFailures.error(ResponseErrorCode.ContentModified, "surviving alias belongs to a different source");
+                }
+                if (wouldRebindOpenFile(loaded.identity(), canonical)) {
+                    finishExternal(uri, request, null);
+                    return null;
+                }
+                var existing = fileIdentities.closedFile(canonical);
+                if (established.isEmpty() && existing != null && !loaded.path().equals(existing.path())) {
+                    throw LspFailures.error(ResponseErrorCode.ContentModified, "file identity changed before refresh");
+                }
+                fileIdentities.checkCapacity(List.of(loaded.identity()));
+                boolean open = openSource(id);
+                if (!open) replaceSource(id, loaded.loaded().text());
+                if (requestedMissing) forgetMissingFileAlias(requestedUri);
+                fileIdentities.rememberPhysicalIdentity(loaded.identity(), canonical);
+                if (!open) fileIdentities.installClosed(canonical, loaded);
+            } else {
+                if (openSource(id)) {
+                    forgetMissingFileAlias(requestedUri);
+                } else {
+                    workspace.source(id).ifPresent(source -> workspace.remove(id, source.revision()));
+                    fileIdentities.removeClosed(canonical);
+                }
+            }
+            finishExternal(uri, request, null);
+            return null;
         });
+    }
+
+    private boolean wouldRebindOpenFile(ProjectSourceLoader.FileIdentity identity, String canonical) {
+        return documents.anyClientSource((id, uri) -> !id.value().equals(canonical)
+                && LspFileIdentityRegistry.path(uri).filter(path ->
+                        path.equals(identity.path()) || path.equals(identity.realPath())).isPresent());
+    }
+
+    private void forgetMissingFileAlias(String uri) {
+        var address = LspFileIdentityRegistry.path(uri);
+        if (address.isPresent() && !documents.anyClientSource((id, client) -> LspFileIdentityRegistry.path(client).equals(address))) {
+            fileIdentities.forgetPath(uri);
+        }
     }
 
     void operation(String message) { try { operations.accept(message); } catch(RuntimeException unavailable) { /* disconnected client */ } }
@@ -467,13 +509,14 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void openWithIdentity(String uri, int version, String text, int retries) {
-        var known=fileSources();
-        if(filePath(uri).isEmpty() || !canonicalUriNow(uri).equals(uri) || known.isEmpty()) { didOpenNow(uri, version, text); return; }
+        var known = fileSources();
+        if (LspFileIdentityRegistry.path(uri).isEmpty() || known.isEmpty()) { didOpenNow(uri, version, text); return; }
+        long capturedIdentities = fileIdentities.identityRevision();
         resolvingOpen=true; long request=++nextOpen; String pending="open-identity:"+request;
         beginExternal(pending,request);
         identifyFile.apply(uri,known).whenComplete((match,failure) -> {
             try { scheduler.onOwner(() -> {
-                if(failure==null && !known.equals(fileSources())) {
+                if (failure == null && (capturedIdentities != fileIdentities.identityRevision() || !known.equals(fileSources()))) {
                     // A watcher may have admitted a hardlink while IO ran, even
                     // on providers without file keys. Re-resolve that new set.
                     Optional<String> retiredAlias = Optional.empty();
@@ -496,17 +539,18 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 Throwable problem=failure;
                 try {
                     if(problem==null) {
-                        var identity=match.identity();
-                        String canonical=identity.flatMap(value -> value.fileKey().map(fileKeys::get)
-                                .or(() -> Optional.ofNullable(fileIdentities.get(value.realPath()))))
-                                .or(() -> match.source().map(SourceId::value)).orElse(uri);
-                        identity.ifPresent(value -> {
-                            int added=(fileIdentities.containsKey(value.path())?0:1)
-                                    +(value.path().equals(value.realPath()) || fileIdentities.containsKey(value.realPath())?0:1);
-                            if(fileIdentities.size()+added>40_000)
-                                throw LspFailures.error(ResponseErrorCode.RequestFailed,"file identity limit reached");
-                            fileIdentities.put(value.path(),canonical); fileIdentities.put(value.realPath(),canonical);
-                            value.fileKey().ifPresent(key -> fileKeys.put(key,canonical));
+                        match.identity().ifPresent(identity -> {
+                            var verifiedSource = fileIdentities.sourceForKey(identity)
+                                    .or(() -> match.source().map(SourceId::value));
+                            String canonical = verifiedSource.orElse(uri);
+                            if (wouldRebindOpenFile(identity, canonical)) {
+                                throw LspFailures.error(ResponseErrorCode.ContentModified, "file identity changed before open");
+                            }
+                            var existing = fileIdentities.closedFile(canonical);
+                            if (verifiedSource.isEmpty() && existing != null && !identity.path().equals(existing.path())) {
+                                throw LspFailures.error(ResponseErrorCode.ContentModified, "file identity changed before open");
+                            }
+                            fileIdentities.rememberPhysicalIdentity(identity, canonical);
                         });
                         didOpenNow(uri, version, text);
                     } else operation("Document identity lookup failed; reopen required");
@@ -638,7 +682,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         if (closed == null) return;
         SourceId id = closed.sourceId();
         boolean local = !externalSources.contains(id);
-        boolean reload = local && closed.hasClientAuthority() && filePath(uri).isPresent();
+        boolean reload = local && closed.hasClientAuthority() && LspFileIdentityRegistry.path(uri).isPresent();
         if (local && !reload) {
             closed.acceptedSource().ifPresent(accepted -> workspace.source(id)
                     .filter(current -> current.revision().equals(accepted.revision()))
@@ -993,24 +1037,6 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     void reloadExternal(String uri) { Objects.requireNonNull(externalReload,"project file service").accept(uri); }
-
-    void deleteExternal(String uri) {
-        scheduler.onOwner(() -> {
-            String canonical=canonicalUriNow(uri);
-            if(openSource(new SourceId(canonical))) return null;
-            documents.advanceGeneration(); closedFiles.remove(canonical); deleteExternalNow(canonical);
-            var request=pendingFiles.get(uri);
-            if(request!=null) finishExternal(uri,request,null); else reanalyzeOpenNow();
-            return null;
-        });
-    }
-
-    private void deleteExternalNow(String uri) {
-        if (openSource(new SourceId(canonicalUriNow(uri)))) return;
-        SourceId id = new SourceId(canonicalUriNow(uri));
-        workspace.source(id).ifPresent(text -> workspace.remove(id, text.revision()));
-        fileKeys.values().removeIf(id.value()::equals);
-    }
 
     void reanalyzeOpen() {
         scheduler.onOwner(() -> { reanalyzeOpenNow(); return null; });

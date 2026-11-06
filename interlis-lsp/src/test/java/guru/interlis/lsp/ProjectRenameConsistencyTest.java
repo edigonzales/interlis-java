@@ -196,6 +196,91 @@ class ProjectRenameConsistencyTest {
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
+    @Test void anOlderWatcherResultThroughAnUnknownHardlinkCannotReplaceTheNewerPrimary() throws Exception {
+        Path folder = project(), base = folder.resolve("Base.ili"), root = folder.resolve("Root.ili");
+        var server = open(folder, true, null, null);
+        try {
+            ready(server, root);
+            Path link = Files.createLink(folder.resolve("HardBase.ili"), base);
+            String primaryUri = base.toUri().toString(), aliasUri = link.toUri().toString();
+            var primary = new SourceId(primaryUri);
+            var loader = new ProjectSourceLoader();
+            var documents = server.textDocumentsForTest();
+            var workspaceService = (InterlisWorkspaceService) server.getWorkspaceService();
+
+            var aliasRequest = workspaceService.beginFileReload(aliasUri, 100);
+            assertEquals(aliasUri, aliasRequest.canonicalUri());
+            String oldText = BASE + "\n!! older watcher read";
+            Files.writeString(base, oldText);
+            var older = loader.read(aliasUri, List.of(folder.toRealPath()), CancellationToken.none()).orElseThrow();
+            assertEquals(oldText, older.loaded().text());
+            assertTrue(loader.sameFile(older, primaryUri, CancellationToken.none()));
+
+            var primaryRequest = workspaceService.beginFileReload(primaryUri, 101);
+            assertEquals(primaryUri, primaryRequest.canonicalUri());
+            String newText = BASE + "\n!! newer watcher read";
+            Files.writeString(base, newText);
+            var newer = loader.read(primaryUri, List.of(folder.toRealPath()), CancellationToken.none());
+            documents.applyExternal(primaryUri, primaryUri, 101, newer, Optional.of(primary), false,
+                    resolved -> workspaceService.claimFileRequest(primaryUri, resolved, 101));
+            documents.applyExternal(aliasUri, aliasUri, 100, Optional.of(older), Optional.of(primary), false,
+                    resolved -> workspaceService.claimFileRequest(aliasUri, resolved, 100));
+
+            ready(server, root);
+            assertEquals(newText, server.workspaceForTest().source(primary).orElseThrow().text());
+            assertEquals(2, server.workspaceForTest().state().sourceRevisions().size());
+            assertEquals(2, rename(server, root).getDocumentChanges().size());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
+    @Test void closingAStandaloneFileAfterPrimaryDeletionRetainsItsSurvivingHardlink() throws Exception {
+        Path base = Files.writeString(temporary.resolve("Base.ili"), BASE);
+        Path link = Files.createLink(temporary.resolve("HardBase.ili"), base);
+        String primaryUri = base.toUri().toString();
+        var primary = new SourceId(primaryUri);
+        var server = new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
+        server.initialize(new InitializeParams()).get(5, TimeUnit.SECONDS);
+        try {
+            var textDocuments = server.getTextDocumentService();
+            String openText = BASE + "\n!! unsaved primary";
+            textDocuments.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(primaryUri, "interlis", 1, openText)));
+            textDocuments.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(link.toUri().toString(), "interlis", 1, BASE)));
+            ready(server, base);
+            var workspace = server.workspaceForTest();
+            assertEquals(Set.of(primary), workspace.state().sourceRevisions().keySet());
+            assertEquals(openText, workspace.source(primary).orElseThrow().text());
+
+            Files.delete(base);
+            textDocuments.didClose(new DidCloseTextDocumentParams(new TextDocumentIdentifier(primaryUri)));
+            var result = server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile", List.of())).get(5, TimeUnit.SECONDS);
+            assertEquals("succeeded", ((Map<?, ?>) result).get("outcome"));
+            assertEquals(Set.of(primary), workspace.state().sourceRevisions().keySet());
+            assertEquals(BASE, workspace.source(primary).orElseThrow().text());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
+    @Test void aDeletedHardlinkAddressCanOpenAsAnIndependentFile() throws Exception {
+        Path folder = project(), base = folder.resolve("Base.ili"), root = folder.resolve("Root.ili");
+        Path link = Files.createLink(folder.resolve("HardBase.ili"), base);
+        var server = open(folder, true, null, null);
+        try {
+            ready(server, root);
+            String uri = link.toUri().toString();
+            Files.delete(link);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(uri, FileChangeType.Deleted))));
+            ready(server, root);
+
+            String distinct = BASE.replace("Base", "Distinct");
+            Files.writeString(link, distinct);
+            server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri, "interlis", 1, distinct)));
+            ready(server, link);
+            assertEquals(distinct, server.workspaceForTest().source(new SourceId(uri)).orElseThrow().text());
+            assertEquals(BASE, server.workspaceForTest().source(new SourceId(base.toUri().toString())).orElseThrow().text());
+            assertEquals(3, server.workspaceForTest().state().sourceRevisions().size());
+            assertEquals(2, rename(server, root).getDocumentChanges().size());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
     @Test void oversizedProjectInputHasAControlledSourceLimitFailure() throws Exception {
         Path folder=Files.createDirectory(temporary.resolve("large-project"));
         Files.writeString(folder.resolve("Large.ili"),"INTERLIS 2.4; MODEL Large AT \"x\" VERSION \"1\" = END Large.\n!!"+"x".repeat(2_100_000));
