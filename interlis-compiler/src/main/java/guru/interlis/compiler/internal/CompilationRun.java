@@ -9,7 +9,10 @@ import guru.interlis.compiler.CompilerServices;
 import guru.interlis.compiler.SourceSet;
 import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.Phase;
+import guru.interlis.execution.CancellationReason;
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.execution.OperationCancelledException;
+import guru.interlis.execution.PhaseStatus;
 import guru.interlis.execution.RunLifecycle;
 import guru.interlis.model.SnapshotId;
 import guru.interlis.source.ContentFingerprint;
@@ -57,7 +60,9 @@ final class CompilationRun {
         Closure closure;
         var indexPhase = lifecycle.beginPhase(Phase.DECLARATION_INDEXING,
                 new guru.interlis.execution.RunEvent.PhaseMetadata(modelIndex.all().size()));
+        PhaseStatus indexStatus = PhaseStatus.FAILED;
         try {
+            token.throwIfCancellationRequested();
             RootSelector rootSelector = new RootSelector();
             roots = rootSelector.select(request.roots(), modelIndex, collector);
             ImportBinder importBinder = new ImportBinder();
@@ -66,8 +71,12 @@ final class CompilationRun {
                 closure = new Closure(List.of(), List.of(), java.util.Set.of(), List.of(),
                         closure.diagnostics(), new java.util.LinkedHashSet<>(closure.reasons()));
             }
+            indexStatus = PhaseStatus.SUCCEEDED;
+        } catch (OperationCancelledException | AnalysisBudgetExceededException cancelled) {
+            indexStatus = PhaseStatus.CANCELLED;
+            throw cancelled;
         } finally {
-            indexPhase.finish(guru.interlis.execution.PhaseStatus.SUCCEEDED);
+            indexPhase.finish(indexStatus);
         }
 
         CompilationFingerprinter fingerprinter = new CompilationFingerprinter();
@@ -99,10 +108,16 @@ final class CompilationRun {
         var bindingPhase = lifecycle.beginPhase(Phase.BINDING,
                 new guru.interlis.execution.RunEvent.PhaseMetadata(declarations.all().size()));
         GraphBuilder.GraphResult graphResult;
+        PhaseStatus bindingStatus = PhaseStatus.FAILED;
         try {
+            token.throwIfCancellationRequested();
             graphResult = builder.build();
+            bindingStatus = PhaseStatus.SUCCEEDED;
+        } catch (OperationCancelledException | AnalysisBudgetExceededException cancelled) {
+            bindingStatus = PhaseStatus.CANCELLED;
+            throw cancelled;
         } finally {
-            bindingPhase.finish(guru.interlis.execution.PhaseStatus.SUCCEEDED);
+            bindingPhase.finish(bindingStatus);
         }
         token.throwIfCancellationRequested();
         List<Diagnostic> diagnostics = collector.freeze();
@@ -120,7 +135,9 @@ final class CompilationRun {
     private void verifySourceSet(SourceSet sourceSet, RunLifecycle lifecycle) {
         var phase = lifecycle.beginPhase(Phase.SOURCE_RESOLUTION,
                 new guru.interlis.execution.RunEvent.PhaseMetadata(sourceSet.sources().size()));
+        PhaseStatus status = PhaseStatus.FAILED;
         try {
+            token.throwIfCancellationRequested();
             long total = 0;
             for (SourceText text : sourceSet.sources().values()) {
                 total = Math.addExact(total, text.length());
@@ -131,15 +148,21 @@ final class CompilationRun {
             }
             new SourceSetVerifier().verify(sourceSet, collector);
             collector.importAll(sourceSet.resolutionDiagnostics());
+            status = PhaseStatus.SUCCEEDED;
+        } catch (OperationCancelledException | AnalysisBudgetExceededException cancelled) {
+            status = PhaseStatus.CANCELLED;
+            throw cancelled;
         } finally {
-            phase.finish(guru.interlis.execution.PhaseStatus.SUCCEEDED);
+            phase.finish(status);
         }
     }
 
     private void parseSources(SourceSet sourceSet, ParseMode mode, RunLifecycle lifecycle) {
         var phase = lifecycle.beginPhase(Phase.LEXING,
                 new guru.interlis.execution.RunEvent.PhaseMetadata(sourceSet.sources().size()));
+        PhaseStatus status = PhaseStatus.FAILED;
         try {
+            token.throwIfCancellationRequested();
             List<SourceId> ids = new ArrayList<>(sourceSet.sources().keySet());
             ids.sort(Comparator.comparing(SourceId::value));
             for (SourceId id : ids) {
@@ -158,8 +181,8 @@ final class CompilationRun {
                             new ParseOptions(mode, java.util.Optional.empty(),
                                     request.options().budget()), token);
                 }
-                if(snapshot.coverage().budgetExceeded())throw new guru.interlis.execution.OperationCancelledException(
-                        guru.interlis.execution.CancellationReason.RESOURCE_LIMIT);
+                if (snapshot.coverage().budgetExceeded())
+                    throw new OperationCancelledException(CancellationReason.RESOURCE_LIMIT);
                 syntax.put(id, snapshot);
                 collector.importAll(snapshot.diagnostics());
             }
@@ -168,8 +191,12 @@ final class CompilationRun {
                 throw new AnalysisBudgetExceededException("maxTokens",
                         request.options().budget().maxTokens());
             }
+            status = PhaseStatus.SUCCEEDED;
+        } catch (OperationCancelledException | AnalysisBudgetExceededException cancelled) {
+            status = PhaseStatus.CANCELLED;
+            throw cancelled;
         } finally {
-            phase.finish(guru.interlis.execution.PhaseStatus.SUCCEEDED);
+            phase.finish(status);
         }
     }
 
