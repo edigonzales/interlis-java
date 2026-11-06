@@ -11,6 +11,7 @@
     <module>interlis-repository</module>
     <module>interlis-projection</module>
     <module>interlis-documentation</module>
+    <module>interlis-transfer</module>
     <module>interlis-wasm-bridge</module>
     <module>interlis-compiler-cli</module>
     <module>interlis-lsp</module>

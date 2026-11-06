@@ -25,7 +25,14 @@ public final class ModulePathContract {
             var result=JenesisBridge.moduleResult(outcome,project);
             if(!result.explicitDescriptor()||!result.moduleName().orElseThrow().equals(name(project)))throw new IllegalStateException("Wrong own module: "+project);
             own.add(name(project));
-            for(var artifact:ModuleArtifacts.runtime(root,project,outcome)) {
+            var runtime=ModuleArtifacts.runtime(root,project,outcome);
+            if(project.equals("interlis-transfer")) {
+                String prefix="maven/guru.interlis/", version="/"+JvmBuildInputs.projectVersion(root);
+                var expected=Set.of(prefix+"interlis-transfer"+version,prefix+"interlis-model"+version);
+                var actual=runtime.stream().map(ModuleArtifacts.Artifact::coordinates).collect(java.util.stream.Collectors.toSet());
+                if(!actual.equals(expected))throw new IllegalStateException("Unexpected transfer runtime closure: "+actual);
+            }
+            for(var artifact:runtime) {
                 Path prior=files.putIfAbsent(artifact.fileName(),artifact.file());
                 if(prior!=null&&!JvmBuildInputs.sha256(prior).equals(artifact.sha256()))throw new IllegalStateException("Conflicting module-path artifact");
             }
@@ -63,6 +70,7 @@ public final class ModulePathContract {
             "guru.interlis.repository","guru.interlis.repository.RepositoryClient",
             "guru.interlis.projection","guru.interlis.projection.DiagramProjector",
             "guru.interlis.documentation","guru.interlis.documentation.DocumentationProjector",
+            "guru.interlis.transfer","guru.interlis.transfer.TransferPlanner",
             "guru.interlis.wasm.bridge","guru.interlis.bridge.BridgeDispatcher");
         String extra=String.join("\n",own.stream().filter(entrypoints::containsKey).map(name->
             "if (named && !"+entrypoints.get(name)+".class.getModule().getName().equals(\""+name+"\")) throw new AssertionError(\"Wrong public entrypoint module\");").toList());
