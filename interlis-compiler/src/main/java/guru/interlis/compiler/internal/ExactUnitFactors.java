@@ -10,8 +10,9 @@ import java.util.*;
 final class ExactUnitFactors {
     enum Result { MATCH, MISMATCH, UNKNOWN }
     private final GraphBuilder graph;
+    private final SemanticBuildState state;
     private final Map<SymbolId,Integer> ranks=new HashMap<>();
-    ExactUnitFactors(GraphBuilder graph) {this.graph=graph;}
+    ExactUnitFactors(GraphBuilder graph, SemanticBuildState state) {this.graph=graph; this.state = state;}
 
     Result compare(SymbolId coarse,SymbolId fine,BigDecimal period) {
         var relation=TypeCompatibility.unitRelation(coarse,fine,this::unit);
@@ -63,7 +64,7 @@ final class ExactUnitFactors {
         return result.numerator.equals(result.denominator)?Result.MATCH:Result.MISMATCH;
     }
 
-    private UnitSymbol unit(SymbolId id) {graph.checkWork();return graph.symbols.get(id) instanceof UnitSymbol unit?unit:null;}
+    private UnitSymbol unit(SymbolId id) {graph.checkWork();return state.symbol(id) instanceof UnitSymbol unit?unit:null;}
     private static List<SymbolId> dependencies(UnitSymbol unit) {
         if(unit.conversionFunction().isPresent())return List.of();
         if(unit.derivedFrom().isPresent())return List.of(unit.derivedFrom().orElseThrow());

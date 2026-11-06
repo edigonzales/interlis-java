@@ -7,9 +7,10 @@ import java.util.*;
 /** Graphics within one compiler run, using its shared name, expression and type binders. */
 final class GraphicBuilder {
     private final GraphBuilder g;
+    private final SemanticBuildState state;
     private final Set<SymbolId> building = new HashSet<>();
     private final Map<SymbolId, SymbolId> contexts = new HashMap<>();
-    GraphicBuilder(GraphBuilder graph) { g=graph; }
+    GraphicBuilder(GraphBuilder graph, SemanticBuildState state) { g=graph; this.state = state; }
     SymbolId context(SymbolId owner) { return contexts.getOrDefault(owner,owner); }
 
     GraphicSymbol build(DeclInfo decl) {
@@ -27,7 +28,7 @@ final class GraphicBuilder {
             if(parent.header().has(Modifier.FINAL)) g.emitRule(decl,"cannot extend FINAL graphic","GRAPHIC_FINAL");
             if(basis.isPresent() && parent.basis().isPresent()) {
                 g.metadata.ensureBases(basis.get());
-                if(!guru.interlis.model.internal.TypeCompatibility.specializes(basis.get(),parent.basis().get(),g.baseOf::get))
+                if(!guru.interlis.model.internal.TypeCompatibility.specializes(basis.get(),parent.basis().get(),state::baseOf))
                     g.emitRule(decl,"graphic basis must specialize inherited basis","GRAPHIC_BASIS");
             }
         }
@@ -36,21 +37,21 @@ final class GraphicBuilder {
         List<ExpressionId> selections=new ArrayList<>(parent==null?List.of():parent.selections());
         for(var selection:syntax.selections()) selections.add(condition(decl,selection));
         LinkedHashMap<String,SymbolId> effective=new LinkedHashMap<>();
-        if(parent!=null) for(var id:parent.effectiveRules()) effective.put(g.symbols.get(id).name().value(),id);
+        if(parent!=null) for(var id:parent.effectiveRules()) effective.put(state.symbol(id).name().value(),id);
         List<SymbolId> local=new ArrayList<>(); Set<String> names=new HashSet<>();
         for(var child:g.index.children(decl.id())) {
             g.checkWork();
             basis.ifPresent(id->contexts.put(child.id(),id));
             if(!names.add(child.name())) g.emitRule(child,"duplicate drawing rule","GRAPHIC_RULE_NAME");
             var rule=rule(child,Optional.ofNullable(effective.get(child.name())));
-            g.symbols.put(rule.id(),rule); local.add(rule.id()); effective.put(child.name(),rule.id());
+            state.defineSymbol(rule); local.add(rule.id()); effective.put(child.name(),rule.id());
         }
         if(!decl.modifiers().contains(Modifier.ABSTRACT)) for(var id:effective.values()) {
-            var rule=(DrawingRuleSymbol)g.symbols.get(id);
+            var rule=(DrawingRuleSymbol)state.symbol(id);
             if(rule.header().has(Modifier.ABSTRACT)) g.emitRule(decl,"concrete graphic retains abstract drawing rule","GRAPHIC_ABSTRACT_RULE");
         }
         var result=new GraphicSymbol(g.header(decl),base,basis,selections,local,List.copyOf(effective.values()));
-        base.ifPresent(id->g.baseOf.put(decl.id(),id)); building.remove(decl.id()); return result;
+        base.ifPresent(id->state.bindBase(decl.id(),id)); building.remove(decl.id()); return result;
     }
 
     private ExpressionId condition(DeclInfo decl,ExpressionSyntax syntax) {
@@ -61,7 +62,7 @@ final class GraphicBuilder {
 
     private DrawingRuleSymbol rule(DeclInfo decl,Optional<SymbolId> inherited) {
         var syntax=(GraphicDeclarationSyntax.Rule)decl.syntax();
-        var parent=inherited.map(id->(DrawingRuleSymbol)g.symbols.get(id)).orElse(null);
+        var parent=inherited.map(id->(DrawingRuleSymbol)state.symbol(id)).orElse(null);
         if(inherited.isPresent()!=decl.modifiers().contains(Modifier.EXTENDED))
             g.emitRule(decl,"drawing-rule override requires inherited rule and EXTENDED","GRAPHIC_RULE_OVERRIDE");
         if(parent!=null && parent.header().has(Modifier.FINAL)) g.emitRule(decl,"cannot override FINAL rule","GRAPHIC_RULE_FINAL");
@@ -71,8 +72,8 @@ final class GraphicBuilder {
         signature.ifPresent(id->{
             ensureBuilt(id);
             var sign=g.metadata.predefined(decl,"INTERLIS.SIGN",Set.of(SymbolKind.CLASS)).orElseThrow();
-            if(!guru.interlis.model.internal.TypeCompatibility.specializes(id,sign,g.baseOf::get)) g.emitRule(decl,"drawing rule requires a SIGN class","GRAPHIC_SIGNATURE");
-            if(parent!=null && parent.signatureClass().isPresent() && !guru.interlis.model.internal.TypeCompatibility.specializes(id,parent.signatureClass().get(),g.baseOf::get))
+            if(!guru.interlis.model.internal.TypeCompatibility.specializes(id,sign,state::baseOf)) g.emitRule(decl,"drawing rule requires a SIGN class","GRAPHIC_SIGNATURE");
+            if(parent!=null && parent.signatureClass().isPresent() && !guru.interlis.model.internal.TypeCompatibility.specializes(id,parent.signatureClass().get(),state::baseOf))
                 g.emitRule(decl,"drawing signature must specialize base signature","GRAPHIC_SIGNATURE");
         });
         List<DrawingRuleSymbol.Clause> clauses=new ArrayList<>();
@@ -94,21 +95,21 @@ final class GraphicBuilder {
 
     private void ensureBuilt(SymbolId id) {
         Set<SymbolId> seen=new HashSet<>();
-        while(id!=null && seen.add(id)) { g.checkWork(); g.index.byId(id).ifPresent(g::buildSymbol); id=g.baseOf.get(id); }
+        while(id!=null && seen.add(id)) { g.checkWork(); g.index.byId(id).ifPresent(g::buildSymbol); id=state.baseOf(id); }
     }
     private List<SymbolId> parameters(SymbolId owner) {
         LinkedHashMap<String,SymbolId> result=new LinkedHashMap<>(); Set<SymbolId> seen=new HashSet<>();
         while(owner!=null && seen.add(owner)) {
-            g.checkWork(); var s=g.symbols.get(owner);
-            if(s instanceof ClassSymbol c) for(var id:c.members()) if(g.symbols.get(id) instanceof ParameterSymbol p) result.putIfAbsent(p.name().value(),id);
-            owner=g.baseOf.get(owner);
+            g.checkWork(); var s=state.symbol(owner);
+            if(s instanceof ClassSymbol c) for(var id:c.members()) if(state.symbol(id) instanceof ParameterSymbol p) result.putIfAbsent(p.name().value(),id);
+            owner=state.baseOf(owner);
         }
         return List.copyOf(result.values());
     }
     private void clauses(DrawingRuleSymbol rule, List<DrawingRuleSymbol.Clause> result, Set<SymbolId> seen) {
         if (!seen.add(rule.id())) return;
         g.checkWork();
-        rule.overrides().ifPresent(id -> clauses((DrawingRuleSymbol)g.symbols.get(id), result, seen));
+        rule.overrides().ifPresent(id -> clauses((DrawingRuleSymbol)state.symbol(id), result, seen));
         result.addAll(rule.clauses());
     }
 
@@ -137,7 +138,7 @@ final class GraphicBuilder {
     private boolean hasSign(DrawingRuleSymbol.Clause clause) {
         for (var assignment : clause.assignments()) {
             g.checkWork();
-            if (assignment.parameter().map(g.symbols::get).filter(p -> p.name().value().equals("Sign")).isPresent()) return true;
+            if (assignment.parameter().map(state::symbol).filter(p -> p.name().value().equals("Sign")).isPresent()) return true;
         }
         return false;
     }
@@ -148,7 +149,7 @@ final class GraphicBuilder {
             g.checkWork(); var clause = clauses.get(i);
             if (clause.condition().isPresent() && i != first && i != second) continue;
             for (var assignment : clause.assignments()) {
-                g.checkWork(); assignment.parameter().ifPresent(id -> values.put(g.symbols.get(id).name().value(), assignment));
+                g.checkWork(); assignment.parameter().ifPresent(id -> values.put(state.symbol(id).name().value(), assignment));
             }
         }
         return List.copyOf(values.values());
@@ -169,7 +170,7 @@ final class GraphicBuilder {
         var contexts = assignmentContexts(rule);
         Set<String> assigned = new HashSet<>();
         for (var context : contexts) for (var assignment : context) {
-            g.checkWork(); assigned.add(g.symbols.get(assignment.parameter().orElseThrow()).name().value());
+            g.checkWork(); assigned.add(state.symbol(assignment.parameter().orElseThrow()).name().value());
         }
         if (!assigned.contains("Sign")) g.emitRule(decl, "missing signature parameter: Sign", "GRAPHIC_PARAMETER_MISSING");
         for (var used : contexts) checkContext(decl, declared, used, assigned);
@@ -179,12 +180,12 @@ final class GraphicBuilder {
         Set<SymbolId> signs = new LinkedHashSet<>(); boolean signExpression = false;
         for (var assignment : used) {
             g.checkWork();
-            var original = g.symbols.get(assignment.parameter().orElseThrow());
+            var original = state.symbol(assignment.parameter().orElseThrow());
             // Explicit METAOBJECT OF restrictions belong to the declared parameter
             // contract, even when its value was inherited and responsibility stays
             // at a base class. They must never be weakened by contextual promotion.
             g.metadata.parameter(declared, original.name().value()).filter(id -> !id.equals(original.id()))
-                    .map(g.symbols::get).map(ParameterSymbol.class::cast)
+                    .map(state::symbol).map(ParameterSymbol.class::cast)
                     .filter(p -> g.effectiveDescriptor(p.typeId()) instanceof MetaObjectType)
                     .ifPresent(p -> checkValue(decl, p, assignment.value()));
             if (original.name().value().equals("Sign")) {
@@ -194,7 +195,7 @@ final class GraphicBuilder {
         Set<SymbolId> responsibleClasses = new LinkedHashSet<>();
         for (var object : signs) {
             g.checkWork();
-            var actual = ((MetaObjectSymbol)g.symbols.get(object)).objectClass().orElse(null);
+            var actual = ((MetaObjectSymbol)state.symbol(object)).objectClass().orElse(null);
             if (actual == null) continue;
             if (!specializes(actual, declared) && !specializes(declared, actual)) {
                 g.emitRule(decl, "metadata object class does not match signature parameter", "GRAPHIC_METAOBJECT_TYPE");
@@ -202,7 +203,7 @@ final class GraphicBuilder {
             }
             SymbolId responsible = actual;
             for (var assignment : used) {
-                g.checkWork(); var owner = g.symbols.get(assignment.parameter().orElseThrow()).owner().orElseThrow();
+                g.checkWork(); var owner = state.symbol(assignment.parameter().orElseThrow()).owner().orElseThrow();
                 if (specializes(responsible, owner)) continue;
                 if (specializes(owner, responsible) && specializes(declared, owner)) responsible = owner;
                 else g.emitRule(decl, "signature parameter owner cannot determine a compatible responsible class", "GRAPHIC_SIGNATURE_RESPONSIBILITY");
@@ -215,20 +216,20 @@ final class GraphicBuilder {
         for (SymbolId responsible : responsibleClasses) {
             g.checkWork();
             for (var id : parameters(responsible)) {
-                var parameter = (ParameterSymbol)g.symbols.get(id);
+                var parameter = (ParameterSymbol)state.symbol(id);
                 if ((parameter.mandatory() || parameter.name().value().equals("Sign")) && !assigned.contains(parameter.name().value()))
                     g.emitRule(decl, "missing signature parameter: " + parameter.name().value(), "GRAPHIC_PARAMETER_MISSING");
             }
             for (var assignment : used) {
-                g.checkWork(); var original = g.symbols.get(assignment.parameter().orElseThrow());
-                var effective = g.metadata.parameter(responsible, original.name().value()).map(g.symbols::get)
+                g.checkWork(); var original = state.symbol(assignment.parameter().orElseThrow());
+                var effective = g.metadata.parameter(responsible, original.name().value()).map(state::symbol)
                         .map(ParameterSymbol.class::cast).orElse((ParameterSymbol)original);
                 if (!effective.id().equals(original.id())) checkValue(decl, effective, assignment.value());
                 if (!effective.name().value().equals("Sign")
                         && g.effectiveDescriptor(effective.typeId()) instanceof MetaObjectType meta && meta.target().isEmpty()) {
                     Set<SymbolId> targets = new LinkedHashSet<>(); objects(assignment.value(), targets);
                     for (SymbolId object : targets) {
-                        g.checkWork(); var actual = ((MetaObjectSymbol)g.symbols.get(object)).objectClass();
+                        g.checkWork(); var actual = ((MetaObjectSymbol)state.symbol(object)).objectClass();
                         if (actual.isPresent() && !specializes(actual.orElseThrow(), responsible))
                             g.emitRule(decl, "metadata object class does not match signature parameter", "GRAPHIC_METAOBJECT_TYPE");
                     }
@@ -238,7 +239,7 @@ final class GraphicBuilder {
     }
 
     private boolean specializes(SymbolId actual, SymbolId base) {
-        return guru.interlis.model.internal.TypeCompatibility.specializes(actual, base, g.baseOf::get);
+        return guru.interlis.model.internal.TypeCompatibility.specializes(actual, base, state::baseOf);
     }
 
     /** An inherited value may now target an overridden parameter with a narrower
@@ -246,12 +247,12 @@ final class GraphicBuilder {
     private void checkValue(DeclInfo decl, ParameterSymbol parameter, DrawingRuleSymbol.Value value) {
         g.checkWork(); var expected = g.effectiveDescriptor(parameter.typeId());
         if (value instanceof DrawingRuleSymbol.ExpressionValue expression) {
-            var actual = g.expressions.get(expression.expression());
+            var actual = state.expression(expression.expression());
             checkMandatoryValue(decl,parameter,actual);
             if (actual.typeState() != ExpressionTypeState.ERROR && !g.valueAssignable(actual, expected.id()))
                 g.emitRule(decl, "incompatible signature parameter assignment", "GRAPHIC_PARAMETER_TYPE");
         } else if (value instanceof DrawingRuleSymbol.MetaObjectValue object && expected instanceof MetaObjectType type) {
-            var actual = object.object().map(g.symbols::get).filter(MetaObjectSymbol.class::isInstance)
+            var actual = object.object().map(state::symbol).filter(MetaObjectSymbol.class::isInstance)
                     .map(MetaObjectSymbol.class::cast).flatMap(MetaObjectSymbol::objectClass);
             if (actual.isPresent() && type.target().isPresent() && !specializes(actual.orElseThrow(), type.target().orElseThrow()))
                 g.emitRule(decl, "metadata object class does not match signature parameter", "GRAPHIC_METAOBJECT_TYPE");
@@ -266,14 +267,14 @@ final class GraphicBuilder {
     }
 
     private DrawingRuleSymbol.Value value(DeclInfo decl,Optional<SymbolId> parameter,GraphicDeclarationSyntax.Value syntax) {
-        TypeDescriptor expected=parameter.map(g.symbols::get).map(ParameterSymbol.class::cast).map(p->g.effectiveDescriptor(p.typeId())).orElse(null);
+        TypeDescriptor expected=parameter.map(state::symbol).map(ParameterSymbol.class::cast).map(p->g.effectiveDescriptor(p.typeId())).orElse(null);
         if(syntax instanceof GraphicDeclarationSyntax.MetaObjectValue m) {
             var target=g.metadata.objectReference(decl,m.object());
             if(expected!=null && !(expected instanceof MetaObjectType)) g.emitRule(decl,"metadata object assigned to an ordinary parameter","GRAPHIC_PARAMETER_TYPE");
             if(expected instanceof MetaObjectType type) {
                 var required=type.target();
-                var actual=target.map(g.symbols::get).filter(MetaObjectSymbol.class::isInstance).map(MetaObjectSymbol.class::cast).flatMap(MetaObjectSymbol::objectClass);
-                if(actual.isPresent() && required.isPresent() && !guru.interlis.model.internal.TypeCompatibility.specializes(actual.get(),required.get(),g.baseOf::get))
+                var actual=target.map(state::symbol).filter(MetaObjectSymbol.class::isInstance).map(MetaObjectSymbol.class::cast).flatMap(MetaObjectSymbol::objectClass);
+                if(actual.isPresent() && required.isPresent() && !guru.interlis.model.internal.TypeCompatibility.specializes(actual.get(),required.get(),state::baseOf))
                     g.emitRule(decl,"metadata object class does not match signature parameter","GRAPHIC_METAOBJECT_TYPE");
             }
             return new DrawingRuleSymbol.MetaObjectValue(target);
@@ -281,7 +282,7 @@ final class GraphicBuilder {
         if(syntax instanceof GraphicDeclarationSyntax.ExpressionValue e) {
             var expression=g.buildExpression(e.expression(),decl.id());
             if(expected!=null)expression=g.contextualValue(expression,expected.id(),decl.id());
-            if(!expression.error() && parameter.isPresent())checkMandatoryValue(decl,(ParameterSymbol)g.symbols.get(parameter.orElseThrow()),g.expressions.get(expression.id()));
+            if(!expression.error() && parameter.isPresent())checkMandatoryValue(decl,(ParameterSymbol)state.symbol(parameter.orElseThrow()),state.expression(expression.id()));
             if(expected!=null && !expression.error() && !g.assignable(expression.typeId(),expected.id()))
                 g.emitRule(decl,"incompatible signature parameter assignment","GRAPHIC_PARAMETER_TYPE");
             return new DrawingRuleSymbol.ExpressionValue(expression.id());
@@ -308,11 +309,11 @@ final class GraphicBuilder {
     private String parent(String path) { int dot=path.lastIndexOf('.'); return dot<0?"":path.substring(0,dot); }
 
     void validateDependencies() {
-        for(var symbol:g.symbols.values()) if(symbol instanceof GraphicSymbol graphic && graphic.basis().isPresent()) {
+        for(var symbol:state.symbolsInBuildOrder()) if(symbol instanceof GraphicSymbol graphic && graphic.basis().isPresent()) {
             var decl=g.index.byId(graphic.id()).orElseThrow();
-            for (var id : graphic.rules()) responsibility(g.index.byId(id).orElseThrow(), (DrawingRuleSymbol)g.symbols.get(id));
+            for (var id : graphic.rules()) responsibility(g.index.byId(id).orElseThrow(), (DrawingRuleSymbol)state.symbol(id));
             var source=g.scopeRoot(graphic.id()); var target=g.scopeRoot(graphic.basis().get());
-            if(g.symbols.get(source) instanceof TopicSymbol && g.symbols.get(target) instanceof TopicSymbol
+            if(state.symbol(source) instanceof TopicSymbol && state.symbol(target) instanceof TopicSymbol
                     && !g.isTopicSubtype(source,target) && !g.topicDependencies(source).contains(target))
                 g.emitRule(decl,"graphic basis topic requires DEPENDS ON","GRAPHIC_TOPIC_DEPENDENCY");
         }

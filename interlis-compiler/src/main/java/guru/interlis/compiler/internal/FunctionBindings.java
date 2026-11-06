@@ -9,7 +9,8 @@ import java.util.*;
  * and path binders; owns no second graph, source parser or name semantics. */
 final class FunctionBindings {
     private final GraphBuilder g;
-    FunctionBindings(GraphBuilder graph) { g=graph; }
+    private final SemanticBuildState state;
+    FunctionBindings(GraphBuilder graph, SemanticBuildState state) { g=graph; this.state = state; }
 
     record Result(boolean error, Map<Integer,FunctionCallExpression.ArgumentPath> paths) {
         Result { paths=Map.copyOf(paths); }
@@ -72,9 +73,9 @@ final class FunctionBindings {
         var actual=arguments.get(dependency.index());
         AttributePathType.Owner owner;
         if(g.effectiveDescriptor(actual.typeId()) instanceof ClassValueType) {
-            var value=g.expressions.get(actual.id());
+            var value=state.expression(actual.id());
             owner=value instanceof SymbolValueExpression symbol&&Set.of(SymbolKind.CLASS,SymbolKind.STRUCTURE,SymbolKind.ASSOCIATION,SymbolKind.VIEW)
-                    .contains(g.index.byId(symbol.target()).map(DeclInfo::kind).orElseGet(()->g.symbols.get(symbol.target()).kind()))
+                    .contains(g.index.byId(symbol.target()).map(DeclInfo::kind).orElseGet(()->state.symbol(symbol.target()).kind()))
                     ?new AttributePathType.Viewable(symbol.target()):new AttributePathType.ClassAttribute(actual.id());
         } else {
             var roots=roots(actual.typeId(),new HashSet<>());
@@ -82,7 +83,7 @@ final class FunctionBindings {
             owner=new AttributePathType.Viewable(roots.getFirst());
         }
         var id=g.nextTypeId();
-        g.types.put(id,new AttributePathType(id,new Origin.DeclaredOrigin(range),Optional.of(owner),attribute.restrictions()));
+        state.storeType(new AttributePathType(id,new Origin.DeclaredOrigin(range),Optional.of(owner),attribute.restrictions()));
         return id;
     }
 
@@ -104,7 +105,7 @@ final class FunctionBindings {
             if(actual.error())continue;
             boolean undefinedValue=guru.interlis.model.internal.TypeCompatibility.isUndefined(g.effectiveDescriptor(actual.typeId()));
             if(undefinedValue && function.parameters().get(i).mandatory()) {
-                error=true;g.emitRule(owner,"MANDATORY function parameter excludes undefined","FUNCTION_ARGUMENT_MANDATORY",g.expressions.get(actual.id()).range());continue;
+                error=true;g.emitRule(owner,"MANDATORY function parameter excludes undefined","FUNCTION_ARGUMENT_MANDATORY",state.expression(actual.id()).range());continue;
             }
             boolean areas=rule==BuiltinFunctions.Rule.AREAS_ATTRIBUTE || rule==BuiltinFunctions.Rule.AREAS_TEXT;
             if(areas && i==1 && undefined(actual))continue;
@@ -112,10 +113,10 @@ final class FunctionBindings {
                 if(undefinedValue)continue;
                 var roots=argumentRoots(attribute,i,function,arguments,rule);
                 boolean valid=attributeMatches(actual.typeId(),attribute,roots,function,arguments);
-                if(!valid) { error=true;g.emitRule(owner,"attribute argument has an incompatible owner or value type","FUNCTION_ATTRIBUTE",g.expressions.get(actual.id()).range()); }
+                if(!valid) { error=true;g.emitRule(owner,"attribute argument has an incompatible owner or value type","FUNCTION_ATTRIBUTE",state.expression(actual.id()).range()); }
             } else if(rule==BuiltinFunctions.Rule.AREAS_TEXT && i>0) {
                 int root=i==1 || undefined(arguments.get(1))?0:1;
-                var value=g.expressions.get(actual.id());
+                var value=state.expression(actual.id());
                 if(!(value instanceof LiteralExpression literal) || literal.textValue().isEmpty()) {
                     error=true;g.emitRule(owner,"area path argument requires a constant TEXT path","FUNCTION_PATH_CONSTANT",value.range());continue;
                 }
@@ -124,7 +125,7 @@ final class FunctionBindings {
                         || !(fragment.root() instanceof PathExpressionSyntax path)) { error=true;continue; }
                 var dependency=paths.get(root);
                 List<SymbolId> roots=dependency==null?roots(arguments.get(root).typeId(),new HashSet<>())
-                        :dependency.binding().map(g.expressions::get).map(e->roots(e.typeId(),new HashSet<>())).orElseGet(List::of);
+                        :dependency.binding().map(state::expression).map(e->roots(e.typeId(),new HashSet<>())).orElseGet(List::of);
                 TypeId expected=areaPathType(i,owner.language());
                 Optional<ExpressionId> binding=Optional.empty();
                 if(!roots.isEmpty()) {
@@ -156,7 +157,7 @@ final class FunctionBindings {
         if(owner.isEmpty())return List.of();
         return switch(owner.orElseThrow()) {
             case AttributePathType.Viewable v -> List.of(v.target());
-            case AttributePathType.ClassAttribute a -> roots(g.expressions.get(a.path()).typeId(),visited);
+            case AttributePathType.ClassAttribute a -> roots(state.expression(a.path()).typeId(),visited);
             case AttributePathType.Argument a -> a.function().equals(function.id()) && a.index()<arguments.size()
                     ? roots(arguments.get(a.index()).typeId(),visited):List.of();
         };
@@ -177,7 +178,7 @@ final class FunctionBindings {
 
     private boolean assign(TypeId source,TypeId target) {
         return guru.interlis.model.internal.TypeCompatibility.assign(g.effectiveDescriptor(source),g.effectiveDescriptor(target),
-                g::effectiveDescriptor,g.baseOf::get,domain->g.effectiveDescriptor(g.declaredTypes.get(domain)),AssignmentContext.FUNCTION_ARGUMENT)
+                g::effectiveDescriptor,state::baseOf,domain->g.effectiveDescriptor(state.declaredType(domain)),AssignmentContext.FUNCTION_ARGUMENT)
                 .decision()==RelationDecision.ALLOWED;
     }
 

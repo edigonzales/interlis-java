@@ -125,8 +125,8 @@ final class OverlayBindings {
         for(var group:groups){charge();if(group.source().priority()==source.priority()&&!group.values().equals(values))error(source,target.qualifiedName(),"conflicting metadata at equal priority: "+key);}
         groups.add(new Values(source,values,order++));
     }
-    void validateCrs(GraphBuilder g) {
-        metadata.forEach((id,keys)->{if(keys.containsKey("CRS")){g.checkWork();if(!(g.effectiveDescriptor(g.declaredTypes.get(id)) instanceof CoordinateType))
+    void validateCrs(GraphBuilder g, SemanticBuildState state) {
+        metadata.forEach((id,keys)->{if(keys.containsKey("CRS")){g.checkWork();if(!(g.effectiveDescriptor(state.declaredType(id)) instanceof CoordinateType))
             error(keys.get("CRS").getFirst().source(),index.byId(id).orElseThrow().qualifiedName(),"CRS target is not a coordinate declaration");}});
     }
     List<MetaAttributeSet.Entry> metadata(SymbolId id) {

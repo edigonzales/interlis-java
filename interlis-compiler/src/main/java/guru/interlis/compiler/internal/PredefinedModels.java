@@ -17,32 +17,34 @@ final class PredefinedModels {
             "min","h","d","M","Y","BaseTimeSystems","TimeOfDay","UTC","GregorianYear","GregorianDate","GregorianDateTime","XMLTime","XMLDate","XMLDateTime",
             "LineSegment","StartSegment","StraightSegment","ArcSegment","SurfaceEdge","SurfaceBoundary","LineGeometry",
             "areAreasWithoutGaps","areAreasWithoutGaps2");
-    static void finish(GraphBuilder graph, Set<LanguageVersion> languages) {
+    static void finish(SemanticWork work, SemanticBuildState state, Set<LanguageVersion> languages) {
         // Analysis also publishes declarations outside the requested closure.
         // Their predefined values need owners even when their language is not
         // part of the selected schema's language set.
         Set<LanguageVersion> materialized=new LinkedHashSet<>(languages);
-        for(var symbol:graph.symbols.values()) {
-            graph.checkWork();
+        for(var symbol:state.symbolsInBuildOrder()) {
+            work.checkpoint();
             if(symbol.origin() instanceof Origin.PredefinedOrigin p)materialized.add(p.language());
         }
         for(var language:materialized) {
-            graph.checkWork();var model=id(language);var origin=new Origin.PredefinedOrigin(language,"INTERLIS");
-            var members=graph.symbols.values().stream().filter(s->s.owner().isEmpty()
+            work.checkpoint();var model=id(language);var origin=new Origin.PredefinedOrigin(language,"INTERLIS");
+            var members=state.symbolsInBuildOrder().stream().filter(s->s.owner().isEmpty()
                     && s.origin() instanceof Origin.PredefinedOrigin p && p.language()==language && p.key().startsWith("INTERLIS."))
                     .sorted(Comparator.comparingInt((Symbol s)->order(((Origin.PredefinedOrigin)s.origin()).key()))
                             .thenComparing(s->((Origin.PredefinedOrigin)s.origin()).key())).toList();
             for(var member:members) {
-                graph.checkWork();var h=member.header();
+                work.checkpoint();var h=member.header();
                 var owned=new SymbolHeader(h.id(),h.kind(),h.name(),Optional.of(model),order(((Origin.PredefinedOrigin)h.origin()).key()),h.origin(),h.nameRange(),
                         h.languageVersion(),h.documentation(),h.metaAttributes(),h.modifiers(),h.oidRules());
-                graph.symbols.put(member.id(),withHeader(member,owned));
+                state.replaceSymbol(withHeader(member,owned));
             }
-            graph.symbols.put(model, declaration(language, members.stream().map(Symbol::id).toList()));
+            var declaration = declaration(language, members.stream().map(Symbol::id).toList());
+            if (state.hasSymbol(model)) state.replaceSymbol(declaration);
+            else state.defineSymbol(declaration);
         }
     }
-    static SymbolId ensure(GraphBuilder graph, LanguageVersion language) {
-        graph.symbols.putIfAbsent(id(language), declaration(language, List.of())); return id(language);
+    static SymbolId ensure(SemanticBuildState state, LanguageVersion language) {
+        state.defineSymbolIfAbsent(declaration(language, List.of())); return id(language);
     }
     private static ModelSymbol declaration(LanguageVersion language, List<SymbolId> members) {
         var model=id(language); var origin=new Origin.PredefinedOrigin(language,"INTERLIS");

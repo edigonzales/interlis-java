@@ -7,27 +7,28 @@ import java.util.*;
 /** Contextual subdivision rules over the final, alias-resolved effective attribute order. */
 final class NumericSubdivisions {
     private final GraphBuilder graph;
+    private final SemanticBuildState state;
     private final ExactUnitFactors factors;
-    NumericSubdivisions(GraphBuilder graph) { this.graph=graph;this.factors=new ExactUnitFactors(graph); }
+    NumericSubdivisions(GraphBuilder graph, SemanticBuildState state) { this.graph=graph; this.state = state;this.factors=new ExactUnitFactors(graph, state); }
 
     void validate() {
         Map<SymbolId,Optional<SymbolId>> originalPredecessors=new HashMap<>();
-        for(var owner:graph.effectiveMembers.entrySet()) {
+        for(var owner:state.effectiveMembersInBuildOrder()) {
             Optional<SymbolId> previous=Optional.empty();
             for(var member:owner.getValue()) {
                 graph.checkWork();
-                if(!(graph.symbols.get(member.declaredSymbol()) instanceof AttributeSymbol attribute))continue;
+                if(!(state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attribute))continue;
                 if(attribute.owner().filter(owner.getKey()::equals).isPresent())originalPredecessors.put(attribute.id(),previous);
                 previous=Optional.of(attribute.id());
             }
         }
         record Relation(SymbolId attribute,Optional<SymbolId> previous) { }
         Set<Relation> checked=new HashSet<>();
-        for(var owner:graph.effectiveMembers.entrySet()) {
+        for(var owner:state.effectiveMembersInBuildOrder()) {
             graph.checkWork();AttributeSymbol previous=null;
             for(var member:owner.getValue()) {
                 graph.checkWork();
-                if(!(graph.symbols.get(member.declaredSymbol()) instanceof AttributeSymbol attribute))continue;
+                if(!(state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attribute))continue;
                 if(attribute.subdivision()) {
                     var preceding=previous==null?Optional.<SymbolId>empty():Optional.of(previous.id());
                     var relation=new Relation(attribute.id(),preceding);
@@ -62,10 +63,10 @@ final class NumericSubdivisions {
         if(!number.range().circular()) {error(declaration,"continuous subdivision must be CIRCULAR","SUBDIVISION_CIRCULAR");return;}
         if(number.range().minimum().isEmpty()||number.range().maximum().isEmpty()
                 ||parent.range().unit().isEmpty()||number.range().unit().isEmpty())return;
-        var parentUnit=graph.symbols.get(parent.range().unit().orElseThrow());
+        var parentUnit=state.symbol(parent.range().unit().orElseThrow());
         if(parentUnit instanceof UnitSymbol unit && unit.abstractUnit()) {
             var specialization=guru.interlis.model.internal.TypeCompatibility.numericUnitExtension(number,parent,id->{
-                graph.checkWork();return graph.symbols.get(id) instanceof UnitSymbol value?value:null;
+                graph.checkWork();return state.symbol(id) instanceof UnitSymbol value?value:null;
             });
             if(specialization.decision()==RelationDecision.DISALLOWED)
                 error(declaration,"subdivision unit cannot specialize the abstract predecessor unit","SUBDIVISION_FACTOR");

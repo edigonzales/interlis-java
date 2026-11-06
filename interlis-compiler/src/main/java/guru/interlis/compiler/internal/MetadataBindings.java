@@ -8,8 +8,9 @@ import java.util.*;
 /** Metadata binding within one graph build. External object values are never loaded. */
 final class MetadataBindings {
     private final GraphBuilder g;
+    private final SemanticBuildState state;
     private final Set<SymbolId> active = new HashSet<>();
-    MetadataBindings(GraphBuilder graph) { g = graph; }
+    MetadataBindings(GraphBuilder graph, SemanticBuildState state) { g = graph; this.state = state; }
 
     MetadataBasketSymbol basket(DeclInfo decl) {
         var syntax = (MetadataBasketDeclarationSyntax)decl.syntax();
@@ -17,7 +18,7 @@ final class MetadataBindings {
         var base = syntax.baseBasket().flatMap(name -> g.bindTarget(decl, name, Set.of(SymbolKind.METADATA_BASKET), ReferenceUsage.BASE_TYPE, new ArrayList<>()));
         var result = new MetadataBasketSymbol(g.header(decl), syntax.basketKind(), topic, base,
                 g.index.children(decl.id()).stream().map(DeclInfo::id).toList());
-        g.symbols.put(decl.id(), result);
+        state.defineSymbol(result);
         active.add(decl.id());
         base.ifPresent(id -> {
             if (active.contains(id)) { g.emitRule(decl, "cyclic metadata basket inheritance", "METADATA_BASKET_CYCLE"); return; }
@@ -46,7 +47,7 @@ final class MetadataBindings {
     MetaObjectSymbol object(DeclInfo decl) {
         var syntax = (MetadataBasketDeclarationSyntax.ObjectDeclaration)decl.syntax();
         var owner = g.index.byId(decl.owner().orElseThrow()).orElseThrow();
-        var basket = g.symbols.get(owner.id()) instanceof MetadataBasketSymbol b ? b : basket(owner);
+        var basket = state.symbol(owner.id()) instanceof MetadataBasketSymbol b ? b : basket(owner);
         Optional<SymbolId> target = Optional.empty();
         SymbolId topic = basket.topic().orElse(null);
         Set<SymbolId> seen = new HashSet<>();
@@ -73,7 +74,7 @@ final class MetadataBindings {
         while (id != null && seen.add(id)) { g.checkWork(); id = g.objectInheritanceBase(id).orElse(null); }
     }
     private boolean specializes(SymbolId actual, SymbolId expected) {
-        return guru.interlis.model.internal.TypeCompatibility.specializes(actual, expected, g.baseOf::get);
+        return guru.interlis.model.internal.TypeCompatibility.specializes(actual, expected, state::baseOf);
     }
 
     NumericRange numeric(NumericTypeSyntax syntax, DeclInfo context, List<DiagnosticId> errors) {
@@ -125,13 +126,13 @@ final class MetadataBindings {
     }
 
     void validate() {
-        for (var symbol : List.copyOf(g.symbols.values())) {
+        for (var symbol : List.copyOf(state.symbolsInBuildOrder())) {
             var decl = g.index.byId(symbol.id()).orElse(null);
             if (decl == null) continue;
             if (symbol instanceof ParameterSymbol parameter && g.index.byId(decl.owner().orElseThrow()).orElseThrow().kind() != SymbolKind.MODEL)
                 validateParameter(decl, parameter);
         }
-        for (var entry : List.copyOf(g.declaredTypes.entrySet())) {
+        for (var entry : List.copyOf(state.declaredTypesInBuildOrder())) {
             var decl = g.index.byId(entry.getKey()).orElse(null); if (decl == null) continue;
             var type = g.effectiveDescriptor(entry.getValue());
             if (type instanceof NumericType n) validateRange(decl, n.range());
@@ -150,44 +151,44 @@ final class MetadataBindings {
         var refsystem = predefined(decl, "INTERLIS.REFSYSTEM", Set.of(SymbolKind.CLASS)).orElseThrow();
         var sign = predefined(decl, "INTERLIS.SIGN", Set.of(SymbolKind.CLASS)).orElseThrow();
         if (specializes(owner, sign)) {
-            var inherited = parameter(g.baseOf.get(owner), decl.name());
+            var inherited = parameter(state.baseOf(owner), decl.name());
             if (g.index.children(owner).stream().filter(d -> d.kind()==SymbolKind.PARAMETER && d.name().equals(decl.name())).count()>1)
                 g.emitRule(decl, "duplicate signature parameter", "PARAMETER_NAME_UNIQUE");
             if (inherited.isPresent() != decl.modifiers().contains(Modifier.EXTENDED))
                 g.emitRule(decl, "signature parameter override needs an inherited parameter and EXTENDED", "PARAMETER_OVERRIDE");
             inherited.ifPresent(id -> {
-                var parent=(ParameterSymbol)g.symbols.get(id);
+                var parent=(ParameterSymbol)state.symbol(id);
                 if (parent.header().has(Modifier.FINAL)) g.emitRule(decl,"cannot override FINAL parameter","PARAMETER_FINAL");
                 if (!g.assignable(parameter.typeId(),parent.typeId()) || parent.mandatory() && !parameter.mandatory())
                     g.emitRule(decl,"signature parameter must refine inherited type and mandatory state","PARAMETER_TYPE");
             });
-            g.symbols.put(decl.id(),new ParameterSymbol(parameter.header(),parameter.typeId(),parameter.mandatory(),inherited));
+            state.replaceSymbol(new ParameterSymbol(parameter.header(),parameter.typeId(),parameter.mandatory(),inherited));
             return;
         }
         if (!(specializes(owner, axis) || specializes(owner, refsystem))) {
             g.emitRule(decl, "class parameters require a reference-system, axis or signature class", "PARAMETER_OWNER"); return;
         }
-        var inherited = parameter(g.baseOf.get(owner), decl.name());
+        var inherited = parameter(state.baseOf(owner), decl.name());
         if (!decl.name().equals("Unit") || inherited.isEmpty()) {
             g.emitRule(decl, "reference-system and axis parameters may only refine the predefined Unit", "PARAMETER_UNIT"); return;
         }
         if (!decl.modifiers().contains(Modifier.EXTENDED)) g.emitRule(decl, "parameter override requires EXTENDED", "PARAMETER_OVERRIDE");
-        var parent = (ParameterSymbol)g.symbols.get(inherited.get());
+        var parent = (ParameterSymbol)state.symbol(inherited.get());
         var actual = g.effectiveDescriptor(parameter.typeId()); var expected = g.effectiveDescriptor(parent.typeId());
         if (!(actual instanceof NumericType a && expected instanceof NumericType b)
                 || b.range().unit().isPresent() && (a.range().unit().isEmpty() || !g.unitExtends(a.range().unit().get(), b.range().unit().get())))
             g.emitRule(decl, "Unit parameter must specialize the inherited numeric unit", "PARAMETER_UNIT_TYPE");
         if (parent.header().has(Modifier.FINAL)) g.emitRule(decl, "cannot override FINAL parameter", "PARAMETER_FINAL");
-        g.symbols.put(decl.id(), new ParameterSymbol(parameter.header(), parameter.typeId(), parameter.mandatory(), inherited));
+        state.replaceSymbol(new ParameterSymbol(parameter.header(), parameter.typeId(), parameter.mandatory(), inherited));
     }
 
     Optional<SymbolId> parameter(SymbolId owner, String name) {
         Set<SymbolId> seen = new HashSet<>();
         while (owner != null && seen.add(owner)) {
-            g.checkWork(); var symbol = g.symbols.get(owner);
+            g.checkWork(); var symbol = state.symbol(owner);
             var members = symbol instanceof ClassSymbol c ? c.members() : symbol instanceof StructureSymbol s ? s.members() : List.<SymbolId>of();
-            for (var id : members) if (g.symbols.get(id) instanceof ParameterSymbol p && p.name().value().equals(name)) return Optional.of(id);
-            owner = g.baseOf.get(owner);
+            for (var id : members) if (state.symbol(id) instanceof ParameterSymbol p && p.name().value().equals(name)) return Optional.of(id);
+            owner = state.baseOf(owner);
         }
         return Optional.empty();
     }
@@ -196,7 +197,7 @@ final class MetadataBindings {
         if (range.referenceSystem().isEmpty()) return;
         var ref = range.referenceSystem().get(); Optional<SymbolId> requiredUnit = Optional.empty();
         if (ref.domain()) {
-            var domain = (DomainSymbol)g.symbols.get(ref.target());
+            var domain = (DomainSymbol)state.symbol(ref.target());
             var target = domain == null ? null : g.effectiveDescriptor(domain.typeId());
             if (target instanceof NumericType n && ref.axis().isEmpty()) requiredUnit = n.range().unit();
             else if (target instanceof CoordinateType c && ref.axis().isPresent() && ref.axis().getAsInt() <= c.dimensions())
@@ -208,20 +209,20 @@ final class MetadataBindings {
             }
             else g.emitRule(decl, "reference-system domain must be numeric or select an existing coordinate axis", "REFSYSTEM_DOMAIN");
         } else {
-            var object = (MetaObjectSymbol)g.symbols.get(ref.target());
+            var object = (MetaObjectSymbol)state.symbol(ref.target());
             if (object == null || object.objectClass().isEmpty()) return;
             SymbolId cls = object.objectClass().get();
             var required = predefined(decl, ref.axis().isPresent() ? "INTERLIS.COORDSYSTEM" : "INTERLIS.REFSYSTEM", Set.of(SymbolKind.CLASS)).orElseThrow();
             if (!specializes(cls, required)) { g.emitRule(decl, "reference-system object has the wrong scalar/coordinate family", "REFSYSTEM_OBJECT"); return; }
             if (ref.axis().isPresent()) {
-                var attribute = g.findMember(cls, "Axis").map(g.symbols::get).orElse(null);
+                var attribute = g.findMember(cls, "Axis").map(state::symbol).orElse(null);
                 if (attribute instanceof AttributeSymbol a && g.effectiveDescriptor(a.declaredType()) instanceof CollectionType list) {
                     if (list.cardinality().upper() instanceof CardinalityUpper.Finite max && java.math.BigInteger.valueOf(ref.axis().getAsInt()).compareTo(max.value()) > 0)
                         g.emitRule(decl, "reference-system axis is outside the declared axis list", "REFSYSTEM_AXIS");
                     if (g.effectiveDescriptor(list.elementType()) instanceof StructureValueType s) cls = g.structures.target(s);
                 }
             }
-            var param = parameter(cls, "Unit").map(g.symbols::get).orElse(null);
+            var param = parameter(cls, "Unit").map(state::symbol).orElse(null);
             if (param instanceof ParameterSymbol p && g.effectiveDescriptor(p.typeId()) instanceof NumericType n) requiredUnit = n.range().unit();
         }
         if (requiredUnit.isPresent() && range.unit().isEmpty() && !requiredUnit.get().equals(g.builtinUnit(decl.id(), "INTERLIS.ANYUNIT").orElseThrow()))
@@ -237,18 +238,18 @@ final class MetadataBindings {
         if (!kinds.contains(kind)) return Optional.empty();
         var h = header(context.language(), name.substring(9), kind, Optional.empty(), 0,
                 kind == SymbolKind.CLASS && !name.equals("INTERLIS.METAOBJECT_TRANSLATION") ? Set.of(Modifier.ABSTRACT) : Set.of());
-        if (g.symbols.containsKey(h.id())) return Optional.of(h.id());
+        if (state.hasSymbol(h.id())) return Optional.of(h.id());
         String baseName = switch (name) {
             case "INTERLIS.REFSYSTEM", "INTERLIS.SIGN" -> "INTERLIS.METAOBJECT";
             case "INTERLIS.COORDSYSTEM", "INTERLIS.SCALSYSTEM" -> "INTERLIS.REFSYSTEM";
             default -> null;
         };
         var base = baseName == null ? Optional.<SymbolId>empty() : predefined(context, baseName, Set.of(SymbolKind.CLASS));
-        base.ifPresent(id -> g.baseOf.put(h.id(), id));
+        base.ifPresent(id -> state.bindBase(h.id(), id));
         List<SymbolId> members = new ArrayList<>();
         List<SymbolId> constraints = new ArrayList<>();
         if (name.equals("INTERLIS.METAOBJECT") || name.equals("INTERLIS.METAOBJECT_TRANSLATION")) {
-            var t = g.nextTypeId(); g.types.put(t, new TextType(t, h.origin(), TextKind.NAME, OptionalInt.of(255)));
+            var t = g.nextTypeId(); state.storeType(new TextType(t, h.origin(), TextKind.NAME, OptionalInt.of(255)));
             var names = name.equals("INTERLIS.METAOBJECT") ? List.of("Name") : List.of("Name", "NameInBaseLanguage");
             for (int i = 0; i < names.size(); i++) {
                 g.checkWork(); members.add(member(h, names.get(i), t, false, true, i));
@@ -260,33 +261,33 @@ final class MetadataBindings {
                 var ch = header(context.language(), name.substring(9) + "." + names.get(i) + "Unique",
                         SymbolKind.CONSTRAINT, Optional.of(h.id()), names.size() + i, Set.of());
                 var expression = new ExpressionId(ch.id().value() + ":path");
-                g.expressions.put(expression, new PathExpression(expression, t, ExpressionTypeState.RESOLVED, range, List.of(),
+                state.storeExpression(new PathExpression(expression, t, ExpressionTypeState.RESOLVED, range, List.of(),
                         new ObjectPath(List.of(new PathStep.AttributeStep(names.get(i), members.get(i), range)))));
-                g.symbols.put(ch.id(), new ConstraintSymbol(ch, new UniquenessConstraint(Optional.empty(), false, Optional.empty(), List.of(expression), List.of()), Optional.empty()));
+                state.defineSymbol(new ConstraintSymbol(ch, new UniquenessConstraint(Optional.empty(), false, Optional.empty(), List.of(expression), List.of()), Optional.empty()));
                 constraints.add(ch.id());
             }
         }
         if (name.equals("INTERLIS.AXIS") || name.equals("INTERLIS.SCALSYSTEM")) {
-            var t = g.nextTypeId(); g.types.put(t, new NumericType(t, h.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
+            var t = g.nextTypeId(); state.storeType(new NumericType(t, h.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
                     NumericDirection.NONE, g.builtinUnit(context.id(), "INTERLIS.ANYUNIT"), Optional.empty())));
             members.add(member(h, "Unit", t, true, false, 0));
         }
         if (name.equals("INTERLIS.COORDSYSTEM")) {
             var axis = predefined(context, "INTERLIS.AXIS", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            var t = g.nextTypeId(); g.types.put(t, new StructureValueType(t, h.origin(), Optional.of(axis), List.of()));
-            var list = g.nextTypeId(); g.types.put(list, new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.of(1, 3), t));
+            var t = g.nextTypeId(); state.storeType(new StructureValueType(t, h.origin(), Optional.of(axis), List.of()));
+            var list = g.nextTypeId(); state.storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.of(1, 3), t));
             members.add(member(h, "Axis", list, false, false, 0));
         }
         if (name.equals("INTERLIS.SIGN")) {
-            var type=g.nextTypeId(); g.types.put(type,new MetaObjectType(type,h.origin(),Optional.empty()));
+            var type=g.nextTypeId(); state.storeType(new MetaObjectType(type,h.origin(),Optional.empty()));
             members.add(member(h,"Sign",type,true,false, 0));
         }
-        g.symbols.put(h.id(), kind == SymbolKind.CLASS ? new ClassSymbol(h, base, members, constraints) : new StructureSymbol(h, base, members, constraints));
+        state.defineSymbol(kind == SymbolKind.CLASS ? new ClassSymbol(h, base, members, constraints) : new StructureSymbol(h, base, members, constraints));
         List<EffectiveMember> effective = new ArrayList<>();
-        base.ifPresent(id -> g.effectiveMembers.getOrDefault(id, List.of()).forEach(m -> effective.add(new EffectiveMember(m.declaredSymbol(), h.id(), List.of(id, h.id()), effective.size(), EffectiveMemberOrigin.INHERITED, false))));
-        for (var id : members) if (g.symbols.get(id).kind() == SymbolKind.ATTRIBUTE)
+        base.ifPresent(id -> state.effectiveMembers(id).forEach(m -> effective.add(new EffectiveMember(m.declaredSymbol(), h.id(), List.of(id, h.id()), effective.size(), EffectiveMemberOrigin.INHERITED, false))));
+        for (var id : members) if (state.symbol(id).kind() == SymbolKind.ATTRIBUTE)
             effective.add(new EffectiveMember(id, h.id(), List.of(h.id()), effective.size(), EffectiveMemberOrigin.LOCAL, false));
-        g.effectiveMembers.put(h.id(), List.copyOf(effective));
+        state.setEffectiveMembers(h.id(), List.copyOf(effective));
         return Optional.of(h.id());
     }
 
@@ -295,9 +296,9 @@ final class MetadataBindings {
                 parameter ? SymbolKind.PARAMETER : SymbolKind.ATTRIBUTE, Optional.of(owner.id()), order, Set.of());
         var h = new SymbolHeader(original.id(), original.kind(), DeclaredName.declared(name), original.owner(), order, original.origin(), Optional.empty(),
                 original.languageVersion(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
-        g.symbols.put(h.id(), parameter ? new ParameterSymbol(h, type, mandatory, Optional.empty())
+        state.defineSymbol(parameter ? new ParameterSymbol(h, type, mandatory, Optional.empty())
                 : new AttributeSymbol(h, type, mandatory, false, false, false, Optional.empty(), List.of()));
-        g.declaredTypes.put(h.id(), type); return h.id();
+        state.bindDeclaredType(h.id(), type); return h.id();
     }
     private SymbolHeader header(LanguageVersion language, String name, SymbolKind kind, Optional<SymbolId> owner, int order, Set<Modifier> modifiers) {
         return new SymbolHeader(new SymbolId("predefined:" + language + ":" + name), kind, owner.isEmpty() ? DeclaredName.synthetic("INTERLIS." + name) : DeclaredName.declared(name),

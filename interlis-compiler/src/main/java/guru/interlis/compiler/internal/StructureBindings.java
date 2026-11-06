@@ -8,7 +8,8 @@ import java.util.*;
 /** Structure binding and availability within one graph build; owns no parallel state. */
 final class StructureBindings {
     private final GraphBuilder g;
-    StructureBindings(GraphBuilder graph) { g=graph; }
+    private final SemanticBuildState state;
+    StructureBindings(GraphBuilder graph, SemanticBuildState state) { g=graph; this.state = state; }
 
     TypeDescriptor bind(TypeId id, StructureValueTypeSyntax syntax, DeclInfo declaration) {
         List<DiagnosticId> errors=new ArrayList<>();
@@ -35,7 +36,7 @@ final class StructureBindings {
     }
 
     void validate() {
-        for(Symbol symbol:g.symbols.values()) {
+        for(Symbol symbol:state.symbolsInBuildOrder()) {
             g.checkWork();
             if(!(symbol instanceof AttributeSymbol attribute))continue;
             DeclInfo declaration=g.index.byId(attribute.id()).orElse(null);
@@ -49,13 +50,13 @@ final class StructureBindings {
                     && !hasConcreteStructure(structure,declaration))
                 g.emitRule(declaration,"required structure attribute needs a concrete allowed structure or ABSTRACT","STRUCTURE_ABSTRACT_REQUIRED");
         }
-        for(Symbol owner:g.symbols.values()) {
+        for(Symbol owner:state.symbolsInBuildOrder()) {
             g.checkWork();
             if(!(owner instanceof ClassSymbol || owner instanceof StructureSymbol || owner instanceof AssociationSymbol) || owner.header().has(Modifier.ABSTRACT))continue;
             DeclInfo declaration=g.index.byId(owner.id()).orElse(null);
             if(declaration==null)continue;
-            for(var member:g.effectiveMembers.getOrDefault(owner.id(),List.of()))
-                if(g.symbols.get(member.declaredSymbol()) instanceof AttributeSymbol attribute && attribute.header().has(Modifier.ABSTRACT))
+            for(var member:state.effectiveMembers(owner.id()))
+                if(state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attribute && attribute.header().has(Modifier.ABSTRACT))
                     g.emitRule(declaration,"concrete viewable retains an abstract attribute","ABSTRACT_MEMBER");
         }
     }
@@ -63,16 +64,16 @@ final class StructureBindings {
     private boolean hasConcreteStructure(StructureValueType type, DeclInfo declaration) {
         if(type.targetRoots().isEmpty())return false;
         for(SymbolId root:type.targetRoots())
-            if(g.symbols.get(root) instanceof StructureSymbol structure && !structure.header().has(Modifier.ABSTRACT))return true;
+            if(state.symbol(root) instanceof StructureSymbol structure && !structure.header().has(Modifier.ABSTRACT))return true;
         var visible=g.importedModels(g.index.modelOfSymbol(declaration.id()).orElseThrow());
         SymbolId topic=g.scopeRoot(declaration.id());
-        for(Symbol symbol:g.symbols.values()) {
+        for(Symbol symbol:state.symbolsInBuildOrder()) {
             g.checkWork();
             if(!(symbol instanceof StructureSymbol structure) || structure.header().has(Modifier.ABSTRACT))continue;
             if(!(structure.origin() instanceof Origin.PredefinedOrigin)
                     && !visible.contains(g.index.modelOfSymbol(structure.id()).orElse(null)))continue;
             SymbolId candidateTopic=g.scopeRoot(structure.id());
-            boolean available=!(g.symbols.get(candidateTopic) instanceof TopicSymbol) || Objects.equals(candidateTopic,topic)
+            boolean available=!(state.symbol(candidateTopic) instanceof TopicSymbol) || Objects.equals(candidateTopic,topic)
                     || type.targetRoots().stream().anyMatch(root -> Objects.equals(g.scopeRoot(root),candidateTopic));
             if(available && type.targetRoots().stream().anyMatch(root -> g.targetSpecializes(structure.id(),root)))return true;
         }

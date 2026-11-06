@@ -5,7 +5,6 @@ import guru.interlis.compiler.SourceSet;
 import guru.interlis.diagnostics.DiagnosticArgument;
 import guru.interlis.diagnostics.DiagnosticCode;
 import guru.interlis.diagnostics.DiagnosticDraft;
-import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.DiagnosticId;
 import guru.interlis.diagnostics.Phase;
 import guru.interlis.diagnostics.Severity;
@@ -151,32 +150,20 @@ final class GraphBuilder {
     private final Closure closure;
     private final guru.interlis.model.SnapshotId snapshotId;
     final NameResolver resolver;
-    private final DiagnosticCollector collector;
+    private final SemanticDiagnostics diagnostics;
     private final Map<SourceId, Set<String>> syntaxUnsupportedBySource;
-    final Map<SymbolId, Symbol> symbols = new LinkedHashMap<>();
-    final Map<TypeId, TypeDescriptor> types = new LinkedHashMap<>();
-    final Map<ExpressionId, TypedExpression> expressions = new LinkedHashMap<>();
-    private final Map<ReferenceId, NameReference> references = new LinkedHashMap<>();
     private final Set<ReferenceSite> recordedReferences = new HashSet<>();
-    final Map<SymbolId, TypeId> declaredTypes = new LinkedHashMap<>();
-    private final Map<SymbolId, EffectiveType> effectiveTypes = new LinkedHashMap<>();
-    final Map<SymbolId, List<EffectiveMember>> effectiveMembers = new LinkedHashMap<>();
     private final Map<SymbolId, SymbolId> externalConstraintTargets = new LinkedHashMap<>();
     private final Set<SymbolId> resolvedObjectBases = new HashSet<>();
     private final Set<SymbolId> resolvingDomainTypes = new HashSet<>();
     private final Set<SymbolId> resolvingAttributeTypes = new HashSet<>();
     private final Set<SymbolId> buildingAssociations = new HashSet<>();
-    final Map<SymbolId, SymbolId> baseOf = new LinkedHashMap<>();
     private final Map<SymbolId, SymbolId> modelIdByDecl = new LinkedHashMap<>();
-    private final Map<SourceId, Set<String>> unsupportedBySource = new LinkedHashMap<>();
     private final Map<String, DeclInfo> modelNames = new LinkedHashMap<>();
-    private int typeCounter;
-    private int expressionCounter;
     private int referenceCounter;
     private final guru.interlis.execution.CancellationToken cancellation;
-    private final List<guru.interlis.diagnostics.Diagnostic> syntaxErrors;
-    private final long maximumWork;
-    private long work;
+    private final SemanticBuildState state = new SemanticBuildState();
+    private final SemanticWork work;
     private final OverlayBindings overlays;
     private final Map<guru.interlis.model.LanguageVersion,TypeId> booleanTypes = new java.util.EnumMap<>(guru.interlis.model.LanguageVersion.class);
 
@@ -185,15 +172,14 @@ final class GraphBuilder {
                  Map<SourceId, Set<String>> syntaxUnsupportedBySource,
                  guru.interlis.execution.CancellationToken cancellation,
                  guru.interlis.compiler.AnalysisBudget budget, OverlayBindings overlays) {
-        this.overlays=overlays;this.work=overlays.workUnits();
+        this.overlays = overlays;
         this.cancellation = Objects.requireNonNull(cancellation, "cancellation");
-        this.maximumWork = Objects.requireNonNull(budget, "budget").maxSemanticWorkUnits();
+        this.work = new SemanticWork(this.cancellation,
+                Objects.requireNonNull(budget, "budget").maxSemanticWorkUnits(), overlays.workUnits());
         this.index = Objects.requireNonNull(index, "index");
         this.sourceSet = Objects.requireNonNull(sourceSet, "sourceSet");
         this.closure = Objects.requireNonNull(closure, "closure");
-        this.collector = Objects.requireNonNull(collector, "collector");
-        this.syntaxErrors = collector.snapshot().stream().filter(d -> d.severity() == Severity.ERROR
-                && (d.phase() == Phase.LEXING || d.phase() == Phase.PARSING)).toList();
+        this.diagnostics = new SemanticDiagnostics(collector, this.closure);
         this.snapshotId = Objects.requireNonNull(snapshotId, "snapshotId");
         this.syntaxUnsupportedBySource = Map.copyOf(
                 Objects.requireNonNull(syntaxUnsupportedBySource, "syntaxUnsupportedBySource"));
@@ -205,27 +191,42 @@ final class GraphBuilder {
     }
 
     void checkWork() {
-        cancellation.throwIfCancellationRequested();
-        if (++work > maximumWork) {
-            throw new AnalysisBudgetExceededException(
-                    "maxSemanticWorkUnits", maximumWork);
-        }
+        work.checkpoint();
     }
 
-    final LineForms lines = new LineForms(this);
-    final GraphicBuilder graphics = new GraphicBuilder(this);
-    final MetadataBindings metadata = new MetadataBindings(this);
-    final StructureBindings structures = new StructureBindings(this);
-    final FunctionBindings functions = new FunctionBindings(this);
-    final PredefinedTemporal temporal = new PredefinedTemporal(this);
+    DiagnosticId unresolved(guru.interlis.syntax.NameSyntax name) {
+        return diagnostics.unresolved(name);
+    }
+
+    DiagnosticId emitUnsupported(SourceId source, SourceRange range, String feature, String construct) {
+        return diagnostics.emitUnsupported(source, range, feature, construct);
+    }
+
+    DiagnosticId emitTypeMismatch(SourceId source, SourceRange range, String actual, String expected) {
+        return diagnostics.emitTypeMismatch(range, actual, expected);
+    }
+
+    DiagnosticId emitRule(DeclInfo decl, String rule, String reason) {
+        return diagnostics.emitRule(decl, rule, reason);
+    }
+
+    DiagnosticId emitRule(DeclInfo decl, String rule, String reason, SourceRange range) {
+        return diagnostics.emitRule(decl, rule, reason, range);
+    }
+
+    final LineForms lines = new LineForms(this, state);
+    final GraphicBuilder graphics = new GraphicBuilder(this, state);
+    final MetadataBindings metadata = new MetadataBindings(this, state);
+    final StructureBindings structures = new StructureBindings(this, state);
+    final FunctionBindings functions = new FunctionBindings(this, state);
+    final PredefinedTemporal temporal = new PredefinedTemporal(this, state);
 
     GraphResult build() {
         syntaxUnsupportedBySource.forEach((source, features) -> {
-            Set<String> known = unsupportedBySource.computeIfAbsent(source,
-                    ignored -> new LinkedHashSet<>());
+            diagnostics.registerUnsupportedSource(source);
             for (String feature : features) {
                 checkWork();
-                if (known.add(feature)) {
+                if (diagnostics.recordUnsupported(source, feature)) {
                     SourceText text = sourceSet.sources().get(source);
                     SourceRange range = text == null ? null : text.range(0, 0);
                     emitUnsupported(source, range, feature, feature);
@@ -258,14 +259,14 @@ final class GraphBuilder {
         buildEffectiveTypes();
         validateFormattedUses();
         validateNumericUses();
-        new NumericSubdivisions(this).validate();
+        new NumericSubdivisions(this, state).validate();
         buildReferences();
         validateAssociationRules();
         validateAttributeOverrides();
         validateClassExtensions();
         validateTypeNamespaces();
         validateConstraintNames();
-        overlays.validateCrs(this);
+        overlays.validateCrs(this, state);
         validateTranslations();
         bindTransferNamespaces();
         Set<SymbolId> modelIds = closure.models().stream()
@@ -277,7 +278,7 @@ final class GraphBuilder {
                 .filter(Objects::nonNull)
                 .toList();
         Set<guru.interlis.model.LanguageVersion> languages = new LinkedHashSet<>();
-        for (ModelSymbol model : symbols.values().stream()
+        for (ModelSymbol model : state.symbolsInBuildOrder().stream()
                 .filter(s -> s instanceof ModelSymbol)
                 .map(s -> (ModelSymbol) s)
                 .filter(s -> modelIds.contains(s.id()))
@@ -285,17 +286,14 @@ final class GraphBuilder {
             checkWork();
             languages.add(model.header().languageVersion());
         }
-        PredefinedModels.finish(this, languages);
-        SemanticGraph graph = new SemanticGraph(
-                snapshotId,
-                symbols.values(), types.values(), expressions.values().stream().toList(),
-                references.values(), declaredTypes, effectiveTypes, effectiveMembers,
-                rootIds, new ArrayList<>(modelIds), languages,
+        PredefinedModels.finish(work, state, languages);
+        SemanticGraph graph = state.freeze(
+                snapshotId, rootIds, new ArrayList<>(modelIds), languages,
                 sourceSet.sources().entrySet().stream().collect(java.util.stream.Collectors.toMap(
                         Map.Entry::getKey, e -> e.getValue().revision())));
         AnalysisCoverage coverage = buildCoverage();
         return new GraphResult(graph, coverage, rootIds, new ArrayList<>(modelIds),
-                unsupportedBySource);
+                diagnostics.unsupportedBySource());
     }
 
     private void validateTypeNamespaces() {
@@ -330,7 +328,7 @@ final class GraphBuilder {
             }
             if (declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) continue;
             var seen = new HashSet<SymbolId>();
-            for (var inherited = baseOf.get(owner); inherited != null && seen.add(inherited); inherited = baseOf.get(inherited)) {
+            for (var inherited = state.baseOf(owner); inherited != null && seen.add(inherited); inherited = state.baseOf(inherited)) {
                 checkWork();
                 var prior = names.getOrDefault(inherited, Map.of()).get(declaration.name());
                 if (prior != null) {
@@ -346,7 +344,7 @@ final class GraphBuilder {
         var related = new guru.interlis.diagnostics.RelatedLocation(prior.nameRange().orElseThrow(),
                 "diagnostic.related.conflictingDeclaration",
                 List.of(new DiagnosticArgument.IdentifierArgument("name", prior.name())));
-        emitRule(declaration, rule, reason, ruleRange(declaration), List.of(related));
+        diagnostics.emitRule(declaration, rule, reason, List.of(related));
     }
 
     /** Named constraints share the declaring viewable's local namespace, including
@@ -364,7 +362,7 @@ final class GraphBuilder {
                     ? external.constraint() : (ConstraintDeclarationSyntax) declaration.syntax();
             if (syntax.name().isEmpty()) continue;
             SymbolId target = externalConstraintTargets.getOrDefault(declaration.id(), declaration.owner().orElse(null));
-            var symbol = symbols.get(target);
+            var symbol = state.symbol(target);
             if (!(symbol instanceof ClassSymbol || symbol instanceof StructureSymbol
                     || symbol instanceof AssociationSymbol || symbol instanceof ViewSymbol)) continue;
             var scope = new ConstraintScope(target, scopeRoot(declaration.id()));
@@ -375,7 +373,7 @@ final class GraphBuilder {
     }
 
     private void validateTranslations() {
-        List<ModelSymbol> models = symbols.values().stream()
+        List<ModelSymbol> models = state.symbolsInBuildOrder().stream()
                 .filter(ModelSymbol.class::isInstance).map(ModelSymbol.class::cast).toList();
         Map<SymbolId, SymbolId> originals = new LinkedHashMap<>();
         for (var model : models) model.translation().ifPresent(translation -> {
@@ -390,7 +388,7 @@ final class GraphBuilder {
                 continue;
             }
             guru.interlis.model.ModelTranslation translation = model.translation().orElseThrow();
-            ModelSymbol source = (ModelSymbol) symbols.get(originals.get(model.id()));
+            ModelSymbol source = (ModelSymbol) state.symbol(originals.get(model.id()));
             DeclInfo decl = index.byId(model.id()).orElse(null);
             if (decl != null && translationRoot(model.id(), originals) == null) {
                 emitRule(decl, "translation dependency has no original model", "TRANSLATION_CYCLE");
@@ -426,7 +424,7 @@ final class GraphBuilder {
                         for (var pair : pending) {
                             checkWork();
                             checked.add(pair.original());
-                            var left=symbols.get(pair.original());var right=symbols.get(pair.translated());
+                            var left=state.symbol(pair.original());var right=state.symbol(pair.translated());
                             if(left!=null && right!=null)compareSymbolReferences(left,right,correspondence,decl);
                         }
                     }
@@ -435,7 +433,7 @@ final class GraphBuilder {
                 // Publish the final immutable links only after all newly added pairs were checked.
                 var bound = new guru.interlis.model.ModelTranslation(translation.sourceModel(), translation.sourceVersion(), translation.language(),
                         Optional.of(source.id()), correspondence.entrySet().stream().map(e -> new guru.interlis.model.TranslationLink(e.getKey(), e.getValue())).toList(),translation.origin());
-                symbols.put(model.id(), new ModelSymbol(model.header(), model.modelKind(), model.contracted(), model.modelVersion(),
+                state.replaceSymbol(new ModelSymbol(model.header(), model.modelKind(), model.contracted(), model.modelVersion(),
                         model.issuer(), model.imports(), model.members(), Optional.of(bound), model.options(), model.transferNamespace()));
             }
         }
@@ -507,8 +505,8 @@ final class GraphBuilder {
             if (candidates.size() != 1) return false;
             int selected = candidates.getFirst(); used.add(selected);
             if (imported.targetModel().isPresent()) {
-                var a = symbols.get(imported.targetModel().orElseThrow());
-                var b = symbols.get(target.imports().get(selected).targetModel().orElseThrow());
+                var a = state.symbol(imported.targetModel().orElseThrow());
+                var b = state.symbol(target.imports().get(selected).targetModel().orElseThrow());
                 if (!(a instanceof ModelSymbol x) || !(b instanceof ModelSymbol y)
                         || !correspondenceWithImports(x, y, originals, map, visited)) return false;
             }
@@ -604,8 +602,8 @@ final class GraphBuilder {
         }
         for (int i = 0; i < sourceIds.size(); i++) {
             checkWork();
-            Symbol source = symbols.get(sourceIds.get(i));
-            Symbol target = symbols.get(targetIds.get(i));
+            Symbol source = state.symbol(sourceIds.get(i));
+            Symbol target = state.symbol(targetIds.get(i));
             if (source == null || target == null || !correspondenceInto(source, target, map)) {
                 return false;
             }
@@ -659,7 +657,7 @@ final class GraphBuilder {
         }
         var sourceCrs=Optional.ofNullable(source.header().metaAttributes().values().get("CRS"));
         var targetCrs=Optional.ofNullable(target.header().metaAttributes().values().get("CRS"));
-        if(effectiveDescriptor(declaredTypes.get(source.id())) instanceof CoordinateType
+        if(effectiveDescriptor(state.declaredType(source.id())) instanceof CoordinateType
                 && !sourceCrs.map(MetaAttributeSet.Value::text).equals(targetCrs.map(MetaAttributeSet.Value::text))) {
             var location=targetCrs.map(MetaAttributeSet.Value::origin).filter(Origin.DeclaredOrigin.class::isInstance).map(Origin.DeclaredOrigin.class::cast)
                     .map(Origin.DeclaredOrigin::range).orElseGet(()->target.origin() instanceof Origin.DeclaredOrigin declared?declared.range():translationDecl.syntax().range());
@@ -727,7 +725,7 @@ final class GraphBuilder {
             var a = sourceRules.get(i); var b = targetRules.get(i);
             boolean equivalent = sameMapped(a.domain(), b.domain(), correspondence);
             if (!equivalent && a.domain().isPresent() && b.domain().isPresent()) {
-                Symbol left = symbols.get(a.domain().orElseThrow()), right = symbols.get(b.domain().orElseThrow());
+                Symbol left = state.symbol(a.domain().orElseThrow()), right = state.symbol(b.domain().orElseThrow());
                 equivalent = left != null && right != null && left.header().origin() instanceof Origin.SyntheticOrigin
                         && right.header().origin() instanceof Origin.SyntheticOrigin && left.name().equals(right.name());
             }
@@ -879,8 +877,8 @@ final class GraphBuilder {
     private boolean sameMappedType(TypeId source, TypeId target,
                                    Map<SymbolId, SymbolId> correspondence) {
         checkWork();
-        TypeDescriptor sourceType = types.get(source);
-        TypeDescriptor targetType = types.get(target);
+        TypeDescriptor sourceType = state.type(source);
+        TypeDescriptor targetType = state.type(target);
         if(sourceType==null || targetType==null || sourceType.getClass()!=targetType.getClass())return false;
         if(sourceType instanceof TextType a && targetType instanceof TextType b)
             return a.textKind()==b.textKind() && a.maxLength().equals(b.maxLength());
@@ -980,8 +978,8 @@ final class GraphBuilder {
 
     private boolean sameEnumBase(Optional<TypeId> source,Optional<TypeId> target,Map<SymbolId,SymbolId> map) {
         if(source.isEmpty() || target.isEmpty())return source.isEmpty() && target.isEmpty();
-        var a=declaredTypes.entrySet().stream().filter(e->e.getValue().equals(source.orElseThrow())).map(Map.Entry::getKey).findFirst();
-        var b=declaredTypes.entrySet().stream().filter(e->e.getValue().equals(target.orElseThrow())).map(Map.Entry::getKey).findFirst();
+        var a=state.declaredTypesInBuildOrder().stream().filter(e->e.getValue().equals(source.orElseThrow())).map(Map.Entry::getKey).findFirst();
+        var b=state.declaredTypesInBuildOrder().stream().filter(e->e.getValue().equals(target.orElseThrow())).map(Map.Entry::getKey).findFirst();
         return a.isPresent() && b.isPresent() ? sameMapped(a,b,map) : sameMappedType(source.orElseThrow(),target.orElseThrow(),map);
     }
 
@@ -1049,7 +1047,7 @@ final class GraphBuilder {
         if (id == null) {
             return List.of();
         }
-        TypedExpression expression = expressions.get(id);
+        TypedExpression expression = state.expression(id);
         if (expression == null) {
             return List.of();
         }
@@ -1081,7 +1079,7 @@ final class GraphBuilder {
             inspected.view().ifPresent(targets::add); targets.add(inspected.source()); targets.add(inspected.element());
         }
         if (expression instanceof guru.interlis.model.ObjectSetExpression
-                && types.get(expression.typeId()) instanceof guru.interlis.model.ObjectArgumentType set) {
+                && state.type(expression.typeId()) instanceof guru.interlis.model.ObjectArgumentType set) {
             set.base().ifPresent(targets::add); targets.addAll(set.restrictions());
         }
         for (ExpressionId child : expression.children()) {
@@ -1110,7 +1108,7 @@ final class GraphBuilder {
     }
 
     private boolean constraintHasErrors(ConstraintDefinition definition) {
-        return constraintExpressions(definition).stream().map(expressions::get)
+        return constraintExpressions(definition).stream().map(state::expression)
                 .anyMatch(e->e!=null&&e.typeState()==guru.interlis.model.ExpressionTypeState.ERROR);
     }
 
@@ -1133,7 +1131,7 @@ final class GraphBuilder {
     }
 
     private boolean sameExpression(ExpressionId source,ExpressionId target,Map<SymbolId,SymbolId> map) {
-        checkWork();var a=expressions.get(source);var b=expressions.get(target);
+        checkWork();var a=state.expression(source);var b=state.expression(target);
         if(a==null || b==null || a.getClass()!=b.getClass())return false;
         if(a instanceof guru.interlis.model.LiteralExpression x && b instanceof guru.interlis.model.LiteralExpression y) {
             if(x.literalKind()!=y.literalKind())return false;
@@ -1238,7 +1236,7 @@ final class GraphBuilder {
         if(!leftWrappers.keySet().equals(rightWrappers.keySet()))return false;
         for(var role:leftWrappers.keySet()) {
             checkWork();
-            var original=symbols.get(leftWrappers.get(role));var translated=symbols.get(rightWrappers.get(role));
+            var original=state.symbol(leftWrappers.get(role));var translated=state.symbol(rightWrappers.get(role));
             if(original==null || translated==null || !correspondenceInto(original,translated,candidate))return false;
         }
         if(!candidate.getOrDefault(source,source).equals(target))return false;
@@ -1276,7 +1274,7 @@ final class GraphBuilder {
             return sameMapped(a.object(),b.object(),map);
         if(left instanceof guru.interlis.model.DrawingRuleSymbol.AccordingValue a && right instanceof guru.interlis.model.DrawingRuleSymbol.AccordingValue b) {
             if(!sameExpressionLists(List.of(a.selector()),List.of(b.selector()),map) || a.cases().size()!=b.cases().size()) return false;
-            var at=effectiveDescriptor(expressions.get(a.selector()).typeId()); var bt=effectiveDescriptor(expressions.get(b.selector()).typeId());
+            var at=effectiveDescriptor(state.expression(a.selector()).typeId()); var bt=effectiveDescriptor(state.expression(b.selector()).typeId());
             if(!(at instanceof EnumerationType ae && bt instanceof EnumerationType be)) return false;
             var ap=ae.values().stream().map(guru.interlis.model.EnumerationValue::path).toList(); var bp=be.values().stream().map(guru.interlis.model.EnumerationValue::path).toList();
             for(int i=0;i<a.cases().size();i++) {
@@ -1291,21 +1289,21 @@ final class GraphBuilder {
     private void validateClassExtensions() {
         Set<SymbolId> extendedBases = new LinkedHashSet<>();
         Map<SymbolId, List<SymbolId>> subclasses = new LinkedHashMap<>();
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (!(symbol instanceof ClassSymbol clazz) || clazz.baseType().isEmpty()) {
                 continue;
             }
             SymbolId base = clazz.baseType().orElseThrow();
             subclasses.computeIfAbsent(base, ignored -> new ArrayList<>()).add(clazz.id());
-            Symbol baseSymbol = symbols.get(base);
+            Symbol baseSymbol = state.symbol(base);
             if (baseSymbol != null && baseSymbol.header().modifiers()
                     .contains(guru.interlis.model.Modifier.EXTENDED)) {
                 extendedBases.add(base);
             }
         }
         Map<String, SymbolId> extendedByTopic = new LinkedHashMap<>();
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (symbol instanceof ClassSymbol clazz
                     && clazz.header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
@@ -1315,13 +1313,13 @@ final class GraphBuilder {
                 }
             }
         }
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (!(symbol instanceof ClassSymbol clazz) || clazz.baseType().isEmpty()) {
                 continue;
             }
             SymbolId base = clazz.baseType().orElseThrow();
-            Symbol baseSymbol = symbols.get(base);
+            Symbol baseSymbol = state.symbol(base);
             SymbolId topic = scopeRoot(clazz.id());
             if (baseSymbol != null && topic != null) {
                 SymbolId localExtended = extendedByTopic.get(topic + ":" + baseSymbol.name().value());
@@ -1330,7 +1328,7 @@ final class GraphBuilder {
                             emitRule(decl, "subclass must extend the local EXTENDED class",
                                     "EXTENDED_BASE_CLASS"));
                 } else if (localExtended != null
-                        && symbols.get(topic) instanceof TopicSymbol topicSymbol
+                        && state.symbol(topic) instanceof TopicSymbol topicSymbol
                         && topicSymbol.baseTopic().isEmpty()) {
                     index.byId(clazz.id()).ifPresent(decl ->
                             emitRule(decl, "EXTENDED class may only be extended in a derived topic",
@@ -1338,14 +1336,14 @@ final class GraphBuilder {
                 }
             }
         }
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (!(symbol instanceof ClassSymbol clazz)
                     || !clazz.header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
                 continue;
             }
             SymbolId topic = scopeRoot(clazz.id());
-            if (!(symbols.get(topic) instanceof TopicSymbol topicSymbol)
+            if (!(state.symbol(topic) instanceof TopicSymbol topicSymbol)
                     || topicSymbol.baseTopic().isEmpty()) {
                 continue;
             }
@@ -1354,8 +1352,8 @@ final class GraphBuilder {
                 checkWork();
                 boolean specialized = index.children(baseTopic).stream()
                         .filter(child -> child.kind() == SymbolKind.CLASS)
-                        .anyMatch(child -> baseOf.get(child.id()) != null
-                                && baseOf.get(child.id()).equals(baseChild.id()));
+                        .anyMatch(child -> state.baseOf(child.id()) != null
+                                && state.baseOf(child.id()).equals(baseChild.id()));
                 if (baseChild.kind() == SymbolKind.CLASS
                         && baseChild.name().equals(clazz.name().value()) && specialized) {
                     index.byId(clazz.id()).ifPresent(decl ->
@@ -1367,12 +1365,12 @@ final class GraphBuilder {
     }
 
     private void validateAttributeOverrides() {
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (!(symbol instanceof ClassSymbol) && !(symbol instanceof StructureSymbol) && !(symbol instanceof AssociationSymbol)) {
                 continue;
             }
-            SymbolId base = baseOf.get(symbol.id());
+            SymbolId base = state.baseOf(symbol.id());
             if (base == null) {
                 continue;
             }
@@ -1381,7 +1379,7 @@ final class GraphBuilder {
                     : ((AssociationSymbol) symbol).attributes();
             for (SymbolId member : members) {
                 checkWork();
-                Symbol memberSymbol = symbols.get(member);
+                Symbol memberSymbol = state.symbol(member);
                 if (!(memberSymbol instanceof AttributeSymbol attribute)) {
                     continue;
                 }
@@ -1417,8 +1415,8 @@ final class GraphBuilder {
             emitRule(attributeDecl, "extended attribute changes TRANSIENT mode",
                     "ATTRIBUTE_OVERRIDE_TRANSIENT");
         }
-        if (types.get(baseAttribute.declaredType()) instanceof DomainReferenceType baseDomainRef
-                && types.get(attribute.declaredType()) instanceof DomainReferenceType derivedDomainRef
+        if (state.type(baseAttribute.declaredType()) instanceof DomainReferenceType baseDomainRef
+                && state.type(attribute.declaredType()) instanceof DomainReferenceType derivedDomainRef
                 && !domainExtends(derivedDomainRef.targetDomain(), baseDomainRef.targetDomain())) {
             emitRule(attributeDecl, "extended attribute changes domain",
                     "ATTRIBUTE_OVERRIDE_TYPE");
@@ -1430,19 +1428,19 @@ final class GraphBuilder {
         Set<SymbolId> seen = new HashSet<>();
         while (current != null && seen.add(current)) {
             checkWork();
-            Symbol symbol = symbols.get(current);
+            Symbol symbol = state.symbol(current);
             List<SymbolId> members = symbol instanceof ClassSymbol classSymbol
                     ? classSymbol.members()
                     : symbol instanceof StructureSymbol structure ? structure.members()
                     : symbol instanceof AssociationSymbol association ? association.attributes() : List.of();
             for (SymbolId member : members) {
                 checkWork();
-                Symbol memberSymbol = symbols.get(member);
+                Symbol memberSymbol = state.symbol(member);
                 if (memberSymbol instanceof AttributeSymbol attribute && attribute.name().value().equals(name)) {
                     return attribute;
                 }
             }
-            current = baseOf.get(current);
+            current = state.baseOf(current);
         }
         return null;
     }
@@ -1455,7 +1453,7 @@ final class GraphBuilder {
             if (current.equals(base)) {
                 return true;
             }
-            current = baseOf.get(current);
+            current = state.baseOf(current);
         }
         return false;
     }
@@ -1467,24 +1465,24 @@ final class GraphBuilder {
 
     private guru.interlis.model.TypeRelation extension(TypeDescriptor derived, TypeDescriptor base, guru.interlis.model.LanguageVersion language) {
         return guru.interlis.model.internal.TypeCompatibility.extend(derived,base,language,this::effectiveDescriptor,
-                baseOf::get,id->effectiveDescriptor(declaredTypes.get(id)),this::extensionUnit);
+                state::baseOf,id->effectiveDescriptor(state.declaredType(id)),this::extensionUnit);
     }
 
     private void validateAssociationRules() {
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (symbol instanceof AssociationSymbol association) {
                 Set<String> roleNames = new LinkedHashSet<>();
                 for (SymbolId roleId : association.roles()) {
                     checkWork();
-                    Symbol role = symbols.get(roleId);
+                    Symbol role = state.symbol(roleId);
                     if (role != null) {
                         roleNames.add(role.name().value());
                     }
                 }
                 for (SymbolId memberId : association.attributes()) {
                     checkWork();
-                    Symbol member = symbols.get(memberId);
+                    Symbol member = state.symbol(memberId);
                     if (member != null && roleNames.contains(member.name().value())) {
                         DeclInfo associationDecl = index.byId(association.id()).orElse(null);
                         if (associationDecl != null) {
@@ -1497,7 +1495,7 @@ final class GraphBuilder {
             }
         }
         Map<SymbolId, Map<String, DeclInfo>> roleNamesByTarget = new LinkedHashMap<>();
-        for (AssociationSymbol association : symbols.values().stream()
+        for (AssociationSymbol association : state.symbolsInBuildOrder().stream()
                 .filter(AssociationSymbol.class::isInstance)
                 .map(AssociationSymbol.class::cast).toList()) {
             checkWork();
@@ -1517,7 +1515,7 @@ final class GraphBuilder {
             }
             for (RoleSymbol hiding : effectiveRoles) {
                 if (!hiding.hiding()) continue;
-                for (Symbol other : symbols.values()) {
+                for (Symbol other : state.symbolsInBuildOrder()) {
                     checkWork();
                     if (!(other instanceof AssociationSymbol sibling)
                             || baseChain(association.id()).contains(sibling.id())
@@ -1570,21 +1568,21 @@ final class GraphBuilder {
                 }
             }
             List<RoleSymbol> roles = association.roles().stream()
-                    .map(symbols::get).filter(RoleSymbol.class::isInstance)
+                    .map(state::symbol).filter(RoleSymbol.class::isInstance)
                     .map(RoleSymbol.class::cast).toList();
             if (roles.size() == 2) {
                 roles.get(0).targetRoots().forEach(t -> addRoleNamespace(roleNamesByTarget, t, roles.get(1)));
                 roles.get(1).targetRoots().forEach(t -> addRoleNamespace(roleNamesByTarget, t, roles.get(0)));
             }
         }
-        for (ClassSymbol classSymbol : symbols.values().stream()
+        for (ClassSymbol classSymbol : state.symbolsInBuildOrder().stream()
                 .filter(ClassSymbol.class::isInstance).map(ClassSymbol.class::cast).toList()) {
             checkWork();
             Set<SymbolId> chain = new LinkedHashSet<>();
             SymbolId current = classSymbol.id();
             while (current != null && chain.add(current)) {
                 checkWork();
-                current = baseOf.get(current);
+                current = state.baseOf(current);
             }
             Map<String, DeclInfo> attributes = new LinkedHashMap<>();
             for (SymbolId ancestor : chain) for (DeclInfo member : index.children(ancestor)) {
@@ -1672,7 +1670,7 @@ final class GraphBuilder {
 
     /** Bound contexts are model-local; their effects flow only along explicit import edges. */
     private void validateGenericSystem() {
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (symbol instanceof DomainSymbol d && d.generic()
                     && !(effectiveDescriptor(d.typeId()) instanceof CoordinateType))
@@ -1680,20 +1678,20 @@ final class GraphBuilder {
             if (!(symbol instanceof guru.interlis.model.ContextSymbol context)) continue;
             DeclInfo decl = index.byId(context.id()).orElseThrow();
             for (var mapping : context.mappings()) {
-                var generic = (DomainSymbol) symbols.get(mapping.genericDomain());
+                var generic = (DomainSymbol) state.symbol(mapping.genericDomain());
                 if (!generic.generic() || !(effectiveDescriptor(generic.typeId()) instanceof CoordinateType base)) {
                     emitRule(decl, "CONTEXT domain must be GENERIC coordinates", "CONTEXT_GENERIC"); continue;
                 }
                 for (SymbolId id : mapping.alternatives()) {
                     checkWork();
-                    var concrete = (DomainSymbol) symbols.get(id);
+                    var concrete = (DomainSymbol) state.symbol(id);
                     if (concrete.generic() || concrete.header().modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)
                             || !(effectiveDescriptor(concrete.typeId()) instanceof CoordinateType target)
                             || target.axes().stream().anyMatch(a -> a.minimum().isEmpty() || a.maximum().isEmpty())) {
                         emitRule(decl, "CONTEXT alternative must be concrete coordinates", "CONTEXT_CONCRETE"); continue;
                     }
                     for (SymbolId parent : baseChain(concrete.id()).stream().skip(1).toList()) {
-                        if (symbols.get(parent) instanceof DomainSymbol ancestor
+                        if (state.symbol(parent) instanceof DomainSymbol ancestor
                                 && effectiveDescriptor(ancestor.typeId()) instanceof CoordinateType inherited
                                 && !guru.interlis.model.internal.TypeCompatibility.coordinateRefines(target, inherited))
                             emitRule(decl, "CONTEXT alternative widens its declared coordinate base", "CONTEXT_ALTERNATIVE_EXTENSION");
@@ -1707,7 +1705,7 @@ final class GraphBuilder {
         }
         Map<SymbolId, Map<SymbolId, TopicSymbol.GenericBinding>> contexts = new LinkedHashMap<>();
         for (var model : index.models()) modelContexts(model.id(), contexts, new HashSet<>());
-        for (Symbol symbol : List.copyOf(symbols.values())) {
+        for (Symbol symbol : List.copyOf(state.symbolsInBuildOrder())) {
             checkWork();
             if (!(symbol instanceof TopicSymbol topic) || index.byId(topic.id()).isEmpty()) continue;
             DeclInfo decl = index.byId(topic.id()).orElseThrow();
@@ -1719,7 +1717,7 @@ final class GraphBuilder {
                 if (Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW).contains(child.kind())) viewables.add(child.id());
             // EXTENDED replaces the inherited declaration in this topic's effective population.
             var overridden = new HashSet<SymbolId>();
-            for (SymbolId id : viewables) if (symbols.get(id).header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED))
+            for (SymbolId id : viewables) if (state.symbol(id).header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED))
                 overridden.addAll(baseChain(id).stream().filter(base -> !base.equals(id)).toList());
             viewables.removeAll(overridden);
             Set<TypeId> seen = new HashSet<>();
@@ -1727,9 +1725,9 @@ final class GraphBuilder {
             for (SymbolId id : viewables) collectViewableGenerics(id, visible, topic.id(), used, referenceUses, seen);
             var available = contexts.getOrDefault(model, Map.of());
             Set<SymbolId> declaredDeferred = new LinkedHashSet<>();
-            for (SymbolId id : baseChain(topic.id())) if (symbols.get(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
+            for (SymbolId id : baseChain(topic.id())) if (state.symbol(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
             for (SymbolId id : topic.deferredGenerics()) {
-                if (!(symbols.get(id) instanceof DomainSymbol domain) || !domain.generic())
+                if (!(state.symbol(id) instanceof DomainSymbol domain) || !domain.generic())
                     emitRule(decl, "DEFERRED GENERICS references a non-generic domain", "GENERIC_DEFERRED_UNKNOWN");
                 if (!used.contains(id)) emitRule(decl, "DEFERRED GENERICS domain is unused", "GENERIC_DEFERRED_UNUSED");
                 if (!available.containsKey(id)) emitRule(decl, "DEFERRED GENERICS domain has no CONTEXT", "GENERIC_CONTEXT_MISSING");
@@ -1752,18 +1750,18 @@ final class GraphBuilder {
                     emitRule(decl, "multiple CONTEXT alternatives require DEFERRED GENERICS", "GENERIC_DEFERRED_REQUIRED");
                 } else if (!binding.alternatives().isEmpty()) bindings.add(binding);
             }
-            symbols.put(topic.id(), new TopicSymbol(topic.header(), topic.baseTopic(), topic.members(), topic.dependencies(),
+            state.replaceSymbol(new TopicSymbol(topic.header(), topic.baseTopic(), topic.members(), topic.dependencies(),
                     topic.deferredGenerics(), bindings));
         }
     }
 
     private Map<SymbolId, TopicSymbol.GenericBinding> modelContexts(SymbolId model,
             Map<SymbolId, Map<SymbolId, TopicSymbol.GenericBinding>> completed, Set<SymbolId> active) {
-        if (symbols.get(model) instanceof ModelSymbol predefined && predefined.origin() instanceof Origin.PredefinedOrigin) return Map.of();
+        if (state.symbol(model) instanceof ModelSymbol predefined && predefined.origin() instanceof Origin.PredefinedOrigin) return Map.of();
         if (completed.containsKey(model)) return completed.get(model);
         if (!active.add(model)) return Map.of(); // ImportBinder diagnoses cycles.
         Map<SymbolId, TopicSymbol.GenericBinding> result = new LinkedHashMap<>();
-        ModelSymbol owner = (ModelSymbol) symbols.get(model);
+        ModelSymbol owner = (ModelSymbol) state.symbol(model);
         DeclInfo decl = index.byId(model).orElseThrow();
         for (var imported : owner.imports()) if (imported.targetModel().isPresent()) {
             checkWork();
@@ -1780,7 +1778,7 @@ final class GraphBuilder {
                 }
             }
         }
-        for (SymbolId member : owner.members()) if (symbols.get(member) instanceof guru.interlis.model.ContextSymbol context) {
+        for (SymbolId member : owner.members()) if (state.symbol(member) instanceof guru.interlis.model.ContextSymbol context) {
             for (var mapping : context.mappings()) {
                 checkWork();
                 var previous = result.get(mapping.genericDomain());
@@ -1803,7 +1801,7 @@ final class GraphBuilder {
         Set<SymbolId> result = new LinkedHashSet<>(); var pending = new java.util.ArrayDeque<SymbolId>(); pending.add(model);
         while (!pending.isEmpty()) {
             checkWork(); SymbolId next = pending.removeFirst();
-            if (result.add(next) && symbols.get(next) instanceof ModelSymbol m)
+            if (result.add(next) && state.symbol(next) instanceof ModelSymbol m)
                 m.imports().forEach(i -> i.targetModel().ifPresent(pending::add));
         }
         return result;
@@ -1811,21 +1809,21 @@ final class GraphBuilder {
 
     private void collectViewableGenerics(SymbolId viewable, Set<SymbolId> visible, SymbolId topic,
             Set<SymbolId> used, Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses, Set<TypeId> seen) {
-        for (var member : effectiveMembers.getOrDefault(viewable, List.of())) {
+        for (var member : state.effectiveMembers(viewable)) {
             checkWork();
-            if (symbols.get(member.declaredSymbol()) instanceof AttributeSymbol attr) collectGenericUses(attr.declaredType(), visible, topic, used, referenceUses, seen);
+            if (state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attr) collectGenericUses(attr.declaredType(), visible, topic, used, referenceUses, seen);
         }
     }
 
     private void collectGenericUses(TypeId type, Set<SymbolId> visible, SymbolId topic, Set<SymbolId> used,
             Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses, Set<TypeId> seen) {
         if (type == null || !seen.add(type)) return;
-        checkWork(); TypeDescriptor descriptor = types.get(type);
-        if (descriptor instanceof DomainReferenceType ref && symbols.get(ref.targetDomain()) instanceof DomainSymbol domain) {
+        checkWork(); TypeDescriptor descriptor = state.type(type);
+        if (descriptor instanceof DomainReferenceType ref && state.symbol(ref.targetDomain()) instanceof DomainSymbol domain) {
             if (domain.generic()) used.add(domain.id());
             collectGenericUses(domain.typeId(), visible, topic, used, referenceUses, seen);
         } else if (descriptor instanceof GeometryType geometry) {
-            geometry.vertexDomain().map(symbols::get).filter(DomainSymbol.class::isInstance).map(DomainSymbol.class::cast).ifPresent(domain -> {
+            geometry.vertexDomain().map(state::symbol).filter(DomainSymbol.class::isInstance).map(DomainSymbol.class::cast).ifPresent(domain -> {
                 if (domain.generic()) used.add(domain.id()); collectGenericUses(domain.typeId(), visible, topic, used, referenceUses, seen);
             });
         } else if (descriptor instanceof NumericType numeric) {
@@ -1835,10 +1833,10 @@ final class GraphBuilder {
         } else if (descriptor instanceof CollectionType collection) {
             collectGenericUses(collection.elementType(), visible, topic, used, referenceUses, seen);
         } else if (descriptor instanceof StructureValueType structure) {
-            for (Symbol symbol : symbols.values()) if (symbol instanceof StructureSymbol candidate
+            for (Symbol symbol : state.symbolsInBuildOrder()) if (symbol instanceof StructureSymbol candidate
                     && visible.contains(index.modelOfSymbol(candidate.id()).orElse(null))
                     && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> baseChain(candidate.id()).contains(root)))
-                    && (!(symbols.get(scopeRoot(candidate.id())) instanceof TopicSymbol) || baseChain(topic).contains(scopeRoot(candidate.id()))))
+                    && (!(state.symbol(scopeRoot(candidate.id())) instanceof TopicSymbol) || baseChain(topic).contains(scopeRoot(candidate.id()))))
                 collectViewableGenerics(candidate.id(), visible, topic, used, referenceUses, seen);
         }
     }
@@ -1847,7 +1845,7 @@ final class GraphBuilder {
             Set<SymbolId> used,Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses,Set<TypeId> seen) {
         checkWork();var reference=range.referenceSystem().orElse(null);
         if(reference==null||!reference.domain())return;
-        if(symbols.get(reference.target()) instanceof DomainSymbol domain&&domain.generic()) {
+        if(state.symbol(reference.target()) instanceof DomainSymbol domain&&domain.generic()) {
             used.add(domain.id());referenceUses.computeIfAbsent(domain.id(),ignored->new LinkedHashSet<>()).add(range);
             collectGenericUses(domain.typeId(),visible,topic,used,referenceUses,seen);
         }
@@ -1936,7 +1934,7 @@ final class GraphBuilder {
                     break;
                 }
             }
-            if (site.modelName().equals("INTERLIS")) target = PredefinedModels.ensure(this, entry.declaration().language());
+            if (site.modelName().equals("INTERLIS")) target = PredefinedModels.ensure(state, entry.declaration().language());
             imports.add(new ModelImport(site.modelName(), site.unqualified(), site.range(),
                     Optional.ofNullable(target)));
         }
@@ -1959,7 +1957,7 @@ final class GraphBuilder {
                 .map(source -> new guru.interlis.model.ModelTranslation(source.text(),
                         syntax.translationVersion(), syntax.language(), Optional.empty(), List.of()));
         translation=overlays.translation(decl.id(),translation);
-        symbols.put(decl.id(), new ModelSymbol(header(decl), syntax.modelKind(),
+        state.defineSymbol(new ModelSymbol(header(decl), syntax.modelKind(),
                 syntax.contracted(), entry.model().version(), syntax.issuer(), imports, members,
                 translation, syntax.options(), modelNamespace(syntax)));
     }
@@ -1972,28 +1970,28 @@ final class GraphBuilder {
 
     /** Translations share the original transfer vocabulary, independent of file/declaration order. */
     private void bindTransferNamespaces() {
-        for (var symbol : List.copyOf(symbols.values())) {
+        for (var symbol : List.copyOf(state.symbolsInBuildOrder())) {
             if (!(symbol instanceof ModelSymbol model) || model.translation().isEmpty()) continue;
             Set<SymbolId> seen = new HashSet<>();
             ModelSymbol original = model;
             while (original.translation().flatMap(guru.interlis.model.ModelTranslation::sourceTarget).isPresent()
                     && seen.add(original.id())) {
                 checkWork();
-                var next = symbols.get(original.translation().orElseThrow().sourceTarget().orElseThrow());
+                var next = state.symbol(original.translation().orElseThrow().sourceTarget().orElseThrow());
                 if (!(next instanceof ModelSymbol base)) break;
                 original = base;
             }
             String namespace = original.transferNamespace();
             if (model.options().xmlNamespace().filter(value -> !value.value().equals(namespace)).isPresent())
                 emitRule(index.byId(model.id()).orElseThrow(), "translated XMLNS conflicts with the original transfer namespace", "TRANSLATION_XMLNS");
-            symbols.put(model.id(), new ModelSymbol(model.header(), model.modelKind(), model.contracted(), model.modelVersion(),
+            state.replaceSymbol(new ModelSymbol(model.header(), model.modelKind(), model.contracted(), model.modelVersion(),
                     model.issuer(), model.imports(), model.members(), model.translation(), model.options(), namespace));
         }
     }
 
     Symbol buildSymbol(DeclInfo decl) {
         checkWork();
-        Symbol existing = symbols.get(decl.id());
+        Symbol existing = state.symbol(decl.id());
         if (existing != null) {
             return existing;
         }
@@ -2018,18 +2016,20 @@ final class GraphBuilder {
             case GRAPHIC -> graphics.build(decl);
             case DRAWING_RULE -> {
                 buildSymbol(index.byId(decl.owner().orElseThrow()).orElseThrow());
-                yield symbols.get(decl.id());
+                yield state.symbol(decl.id());
             }
             case VIEW -> buildView(decl);
             case VIEW_BASE -> views.buildBase(decl);
             case MODEL -> throw new IllegalStateException("model symbols are built separately");
         };
-        symbols.put(decl.id(), symbol);
+        // A specialized binder can publish a provisional or shared declaration during dispatch.
+        if (state.hasSymbol(symbol.id())) state.replaceSymbol(symbol);
+        else state.defineSymbol(symbol);
         return symbol;
     }
 
     private void validateTopicInheritanceCycles() {
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             checkWork();
             if (symbol instanceof TopicSymbol && hasCycle(baseChain(symbol.id())))
                 index.byId(symbol.id()).ifPresent(this::emitCycle);
@@ -2048,7 +2048,7 @@ final class GraphBuilder {
         Optional<SymbolId> base = syntax.baseTopic().flatMap(name -> {
             Optional<SymbolId> resolved = tryResolve(decl, name, Set.of(SymbolKind.TOPIC));
             if (resolved.isEmpty()) {
-                List<SymbolId> matches = symbols.values().stream()
+                List<SymbolId> matches = state.symbolsInBuildOrder().stream()
                         .filter(TopicSymbol.class::isInstance).map(TopicSymbol.class::cast)
                         .filter(topic -> topic.name().value().equals(name.text()))
                         .map(TopicSymbol::id).toList();
@@ -2058,15 +2058,15 @@ final class GraphBuilder {
             }
             return resolved;
         });
-        base.ifPresent(id -> baseOf.put(decl.id(), id));
+        base.ifPresent(id -> state.bindBase(decl.id(), id));
         if (base.filter(this::isFinalDeclaration).isPresent())
             emitRule(decl, "cannot extend FINAL topic", "TOPIC_FINAL");
-        if (base.isPresent() && symbols.get(base.orElseThrow()) instanceof TopicSymbol baseTopic) {
+        if (base.isPresent() && state.symbol(base.orElseThrow()) instanceof TopicSymbol baseTopic) {
             boolean abstractBase = baseTopic.header().modifiers()
                     .contains(guru.interlis.model.Modifier.ABSTRACT);
             for (SymbolId member : baseTopic.members()) {
                 checkWork();
-                if (symbols.get(member) instanceof ClassSymbol baseClass
+                if (state.symbol(member) instanceof ClassSymbol baseClass
                         && baseClass.header().modifiers()
                         .contains(guru.interlis.model.Modifier.ABSTRACT)) {
                     abstractBase = true;
@@ -2075,7 +2075,7 @@ final class GraphBuilder {
             Set<String> baseDomains = new LinkedHashSet<>();
             for (SymbolId member : baseTopic.members()) {
                 checkWork();
-                if (symbols.get(member) instanceof DomainSymbol domain) {
+                if (state.symbol(member) instanceof DomainSymbol domain) {
                     baseDomains.add(domain.name().value());
                 }
             }
@@ -2111,13 +2111,13 @@ final class GraphBuilder {
             for (DeclInfo child : index.children(decl.id())) {
                 checkWork();
                 if (child.kind() != SymbolKind.CLASS
-                        || !(symbols.get(child.id()) instanceof ClassSymbol derivedClass)
+                        || !(state.symbol(child.id()) instanceof ClassSymbol derivedClass)
                         || derivedClass.baseType().isEmpty()) {
                     continue;
                 }
                 for (SymbolId member : baseTopic.members()) {
                     checkWork();
-                    if (!(symbols.get(member) instanceof ClassSymbol baseClass)
+                    if (!(state.symbol(member) instanceof ClassSymbol baseClass)
                             || !baseClass.name().equals(derivedClass.name())) {
                         continue;
                     }
@@ -2190,9 +2190,9 @@ final class GraphBuilder {
             checkWork();
             DeclInfo memberDecl = index.byId(member).orElse(null);
             if (memberDecl != null && memberDecl.kind() == SymbolKind.ATTRIBUTE) {
-                TypeId typeId = declaredTypes.get(member);
+                TypeId typeId = state.declaredType(member);
                 if (decl.language() != guru.interlis.model.LanguageVersion.ILI24
-                        && typeId != null && types.get(typeId) instanceof ReferenceType) {
+                        && typeId != null && state.type(typeId) instanceof ReferenceType) {
                     emitRule(memberDecl, "reference attribute is only allowed in a structure",
                             "REFERENCE_ATTRIBUTE_CLASS");
                 }
@@ -2221,7 +2221,7 @@ final class GraphBuilder {
     Optional<SymbolId> objectInheritanceBase(SymbolId owner) {
         DeclInfo decl = index.byId(owner).orElse(null);
         if (decl == null || (decl.kind() != SymbolKind.CLASS && decl.kind() != SymbolKind.STRUCTURE)
-                || !resolvedObjectBases.add(owner)) return Optional.ofNullable(baseOf.get(owner));
+                || !resolvedObjectBases.add(owner)) return Optional.ofNullable(state.baseOf(owner));
         Optional<guru.interlis.syntax.NameSyntax> name = decl.syntax() instanceof ClassDeclarationSyntax c
                 ? c.baseType() : ((StructureDeclarationSyntax) decl.syntax()).baseType();
         if (name.isPresent() && decl.modifiers().contains(guru.interlis.model.Modifier.EXTENDED))
@@ -2235,7 +2235,7 @@ final class GraphBuilder {
             if (base.isEmpty()) emitRule(decl, "EXTENDED needs a same-named inherited declaration", "EXTENDED_BASE");
         }
         base.ifPresent(id -> {
-            baseOf.put(owner, id);
+            state.bindBase(owner, id);
             if (isFinalDeclaration(id))
                 emitRule(decl, "cannot extend FINAL object type", "OBJECT_FINAL");
         });
@@ -2245,7 +2245,7 @@ final class GraphBuilder {
     /** Declaration metadata is available before an imported base is built. */
     private boolean isFinalDeclaration(SymbolId id) {
         return index.byId(id).map(info -> info.modifiers().contains(guru.interlis.model.Modifier.FINAL))
-                .orElseGet(() -> symbols.containsKey(id) && symbols.get(id).header().has(guru.interlis.model.Modifier.FINAL));
+                .orElseGet(() -> state.hasSymbol(id) && state.symbol(id).header().has(guru.interlis.model.Modifier.FINAL));
     }
 
     private AssociationSymbol buildAssociation(DeclInfo decl) {
@@ -2267,8 +2267,8 @@ final class GraphBuilder {
                 base = Optional.empty();
             } else {
                 buildSymbol(index.byId(parent).orElseThrow());
-                baseOf.put(decl.id(), parent);
-                if (symbols.get(parent).header().modifiers().contains(guru.interlis.model.Modifier.FINAL)) {
+                state.bindBase(decl.id(), parent);
+                if (state.symbol(parent).header().modifiers().contains(guru.interlis.model.Modifier.FINAL)) {
                     emitRule(decl, "cannot extend FINAL association", "ASSOCIATION_FINAL");
                 }
             }
@@ -2300,7 +2300,7 @@ final class GraphBuilder {
         List<SymbolId> constraints = index.children(decl.id()).stream()
                 .filter(child -> child.kind() == SymbolKind.CONSTRAINT)
                 .map(DeclInfo::id).toList();
-        Cardinality inheritedCardinality = base.map(symbols::get).map(AssociationSymbol.class::cast)
+        Cardinality inheritedCardinality = base.map(state::symbol).map(AssociationSymbol.class::cast)
                 .map(AssociationSymbol::cardinality).orElse(Cardinality.exactly(1));
         Cardinality effectiveCardinality = syntax.cardinality().orElse(inheritedCardinality);
         if (base.isPresent() && (effectiveCardinality.lower().compareTo(inheritedCardinality.lower()) < 0
@@ -2321,7 +2321,7 @@ final class GraphBuilder {
         TypeId type = buildType(syntax.type(), decl.id(), decl.sourceId());
         if (index.byId(decl.owner().orElseThrow()).orElseThrow().kind() == SymbolKind.MODEL && containsArea(type, new HashSet<>()))
             emitRule(decl, "runtime parameters cannot contain AREA values", "PARAMETER_AREA");
-        declaredTypes.put(decl.id(), type);
+        state.bindDeclaredType(decl.id(), type);
         return new guru.interlis.model.ParameterSymbol(header(decl), type, syntax.mandatory() || mandatoryType(type), Optional.empty());
     }
 
@@ -2337,9 +2337,9 @@ final class GraphBuilder {
                 Set<SymbolId> visited=new HashSet<>();
                 for(SymbolId current=root;current!=null && visited.add(current);current=objectInheritanceBase(current).orElse(null)) {
                     checkWork();
-                    if(symbols.get(current) instanceof StructureSymbol known) {
+                    if(state.symbol(current) instanceof StructureSymbol known) {
                         for(SymbolId member:known.members())
-                            if(symbols.get(member) instanceof AttributeSymbol attribute && containsArea(attribute.declaredType(),seen))return true;
+                            if(state.symbol(member) instanceof AttributeSymbol attribute && containsArea(attribute.declaredType(),seen))return true;
                     } else for(var child:index.children(current))
                         if(child.kind()==SymbolKind.ATTRIBUTE && containsArea(attributeType(child),seen))return true;
                 }
@@ -2378,7 +2378,7 @@ final class GraphBuilder {
         if (bound != null) return bound;
         if (!resolvingFunctionArguments.add(key)) {
             TypeId error = nextTypeId();
-            types.put(error, new ErrorType(error, function.origin(), List.of(emitRule(function,
+            state.storeType(new ErrorType(error, function.origin(), List.of(emitRule(function,
                     "cyclic attribute-path argument dependency", "FUNCTION_ARGUMENT_CYCLE"))));
             return error;
         }
@@ -2426,7 +2426,7 @@ final class GraphBuilder {
         if (parent == null) return Optional.empty();
         var language = index.byId(context).orElseThrow().language();
         SymbolId id = new SymbolId("predefined:" + language + ":unit:" + name);
-        if (symbols.containsKey(id)) return Optional.of(id);
+        if (state.hasSymbol(id)) return Optional.of(id);
         Optional<SymbolId> base = parent.isEmpty() ? Optional.empty() : builtinUnit(context, "INTERLIS." + parent);
         boolean abstractUnit = parent.isEmpty() || parent.equals("ANYUNIT");
         String designation = switch (shortName) {
@@ -2436,7 +2436,7 @@ final class GraphBuilder {
             default -> shortName;
         };
         Origin origin = new Origin.PredefinedOrigin(language, name);
-        symbols.put(id, new UnitSymbol(new SymbolHeader(id, SymbolKind.UNIT, DeclaredName.synthetic(name),
+        state.defineSymbol(new UnitSymbol(new SymbolHeader(id, SymbolKind.UNIT, DeclaredName.synthetic(name),
                 Optional.empty(), 0, origin, Optional.empty(), language,
                 Documentation.empty(), MetaAttributeSet.empty(), abstractUnit
                     ? Set.of(guru.interlis.model.Modifier.ABSTRACT) : Set.of(), List.of()),
@@ -2446,7 +2446,7 @@ final class GraphBuilder {
 
     /** Validate bound dependencies after all declarations exist; file order is immaterial. */
     private void validateUnits() {
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             if (!(symbol instanceof UnitSymbol unit)) continue;
             DeclInfo decl = index.byId(unit.id()).orElse(null);
             if (decl == null) continue;
@@ -2471,20 +2471,20 @@ final class GraphBuilder {
                 if (next.equals(unit.id())) {
                     emitRule(decl, "cyclic unit dependency", "UNIT_CYCLE"); break;
                 }
-                if (seen.add(next) && symbols.get(next) instanceof UnitSymbol dependency)
+                if (seen.add(next) && state.symbol(next) instanceof UnitSymbol dependency)
                     pending.addAll(unitDependencies(dependency));
             }
             for (var component : unit.components()) {
-                UnitSymbol target = (UnitSymbol) symbols.get(component.unit());
+                UnitSymbol target = (UnitSymbol) state.symbol(component.unit());
                 if (target.abstractUnit() != unit.abstractUnit())
                     emitRule(decl, "composed unit and all components must agree on abstraction", "UNIT_COMPONENT_ABSTRACT");
             }
             if (unit.derivedFrom().isPresent()) {
-                UnitSymbol target = (UnitSymbol) symbols.get(unit.derivedFrom().orElseThrow());
+                UnitSymbol target = (UnitSymbol) state.symbol(unit.derivedFrom().orElseThrow());
                 if (unit.abstractUnit() || target.abstractUnit())
                     emitRule(decl, "derived units require a concrete conversion target and are concrete", "UNIT_DERIVED_ABSTRACT");
             }
-            UnitSymbol base = unit.base().map(symbols::get).filter(UnitSymbol.class::isInstance).map(UnitSymbol.class::cast).orElse(null);
+            UnitSymbol base = unit.base().map(state::symbol).filter(UnitSymbol.class::isInstance).map(UnitSymbol.class::cast).orElse(null);
             if (base == null) continue;
             if (!base.abstractUnit()) emitRule(decl, "only abstract units can be extended", "UNIT_BASE_ABSTRACT");
             if (!syntax.components().isEmpty()) {
@@ -2540,20 +2540,20 @@ final class GraphBuilder {
             }
             buildSymbol(child);
         }
-        return new DomainSymbol(header(decl), type, Optional.ofNullable(baseOf.get(decl.id())),
+        return new DomainSymbol(header(decl), type, Optional.ofNullable(state.baseOf(decl.id())),
                 decl.modifiers().contains(guru.interlis.model.Modifier.GENERIC));
     }
 
     /** Bind referenced types before expressions without recursively building their constraints. */
     private TypeId domainType(DeclInfo decl) {
-        TypeId existing = declaredTypes.get(decl.id());
+        TypeId existing = state.declaredType(decl.id());
         if (existing != null) return existing;
         checkWork();
         if (!resolvingDomainTypes.add(decl.id())) {
             TypeId error = nextTypeId();
-            types.put(error, new ErrorType(error, decl.origin(),
+            state.storeType(new ErrorType(error, decl.origin(),
                     List.of(emitRule(decl, "cyclic domain type dependency", "DOMAIN_TYPE_CYCLE"))));
-            declaredTypes.put(decl.id(), error);
+            state.bindDeclaredType(decl.id(), error);
             return error;
         }
         try {
@@ -2561,18 +2561,18 @@ final class GraphBuilder {
             Optional<SymbolId> base=syntax.baseDomain().flatMap(name->bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.BASE_TYPE,new ArrayList<>()));
 
             base.ifPresent(id -> {
-                baseOf.put(decl.id(), id);
+                state.bindBase(decl.id(), id);
                 index.byId(id).ifPresent(this::domainType);
-                if ((symbols.get(id) != null && symbols.get(id).header().has(guru.interlis.model.Modifier.FINAL))
+                if ((state.symbol(id) != null && state.symbol(id).header().has(guru.interlis.model.Modifier.FINAL))
                         || index.byId(id).filter(d -> d.modifiers().contains(guru.interlis.model.Modifier.FINAL)).isPresent())
                     emitRule(decl, "cannot extend FINAL domain", "DOMAIN_FINAL");
             });
             TypeId type;
             if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name()) && base.isPresent()) {
                 type = nextTypeId();
-                types.put(type, new DomainReferenceType(type, new Origin.DeclaredOrigin(syntax.type().range()), base.orElseThrow()));
+                state.storeType(new DomainReferenceType(type, new Origin.DeclaredOrigin(syntax.type().range()), base.orElseThrow()));
             } else type = buildType(syntax.type(), decl.id(), decl.sourceId());
-            TypeDescriptor inherited = base.map(declaredTypes::get).map(this::effectiveDescriptor).orElse(null);
+            TypeDescriptor inherited = base.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
             inheritTypeProperties(type, syntax.type(), inherited,decl);
             if (syntax.type() instanceof LineTypeSyntax) lines.effective(type, inherited, decl);
             else if (inherited instanceof GeometryType && !(effectiveDescriptor(type) instanceof GeometryType))
@@ -2582,10 +2582,10 @@ final class GraphBuilder {
                 if (relation.decision() == guru.interlis.model.RelationDecision.DISALLOWED)
                     emitRule(decl, "numeric type does not specialize its base: " + relation.reason(), relation.reason().startsWith("numeric-unit") || relation.reason().contains("unit-") ? "NUMERIC_UNIT_EXTENSION" : "NUMERIC_EXTENSION");
             }
-            declaredTypes.putIfAbsent(decl.id(), type);
+            state.bindDeclaredTypeIfAbsent(decl.id(), type);
             if (syntax.type() instanceof EnumerationTypeSyntax enumeration) {
                 if (base.isPresent() && inherited == null) emitRule(decl, "enumeration base must already be defined", "ENUM_BASE");
-                types.put(type, effectiveEnumeration(type, enumeration, inherited, decl));
+                state.storeType(effectiveEnumeration(type, enumeration, inherited, decl));
             }
             TypeDescriptor own=effectiveDescriptor(type);
             if(inherited!=null && !(inherited instanceof NumericType && own instanceof NumericType)
@@ -2595,14 +2595,14 @@ final class GraphBuilder {
                 if(relation.decision()==guru.interlis.model.RelationDecision.DISALLOWED)
                     emitRule(decl,"domain does not specialize its base: "+relation.reason(),"TYPE_EXTENSION");
             }
-            if (base.isPresent() && effectiveDescriptor(declaredTypes.get(base.orElseThrow())) instanceof guru.interlis.model.OidType oid
-                    && (Optional.ofNullable(symbols.get(base.orElseThrow()))
+            if (base.isPresent() && effectiveDescriptor(state.declaredType(base.orElseThrow())) instanceof guru.interlis.model.OidType oid
+                    && (Optional.ofNullable(state.symbol(base.orElseThrow()))
                             .filter(s -> s.name().value().equals("INTERLIS.NOOID")).isPresent()
                     || oid.oidKind() != guru.interlis.model.OidKind.ANY
                     || !(effectiveDescriptor(type) instanceof guru.interlis.model.OidType derived)
                     || derived.oidKind() == guru.interlis.model.OidKind.ANY))
                 emitRule(decl, "concrete OID domain cannot be extended", "OID_EXTENSION");
-            return declaredTypes.get(decl.id());
+            return state.declaredType(decl.id());
         } finally {
             resolvingDomainTypes.remove(decl.id());
         }
@@ -2656,7 +2656,7 @@ final class GraphBuilder {
 
     private UnitSymbol extensionUnit(SymbolId id) {
         checkWork();
-        Symbol symbol = symbols.get(id);
+        Symbol symbol = state.symbol(id);
         if (symbol == null) symbol = index.byId(id).map(this::buildSymbol).orElse(null);
         return symbol instanceof UnitSymbol unit ? unit : null;
     }
@@ -2685,7 +2685,7 @@ final class GraphBuilder {
     }
 
     private void validateNumericUses() {
-        for(var entry:declaredTypes.entrySet()) {
+        for(var entry:state.declaredTypesInBuildOrder()) {
             checkWork();var declaration=index.byId(entry.getKey()).orElse(null);
             if(declaration==null || declaration.kind()!=SymbolKind.DOMAIN && declaration.kind()!=SymbolKind.ATTRIBUTE)continue;
             var type=effectiveDescriptor(entry.getValue());
@@ -2702,8 +2702,8 @@ final class GraphBuilder {
 
     private boolean genericCoordinateType(TypeId id,Set<TypeId> seen) {
         if(!seen.add(id))return false;
-        if(types.get(id) instanceof DomainReferenceType reference) {
-            var domain=symbols.get(reference.targetDomain());
+        if(state.type(id) instanceof DomainReferenceType reference) {
+            var domain=state.symbol(reference.targetDomain());
             return domain instanceof DomainSymbol d && (d.generic() || genericCoordinateType(d.typeId(),seen));
         }
         return false;
@@ -2711,39 +2711,39 @@ final class GraphBuilder {
 
     private boolean mandatoryDomain(SymbolId domain) {
         Set<SymbolId> seen = new HashSet<>();
-        for (SymbolId current = domain; current != null && seen.add(current); current = baseOf.get(current)) {
+        for (SymbolId current = domain; current != null && seen.add(current); current = state.baseOf(current)) {
             checkWork();
             if (index.byId(current).filter(d -> d.modifiers().contains(guru.interlis.model.Modifier.MANDATORY)).isPresent()) return true;
-            if (symbols.get(current) instanceof DomainSymbol d && d.mandatory()) return true;
+            if (state.symbol(current) instanceof DomainSymbol d && d.mandatory()) return true;
         }
         return false;
     }
 
     private boolean mandatoryType(TypeId type) {
         Set<TypeId> seen = new HashSet<>();
-        while (type != null && seen.add(type) && types.get(type) instanceof DomainReferenceType reference) {
+        while (type != null && seen.add(type) && state.type(type) instanceof DomainReferenceType reference) {
             if (mandatoryDomain(reference.targetDomain())) return true;
-            type = declaredTypes.get(reference.targetDomain());
+            type = state.declaredType(reference.targetDomain());
         }
         return false;
     }
 
     /** Complete only owned inline types; referenced alias descriptors are never mutated. */
     private void inheritTypeProperties(TypeId id, TypeSyntax syntax, TypeDescriptor base,DeclInfo declaration) {
-        if (syntax instanceof NumericTypeSyntax own && types.get(id) instanceof NumericType numeric && base instanceof NumericType parent) {
+        if (syntax instanceof NumericTypeSyntax own && state.type(id) instanceof NumericType numeric && base instanceof NumericType parent) {
             var range=inheritRange(numeric.range(),parent.range(),own);var errors=new ArrayList<DiagnosticId>();
             validateNumericUnit(range,declaration,syntax.range(),errors);
-            types.put(id,errors.isEmpty()?new NumericType(id,numeric.origin(),range):new ErrorType(id,numeric.origin(),errors));
+            state.storeType(errors.isEmpty()?new NumericType(id,numeric.origin(),range):new ErrorType(id,numeric.origin(),errors));
         }
-        else if(syntax instanceof CoordinateTypeSyntax own && types.get(id) instanceof CoordinateType coordinate && base instanceof CoordinateType parent) {
+        else if(syntax instanceof CoordinateTypeSyntax own && state.type(id) instanceof CoordinateType coordinate && base instanceof CoordinateType parent) {
             List<NumericRange> axes=new ArrayList<>(coordinate.axes());
             for(int i=0;i<Math.min(axes.size(),parent.axes().size());i++)axes.set(i,inheritRange(axes.get(i),parent.axes().get(i),own.axes().get(i)));
             var errors=new ArrayList<DiagnosticId>();
             for(int i=0;i<axes.size();i++)validateNumericUnit(axes.get(i),declaration,own.axes().get(i).range(),errors);
-            types.put(id,errors.isEmpty()?new CoordinateType(id,coordinate.origin(),coordinate.dimensions(),axes,coordinate.multiCoordinate(),
+            state.storeType(errors.isEmpty()?new CoordinateType(id,coordinate.origin(),coordinate.dimensions(),axes,coordinate.multiCoordinate(),
                     coordinate.referenceSystem().isPresent()?coordinate.referenceSystem():parent.referenceSystem(),
                     coordinate.rotation().isPresent()?coordinate.rotation():parent.rotation()):new ErrorType(id,coordinate.origin(),errors));
-        } else if(syntax instanceof CollectionTypeSyntax own && types.get(id) instanceof CollectionType collection && base instanceof CollectionType parent)
+        } else if(syntax instanceof CollectionTypeSyntax own && state.type(id) instanceof CollectionType collection && base instanceof CollectionType parent)
             inheritTypeProperties(collection.elementType(),own.elementType(),effectiveDescriptor(parent.elementType()),declaration);
     }
 
@@ -2770,7 +2770,7 @@ final class GraphBuilder {
 
     boolean assignable(TypeId actual, TypeId expected) {
         if(mandatoryType(expected) && guru.interlis.model.internal.TypeCompatibility.isUndefined(effectiveDescriptor(actual)))return false;
-        return guru.interlis.model.internal.TypeCompatibility.assign(effectiveDescriptor(actual), effectiveDescriptor(expected), this::effectiveDescriptor, baseOf::get, domain -> effectiveDescriptor(declaredTypes.get(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
+        return guru.interlis.model.internal.TypeCompatibility.assign(effectiveDescriptor(actual), effectiveDescriptor(expected), this::effectiveDescriptor, state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
     }
 
     private List<ExpressionId> bindAttributeDerivations(DeclInfo decl, AttributeDeclarationSyntax syntax, TypeId type) {
@@ -2790,21 +2790,21 @@ final class GraphBuilder {
 
     /** Resolve once so every expression and the published attribute share the same type. */
     TypeId attributeType(DeclInfo decl) {
-        TypeId existing = declaredTypes.get(decl.id());
+        TypeId existing = state.declaredType(decl.id());
         if (existing != null) return existing;
         checkWork();
         AttributeDeclarationSyntax syntax = (AttributeDeclarationSyntax) decl.syntax();
         TypeId type;
         if (!resolvingAttributeTypes.add(decl.id())) {
             type = nextTypeId();
-            types.put(type, new ErrorType(type, decl.origin(),
+            state.storeType(new ErrorType(type, decl.origin(),
                     List.of(emitRule(decl, "cyclic inherited attribute type", "INHERITANCE_CYCLE"))));
             return type;
         }
         try {
             decl.owner().flatMap(this::objectInheritanceBase).flatMap(base->findMember(base,decl.name()))
-                    .filter(base->symbols.get(base) instanceof AttributeSymbol || index.byId(base).filter(d->d.kind()==SymbolKind.ATTRIBUTE).isPresent())
-                    .ifPresent(base->baseOf.put(decl.id(),base));
+                    .filter(base->state.symbol(base) instanceof AttributeSymbol || index.byId(base).filter(d->d.kind()==SymbolKind.ATTRIBUTE).isPresent())
+                    .ifPresent(base->state.bindBase(decl.id(),base));
             if (syntax.type() instanceof GenericTypeSyntax inferred && "INFERRED".equals(inferred.name())) {
                 var result = buildExpression(syntax.derivations().getFirst(), decl.owner().orElseThrow());
                 inferredDerivations.put(decl.id(), List.of(result.id()));
@@ -2815,12 +2815,12 @@ final class GraphBuilder {
                 DeclInfo inherited = base.flatMap(index::byId).orElse(null);
                 if (inherited != null && inherited.kind() == SymbolKind.ATTRIBUTE) {
                     type = attributeType(inherited);
-                } else if (base.map(symbols::get).orElse(null) instanceof AttributeSymbol attribute) {
+                } else if (base.map(state::symbol).orElse(null) instanceof AttributeSymbol attribute) {
                     // ALL OF members have a bound type but no separate syntax declaration.
                     type = attribute.declaredType();
                 } else {
                     type = nextTypeId();
-                    types.put(type, new ErrorType(type, decl.origin(), List.of(emitRule(decl,
+                    state.storeType(new ErrorType(type, decl.origin(), List.of(emitRule(decl,
                             "MANDATORY without a type requires an inherited attribute", "ATTRIBUTE_INHERITED_TYPE"))));
                 }
             } else {
@@ -2829,7 +2829,7 @@ final class GraphBuilder {
                 if (decl.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
                     var base = decl.owner().flatMap(this::objectInheritanceBase).flatMap(owner -> findMember(owner, decl.name()));
                     TypeId baseType = base.flatMap(index::byId).filter(d -> d.kind() == SymbolKind.ATTRIBUTE)
-                            .map(this::attributeType).orElseGet(() -> base.map(symbols::get)
+                            .map(this::attributeType).orElseGet(() -> base.map(state::symbol)
                                     .filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
                                     .map(AttributeSymbol::declaredType).orElse(null));
                     inheritTypeProperties(type, syntax.type(), effectiveDescriptor(baseType),decl);
@@ -2837,7 +2837,7 @@ final class GraphBuilder {
                 }
                 if (syntax.type() instanceof LineTypeSyntax) lines.effective(type, inheritedGeometry, decl);
             }
-            declaredTypes.put(decl.id(), type);
+            state.bindDeclaredType(decl.id(), type);
             return type;
         } finally {
             resolvingAttributeTypes.remove(decl.id());
@@ -2865,7 +2865,7 @@ final class GraphBuilder {
             targets.add(new guru.interlis.model.RoleTarget(base, restrictions));
         }
         Cardinality cardinality = syntax.cardinality();
-        SymbolId associationBase = baseOf.get(decl.owner().orElseThrow());
+        SymbolId associationBase = state.baseOf(decl.owner().orElseThrow());
         RoleSymbol inherited = associationBase == null ? null : associationRoles(associationBase).stream()
                 .filter(r -> r.name().value().equals(decl.name())).findFirst().orElse(null);
         if (inherited == null) {
@@ -2910,7 +2910,7 @@ final class GraphBuilder {
             if (!bound.error()) {
                 var roots = targets.stream().flatMap(t -> t.allowedRoots().stream()).toList();
                 var expected = new guru.interlis.model.ObjectArgumentType(nextTypeId(), decl.origin(), Optional.empty(), roots, false);
-                types.put(expected.id(), expected);
+                state.storeType(expected);
                 if (!assignable(bound.typeId(), expected.id())) emitTypeMismatch(decl.sourceId(), expression.range(), typeName(bound.typeId()), "single role target");
             }
             return bound.id();
@@ -2933,7 +2933,7 @@ final class GraphBuilder {
 
     boolean targetSpecializes(SymbolId candidate, SymbolId base) {
         return objectBase(base).isEmpty()
-                || guru.interlis.model.internal.TypeCompatibility.specializes(candidate, base, baseOf::get);
+                || guru.interlis.model.internal.TypeCompatibility.specializes(candidate, base, state::baseOf);
     }
 
     private boolean roleAccepts(RoleSymbol role, SymbolId candidate) {
@@ -2960,13 +2960,13 @@ final class GraphBuilder {
         Set<SymbolId> result = new LinkedHashSet<>();
         for (SymbolId id : baseChain(topic)) {
             checkWork();
-            if (symbols.get(id) instanceof TopicSymbol owner) result.addAll(owner.dependencies());
+            if (state.symbol(id) instanceof TopicSymbol owner) result.addAll(owner.dependencies());
         }
         return List.copyOf(result);
     }
 
     private void validateTopicDependencies() {
-        for (Symbol symbol : symbols.values()) {
+        for (Symbol symbol : state.symbolsInBuildOrder()) {
             if (!(symbol instanceof TopicSymbol topic)) continue;
             checkWork();
             Set<SymbolId> seen = new HashSet<>();
@@ -2986,8 +2986,8 @@ final class GraphBuilder {
     private void validateReferenceScope(DeclInfo site, SymbolId sourceTopic, SymbolId target,
                                         boolean external, String externalRule) {
         SymbolId targetTopic = scopeRoot(target);
-        if (!(symbols.get(sourceTopic) instanceof TopicSymbol)
-                || !(symbols.get(targetTopic) instanceof TopicSymbol)
+        if (!(state.symbol(sourceTopic) instanceof TopicSymbol)
+                || !(state.symbol(targetTopic) instanceof TopicSymbol)
                 || isTopicSubtype(sourceTopic, targetTopic)) return;
         if (!external) emitRule(site, "cross-topic reference requires EXTERNAL", externalRule);
         if (!topicDependencies(sourceTopic).contains(targetTopic))
@@ -3001,7 +3001,7 @@ final class GraphBuilder {
         while (current != null && guard++ < 32) {
             checkWork();
             firstBases.add(current);
-            current = symbols.get(current) instanceof TopicSymbol topic
+            current = state.symbol(current) instanceof TopicSymbol topic
                     ? topic.baseTopic().orElse(null) : null;
         }
         current = second;
@@ -3011,7 +3011,7 @@ final class GraphBuilder {
             if (firstBases.contains(current)) {
                 return true;
             }
-            current = symbols.get(current) instanceof TopicSymbol topic
+            current = state.symbol(current) instanceof TopicSymbol topic
                     ? topic.baseTopic().orElse(null) : null;
         }
         return false;
@@ -3025,7 +3025,7 @@ final class GraphBuilder {
             if (current.equals(base)) {
                 return true;
             }
-            Symbol symbol = symbols.get(current);
+            Symbol symbol = state.symbol(current);
             if (symbol instanceof TopicSymbol topic) {
                 current = topic.baseTopic().orElse(null);
             } else {
@@ -3038,22 +3038,24 @@ final class GraphBuilder {
     private SymbolId anyClass(DeclInfo owner) {
         SymbolId model = index.modelOfSymbol(owner.id()).orElseThrow();
         SymbolId id = new SymbolId(model.value() + ":predefined:ANYCLASS");
-        symbols.computeIfAbsent(id, ignored -> new ClassSymbol(new SymbolHeader(id, SymbolKind.CLASS,
-                DeclaredName.declared("ANYCLASS"), Optional.of(model), 0,
-                new Origin.PredefinedOrigin(owner.language(), "INTERLIS.ANYCLASS"), Optional.empty(),
-                owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of()),
-                Optional.empty(), List.of(), List.of()));
+        if (!state.hasSymbol(id)) {
+            state.defineSymbol(new ClassSymbol(new SymbolHeader(id, SymbolKind.CLASS,
+                    DeclaredName.declared("ANYCLASS"), Optional.of(model), 0,
+                    new Origin.PredefinedOrigin(owner.language(), "INTERLIS.ANYCLASS"), Optional.empty(),
+                    owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of()),
+                    Optional.empty(), List.of(), List.of()));
+        }
         return id;
     }
 
     private Optional<SymbolId> objectBase(SymbolId target) {
-        Symbol symbol = symbols.get(target);
+        Symbol symbol = state.symbol(target);
         return symbol != null && symbol.origin() instanceof Origin.PredefinedOrigin predefined
                 && predefined.key().equals("INTERLIS.ANYCLASS") ? Optional.empty() : Optional.of(target);
     }
 
     private SymbolId syntheticClass(DeclInfo owner, guru.interlis.syntax.NameSyntax name) {
-        SymbolId id = new SymbolId("sym-unresolved-" + (++typeCounter));
+        SymbolId id = new SymbolId("sym-unresolved-" + state.nextTypeSequence());
         SymbolId model = index.modelOfSymbol(owner.id()).orElse(owner.id());
         SymbolHeader header = new SymbolHeader(id, SymbolKind.CLASS,
                 DeclaredName.synthetic("<unresolved-role-target>"),
@@ -3064,7 +3066,7 @@ final class GraphBuilder {
                 MetaAttributeSet.empty(), Set.of(), List.of());
         ClassSymbol synthetic = new ClassSymbol(header, Optional.empty(),
                 List.of(), List.of());
-        symbols.put(id, synthetic);
+        state.defineSymbol(synthetic);
         return id;
     }
 
@@ -3197,9 +3199,9 @@ final class GraphBuilder {
         }
         if (!expression.error() && isBoolean(expression.typeId()) && syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.SET
                 && decl.language()==guru.interlis.model.LanguageVersion.ILI24 && !hasObjectSetFunction(expression.id())) {
-            var cause=emitTypeMismatch(decl.sourceId(),expressions.get(expression.id()).range(),
+            var cause=emitTypeMismatch(decl.sourceId(),state.expression(expression.id()).range(),
                     "SET condition without OBJECTS function","SET condition with OBJECTS function");
-            expression=failedFunctionArgument(expressions.get(expression.id()).range(),List.of(cause));
+            expression=failedFunctionArgument(state.expression(expression.id()).range(),List.of(cause));
         }
         ConstraintDefinition definition = switch (syntax.constraintKind()) {
             case MANDATORY -> new MandatoryConstraint(syntax.name(), expression.id());
@@ -3220,9 +3222,9 @@ final class GraphBuilder {
     private boolean hasObjectSetFunction(ExpressionId root) {
         var pending=new java.util.ArrayDeque<ExpressionId>();var seen=new java.util.HashSet<ExpressionId>();pending.add(root);
         while(!pending.isEmpty()) {
-            checkWork();var id=pending.removeFirst();if(!seen.add(id))continue;var expression=expressions.get(id);
+            checkWork();var id=pending.removeFirst();if(!seen.add(id))continue;var expression=state.expression(id);
             if(expression instanceof guru.interlis.model.FunctionCallExpression call
-                    && call.targetFunction().map(symbols::get).filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast)
+                    && call.targetFunction().map(state::symbol).filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast)
                     .stream().flatMap(f->f.parameters().stream()).map(p->effectiveDescriptor(p.typeId()))
                     .anyMatch(t->t instanceof guru.interlis.model.ObjectArgumentType objects&&objects.objects()))return true;
             pending.addAll(expression.children());
@@ -3248,13 +3250,13 @@ final class GraphBuilder {
     private ExpressionResult constraintPath(ExpressionSyntax syntax, DeclInfo owner,
             SymbolId start, boolean localPrefix) {
         if (syntax instanceof PathExpressionSyntax path)
-            return pathExpression(new ExpressionId("expr-" + (++expressionCounter)), path, owner.id(), start, localPrefix);
+            return pathExpression(state.nextExpressionId(), path, owner.id(), start, localPrefix);
         return buildExpression(syntax, owner.id()); // Unsupported operators keep their explicit diagnostic.
     }
 
     private void requireConstraintValue(DeclInfo owner, ExpressionResult result, boolean unique) {
         if (result.error()) return;
-        TypedExpression expression = expressions.get(result.id());
+        TypedExpression expression = state.expression(result.id());
         TypeDescriptor type = effectiveDescriptor(result.typeId());
         boolean invalid = unique && type instanceof CollectionType || type instanceof guru.interlis.model.ObjectArgumentType o && o.objects();
         if (unique) invalid |= type instanceof StructureValueType;
@@ -3282,7 +3284,7 @@ final class GraphBuilder {
                     && existenceCompatible(a.valueType().orElseThrow(), b.valueType().orElseThrow()));
         if (actual.id().equals(expected.id())) return true;
         if (actual instanceof GeometryType geometry && expected instanceof CoordinateType) {
-            actual = geometry.vertexDomain().map(declaredTypes::get).map(this::effectiveDescriptor).orElse(null);
+            actual = geometry.vertexDomain().map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
         }
         if (actual instanceof NumericType a && expected instanceof NumericType b)
             return numericValueCompatible(a.range(), b.range());
@@ -3308,7 +3310,7 @@ final class GraphBuilder {
                     && a.values().stream().map(EnumerationValue::path).toList()
                     .equals(b.values().stream().map(EnumerationValue::path).toList());
         return guru.interlis.model.internal.TypeCompatibility.assign(actual, expected,
-                this::effectiveDescriptor, baseOf::get, domain -> effectiveDescriptor(declaredTypes.get(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
+                this::effectiveDescriptor, state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
     }
 
     private boolean numericValueCompatible(NumericRange a, NumericRange b) {
@@ -3319,7 +3321,7 @@ final class GraphBuilder {
     private EnumElementSymbol buildEnumElement(DeclInfo decl) {
         String path = decl.name();
         List<String> segments = List.of(path.split("\\."));
-        TypeDescriptor type = decl.owner().map(declaredTypes::get).map(this::effectiveDescriptor).orElse(null);
+        TypeDescriptor type = decl.owner().map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
         int ordinal = type instanceof EnumerationType enumeration ? enumeration.values().stream()
                 .filter(value -> value.path().equals(path)).mapToInt(EnumerationValue::order).findFirst().orElse(-1) : -1;
         if (ordinal < 0) {
@@ -3333,14 +3335,13 @@ final class GraphBuilder {
 
     private UnsupportedSymbol buildUnsupported(DeclInfo decl) {
         String feature = decl.featureId().orElse("UNKNOWN_SYNTAX");
-        unsupportedBySource.computeIfAbsent(decl.sourceId(), ignored -> new LinkedHashSet<>())
-                .add(feature);
+        diagnostics.recordUnsupported(decl.sourceId(), feature);
         emitUnsupported(decl.sourceId(), decl.origin() instanceof Origin.DeclaredOrigin d
                 ? d.range() : null, feature, decl.name());
         return new UnsupportedSymbol(header(decl), feature, decl.name());
     }
 
-    private final ViewBuilder views = new ViewBuilder(this);
+    private final ViewBuilder views = new ViewBuilder(this, state);
 
     private ViewSymbol buildView(DeclInfo decl) { return views.build(decl); }
 
@@ -3348,7 +3349,7 @@ final class GraphBuilder {
 
     private void bindOidRules() {
         Map<SymbolId, List<guru.interlis.model.OidRule>> bound = new LinkedHashMap<>();
-        for (Symbol symbol : List.copyOf(symbols.values())) {
+        for (Symbol symbol : List.copyOf(state.symbolsInBuildOrder())) {
             if (symbol instanceof ClassSymbol || symbol instanceof TopicSymbol || symbol instanceof AssociationSymbol)
                 bindOidRules(symbol.id(), bound, new HashSet<>());
         }
@@ -3359,7 +3360,7 @@ final class GraphBuilder {
         checkWork();
         if (bound.containsKey(id)) return bound.get(id);
         if (!active.add(id)) return List.of(); // Existing inheritance checks diagnose the cycle.
-        Symbol symbol = symbols.get(id);
+        Symbol symbol = state.symbol(id);
         DeclInfo decl = index.byId(id).orElse(null);
         if (decl == null || !(symbol instanceof ClassSymbol || symbol instanceof TopicSymbol || symbol instanceof AssociationSymbol))
             return List.of();
@@ -3369,12 +3370,12 @@ final class GraphBuilder {
             case AssociationDeclarationSyntax a -> a.oidRules();
             default -> List.of();
         };
-        List<guru.interlis.model.OidRule> inherited = baseOf.containsKey(id)
-                ? bindOidRules(baseOf.get(id), bound, active) : List.of();
+        List<guru.interlis.model.OidRule> inherited = state.hasBase(id)
+                ? bindOidRules(state.baseOf(id), bound, active) : List.of();
         List<guru.interlis.model.OidRule> rules = new ArrayList<>(inherited);
         if (!(symbol instanceof TopicSymbol) && rules.isEmpty()) {
             SymbolId topic = scopeRoot(id);
-            if (topic != null && !topic.equals(id) && symbols.get(topic) instanceof TopicSymbol)
+            if (topic != null && !topic.equals(id) && state.symbol(topic) instanceof TopicSymbol)
                 bindOidRules(topic, bound, active).stream().filter(r -> !r.basket()).forEach(rules::add);
         }
         for (var rule : declared) {
@@ -3388,7 +3389,7 @@ final class GraphBuilder {
                 var name = rule.domain().orElseThrow();
                 domain=bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.TYPE_USE,new ArrayList<>());
                 if (domain.isEmpty()) continue;
-                if (!(effectiveDescriptor(declaredTypes.get(domain.orElseThrow())) instanceof guru.interlis.model.OidType)) {
+                if (!(effectiveDescriptor(state.declaredType(domain.orElseThrow())) instanceof guru.interlis.model.OidType)) {
                     emitRule(decl, "OID AS must bind an OID domain", "OID_DOMAIN"); continue;
                 }
             }
@@ -3400,7 +3401,7 @@ final class GraphBuilder {
         }
         // Only 2.4 defines an omitted class rule as inherited NO OID.
         if (decl.language() == guru.interlis.model.LanguageVersion.ILI24
-                && symbols.get(baseOf.get(id)) instanceof ClassSymbol && inherited.isEmpty()
+                && state.symbol(state.baseOf(id)) instanceof ClassSymbol && inherited.isEmpty()
                 && rules.stream().anyMatch(r -> !r.basket() && oidState(r) == 2))
             emitRule(decl, "inherited NO OID must first be concretized as ANYOID", "OID_OVERRIDE");
         rules.sort(Comparator.comparing(r -> !r.basket()));
@@ -3428,17 +3429,17 @@ final class GraphBuilder {
             case AssociationSymbol a -> new AssociationSymbol(header, a.baseAssociation(), a.cardinality(), a.roles(), a.attributes(), a.constraints(), a.derivedFrom());
             default -> symbol;
         };
-        symbols.put(id, replacement); active.remove(id);
+        state.replaceSymbol(replacement); active.remove(id);
         var result = List.copyOf(rules); bound.put(id, result); return result;
     }
 
     private void validateReferenceTargets() {
-        for (var entry : effectiveMembers.entrySet()) {
+        for (var entry : state.effectiveMembersInBuildOrder()) {
             checkWork();
             SymbolId sourceOwner = entry.getKey();
             while (sourceOwner != null && index.byId(sourceOwner).isEmpty()) {
                 checkWork();
-                sourceOwner = symbols.get(sourceOwner).owner().orElse(null);
+                sourceOwner = state.symbol(sourceOwner).owner().orElse(null);
             }
             if (sourceOwner == null) continue; // Predefined declarations are checked at their source uses.
             DeclInfo owner = index.byId(sourceOwner).orElseThrow();
@@ -3450,9 +3451,9 @@ final class GraphBuilder {
                 checkWork();
                 SymbolId container = pending.removeFirst();
                 if (!seen.add(container)) continue;
-                for (EffectiveMember member : effectiveMembers.getOrDefault(container, List.of())) {
+                for (EffectiveMember member : state.effectiveMembers(container)) {
                     checkWork();
-                    Symbol declaration = symbols.get(member.declaredSymbol());
+                    Symbol declaration = state.symbol(member.declaredSymbol());
                     List<SymbolId> roots = List.of();
                     boolean external = false;
                     if (declaration instanceof RoleSymbol role) {
@@ -3472,7 +3473,7 @@ final class GraphBuilder {
                             ? index.byId(declaration.id()).orElse(owner) : owner;
                     for (SymbolId root : roots) {
                         checkWork();
-                        Symbol target = symbols.get(contextualObject(root, topic));
+                        Symbol target = state.symbol(contextualObject(root, topic));
                         if (target == null || index.byId(target.id()).isEmpty()) continue; // ANYCLASS/unresolved: no invented OID.
                         validateReferenceScope(site, topic, target.id(), external,
                                 declaration instanceof RoleSymbol ? "ROLE_EXTERNAL" : "REFERENCE_EXTERNAL");
@@ -3493,9 +3494,9 @@ final class GraphBuilder {
 
     private int oidState(guru.interlis.model.OidRule rule) {
         if (rule.domain().isEmpty()) return 0;
-        Symbol domain = symbols.get(rule.domain().orElseThrow());
+        Symbol domain = state.symbol(rule.domain().orElseThrow());
         if (domain != null && domain.name().value().equals("INTERLIS.NOOID")) return 0;
-        return effectiveDescriptor(declaredTypes.get(rule.domain().orElseThrow())) instanceof guru.interlis.model.OidType oid
+        return effectiveDescriptor(state.declaredType(rule.domain().orElseThrow())) instanceof guru.interlis.model.OidType oid
                 && oid.oidKind() == guru.interlis.model.OidKind.ANY ? 1 : 2;
     }
 
@@ -3503,7 +3504,7 @@ final class GraphBuilder {
             guru.interlis.model.LanguageVersion language, boolean topic) {
         if (base.domain().equals(derived.domain())) return true;
         if (base.domain().isPresent() && derived.domain().isPresent()) {
-            Symbol a = symbols.get(base.domain().orElseThrow()), b = symbols.get(derived.domain().orElseThrow());
+            Symbol a = state.symbol(base.domain().orElseThrow()), b = state.symbol(derived.domain().orElseThrow());
             if (a != null && b != null && a.header().origin() instanceof Origin.SyntheticOrigin
                     && b.header().origin() instanceof Origin.SyntheticOrigin && a.name().equals(b.name())) return true;
         }
@@ -3555,7 +3556,7 @@ final class GraphBuilder {
         if (!Set.of("INTERLIS.URI", "INTERLIS.NAME", "INTERLIS.BOOLEAN", "INTERLIS.INTERLIS_1_DATE", "INTERLIS.HALIGNMENT", "INTERLIS.VALIGNMENT").contains(name))
             return Optional.empty();
         SymbolId symbol = new SymbolId("predefined:" + context.language() + ":domain:" + name);
-        if (symbols.containsKey(symbol)) return Optional.of(symbol);
+        if (state.hasSymbol(symbol)) return Optional.of(symbol);
         Origin origin = new Origin.PredefinedOrigin(context.language(), name);
         TypeId type = nextTypeId();
         TypeDescriptor descriptor=switch(name) {
@@ -3566,9 +3567,9 @@ final class GraphBuilder {
             default -> new guru.interlis.model.AlignmentType(type,origin,name.equals("INTERLIS.HALIGNMENT")
                     ? guru.interlis.model.AlignmentKind.HORIZONTAL : guru.interlis.model.AlignmentKind.VERTICAL);
         };
-        types.put(type,descriptor);
-        declaredTypes.put(symbol, type);
-        symbols.put(symbol, new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN,
+        state.storeType(descriptor);
+        state.bindDeclaredType(symbol, type);
+        state.defineSymbol(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN,
                 DeclaredName.synthetic(name), Optional.empty(), 0, origin, Optional.empty(), context.language(),
                 Documentation.empty(), MetaAttributeSet.empty(), Set.of(guru.interlis.model.Modifier.FINAL), List.of()),
                 type, Optional.empty(), false));
@@ -3582,7 +3583,7 @@ final class GraphBuilder {
         if (name.equals("INTERLIS.NOOID") && language == guru.interlis.model.LanguageVersion.ILI23)
             return Optional.empty();
         SymbolId symbol = new SymbolId("predefined:" + language + ":domain:" + name);
-        if (symbols.containsKey(symbol)) return Optional.of(symbol);
+        if (state.hasSymbol(symbol)) return Optional.of(symbol);
         Optional<SymbolId> base = language == guru.interlis.model.LanguageVersion.ILI23 || name.equals("INTERLIS.NOOID")
                 ? Optional.empty()
                 : builtinOidDomain(context, name.equals("INTERLIS.ANYOID") ? "INTERLIS.NOOID" : "INTERLIS.ANYOID");
@@ -3593,14 +3594,14 @@ final class GraphBuilder {
         Optional<TypeId> carrier = Optional.empty();
         if (kind != guru.interlis.model.OidKind.ANY) {
             TypeId value = nextTypeId();
-            types.put(value, kind == guru.interlis.model.OidKind.NUMERIC
+            state.storeType(kind == guru.interlis.model.OidKind.NUMERIC
                     ? new NumericType(value, origin, NumericRange.of(guru.interlis.model.DecimalLiteral.parse("0"), guru.interlis.model.DecimalLiteral.parse("2147483647")))
                     : new TextType(value, origin, TextKind.TEXT, java.util.OptionalInt.of(kind == guru.interlis.model.OidKind.UUID ? 36 : 16)));
             carrier = Optional.of(value);
         }
-        TypeId type = nextTypeId(); types.put(type, new guru.interlis.model.OidType(type, origin, kind, carrier));
-        declaredTypes.put(symbol, type); base.ifPresent(b -> baseOf.put(symbol, b));
-        symbols.put(symbol, new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN, DeclaredName.synthetic(name),
+        TypeId type = nextTypeId(); state.storeType(new guru.interlis.model.OidType(type, origin, kind, carrier));
+        state.bindDeclaredType(symbol, type); base.ifPresent(b -> state.bindBase(symbol, b));
+        state.defineSymbol(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN, DeclaredName.synthetic(name),
                 Optional.empty(), 0, origin, Optional.empty(), language,
                 Documentation.empty(), MetaAttributeSet.empty(), language == guru.interlis.model.LanguageVersion.ILI24 && name.equals("INTERLIS.ANYOID")
                         ? Set.of(guru.interlis.model.Modifier.ABSTRACT) : Set.of(), List.of()), type, base, false));
@@ -3617,7 +3618,7 @@ final class GraphBuilder {
         DeclInfo owner = index.byId(context).orElseThrow();
         List<DiagnosticId> errors=new ArrayList<>();
         Optional<SymbolId> domain = syntax.basedOnStructure() || syntax.base().isEmpty()
-                ? Optional.ofNullable(baseOf.get(context)) : Optional.empty();
+                ? Optional.ofNullable(state.baseOf(context)) : Optional.empty();
         Optional<SymbolId> structure = Optional.empty();
         Optional<guru.interlis.model.TemporalKind> predefined = Optional.empty();
         if (syntax.base().isPresent()) {
@@ -3625,7 +3626,7 @@ final class GraphBuilder {
             if (syntax.basedOnStructure()) structure = bindFormatName(context, name, Set.of(SymbolKind.STRUCTURE));
             else domain = bindFormatName(context, name, Set.of(SymbolKind.DOMAIN));
         }
-        TypeDescriptor inherited = domain.map(declaredTypes::get).map(this::effectiveDescriptor).orElse(null);
+        TypeDescriptor inherited = domain.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
         FormattedType base = inherited instanceof FormattedType f ? f : null;
         List<FormattedType.Part> parts = new ArrayList<>();
         if (!syntax.basedOnStructure()) {
@@ -3639,7 +3640,7 @@ final class GraphBuilder {
                 // INHERITANCE keeps the layout and provenance, but uses the effective
                 // attribute of the specialized structure (including its precision).
                 Optional<SymbolId> attribute = part.attribute().isEmpty() ? Optional.empty()
-                        : findMember(structure.orElseThrow(), symbols.get(part.attribute().orElseThrow()).name().value());
+                        : findMember(structure.orElseThrow(), state.symbol(part.attribute().orElseThrow()).name().value());
                 parts.add(new FormattedType.Part(attribute, part.width(), part.format(), part.literal(), part.origin()));
             }
         } else if (base != null) errors.add(emitRule(owner, "extended FORMAT must retain its inherited prefix", "FORMAT_INHERITANCE"));
@@ -3655,10 +3656,10 @@ final class GraphBuilder {
                 recordReference(owner, name, attribute.orElse(null), ReferenceUsage.TYPE_USE);
                 if (attribute.isEmpty()) errors.add(unresolved(name));
                 attribute.flatMap(index::byId).ifPresent(this::attributeType);
-                TypeDescriptor value = attribute.map(declaredTypes::get).map(this::effectiveDescriptor).orElse(null);
+                TypeDescriptor value = attribute.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
                 if (part.format().isPresent()) {
                     nested = bindFormatName(context, part.format().orElseThrow(), Set.of(SymbolKind.DOMAIN));
-                    TypeDescriptor nestedType = nested.map(declaredTypes::get).map(this::effectiveDescriptor).orElse(null);
+                    TypeDescriptor nestedType = nested.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
                     SymbolId selected = value instanceof CollectionType c && !isMany(c.cardinality()) ? structures.target(c) : structures.target(value);
                     if (value instanceof CollectionType c && isMany(c.cardinality())) selected = null;
                     if (!(nestedType instanceof FormattedType f) || f.structure().isEmpty() || selected == null
@@ -3693,7 +3694,7 @@ final class GraphBuilder {
                     if (lower.filter(v -> FormattedValues.compare(min.orElseThrow(), v) < 0).isPresent()
                             || upper.filter(v -> FormattedValues.compare(max.orElseThrow(), v) > 0).isPresent())
                         errors.add(emitRule(owner, "FORMAT extension widens base bounds", "FORMAT_BOUNDS"));
-                    TypeDescriptor next = ancestor.baseDomain().map(declaredTypes::get).map(this::effectiveDescriptor).orElse(null);
+                    TypeDescriptor next = ancestor.baseDomain().map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
                     ancestor = next instanceof FormattedType f ? f : null;
                 }
             }
@@ -3702,7 +3703,7 @@ final class GraphBuilder {
     }
 
     private void validateFormattedUses() {
-        for (var entry : declaredTypes.entrySet()) {
+        for (var entry : state.declaredTypesInBuildOrder()) {
             checkWork();
             DeclInfo declaration = index.byId(entry.getKey()).orElse(null);
             if (declaration == null || declaration.kind() != SymbolKind.DOMAIN && declaration.kind() != SymbolKind.ATTRIBUTE)
@@ -3716,7 +3717,7 @@ final class GraphBuilder {
     }
 
     private FormattedValues formattedValues() {
-        return new FormattedValues(id -> effectiveDescriptor(declaredTypes.get(id)), this::checkWork);
+        return new FormattedValues(id -> effectiveDescriptor(state.declaredType(id)), this::checkWork);
     }
 
     private Optional<List<java.math.BigDecimal>> formatValue(FormattedType type, String value) {
@@ -3751,7 +3752,7 @@ final class GraphBuilder {
             case OidTypeSyntax oid -> {
                 Optional<TypeId> carrier = oid.valueType().map(t -> buildType(t, context, source));
                 if (oid.oidKind() == guru.interlis.model.OidKind.UUID) {
-                    TypeId text = nextTypeId(); types.put(text, new TextType(text, new Origin.DeclaredOrigin(oid.range()), TextKind.TEXT, java.util.OptionalInt.of(36)));
+                    TypeId text = nextTypeId(); state.storeType(new TextType(text, new Origin.DeclaredOrigin(oid.range()), TextKind.TEXT, java.util.OptionalInt.of(36)));
                     carrier = Optional.of(text);
                 }
                 yield new guru.interlis.model.OidType(id, new Origin.DeclaredOrigin(oid.range()), oid.oidKind(), carrier);
@@ -3766,7 +3767,7 @@ final class GraphBuilder {
                         Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors);
                 if (domain.isEmpty()) yield new ErrorType(id, new Origin.DeclaredOrigin(enumTree.range()), errors);
                 index.byId(domain.orElseThrow()).ifPresent(this::domainType);
-                TypeDescriptor base=effectiveDescriptor(declaredTypes.get(domain.orElseThrow()));
+                TypeDescriptor base=effectiveDescriptor(state.declaredType(domain.orElseThrow()));
                 if(!(base instanceof EnumerationType enumeration) || enumeration.treeValues())
                     yield new ErrorType(id,new Origin.DeclaredOrigin(enumTree.range()),List.of(emitRule(index.byId(context).orElseThrow(),"ALL OF requires an enumeration domain","ENUM_TREE_TARGET",enumTree.range())));
                 yield new EnumerationType(id,new Origin.DeclaredOrigin(enumTree.range()),enumeration.values(),enumeration.ordered(),
@@ -3839,7 +3840,7 @@ final class GraphBuilder {
                 target.ifPresent(idTarget -> {
                     metadata.ensureBases(idTarget);
                     var root = metadata.predefined(declaration, "INTERLIS.METAOBJECT", Set.of(SymbolKind.CLASS)).orElseThrow();
-                    if (!guru.interlis.model.internal.TypeCompatibility.specializes(idTarget, root, baseOf::get))
+                    if (!guru.interlis.model.internal.TypeCompatibility.specializes(idTarget, root, state::baseOf))
                         emitRule(declaration, "METAOBJECT OF requires a metadata class", "PARAMETER_METAOBJECT_TARGET");
                 });
                 yield new guru.interlis.model.MetaObjectType(id, new Origin.DeclaredOrigin(meta.range()), target);
@@ -3859,7 +3860,7 @@ final class GraphBuilder {
                 TypeDescriptor inherited = null;
                 if (declaration.kind() == SymbolKind.ATTRIBUTE && declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
                     SymbolId owner = declaration.owner().orElse(null);
-                    AttributeSymbol baseAttribute = owner == null ? null : findBaseAttribute(baseOf.get(owner), declaration.name());
+                    AttributeSymbol baseAttribute = owner == null ? null : findBaseAttribute(state.baseOf(owner), declaration.name());
                     if (baseAttribute != null) inherited = effectiveDescriptor(baseAttribute.declaredType());
                 }
                 // Domains are merged after their base reference has been bound.
@@ -3874,7 +3875,7 @@ final class GraphBuilder {
                 if(target.isEmpty())yield new ErrorType(id,new Origin.DeclaredOrigin(reference.range()),errors);
                 SymbolId selected=target.orElseThrow();
                 var sourceDeclaration=index.byId(selected);
-                SymbolKind kind=sourceDeclaration.map(DeclInfo::kind).orElseGet(()->symbols.get(selected).kind());
+                SymbolKind kind=sourceDeclaration.map(DeclInfo::kind).orElseGet(()->state.symbol(selected).kind());
                 if(kind==SymbolKind.STRUCTURE)yield new StructureValueType(id,new Origin.DeclaredOrigin(reference.range()),Optional.of(selected),List.of());
                 sourceDeclaration.ifPresent(this::domainType);
                 yield new DomainReferenceType(id,new Origin.DeclaredOrigin(reference.range()),selected);
@@ -3918,7 +3919,7 @@ final class GraphBuilder {
                 if (unsupported.featureId().equals("MISSING_ATTRIBUTE_TYPE") || unsupported.featureId().equals("MISSING_FUNCTION_RETURN_TYPE")) {
                     DiagnosticId cause = null;
                     int distance = Integer.MAX_VALUE;
-                    for (var diagnostic : syntaxErrors) {
+                    for (var diagnostic : diagnostics.syntaxErrors()) {
                         checkWork();
                         var range = diagnostic.primaryRange().orElse(null);
                         if (range == null || !range.source().equals(unsupported.range().source())
@@ -3935,7 +3936,7 @@ final class GraphBuilder {
                         List.of(diagnostic));
             }
         };
-        types.put(id, descriptor);
+        state.storeType(descriptor);
         return id;
     }
 
@@ -3952,8 +3953,8 @@ final class GraphBuilder {
             restriction.ifPresent(restrictions::add);
             if (base.isPresent() && restriction.isPresent()
                     && !guru.interlis.model.internal.TypeCompatibility.specializes(
-                            restriction.get(), base.get(), baseOf::get)) {
-                errors.add(collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0005"),
+                            restriction.get(), base.get(), state::baseOf)) {
+                errors.add(diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0005"),
                                 Severity.ERROR, Phase.TYPE_CHECKING, "diagnostic.semantics.type")
                         .at(name.range())
                         .argument(new DiagnosticArgument.TypeNameArgument("actual", name.text()))
@@ -4021,7 +4022,7 @@ final class GraphBuilder {
         Optional<SymbolId> target = resolution.target();
         recordReference(owner, name, target.orElse(null), usage);
         if (resolution.status() == NameResolver.Status.AMBIGUOUS) {
-            errors.add(collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0002"),
+            errors.add(diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0002"),
                             Severity.ERROR, Phase.BINDING, "diagnostic.semantics.ambiguous")
                     .at(name.range())
                     .argument(new DiagnosticArgument.IdentifierArgument("name", name.text()))
@@ -4041,63 +4042,29 @@ final class GraphBuilder {
                 ? resolution.target() : Optional.empty();
     }
 
-    DiagnosticId unresolved(guru.interlis.syntax.NameSyntax name) {
-        var draft = DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0001"),
-                        Severity.ERROR, Phase.BINDING, "diagnostic.semantics.unresolved")
-                .at(name.range())
-                .argument(new DiagnosticArgument.IdentifierArgument("name", name.text()));
-        // Only qualified references to an actually failed import are dependent.
-        // An unrelated unresolved name in the same file remains independently visible.
-        if (name.segments().size() > 1) {
-            String qualifier = name.segments().getFirst().text();
-            closure.models().stream().filter(m -> m.sourceId().equals(name.range().source())
-                    && m.syntax().range().startOffset() <= name.range().startOffset()
-                    && m.syntax().range().endOffset() >= name.range().endOffset())
-                    .flatMap(m -> m.syntax().imports().stream()).filter(i -> i.modelName().equals(qualifier))
-                    .map(i -> collector.importFailure(i.range())).flatMap(Optional::stream).findFirst()
-                    .ifPresent(id -> { draft.cause(id); draft.dependsOn(id); });
-        }
-        return collector.emit(draft);
-    }
-
     private TypeId errorType(SourceId source, SourceRange range, String feature) {
         TypeId id = nextTypeId();
         DiagnosticId diagnostic = emitUnsupported(source, range, feature, feature);
-        types.put(id, new ErrorType(id, new Origin.SyntheticOrigin(
+        state.storeType(new ErrorType(id, new Origin.SyntheticOrigin(
                 guru.interlis.model.SyntheticReason.MISSING_TYPE, Optional.of(range)),
                 List.of(diagnostic)));
         return id;
     }
 
-    DiagnosticId emitUnsupported(SourceId source, SourceRange range, String feature,
-                                         String construct) {
-        DiagnosticDraft draft = DiagnosticDraft.of(new DiagnosticCode("ILI-IMPL-0001"),
-                        Severity.ERROR, Phase.SEMANTIC_CHECKING,
-                        "diagnostic.implementation.unsupported")
-                .argument(new DiagnosticArgument.TextArgument("feature", feature))
-                .argument(new DiagnosticArgument.TextArgument("construct",
-                        construct == null ? feature : construct));
-        if (range != null) {
-            draft.at(range);
-        }
-        unsupportedBySource.computeIfAbsent(source, ignored -> new LinkedHashSet<>()).add(feature);
-        return collector.emit(draft);
-    }
-
     private TypeId builtinBoolean(guru.interlis.model.LanguageVersion language) {
         return booleanTypes.computeIfAbsent(language,version->{
-            TypeId id=nextTypeId();types.put(id,new guru.interlis.model.BooleanType(id,new Origin.PredefinedOrigin(version,"BOOLEAN")));return id;
+            TypeId id=nextTypeId();state.storeType(new guru.interlis.model.BooleanType(id,new Origin.PredefinedOrigin(version,"BOOLEAN")));return id;
         });
     }
 
     TypeId nextTypeId() {
-        return new TypeId("type-" + (++typeCounter));
+        return state.nextTypeId();
     }
 
     // ---- expressions -----------------------------------------------------------
 
     ExpressionResult buildExpression(ExpressionSyntax syntax, SymbolId owner) {
-        ExpressionId id = new ExpressionId("expr-" + (++expressionCounter));
+        ExpressionId id = state.nextExpressionId();
         return switch (syntax) {
             case LiteralExpressionSyntax literal -> literalExpression(id, literal, owner);
             case PathExpressionSyntax path -> pathExpression(id, path, owner);
@@ -4125,7 +4092,7 @@ final class GraphBuilder {
                 ErrorExpression expression = new ErrorExpression(id, error,
                         guru.interlis.model.ExpressionTypeState.ERROR, unsupported.range(),
                         List.of(), List.of(diagnostic));
-                expressions.put(id, expression);
+                state.storeExpression(expression);
                 yield new ExpressionResult(id, error, true);
             }
         };
@@ -4141,14 +4108,14 @@ final class GraphBuilder {
             var kind = index.byId(context).map(DeclInfo::kind).orElse(null);
             type = nextTypeId();
             if (kind == SymbolKind.CLASS || kind == SymbolKind.ASSOCIATION || kind == SymbolKind.VIEW) {
-                types.put(type, new guru.interlis.model.ObjectArgumentType(type,
+                state.storeType(new guru.interlis.model.ObjectArgumentType(type,
                         new Origin.DeclaredOrigin(syntax.range()), Optional.of(context), List.of(), true));
             } else {
                 type = errorType(ownerSource(owner), syntax.range(), "ALL requires an object context");
             }
         }
         boolean error = effectiveDescriptor(type) instanceof ErrorType;
-        expressions.put(id, new guru.interlis.model.ObjectSetExpression(id, type,
+        state.storeExpression(new guru.interlis.model.ObjectSetExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range()));
         return new ExpressionResult(id, type, error);
@@ -4168,8 +4135,8 @@ final class GraphBuilder {
                                                        GenericConstantExpressionSyntax syntax,
                                                        SymbolId owner) {
         TypeId type = nextTypeId();
-        types.put(type, new GenericType(type, new Origin.DeclaredOrigin(syntax.range()), syntax.name()));
-        expressions.put(id, new guru.interlis.model.ConstantExpression(id, type,
+        state.storeType(new GenericType(type, new Origin.DeclaredOrigin(syntax.range()), syntax.name()));
+        state.storeExpression(new guru.interlis.model.ConstantExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.name()));
         return new ExpressionResult(id, type, false);
@@ -4187,10 +4154,10 @@ final class GraphBuilder {
         else recordReference(declaration, syntax.target(), target.orElseThrow(), ReferenceUsage.EXPRESSION);
         if (target.isEmpty()) return failedValueExpression(id, syntax.range(), errors);
         TypeId type = nextTypeId();
-        boolean structure = symbols.get(target.orElseThrow()) instanceof StructureSymbol
+        boolean structure = state.symbol(target.orElseThrow()) instanceof StructureSymbol
                 || index.byId(target.orElseThrow()).map(d -> d.kind() == SymbolKind.STRUCTURE).orElse(false);
-        types.put(type, new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()), structure, target.stream().toList()));
-        expressions.put(id, new guru.interlis.model.SymbolValueExpression(id, type,
+        state.storeType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()), structure, target.stream().toList()));
+        state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), target.orElseThrow()));
         return new ExpressionResult(id, type, false);
     }
@@ -4200,7 +4167,7 @@ final class GraphBuilder {
     }
 
     ExpressionResult contextualAttributeConstant(guru.interlis.syntax.AttributeConstantExpressionSyntax syntax,SymbolId owner,SymbolId context) {
-        return attributeConstantExpression(new ExpressionId("expr-"+(++expressionCounter)),syntax,owner,context);
+        return attributeConstantExpression(state.nextExpressionId(),syntax,owner,context);
     }
 
     private ExpressionResult attributeConstantExpression(ExpressionId id, guru.interlis.syntax.AttributeConstantExpressionSyntax syntax, SymbolId owner,SymbolId context) {
@@ -4210,18 +4177,18 @@ final class GraphBuilder {
                 ? bindTarget(declaration, syntax.viewable().orElseThrow(), Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE, SymbolKind.ASSOCIATION, SymbolKind.VIEW), ReferenceUsage.EXPRESSION, errors)
                 : Optional.of(context);
         Optional<SymbolId> attribute = viewable.flatMap(target -> findMember(target, syntax.attribute().text()))
-                .filter(target -> index.byId(target).map(DeclInfo::kind).orElse(null) == SymbolKind.ATTRIBUTE || symbols.get(target) instanceof AttributeSymbol);
+                .filter(target -> index.byId(target).map(DeclInfo::kind).orElse(null) == SymbolKind.ATTRIBUTE || state.symbol(target) instanceof AttributeSymbol);
         recordReference(declaration, syntax.attribute(), attribute.orElse(null), ReferenceUsage.EXPRESSION);
         if (attribute.isEmpty()) {
             errors.add(unresolved(syntax.attribute()));
             return failedValueExpression(id, syntax.range(), errors);
         }
         TypeId attributeType = index.byId(attribute.orElseThrow()).map(this::attributeType)
-                .orElseGet(() -> ((AttributeSymbol) symbols.get(attribute.orElseThrow())).declaredType());
+                .orElseGet(() -> ((AttributeSymbol) state.symbol(attribute.orElseThrow())).declaredType());
         TypeId type = nextTypeId();
-        types.put(type, new guru.interlis.model.AttributePathType(type, new Origin.DeclaredOrigin(syntax.range()),
+        state.storeType(new guru.interlis.model.AttributePathType(type, new Origin.DeclaredOrigin(syntax.range()),
                 Optional.of(new guru.interlis.model.AttributePathType.Viewable(viewable.orElseThrow())), List.of(attributeType)));
-        expressions.put(id, new guru.interlis.model.SymbolValueExpression(id, type, guru.interlis.model.ExpressionTypeState.RESOLVED,
+        state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, type, guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), attribute.orElseThrow()));
         return new ExpressionResult(id, type, false);
     }
@@ -4232,7 +4199,7 @@ final class GraphBuilder {
         if (target.isEmpty()) return failedValueExpression(id, syntax.range(), errors);
         var parameter = (guru.interlis.model.ParameterSymbol) buildSymbol(index.byId(target.orElseThrow()).orElseThrow());
         boolean error = effectiveDescriptor(parameter.typeId()) instanceof ErrorType;
-        expressions.put(id, new guru.interlis.model.SymbolValueExpression(id, parameter.typeId(),
+        state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, parameter.typeId(),
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), parameter.id()));
         return new ExpressionResult(id, parameter.typeId(), error);
@@ -4240,19 +4207,19 @@ final class GraphBuilder {
 
     private ExpressionResult failedValueExpression(ExpressionId id, SourceRange range, List<DiagnosticId> errors) {
         TypeId type = nextTypeId();
-        types.put(type, new ErrorType(type, new Origin.DeclaredOrigin(range), errors));
-        expressions.put(id, new guru.interlis.model.ErrorExpression(id, type,
+        state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(range), errors));
+        state.storeExpression(new guru.interlis.model.ErrorExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.ERROR, range, List.of(), errors));
         return new ExpressionResult(id, type, true);
     }
 
     ExpressionResult failedFunctionArgument(SourceRange range,List<DiagnosticId> causes) {
-        return failedValueExpression(new ExpressionId("expr-"+(++expressionCounter)),range,causes);
+        return failedValueExpression(state.nextExpressionId(),range,causes);
     }
 
     ExpressionResult blockedFunctionArgument(SourceRange range,ExpressionResult dependency,DeclInfo owner) {
-        var descriptor=effectiveDescriptor(dependency.typeId());var source=expressions.get(dependency.id()).range();
-        var causes=descriptor instanceof ErrorType error?error.diagnosticIds():collector.snapshot().stream()
+        var descriptor=effectiveDescriptor(dependency.typeId());var source=state.expression(dependency.id()).range();
+        var causes=descriptor instanceof ErrorType error?error.diagnosticIds():diagnostics.snapshot().stream()
                 .filter(d->d.severity()==Severity.ERROR&&d.primaryRange().filter(r->r.source().equals(source.source())&&r.revision().equals(source.revision())
                         &&r.startOffset()<=source.endOffset()&&r.endOffset()>=source.startOffset()).isPresent()).map(guru.interlis.diagnostics.Diagnostic::id).toList();
         if(causes.isEmpty())causes=List.of(emitRule(owner,"invalid actual attribute owner argument","FUNCTION_ATTRIBUTE_DEPENDENCY",range));
@@ -4265,15 +4232,15 @@ final class GraphBuilder {
         String text = syntax.text().toLowerCase(java.util.Locale.ROOT);
         if (text.equals("#true") || text.equals("#false")) {
             TypeId type = builtinBoolean(index.byId(owner).orElseThrow().language());
-            expressions.put(id, new guru.interlis.model.LiteralExpression(id, type,
+            state.storeExpression(new guru.interlis.model.LiteralExpression(id, type,
                     guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                     guru.interlis.model.LiteralKind.BOOLEAN, syntax.text(), Optional.empty(),
                     Optional.empty()));
             return new ExpressionResult(id, type, false);
         }
         TypeId type = nextTypeId();
-        types.put(type,new guru.interlis.model.EnumArgumentType(type,new Origin.DeclaredOrigin(syntax.range()),false));
-        expressions.put(id, new guru.interlis.model.ConstantExpression(id, type,
+        state.storeType(new guru.interlis.model.EnumArgumentType(type,new Origin.DeclaredOrigin(syntax.range()),false));
+        state.storeExpression(new guru.interlis.model.ConstantExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.text()));
         return new ExpressionResult(id, type, false);
@@ -4294,7 +4261,7 @@ final class GraphBuilder {
             DiagnosticId cause = emitRule(declaration, "Unknown standard function INTERLIS." + syntax.functionName().segments().getLast().text(),
                     "BUILTIN_NAME");
             type = nextTypeId();
-            types.put(type, new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(cause)));
+            state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(cause)));
             error = true;
 
         } else {
@@ -4310,7 +4277,7 @@ final class GraphBuilder {
                 var expected = signature.arguments().get(i);
                 if (!actual.error() && expected!=BuiltinFunctions.Value.ATTRIBUTE
                         && !(i==1 && (signature.rule()==BuiltinFunctions.Rule.AREAS_ATTRIBUTE || signature.rule()==BuiltinFunctions.Rule.AREAS_TEXT)
-                            && expressions.get(actual.id()) instanceof guru.interlis.model.UndefinedExpression)
+                            && state.expression(actual.id()) instanceof guru.interlis.model.UndefinedExpression)
                         && !builtinArgumentMatches(actual.typeId(), expected, declaration.language())) {
                     emitTypeMismatch(ownerSource(owner), syntax.arguments().get(i).range(),
                             typeName(actual.typeId()), expected.name());
@@ -4325,13 +4292,13 @@ final class GraphBuilder {
             List<SymbolId> targets = argument instanceof ReferenceType r ? r.targetRoots()
                     : argument instanceof guru.interlis.model.ObjectArgumentType o ? (o.restrictions().isEmpty() ? o.base().stream().toList() : o.restrictions())
                     : argument instanceof StructureValueType structure ? structure.targetRoots() : List.of();
-            types.put(type, new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()),
+            state.storeType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()),
                     argument instanceof StructureValueType || guru.interlis.model.internal.TypeCompatibility.isUndefined(argument), targets));
         }
         if (!error && signature.rule()==BuiltinFunctions.Rule.CONVERT_UNIT) {
             var from=effectiveDescriptor(arguments.getFirst().typeId());
             type=nextTypeId();
-            types.put(type,new NumericType(type,new Origin.DeclaredOrigin(syntax.range()),new NumericRange(Optional.empty(),Optional.empty(),false,
+            state.storeType(new NumericType(type,new Origin.DeclaredOrigin(syntax.range()),new NumericRange(Optional.empty(),Optional.empty(),false,
                     guru.interlis.model.NumericDirection.NONE,from instanceof NumericType n?n.range().unit():Optional.empty(),Optional.empty())));
         }
         FunctionBindings.Result bound = FunctionBindings.Result.empty();
@@ -4341,7 +4308,7 @@ final class GraphBuilder {
         }
         if(available)recordReference(declaration,syntax.functionName(),
                 builtinDeclaration(signature,declaration.language()).id(),ReferenceUsage.EXPRESSION);
-        expressions.put(id, new guru.interlis.model.FunctionCallExpression(id, type,
+        state.storeExpression(new guru.interlis.model.FunctionCallExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), arguments.stream().map(ExpressionResult::id).toList(),
@@ -4357,7 +4324,7 @@ final class GraphBuilder {
             var argument=arguments.get(i);var actual=effectiveDescriptor(argument.typeId());
             boolean valid;
             if(isEnumConstant(argument)) {
-                var path=((guru.interlis.model.ConstantExpression)expressions.get(argument.id())).constantName().substring(1);
+                var path=((guru.interlis.model.ConstantExpression)state.expression(argument.id())).constantName().substring(1);
                 var values=enumerationPaths(anchor);
                 valid=values.contains(path) && (signature.arguments().get(i)==BuiltinFunctions.Value.ENUM_TREE
                         || values.stream().noneMatch(v->v.startsWith(path+".")));
@@ -4371,7 +4338,7 @@ final class GraphBuilder {
                 TypeId context=anchor.id();
                 if(anchor instanceof EnumerationType enumeration && !enumeration.treeValues()
                         && signature.arguments().get(i)==BuiltinFunctions.Value.ENUM_TREE) {
-                    context=nextTypeId();types.put(context,new EnumerationType(context,enumeration.origin(),enumeration.values(),enumeration.ordered(),
+                    context=nextTypeId();state.storeType(new EnumerationType(context,enumeration.origin(),enumeration.values(),enumeration.ordered(),
                             enumeration.circular(),enumeration.finalSubtrees(),Optional.of(enumeration.id()),true));
                 }
                 arguments.set(i,contextualEnumConstant(argument,context,owner.id()));
@@ -4391,7 +4358,7 @@ final class GraphBuilder {
 
     FunctionSymbol builtinDeclaration(BuiltinFunctions.Signature signature, guru.interlis.model.LanguageVersion language) {
         var id=new SymbolId("predefined:"+language+":function:INTERLIS."+signature.name());
-        if(symbols.get(id) instanceof FunctionSymbol function)return function;
+        if(state.symbol(id) instanceof FunctionSymbol function)return function;
         var parameters=new ArrayList<guru.interlis.model.FunctionParameter>();
         var names=BuiltinFunctions.parameterNames(signature.name());
         for(int i=0;i<signature.arguments().size();i++) {
@@ -4399,14 +4366,14 @@ final class GraphBuilder {
             if(signature.arguments().get(i)==BuiltinFunctions.Value.ATTRIBUTE) {
                 parameter=nextTypeId();
                 TypeId restriction=builtinResultType(i==1?BuiltinFunctions.Value.BAG:BuiltinFunctions.Value.SURFACE,language);
-                types.put(parameter,new guru.interlis.model.AttributePathType(parameter,new Origin.PredefinedOrigin(language,"INTERLIS."+signature.name()),
+                state.storeType(new guru.interlis.model.AttributePathType(parameter,new Origin.PredefinedOrigin(language,"INTERLIS."+signature.name()),
                         Optional.of(new guru.interlis.model.AttributePathType.Argument(id,i-1)),List.of(restriction)));
             } else parameter=builtinResultType(signature.arguments().get(i),language);
             parameters.add(new guru.interlis.model.FunctionParameter(names.get(i),parameter,false));
         }
         var header=new SymbolHeader(id,SymbolKind.FUNCTION,DeclaredName.synthetic("INTERLIS."+signature.name()),Optional.empty(),0,
                 new Origin.PredefinedOrigin(language,"INTERLIS."+signature.name()),Optional.empty(),language,Documentation.empty(),MetaAttributeSet.empty(),Set.of(),List.of());
-        var function=new FunctionSymbol(header,parameters,builtinResultType(signature.result(),language),false,Documentation.empty());symbols.put(id,function);return function;
+        var function=new FunctionSymbol(header,parameters,builtinResultType(signature.result(),language),false,Documentation.empty());state.defineSymbol(function);return function;
     }
 
     private TypeId builtinResultType(BuiltinFunctions.Value value,
@@ -4430,14 +4397,14 @@ final class GraphBuilder {
                     java.util.OptionalInt.empty());
             default -> throw new IllegalArgumentException("unsupported builtin result " + value);
         };
-        types.put(id, descriptor);
+        state.storeType(descriptor);
         return id;
     }
 
     private boolean builtinArgumentMatches(TypeId actual, BuiltinFunctions.Value expected, guru.interlis.model.LanguageVersion language) {
         return guru.interlis.model.internal.TypeCompatibility.assign(effectiveDescriptor(actual),
-                effectiveDescriptor(builtinResultType(expected,language)),this::effectiveDescriptor,baseOf::get,
-                domain->effectiveDescriptor(declaredTypes.get(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT)
+                effectiveDescriptor(builtinResultType(expected,language)),this::effectiveDescriptor,state::baseOf,
+                domain->effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT)
                 .decision()==guru.interlis.model.RelationDecision.ALLOWED;
     }
 
@@ -4445,7 +4412,7 @@ final class GraphBuilder {
                                                     FunctionCallExpressionSyntax syntax,
                                                     SymbolId owner) {
         var selected=resolveName(index.byId(owner).orElseThrow(),syntax.functionName(),Set.of(SymbolKind.FUNCTION),true);
-        if(selected.target().map(symbols::get).filter(f->f instanceof FunctionSymbol && f.origin() instanceof Origin.PredefinedOrigin).isPresent())
+        if(selected.target().map(state::symbol).filter(f->f instanceof FunctionSymbol && f.origin() instanceof Origin.PredefinedOrigin).isPresent())
             return builtinFunctionExpression(id,new BuiltinFunctionExpressionSyntax(syntax.id(),syntax.range(),syntax.functionName(),syntax.arguments()),owner);
         List<DiagnosticId> bindingErrors = new ArrayList<>();
         Optional<SymbolId> target = bindTarget(index.byId(owner).orElseThrow(), syntax.functionName(),
@@ -4459,7 +4426,7 @@ final class GraphBuilder {
         if (function == null) {
             checkWork();
             type = nextTypeId();
-            types.put(type, new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()),
+            state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()),
                     bindingErrors));
             error = true;
         } else {
@@ -4476,7 +4443,7 @@ final class GraphBuilder {
                 actual=contextualValue(actual,expected,owner);arguments.set(i,actual);
                 if (!actual.error() && !(effectiveDescriptor(expected) instanceof guru.interlis.model.AttributePathType) && guru.interlis.model.internal.TypeCompatibility.assign(
                         effectiveDescriptor(actual.typeId()), effectiveDescriptor(expected),
-                        this::effectiveDescriptor, baseOf::get, domain -> effectiveDescriptor(declaredTypes.get(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
+                        this::effectiveDescriptor, state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
                         != guru.interlis.model.RelationDecision.ALLOWED) {
                     emitTypeMismatch(ownerSource(owner), syntax.arguments().get(i).range(),
                             typeName(actual.typeId()), typeName(expected));
@@ -4486,7 +4453,7 @@ final class GraphBuilder {
         }
         if (!error) error = functions.bind(function,arguments,index.byId(owner).orElseThrow(),syntax.range(),BuiltinFunctions.Rule.SIMPLE).error();
         if (!error) type=functions.returnType(function,arguments,syntax.range());
-        expressions.put(id, new guru.interlis.model.FunctionCallExpression(id, type,
+        state.storeExpression(new guru.interlis.model.FunctionCallExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), children, syntax.functionName().text(), target,Map.of()));
@@ -4499,7 +4466,7 @@ final class GraphBuilder {
         if (syntax.literalKind() == guru.interlis.model.LiteralKind.TEXT) {
             String value = unquote(syntax.lexeme());
             type = nextTypeId();
-            types.put(type, new TextType(type, new Origin.DeclaredOrigin(syntax.range()),
+            state.storeType(new TextType(type, new Origin.DeclaredOrigin(syntax.range()),
                     value.indexOf('\r')>=0 || value.indexOf('\n')>=0 || value.indexOf('\t')>=0 ? TextKind.MTEXT : TextKind.TEXT,
                     java.util.OptionalInt.of(TextLengths.canonicalLength(value))));
             expression = new guru.interlis.model.LiteralExpression(id, type,
@@ -4512,7 +4479,7 @@ final class GraphBuilder {
                     effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                     syntax.literalKind(), syntax.lexeme(), syntax.decimal(), Optional.empty());
         }
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, type, effectiveDescriptor(type) instanceof ErrorType);
     }
 
@@ -4521,17 +4488,17 @@ final class GraphBuilder {
         Optional<SymbolId> unit = unitName.flatMap(name -> bindUnit(index.byId(owner).orElseThrow(), name));
         if (unitName.isPresent() && unit.isEmpty()) {
             var diagnostic = emitRule(index.byId(owner).orElseThrow(), "Numeric constant requires a known unit", "CONSTANT_UNIT", unitName.orElseThrow().range());
-            types.put(type, new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
+            state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
             return type;
         }
         if (unit.isPresent() && extensionUnit(unit.orElseThrow()).abstractUnit()) {
             var diagnostic = emitRule(index.byId(owner).orElseThrow(), "Numeric constant requires a concrete unit", "CONSTANT_UNIT", unitName.orElseThrow().range());
-            types.put(type, new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
+            state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
             return type;
         }
         NumericRange range = new NumericRange(decimal, decimal, false,
                 guru.interlis.model.NumericDirection.NONE, unit, Optional.empty());
-        types.put(type, new NumericType(type, new Origin.DeclaredOrigin(sourceRange), range));
+        state.storeType(new NumericType(type, new Origin.DeclaredOrigin(sourceRange), range));
         return type;
     }
 
@@ -4540,7 +4507,7 @@ final class GraphBuilder {
         if (isSetCondition(owner, syntax.range())) {
             checkWork();
             var name=syntax.segments().getFirst().name();
-            var diagnostic=collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0008"),Severity.ERROR,
+            var diagnostic=diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0008"),Severity.ERROR,
                             Phase.TYPE_CHECKING,"diagnostic.semantics.path")
                     .at(name.range()).argument(new DiagnosticArgument.IdentifierArgument("segment",name.text()))
                     .argument(new DiagnosticArgument.TextArgument("reason","SET condition has no individual object context; object values belong in WHERE")));
@@ -4570,16 +4537,16 @@ final class GraphBuilder {
     guru.interlis.syntax.FragmentSnapshot parsePathLiteral(SourceRange range, guru.interlis.model.LanguageVersion language) {
         var fragment = new guru.interlis.compiler.internal.antlr.AntlrSyntaxService().parsePathLiteral(
                 sourceSet.sources().get(range.source()), range, language, cancellation);
-        collector.importAll(fragment.diagnostics());
+        diagnostics.importAll(fragment.diagnostics());
         return fragment;
     }
 
     ExpressionResult valuePath(PathExpressionSyntax syntax, SymbolId owner, SymbolId start) {
-        return pathExpression(new ExpressionId("expr-" + (++expressionCounter)), syntax, owner, start, false, PathContext.FUNCTION_PATH);
+        return pathExpression(state.nextExpressionId(), syntax, owner, start, false, PathContext.FUNCTION_PATH);
     }
 
     ExpressionResult inspectionPath(PathExpressionSyntax syntax, SymbolId owner, SymbolId start) {
-        return pathExpression(new ExpressionId("expr-" + (++expressionCounter)), syntax, owner, start, false, PathContext.INSPECTION);
+        return pathExpression(state.nextExpressionId(), syntax, owner, start, false, PathContext.INSPECTION);
     }
 
     private enum PathContext { VALUE, INSPECTION, FUNCTION_PATH }
@@ -4607,7 +4574,7 @@ final class GraphBuilder {
                 if (!valid) {
                     var diagnostic = emitRule(index.byId(owner).orElseThrow(), "invalid inspection path context", "VIEW_INSPECTION_CONTEXT");
                     currentType = nextTypeId();
-                    types.put(currentType, new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                    state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                     steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, name.range()));
                     error = true; break;
                 }
@@ -4619,7 +4586,7 @@ final class GraphBuilder {
             if ("THIS".equals(text) && segment.index().isEmpty() && !segment.associationAccess() && (currentScope != null || currentType != null
                     && effectiveDescriptor(currentType) instanceof guru.interlis.model.ObjectArgumentType)) {
                 steps.add(new guru.interlis.model.PathStep.ThisStep(name.range()));
-                currentType = i == 0 ? declaredTypes.get(currentScope) : currentType;
+                currentType = i == 0 ? state.declaredType(currentScope) : currentType;
                 if (currentType == null) {
                     currentType = objectPathType(currentScope, name.range());
                 }
@@ -4675,7 +4642,7 @@ final class GraphBuilder {
                     Cardinality cardinality = accessCardinality(access, associationObject);
                     boolean many = incomingMany || isMany(cardinality);
                     currentType = nextTypeId();
-                    types.put(currentType, associationObject
+                    state.storeType(associationObject
                             ? new guru.interlis.model.ObjectArgumentType(currentType, new Origin.DeclaredOrigin(segment.range()),
                                     Optional.of(currentScope), List.of(), many)
                             : rolePathType(currentType, access.target().orElseThrow(), contextTopic, segment.range(), many));
@@ -4691,13 +4658,13 @@ final class GraphBuilder {
                             access.target().orElse(access.source()).id(), ReferenceUsage.EXPRESSION);
                     continue;
                 } else if (accesses.size() > 1) {
-                    var diagnostic = collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0002"),
+                    var diagnostic = diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0002"),
                                     Severity.ERROR, Phase.BINDING, "diagnostic.semantics.ambiguous")
                             .at(name.range()).argument(new DiagnosticArgument.IdentifierArgument("name", text))
                             .argument(new DiagnosticArgument.IdentifierListArgument("candidates",
                                     accesses.stream().map(a -> a.association().value() + ":" + a.source().id().value()).toList())));
                     currentType = nextTypeId();
-                    types.put(currentType, new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
+                    state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
                     steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, segment.range()));
                     error = true;
                     break;
@@ -4707,13 +4674,13 @@ final class GraphBuilder {
                 DiagnosticId diagnostic = unresolved(name);
                 steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, name.range()));
                 TypeId errorType = nextTypeId();
-                types.put(errorType, new ErrorType(errorType,
+                state.storeType(new ErrorType(errorType,
                         new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                 currentType = errorType;
                 error = true;
                 break;
             }
-            var referenceTarget = symbols.get(member.orElseThrow());
+            var referenceTarget = state.symbol(member.orElseThrow());
             recordReference(index.byId(owner).orElseThrow(), name,
                     referenceTarget instanceof ViewSymbol.Base basis && basis.nameRange().isEmpty() ? basis.target() : member.orElseThrow(),
                     ReferenceUsage.EXPRESSION);
@@ -4721,7 +4688,7 @@ final class GraphBuilder {
             if ((localPrefix || segment.index().isPresent()) && kind != SymbolKind.ATTRIBUTE) {
                 DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), name.range(), "role", "structure attribute");
                 currentType = nextTypeId();
-                types.put(currentType, new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                 error = true;
                 break;
             }
@@ -4738,11 +4705,11 @@ final class GraphBuilder {
                 RoleSymbol role = (RoleSymbol) buildSymbol(index.byId(member.get()).orElseThrow());
                 currentScope = commonRoleScope(role, contextTopic);
                 currentType = nextTypeId();
-                types.put(currentType, rolePathType(currentType, role, contextTopic, name.range(), incomingMany));
+                state.storeType(rolePathType(currentType, role, contextTopic, name.range(), incomingMany));
             } else {
                 steps.add(new guru.interlis.model.PathStep.AttributeStep(text, member.get(),
                         name.range()));
-                currentType = declaredTypes.get(member.get());
+                currentType = state.declaredType(member.get());
                 if (currentType == null) currentType = attributeType(index.byId(member.get()).orElseThrow());
                 TypeDescriptor descriptor = currentType == null ? null
                         : effectiveDescriptor(currentType);
@@ -4754,7 +4721,7 @@ final class GraphBuilder {
                         DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), segment.range(),
                                 typeName(currentType), "valid LIST position or coordinate axis");
                         currentType = nextTypeId();
-                        types.put(currentType, new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
+                        state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
                         error = true;
                         break;
                     }
@@ -4768,7 +4735,7 @@ final class GraphBuilder {
                         DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), name.range(),
                                 typeName(currentType), "structure attribute");
                         currentType = nextTypeId();
-                        types.put(currentType, new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                        state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                         error = true;
                         break;
                     }
@@ -4780,11 +4747,11 @@ final class GraphBuilder {
                     currentScope = commonObjectScope(roots);
                     currentType = nextTypeId();
                     if (incomingMany) {
-                        types.put(currentType, new guru.interlis.model.ObjectArgumentType(currentType,
+                        state.storeType(new guru.interlis.model.ObjectArgumentType(currentType,
                                 new Origin.DeclaredOrigin(name.range()), roots.size() == 1 ? Optional.of(roots.getFirst()) : Optional.empty(),
                                 roots.size() <= 1 ? List.of() : roots, true));
                     } else {
-                        types.put(currentType, new ReferenceType(currentType, new Origin.DeclaredOrigin(name.range()),
+                        state.storeType(new ReferenceType(currentType, new Origin.DeclaredOrigin(name.range()),
                                 reference.target().map(t -> contextualObject(t, contextTopic)),
                                 reference.restrictions().stream().map(t -> contextualObject(t, contextTopic)).toList(), reference.external()));
                     }
@@ -4801,7 +4768,7 @@ final class GraphBuilder {
                     DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), name.range(),
                             "multiple attribute values", "single attribute value");
                     currentType = nextTypeId();
-                    types.put(currentType, new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                    state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                     error = true;
                     break;
                 }
@@ -4817,7 +4784,7 @@ final class GraphBuilder {
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(), path);
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, currentType, error);
     }
 
@@ -4834,7 +4801,7 @@ final class GraphBuilder {
         if (type instanceof CoordinateType coordinate && !coordinate.multiCoordinate() && position.isPresent()
                 && position.orElseThrow().compareTo(java.math.BigInteger.valueOf(coordinate.dimensions())) <= 0) {
             TypeId result = nextTypeId();
-            types.put(result, new NumericType(result, new Origin.DeclaredOrigin(range),
+            state.storeType(new NumericType(result, new Origin.DeclaredOrigin(range),
                     coordinate.axes().get(position.orElseThrow().intValueExact() - 1)));
             return result;
         }
@@ -4944,12 +4911,12 @@ final class GraphBuilder {
     private SymbolId contextualObject(SymbolId target, SymbolId topic) {
         if (target == null) return null;
         Set<SymbolId> seen = new HashSet<>();
-        for (SymbolId context = topic; context != null && seen.add(context); context = baseOf.get(context)) {
+        for (SymbolId context = topic; context != null && seen.add(context); context = state.baseOf(context)) {
             for (DeclInfo candidate : index.children(context)) {
                 checkWork();
                 if ((candidate.kind() == SymbolKind.CLASS || candidate.kind() == SymbolKind.ASSOCIATION)
                         && candidate.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)
-                        && guru.interlis.model.internal.TypeCompatibility.specializes(candidate.id(), target, baseOf::get)) {
+                        && guru.interlis.model.internal.TypeCompatibility.specializes(candidate.id(), target, state::baseOf)) {
                     return candidate.id();
                 }
             }
@@ -4983,18 +4950,18 @@ final class GraphBuilder {
     /** Same participant-value type as an ordinary role path, for implicit 2.4
      * ALL OF values. One basis row denotes one link, not all its peer links. */
     TypeId roleValueType(RoleSymbol role,SymbolId owner,SourceRange range) {
-        TypeId id=nextTypeId();types.put(id,rolePathType(id,role,scopeRoot(owner),range,false));return id;
+        TypeId id=nextTypeId();state.storeType(rolePathType(id,role,scopeRoot(owner),range,false));return id;
     }
 
     TypeId objectPathType(SymbolId target, SourceRange range) {
         TypeId type = nextTypeId();
         if (objectBase(target).isEmpty()) {
-            types.put(type, new guru.interlis.model.ObjectArgumentType(type, new Origin.DeclaredOrigin(range),
+            state.storeType(new guru.interlis.model.ObjectArgumentType(type, new Origin.DeclaredOrigin(range),
                     Optional.empty(), List.of(), false));
         } else if (index.byId(target).map(DeclInfo::kind).orElse(null) == SymbolKind.STRUCTURE) {
-            types.put(type, new StructureValueType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of()));
+            state.storeType(new StructureValueType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of()));
         } else {
-            types.put(type, new ReferenceType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of(), false));
+            state.storeType(new ReferenceType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of(), false));
         }
         return type;
     }
@@ -5011,10 +4978,10 @@ final class GraphBuilder {
                     return Optional.of(child.id());
                 }
             }
-            Symbol predefinedOwner = symbols.get(current);
+            Symbol predefinedOwner = state.symbol(current);
             if (predefinedOwner != null && predefinedOwner.origin() instanceof Origin.PredefinedOrigin) {
                 var members = predefinedOwner instanceof StructureSymbol s ? s.members() : predefinedOwner instanceof ClassSymbol c ? c.members() : List.<SymbolId>of();
-                for (SymbolId member : members) if (symbols.get(member).kind() == SymbolKind.ATTRIBUTE && symbols.get(member).name().value().equals(name)) return Optional.of(member);
+                for (SymbolId member : members) if (state.symbol(member).kind() == SymbolKind.ATTRIBUTE && state.symbol(member).name().value().equals(name)) return Optional.of(member);
             }
             var viewMember = views.member(current, name);
             if (viewMember.isPresent()) return viewMember;
@@ -5064,7 +5031,7 @@ final class GraphBuilder {
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(left.id(), right.id()), syntax.operator(),
                 left.id(), right.id());
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, result, error);
     }
 
@@ -5082,7 +5049,7 @@ final class GraphBuilder {
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(operand.id()), syntax.operator(), operand.id());
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, type, error);
     }
 
@@ -5094,7 +5061,7 @@ final class GraphBuilder {
                 operand.error() ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(operand.id()), operand.id());
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, type, operand.error());
     }
 
@@ -5103,38 +5070,38 @@ final class GraphBuilder {
         TypedExpression expression = new guru.interlis.model.ConstantExpression(id, type,
                 effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.constantName());
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, type, effectiveDescriptor(type) instanceof ErrorType);
     }
 
     private ExpressionResult undefinedExpression(ExpressionId id, UndefinedExpressionSyntax syntax, SymbolId owner) {
         TypeId type = nextTypeId();
-        types.put(type, new guru.interlis.model.GenericType(type,
+        state.storeType(new guru.interlis.model.GenericType(type,
                 new Origin.PredefinedOrigin(index.byId(owner).orElseThrow().language(), "UNDEFINED"),
                 "UNDEFINED"));
         TypedExpression expression = new guru.interlis.model.UndefinedExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of());
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, type, false);
     }
 
     /** A missing parsed condition is a source recovery error, never an implementation gap. */
     private ExpressionResult missingConstraintExpression(DeclInfo owner,SourceRange range) {
-        var causes=syntaxErrors.stream().filter(d->d.primaryRange().filter(r->r.source().equals(range.source())
+        var causes=diagnostics.syntaxErrors().stream().filter(d->d.primaryRange().filter(r->r.source().equals(range.source())
                 && r.revision().equals(range.revision()) && r.startOffset()<=range.endOffset() && r.endOffset()>=range.startOffset()).isPresent())
                 .map(guru.interlis.diagnostics.Diagnostic::id).toList();
         if(causes.isEmpty())causes=List.of(emitRule(owner,"constraint syntax is incomplete","SOURCE_MISSING_CONSTRAINT",range));
-        return failedValueExpression(new ExpressionId("expr-"+(++expressionCounter)),range,causes);
+        return failedValueExpression(state.nextExpressionId(),range,causes);
     }
 
     private ExpressionResult errorExpression(SourceId source, SourceRange range, String feature) {
-        ExpressionId id = new ExpressionId("expr-" + (++expressionCounter));
+        ExpressionId id = state.nextExpressionId();
         TypeId type = errorType(source, range, feature);
         DiagnosticId diagnostic = emitUnsupported(source, range, feature, feature);
         TypedExpression expression = new ErrorExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.ERROR, range, List.of(),
                 List.of(diagnostic));
-        expressions.put(id, expression);
+        state.storeExpression(expression);
         return new ExpressionResult(id, type, true);
     }
 
@@ -5152,7 +5119,7 @@ final class GraphBuilder {
         } else {
             return true;
         }
-        TypedExpression expression = expressions.get(textId);
+        TypedExpression expression = state.expression(textId);
         if (!(expression instanceof guru.interlis.model.LiteralExpression literal)
                 || literal.textValue().isEmpty()) {
             return true;
@@ -5166,7 +5133,7 @@ final class GraphBuilder {
     }
 
     private boolean isEnumConstant(ExpressionResult result) {
-        TypedExpression expression = expressions.get(result.id());
+        TypedExpression expression = state.expression(result.id());
         return expression instanceof guru.interlis.model.ConstantExpression constant
                 && constant.constantName().startsWith("#");
     }
@@ -5184,7 +5151,7 @@ final class GraphBuilder {
         if (enumSide == null || constSide == null) {
             return true;
         }
-        TypedExpression constant = expressions.get(constSide.id());
+        TypedExpression constant = state.expression(constSide.id());
         if (!(constant instanceof guru.interlis.model.ConstantExpression value)
                 || !value.constantName().startsWith("#")) {
             return true;
@@ -5200,24 +5167,24 @@ final class GraphBuilder {
     ExpressionResult contextualValue(ExpressionResult value, TypeId expected, SymbolId owner) {
         if(value.error())return value;
         value=contextualNumericConstant(value,expected);
-        if (expressions.get(value.id()) instanceof guru.interlis.model.FunctionCallExpression call && isUnitConversion(call)
+        if (state.expression(value.id()) instanceof guru.interlis.model.FunctionCallExpression call && isUnitConversion(call)
                 && effectiveDescriptor(expected) instanceof NumericType numeric) {
             // Unrestricted NUMERIC is a wildcard formal, not a new unitless destination.
             if(numeric.range().unit().isEmpty() && numeric.range().minimum().isEmpty() && numeric.range().maximum().isEmpty())return value;
             TypeId type=expected;boolean error=!conversionCompatible(call,numeric);
             if(error) {
                 var diagnostic=emitRule(index.byId(owner).orElseThrow(),"convertUnit source and destination need a common conversion unit","CONVERT_UNIT",call.range());
-                type=nextTypeId();types.put(type,new ErrorType(type,new Origin.DeclaredOrigin(call.range()),List.of(diagnostic)));
+                type=nextTypeId();state.storeType(new ErrorType(type,new Origin.DeclaredOrigin(call.range()),List.of(diagnostic)));
             }
-            expressions.put(call.id(),new guru.interlis.model.FunctionCallExpression(call.id(),type,
+            state.storeExpression(new guru.interlis.model.FunctionCallExpression(call.id(),type,
                     error?guru.interlis.model.ExpressionTypeState.ERROR:call.typeState(),call.range(),call.children(),call.functionName(),call.targetFunction(),call.argumentPaths()));
             return new ExpressionResult(call.id(),type,error);
         }
         var result=contextualEnumConstant(value,expected,owner);
-        if(expressions.get(result.id()) instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent()
+        if(state.expression(result.id()) instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent()
                 && effectiveDescriptor(expected) instanceof FormattedType formatted
                 && formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent()) {
-            expressions.put(result.id(),new guru.interlis.model.LiteralExpression(literal.id(),expected,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
+            state.storeExpression(new guru.interlis.model.LiteralExpression(literal.id(),expected,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
             return new ExpressionResult(result.id(),expected,false);
         }
         return result;
@@ -5226,26 +5193,26 @@ final class GraphBuilder {
     private ExpressionResult contextualNumericConstant(ExpressionResult value, TypeId expected) {
         if(value.error() || !(effectiveDescriptor(expected) instanceof NumericType target) || target.range().unit().isEmpty()
                 || !(effectiveDescriptor(value.typeId()) instanceof NumericType source) || source.range().unit().isPresent())return value;
-        var expression=expressions.get(value.id());
+        var expression=state.expression(value.id());
         if(!(expression instanceof guru.interlis.model.LiteralExpression literal && literal.literalKind()==guru.interlis.model.LiteralKind.NUMBER)
                 && !(expression instanceof guru.interlis.model.ConstantExpression constant && (constant.constantName().equals("PI") || constant.constantName().equals("LNBASE"))))return value;
         TypeId type=nextTypeId();var range=source.range();
-        types.put(type,new NumericType(type,source.origin(),new NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),target.range().unit(),range.referenceSystem())));
+        state.storeType(new NumericType(type,source.origin(),new NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),target.range().unit(),range.referenceSystem())));
         if(expression instanceof guru.interlis.model.LiteralExpression literal)
-            expressions.put(value.id(),new guru.interlis.model.LiteralExpression(literal.id(),type,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
+            state.storeExpression(new guru.interlis.model.LiteralExpression(literal.id(),type,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
         else {var constant=(guru.interlis.model.ConstantExpression)expression;
-            expressions.put(value.id(),new guru.interlis.model.ConstantExpression(constant.id(),type,constant.typeState(),constant.range(),constant.children(),constant.constantName()));}
+            state.storeExpression(new guru.interlis.model.ConstantExpression(constant.id(),type,constant.typeState(),constant.range(),constant.children(),constant.constantName()));}
         return new ExpressionResult(value.id(),type,false);
     }
 
     private boolean isUnitConversion(guru.interlis.model.FunctionCallExpression call) {
-        return call.targetFunction().flatMap(id->Optional.ofNullable(symbols.get(id))).filter(FunctionSymbol.class::isInstance)
+        return call.targetFunction().flatMap(id->Optional.ofNullable(state.symbol(id))).filter(FunctionSymbol.class::isInstance)
                 .map(Symbol::origin).filter(Origin.PredefinedOrigin.class::isInstance).map(Origin.PredefinedOrigin.class::cast)
                 .map(origin->origin.key().equals("INTERLIS.convertUnit")).orElse(false);
     }
 
     private boolean conversionCompatible(guru.interlis.model.FunctionCallExpression call,NumericType target) {
-        var descriptor=effectiveDescriptor(expressions.get(call.children().getFirst()).typeId());
+        var descriptor=effectiveDescriptor(state.expression(call.children().getFirst()).typeId());
         if(guru.interlis.model.internal.TypeCompatibility.isUndefined(descriptor))return true;
         var from=(NumericType)descriptor;
         var sourceUnit=from.range().unit();var targetUnit=target.range().unit();
@@ -5270,14 +5237,14 @@ final class GraphBuilder {
 
     private ExpressionResult contextualEnumConstant(ExpressionResult value, TypeId context, SymbolId owner) {
         if(!isEnumConstant(value))return value;
-        var actual=(guru.interlis.model.ConstantExpression)expressions.get(value.id());
+        var actual=(guru.interlis.model.ConstantExpression)state.expression(value.id());
         TypeDescriptor expected=effectiveDescriptor(context);
         String path=actual.constantName().substring(1);
         var paths=enumerationPaths(expected);
         boolean valid=paths.contains(path) && (!(expected instanceof EnumerationType e) || e.treeValues()
                 || paths.stream().noneMatch(p->p.startsWith(path+".")));
         if(!valid)return value;
-        expressions.put(value.id(),new guru.interlis.model.ConstantExpression(actual.id(),context,actual.typeState(),actual.range(),actual.children(),actual.constantName()));
+        state.storeExpression(new guru.interlis.model.ConstantExpression(actual.id(),context,actual.typeState(),actual.range(),actual.children(),actual.constantName()));
         if(expected instanceof EnumerationType enumeration) {
             var segments=new ArrayList<ReferenceSegment>();int start=actual.range().startOffset()+1;String prefix="";
             for(String part:path.split("\\.")) {
@@ -5290,7 +5257,7 @@ final class GraphBuilder {
             var range=new SourceRange(actual.range().source(),actual.range().revision(),actual.range().startOffset()+1,actual.range().endOffset());
             if(target!=null && recordedReferences.add(new ReferenceSite(owner,range,ReferenceUsage.EXPRESSION,Optional.of(target)))) {
                 var id=new ReferenceId("ref-"+(++referenceCounter));
-                references.put(id,new NameReference(id,new ScopeId(owner.value()),ReferenceUsage.EXPRESSION,segments,range,new BindingResolution.BoundTarget(target)));
+                state.storeReference(new NameReference(id,new ScopeId(owner.value()),ReferenceUsage.EXPRESSION,segments,range,new BindingResolution.BoundTarget(target)));
             }
         }
         return new ExpressionResult(value.id(),context,value.error());
@@ -5299,7 +5266,7 @@ final class GraphBuilder {
     private SymbolId enumMember(EnumerationType type,String path) {
         Set<TypeId> seen=new HashSet<>();
         for(var current=type;current!=null && seen.add(current.id());) {
-            for(var entry:declaredTypes.entrySet()) {
+            for(var entry:state.declaredTypesInBuildOrder()) {
                 checkWork();TypeDescriptor candidate=effectiveDescriptor(entry.getValue());
                 while(candidate instanceof CollectionType collection)candidate=effectiveDescriptor(collection.elementType());
                 if(candidate==null || !candidate.id().equals(current.id()))continue;
@@ -5315,11 +5282,11 @@ final class GraphBuilder {
         TypeDescriptor a=effectiveDescriptor(left.typeId()),b=effectiveDescriptor(right.typeId());
         if(isEnumConstant(left) && b instanceof EnumerationType)a=b;
         if(isEnumConstant(right) && a instanceof EnumerationType)b=a;
-        if(a instanceof FormattedType && expressions.get(right.id()) instanceof guru.interlis.model.LiteralExpression literal
+        if(a instanceof FormattedType && state.expression(right.id()) instanceof guru.interlis.model.LiteralExpression literal
                 && literal.literalKind()==guru.interlis.model.LiteralKind.TEXT)b=a;
-        if(b instanceof FormattedType && expressions.get(left.id()) instanceof guru.interlis.model.LiteralExpression literal
+        if(b instanceof FormattedType && state.expression(left.id()) instanceof guru.interlis.model.LiteralExpression literal
                 && literal.literalKind()==guru.interlis.model.LiteralKind.TEXT)a=b;
-        return guru.interlis.model.internal.TypeCompatibility.compare(a,b,operator,this::effectiveDescriptor,id->effectiveDescriptor(declaredTypes.get(id))).decision()
+        return guru.interlis.model.internal.TypeCompatibility.compare(a,b,operator,this::effectiveDescriptor,id->effectiveDescriptor(state.declaredType(id))).decision()
                 ==guru.interlis.model.RelationDecision.ALLOWED;
     }
 
@@ -5334,13 +5301,13 @@ final class GraphBuilder {
     }
 
     TypeDescriptor effectiveDescriptor(TypeId typeId) {
-        TypeDescriptor descriptor = types.get(typeId);
+        TypeDescriptor descriptor = state.type(typeId);
         Set<TypeId> seen = new HashSet<>();
         while (descriptor instanceof DomainReferenceType reference && seen.add(descriptor.id())) {
             checkWork();
-            TypeId target = declaredTypes.get(reference.targetDomain());
+            TypeId target = state.declaredType(reference.targetDomain());
             if (target == null) break;
-            descriptor = types.get(target);
+            descriptor = state.type(target);
         }
         return descriptor;
     }
@@ -5352,14 +5319,6 @@ final class GraphBuilder {
             return text.textKind().name() + (text.maxLength().isPresent() ? "*" + text.maxLength().getAsInt() : "");
         }
         return descriptor == null ? "UNKNOWN" : descriptor.kind().name();
-    }
-
-    DiagnosticId emitTypeMismatch(SourceId source, SourceRange range, String actual, String expected) {
-        return collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0005"), Severity.ERROR,
-                        Phase.TYPE_CHECKING, "diagnostic.semantics.type")
-                .at(range)
-                .argument(new DiagnosticArgument.TypeNameArgument("actual", actual))
-                .argument(new DiagnosticArgument.TypeNameArgument("expected", expected)));
     }
 
     private Optional<DecimalLiteral> decimal(String lexeme) {
@@ -5399,7 +5358,7 @@ final class GraphBuilder {
             List<SymbolId> chain = baseChain(decl.id());
             if (hasCycle(chain)) {
                 emitCycle(decl);
-                effectiveMembers.put(decl.id(), localMembers(decl));
+                state.setEffectiveMembers(decl.id(), localMembers(decl));
                 return;
             }
             List<EffectiveMember> result = new ArrayList<>();
@@ -5407,12 +5366,12 @@ final class GraphBuilder {
             for (int depth = chain.size() - 1; depth >= 0; depth--) {
                 checkWork();
                 SymbolId current = chain.get(depth);
-                if (symbols.get(current) != null && symbols.get(current).origin() instanceof Origin.PredefinedOrigin) {
-                    var predefined = symbols.get(current);
+                if (state.symbol(current) != null && state.symbol(current).origin() instanceof Origin.PredefinedOrigin) {
+                    var predefined = state.symbol(current);
                     var members = predefined instanceof StructureSymbol s ? s.members() : predefined instanceof ClassSymbol c ? c.members() : List.<SymbolId>of();
                     for (SymbolId member : members) {
-                        if (symbols.get(member).kind() != SymbolKind.ATTRIBUTE) continue;
-                        String name = symbols.get(member).name().value();
+                        if (state.symbol(member).kind() != SymbolKind.ATTRIBUTE) continue;
+                        String name = state.symbol(member).name().value();
                         Integer existing = positions.get(name);
                         int position = existing == null ? result.size() : existing;
                         var effective = new EffectiveMember(member, decl.id(), pathTo(chain, depth), position,
@@ -5441,7 +5400,7 @@ final class GraphBuilder {
                         AttributeSymbol override = attribute.kind() == SymbolKind.ATTRIBUTE
                                 ? overrideAttribute(attribute.id(), old.declaredSymbol()) : null;
                         if (override != null) {
-                            symbols.put(attribute.id(), override);
+                            state.replaceSymbol(override);
                         }
                     } else {
                         if (depth == 0 && attribute.kind() == SymbolKind.ATTRIBUTE
@@ -5456,37 +5415,12 @@ final class GraphBuilder {
                     }
                 }
             }
-            effectiveMembers.put(decl.id(), List.copyOf(result));
+            state.setEffectiveMembers(decl.id(), List.copyOf(result));
         }
         for (DeclInfo child : index.children(decl.id())) {
             checkWork();
             collectEffective(child);
         }
-    }
-
-    DiagnosticId emitRule(DeclInfo decl, String rule, String reason) {
-        return emitRule(decl, rule, reason, ruleRange(decl));
-    }
-
-    private SourceRange ruleRange(DeclInfo decl) {
-        return decl.origin() instanceof Origin.DeclaredOrigin declared
-                ? declared.range() : decl.nameRange().orElse(null);
-    }
-
-    DiagnosticId emitRule(DeclInfo decl, String rule, String reason, SourceRange range) {
-        return emitRule(decl, rule, reason, range, List.of());
-    }
-
-    private DiagnosticId emitRule(DeclInfo decl, String rule, String reason, SourceRange range,
-                                  List<guru.interlis.diagnostics.RelatedLocation> related) {
-        var draft = DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0010"),
-                        Severity.ERROR, Phase.SEMANTIC_CHECKING,
-                        "diagnostic.semantics.inheritance")
-                .at(range)
-                .argument(new DiagnosticArgument.IdentifierArgument("element", decl.name()))
-                .argument(new DiagnosticArgument.TextArgument("rule", rule + "/" + reason));
-        related.forEach(draft::related);
-        return collector.emit(draft);
     }
 
     SymbolId scopeRoot(SymbolId symbol) {
@@ -5507,7 +5441,7 @@ final class GraphBuilder {
     }
 
     private AttributeSymbol overrideAttribute(SymbolId id, SymbolId baseId) {
-        if (symbols.get(id) instanceof AttributeSymbol attribute) {
+        if (state.symbol(id) instanceof AttributeSymbol attribute) {
             return new AttributeSymbol(attribute.header(), attribute.declaredType(),
                     attribute.mandatory(), attribute.transientAttribute(), attribute.continuous(),
                     attribute.subdivision(), Optional.of(baseId), attribute.derivations());
@@ -5523,7 +5457,7 @@ final class GraphBuilder {
             checkWork();
             chain.add(current);
             if (!seen.add(current)) break;
-            current = baseOf.get(current);
+            current = state.baseOf(current);
         }
         return chain;
     }
@@ -5533,7 +5467,7 @@ final class GraphBuilder {
     }
 
     private void emitCycle(DeclInfo decl) {
-        collector.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0006"), Severity.ERROR,
+        diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0006"), Severity.ERROR,
                         Phase.SEMANTIC_CHECKING, "diagnostic.semantics.cycle")
                 .at(decl.origin() instanceof Origin.DeclaredOrigin d ? d.range() : decl.nameRange().orElse(null))
                 .argument(new DiagnosticArgument.TextArgument("relationship", "INHERITANCE"))
@@ -5564,9 +5498,9 @@ final class GraphBuilder {
     }
 
     private void buildEffectiveTypes() {
-        for (Map.Entry<SymbolId, TypeId> entry : declaredTypes.entrySet()) {
+        for (Map.Entry<SymbolId, TypeId> entry : state.declaredTypesInBuildOrder()) {
             checkWork();
-            effectiveTypes.put(entry.getKey(), effectiveType(entry.getValue()));
+            state.setEffectiveType(entry.getKey(), effectiveType(entry.getValue()));
         }
     }
 
@@ -5576,7 +5510,7 @@ final class GraphBuilder {
         Set<TypeId> seen = new HashSet<>();
         while (true) {
             checkWork();
-            TypeDescriptor descriptor = types.get(current);
+            TypeDescriptor descriptor = state.type(current);
             if (!(descriptor instanceof DomainReferenceType reference)) {
                 break;
             }
@@ -5584,7 +5518,7 @@ final class GraphBuilder {
                 break;
             }
             aliasPath.add(reference.targetDomain());
-            Symbol symbol = symbols.get(reference.targetDomain());
+            Symbol symbol = state.symbol(reference.targetDomain());
             if (symbol instanceof DomainSymbol domain) {
                 current = domain.typeId();
             } else {
@@ -5601,7 +5535,7 @@ final class GraphBuilder {
         // navigable type/role references, not only model-level declarations.
         for (IndexedDeclarations.ModelEntry entry : index.models()) {
             checkWork();
-            if (symbols.get(entry.id()) instanceof ModelSymbol model) {
+            if (state.symbol(entry.id()) instanceof ModelSymbol model) {
                 for (var imported : model.imports()) {
                     var name = new guru.interlis.syntax.NameSyntax(
                             new guru.interlis.syntax.SyntaxNodeId("import-" + referenceCounter),
@@ -5624,21 +5558,21 @@ final class GraphBuilder {
 
     private void referenceFor(DeclInfo decl) {
         if (decl.syntax() instanceof ClassDeclarationSyntax clazz && clazz.baseType().isPresent()) {
-            recordReference(decl, clazz.baseType().get(), baseOf.get(decl.id()), ReferenceUsage.BASE_TYPE);
+            recordReference(decl, clazz.baseType().get(), state.baseOf(decl.id()), ReferenceUsage.BASE_TYPE);
         } else if (decl.syntax() instanceof StructureDeclarationSyntax structure
                 && structure.baseType().isPresent()) {
-            recordReference(decl, structure.baseType().get(), baseOf.get(decl.id()),
+            recordReference(decl, structure.baseType().get(), state.baseOf(decl.id()),
                     ReferenceUsage.BASE_TYPE);
         } else if (decl.syntax() instanceof TopicSyntax topic && topic.baseTopic().isPresent()) {
-            recordReference(decl, topic.baseTopic().get(), baseOf.get(decl.id()),
+            recordReference(decl, topic.baseTopic().get(), state.baseOf(decl.id()),
                     ReferenceUsage.BASE_TYPE);
         } else if (decl.syntax() instanceof DomainDeclarationSyntax domain
                 && domain.baseDomain().isPresent()) {
-            recordReference(decl, domain.baseDomain().get(), baseOf.get(decl.id()),
+            recordReference(decl, domain.baseDomain().get(), state.baseOf(decl.id()),
                     ReferenceUsage.BASE_TYPE);
         } else if (decl.syntax() instanceof AssociationDeclarationSyntax association
                 && association.baseAssociation().isPresent()) {
-            recordReference(decl, association.baseAssociation().orElseThrow(), baseOf.get(decl.id()), ReferenceUsage.BASE_TYPE);
+            recordReference(decl, association.baseAssociation().orElseThrow(), state.baseOf(decl.id()), ReferenceUsage.BASE_TYPE);
         } else if (decl.syntax() instanceof AttributeDeclarationSyntax attribute) {
             referenceForType(decl, attribute.type());
         }
@@ -5646,7 +5580,7 @@ final class GraphBuilder {
 
     private void referenceForType(DeclInfo decl, TypeSyntax syntax) {
         if (syntax instanceof DomainReferenceSyntax reference) {
-            TypeDescriptor descriptor = types.get(declaredTypes.get(decl.id()));
+            TypeDescriptor descriptor = state.type(state.declaredType(decl.id()));
             if (descriptor instanceof DomainReferenceType domain) {
                 recordReference(decl, reference.name(), domain.targetDomain(),
                         ReferenceUsage.TYPE_USE);
@@ -5680,7 +5614,7 @@ final class GraphBuilder {
                 ? new BindingResolution.UnresolvedTarget(guru.interlis.model.UnresolvedReason.NAME_NOT_FOUND,
                 List.of())
                 : new BindingResolution.BoundTarget(target);
-        references.put(id, new NameReference(id, new ScopeId(owner.id().value()), usage,
+        state.storeReference(new NameReference(id, new ScopeId(owner.id().value()), usage,
                 segments, name.range(), resolution));
     }
 
@@ -5688,39 +5622,39 @@ final class GraphBuilder {
         if (symbol == null) return null;
         var declaration = index.byId(symbol);
         if (declaration.isPresent()) return declaration.orElseThrow().owner().orElse(null);
-        var value = symbols.get(symbol);
+        var value = state.symbol(symbol);
         if (value == null) return null;
         if (value.owner().isPresent()) return value.owner().orElseThrow();
         return value.origin() instanceof Origin.PredefinedOrigin predefined && predefined.key().startsWith("INTERLIS.")
-                ? PredefinedModels.ensure(this, predefined.language()) : null;
+                ? PredefinedModels.ensure(state, predefined.language()) : null;
     }
 
     private String referenceName(SymbolId symbol) {
         return index.byId(symbol).map(DeclInfo::name).orElseGet(() -> {
-            String name = symbols.get(symbol).name().value(); return name.substring(name.lastIndexOf('.') + 1);
+            String name = state.symbol(symbol).name().value(); return name.substring(name.lastIndexOf('.') + 1);
         });
     }
 
     private AnalysisCoverage buildCoverage() {
         List<AnalysisCoverage.CoverageEntry> entries = new ArrayList<>();
-        List<guru.interlis.diagnostics.Diagnostic> diagnostics = collector.snapshot().stream()
+        List<guru.interlis.diagnostics.Diagnostic> relevantDiagnostics = diagnostics.snapshot().stream()
                 .filter(d -> d.phase() == Phase.LEXING || d.phase() == Phase.PARSING
                         || d.primaryRange().map(closure::contains).orElse(true)).toList();
         for (SourceId source : closure.sources()) {
             checkWork();
-            boolean lexing = diagnostics.stream().noneMatch(d -> d.primaryRange()
+            boolean lexing = relevantDiagnostics.stream().noneMatch(d -> d.primaryRange()
                     .filter(r -> r.source().equals(source)).isPresent()
                     && d.code().value().equals("ILI-SYN-0001"));
-            boolean parsing = diagnostics.stream().noneMatch(d -> d.primaryRange()
+            boolean parsing = relevantDiagnostics.stream().noneMatch(d -> d.primaryRange()
                     .filter(r -> r.source().equals(source)).isPresent()
                     && d.code().value().matches("ILI-SYN-000[2-6]"));
-            boolean indexing = diagnostics.stream().noneMatch(d -> d.code().value().equals("ILI-SEM-0003")
+            boolean indexing = relevantDiagnostics.stream().noneMatch(d -> d.code().value().equals("ILI-SEM-0003")
                     && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
-            boolean binding = diagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-000[124]")
+            boolean binding = relevantDiagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-000[124]")
                     && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
-            boolean typeChecking = diagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-000[578]")
+            boolean typeChecking = relevantDiagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-000[578]")
                     && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
-            boolean semantic = diagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-0006|ILI-SEM-0010")
+            boolean semantic = relevantDiagnostics.stream().noneMatch(d -> d.code().value().matches("ILI-SEM-0006|ILI-SEM-0010")
                     && d.primaryRange().filter(r -> r.source().equals(source)).isPresent());
             entries.add(entry(Phase.LEXING, source, lexing ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
             entries.add(entry(Phase.PARSING, source, parsing ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
@@ -5733,7 +5667,7 @@ final class GraphBuilder {
             entries.add(entry(Phase.SEMANTIC_CHECKING, source,
                     semantic ? CoverageStatus.COMPLETE : CoverageStatus.BLOCKED_BY_ERROR));
         }
-        for (var diagnostic : diagnostics) {
+        for (var diagnostic : relevantDiagnostics) {
             if (diagnostic.code().value().equals("ILI-IMPL-0001")) {
                 var feature = diagnostic.arguments().stream()
                         .filter(a -> a instanceof DiagnosticArgument.TextArgument)

@@ -8,7 +8,8 @@ import java.util.*;
  * Built on demand in the owning graph; FORMAT values use the ordinary bound layout. */
 final class PredefinedTemporal {
     private final GraphBuilder g;
-    PredefinedTemporal(GraphBuilder graph) { g = graph; }
+    private final SemanticBuildState state;
+    PredefinedTemporal(GraphBuilder graph, SemanticBuildState state) { g = graph; this.state = state; }
 
     Optional<SymbolId> find(DeclInfo context, String qualified, Set<SymbolKind> kinds) {
         if (!qualified.startsWith("INTERLIS.")) return Optional.empty();
@@ -22,7 +23,7 @@ final class PredefinedTemporal {
         };
         if (kind == null || !kinds.contains(kind)) return Optional.empty();
         SymbolId id = id(context, name);
-        if (g.symbols.containsKey(id)) return Optional.of(id);
+        if (state.hasSymbol(id)) return Optional.of(id);
         if (kind == SymbolKind.CLASS) timeSystem(context, "UTC");
         else if (kind == SymbolKind.UNIT) unit(context, name);
         else if (kind == SymbolKind.STRUCTURE) structure(context, name);
@@ -43,7 +44,7 @@ final class PredefinedTemporal {
                 new UnitSymbol.ConversionFactor(UnitSymbol.Operator.MULTIPLY, UnitSymbol.ConstantKind.DECIMAL,
                         Optional.of(DecimalLiteral.parse(factor)), new guru.interlis.source.SourceRange(new guru.interlis.source.SourceId("predefined:/INTERLIS-" + context.language()), guru.interlis.source.SourceRevision.initial(), 0, 0)));
         var h = header(context, name, SymbolKind.UNIT, Optional.empty(), 0, Set.of());
-        g.symbols.put(h.id(), new UnitSymbol(h, switch (name) { case "min" -> "Minute"; case "h" -> "Hour";
+        state.defineSymbol(new UnitSymbol(h, switch (name) { case "min" -> "Minute"; case "h" -> "Hour";
             case "d" -> "Day"; case "M" -> "Month"; default -> "Year"; }, false, factor == null ? base : Optional.empty(),
                 factor == null ? Optional.empty() : base, List.of(), factors, Optional.empty(), Optional.empty()));
     }
@@ -54,7 +55,7 @@ final class PredefinedTemporal {
                 : Optional.of(require(context, unit, SymbolKind.UNIT));
         var reference = system == null ? Optional.<NumericRange.ReferenceSystem>empty()
                 : Optional.of(new NumericRange.ReferenceSystem(timeSystem(context, system), false, OptionalInt.empty()));
-        g.types.put(id, new NumericType(id, origin(context, "numeric:" + unit),
+        state.storeType(new NumericType(id, origin(context, "numeric:" + unit),
                 new NumericRange(Optional.of(DecimalLiteral.parse(lo)), Optional.of(DecimalLiteral.parse(hi)),
                         circular, NumericDirection.NONE, boundUnit, reference)));
         return id;
@@ -62,36 +63,36 @@ final class PredefinedTemporal {
 
     private SymbolId timeSystem(DeclInfo context, String name) {
         var object = id(context, "BaseTimeSystems." + name);
-        if (g.symbols.containsKey(object)) return object;
+        if (state.hasSymbol(object)) return object;
         var topic = header(context, "TIMESYSTEMS", SymbolKind.TOPIC, Optional.empty(), 0, Set.of());
         var base = g.metadata.predefined(context, "INTERLIS.SCALSYSTEM", Set.of(SymbolKind.CLASS)).orElseThrow();
         var classes = new ArrayList<SymbolId>();
         for (String className : List.of("CALENDAR", "TIMEOFDAYSYS")) {
             var h = header(context, "TIMESYSTEMS." + className, SymbolKind.CLASS, Optional.of(topic.id()), classes.size(), Set.of());
-            g.baseOf.put(h.id(), base);
+            state.bindBase(h.id(), base);
             var unitType = g.nextTypeId();
-            g.types.put(unitType, new NumericType(unitType, h.origin(), new NumericRange(Optional.empty(), Optional.empty(),
+            state.storeType(new NumericType(unitType, h.origin(), new NumericRange(Optional.empty(), Optional.empty(),
                     false, NumericDirection.NONE, g.builtinUnit(context.id(), "INTERLIS.TIME"), Optional.empty())));
             var original = header(context, "TIMESYSTEMS." + className + ".Unit", SymbolKind.PARAMETER, Optional.of(h.id()), 0, Set.of(Modifier.EXTENDED));
             var parameter = new SymbolHeader(original.id(), original.kind(), DeclaredName.declared("Unit"), original.owner(), 0,
                     original.origin(), Optional.empty(), context.language(), Documentation.empty(), MetaAttributeSet.empty(), original.modifiers(), List.of());
-            var inherited = ((ClassSymbol)g.symbols.get(base)).members().stream()
-                    .filter(id -> g.symbols.get(id).kind() == SymbolKind.PARAMETER).findFirst();
-            g.symbols.put(parameter.id(), new ParameterSymbol(parameter, unitType, false, inherited));
-            g.declaredTypes.put(parameter.id(), unitType);
-            g.symbols.put(h.id(), new ClassSymbol(h, Optional.of(base), List.of(parameter.id()), List.of()));
-            g.effectiveMembers.put(h.id(), g.effectiveMembers.getOrDefault(base, List.of()).stream().map(m ->
+            var inherited = ((ClassSymbol)state.symbol(base)).members().stream()
+                    .filter(id -> state.symbol(id).kind() == SymbolKind.PARAMETER).findFirst();
+            state.defineSymbol(new ParameterSymbol(parameter, unitType, false, inherited));
+            state.bindDeclaredType(parameter.id(), unitType);
+            state.defineSymbol(new ClassSymbol(h, Optional.of(base), List.of(parameter.id()), List.of()));
+            state.setEffectiveMembers(h.id(), state.effectiveMembers(base).stream().map(m ->
                     new EffectiveMember(m.declaredSymbol(), h.id(), List.of(base, h.id()), m.position(), EffectiveMemberOrigin.INHERITED, false)).toList());
             classes.add(h.id());
         }
-        g.symbols.put(topic.id(), new TopicSymbol(topic, Optional.empty(), classes, List.of(), List.of(), List.of()));
+        state.defineSymbol(new TopicSymbol(topic, Optional.empty(), classes, List.of(), List.of(), List.of()));
         var basket = header(context, "BaseTimeSystems", SymbolKind.METADATA_BASKET, Optional.empty(), 0, Set.of());
         List<SymbolId> objects = new ArrayList<>();
         for (String objectName : List.of("GregorianCalendar", "UTC")) {
             var h = header(context, "BaseTimeSystems." + objectName, SymbolKind.METAOBJECT, Optional.of(basket.id()), objects.size(), Set.of());
-            g.symbols.put(h.id(), new MetaObjectSymbol(h, Optional.of(classes.get(objects.size())))); objects.add(h.id());
+            state.defineSymbol(new MetaObjectSymbol(h, Optional.of(classes.get(objects.size())))); objects.add(h.id());
         }
-        g.symbols.put(basket.id(), new MetadataBasketSymbol(basket, MetadataBasketSymbol.Kind.REFSYSTEM,
+        state.defineSymbol(new MetadataBasketSymbol(basket, MetadataBasketSymbol.Kind.REFSYSTEM,
                 Optional.of(topic.id()), Optional.empty(), objects));
         return object;
     }
@@ -101,11 +102,11 @@ final class PredefinedTemporal {
         var base = parent == null ? Optional.<SymbolId>empty() : Optional.of(require(context, parent, SymbolKind.STRUCTURE));
         var h = header(context, name, SymbolKind.STRUCTURE, Optional.empty(), 0,
                 name.equals("TimeOfDay") ? Set.of(Modifier.ABSTRACT) : Set.of());
-        base.ifPresent(id -> g.baseOf.put(h.id(), id));
+        base.ifPresent(id -> state.bindBase(h.id(), id));
         List<SymbolId> members = new ArrayList<>();
         if (name.equals("GregorianDate")) {
             var type = g.nextTypeId();
-            g.types.put(type, new DomainReferenceType(type, h.origin(), require(context, "GregorianYear", SymbolKind.DOMAIN)));
+            state.storeType(new DomainReferenceType(type, h.origin(), require(context, "GregorianYear", SymbolKind.DOMAIN)));
             members.add(attribute(context, h, "Year", type, false, false, Optional.empty(), 0));
             members.add(attribute(context, h, "Month", number(context, "1", "12", "M", false, null), true, false, Optional.empty(), 1));
             members.add(attribute(context, h, "Day", number(context, "1", "31", "d", false, null), true, false, Optional.empty(), 2));
@@ -118,16 +119,16 @@ final class PredefinedTemporal {
                 members.add(attribute(context, h, "Seconds", number(context, "0.000", "59.999", "s", true, null), true, true, Optional.empty(), 2));
             }
         }
-        g.symbols.put(h.id(), new StructureSymbol(h, base, members, List.of()));
+        state.defineSymbol(new StructureSymbol(h, base, members, List.of()));
         List<EffectiveMember> effective = new ArrayList<>();
-        base.ifPresent(id -> g.effectiveMembers.getOrDefault(id, List.of()).forEach(m -> {
-            var replacement = members.stream().filter(member -> ((AttributeSymbol)g.symbols.get(member)).overrides().filter(m.declaredSymbol()::equals).isPresent()).findFirst();
+        base.ifPresent(id -> state.effectiveMembers(id).forEach(m -> {
+            var replacement = members.stream().filter(member -> ((AttributeSymbol)state.symbol(member)).overrides().filter(m.declaredSymbol()::equals).isPresent()).findFirst();
             effective.add(new EffectiveMember(replacement.orElse(m.declaredSymbol()), h.id(), List.of(id, h.id()), effective.size(),
                     replacement.isPresent() ? EffectiveMemberOrigin.OVERRIDDEN : EffectiveMemberOrigin.INHERITED, replacement.isPresent()));
         }));
         for (var member : members) if (effective.stream().noneMatch(m -> m.declaredSymbol().equals(member)))
             effective.add(new EffectiveMember(member, h.id(), List.of(h.id()), effective.size(), EffectiveMemberOrigin.LOCAL, false));
-        g.effectiveMembers.put(h.id(), List.copyOf(effective));
+        state.setEffectiveMembers(h.id(), List.copyOf(effective));
     }
 
     private SymbolId attribute(DeclInfo context, SymbolHeader owner, String name, TypeId type, boolean subdivision,
@@ -136,8 +137,8 @@ final class PredefinedTemporal {
                 Optional.of(owner.id()), order, overrides.isPresent() ? Set.of(Modifier.EXTENDED) : Set.of());
         h = new SymbolHeader(h.id(), h.kind(), DeclaredName.declared(name), h.owner(), order, h.origin(), Optional.empty(),
                 context.language(), Documentation.empty(), MetaAttributeSet.empty(), h.modifiers(), List.of());
-        g.symbols.put(h.id(), new AttributeSymbol(h, type, false, false, continuous, subdivision, overrides, List.of()));
-        g.declaredTypes.put(h.id(), type); return h.id();
+        state.defineSymbol(new AttributeSymbol(h, type, false, false, continuous, subdivision, overrides, List.of()));
+        state.bindDeclaredType(h.id(), type); return h.id();
     }
 
     private void domain(DeclInfo context, String name) {
@@ -158,11 +159,11 @@ final class PredefinedTemporal {
             }
             type = g.nextTypeId();
             var kind = name.equals("XMLDate") ? TemporalKind.DATE : name.equals("XMLTime") ? TemporalKind.TIMEOFDAY : TemporalKind.DATETIME;
-            g.types.put(type, new FormattedType(type, h.origin(), "INTERLIS." + name, Optional.of(kind), base,
+            state.storeType(new FormattedType(type, h.origin(), "INTERLIS." + name, Optional.of(kind), base,
                     Optional.of(structure), parts, Optional.empty(), Optional.empty()));
         }
-        g.symbols.put(h.id(), new DomainSymbol(h, type, base, false)); g.declaredTypes.put(h.id(), type);
-        base.ifPresent(id -> g.baseOf.put(h.id(), id));
+        state.defineSymbol(new DomainSymbol(h, type, base, false)); state.bindDeclaredType(h.id(), type);
+        base.ifPresent(id -> state.bindBase(h.id(), id));
     }
 
     private void dateParts(DeclInfo context, SymbolId structure, List<FormattedType.Part> parts) {

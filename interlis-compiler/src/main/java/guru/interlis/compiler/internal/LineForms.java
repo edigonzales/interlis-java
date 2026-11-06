@@ -9,7 +9,8 @@ import java.util.*;
 /** Bound line declarations and predefined segment types; state belongs to the compilation graph. */
 final class LineForms {
     private final GraphBuilder g;
-    LineForms(GraphBuilder graph) { g = graph; }
+    private final SemanticBuildState state;
+    LineForms(GraphBuilder graph, SemanticBuildState state) { g = graph; this.state = state; }
 
     LineFormSymbol buildForm(DeclInfo decl) {
         var syntax = (LineFormDeclarationSyntax) decl.syntax();
@@ -20,7 +21,7 @@ final class LineForms {
             Set<SymbolId> seen = new HashSet<>();
             while (base != null && seen.add(base)) { g.checkWork(); base = g.objectInheritanceBase(base).orElse(null); }
             SymbolId required = predefined(decl, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            if (id.equals(required) || !guru.interlis.model.internal.TypeCompatibility.specializes(id, required, g.baseOf::get))
+            if (id.equals(required) || !guru.interlis.model.internal.TypeCompatibility.specializes(id, required, state::baseOf))
                 g.emitRule(decl, "line form structure must extend INTERLIS.LineSegment", "LINE_FORM_STRUCTURE");
         });
         var model = g.index.models().stream().filter(e -> g.index.modelOfSymbol(decl.id()).filter(e.id()::equals).isPresent())
@@ -46,7 +47,7 @@ final class LineForms {
         var vertex = syntax.vertexDomain().flatMap(name -> g.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors));
         vertex.ifPresent(target -> {
             g.index.byId(target).ifPresent(g::buildSymbol);
-            var domain = (DomainSymbol)g.symbols.get(target);
+            var domain = (DomainSymbol)state.symbol(target);
             if (!(g.effectiveDescriptor(domain.typeId()) instanceof CoordinateType coordinate) || coordinate.multiCoordinate())
                 g.emitRule(decl, "VERTEX must reference a coordinate domain", "LINE_VERTEX_COORDINATE");
         });
@@ -62,7 +63,7 @@ final class LineForms {
      * Aliases are read, never mutated; direction and LINE ATTRIBUTES in an explicit
      * line declaration retain their language meaning rather than being invented. */
     void effective(TypeId id, TypeDescriptor inherited, DeclInfo declaration) {
-        if (!(g.types.get(id) instanceof GeometryType own)) return;
+        if (!(state.type(id) instanceof GeometryType own)) return;
         GeometryType parent = inherited instanceof GeometryType p ? p : null;
         if (inherited != null && parent == null) g.emitRule(declaration, "geometry needs a geometric base", "GEOMETRY_EXTENSION");
         var forms = own.lineForms().isEmpty() && parent != null ? parent.lineForms() : own.lineForms();
@@ -71,11 +72,11 @@ final class LineForms {
         boolean surface = switch (own.geometryKind()) { case SURFACE, AREA, MULTISURFACE, MULTIAREA -> true; default -> false; };
         boolean without = own.withoutOverlaps() || parent != null && parent.withoutOverlaps() || surface;
         if (tolerance.isEmpty() && without && declaration.language() == LanguageVersion.ILI24 && vertex.isPresent()
-                && g.effectiveDescriptor(g.declaredTypes.get(vertex.orElseThrow())) instanceof CoordinateType c
+                && g.effectiveDescriptor(state.declaredType(vertex.orElseThrow())) instanceof CoordinateType c
                 && c.axes().stream().allMatch(a -> a.minimum().isPresent() && a.maximum().isPresent()))
             tolerance = Optional.of(new GeometryType.TrackWidth(vertex.orElseThrow()));
         var result = new GeometryType(id, own.origin(), own.geometryKind(), forms, vertex, own.lineAttributes(), own.directed(), without, tolerance);
-        g.types.put(id, result);
+        state.storeType(result);
         if (parent != null) {
             var relation = extension(result, parent);
             if (relation.decision() == RelationDecision.DISALLOWED)
@@ -84,7 +85,7 @@ final class LineForms {
         if (!result.lineAttributes().isEmpty() && !surface)
             g.emitRule(declaration, "LINE ATTRIBUTES require SURFACE or AREA", "LINE_ATTRIBUTES_FAMILY");
         boolean generic = declaration.language() == LanguageVersion.ILI24 && vertex.filter(this::genericVertex).isPresent();
-        CoordinateType coordinate = vertex.map(g.declaredTypes::get).map(g::effectiveDescriptor)
+        CoordinateType coordinate = vertex.map(state::declaredType).map(g::effectiveDescriptor)
                 .filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
         if (coordinate != null && declaration.language() == LanguageVersion.ILI24) {
             var length = g.builtinUnit(declaration.id(), "INTERLIS.LENGTH").orElseThrow();
@@ -114,8 +115,8 @@ final class LineForms {
     }
 
     TypeRelation extension(GeometryType derived, GeometryType base) {
-        return guru.interlis.model.internal.TypeCompatibility.geometryExtension(derived, base, g.baseOf::get,
-                id -> g.effectiveDescriptor(g.declaredTypes.get(id)));
+        return guru.interlis.model.internal.TypeCompatibility.geometryExtension(derived, base, state::baseOf,
+                id -> g.effectiveDescriptor(state.declaredType(id)));
     }
 
     private static int scale(DecimalLiteral value) {
@@ -126,9 +127,9 @@ final class LineForms {
         var seen = new HashSet<SymbolId>(); var pending = new ArrayDeque<SymbolId>(); pending.add(domain);
         while (!pending.isEmpty()) {
             g.checkWork(); var id = pending.removeFirst(); if (!seen.add(id)) continue;
-            if (g.symbols.get(id) instanceof DomainSymbol d && d.generic()) return true;
-            if (g.types.get(g.declaredTypes.get(id)) instanceof DomainReferenceType alias) pending.add(alias.targetDomain());
-            if (g.baseOf.get(id) != null) pending.add(g.baseOf.get(id));
+            if (state.symbol(id) instanceof DomainSymbol d && d.generic()) return true;
+            if (state.type(state.declaredType(id)) instanceof DomainReferenceType alias) pending.add(alias.targetDomain());
+            if (state.baseOf(id) != null) pending.add(state.baseOf(id));
         }
         return false;
     }
@@ -141,20 +142,20 @@ final class LineForms {
 
     private boolean incomplete(GeometryType geometry) {
         if (geometry.lineForms().isEmpty() || geometry.vertexDomain().isEmpty()) return true;
-        var descriptor = g.effectiveDescriptor(g.declaredTypes.get(geometry.vertexDomain().orElseThrow()));
-        if (g.symbols.get(geometry.vertexDomain().orElseThrow()).header().has(Modifier.ABSTRACT)) return true;
+        var descriptor = g.effectiveDescriptor(state.declaredType(geometry.vertexDomain().orElseThrow()));
+        if (state.symbol(geometry.vertexDomain().orElseThrow()).header().has(Modifier.ABSTRACT)) return true;
         if (!(descriptor instanceof CoordinateType c) || c.axes().stream().anyMatch(a -> a.minimum().isEmpty() || a.maximum().isEmpty())) return true;
         return geometry.withoutOverlaps() && geometry.overlap().isEmpty();
     }
 
     void validateConcreteMembers() {
-        for (var entry : g.effectiveMembers.entrySet()) {
+        for (var entry : state.effectiveMembersInBuildOrder()) {
             g.checkWork(); var owner = g.index.byId(entry.getKey()).orElse(null);
             if (owner == null || owner.modifiers().contains(Modifier.ABSTRACT)) continue;
             for (var member : entry.getValue()) {
-                var symbol = g.symbols.get(member.declaredSymbol());
+                var symbol = state.symbol(member.declaredSymbol());
                 if (!(symbol instanceof AttributeSymbol attribute)) continue;
-                var type = g.effectiveDescriptor(g.declaredTypes.get(attribute.id()));
+                var type = g.effectiveDescriptor(state.declaredType(attribute.id()));
                 if (type instanceof GeometryType geometry && (attribute.header().has(Modifier.ABSTRACT)
                         || incomplete(geometry) && !(owner.language() == LanguageVersion.ILI24 && geometry.vertexDomain().filter(this::genericVertex).isPresent())))
                     g.emitRule(owner, "concrete owner retains an abstract geometry member", "GEOMETRY_ABSTRACT_MEMBER");
@@ -173,11 +174,11 @@ final class LineForms {
                 "INTERLIS.SurfaceBoundary", "INTERLIS.LineGeometry").contains(name))) return Optional.empty();
         LanguageVersion language = context.language();
         SymbolId id = id(language, form ? name : name.substring(9));
-        if (g.symbols.containsKey(id)) return Optional.of(id);
+        if (state.hasSymbol(id)) return Optional.of(id);
         if (form) {
             SymbolId structure = predefined(context, name.equals("STRAIGHTS") ? "INTERLIS.StraightSegment" : "INTERLIS.ArcSegment",
                     Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            g.symbols.put(id, new LineFormSymbol(header(language, name, SymbolKind.LINE_FORM, Optional.empty(), Set.of()), Optional.of(structure)));
+            state.defineSymbol(new LineFormSymbol(header(language, name, SymbolKind.LINE_FORM, Optional.empty(), Set.of()), Optional.of(structure)));
             return Optional.of(id);
         }
         String shortName = name.substring(9);
@@ -185,7 +186,7 @@ final class LineForms {
             return Optional.of(geometryStructure(context, shortName));
         Optional<SymbolId> base = shortName.equals("LineSegment") ? Optional.empty()
                 : predefined(context, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE));
-        base.ifPresent(parent -> g.baseOf.put(id, parent));
+        base.ifPresent(parent -> state.bindBase(id, parent));
         var header = header(language, shortName, SymbolKind.STRUCTURE, Optional.empty(),
                 Set.of(shortName.equals("LineSegment") ? Modifier.ABSTRACT : Modifier.FINAL));
         List<SymbolId> members = new ArrayList<>();
@@ -194,16 +195,16 @@ final class LineForms {
             members.add(attribute(language, id, "ArcPoint", lineCoord(language), true));
             TypeId numeric = g.nextTypeId();
             var unit = g.builtinUnit(context.id(), "INTERLIS.LENGTH");
-            g.types.put(numeric, new NumericType(numeric, header.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
+            state.storeType(new NumericType(numeric, header.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
                     NumericDirection.NONE, unit, Optional.empty())));
             members.add(attribute(language, id, "Radius", numeric, false));
         }
-        g.symbols.put(id, new StructureSymbol(header, base, members, List.of()));
+        state.defineSymbol(new StructureSymbol(header, base, members, List.of()));
         List<EffectiveMember> effective = new ArrayList<>();
-        base.ifPresent(parent -> g.effectiveMembers.getOrDefault(parent, List.of()).forEach(member -> effective.add(
+        base.ifPresent(parent -> state.effectiveMembers(parent).forEach(member -> effective.add(
                 new EffectiveMember(member.declaredSymbol(), id, List.of(parent, id), effective.size(), EffectiveMemberOrigin.INHERITED, false))));
         for (SymbolId member : members) effective.add(new EffectiveMember(member, id, List.of(id), effective.size(), EffectiveMemberOrigin.LOCAL, false));
-        g.effectiveMembers.put(id, List.copyOf(effective));
+        state.setEffectiveMembers(id, List.copyOf(effective));
         return Optional.of(id);
     }
 
@@ -214,24 +215,24 @@ final class LineForms {
         List<SymbolId> members = new ArrayList<>();
         if (name.equals("SurfaceEdge")) {
             TypeId geometry = g.nextTypeId();
-            g.types.put(geometry, new GeometryType(geometry, h.origin(), GeometryKind.POLYLINE, List.of(),
+            state.storeType(new GeometryType(geometry, h.origin(), GeometryKind.POLYLINE, List.of(),
                     Optional.empty(), Optional.empty(), true, false, Optional.empty()));
             members.add(attribute(language, h.id(), "Geometry", geometry, false));
             if (language == LanguageVersion.ILI23) {
-                TypeId attrs = g.nextTypeId(); g.types.put(attrs, new GenericType(attrs, h.origin(), "ANYSTRUCTURE"));
+                TypeId attrs = g.nextTypeId(); state.storeType(new GenericType(attrs, h.origin(), "ANYSTRUCTURE"));
                 members.add(attribute(language, h.id(), "LineAttrs", attrs, false, 1));
             }
         } else {
             String targetName = name.equals("SurfaceBoundary") ? "SurfaceEdge" : "LineSegment";
             var target = predefined(context, "INTERLIS." + targetName, Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            TypeId element = g.nextTypeId(); g.types.put(element, new StructureValueType(element, h.origin(), Optional.of(target), List.of()));
-            TypeId list = g.nextTypeId(); g.types.put(list, new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.unboundedFrom(0), element));
+            TypeId element = g.nextTypeId(); state.storeType(new StructureValueType(element, h.origin(), Optional.of(target), List.of()));
+            TypeId list = g.nextTypeId(); state.storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.unboundedFrom(0), element));
             members.add(attribute(language, h.id(), name.equals("SurfaceBoundary") ? "Lines" : "Segments", list, false));
         }
-        g.symbols.put(h.id(), new StructureSymbol(h, Optional.empty(), members, List.of()));
+        state.defineSymbol(new StructureSymbol(h, Optional.empty(), members, List.of()));
         List<EffectiveMember> effective = new ArrayList<>();
         for (SymbolId member : members) effective.add(new EffectiveMember(member, h.id(), List.of(h.id()), effective.size(), EffectiveMemberOrigin.LOCAL, false));
-        g.effectiveMembers.put(h.id(), List.copyOf(effective));
+        state.setEffectiveMembers(h.id(), List.copyOf(effective));
         if (name.equals("LineGeometry")) {
             var segment = predefined(context, "INTERLIS.LineSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
             var start = predefined(context, "INTERLIS.StartSegment", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
@@ -243,36 +244,36 @@ final class LineForms {
     }
 
     void startConstraint(DeclInfo owner, SymbolId line, SymbolId segment, SymbolId start, guru.interlis.source.SourceRange range) {
-        var structure = (StructureSymbol)g.symbols.get(line);
+        var structure = (StructureSymbol)state.symbol(line);
         if (!structure.constraints().isEmpty()) return;
         SymbolId attribute = structure.members().getFirst();
-        TypeId element = g.nextTypeId(); g.types.put(element, new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
+        TypeId element = g.nextTypeId(); state.storeType(new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
         ExpressionId path = new ExpressionId(line.value() + ":first");
-        g.expressions.put(path, new PathExpression(path, element, ExpressionTypeState.RESOLVED, range, List.of(), new ObjectPath(List.of(
+        state.storeExpression(new PathExpression(path, element, ExpressionTypeState.RESOLVED, range, List.of(), new ObjectPath(List.of(
                 new PathStep.AttributeStep("Segments", attribute, range), new PathStep.IndexStep(new PathIndex(PathIndex.Kind.FIRST, Optional.empty()), element, range)))));
-        TypeId classType = g.nextTypeId(); g.types.put(classType, new ClassValueType(classType, structure.origin(), true, List.of(start)));
+        TypeId classType = g.nextTypeId(); state.storeType(new ClassValueType(classType, structure.origin(), true, List.of(start)));
         ExpressionId value = new ExpressionId(line.value() + ":start");
-        g.expressions.put(value, new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
-        TypeId bool = g.nextTypeId(); g.types.put(bool, new BooleanType(bool, structure.origin()));
+        state.storeExpression(new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
+        TypeId bool = g.nextTypeId(); state.storeType(new BooleanType(bool, structure.origin()));
         ExpressionId call = new ExpressionId(line.value() + ":isStart");
-        g.expressions.put(call, new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(g.builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
+        state.storeExpression(new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(g.builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
         SymbolId constraint = new SymbolId(line.value() + ":startConstraint");
         Origin constraintOrigin = structure.origin() instanceof Origin.PredefinedOrigin predefined
                 ? new Origin.PredefinedOrigin(predefined.language(), predefined.key() + ".StartSegment")
-                : new Origin.DerivedOrigin(((StructureSymbol)g.symbols.get(((Origin.DerivedOrigin)structure.origin()).declaredAt())).constraints().getFirst(), DerivationKind.CONTEXTUALIZATION);
+                : new Origin.DerivedOrigin(((StructureSymbol)state.symbol(((Origin.DerivedOrigin)structure.origin()).declaredAt())).constraints().getFirst(), DerivationKind.CONTEXTUALIZATION);
         var header = new SymbolHeader(constraint, SymbolKind.CONSTRAINT, DeclaredName.synthetic("StartSegment"), Optional.of(line), 0,
                 constraintOrigin, Optional.empty(), owner.language(), Documentation.empty(), MetaAttributeSet.empty(), Set.of(), List.of());
-        g.symbols.put(constraint, new ConstraintSymbol(header, new MandatoryConstraint(Optional.empty(), call), Optional.empty()));
-        g.symbols.put(line, new StructureSymbol(structure.header(), structure.baseType(), structure.members(), List.of(constraint)));
+        state.defineSymbol(new ConstraintSymbol(header, new MandatoryConstraint(Optional.empty(), call), Optional.empty()));
+        state.replaceSymbol(new StructureSymbol(structure.header(), structure.baseType(), structure.members(), List.of(constraint)));
     }
 
     private TypeId lineCoord(LanguageVersion language) {
         SymbolId domain = id(language, "LineCoord");
-        if (g.declaredTypes.containsKey(domain)) return g.declaredTypes.get(domain);
+        if (state.hasDeclaredType(domain)) return state.declaredType(domain);
         TypeId type = g.nextTypeId();
         var h = header(language, "LineCoord", SymbolKind.DOMAIN, Optional.empty(), Set.of(Modifier.ABSTRACT));
-        g.types.put(type, new CoordinateType(type, h.origin(), 2, List.of(NumericRange.unbounded(), NumericRange.unbounded()), false, Optional.empty(), Optional.empty()));
-        g.symbols.put(domain, new DomainSymbol(h, type, Optional.empty(), false)); g.declaredTypes.put(domain, type);
+        state.storeType(new CoordinateType(type, h.origin(), 2, List.of(NumericRange.unbounded(), NumericRange.unbounded()), false, Optional.empty(), Optional.empty()));
+        state.defineSymbol(new DomainSymbol(h, type, Optional.empty(), false)); state.bindDeclaredType(domain, type);
         return type;
     }
 
@@ -285,8 +286,8 @@ final class LineForms {
         // Attribute names are local even though their predefined identity includes the owning structure.
         h = new SymbolHeader(h.id(), h.kind(), DeclaredName.declared(name), h.owner(), order, h.origin(), h.nameRange(),
                 h.languageVersion(), h.documentation(), h.metaAttributes(), h.modifiers(), h.oidRules());
-        g.symbols.put(h.id(), new AttributeSymbol(h, type, mandatory, false, false, false, Optional.empty(), List.of()));
-        g.declaredTypes.put(h.id(), type); return h.id();
+        state.defineSymbol(new AttributeSymbol(h, type, mandatory, false, false, false, Optional.empty(), List.of()));
+        state.bindDeclaredType(h.id(), type); return h.id();
     }
 
     private SymbolId id(LanguageVersion language, String name) { return new SymbolId("predefined:" + language + ":" + name); }
