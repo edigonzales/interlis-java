@@ -91,7 +91,9 @@ public sealed interface TransferValue permits TransferValue.Text, TransferValue.
     }
 
     /** Reference to an object identity. Basket and position are retained when supplied.
-     * A position is absolute in the ordered relation within the transfer basket and is one-based. */
+     * The external flag records the EXTERNAL reference semantics that permit a target in
+     * another basket. The supplied target basket is independent of that flag. A position
+     * is absolute in the ordered relation within the transfer basket and is one-based. */
     record Reference(TransferIdentity.ObjectKey target, Optional<TransferIdentity.BasketId> targetBasket,
                      boolean external, Optional<BigInteger> orderPosition) implements TransferValue {
         public Reference {
