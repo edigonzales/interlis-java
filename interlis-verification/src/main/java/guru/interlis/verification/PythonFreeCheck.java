@@ -18,7 +18,7 @@ public final class PythonFreeCheck {
     private PythonFreeCheck() { }
     static void validate(String path,String text) {
         require(!path.toLowerCase(Locale.ROOT).matches(".*\\.py[wc]?$"),"Forbidden source remains: "+path);
-        if(path.startsWith("docs/"))return; // Historical evidence and quotations are preserved.
+        if(path.startsWith("docs/"))return; // Documentation can quote example commands.
         require(!Path.of(path).getFileName().toString().matches("(?i)(pyproject\\.toml|Pipfile(?:\\.lock)?|\\.python-version|requirements.*\\.txt)"),"Forbidden dependency manifest: "+path);
         // This one harness only makes deliberately failing interpreter probes, then
         // enforces an OS execution denial for the entire descendant process tree.

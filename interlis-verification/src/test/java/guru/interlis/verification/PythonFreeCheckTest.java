@@ -12,7 +12,7 @@ class PythonFreeCheckTest {
             assertThrows(Exception.class,()->PythonFreeCheck.validate(path,"'"+"pi"+"p3 install dependency'"));
         }
         assertThrows(Exception.class,()->PythonFreeCheck.validate("tools/a.sh","#!/usr/bin/env "+"py"+"thon3\n"));
-        PythonFreeCheck.validate("docs/evidence/old.md","Historical "+"py"+"thon3 command");
+        PythonFreeCheck.validate("docs/contracts/example.md","Documentation example "+"py"+"thon3 command");
         PythonFreeCheck.validate("tools/ok.cjs","spawn('node', ['contract.cjs'])");
     }
     @Test void absoluteAndEnvWrappedShellCommandsFail() {

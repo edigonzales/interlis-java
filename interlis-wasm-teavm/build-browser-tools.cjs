@@ -3,7 +3,7 @@ const esbuild=require('esbuild');
 const root=__dirname,output=path.join(root,'build/browser-tools'),types=path.join(output,'types');
 const hash=value=>crypto.createHash('sha256').update(value).digest('hex');
 const read=p=>fs.readFileSync(path.join(root,p));
-const pin=JSON.parse(read('../docs/p3/diagram-adapter-pin.json'));
+const pin=JSON.parse(read('../testdata/reference/diagram/adapter-pin.json'));
 const ui=path.resolve(root,'../frontend/diagram-ui');
 if(pin.currentRenderer?.directory!=='frontend/diagram-ui')throw new Error('shared renderer migration identity missing');
 cp.execFileSync(process.execPath,[path.join(ui,'prepare.cjs')],{cwd:ui,stdio:'inherit'});
@@ -51,7 +51,7 @@ const files=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(en
 let commit='unavailable',dirty='unavailable';try{commit=cp.execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();dirty=cp.execFileSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8'}).trim();}catch{}
 const manifest={status:'passed',scope:'TypeScript strict checking, declarations and bundles; not a browser acceptance',node:process.version,commit,dirty,
   versions:Object.fromEntries(['typescript','esbuild','ajv','elkjs','sprotty-protocol','libavoid-js'].map(name=>[name,JSON.parse(fs.readFileSync(path.join(root,'node_modules',name,'package.json'),'utf8')).version])),
-  inputs:Object.fromEntries([...files(path.join(root,'src/main/typescript')),...files(path.join(root,'src/main/web')),...files(path.join(ui,'src')),...['build.cjs','prepare.cjs','package.json','package-lock.json','tsconfig.json','provenance.json'].map(p=>path.join(ui,p)),...['build-browser-tools.cjs','package.json','package-lock.json','tsconfig.json'].map(p=>path.join(root,p)),path.resolve(root,'../interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json'),path.resolve(root,'../'+pin.diagramOptionsSchema.file),path.resolve(root,'../docs/p3/diagram-adapter-pin.json')].map(p=>[path.relative(root,p),hash(fs.readFileSync(p))])),
+  inputs:Object.fromEntries([...files(path.join(root,'src/main/typescript')),...files(path.join(root,'src/main/web')),...files(path.join(ui,'src')),...['build.cjs','prepare.cjs','package.json','package-lock.json','tsconfig.json','provenance.json'].map(p=>path.join(ui,p)),...['build-browser-tools.cjs','package.json','package-lock.json','tsconfig.json'].map(p=>path.join(root,p)),path.resolve(root,'../interlis-projection/src/main/resources/guru/interlis/projection/diagram-document-1.0.schema.json'),path.resolve(root,'../'+pin.diagramOptionsSchema.file),path.resolve(root,'../testdata/reference/diagram/adapter-pin.json')].map(p=>[path.relative(root,p),hash(fs.readFileSync(p))])),
   outputs:Object.fromEntries(files(output).map(p=>[path.relative(output,p),hash(fs.readFileSync(p))]))};
 fs.writeFileSync(path.join(root,'build/browser-tools-result.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log('BROWSER_TOOLS_PASS '+JSON.stringify({node:manifest.node,versions:manifest.versions,outputs:Object.keys(manifest.outputs).length}));

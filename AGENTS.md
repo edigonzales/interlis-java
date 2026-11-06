@@ -1,81 +1,42 @@
 # Arbeitsregeln für interlis-java
 
-Diese Datei gehört als `AGENTS.md` in das Repository-Root. Pfadangaben beziehen sich auf dieses Root. Sie gilt für Arbeiten im gesamten Repository; für Änderungen unter `docs/spec/` ist zusätzlich die dortige `AGENTS.md` zu lesen. Anweisungen der Ausführungsumgebung und der aktuelle Nutzerauftrag haben Vorrang vor Repositorydokumenten.
-
-## 1. Auftrag und Produktziel
-
-`interlis-java` entwickelt einen modernen Java-INTERLIS-Stack mit den Fähigkeiten von ili2c, iox-ili, ilivalidator und ili2db. Der Compiler ist die gemeinsame Grundlage für Batch, IDE/LSP, Visualisierung und portable Ausführung. Vertrautes Werkzeugverhalten und bestehende ili2db-Abbildungen bleiben ausdrückliche Kompatibilitätsziele.
-
-Bearbeite den tatsächlich erteilten Auftrag. Die Anwesenheit der Spezifikation oder das Lesen von `STARTPROMPT.md` aktiviert nicht selbständig einen Implementierungsauftrag. Bei einer beauftragten Erstimplementierung nach diesem Startprompt umfasst der erste Abschnitt P0 und P1. Bei einer Dokumentänderung, Analyse oder einem gezielten Fix bleibt dieser konkrete Umfang massgeblich. P2 bis P5 bleiben Zielanforderungen; sie werden dadurch weder vorzeitig implementiert noch gestrichen.
-
-## 2. Einstieg und massgebliche Dokumente
-
-Für den beauftragten G2-Abschluss gilt organisatorisch `docs/g2/EXECUTION_PLAN.md`;
-der operative Stand steht ausschliesslich in `docs/g2/STATUS.md`. Die fachlichen
-Spezifikationen und historischen Nachweise bleiben erhalten.
-
-1. Prüfe den Repositoryzustand und vorhandene Änderungen. Lies die für die betroffenen Pfade geltenden Arbeitsregeln sowie `docs/implementation-status.md`, falls vorhanden. Erhalte fremde Änderungen.
-2. Lies vor der ersten Implementierung `docs/spec/README.md`, `00-auftrag-und-agentenregeln.md`, `01-zielbild-und-anforderungen.md`, `02-architektur-und-modulgrenzen.md`, `03-build-und-repository.md` und `16-api-register-und-vertragstests.md` unter `docs/spec/`.
-3. Wähle das beauftragte Arbeitspaket aus `14-implementierungsplan-und-arbeitspakete.md`. Lies seine Fachkapitel und die relevanten Abnahmen aus `13-tests-kompatibilitaet-und-qualitaet.md`. Verwende `17-abdeckungsmatrix-und-review.md` zur Zuordnung der Anforderungs-IDs. Bereits gelesene unveränderte Kapitel müssen nicht für jeden kleinen Schritt erneut vollständig geladen werden.
-
-Die Spezifikation ist die fachliche Vertragsquelle. Kapitel 16 regelt gemeinsame API-Namen und Besitzer; die Fachkapitel regeln Details und Methodenbedingungen. Kapitel 01 definiert den Scope, Kapitel 03 den Build, Kapitel 14 die Lieferabschnitte. Eine Inkonsistenz wird anhand der betroffenen Verträge geklärt und konsistent korrigiert. Das Verhalten einer bestehenden Implementierung ist ein Referenznachweis, keine automatische Erlaubnis zum Ändern der Spezifikation.
-
-## 3. Architektur- und Qualitätsgrenzen
-
-Seit dem ausdrücklich beauftragten Auftrag B ist Jenesis 0.18.1 der alleinige
-JVM-Builder gemäss `docs/implementation/jenesis-migration-b/`. Die POMs sind
-Metadaten; Maven wird nicht ausgeführt. Gradle/Groovy bleibt ausschliesslich
-für die zwei Wasm-Backends. Alle eigenen JVM-Produkte und regulären CLI-/LSP-
-Starts werden nach B-II explizit modular. APE und CosmoGVM-Uhrpatch bleiben pausiert.
-`build/jenesis/`, `build/InterlisJvmBuild.java`, `build/interlis/` und der Upstreampin
-sind Quellen; nie das gesamte Root-`build/` löschen.
-
-- Verwende Java 25 ohne Preview und `java build/InterlisJvmBuild.java` für die zehn JVM-Module. Paketbasis und Group sind `guru.interlis`. Für Backendaufgaben ausschliesslich den Gradlewrapper mit explizitem geprüftem ConsumerSnapshot verwenden. Kein zweiter JVM-Builder und kein zusätzliches Buildframework.
-- Unterstütze ausschliesslich INTERLIS 2.3 und 2.4. ANTLR bleibt intern; öffentliche APIs verwenden eigene Quell-, Syntax- und Modelltypen.
-- Halte Compiler und Modell unabhängig von Dateisystem, HTTP, JDBC, LSP-Transport und UI. Hostzugriffe und Laufzeitintegration gehören in explizite Adapter.
-- Erhalte die Verträge von `SyntaxSnapshot`, `AnalysisSnapshot` und `CompiledSchema`. Veröffentlichte Werte bleiben unveränderlich. Quellrevisionen, UTF-16-Bereiche, Snapshotreferenzen und fachliche Reihenfolgen werden nicht durch bequemere untypisierte Werte ersetzt.
-- Ein gültiges `CompiledSchema` entsteht nur über das Gate für die angeforderte Closure. Fehlende Implementierung, Quellfehler, ungelöste Eingaben, Warnungsablehnung, Abbruch und interne Defekte bleiben unterscheidbar. Legale aufgeschobene Typbindung ist kein Fehlerzustand.
-- Wiederverwendung ist eine Optimierung. Der gleiche Eingabestand muss bei frischer und wiederverwendender Analyse fachlich übereinstimmen. Übernimm veraltete Hintergrundresultate weder als aktuelle Anzeige noch in aktuelle Wiederverwendungsdaten.
-- Behandle strukturierte Diagnostik und Laufbeobachtung als Teil jedes fachlichen Abschnitts. Verwende die zentralen Diagnose- und `RunContext`-Verträge aus Kapitel 09; keine globalen aktuellen Läufe, globalen Listener oder zweite Gateentscheidung in Adaptern.
-- Halte spätere Verbraucherinformationen vollständig, insbesondere Typen, Übersetzungen, effektive Attribute/Rollen und Transferreihenfolgen. Bestehende DB-Mappings und Metadaten dürfen nicht still durch neue Zuordnungen ersetzt werden.
-
-Die ausführlichen Verträge bleiben in den Fachkapiteln. Diese Merkpunkte sind keine alternative verkürzte Spezifikation.
-
-## 4. Arbeitsweise
-
-Benenne pro fachlichem Abschnitt die betroffenen Anforderungs-IDs, die erwartete Beobachtung und die passende Abnahme. Implementiere innerhalb des erteilten Umfangs einen vollständigen Abschnitt mit Fehlerpfad, öffentlichem Zugriff und relevanten Adaptern. Ein Stub, ein leerer Visitor, ein übersprungenes Konstrukt oder eine feste Erfolgsantwort erfüllt keine Anforderung.
-
-Produktionscode und API-Namen sind Englisch. Erläutere in Javadoc besonders Nullfreiheit, Mutabilität, Reihenfolge, Revisionen, Einheiten, Abbruch und Fehler. Verwende klare Typen, kleine explizite Fabriken und Konstruktorinjektion. Füge Abhängigkeiten oder Frameworks nur für einen konkreten aktuellen Bedarf hinzu.
-
-Bei Änderungen gemeinsamer APIs aktualisiere die betroffenen Verbraucher, Vertragstests und Spezifikationsstellen gemeinsam. Beachte dafür `docs/spec/AGENTS.md`. Kopiere keine zweite fachliche Namens-, Typ- oder Validierungssemantik in CLI, LSP, Diagrammrenderer oder Browserclient.
-
-Löse Routineentscheidungen selbständig mit der einfachsten vertragskonformen Umsetzung. Bei einer echten ungeklärten Scope- oder Kompatibilitätsentscheidung beschreibe Auswirkungen und Empfehlung und erledige unabhängige Arbeit weiter. Veröffentlichungen, Releases, Nachrichten an Dritte und Produktionsmigrationen müssen vom konkreten Auftrag gedeckt sein; diese Datei erteilt dafür keinen zusätzlichen Auftrag.
-
-## 5. Build und zielgerichtete Verifikation
-
-Die ausführbaren Kommandos und Phasengates stehen in Kapitel 03 und 14. Prüfe zunächst, was im aktuellen Stand bereits vorhanden ist. Nutze für JVMprofile `java build/InterlisJvmBuild.java`, für die zwei Backendprojekte den Wrapper mit explizitem Snapshot.
-
-- Ein Compilervertrag kann beispielsweise mit `java build/InterlisJvmBuild.java build --module interlis-compiler` geprüft werden, sobald dieses Modul existiert.
-- `host --profile portable` prüft den vorgesehenen JVM-/Node-Vertrag; `host --profile browser` die reale Browsermatrix. Verwende diese Tasks, sobald sie implementiert sind, für die davon betroffenen Änderungen und fälligen Gates.
-- `release-check --profile compiler` gilt für den ausdrücklich beschriebenen Entwicklungsstand. Fehlende oder übersprungene Pflichtprüfungen halten das jeweilige Gate offen.
-
-Erfinde keine vorhandenen Tasks, Versionspins oder erfolgreichen Läufe. Bei reinen redaktionellen Änderungen genügt die passende Dokumentprüfung. Änderungen an Semantik, APIs, ausführbaren Beispielen oder Buildlogik erhalten die dafür notwendigen Prüfungen. Wiederhole darüber hinaus nur Tests, die eine konkrete offene Frage klären.
-
-### Testumfang und unabhängige Reviews
-
-Führe nur Tests aus, die für die konkrete Änderung notwendig und aussagekräftig sind. Wähle den kleinsten ausreichenden Umfang anhand betroffener Verträge, Verbraucher und konkreter Regressionsrisiken. Benenne kurz, welche offene Frage ein zusätzlicher oder breiterer Lauf klärt. Ein Phasenwechsel, neuer Review oder Dokumentationscommit allein rechtfertigt keinen vollständigen Testlauf.
-
-- Prüfe zunächst die betroffenen Tests und gezielte Integrations-/Prozessfälle. Erweitere den Umfang nur bei einem konkreten Risiko, einem Befund oder einer tatsächlich fälligen Abnahme. Vollständige Korpus-, Browser-, Plattform-, Performance- und Releaseprüfungen sind keine pauschale Standardprüfung jeder Änderung.
-- **Codex und OpenCode führen vollständige Korpus- und Benchmarkläufe nicht doppelt aus.** Koordiniere breite Pflichtprüfungen einmal pro relevantem Produktstand. Der unabhängige Reviewer prüft Code und ursprüngliche Rohbelege selbst und ergänzt eigene gezielte Gegenproben; Unabhängigkeit verlangt keine Wiederholung sämtlicher Tests. Abweichende Plattformen oder Laufzeiten werden geprüft, wenn deren Vertrag betroffen ist und dafür noch kein gültiger Nachweis vorliegt.
-- Nutze vorhandene belastbare lokale oder CI-Nachweise des identischen Produktstands. Prüfe Commit-SHA beziehungsweise nachvollziehbar unveränderten relevanten Produktinhalt, Eingaben, Toolchain, Plattform, tatsächliche Exits, Vollständigkeit und Skips. Ein behauptetes PASS oder fremder grüner Bericht allein genügt nicht. Nach Produktänderungen sind die davon betroffenen Nachweise erneut zu erbringen; unveränderte Bereiche benötigen keinen automatischen Vollauf.
-- Wiederhole einen fehlgeschlagenen Test erst nach Ursachenprüfung, einer Korrektur oder einer begründeten gezielten Gegenprobe. Wiederhole erfolgreiche Prüfungen nur bei neuen Änderungen, neuen Befunden oder weiterhin offenen Fragen. Erfasse Wiederverwendung, bewusste Abbrüche und nicht ausgeführte fällige Prüfungen transparent; abgebrochene Läufe gelten nicht als PASS.
-
-Diese Teststrategie gilt auch für die Auslegung älterer Ausführungspläne und Reviewerprompts mit pauschalen Wiederholungsforderungen. Fachliche Abnahmekriterien bleiben bestehen; benötigte Nachweise dürfen unabhängig geprüft und wiederverwendet werden. Eine aktuelle ausdrückliche Nutzeranweisung zu zusätzlichen Läufen hat Vorrang.
-
-Ändere Goldens, XFAILs oder erwartete Diagnosen nur mit fachlichem Beleg. Erfasse tatsächliche Kommandos, Versionen, Umfang und Resultate. Ein Node-Erfolg belegt keinen Browserlauf; ein Parsererfolg keine vollständige Semantik; eine erfolgreiche Kompilierung noch keinen erfolgreichen CLI-Export. Die konkreten TeaVM-/Web-Image-Pflichten stehen in Kapitel 10.
-
-## 6. Fortschritt und Abschluss
-
-Halte beauftragten Implementierungsfortschritt unter `docs/implementation-status.md` sowie die Nachweise gemäss Kapitel 13 fest. Chatverlauf und diese Datei ersetzen keinen nachvollziehbaren Projektstatus. Verändere bei einem reinen Review keinen Implementierungsstatus ohne neue Evidenz.
-
-Berichte zum Abschluss: bearbeiteter Umfang und IDs, wesentliche Änderungen, ausgeführte Prüfungen, nicht ausgeführte fällige Prüfungen, konkrete Blocker und nächster fachlicher Schritt. Trenne geplant, implementiert und tatsächlich verifiziert. Ein anderer Agent muss die beauftragte Arbeit anhand des Repositorys fortsetzen können.
+- Bearbeite den erteilten Auftrag. Prüfe vor Änderungen Branch, Index und
+  Arbeitsbaum, erhalte fremde Änderungen und lies die betroffenen
+  [Verträge](docs/README.md) und [Modulgrenzen](docs/architecture.md).
+  Veröffentlichungen und Arbeiten an Produktionssystemen brauchen einen
+  konkreten Auftrag.
+- Nutze [Jenesis 0.18.1 mit Java 25](docs/development/build.md) für alle elf
+  JVM-Module. POMs definieren Koordinaten und Abhängigkeiten. Der Gradle-Wrapper
+  baut die beiden Wasm-Backends mit explizitem geprüftem ConsumerSnapshot.
+  `build/jenesis/`, `build/interlis/`, `build/InterlisJvmBuild.java` und der
+  Upstreampin sind Quellen. Verwende die gezielten Clean-Sichten.
+- Unterstütze INTERLIS 2.3 und 2.4. ANTLR bleibt intern. Compiler und Modell
+  arbeiten mit expliziten Daten und Diensten. Dateisystem, HTTP, JDBC, LSP und
+  UI gehören an ihre Hostgrenzen.
+- Erhalte unveränderliche, revisionstreue Syntax-, Analyse- und Schemasichten.
+  Das Compiler-Gate entscheidet über die Gültigkeit der angeforderten Closure.
+  Diagnostik und Laufbeobachtung verwenden ihre zentralen Datenverträge.
+  Abbruch, Quellfehler, fehlende Eingaben, Warnungsablehnung und interne Fehler
+  bleiben unterscheidbar.
+- Behandle Wiederverwendung als Optimierung. Frische und wiederverwendende
+  Analysen müssen fachlich übereinstimmen. Veraltete Editor- und
+  Repositoryresultate werden vor Übernahme oder Veröffentlichung verworfen.
+- Erhalte Reihenfolge, Herkunft, Typen, Übersetzungsbeziehungen, effektive
+  Attribute und Rollen für spätere Verbraucher. Prüfe neue Semantik gegen
+  die geltende Anforderung und Normentscheidung. Alte Werkzeuge liefern
+  Referenzverhalten für die ausdrücklich benannten Kompatibilitätsprofile.
+- Nutze die vorhandenen Typen und fachlichen Regeln auch in CLI, LSP,
+  Projektionen und Browser. Produktionscode und API-Namen sind Englisch.
+  Javadoc beschreibt relevante Nullfreiheit, Mutabilität, Reihenfolge,
+  Revisionen, Einheiten und Fehlerzustände. Aktualisiere Verbraucher, Tests
+  und Vertragsdokumente gemeinsam, wenn sich öffentliche Verträge ändern.
+- Wähle die kleinsten [aussagekräftigen Prüfungen](docs/development/testing.md).
+  Führe breite Korpus-, Browser-, Plattform- und Benchmarkläufe aus, wenn
+  eine betroffene Abnahme sie fordert. Unabhängige Reviews prüfen Originalbelege
+  und eigene gezielte Gegenproben. Belastbare Nachweise dürfen wiederverwendet
+  werden, wenn relevante Eingaben und Produktstand übereinstimmen.
+- Erfasse Befehle, Werkzeugversionen, Prüfbereiche, Exits, Skips und offene
+  Nachweise. Ein abgebrochener oder übersprungener Lauf zählt nicht als Erfolg.
+  Ändere Goldens, XFAILs und erwartete Diagnosen nur mit fachlicher Begründung.
+  Ein vollständiges Freigabegate richtet sich nach
+  [development/release.md](docs/development/release.md).

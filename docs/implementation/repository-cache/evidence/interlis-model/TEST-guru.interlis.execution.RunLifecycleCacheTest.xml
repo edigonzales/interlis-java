@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="guru.interlis.execution.RunLifecycleCacheTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-01T16:18:35.565Z" hostname="Monterrico.local" time="0.028">
-  <properties/>
-  <testcase name="cacheEventsShareTheirRunningLifecycleSequenceAndRejectOtherStates()" classname="guru.interlis.execution.RunLifecycleCacheTest" time="0.018"/>
-  <testcase name="aBrokenObserverDoesNotChangeTheLifecycle()" classname="guru.interlis.execution.RunLifecycleCacheTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

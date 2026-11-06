@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="guru.interlis.repository.RepositoryRefreshServiceTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-02T20:02:59.988Z" hostname="Monterrico.local" time="0.007">
-  <properties/>
-  <testcase name="concurrentRefreshesShareNoMutableCatalogState()" classname="guru.interlis.repository.RepositoryRefreshServiceTest" time="0.004"/>
-  <testcase name="returnsStableRevisionAndDoesNotMutatePreviousCatalog()" classname="guru.interlis.repository.RepositoryRefreshServiceTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

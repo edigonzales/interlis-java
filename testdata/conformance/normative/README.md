@@ -1,12 +1,12 @@
 # Positive Gegenproben für bewusst abweichende Referenzerwartungen
 
 Diese Dateien sind gezielt korrigierte Fassungen der in
-`docs/evidence/conformance/normative-expectations.json` genannten ili2c-Testfälle
+[expectations.json](expectations.json) genannten ili2c-Testfälle
 (Upstream `claeis/ili2c`, Commit `4ea207f388ef7d91b03d968cc1636f4de84e36ea`).
 Die Originaldateien, Suite-Erwartungen und Quellenpins werden nicht geändert.
 Die Herkunft jedes Falls, Original-/Kontrollhashes, Normstellen und exakten
 negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
-`conformanceCheck`; ihr Inhalt wird dabei nicht erneuert.
+`java build/InterlisJvmBuild.java host --profile conformance`; ihr Inhalt wird dabei nicht erneuert.
 
 Änderungen gegenüber den Originalen:
 
@@ -27,9 +27,7 @@ negativen Diagnosen stehen im Manifest. Die Gegenproben gehören zum normalen
 - `iliconversion_ConversionOfSETCONSTRAINT`: DEFINED(attr2) in den WHERE-Filter übernehmen; der Hauptausdruck prüft objectCount(ALL).
 
 Die letzten beiden Fassungen folgen dem ausdrücklich bestätigten SET-Kontextprofil.
-Die ursprünglichen19 Manifestobjekte sind unverändert; ihr historischer Byte-Pin
-liegt zusätzlich in `normative-expectations-before-set-context.json`. Der
-unveränderte globale19-Fälle-Entscheidungspaketstand bleibt getrennt sichtbar.
+Der [Normdatensatz](../../reference/norms/normative-decisions.json) bindet Fallidentität und bestätigte Erwartung.
 
 Jede Korrektur erhält die übrige Modellstruktur. Damit darf eine Ausnahme keine
 weitere Implementierungslücke im betreffenden Original verdecken. Die Dateien

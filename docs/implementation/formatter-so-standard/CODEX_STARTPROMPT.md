@@ -10,7 +10,7 @@ Ein Auftrag enthält F1 (allgemeine Formatierung) und F2 (Constraints). F0 berei
 
 ## Verbindlich lesen
 
-Lies die geltenden `AGENTS.md`-Dateien sowie alle Dokumente dieses Pakets. Aktuelle Quellen-/Buildverträge stehen insbesondere in `docs/spec/03-build-und-repository.md`, `04-quelltext-syntax-und-parser.md`, `09-diagnostik-protokolle-und-fehler.md`, `13-tests-kompatibilitaet-und-qualitaet.md`, `16-api-register-und-vertragstests.md` und `18-cli-sdk-und-kompatibilitaetsadapter.md`. Lies weitere Kapitel nur soweit betroffen. Dokumentationspfade am aktuellen Checkout verifizieren.
+Lies die geltenden `AGENTS.md`-Dateien sowie alle Dokumente dieses Pakets. Aktuelle Verträge stehen in `docs/development/build.md`, `docs/development/testing.md`, `docs/contracts/sources-and-syntax.md`, `docs/contracts/diagnostics.md`, `docs/contracts/formatting.md`, `docs/contracts/requirements.md`, `docs/usage/cli.md` und `docs/usage/sdk.md`. Lies weitere Verträge nur soweit betroffen. Dokumentationspfade am aktuellen Checkout verifizieren.
 
 Aktuelle ausdrückliche Entscheidungen dieses Folgeauftrags ersetzen alte Vorgaben zur bloss zeilenerhaltenden Formatierung und deren alten Sollstil. Sicherheits-, Sprach-, Build-, Integritäts- und Evidenzpflichten werden nicht aufgehoben. Aktualisiere widersprechende aktive Formatterverträge; historische Rohbelege nicht umschreiben.
 

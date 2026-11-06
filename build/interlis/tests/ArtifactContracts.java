@@ -69,12 +69,12 @@ public final class ArtifactContracts {
         rejects(()->JenesisBridge.moduleResult(new JenesisBridge.BuildOutcome(index,Map.of("build/a/inventory",engine.resolve("escaped"))),"interlis-model"),"escaped inventory symlink");
         Files.createDirectories(root.resolve("build/jenesis"));Files.writeString(root.resolve("build/jenesis/sentinel"),"source");
         Files.createDirectories(root.resolve("build/interlis"));Files.writeString(root.resolve("build/interlis/sentinel"),"source");
-        Files.createDirectories(root.resolve("docs/spec"));Files.writeString(root.resolve("docs/spec/sentinel"),"spec");
+        Files.createDirectories(root.resolve("docs/contracts"));Files.writeString(root.resolve("docs/contracts/sentinel"),"contract");
         Path consumer=Files.createDirectories(root.resolve("target/jenesis-jvm/consumers"));Files.writeString(consumer.resolve("sentinel"),"consumer");
         BuildOutputs.clean(root,"jvm");check(!Files.exists(engine));check(Files.exists(consumer.resolve("sentinel")));
         check(Files.readString(root.resolve("build/jenesis/sentinel")).equals("source"));
         check(Files.readString(root.resolve("build/interlis/sentinel")).equals("source"));
-        check(Files.readString(root.resolve("docs/spec/sentinel")).equals("spec"));
+        check(Files.readString(root.resolve("docs/contracts/sentinel")).equals("contract"));
         BuildOutputs.clean(root,"consumer");check(!Files.exists(consumer));check(Files.exists(outside.resolve("jar")));
         rejects(()->BuildOutputs.clean(root,"all"),"unbounded clean");
         Files.move(root.resolve("target"),root.resolve("saved-target"));Files.createSymbolicLink(root.resolve("target"),outside);

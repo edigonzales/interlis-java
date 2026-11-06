@@ -1,1 +1,0 @@
-INTERLIS 2.4; MODEL Dep AT "https://example.org" VERSION "1" = DOMAIN D=TEXT; END Dep.

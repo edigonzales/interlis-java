@@ -4286,8 +4286,8 @@
   "requirements": [
     {
       "id": "SRC-001",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 17,
+      "source": "docs/contracts/requirements.md",
+      "line": 91,
       "links": [
         "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly",
         "ImportBindingContractTest.staleTargetRevisionIsRejected",
@@ -4300,8 +4300,8 @@
     },
     {
       "id": "SRC-006",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 22,
+      "source": "docs/contracts/requirements.md",
+      "line": 96,
       "links": [
         "CanonicalSourceOrderTest.sourceMapOrderDoesNotChangeSnapshotOrDiagnostics",
         "QueryOwnershipTest.sourceInsertionOrderDoesNotChangeSemanticResult",
@@ -4312,8 +4312,8 @@
     },
     {
       "id": "SRC-007",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 23,
+      "source": "docs/contracts/requirements.md",
+      "line": 97,
       "links": [
         "FingerprintContractTest.sameSemanticInputHasSameSnapshotIdAndChangedContentChangesIt",
         "SourceTextTest.contentFingerprintIsStableAndExact"
@@ -4323,8 +4323,8 @@
     },
     {
       "id": "SYN-001",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 24,
+      "source": "docs/contracts/requirements.md",
+      "line": 103,
       "links": [
         "CompilerEngineTest.trailingContentRejectsCompilation",
         "SyntaxContractTest.rejectsTrailingContentAndUnsupportedVersion"
@@ -4333,8 +4333,8 @@
     },
     {
       "id": "SYN-003",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 26,
+      "source": "docs/contracts/requirements.md",
+      "line": 105,
       "links": [
         "VersionScannerTest.detectsUnsupportedVersion",
         "SyntaxContractTest.rejectsTrailingContentAndUnsupportedVersion",
@@ -4344,8 +4344,8 @@
     },
     {
       "id": "SYN-007",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 30,
+      "source": "docs/contracts/requirements.md",
+      "line": 109,
       "links": [
         "FragmentSyntaxContractTest.missingFragmentTokensPointToTheFragmentEnd",
         "FragmentSyntaxContractTest.pathsRetainAbsoluteUtf16OffsetsAfterUnicodeAndCrLfPrefixes"
@@ -4354,8 +4354,8 @@
     },
     {
       "id": "SYN-008",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 31,
+      "source": "docs/contracts/requirements.md",
+      "line": 110,
       "links": [
         "ArchitectureBoundaryTest.publicModelAndCompilerApiDoNotLeakForbiddenTypes"
       ],
@@ -4364,8 +4364,8 @@
     },
     {
       "id": "SYN-009",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 32,
+      "source": "docs/contracts/requirements.md",
+      "line": 111,
       "links": [
         "LifecycleBoundaryContractTest.repeatedMalformedSourcesAndDeeplyNestedValidSourcesTerminateWithExactOutcomeKinds",
         "LifecycleBoundaryContractTest.syntaxNodeRecoveryAndTokenBudgetsRemainResourceCancellationRatherThanLanguageErrors"
@@ -4375,8 +4375,8 @@
     },
     {
       "id": "SYN-011",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 34,
+      "source": "docs/contracts/requirements.md",
+      "line": 113,
       "links": [
         "SyntaxContractTest.editorRecoveryKeepsFollowingDeclarations",
         "SyntaxProfileSafetyTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments"
@@ -4385,8 +4385,8 @@
     },
     {
       "id": "SYN-012",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 35,
+      "source": "docs/contracts/requirements.md",
+      "line": 114,
       "links": [],
       "scope": "Build-/Reproduzierbarkeitsnachweis ist nicht als JUnit-Vertrag gebunden; nur Build-Evidenz.",
       "processEvidence": [
@@ -4409,8 +4409,8 @@
     },
     {
       "id": "SYN-014",
-      "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-      "line": 37,
+      "source": "docs/contracts/requirements.md",
+      "line": 116,
       "links": [
         "QueryOwnershipTest.sourceInsertionOrderDoesNotChangeSemanticResult",
         "CanonicalSourceOrderTest.sourceMapOrderDoesNotChangeSnapshotOrDiagnostics",
@@ -4423,8 +4423,8 @@
     },
     {
       "id": "META-001",
-      "source": "docs/spec/05-metamodell-und-typensystem.md",
-      "line": 17,
+      "source": "docs/contracts/requirements.md",
+      "line": 123,
       "links": [
         "SnapshotOwnershipTest.mutatingCallerCollectionsDoesNotChangeCompilation",
         "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly",
@@ -4434,8 +4434,8 @@
     },
     {
       "id": "META-002",
-      "source": "docs/spec/05-metamodell-und-typensystem.md",
-      "line": 18,
+      "source": "docs/contracts/requirements.md",
+      "line": 124,
       "links": [
         "OutcomeContractTest.successRejectionAndCancellationRemainDistinct",
         "ApiInvariantTest.analysisSnapshotRejectsMismatchedGraphSnapshot"
@@ -4444,8 +4444,8 @@
     },
     {
       "id": "META-004",
-      "source": "docs/spec/05-metamodell-und-typensystem.md",
-      "line": 20,
+      "source": "docs/contracts/requirements.md",
+      "line": 126,
       "links": [
         "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly"
       ],
@@ -4453,8 +4453,8 @@
     },
     {
       "id": "META-012",
-      "source": "docs/spec/05-metamodell-und-typensystem.md",
-      "line": 28,
+      "source": "docs/contracts/requirements.md",
+      "line": 134,
       "links": [
         "CompiledSchemaSelectionTest.unrelatedBrokenModelStaysOutsideTheCompiledClosure",
         "SemanticOverlayContractTest.overlayOnlyEditsMatchFreshAnalysisAndDoNotMutatePublishedSnapshots",
@@ -4465,8 +4465,8 @@
     },
     {
       "id": "META-013",
-      "source": "docs/spec/05-metamodell-und-typensystem.md",
-      "line": 29,
+      "source": "docs/contracts/requirements.md",
+      "line": 135,
       "links": [
         "ViewContractTest.projectionPublishesBoundFormationAndMembers",
         "CrossModelSemanticClosureContractTest.abstractLineCoordFieldsAndExternalParametersStayLegalAndCanonical"
@@ -4475,8 +4475,8 @@
     },
     {
       "id": "SEM-001",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 17,
+      "source": "docs/contracts/requirements.md",
+      "line": 145,
       "links": [
         "ArchitectureBoundaryTest.publicModelAndCompilerApiDoNotLeakForbiddenTypes"
       ],
@@ -4484,8 +4484,8 @@
     },
     {
       "id": "SEM-004",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 20,
+      "source": "docs/contracts/requirements.md",
+      "line": 148,
       "links": [
         "CompilerEngineTest.unrelatedBrokenModelDoesNotBlock",
         "CompiledSchemaSelectionTest.unrelatedSemanticErrorInSameFileDoesNotBlockSelectedModel"
@@ -4494,8 +4494,8 @@
     },
     {
       "id": "SEM-006",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 22,
+      "source": "docs/contracts/requirements.md",
+      "line": 150,
       "links": [
         "GenericContextContractTest.concreteAndAbstractBindingsAreDifferentFromInvalidDeferral"
       ],
@@ -4503,8 +4503,8 @@
     },
     {
       "id": "SEM-007",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 23,
+      "source": "docs/contracts/requirements.md",
+      "line": 151,
       "links": [
         "EngineContractTest.reuseIsOptionalAndFreshSemanticsMatch",
         "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits"
@@ -4513,8 +4513,8 @@
     },
     {
       "id": "SEM-009",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 25,
+      "source": "docs/contracts/requirements.md",
+      "line": 153,
       "links": [
         "ImportedTranslationContractTest.translationCyclesHaveNoCanonicalIdentity",
         "InheritanceFoundationContractTest.cyclicTopicClassAndStructureInheritanceCannotProduceACompiledSchema"
@@ -4523,8 +4523,8 @@
     },
     {
       "id": "SEM-011",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 27,
+      "source": "docs/contracts/requirements.md",
+      "line": 155,
       "links": [
         "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits"
       ],
@@ -4532,8 +4532,8 @@
     },
     {
       "id": "SEM-012",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 28,
+      "source": "docs/contracts/requirements.md",
+      "line": 156,
       "links": [
         "ModelHeaderContractTest.editsOfOnlyOptionsAgreeFreshAndReusedAndRecover",
         "GenericContextContractTest.importsAreOrderIndependentAndFreshAnalysisMatchesReuse"
@@ -4542,8 +4542,8 @@
     },
     {
       "id": "SEM-013",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 29,
+      "source": "docs/contracts/requirements.md",
+      "line": 157,
       "links": [
         "WorkspaceIsolationTest.parallelWorkspacesKeepIndependentRevisionsAndAnalyses",
         "EngineContractTest.reuseIsOptionalAndFreshSemanticsMatch",
@@ -4554,8 +4554,8 @@
     },
     {
       "id": "SEM-015",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 31,
+      "source": "docs/contracts/requirements.md",
+      "line": 159,
       "links": [
         "FunctionContextContractTest.attributeRelationsKeepValueErrorsSeparateFromARequiredCallContext",
         "EditorPartialStateContractTest.missingAttributeTypeKeepsNeighborDefinitionCompletionAndExactPublicType",
@@ -4566,8 +4566,8 @@
     },
     {
       "id": "SEM-016",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 32,
+      "source": "docs/contracts/requirements.md",
+      "line": 160,
       "links": [
         "SemanticOverlayContractTest.overlayOnlyEditsMatchFreshAnalysisAndDoNotMutatePublishedSnapshots",
         "OverlayWorkspaceContractTest.overlayOnlyChangesInvalidateCapturesWhileCachePolicyDoesNotChangeSemantics"
@@ -4576,8 +4576,8 @@
     },
     {
       "id": "SEM-018",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 34,
+      "source": "docs/contracts/requirements.md",
+      "line": 162,
       "links": [
         "ArchitectureBoundaryTest.publicModelAndCompilerApiDoNotLeakForbiddenTypes"
       ],
@@ -4585,8 +4585,8 @@
     },
     {
       "id": "SEM-019",
-      "source": "docs/spec/06-kompilierung-und-semantik.md",
-      "line": 35,
+      "source": "docs/contracts/requirements.md",
+      "line": 163,
       "links": [
         "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
         "EngineContractTest.reuseIsOptionalAndFreshSemanticsMatch",
@@ -4597,8 +4597,8 @@
     },
     {
       "id": "INC-001",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 15,
+      "source": "docs/contracts/requirements.md",
+      "line": 170,
       "links": [
         "BridgeDispatcherTest.protocolRoundTripFromOpenToDiagram",
         "WorkspaceTest.compileFixAndIncrementalEquality",
@@ -4609,8 +4609,8 @@
     },
     {
       "id": "INC-002",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 16,
+      "source": "docs/contracts/requirements.md",
+      "line": 171,
       "links": [
         "WorkspaceTest.batchConflictLeavesWorkspaceUnchanged",
         "WorkspaceTest.staleDetachedAnalysisIsNotCommitted"
@@ -4619,8 +4619,8 @@
     },
     {
       "id": "INC-003",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 17,
+      "source": "docs/contracts/requirements.md",
+      "line": 172,
       "links": [
         "WorkspaceTest.compileFixAndIncrementalEquality",
         "LspFeatureTest.oldDocumentVersionsAreIgnoredAndClosingRestoresDiskText"
@@ -4629,8 +4629,8 @@
     },
     {
       "id": "INC-004",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 18,
+      "source": "docs/contracts/requirements.md",
+      "line": 173,
       "links": [
         "EngineContractTest.reuseIsOptionalAndFreshSemanticsMatch",
         "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly",
@@ -4641,8 +4641,8 @@
     },
     {
       "id": "INC-005",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 19,
+      "source": "docs/contracts/requirements.md",
+      "line": 174,
       "links": [
         "SyntaxContractTest.editorRecoveryKeepsFollowingDeclarations",
         "LspServerTest.openChangeDiagnosticsAndQueries",
@@ -4653,8 +4653,8 @@
     },
     {
       "id": "INC-006",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 20,
+      "source": "docs/contracts/requirements.md",
+      "line": 175,
       "links": [
         "WorkspaceTest.syntaxIsSharedWithResolverAndBoundedAfterAcceptance"
       ],
@@ -4663,8 +4663,8 @@
     },
     {
       "id": "INC-007",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 21,
+      "source": "docs/contracts/requirements.md",
+      "line": 176,
       "links": [
         "OverlayWorkspaceContractTest.overlayOnlyChangesInvalidateCapturesWhileCachePolicyDoesNotChangeSemantics",
         "ModelHeaderContractTest.editsOfOnlyOptionsAgreeFreshAndReusedAndRecover",
@@ -4675,8 +4675,8 @@
     },
     {
       "id": "INC-008",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 22,
+      "source": "docs/contracts/requirements.md",
+      "line": 177,
       "links": [
         "WorkspaceTest.missingImportAppearsLaterWithoutEdit",
         "WorkspaceTest.missingTranslationOriginalCanBeAddedWithoutEditingTheTranslation"
@@ -4685,8 +4685,8 @@
     },
     {
       "id": "INC-009",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 23,
+      "source": "docs/contracts/requirements.md",
+      "line": 178,
       "links": [
         "WorkspaceTest.compileFixAndIncrementalEquality",
         "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits"
@@ -4695,8 +4695,8 @@
     },
     {
       "id": "INC-010",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 24,
+      "source": "docs/contracts/requirements.md",
+      "line": 179,
       "links": [
         "OriginalViewReuseTest.originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
         "RenameSafetyTest.renameDoesNotTouchSameNameInAnotherTopicOrComments",
@@ -4708,8 +4708,8 @@
     },
     {
       "id": "INC-011",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 25,
+      "source": "docs/contracts/requirements.md",
+      "line": 180,
       "links": [
         "QueryOwnershipTest.sourceInsertionOrderDoesNotChangeSemanticResult",
         "DuplicateNameContractTest.classAndDomainWithSameNameAreRejected",
@@ -4722,8 +4722,8 @@
     },
     {
       "id": "INC-012",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 26,
+      "source": "docs/contracts/requirements.md",
+      "line": 181,
       "links": [
         "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly",
         "SourceTextTest.sliceRejectsForeignRevisionAndInvalidOffsets",
@@ -4733,8 +4733,8 @@
     },
     {
       "id": "INC-013",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 27,
+      "source": "docs/contracts/requirements.md",
+      "line": 182,
       "links": [
         "CancelledAnalysisTest.cancelledAnalysisTerminatesWithoutSchema",
         "EngineContractTest.cancellationIsTypedAndNeverProducesSchema",
@@ -4746,8 +4746,8 @@
     },
     {
       "id": "INC-014",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 28,
+      "source": "docs/contracts/requirements.md",
+      "line": 183,
       "links": [
         "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction",
         "WorkspaceTest.syntaxIsSharedWithResolverAndBoundedAfterAcceptance"
@@ -4757,8 +4757,8 @@
     },
     {
       "id": "INC-015",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 29,
+      "source": "docs/contracts/requirements.md",
+      "line": 184,
       "links": [
         "CompilerEngineTest.unrelatedBrokenModelDoesNotBlock",
         "CompiledSchemaSelectionTest.unrelatedBrokenModelStaysOutsideTheCompiledClosure"
@@ -4767,8 +4767,8 @@
     },
     {
       "id": "INC-016",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 30,
+      "source": "docs/contracts/requirements.md",
+      "line": 185,
       "links": [
         "SemanticOverlayContractTest.overlayOnlyEditsMatchFreshAnalysisAndDoNotMutatePublishedSnapshots",
         "OverlayWorkspaceContractTest.anOverlayRoundTripRestoresContentIdentityWithoutReusingOldResults",
@@ -4780,8 +4780,8 @@
     },
     {
       "id": "INC-017",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 31,
+      "source": "docs/contracts/requirements.md",
+      "line": 186,
       "links": [],
       "scope": "Kein Benchmark-/Gleichheitsnachweis vor Optimierungsaktivierung in diesem Lauf.",
       "processEvidence": [
@@ -4798,8 +4798,8 @@
     },
     {
       "id": "INC-018",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 32,
+      "source": "docs/contracts/requirements.md",
+      "line": 187,
       "links": [
         "WorkspaceTest.staleDetachedAnalysisIsNotCommitted",
         "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
@@ -4809,8 +4809,8 @@
     },
     {
       "id": "INC-019",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 33,
+      "source": "docs/contracts/requirements.md",
+      "line": 188,
       "links": [
         "WorkspaceTest.missingImportAppearsLaterWithoutEdit",
         "WorkspaceConcurrencyAndSnapshotIsolationTest.lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction"
@@ -4820,8 +4820,8 @@
     },
     {
       "id": "INC-020",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 34,
+      "source": "docs/contracts/requirements.md",
+      "line": 189,
       "links": [
         "WorkspaceIsolationTest.parallelWorkspacesKeepIndependentRevisionsAndAnalyses",
         "WorkspaceConcurrencyAndSnapshotIsolationTest.parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph"
@@ -4831,8 +4831,8 @@
     },
     {
       "id": "INC-021",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 35,
+      "source": "docs/contracts/requirements.md",
+      "line": 190,
       "links": [
         "WorkspaceTest.batchConflictLeavesWorkspaceUnchanged"
       ],
@@ -4840,8 +4840,8 @@
     },
     {
       "id": "INC-022",
-      "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-      "line": 36,
+      "source": "docs/contracts/requirements.md",
+      "line": 191,
       "links": [
         "ResolutionBoundaryContractTest.analysisWithOtherRootSelectionCannotBeAcceptedIntoACapture",
         "OverlayWorkspaceContractTest.overlayOnlyChangesInvalidateCapturesWhileCachePolicyDoesNotChangeSemantics",
@@ -4852,8 +4852,8 @@
     },
     {
       "id": "DIAG-001",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 28,
+      "source": "docs/contracts/requirements.md",
+      "line": 236,
       "links": [
         "DiagnosticCatalogTest.initialCatalogIsStableAndUnique",
         "CliApplicationTest.jsonOutputIsMachineReadable",
@@ -4865,8 +4865,8 @@
     },
     {
       "id": "DIAG-002",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 29,
+      "source": "docs/contracts/requirements.md",
+      "line": 237,
       "links": [
         "DiagnosticPresentationTest.dependentSuppressionUsesExplicitCauseIdsNotText",
         "DiagnosticOrderTest.canonicalOrderIsIndependentOfEmissionOrder"
@@ -4875,8 +4875,8 @@
     },
     {
       "id": "DIAG-003",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 30,
+      "source": "docs/contracts/requirements.md",
+      "line": 238,
       "links": [
         "SourceTextTest.crlfAndSupplementaryCharactersUseUtf16Offsets",
         "DiagnosticOrderTest.canonicalOrderIsIndependentOfEmissionOrder"
@@ -4885,8 +4885,8 @@
     },
     {
       "id": "DIAG-004",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 31,
+      "source": "docs/contracts/requirements.md",
+      "line": 239,
       "links": [
         "DiagnosticPresentationTest.fullListRemainsAvailableWhenPolicyDoesNotSuppress",
         "SyntaxProfileSafetyTest.repeatedPropertiesAreVisibleWarningsRatherThanHiddenSetDeduplication"
@@ -4896,8 +4896,8 @@
     },
     {
       "id": "DIAG-005",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 32,
+      "source": "docs/contracts/requirements.md",
+      "line": 240,
       "links": [
         "ImportDiagnosticContractTest.missingImportProducesResolverDiagnosticAndNoSchema",
         "ExpressionConstraintContractTest.externalConstraintCannotBindAnUnrelatedSameNamedClassOrMissingTarget",
@@ -4908,8 +4908,8 @@
     },
     {
       "id": "DIAG-006",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 33,
+      "source": "docs/contracts/requirements.md",
+      "line": 241,
       "links": [
         "DiagnosticCatalogTest.initialCatalogIsStableAndUnique",
         "CliApplicationTest.jsonOutputIsMachineReadable"
@@ -4918,8 +4918,8 @@
     },
     {
       "id": "DIAG-007",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 34,
+      "source": "docs/contracts/requirements.md",
+      "line": 242,
       "links": [
         "OutcomeContractTest.successRejectionAndCancellationRemainDistinct",
         "SyntaxProfileSafetyTest.syntaxRecoveryDoesNotHideInvalidFunctionArguments",
@@ -4930,8 +4930,8 @@
     },
     {
       "id": "DIAG-008",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 35,
+      "source": "docs/contracts/requirements.md",
+      "line": 243,
       "links": [
         "DiagnosticOrderTest.canonicalOrderIsIndependentOfEmissionOrder"
       ],
@@ -4939,8 +4939,8 @@
     },
     {
       "id": "DIAG-009",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 36,
+      "source": "docs/contracts/requirements.md",
+      "line": 244,
       "links": [
         "NumericLiteralBudgetContractTest.oversizedThresholdsRangesAndConstantsUseTheExistingBudgetOutcome",
         "EngineContractTest.resourceLimitIsCancellationAndNotAFalseNegativeModel",
@@ -4952,8 +4952,8 @@
     },
     {
       "id": "DIAG-010",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 37,
+      "source": "docs/contracts/requirements.md",
+      "line": 245,
       "links": [
         "LspFeatureTest.renameIsRejectedWhenSourceChangedAfterAnalysis",
         "WorkspaceTest.staleDetachedAnalysisIsNotCommitted"
@@ -4962,8 +4962,8 @@
     },
     {
       "id": "LOG-001",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 38,
+      "source": "docs/contracts/requirements.md",
+      "line": 251,
       "links": [
         "ArchitectureBoundaryTest.publicModelAndCompilerApiDoNotLeakForbiddenTypes"
       ],
@@ -4989,8 +4989,8 @@
     },
     {
       "id": "LOG-002",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 39,
+      "source": "docs/contracts/requirements.md",
+      "line": 252,
       "links": [
         "RunEventContractTest.oneOrderedTerminalEventAndIndependentObservers",
         "EngineContractTest.cancellationIsTypedAndNeverProducesSchema",
@@ -5001,8 +5001,8 @@
     },
     {
       "id": "LOG-003",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 40,
+      "source": "docs/contracts/requirements.md",
+      "line": 253,
       "links": [
         "RunEventContractTest.throwingObserverStillGetsExactlyOneTerminalAttempt",
         "LifecycleBoundaryContractTest.cancellationAtEveryEmittedCompilerPhasePreservesInputsAndAllowsAFollowup"
@@ -5012,8 +5012,8 @@
     },
     {
       "id": "LOG-004",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 41,
+      "source": "docs/contracts/requirements.md",
+      "line": 254,
       "links": [
         "EngineContractTest.failingObserverDoesNotChangeFactualResult"
       ],
@@ -5021,8 +5021,8 @@
     },
     {
       "id": "LOG-005",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 42,
+      "source": "docs/contracts/requirements.md",
+      "line": 255,
       "links": [
         "CliApplicationTest.checkPositiveAndNegativeModels",
         "CliApplicationTest.jsonOutputIsMachineReadable"
@@ -5048,8 +5048,8 @@
     },
     {
       "id": "LOG-006",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 43,
+      "source": "docs/contracts/requirements.md",
+      "line": 256,
       "links": [
         "LspServerTest.openChangeDiagnosticsAndQueries",
         "LspFeatureTest.configurationAndWatchedFilesRefreshAreAccepted"
@@ -5071,8 +5071,8 @@
     },
     {
       "id": "LOG-007",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 44,
+      "source": "docs/contracts/requirements.md",
+      "line": 257,
       "links": [
         "DiagnosticCatalogTest.initialCatalogIsStableAndUnique",
         "DiagnosticOrderTest.canonicalOrderIsIndependentOfEmissionOrder",
@@ -5083,8 +5083,8 @@
     },
     {
       "id": "LOG-008",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 45,
+      "source": "docs/contracts/requirements.md",
+      "line": 258,
       "links": [
         "RepositoryIndexReaderTest.rejectsMissingMetadataAndMalformedXml",
         "HttpSourceLoaderTest.mapsAccessEncodingSizeAndOffline",
@@ -5095,8 +5095,8 @@
     },
     {
       "id": "LOG-009",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 46,
+      "source": "docs/contracts/requirements.md",
+      "line": 259,
       "links": [
         "BoundedObservationQueueTest.loadTestKeepsBoundAndCountsDiscards",
         "BoundedObservationQueueTest.drainPreservesOrder"
@@ -5105,8 +5105,8 @@
     },
     {
       "id": "LOG-010",
-      "source": "docs/spec/09-diagnostik-logging-und-telemetrie.md",
-      "line": 47,
+      "source": "docs/contracts/requirements.md",
+      "line": 260,
       "links": [
         "WorkspaceIsolationTest.parallelWorkspacesKeepIndependentRevisionsAndAnalyses",
         "EngineContractTest.reuseIsOptionalAndFreshSemanticsMatch"
@@ -5115,8 +5115,8 @@
     },
     {
       "id": "API-001",
-      "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 255,
+      "source": "docs/contracts/requirements.md",
+      "line": 402,
       "links": [
         "ArchitectureBoundaryTest.publicModelAndCompilerApiDoNotLeakForbiddenTypes",
         "PublicSdkConstructionTest.minimalPublicApiCompile"
@@ -5126,8 +5126,8 @@
     },
     {
       "id": "API-002",
-      "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 256,
+      "source": "docs/contracts/requirements.md",
+      "line": 403,
       "links": [
         "PublicSdkConstructionTest.minimalPublicApiCompile"
       ],
@@ -5135,8 +5135,8 @@
     },
     {
       "id": "API-003",
-      "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 257,
+      "source": "docs/contracts/requirements.md",
+      "line": 404,
       "links": [
         "ApiInvariantTest.requestsRejectEmptyRootsAndMismatchedSourceKeys",
         "OutcomeContractTest.successRejectionAndCancellationRemainDistinct"
@@ -5144,25 +5144,21 @@
       "scope": "Javadoc-/vollstaendiger Vertragstestreview nicht als JUnit gebunden.",
       "processEvidence": [
         {
-          "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "63c50a122cd19c449855b7f45abed5a13fd3323d7dd9e02213e6e0a3c2a643d1",
+          "source": "docs/usage/sdk.md",
+          "sha256": "5f00f953d2d50f129edea8f0eb41902147be33a8aafe073fdaaea7c5f932c3e2",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
-          "source": "docs/spec/04-quelltext-syntax-und-parser.md",
-          "sha256": "b002466fc540c1c513df61a832e1b011869d428979dfc86e939fda73f88ccf0b"
+          "source": "docs/contracts/sources-and-syntax.md",
+          "sha256": "e7cddafec358cf32c65f27226cc707f7338f1ecf3f5937a66ceb394e3c03eee5"
         },
         {
-          "source": "docs/spec/05-metamodell-und-typensystem.md",
-          "sha256": "8008c7f9b80f7601028eee948683050d37e7be89fa157c7d4ef640310bb44d86"
+          "source": "docs/contracts/compiler-and-model.md",
+          "sha256": "c353b7197cc5cb40d12ff38264afe8ea46fa7bc8936130c02385ce9e802ed753"
         },
         {
-          "source": "docs/spec/06-kompilierung-und-semantik.md",
-          "sha256": "f5a5c26c249e1e8684469ccbc6cd13964f02384083c2caa238e9eb9495e223dd"
-        },
-        {
-          "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
-          "sha256": "e1ce71c77ed3fb3d67547648c64c99ae18de0c61c2e5ca6e3f14305c9b88d3b7",
+          "source": "docs/contracts/workspace-and-lsp.md",
+          "sha256": "85c3b8723334fb634a3eff0808fe346f77e0092caec37f5933f6e9fcccd90530",
           "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
         }
       ],
@@ -5170,8 +5166,8 @@
     },
     {
       "id": "API-004",
-      "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 258,
+      "source": "docs/contracts/requirements.md",
+      "line": 405,
       "links": [
         "OutcomeContractTest.successRejectionAndCancellationRemainDistinct",
         "CliApplicationTest.checkPositiveAndNegativeModels",
@@ -5181,8 +5177,8 @@
     },
     {
       "id": "API-005",
-      "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 259,
+      "source": "docs/contracts/requirements.md",
+      "line": 406,
       "links": [
         "QueryOwnershipTest.oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly",
         "CompiledSchemaSelectionTest.unrelatedBrokenModelStaysOutsideTheCompiledClosure",
@@ -5192,26 +5188,26 @@
     },
     {
       "id": "API-006",
-      "source": "docs/spec/16-api-register-und-vertragstests.md",
-      "line": 260,
+      "source": "docs/contracts/requirements.md",
+      "line": 407,
       "links": [
         "ArchitectureBoundaryTest.publicModelAndCompilerApiDoNotLeakForbiddenTypes"
       ],
       "scope": "Kein Drift-/Golden-Test gegen ein API-Register.",
       "processEvidence": [
         {
-          "source": "docs/spec/16-api-register-und-vertragstests.md",
-          "sha256": "63c50a122cd19c449855b7f45abed5a13fd3323d7dd9e02213e6e0a3c2a643d1",
+          "source": "docs/usage/sdk.md",
+          "sha256": "5f00f953d2d50f129edea8f0eb41902147be33a8aafe073fdaaea7c5f932c3e2",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
-          "source": "docs/spec/10-webassembly-und-portabilitaet.md",
-          "sha256": "1919dadc32ec793c07c3c902e527fbdfa2081301ae985c827c02ce1e3fb3577b",
+          "source": "docs/contracts/bridge-protocol.md",
+          "sha256": "0a303f8e89ecbe0f0414724b2558696c2b2a38ea65f2c71f31b9d050e69e290b",
           "reason": "Redaktioneller Reviewhinweis O-01: bestehende Jenesis-/Backend-Einstiege statt entfernter Gradle-Roottasknamen; Sprach-/Bridge-/Abnahmeverträge unverändert."
         },
         {
-          "source": "docs/spec/17-abdeckungsmatrix-und-review.md",
-          "sha256": "bb2f2a2294af06d543aeba8c934b60c8d732fa897d271083a7e885520e6eaf45",
+          "source": "docs/contracts/requirements.md",
+          "sha256": "8f8cb4c7eb049d29e12b565775381af4a186dbafe76c765545894a0750082f23",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         }
       ],
@@ -5219,8 +5215,8 @@
     },
     {
       "id": "FMT-001",
-      "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 170,
+      "source": "docs/contracts/requirements.md",
+      "line": 434,
       "links": [
         "FormatterContractTest.formattingIsIdempotentAndCanUseLf"
       ],
@@ -5228,8 +5224,8 @@
     },
     {
       "id": "FMT-002",
-      "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 171,
+      "source": "docs/contracts/requirements.md",
+      "line": 435,
       "links": [
         "FormatterContractTest.formatsIndentationAndPreservesCommentsAndUnicode",
         "FormatterContractTest.multilineAndInterleavedCommentsKeepTheirTextAndPosition",
@@ -5239,8 +5235,8 @@
     },
     {
       "id": "FMT-003",
-      "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 172,
+      "source": "docs/contracts/requirements.md",
+      "line": 436,
       "links": [
         "CliApplicationTest.formatWritesStdoutChecksAndWritesAtomically",
         "FormatterContractTest.formattingIsIdempotentAndCanUseLf"
@@ -5249,8 +5245,8 @@
     },
     {
       "id": "FMT-004",
-      "source": "docs/spec/18-cli-sdk-und-kompatibilitaetsadapter.md",
-      "line": 173,
+      "source": "docs/contracts/requirements.md",
+      "line": 437,
       "links": [
         "CliApplicationTest.formatWritesStdoutChecksAndWritesAtomically",
         "CliApplicationTest.formatDoesNotWriteInvalidSource"
@@ -16381,8 +16377,8 @@
     "testdata/reference/norms/norm-conditions.json": "b1a533a669d7a56698a89b26493686bc6c4fbdadb2e1239e2aae41121d72a43f",
     "testdata/reference/norms/grammar-inventory.json": "982bd191d22bb8e026a15ed2879c784b3936fab908d75dee4cec180428676d2e",
     "testdata/reference/norms/builtin-inventory.json": "be9dc5e65b20c15163ebaf42829961bb632105f88d57d6c2f4ead7175ba2451b",
-    "testdata/reference/norms/spec-contract-inventory.json": "3d1d41e9f5049cc8ed73488563416dd29766fdd5da9dd594c5afa80336ea31cd",
     "testdata/verification/predefined-catalogue.json": "ea279974005f7dace7922099e8ea8ea499bb96ddcac9a9c5eeacb19721911e85",
-    "testdata/compiler/character-sets/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
+    "testdata/compiler/character-sets/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e",
+    "docs/contracts/requirements.md": "8f8cb4c7eb049d29e12b565775381af4a186dbafe76c765545894a0750082f23"
   }
 }

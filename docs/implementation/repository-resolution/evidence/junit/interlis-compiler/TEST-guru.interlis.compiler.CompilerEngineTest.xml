@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="guru.interlis.compiler.CompilerEngineTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:27:56.494Z" hostname="Monterrico.local" time="0.44">
-  <properties/>
-  <testcase name="validImportedDomainAndConstraintCompiles()" classname="guru.interlis.compiler.CompilerEngineTest" time="0.422"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

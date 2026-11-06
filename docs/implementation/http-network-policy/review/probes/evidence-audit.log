@@ -1,5 +1,0 @@
-junit suites=22 tests=126 skipped=0 failures=0 errors=0
-cli_processes=17 passed=true
-sdk_processes=2 exits=0,0
-execution_logs=11
-EVIDENCE_AUDIT_PASS

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="guru.interlis.repository.FileSourceLoaderTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:41:32.929Z" hostname="Monterrico.local" time="0.019">
-  <properties/>
-  <testcase name="rejectsMissingInvalidAndOversizedSources()" classname="guru.interlis.repository.FileSourceLoaderTest" time="0.014"/>
-  <testcase name="loadsUtf8WithByteProvenance()" classname="guru.interlis.repository.FileSourceLoaderTest" time="0.001"/>
-  <testcase name="rejectsOfflineCancelledAndInvalidPath()" classname="guru.interlis.repository.FileSourceLoaderTest" time="0.001"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

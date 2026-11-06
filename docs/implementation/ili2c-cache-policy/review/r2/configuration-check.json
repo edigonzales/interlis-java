@@ -1,6 +1,0 @@
-{
-  "deepseekOverrides": [],
-  "providerHost": "https://api.deepseek.com",
-  "hostEvidence": "built-in DeepSeek provider default; no configured provider override",
-  "environmentOverrideNames": []
-}

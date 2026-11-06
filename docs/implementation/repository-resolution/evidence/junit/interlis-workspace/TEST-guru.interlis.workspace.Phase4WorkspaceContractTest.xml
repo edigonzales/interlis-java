@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="guru.interlis.workspace.Phase4WorkspaceContractTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:36:26.500Z" hostname="Monterrico.local" time="0.043">
-  <properties/>
-  <testcase name="parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph()" classname="guru.interlis.workspace.Phase4WorkspaceContractTest" time="0.026"/>
-  <testcase name="lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction()" classname="guru.interlis.workspace.Phase4WorkspaceContractTest" time="0.017"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

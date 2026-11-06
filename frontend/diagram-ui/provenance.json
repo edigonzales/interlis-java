@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "adoptedFromCoreCommit": "3b60e6c1309a4897ad6d0e99f6d8dfd137520ca9",
-  "originalVendorPin": "docs/p3/diagram-adapter-pin.json",
+  "originalVendorPin": "testdata/reference/diagram/adapter-pin.json",
   "upstreamRepository": "https://github.com/edigonzales/interlis-language-tools",
   "upstreamCommit": "f27801bfebf0fdac82a19e016f4c347ae2b6f8fb",
   "originals": {

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="guru.interlis.repository.ResolutionLockContractTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-01T15:41:35.622Z" hostname="Monterrico.local" time="0.011">
-  <properties/>
-  <testcase name="persistentCacheVerifiesExactBytesAcrossInstancesAndTreatsCorruptionAsMiss()" classname="guru.interlis.repository.ResolutionLockContractTest" time="0.007"/>
-  <testcase name="codecRoundTripIsCanonicalAndRejectsDuplicateOrUnknownInputs()" classname="guru.interlis.repository.ResolutionLockContractTest" time="0.004"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[[Fatal Error] :1:10: DOCTYPE is disallowed when the feature "http://apache.org/xml/features/disallow-doctype-decl" set to true.
-]]></system-err>
-</testsuite>
