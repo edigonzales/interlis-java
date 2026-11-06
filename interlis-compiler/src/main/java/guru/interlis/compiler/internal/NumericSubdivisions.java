@@ -46,8 +46,8 @@ final class NumericSubdivisions {
     }
     private void validate(AttributeSymbol attribute,AttributeSymbol previous,DeclInfo declaration) {
         if(previous==null) { error(declaration,"subdivision needs a preceding attribute","SUBDIVISION_PREDECESSOR");return; }
-        var own=graph.effectiveDescriptor(attribute.declaredType());
-        var predecessor=graph.effectiveDescriptor(previous.declaredType());
+        var own=graph.types.effectiveDescriptor(attribute.declaredType());
+        var predecessor=graph.types.effectiveDescriptor(previous.declaredType());
         if(unknown(own)||unknown(predecessor))return;
         if(!(own instanceof NumericType number)) {error(declaration,"subdivision must have a scalar numeric type","SUBDIVISION_NUMERIC");return;}
         if(!(predecessor instanceof NumericType parent)) {error(declaration,"subdivision predecessor must have a scalar numeric type","SUBDIVISION_PREDECESSOR_NUMERIC");return;}

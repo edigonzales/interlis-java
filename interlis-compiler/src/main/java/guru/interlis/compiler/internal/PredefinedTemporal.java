@@ -38,7 +38,7 @@ final class PredefinedTemporal {
     private void unit(DeclInfo context, String name) {
         String parent = switch (name) { case "min" -> "s"; case "h" -> "min"; case "d" -> "h"; default -> "TIME"; };
         var base = parent.equals("min") || parent.equals("h") ? Optional.of(require(context, parent, SymbolKind.UNIT))
-                : g.builtinUnit(context.id(), "INTERLIS." + parent);
+                : g.units.builtinUnit(context.id(), "INTERLIS." + parent);
         String factor = switch (name) { case "min", "h" -> "60"; case "d" -> "24"; default -> null; };
         var factors = factor == null ? List.<UnitSymbol.ConversionFactor>of() : List.of(
                 new UnitSymbol.ConversionFactor(UnitSymbol.Operator.MULTIPLY, UnitSymbol.ConstantKind.DECIMAL,
@@ -50,8 +50,8 @@ final class PredefinedTemporal {
     }
 
     private TypeId number(DeclInfo context, String lo, String hi, String unit, boolean circular, String system) {
-        var id = g.nextTypeId();
-        var boundUnit = unit.equals("s") ? g.builtinUnit(context.id(), "INTERLIS.s")
+        var id = g.types.nextTypeId();
+        var boundUnit = unit.equals("s") ? g.units.builtinUnit(context.id(), "INTERLIS.s")
                 : Optional.of(require(context, unit, SymbolKind.UNIT));
         var reference = system == null ? Optional.<NumericRange.ReferenceSystem>empty()
                 : Optional.of(new NumericRange.ReferenceSystem(timeSystem(context, system), false, OptionalInt.empty()));
@@ -70,9 +70,9 @@ final class PredefinedTemporal {
         for (String className : List.of("CALENDAR", "TIMEOFDAYSYS")) {
             var h = header(context, "TIMESYSTEMS." + className, SymbolKind.CLASS, Optional.of(topic.id()), classes.size(), Set.of());
             state.bindBase(h.id(), base);
-            var unitType = g.nextTypeId();
+            var unitType = g.types.nextTypeId();
             state.storeType(new NumericType(unitType, h.origin(), new NumericRange(Optional.empty(), Optional.empty(),
-                    false, NumericDirection.NONE, g.builtinUnit(context.id(), "INTERLIS.TIME"), Optional.empty())));
+                    false, NumericDirection.NONE, g.units.builtinUnit(context.id(), "INTERLIS.TIME"), Optional.empty())));
             var original = header(context, "TIMESYSTEMS." + className + ".Unit", SymbolKind.PARAMETER, Optional.of(h.id()), 0, Set.of(Modifier.EXTENDED));
             var parameter = new SymbolHeader(original.id(), original.kind(), DeclaredName.declared("Unit"), original.owner(), 0,
                     original.origin(), Optional.empty(), context.language(), Documentation.empty(), MetaAttributeSet.empty(), original.modifiers(), List.of());
@@ -105,7 +105,7 @@ final class PredefinedTemporal {
         base.ifPresent(id -> state.bindBase(h.id(), id));
         List<SymbolId> members = new ArrayList<>();
         if (name.equals("GregorianDate")) {
-            var type = g.nextTypeId();
+            var type = g.types.nextTypeId();
             state.storeType(new DomainReferenceType(type, h.origin(), require(context, "GregorianYear", SymbolKind.DOMAIN)));
             members.add(attribute(context, h, "Year", type, false, false, Optional.empty(), 0));
             members.add(attribute(context, h, "Month", number(context, "1", "12", "M", false, null), true, false, Optional.empty(), 1));
@@ -157,7 +157,7 @@ final class PredefinedTemporal {
                 field(parts, structure, "Minutes", context.language() == LanguageVersion.ILI24 ? 2 : 0, h.origin()); literal(parts, ":", h.origin());
                 field(parts, structure, "Seconds", context.language() == LanguageVersion.ILI24 ? 2 : 0, h.origin());
             }
-            type = g.nextTypeId();
+            type = g.types.nextTypeId();
             var kind = name.equals("XMLDate") ? TemporalKind.DATE : name.equals("XMLTime") ? TemporalKind.TIMEOFDAY : TemporalKind.DATETIME;
             state.storeType(new FormattedType(type, h.origin(), "INTERLIS." + name, Optional.of(kind), base,
                     Optional.of(structure), parts, Optional.empty(), Optional.empty()));

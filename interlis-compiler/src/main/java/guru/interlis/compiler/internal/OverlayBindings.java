@@ -126,7 +126,7 @@ final class OverlayBindings {
         groups.add(new Values(source,values,order++));
     }
     void validateCrs(GraphBuilder g, SemanticBuildState state) {
-        metadata.forEach((id,keys)->{if(keys.containsKey("CRS")){g.checkWork();if(!(g.effectiveDescriptor(state.declaredType(id)) instanceof CoordinateType))
+        metadata.forEach((id,keys)->{if(keys.containsKey("CRS")){g.checkWork();if(!(g.types.effectiveDescriptor(state.declaredType(id)) instanceof CoordinateType))
             error(keys.get("CRS").getFirst().source(),index.byId(id).orElseThrow().qualifiedName(),"CRS target is not a coordinate declaration");}});
     }
     List<MetaAttributeSet.Entry> metadata(SymbolId id) {

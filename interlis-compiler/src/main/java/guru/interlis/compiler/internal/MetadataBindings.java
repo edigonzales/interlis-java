@@ -78,7 +78,7 @@ final class MetadataBindings {
     }
 
     NumericRange numeric(NumericTypeSyntax syntax, DeclInfo context, List<DiagnosticId> errors) {
-        var unit = syntax.unit().flatMap(name -> g.bindUnit(context, name, errors));
+        var unit = syntax.unit().flatMap(name -> g.units.bindUnit(context, name, errors));
         var ref = syntax.referenceSystem().flatMap(r -> {
             if (r.axis().isPresent() && r.axis().getAsInt() < 1) {
                 errors.add(g.emitRule(context, "reference-system axis numbers start at one", "REFSYSTEM_AXIS")); return Optional.empty();
@@ -134,7 +134,7 @@ final class MetadataBindings {
         }
         for (var entry : List.copyOf(state.declaredTypesInBuildOrder())) {
             var decl = g.index.byId(entry.getKey()).orElse(null); if (decl == null) continue;
-            var type = g.effectiveDescriptor(entry.getValue());
+            var type = g.types.effectiveDescriptor(entry.getValue());
             if (type instanceof NumericType n) validateRange(decl, n.range());
             if (type instanceof CoordinateType c) {
                 c.axes().forEach(axis -> validateRange(decl, axis));
@@ -159,7 +159,7 @@ final class MetadataBindings {
             inherited.ifPresent(id -> {
                 var parent=(ParameterSymbol)state.symbol(id);
                 if (parent.header().has(Modifier.FINAL)) g.emitRule(decl,"cannot override FINAL parameter","PARAMETER_FINAL");
-                if (!g.assignable(parameter.typeId(),parent.typeId()) || parent.mandatory() && !parameter.mandatory())
+                if (!g.types.assignable(parameter.typeId(),parent.typeId()) || parent.mandatory() && !parameter.mandatory())
                     g.emitRule(decl,"signature parameter must refine inherited type and mandatory state","PARAMETER_TYPE");
             });
             state.replaceSymbol(new ParameterSymbol(parameter.header(),parameter.typeId(),parameter.mandatory(),inherited));
@@ -174,9 +174,9 @@ final class MetadataBindings {
         }
         if (!decl.modifiers().contains(Modifier.EXTENDED)) g.emitRule(decl, "parameter override requires EXTENDED", "PARAMETER_OVERRIDE");
         var parent = (ParameterSymbol)state.symbol(inherited.get());
-        var actual = g.effectiveDescriptor(parameter.typeId()); var expected = g.effectiveDescriptor(parent.typeId());
+        var actual = g.types.effectiveDescriptor(parameter.typeId()); var expected = g.types.effectiveDescriptor(parent.typeId());
         if (!(actual instanceof NumericType a && expected instanceof NumericType b)
-                || b.range().unit().isPresent() && (a.range().unit().isEmpty() || !g.unitExtends(a.range().unit().get(), b.range().unit().get())))
+                || b.range().unit().isPresent() && (a.range().unit().isEmpty() || !g.units.unitExtends(a.range().unit().get(), b.range().unit().get())))
             g.emitRule(decl, "Unit parameter must specialize the inherited numeric unit", "PARAMETER_UNIT_TYPE");
         if (parent.header().has(Modifier.FINAL)) g.emitRule(decl, "cannot override FINAL parameter", "PARAMETER_FINAL");
         state.replaceSymbol(new ParameterSymbol(parameter.header(), parameter.typeId(), parameter.mandatory(), inherited));
@@ -198,13 +198,13 @@ final class MetadataBindings {
         var ref = range.referenceSystem().get(); Optional<SymbolId> requiredUnit = Optional.empty();
         if (ref.domain()) {
             var domain = (DomainSymbol)state.symbol(ref.target());
-            var target = domain == null ? null : g.effectiveDescriptor(domain.typeId());
+            var target = domain == null ? null : g.types.effectiveDescriptor(domain.typeId());
             if (target instanceof NumericType n && ref.axis().isEmpty()) requiredUnit = n.range().unit();
             else if (target instanceof CoordinateType c && ref.axis().isPresent() && ref.axis().getAsInt() <= c.dimensions())
                 requiredUnit = c.axes().get(ref.axis().getAsInt() - 1).unit();
             else if (target instanceof CoordinateType c && ref.axis().isEmpty() && (c.rotation().isPresent() || domain.generic())) {
                 // A direction uses the coordinate system's zero direction and sense, not one of its length axes.
-                if (range.unit().isPresent() && !g.unitExtends(range.unit().get(), g.builtinUnit(decl.id(), "INTERLIS.ANGLE").orElseThrow()))
+                if (range.unit().isPresent() && !g.units.unitExtends(range.unit().get(), g.units.builtinUnit(decl.id(), "INTERLIS.ANGLE").orElseThrow()))
                     g.emitRule(decl, "a coordinate direction reference requires an angular unit", "REFSYSTEM_DIRECTION_UNIT");
             }
             else g.emitRule(decl, "reference-system domain must be numeric or select an existing coordinate axis", "REFSYSTEM_DOMAIN");
@@ -216,19 +216,19 @@ final class MetadataBindings {
             if (!specializes(cls, required)) { g.emitRule(decl, "reference-system object has the wrong scalar/coordinate family", "REFSYSTEM_OBJECT"); return; }
             if (ref.axis().isPresent()) {
                 var attribute = g.findMember(cls, "Axis").map(state::symbol).orElse(null);
-                if (attribute instanceof AttributeSymbol a && g.effectiveDescriptor(a.declaredType()) instanceof CollectionType list) {
+                if (attribute instanceof AttributeSymbol a && g.types.effectiveDescriptor(a.declaredType()) instanceof CollectionType list) {
                     if (list.cardinality().upper() instanceof CardinalityUpper.Finite max && java.math.BigInteger.valueOf(ref.axis().getAsInt()).compareTo(max.value()) > 0)
                         g.emitRule(decl, "reference-system axis is outside the declared axis list", "REFSYSTEM_AXIS");
-                    if (g.effectiveDescriptor(list.elementType()) instanceof StructureValueType s) cls = g.structures.target(s);
+                    if (g.types.effectiveDescriptor(list.elementType()) instanceof StructureValueType s) cls = g.structures.target(s);
                 }
             }
             var param = parameter(cls, "Unit").map(state::symbol).orElse(null);
-            if (param instanceof ParameterSymbol p && g.effectiveDescriptor(p.typeId()) instanceof NumericType n) requiredUnit = n.range().unit();
+            if (param instanceof ParameterSymbol p && g.types.effectiveDescriptor(p.typeId()) instanceof NumericType n) requiredUnit = n.range().unit();
         }
-        if (requiredUnit.isPresent() && range.unit().isEmpty() && !requiredUnit.get().equals(g.builtinUnit(decl.id(), "INTERLIS.ANYUNIT").orElseThrow()))
+        if (requiredUnit.isPresent() && range.unit().isEmpty() && !requiredUnit.get().equals(g.units.builtinUnit(decl.id(), "INTERLIS.ANYUNIT").orElseThrow()))
             g.emitRule(decl, "reference system with a specific Unit requires an explicit numeric unit", "REFSYSTEM_UNIT_REQUIRED");
-        if (requiredUnit.isPresent() && range.unit().isPresent() && !g.unitExtends(range.unit().get(), requiredUnit.get())
-                && !g.unitsConvertible(range.unit().get(), requiredUnit.get()))
+        if (requiredUnit.isPresent() && range.unit().isPresent() && !g.units.unitExtends(range.unit().get(), requiredUnit.get())
+                && !g.units.unitsConvertible(range.unit().get(), requiredUnit.get()))
             g.emitRule(decl, "numeric unit is incompatible with its reference system", "REFSYSTEM_UNIT");
     }
 
@@ -249,7 +249,7 @@ final class MetadataBindings {
         List<SymbolId> members = new ArrayList<>();
         List<SymbolId> constraints = new ArrayList<>();
         if (name.equals("INTERLIS.METAOBJECT") || name.equals("INTERLIS.METAOBJECT_TRANSLATION")) {
-            var t = g.nextTypeId(); state.storeType(new TextType(t, h.origin(), TextKind.NAME, OptionalInt.of(255)));
+            var t = g.types.nextTypeId(); state.storeType(new TextType(t, h.origin(), TextKind.NAME, OptionalInt.of(255)));
             var names = name.equals("INTERLIS.METAOBJECT") ? List.of("Name") : List.of("Name", "NameInBaseLanguage");
             for (int i = 0; i < names.size(); i++) {
                 g.checkWork(); members.add(member(h, names.get(i), t, false, true, i));
@@ -268,18 +268,18 @@ final class MetadataBindings {
             }
         }
         if (name.equals("INTERLIS.AXIS") || name.equals("INTERLIS.SCALSYSTEM")) {
-            var t = g.nextTypeId(); state.storeType(new NumericType(t, h.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
-                    NumericDirection.NONE, g.builtinUnit(context.id(), "INTERLIS.ANYUNIT"), Optional.empty())));
+            var t = g.types.nextTypeId(); state.storeType(new NumericType(t, h.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
+                    NumericDirection.NONE, g.units.builtinUnit(context.id(), "INTERLIS.ANYUNIT"), Optional.empty())));
             members.add(member(h, "Unit", t, true, false, 0));
         }
         if (name.equals("INTERLIS.COORDSYSTEM")) {
             var axis = predefined(context, "INTERLIS.AXIS", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            var t = g.nextTypeId(); state.storeType(new StructureValueType(t, h.origin(), Optional.of(axis), List.of()));
-            var list = g.nextTypeId(); state.storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.of(1, 3), t));
+            var t = g.types.nextTypeId(); state.storeType(new StructureValueType(t, h.origin(), Optional.of(axis), List.of()));
+            var list = g.types.nextTypeId(); state.storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.of(1, 3), t));
             members.add(member(h, "Axis", list, false, false, 0));
         }
         if (name.equals("INTERLIS.SIGN")) {
-            var type=g.nextTypeId(); state.storeType(new MetaObjectType(type,h.origin(),Optional.empty()));
+            var type=g.types.nextTypeId(); state.storeType(new MetaObjectType(type,h.origin(),Optional.empty()));
             members.add(member(h,"Sign",type,true,false, 0));
         }
         state.defineSymbol(kind == SymbolKind.CLASS ? new ClassSymbol(h, base, members, constraints) : new StructureSymbol(h, base, members, constraints));

@@ -152,9 +152,9 @@ final class ViewBuilder {
                             for (var path : f.paths()) equal.add(g.buildExpression(path, decl.id()).id());
                             formation = Optional.of(new ViewSymbol.Aggregation(formationBases.getFirst(), equal));
                             var basis = (ViewSymbol.Base)state.symbol(formationBases.getFirst());
-                            TypeId element = g.nextTypeId();
+                            TypeId element = g.types.nextTypeId();
                             state.storeType(new StructureValueType(element, decl.origin(), Optional.of(basis.target()), List.of()));
-                            TypeId bag = g.nextTypeId();
+                            TypeId bag = g.types.nextTypeId();
                             state.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG,
                                     new Cardinality(java.math.BigInteger.ZERO, new CardinalityUpper.Unbounded()), element));
                             SymbolId aggregateId = new SymbolId(decl.id().value() + ":AGGREGATES");
@@ -222,7 +222,7 @@ final class ViewBuilder {
                             g.emitRule(child, "EXTENDED requires an inherited attribute", "EXTENDED_BASE");
                         g.validateAttributeOverrideProperties(child, attribute, old);
                         if (old.header().has(Modifier.FINAL)) g.emitRule(child, "cannot override FINAL attribute", "VIEW_FINAL");
-                        if (!g.assignable(attribute.declaredType(), old.declaredType()))
+                        if (!g.types.assignable(attribute.declaredType(), old.declaredType()))
                             g.emitRule(child, "view override must specialize the inherited type", "VIEW_ATTRIBUTE_TYPE");
                         result.set(result.indexOf(old.id()), attribute.id()); scope.remove(old.id()); scope.add(attribute.id());
                         state.replaceSymbol(new AttributeSymbol(attribute.header(), attribute.declaredType(), attribute.mandatory(),
@@ -237,8 +237,8 @@ final class ViewBuilder {
             for (var selection : syntax.selections()) {
                 var expression = g.buildExpression(selection, decl.id()); selections.add(expression.id());
                 if (!decl.modifiers().contains(Modifier.ABSTRACT)) validateConcreteExpression(decl, expression.id(), new HashSet<>());
-                if (!expression.error() && !g.isBoolean(expression.typeId()))
-                    g.emitTypeMismatch(decl.sourceId(), selection.range(), g.typeName(expression.typeId()), "BOOLEAN");
+                if (!expression.error() && !g.types.isBoolean(expression.typeId()))
+                    g.emitTypeMismatch(decl.sourceId(), selection.range(), g.types.typeName(expression.typeId()), "BOOLEAN");
             }
             List<SymbolId> constraints = new ArrayList<>();
             for (var child : g.index.children(decl.id())) if (child.kind() == SymbolKind.CONSTRAINT) { g.buildSymbol(child); constraints.add(child.id()); }
@@ -316,19 +316,19 @@ final class ViewBuilder {
     Inspected bindInspection(DeclInfo decl, SymbolId source, PathExpressionSyntax path, boolean area) {
         var expression = g.inspectionPath(path, decl.id(), source);
         if (expression.error()) return null;
-        TypeDescriptor descriptor = g.effectiveDescriptor(expression.typeId());
+        TypeDescriptor descriptor = g.types.effectiveDescriptor(expression.typeId());
         SymbolId parent = source;
         if (path.segments().size() > 1) {
             var prefix = new PathExpressionSyntax(path.id(), path.range(), path.segments().subList(0, path.segments().size()-1));
             var result = g.inspectionPath(prefix, decl.id(), source);
             if (result.error()) return null;
-            var type = g.effectiveDescriptor(result.typeId());
-            if (type instanceof CollectionType c) type = g.effectiveDescriptor(c.elementType());
+            var type = g.types.effectiveDescriptor(result.typeId());
+            if (type instanceof CollectionType c) type = g.types.effectiveDescriptor(c.elementType());
             if (type instanceof StructureValueType st) parent = g.structures.target(st);
             else if (type instanceof GeometryType geometry) parent = geometryElement(decl, geometry, false);
         }
         SymbolId element = null;
-        if (descriptor instanceof CollectionType collection) descriptor = g.effectiveDescriptor(collection.elementType());
+        if (descriptor instanceof CollectionType collection) descriptor = g.types.effectiveDescriptor(collection.elementType());
         if (descriptor instanceof StructureValueType structure && !area) element = g.structures.target(structure);
         else if (descriptor instanceof GeometryType geometry) {
             if (!area || geometry.geometryKind() == GeometryKind.AREA || geometry.geometryKind() == GeometryKind.MULTIAREA)
@@ -378,22 +378,22 @@ final class ViewBuilder {
         var restriction = syntax.restriction().map(r -> g.buildExpression(r, owner));
         if (inspected == null) {
             var diagnostic = g.emitRule(decl, "factor requires a bound inspection", "INSPECTION_FACTOR_TARGET");
-            TypeId type = g.nextTypeId(); state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
+            TypeId type = g.types.nextTypeId(); state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
             state.storeExpression(new ErrorExpression(id, type, ExpressionTypeState.ERROR, syntax.range(), restriction.stream().map(GraphBuilder.ExpressionResult::id).toList(), List.of(diagnostic)));
             return new GraphBuilder.ExpressionResult(id, type, true);
         }
         factorSources.computeIfAbsent(decl.id(), ignored -> new LinkedHashSet<>()).add(view.orElse(source));
         boolean error = restriction.map(GraphBuilder.ExpressionResult::error).orElse(false);
         if (restriction.isPresent() && !error) {
-            TypeId expected = g.nextTypeId();
+            TypeId expected = g.types.nextTypeId();
             state.storeType(new ObjectArgumentType(expected, decl.origin(), Optional.of(source), List.of(), false));
-            if (!g.assignable(restriction.orElseThrow().typeId(), expected)) {
+            if (!g.types.assignable(restriction.orElseThrow().typeId(), expected)) {
                 g.emitRule(decl, "inspection restriction requires one object specializing its source", "INSPECTION_FACTOR_RESTRICTION");
                 error = true;
             }
         }
-        TypeId element = g.nextTypeId(); state.storeType(new StructureValueType(element, decl.origin(), Optional.of(inspected.element()), List.of()));
-        TypeId bag = g.nextTypeId(); state.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG, Cardinality.unboundedFrom(0), element));
+        TypeId element = g.types.nextTypeId(); state.storeType(new StructureValueType(element, decl.origin(), Optional.of(inspected.element()), List.of()));
+        TypeId bag = g.types.nextTypeId(); state.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG, Cardinality.unboundedFrom(0), element));
         state.storeExpression(new InspectionExpression(id, bag, error ? ExpressionTypeState.ERROR : ExpressionTypeState.RESOLVED,
                 syntax.range(), view, source, inspected.element(), inspected.path(), restriction.map(GraphBuilder.ExpressionResult::id), inspected.area()));
         return new GraphBuilder.ExpressionResult(id, bag, error);
@@ -433,11 +433,11 @@ final class ViewBuilder {
         g.lines.startConstraint(owner, lineGeometry, segment, start, owner.syntax().range());
         registerGeometryElement(lineGeometry, geometry, context, GeometryElementRole.LINE_GEOMETRY);
         if (geometry.geometryKind() == GeometryKind.POLYLINE || geometry.geometryKind() == GeometryKind.MULTIPOLYLINE) return lineGeometry;
-        TypeId polyline = g.nextTypeId();
+        TypeId polyline = g.types.nextTypeId();
         state.storeType(new GeometryType(polyline, geometry.origin(), GeometryKind.POLYLINE, geometry.lineForms(), geometry.vertexDomain(), geometry.lineAttributes(), true, geometry.withoutOverlaps(), geometry.overlap()));
         Map<String, TypeId> fields = new LinkedHashMap<>(); fields.put("Geometry", polyline);
         if (owner.language() == LanguageVersion.ILI23) {
-            TypeId lineAttrs = g.nextTypeId();
+            TypeId lineAttrs = g.types.nextTypeId();
             if (geometry.lineAttributes().isPresent()) {
                 SymbolId target = geometry.lineAttributes().orElseThrow(); g.index.byId(target).ifPresent(g::buildSymbol);
                 state.storeType(new StructureValueType(lineAttrs, geometry.origin(), Optional.of(target), List.of()));
@@ -453,8 +453,8 @@ final class ViewBuilder {
     }
 
     private TypeId collection(DeclInfo owner, SymbolId structure) {
-        TypeId element = g.nextTypeId(); state.storeType(new StructureValueType(element, owner.origin(), Optional.of(structure), List.of()));
-        TypeId list = g.nextTypeId(); state.storeType(new CollectionType(list, owner.origin(), CollectionKind.LIST,
+        TypeId element = g.types.nextTypeId(); state.storeType(new StructureValueType(element, owner.origin(), Optional.of(structure), List.of()));
+        TypeId list = g.types.nextTypeId(); state.storeType(new CollectionType(list, owner.origin(), CollectionKind.LIST,
                 Cardinality.unboundedFrom(0), element)); return list;
     }
 

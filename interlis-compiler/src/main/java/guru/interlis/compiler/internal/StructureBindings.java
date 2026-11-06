@@ -31,7 +31,7 @@ final class StructureBindings {
     }
 
     SymbolId target(TypeDescriptor type) {
-        if(type instanceof CollectionType collection)type=g.effectiveDescriptor(collection.elementType());
+        if(type instanceof CollectionType collection)type=g.types.effectiveDescriptor(collection.elementType());
         return type instanceof StructureValueType structure?g.commonObjectScope(structure.targetRoots()):null;
     }
 
@@ -41,10 +41,10 @@ final class StructureBindings {
             if(!(symbol instanceof AttributeSymbol attribute))continue;
             DeclInfo declaration=g.index.byId(attribute.id()).orElse(null);
             if(declaration==null)continue;
-            TypeDescriptor type=g.effectiveDescriptor(attribute.declaredType());
+            TypeDescriptor type=g.types.effectiveDescriptor(attribute.declaredType());
             boolean required=attribute.mandatory();
             if(type instanceof CollectionType collection) {
-                required=collection.cardinality().lower().signum()>0;type=g.effectiveDescriptor(collection.elementType());
+                required=collection.cardinality().lower().signum()>0;type=g.types.effectiveDescriptor(collection.elementType());
             }
             if(required && type instanceof StructureValueType structure && !attribute.header().has(Modifier.ABSTRACT)
                     && !hasConcreteStructure(structure,declaration))
@@ -65,7 +65,7 @@ final class StructureBindings {
         if(type.targetRoots().isEmpty())return false;
         for(SymbolId root:type.targetRoots())
             if(state.symbol(root) instanceof StructureSymbol structure && !structure.header().has(Modifier.ABSTRACT))return true;
-        var visible=g.importedModels(g.index.modelOfSymbol(declaration.id()).orElseThrow());
+        var visible=g.generics.importedModels(g.index.modelOfSymbol(declaration.id()).orElseThrow());
         SymbolId topic=g.scopeRoot(declaration.id());
         for(Symbol symbol:state.symbolsInBuildOrder()) {
             g.checkWork();

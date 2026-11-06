@@ -167,7 +167,7 @@ final class SegmentContextualizer {
         if (types.containsKey(original)) return types.get(original);
         Set<SymbolId> refs = new HashSet<>(); typeDependencies(original, refs, new HashSet<>());
         if (refs.stream().noneMatch(symbols::containsKey)) return original;
-        g.checkWork(); TypeId id = g.nextTypeId(); types.put(original, id);
+        g.checkWork(); TypeId id = g.types.nextTypeId(); types.put(original, id);
         var origin = state.type(original).origin();
         TypeDescriptor result = switch (state.type(original)) {
             case DomainReferenceType t -> new DomainReferenceType(id, origin, symbol(t.targetDomain()));

@@ -48,7 +48,7 @@ final class LineForms {
         vertex.ifPresent(target -> {
             g.index.byId(target).ifPresent(g::buildSymbol);
             var domain = (DomainSymbol)state.symbol(target);
-            if (!(g.effectiveDescriptor(domain.typeId()) instanceof CoordinateType coordinate) || coordinate.multiCoordinate())
+            if (!(g.types.effectiveDescriptor(domain.typeId()) instanceof CoordinateType coordinate) || coordinate.multiCoordinate())
                 g.emitRule(decl, "VERTEX must reference a coordinate domain", "LINE_VERTEX_COORDINATE");
         });
         if (decl.language() == LanguageVersion.ILI24 && syntax.lineAttributes().isPresent())
@@ -72,7 +72,7 @@ final class LineForms {
         boolean surface = switch (own.geometryKind()) { case SURFACE, AREA, MULTISURFACE, MULTIAREA -> true; default -> false; };
         boolean without = own.withoutOverlaps() || parent != null && parent.withoutOverlaps() || surface;
         if (tolerance.isEmpty() && without && declaration.language() == LanguageVersion.ILI24 && vertex.isPresent()
-                && g.effectiveDescriptor(state.declaredType(vertex.orElseThrow())) instanceof CoordinateType c
+                && g.types.effectiveDescriptor(state.declaredType(vertex.orElseThrow())) instanceof CoordinateType c
                 && c.axes().stream().allMatch(a -> a.minimum().isPresent() && a.maximum().isPresent()))
             tolerance = Optional.of(new GeometryType.TrackWidth(vertex.orElseThrow()));
         var result = new GeometryType(id, own.origin(), own.geometryKind(), forms, vertex, own.lineAttributes(), own.directed(), without, tolerance);
@@ -85,11 +85,11 @@ final class LineForms {
         if (!result.lineAttributes().isEmpty() && !surface)
             g.emitRule(declaration, "LINE ATTRIBUTES require SURFACE or AREA", "LINE_ATTRIBUTES_FAMILY");
         boolean generic = declaration.language() == LanguageVersion.ILI24 && vertex.filter(this::genericVertex).isPresent();
-        CoordinateType coordinate = vertex.map(state::declaredType).map(g::effectiveDescriptor)
+        CoordinateType coordinate = vertex.map(state::declaredType).map(g.types::effectiveDescriptor)
                 .filter(CoordinateType.class::isInstance).map(CoordinateType.class::cast).orElse(null);
         if (coordinate != null && declaration.language() == LanguageVersion.ILI24) {
-            var length = g.builtinUnit(declaration.id(), "INTERLIS.LENGTH").orElseThrow();
-            for (var axis : coordinate.axes()) if (axis.unit().isPresent() && !g.unitExtends(axis.unit().orElseThrow(), length))
+            var length = g.units.builtinUnit(declaration.id(), "INTERLIS.LENGTH").orElseThrow();
+            for (var axis : coordinate.axes()) if (axis.unit().isPresent() && !g.units.unitExtends(axis.unit().orElseThrow(), length))
                 g.emitRule(declaration, "line vertices require Cartesian coordinates with length units", "LINE_VERTEX_CARTESIAN");
             Integer scale = null;
             for (var axis : coordinate.axes()) {
@@ -116,7 +116,7 @@ final class LineForms {
 
     TypeRelation extension(GeometryType derived, GeometryType base) {
         return guru.interlis.model.internal.TypeCompatibility.geometryExtension(derived, base, state::baseOf,
-                id -> g.effectiveDescriptor(state.declaredType(id)));
+                id -> g.types.effectiveDescriptor(state.declaredType(id)));
     }
 
     private static int scale(DecimalLiteral value) {
@@ -142,7 +142,7 @@ final class LineForms {
 
     private boolean incomplete(GeometryType geometry) {
         if (geometry.lineForms().isEmpty() || geometry.vertexDomain().isEmpty()) return true;
-        var descriptor = g.effectiveDescriptor(state.declaredType(geometry.vertexDomain().orElseThrow()));
+        var descriptor = g.types.effectiveDescriptor(state.declaredType(geometry.vertexDomain().orElseThrow()));
         if (state.symbol(geometry.vertexDomain().orElseThrow()).header().has(Modifier.ABSTRACT)) return true;
         if (!(descriptor instanceof CoordinateType c) || c.axes().stream().anyMatch(a -> a.minimum().isEmpty() || a.maximum().isEmpty())) return true;
         return geometry.withoutOverlaps() && geometry.overlap().isEmpty();
@@ -155,7 +155,7 @@ final class LineForms {
             for (var member : entry.getValue()) {
                 var symbol = state.symbol(member.declaredSymbol());
                 if (!(symbol instanceof AttributeSymbol attribute)) continue;
-                var type = g.effectiveDescriptor(state.declaredType(attribute.id()));
+                var type = g.types.effectiveDescriptor(state.declaredType(attribute.id()));
                 if (type instanceof GeometryType geometry && (attribute.header().has(Modifier.ABSTRACT)
                         || incomplete(geometry) && !(owner.language() == LanguageVersion.ILI24 && geometry.vertexDomain().filter(this::genericVertex).isPresent())))
                     g.emitRule(owner, "concrete owner retains an abstract geometry member", "GEOMETRY_ABSTRACT_MEMBER");
@@ -193,8 +193,8 @@ final class LineForms {
         if (shortName.equals("LineSegment")) members.add(attribute(language, id, "SegmentEndPoint", lineCoord(language), true));
         if (shortName.equals("ArcSegment")) {
             members.add(attribute(language, id, "ArcPoint", lineCoord(language), true));
-            TypeId numeric = g.nextTypeId();
-            var unit = g.builtinUnit(context.id(), "INTERLIS.LENGTH");
+            TypeId numeric = g.types.nextTypeId();
+            var unit = g.units.builtinUnit(context.id(), "INTERLIS.LENGTH");
             state.storeType(new NumericType(numeric, header.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
                     NumericDirection.NONE, unit, Optional.empty())));
             members.add(attribute(language, id, "Radius", numeric, false));
@@ -214,19 +214,19 @@ final class LineForms {
         var language = context.language(); var h = header(language, name, SymbolKind.STRUCTURE, Optional.empty(), Set.of());
         List<SymbolId> members = new ArrayList<>();
         if (name.equals("SurfaceEdge")) {
-            TypeId geometry = g.nextTypeId();
+            TypeId geometry = g.types.nextTypeId();
             state.storeType(new GeometryType(geometry, h.origin(), GeometryKind.POLYLINE, List.of(),
                     Optional.empty(), Optional.empty(), true, false, Optional.empty()));
             members.add(attribute(language, h.id(), "Geometry", geometry, false));
             if (language == LanguageVersion.ILI23) {
-                TypeId attrs = g.nextTypeId(); state.storeType(new GenericType(attrs, h.origin(), "ANYSTRUCTURE"));
+                TypeId attrs = g.types.nextTypeId(); state.storeType(new GenericType(attrs, h.origin(), "ANYSTRUCTURE"));
                 members.add(attribute(language, h.id(), "LineAttrs", attrs, false, 1));
             }
         } else {
             String targetName = name.equals("SurfaceBoundary") ? "SurfaceEdge" : "LineSegment";
             var target = predefined(context, "INTERLIS." + targetName, Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            TypeId element = g.nextTypeId(); state.storeType(new StructureValueType(element, h.origin(), Optional.of(target), List.of()));
-            TypeId list = g.nextTypeId(); state.storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.unboundedFrom(0), element));
+            TypeId element = g.types.nextTypeId(); state.storeType(new StructureValueType(element, h.origin(), Optional.of(target), List.of()));
+            TypeId list = g.types.nextTypeId(); state.storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.unboundedFrom(0), element));
             members.add(attribute(language, h.id(), name.equals("SurfaceBoundary") ? "Lines" : "Segments", list, false));
         }
         state.defineSymbol(new StructureSymbol(h, Optional.empty(), members, List.of()));
@@ -247,14 +247,14 @@ final class LineForms {
         var structure = (StructureSymbol)state.symbol(line);
         if (!structure.constraints().isEmpty()) return;
         SymbolId attribute = structure.members().getFirst();
-        TypeId element = g.nextTypeId(); state.storeType(new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
+        TypeId element = g.types.nextTypeId(); state.storeType(new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
         ExpressionId path = new ExpressionId(line.value() + ":first");
         state.storeExpression(new PathExpression(path, element, ExpressionTypeState.RESOLVED, range, List.of(), new ObjectPath(List.of(
                 new PathStep.AttributeStep("Segments", attribute, range), new PathStep.IndexStep(new PathIndex(PathIndex.Kind.FIRST, Optional.empty()), element, range)))));
-        TypeId classType = g.nextTypeId(); state.storeType(new ClassValueType(classType, structure.origin(), true, List.of(start)));
+        TypeId classType = g.types.nextTypeId(); state.storeType(new ClassValueType(classType, structure.origin(), true, List.of(start)));
         ExpressionId value = new ExpressionId(line.value() + ":start");
         state.storeExpression(new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
-        TypeId bool = g.nextTypeId(); state.storeType(new BooleanType(bool, structure.origin()));
+        TypeId bool = g.types.nextTypeId(); state.storeType(new BooleanType(bool, structure.origin()));
         ExpressionId call = new ExpressionId(line.value() + ":isStart");
         state.storeExpression(new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(g.builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
         SymbolId constraint = new SymbolId(line.value() + ":startConstraint");
@@ -270,7 +270,7 @@ final class LineForms {
     private TypeId lineCoord(LanguageVersion language) {
         SymbolId domain = id(language, "LineCoord");
         if (state.hasDeclaredType(domain)) return state.declaredType(domain);
-        TypeId type = g.nextTypeId();
+        TypeId type = g.types.nextTypeId();
         var h = header(language, "LineCoord", SymbolKind.DOMAIN, Optional.empty(), Set.of(Modifier.ABSTRACT));
         state.storeType(new CoordinateType(type, h.origin(), 2, List.of(NumericRange.unbounded(), NumericRange.unbounded()), false, Optional.empty(), Optional.empty()));
         state.defineSymbol(new DomainSymbol(h, type, Optional.empty(), false)); state.bindDeclaredType(domain, type);

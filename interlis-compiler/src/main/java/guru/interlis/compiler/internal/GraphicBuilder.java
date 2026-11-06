@@ -56,7 +56,7 @@ final class GraphicBuilder {
 
     private ExpressionId condition(DeclInfo decl,ExpressionSyntax syntax) {
         var result=g.buildExpression(syntax,decl.id());
-        if(!result.error() && !g.isBoolean(result.typeId())) g.emitRule(decl,"graphic condition must be Boolean","GRAPHIC_CONDITION");
+        if(!result.error() && !g.types.isBoolean(result.typeId())) g.emitRule(decl,"graphic condition must be Boolean","GRAPHIC_CONDITION");
         return result.id();
     }
 
@@ -186,7 +186,7 @@ final class GraphicBuilder {
             // at a base class. They must never be weakened by contextual promotion.
             g.metadata.parameter(declared, original.name().value()).filter(id -> !id.equals(original.id()))
                     .map(state::symbol).map(ParameterSymbol.class::cast)
-                    .filter(p -> g.effectiveDescriptor(p.typeId()) instanceof MetaObjectType)
+                    .filter(p -> g.types.effectiveDescriptor(p.typeId()) instanceof MetaObjectType)
                     .ifPresent(p -> checkValue(decl, p, assignment.value()));
             if (original.name().value().equals("Sign")) {
                 objects(assignment.value(), signs); signExpression |= assignment.value() instanceof DrawingRuleSymbol.ExpressionValue;
@@ -226,7 +226,7 @@ final class GraphicBuilder {
                         .map(ParameterSymbol.class::cast).orElse((ParameterSymbol)original);
                 if (!effective.id().equals(original.id())) checkValue(decl, effective, assignment.value());
                 if (!effective.name().value().equals("Sign")
-                        && g.effectiveDescriptor(effective.typeId()) instanceof MetaObjectType meta && meta.target().isEmpty()) {
+                        && g.types.effectiveDescriptor(effective.typeId()) instanceof MetaObjectType meta && meta.target().isEmpty()) {
                     Set<SymbolId> targets = new LinkedHashSet<>(); objects(assignment.value(), targets);
                     for (SymbolId object : targets) {
                         g.checkWork(); var actual = ((MetaObjectSymbol)state.symbol(object)).objectClass();
@@ -245,7 +245,7 @@ final class GraphicBuilder {
     /** An inherited value may now target an overridden parameter with a narrower
      * type. Check the already bound value without re-binding syntax/references. */
     private void checkValue(DeclInfo decl, ParameterSymbol parameter, DrawingRuleSymbol.Value value) {
-        g.checkWork(); var expected = g.effectiveDescriptor(parameter.typeId());
+        g.checkWork(); var expected = g.types.effectiveDescriptor(parameter.typeId());
         if (value instanceof DrawingRuleSymbol.ExpressionValue expression) {
             var actual = state.expression(expression.expression());
             checkMandatoryValue(decl,parameter,actual);
@@ -262,12 +262,12 @@ final class GraphicBuilder {
 
     private void checkMandatoryValue(DeclInfo declaration,ParameterSymbol parameter,TypedExpression value) {
         if(parameter.mandatory() && value.typeState()!=ExpressionTypeState.ERROR
-                && guru.interlis.model.internal.TypeCompatibility.isUndefined(g.effectiveDescriptor(value.typeId())))
+                && guru.interlis.model.internal.TypeCompatibility.isUndefined(g.types.effectiveDescriptor(value.typeId())))
             g.emitRule(declaration,"MANDATORY signature parameter excludes undefined","GRAPHIC_PARAMETER_MANDATORY",value.range());
     }
 
     private DrawingRuleSymbol.Value value(DeclInfo decl,Optional<SymbolId> parameter,GraphicDeclarationSyntax.Value syntax) {
-        TypeDescriptor expected=parameter.map(state::symbol).map(ParameterSymbol.class::cast).map(p->g.effectiveDescriptor(p.typeId())).orElse(null);
+        TypeDescriptor expected=parameter.map(state::symbol).map(ParameterSymbol.class::cast).map(p->g.types.effectiveDescriptor(p.typeId())).orElse(null);
         if(syntax instanceof GraphicDeclarationSyntax.MetaObjectValue m) {
             var target=g.metadata.objectReference(decl,m.object());
             if(expected!=null && !(expected instanceof MetaObjectType)) g.emitRule(decl,"metadata object assigned to an ordinary parameter","GRAPHIC_PARAMETER_TYPE");
@@ -283,13 +283,13 @@ final class GraphicBuilder {
             var expression=g.buildExpression(e.expression(),decl.id());
             if(expected!=null)expression=g.contextualValue(expression,expected.id(),decl.id());
             if(!expression.error() && parameter.isPresent())checkMandatoryValue(decl,(ParameterSymbol)state.symbol(parameter.orElseThrow()),state.expression(expression.id()));
-            if(expected!=null && !expression.error() && !g.assignable(expression.typeId(),expected.id()))
+            if(expected!=null && !expression.error() && !g.types.assignable(expression.typeId(),expected.id()))
                 g.emitRule(decl,"incompatible signature parameter assignment","GRAPHIC_PARAMETER_TYPE");
             return new DrawingRuleSymbol.ExpressionValue(expression.id());
         }
         var according=(GraphicDeclarationSyntax.AccordingValue)syntax;
         var selector=g.buildExpression(according.selector(),decl.id());
-        var type=g.effectiveDescriptor(selector.typeId());
+        var type=g.types.effectiveDescriptor(selector.typeId());
         if(!(type instanceof EnumerationType)) g.emitRule(decl,"ACCORDING requires an enumeration attribute","GRAPHIC_ENUM_SELECTOR");
         List<DrawingRuleSymbol.EnumAssignment> cases=new ArrayList<>();
         for(var entry:according.cases()) {

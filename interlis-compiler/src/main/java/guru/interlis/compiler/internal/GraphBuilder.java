@@ -149,12 +149,17 @@ final class GraphBuilder {
     final NameBindings names;
     final ReferenceBindings references;
     final TranslationBindings translations;
+    final TypeBindings types;
+    final UnitBindings units;
+    final OidBindings oid;
+    final FormattedTypeBindings formats;
+    final GenericBindings generics;
     private final SemanticDiagnostics diagnostics;
     private final Map<SourceId, Set<String>> syntaxUnsupportedBySource;
     private final Map<SymbolId, SymbolId> externalConstraintTargets = new LinkedHashMap<>();
     private final Set<SymbolId> resolvedObjectBases = new HashSet<>();
-    private final Set<SymbolId> resolvingDomainTypes = new HashSet<>();
-    private final Set<SymbolId> resolvingAttributeTypes = new HashSet<>();
+
+
     private final Set<SymbolId> buildingAssociations = new HashSet<>();
     private final Map<SymbolId, SymbolId> modelIdByDecl = new LinkedHashMap<>();
     private final Map<String, DeclInfo> modelNames = new LinkedHashMap<>();
@@ -162,7 +167,7 @@ final class GraphBuilder {
     private final SemanticBuildState state = new SemanticBuildState();
     private final SemanticWork work;
     private final OverlayBindings overlays;
-    private final Map<guru.interlis.model.LanguageVersion,TypeId> booleanTypes = new java.util.EnumMap<>(guru.interlis.model.LanguageVersion.class);
+
 
     GraphBuilder(IndexedDeclarations index, SourceSet sourceSet, Closure closure,
                  DiagnosticCollector collector, guru.interlis.model.SnapshotId snapshotId,
@@ -181,12 +186,17 @@ final class GraphBuilder {
         this.syntaxUnsupportedBySource = Map.copyOf(
                 Objects.requireNonNull(syntaxUnsupportedBySource, "syntaxUnsupportedBySource"));
         this.resolver = new NameResolver(index, closure);
+        this.types = new TypeBindings(this, state, work, index, diagnostics);
+        this.units = new UnitBindings(this, state, work, index, diagnostics);
+        this.oid = new OidBindings(this, state, work, index, diagnostics);
+        this.formats = new FormattedTypeBindings(this, state, work, index, diagnostics);
+        this.generics = new GenericBindings(this, state, work, index, diagnostics);
         this.references = new ReferenceBindings(index, state, work, state::storeReference,
                 language -> PredefinedModels.ensure(state, language));
         this.names = new NameBindings(index, resolver, work, diagnostics, references, temporal, metadata, lines,
-                this::builtinOidDomain, this::builtinSimpleDomain, this::builtinUnit, this::builtinDeclaration);
+                oid::builtinOidDomain, types::builtinSimpleDomain, units::builtinUnit, this::builtinDeclaration);
         this.translations = new TranslationBindings(index, state, work, diagnostics,
-                this::effectiveDescriptor, this::findMember, views, state::replaceSymbol);
+                types::effectiveDescriptor, this::findMember, views, state::replaceSymbol);
         for (IndexedDeclarations.ModelEntry entry : index.models()) {
             checkWork();
             modelIdByDecl.put(entry.declaration().id(), entry.id());
@@ -248,20 +258,20 @@ final class GraphBuilder {
             buildModel(entry);
         }
         validateTopicInheritanceCycles();
-        validateUnits();
+        units.validateUnits();
         resolveOverridesAndEffectiveMembers();
         structures.validate();
         lines.validateConcreteMembers();
         metadata.validate();
-        validateGenericSystem();
-        bindOidRules();
+        generics.validateGenericSystem();
+        oid.bindOidRules();
         validateTopicDependencies();
         views.validateDependencies();
         graphics.validateDependencies();
         validateReferenceTargets();
-        buildEffectiveTypes();
-        validateFormattedUses();
-        validateNumericUses();
+        types.buildEffectiveTypes();
+        formats.validateFormattedUses();
+        units.validateNumericUses();
         new NumericSubdivisions(this, state).validate();
         references.complete();
         validateAssociationRules();
@@ -510,8 +520,8 @@ final class GraphBuilder {
                     continue;
                 }
                 validateAttributeOverrideProperties(attributeDecl, attribute, baseAttribute);
-                TypeDescriptor baseType = effectiveDescriptor(baseAttribute.declaredType());
-                TypeDescriptor derivedType = effectiveDescriptor(attribute.declaredType());
+                TypeDescriptor baseType = types.effectiveDescriptor(baseAttribute.declaredType());
+                TypeDescriptor derivedType = types.effectiveDescriptor(attribute.declaredType());
                 if (baseType != null && derivedType != null) {
                     String problem = overrideProblem(baseType, derivedType, attributeDecl.language());
                     if (problem != null) {
@@ -540,7 +550,7 @@ final class GraphBuilder {
         }
     }
 
-    private AttributeSymbol findBaseAttribute(SymbolId base, String name) {
+    AttributeSymbol findBaseAttribute(SymbolId base, String name) {
         SymbolId current = base;
         Set<SymbolId> seen = new HashSet<>();
         while (current != null && seen.add(current)) {
@@ -562,7 +572,7 @@ final class GraphBuilder {
         return null;
     }
 
-    private boolean domainExtends(SymbolId derived, SymbolId base) {
+    boolean domainExtends(SymbolId derived, SymbolId base) {
         SymbolId current = derived;
         Set<SymbolId> visited = new LinkedHashSet<>();
         while (current != null && visited.add(current)) {
@@ -576,14 +586,10 @@ final class GraphBuilder {
     }
 
     private String overrideProblem(TypeDescriptor base, TypeDescriptor derived, guru.interlis.model.LanguageVersion language) {
-        var relation=extension(derived,base,language);
+        var relation=types.extension(derived,base,language);
         return relation.decision()==guru.interlis.model.RelationDecision.ALLOWED?null:relation.reason();
     }
 
-    private guru.interlis.model.TypeRelation extension(TypeDescriptor derived, TypeDescriptor base, guru.interlis.model.LanguageVersion language) {
-        return guru.interlis.model.internal.TypeCompatibility.extend(derived,base,language,this::effectiveDescriptor,
-                state::baseOf,id->effectiveDescriptor(state.declaredType(id)),this::extensionUnit);
-    }
 
     private void validateAssociationRules() {
         for (Symbol symbol : state.symbolsInBuildOrder()) {
@@ -760,219 +766,6 @@ final class GraphBuilder {
     }
 
 
-    private guru.interlis.model.ContextSymbol buildContext(DeclInfo decl) {
-        var syntax = (guru.interlis.syntax.ContextDeclarationSyntax) decl.syntax();
-        if (index.byId(decl.owner().orElseThrow()).orElseThrow().kind() != SymbolKind.MODEL)
-            emitRule(decl, "CONTEXT must be declared at model level", "CONTEXT_SCOPE");
-        if (index.children(decl.owner().orElseThrow()).stream()
-                .anyMatch(d -> !d.id().equals(decl.id()) && d.name().equals(decl.name())))
-            emitRule(decl, "context name must be unique", "CONTEXT_NAME_UNIQUE");
-        List<guru.interlis.model.ContextSymbol.Mapping> mappings = new ArrayList<>();
-        Set<SymbolId> own = new HashSet<>();
-        for (var mapping : syntax.mappings()) {
-            checkWork();
-            var generic = names.bindTarget(decl, mapping.genericDomain(), Set.of(SymbolKind.DOMAIN),
-                    ReferenceUsage.TYPE_USE, new ArrayList<>());
-            List<SymbolId> alternatives = new ArrayList<>();
-            for (var name : mapping.alternatives()) names.bindTarget(decl, name, Set.of(SymbolKind.DOMAIN),
-                    ReferenceUsage.TYPE_USE, new ArrayList<>()).ifPresent(alternatives::add);
-            if (generic.isEmpty()) continue;
-            if (!own.add(generic.get())) emitRule(decl, "duplicate generic mapping in context", "CONTEXT_DUPLICATE");
-            if (new HashSet<>(alternatives).size() != alternatives.size())
-                emitRule(decl, "duplicate concrete alternative", "CONTEXT_DUPLICATE");
-            mappings.add(new guru.interlis.model.ContextSymbol.Mapping(generic.get(), alternatives, mapping.genericDomain().range()));
-        }
-        return new guru.interlis.model.ContextSymbol(header(decl), mappings);
-    }
-
-    /** Bound contexts are model-local; their effects flow only along explicit import edges. */
-    private void validateGenericSystem() {
-        for (Symbol symbol : state.symbolsInBuildOrder()) {
-            checkWork();
-            if (symbol instanceof DomainSymbol d && d.generic()
-                    && !(effectiveDescriptor(d.typeId()) instanceof CoordinateType))
-                emitRule(index.byId(d.id()).orElseThrow(), "GENERIC requires a coordinate domain", "GENERIC_TYPE");
-            if (!(symbol instanceof guru.interlis.model.ContextSymbol context)) continue;
-            DeclInfo decl = index.byId(context.id()).orElseThrow();
-            for (var mapping : context.mappings()) {
-                var generic = (DomainSymbol) state.symbol(mapping.genericDomain());
-                if (!generic.generic() || !(effectiveDescriptor(generic.typeId()) instanceof CoordinateType base)) {
-                    emitRule(decl, "CONTEXT domain must be GENERIC coordinates", "CONTEXT_GENERIC"); continue;
-                }
-                for (SymbolId id : mapping.alternatives()) {
-                    checkWork();
-                    var concrete = (DomainSymbol) state.symbol(id);
-                    if (concrete.generic() || concrete.header().modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)
-                            || !(effectiveDescriptor(concrete.typeId()) instanceof CoordinateType target)
-                            || target.axes().stream().anyMatch(a -> a.minimum().isEmpty() || a.maximum().isEmpty())) {
-                        emitRule(decl, "CONTEXT alternative must be concrete coordinates", "CONTEXT_CONCRETE"); continue;
-                    }
-                    for (SymbolId parent : baseChain(concrete.id()).stream().skip(1).toList()) {
-                        if (state.symbol(parent) instanceof DomainSymbol ancestor
-                                && effectiveDescriptor(ancestor.typeId()) instanceof CoordinateType inherited
-                                && !guru.interlis.model.internal.TypeCompatibility.coordinateRefines(target, inherited))
-                            emitRule(decl, "CONTEXT alternative widens its declared coordinate base", "CONTEXT_ALTERNATIVE_EXTENSION");
-                    }
-                    if (base.dimensions() != target.dimensions() || base.multiCoordinate() != target.multiCoordinate())
-                        emitRule(decl, "CONTEXT target dimensions differ", "GENERIC_DIMENSIONS");
-                    else if (!guru.interlis.model.internal.TypeCompatibility.coordinateRefines(target, base))
-                        emitRule(decl, "CONTEXT target must refine the generic coordinates", "GENERIC_RANGE");
-                }
-            }
-        }
-        Map<SymbolId, Map<SymbolId, TopicSymbol.GenericBinding>> contexts = new LinkedHashMap<>();
-        for (var model : index.models()) modelContexts(model.id(), contexts, new HashSet<>());
-        for (Symbol symbol : List.copyOf(state.symbolsInBuildOrder())) {
-            checkWork();
-            if (!(symbol instanceof TopicSymbol topic) || index.byId(topic.id()).isEmpty()) continue;
-            DeclInfo decl = index.byId(topic.id()).orElseThrow();
-            SymbolId model = index.modelOfSymbol(topic.id()).orElseThrow();
-            Set<SymbolId> visible = importedModels(model);
-            Set<SymbolId> used = new LinkedHashSet<>();
-            Set<SymbolId> viewables = new LinkedHashSet<>();
-            for (SymbolId id : baseChain(topic.id())) for (DeclInfo child : index.children(id))
-                if (Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW).contains(child.kind())) viewables.add(child.id());
-            // EXTENDED replaces the inherited declaration in this topic's effective population.
-            var overridden = new HashSet<SymbolId>();
-            for (SymbolId id : viewables) if (state.symbol(id).header().modifiers().contains(guru.interlis.model.Modifier.EXTENDED))
-                overridden.addAll(baseChain(id).stream().filter(base -> !base.equals(id)).toList());
-            viewables.removeAll(overridden);
-            Set<TypeId> seen = new HashSet<>();
-            Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses=new LinkedHashMap<>();
-            for (SymbolId id : viewables) collectViewableGenerics(id, visible, topic.id(), used, referenceUses, seen);
-            var available = contexts.getOrDefault(model, Map.of());
-            Set<SymbolId> declaredDeferred = new LinkedHashSet<>();
-            for (SymbolId id : baseChain(topic.id())) if (state.symbol(id) instanceof TopicSymbol t) declaredDeferred.addAll(t.deferredGenerics());
-            for (SymbolId id : topic.deferredGenerics()) {
-                if (!(state.symbol(id) instanceof DomainSymbol domain) || !domain.generic())
-                    emitRule(decl, "DEFERRED GENERICS references a non-generic domain", "GENERIC_DEFERRED_UNKNOWN");
-                if (!used.contains(id)) emitRule(decl, "DEFERRED GENERICS domain is unused", "GENERIC_DEFERRED_UNUSED");
-                if (!available.containsKey(id)) emitRule(decl, "DEFERRED GENERICS domain has no CONTEXT", "GENERIC_CONTEXT_MISSING");
-            }
-            List<TopicSymbol.GenericBinding> bindings = new ArrayList<>();
-            for (SymbolId generic : used) {
-                var binding = available.get(generic);
-                if(binding!=null) for(var range:referenceUses.getOrDefault(generic,Set.of())) for(var alternative:binding.alternatives()) {
-                    checkWork();var reference=range.referenceSystem().orElseThrow();
-                    var concrete=new guru.interlis.model.NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),range.unit(),
-                            Optional.of(new guru.interlis.model.NumericRange.ReferenceSystem(alternative,true,reference.axis())));
-                    // Validate known alternatives without rewriting the published generic identity.
-                    metadata.validateRange(decl,concrete);
-                }
-                if (binding == null) {
-                    if (topic.header().modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
-                        bindings.add(new TopicSymbol.GenericBinding(generic, List.of(), List.of(), TopicSymbol.BindingState.ABSTRACT));
-                    else emitRule(decl, "generic domain is used without an effective CONTEXT", "GENERIC_CONTEXT_MISSING");
-                } else if (binding.alternatives().size() > 1 && !declaredDeferred.contains(generic)) {
-                    emitRule(decl, "multiple CONTEXT alternatives require DEFERRED GENERICS", "GENERIC_DEFERRED_REQUIRED");
-                } else if (!binding.alternatives().isEmpty()) bindings.add(binding);
-            }
-            state.replaceSymbol(new TopicSymbol(topic.header(), topic.baseTopic(), topic.members(), topic.dependencies(),
-                    topic.deferredGenerics(), bindings));
-        }
-    }
-
-    private Map<SymbolId, TopicSymbol.GenericBinding> modelContexts(SymbolId model,
-            Map<SymbolId, Map<SymbolId, TopicSymbol.GenericBinding>> completed, Set<SymbolId> active) {
-        if (state.symbol(model) instanceof ModelSymbol predefined && predefined.origin() instanceof Origin.PredefinedOrigin) return Map.of();
-        if (completed.containsKey(model)) return completed.get(model);
-        if (!active.add(model)) return Map.of(); // ImportBinder diagnoses cycles.
-        Map<SymbolId, TopicSymbol.GenericBinding> result = new LinkedHashMap<>();
-        ModelSymbol owner = (ModelSymbol) state.symbol(model);
-        DeclInfo decl = index.byId(model).orElseThrow();
-        for (var imported : owner.imports()) if (imported.targetModel().isPresent()) {
-            checkWork();
-            for (var entry : modelContexts(imported.targetModel().get(), completed, active).entrySet()) {
-                var previous = result.get(entry.getKey()); var incoming = entry.getValue();
-                if (previous == null) result.put(entry.getKey(), incoming);
-                else {
-                    var candidates = new LinkedHashSet<>(previous.alternatives()); candidates.addAll(incoming.alternatives());
-                    candidates.removeIf(id -> previous.alternatives().stream().noneMatch(base -> domainExtends(id, base))
-                            || incoming.alternatives().stream().noneMatch(base -> domainExtends(id, base)));
-                    var origins = new LinkedHashSet<>(previous.contexts()); origins.addAll(incoming.contexts());
-                    if (candidates.isEmpty()) emitRule(decl, "imported contexts have incompatible alternatives", "CONTEXT_CONFLICT");
-                    result.put(entry.getKey(), genericBinding(entry.getKey(), List.copyOf(candidates), List.copyOf(origins)));
-                }
-            }
-        }
-        for (SymbolId member : owner.members()) if (state.symbol(member) instanceof guru.interlis.model.ContextSymbol context) {
-            for (var mapping : context.mappings()) {
-                checkWork();
-                var previous = result.get(mapping.genericDomain());
-                if (previous != null && mapping.alternatives().stream().anyMatch(id ->
-                        previous.alternatives().stream().noneMatch(base -> domainExtends(id, base))))
-                    emitRule(index.byId(context.id()).orElseThrow(), "CONTEXT target must extend an existing alternative", "GENERIC_CONTEXT_EXTENDS");
-                result.put(mapping.genericDomain(), genericBinding(mapping.genericDomain(), mapping.alternatives(), List.of(context.id())));
-            }
-        }
-        active.remove(model); completed.put(model, result); return result;
-    }
-
-    private TopicSymbol.GenericBinding genericBinding(SymbolId generic, List<SymbolId> alternatives, List<SymbolId> contexts) {
-        // Empty alternatives can occur only in a diagnosed partial analysis, not in a valid schema.
-        return new TopicSymbol.GenericBinding(generic, alternatives, contexts, alternatives.isEmpty()
-                ? TopicSymbol.BindingState.ABSTRACT : alternatives.size() == 1 ? TopicSymbol.BindingState.CONCRETE : TopicSymbol.BindingState.DEFERRED);
-    }
-
-    Set<SymbolId> importedModels(SymbolId model) {
-        Set<SymbolId> result = new LinkedHashSet<>(); var pending = new java.util.ArrayDeque<SymbolId>(); pending.add(model);
-        while (!pending.isEmpty()) {
-            checkWork(); SymbolId next = pending.removeFirst();
-            if (result.add(next) && state.symbol(next) instanceof ModelSymbol m)
-                m.imports().forEach(i -> i.targetModel().ifPresent(pending::add));
-        }
-        return result;
-    }
-
-    private void collectViewableGenerics(SymbolId viewable, Set<SymbolId> visible, SymbolId topic,
-            Set<SymbolId> used, Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses, Set<TypeId> seen) {
-        for (var member : state.effectiveMembers(viewable)) {
-            checkWork();
-            if (state.symbol(member.declaredSymbol()) instanceof AttributeSymbol attr) collectGenericUses(attr.declaredType(), visible, topic, used, referenceUses, seen);
-        }
-    }
-
-    private void collectGenericUses(TypeId type, Set<SymbolId> visible, SymbolId topic, Set<SymbolId> used,
-            Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses, Set<TypeId> seen) {
-        if (type == null || !seen.add(type)) return;
-        checkWork(); TypeDescriptor descriptor = state.type(type);
-        if (descriptor instanceof DomainReferenceType ref && state.symbol(ref.targetDomain()) instanceof DomainSymbol domain) {
-            if (domain.generic()) used.add(domain.id());
-            collectGenericUses(domain.typeId(), visible, topic, used, referenceUses, seen);
-        } else if (descriptor instanceof GeometryType geometry) {
-            geometry.vertexDomain().map(state::symbol).filter(DomainSymbol.class::isInstance).map(DomainSymbol.class::cast).ifPresent(domain -> {
-                if (domain.generic()) used.add(domain.id()); collectGenericUses(domain.typeId(), visible, topic, used, referenceUses, seen);
-            });
-        } else if (descriptor instanceof NumericType numeric) {
-            collectRangeGenerics(numeric.range(),visible,topic,used,referenceUses,seen);
-        } else if (descriptor instanceof CoordinateType coordinate) {
-            for(var range:coordinate.axes())collectRangeGenerics(range,visible,topic,used,referenceUses,seen);
-        } else if (descriptor instanceof CollectionType collection) {
-            collectGenericUses(collection.elementType(), visible, topic, used, referenceUses, seen);
-        } else if (descriptor instanceof StructureValueType structure) {
-            for (Symbol symbol : state.symbolsInBuildOrder()) if (symbol instanceof StructureSymbol candidate
-                    && visible.contains(index.modelOfSymbol(candidate.id()).orElse(null))
-                    && (structure.targetRoots().isEmpty() || structure.targetRoots().stream().anyMatch(root -> baseChain(candidate.id()).contains(root)))
-                    && (!(state.symbol(scopeRoot(candidate.id())) instanceof TopicSymbol) || baseChain(topic).contains(scopeRoot(candidate.id()))))
-                collectViewableGenerics(candidate.id(), visible, topic, used, referenceUses, seen);
-        }
-    }
-
-    private void collectRangeGenerics(guru.interlis.model.NumericRange range,Set<SymbolId> visible,SymbolId topic,
-            Set<SymbolId> used,Map<SymbolId,Set<guru.interlis.model.NumericRange>> referenceUses,Set<TypeId> seen) {
-        checkWork();var reference=range.referenceSystem().orElse(null);
-        if(reference==null||!reference.domain())return;
-        if(state.symbol(reference.target()) instanceof DomainSymbol domain&&domain.generic()) {
-            used.add(domain.id());referenceUses.computeIfAbsent(domain.id(),ignored->new LinkedHashSet<>()).add(range);
-            collectGenericUses(domain.typeId(),visible,topic,used,referenceUses,seen);
-        }
-    }
-
-    private String lastSegment(String name) {
-        int dot = name.lastIndexOf('.');
-        return dot < 0 ? name : name.substring(dot + 1);
-    }
-
     private void buildModel(IndexedDeclarations.ModelEntry entry) {
         DeclInfo decl = entry.declaration();
         guru.interlis.syntax.ModelSyntax modelSyntax = entry.model().syntax();
@@ -1118,13 +911,13 @@ final class GraphBuilder {
             case STRUCTURE -> buildStructure(decl);
             case ASSOCIATION -> buildAssociation(decl);
             case DOMAIN -> buildDomain(decl);
-            case UNIT -> buildUnit(decl);
+            case UNIT -> units.buildUnit(decl);
             case LINE_FORM -> lines.buildForm(decl);
             case METADATA_BASKET -> metadata.basket(decl);
             case METAOBJECT -> metadata.object(decl);
             case FUNCTION -> buildFunction(decl);
             case PARAMETER -> buildParameter(decl);
-            case CONTEXT -> buildContext(decl);
+            case CONTEXT -> generics.buildContext(decl);
             case ATTRIBUTE -> buildAttribute(decl);
             case ROLE -> buildRole(decl);
             case CONSTRAINT -> buildConstraint(decl);
@@ -1435,16 +1228,16 @@ final class GraphBuilder {
         if (index.byId(decl.owner().orElseThrow()).orElseThrow().kind() == SymbolKind.MODEL
                 && decl.language() == guru.interlis.model.LanguageVersion.ILI23 && !model.contracted())
             emitRule(decl, "runtime parameters require CONTRACTED in INTERLIS 2.3", "PARAMETER_CONTRACTED");
-        TypeId type = buildType(syntax.type(), decl.id(), decl.sourceId());
+        TypeId type = types.buildType(syntax.type(), decl.id(), decl.sourceId());
         if (index.byId(decl.owner().orElseThrow()).orElseThrow().kind() == SymbolKind.MODEL && containsArea(type, new HashSet<>()))
             emitRule(decl, "runtime parameters cannot contain AREA values", "PARAMETER_AREA");
         state.bindDeclaredType(decl.id(), type);
-        return new guru.interlis.model.ParameterSymbol(header(decl), type, syntax.mandatory() || mandatoryType(type), Optional.empty());
+        return new guru.interlis.model.ParameterSymbol(header(decl), type, syntax.mandatory() || types.mandatoryType(type), Optional.empty());
     }
 
     private boolean containsArea(TypeId type, Set<TypeId> seen) {
         if (!seen.add(type)) return false;
-        TypeDescriptor descriptor = effectiveDescriptor(type);
+        TypeDescriptor descriptor = types.effectiveDescriptor(type);
         if (descriptor instanceof GeometryType geometry)
             return geometry.geometryKind() == guru.interlis.model.GeometryKind.AREA
                     || geometry.geometryKind() == guru.interlis.model.GeometryKind.MULTIAREA;
@@ -1458,7 +1251,7 @@ final class GraphBuilder {
                         for(SymbolId member:known.members())
                             if(state.symbol(member) instanceof AttributeSymbol attribute && containsArea(attribute.declaredType(),seen))return true;
                     } else for(var child:index.children(current))
-                        if(child.kind()==SymbolKind.ATTRIBUTE && containsArea(attributeType(child),seen))return true;
+                        if(child.kind()==SymbolKind.ATTRIBUTE && containsArea(types.attributeType(child),seen))return true;
                 }
             }
         }
@@ -1481,174 +1274,14 @@ final class GraphBuilder {
             }
         }
         List<FunctionParameter> parameters = java.util.stream.IntStream.range(0, syntax.parameters().size())
-                .mapToObj(i -> new FunctionParameter(syntax.parameters().get(i).name(), functionArgumentType(decl, i), syntax.parameters().get(i).mandatory() || mandatoryType(functionArgumentType(decl,i)))).toList();
-        TypeId result=buildType(syntax.returnType(), decl.id(), decl.sourceId());
-        return new FunctionSymbol(header(decl), parameters,result,syntax.returnMandatory() || mandatoryType(result),syntax.explanation().map(e->new Documentation(e.text(),List.of(e.range()))).orElseGet(Documentation::empty));
+                .mapToObj(i -> new FunctionParameter(syntax.parameters().get(i).name(), types.functionArgumentType(decl, i), syntax.parameters().get(i).mandatory() || types.mandatoryType(types.functionArgumentType(decl,i)))).toList();
+        TypeId result=types.buildType(syntax.returnType(), decl.id(), decl.sourceId());
+        return new FunctionSymbol(header(decl), parameters,result,syntax.returnMandatory() || types.mandatoryType(result),syntax.explanation().map(e->new Documentation(e.text(),List.of(e.range()))).orElseGet(Documentation::empty));
     }
 
-    private final Map<guru.interlis.model.AttributePathType.Argument, TypeId> functionArgumentTypes = new LinkedHashMap<>();
-    private final Set<guru.interlis.model.AttributePathType.Argument> resolvingFunctionArguments = new HashSet<>();
-
-    private TypeId functionArgumentType(DeclInfo function, int position) {
-        var key = new guru.interlis.model.AttributePathType.Argument(function.id(), position);
-        TypeId bound = functionArgumentTypes.get(key);
-        if (bound != null) return bound;
-        if (!resolvingFunctionArguments.add(key)) {
-            TypeId error = nextTypeId();
-            state.storeType(new ErrorType(error, function.origin(), List.of(emitRule(function,
-                    "cyclic attribute-path argument dependency", "FUNCTION_ARGUMENT_CYCLE"))));
-            return error;
-        }
-        var syntax = (FunctionDeclarationSyntax) function.syntax();
-        TypeId type = buildType(syntax.parameters().get(position).type(), function.id(), function.sourceId());
-        functionArgumentTypes.put(key, type); resolvingFunctionArguments.remove(key);
-        return type;
-    }
-
-    private UnitSymbol buildUnit(DeclInfo decl) {
-        UnitDeclarationSyntax syntax = (UnitDeclarationSyntax) decl.syntax();
-        Optional<SymbolId> base = syntax.base().flatMap(name -> bindUnit(decl, name));
-        Optional<SymbolId> derived = syntax.derivedFrom().flatMap(name -> bindUnit(decl, name));
-        List<UnitSymbol.Component> components = new ArrayList<>();
-        for (var component : syntax.components()) {
-            checkWork();
-            bindUnit(decl, component.unit()).ifPresent(id -> components.add(new UnitSymbol.Component(component.operator(), id)));
-        }
-        return new UnitSymbol(header(decl), syntax.designation(), syntax.abstractUnit(), base, derived,
-                components, syntax.conversionFactors(), syntax.conversionFunction(), syntax.definition().isBlank() ? Optional.empty() : Optional.of(syntax.definition()));
-    }
-
-    Optional<SymbolId> bindUnit(DeclInfo decl, guru.interlis.syntax.NameSyntax name) {
-        return bindUnit(decl,name,new ArrayList<>());
-    }
-
-    Optional<SymbolId> bindUnit(DeclInfo decl, guru.interlis.syntax.NameSyntax name, List<DiagnosticId> errors) {
-        return names.bindTarget(decl,name,Set.of(SymbolKind.UNIT),ReferenceUsage.TYPE_USE,errors,false);
-    }
-
-    Optional<SymbolId> builtinUnit(SymbolId context, String name) {
-        if (!name.startsWith("INTERLIS.")) return Optional.empty();
-        var timeUnit = temporal.find(index.byId(context).orElseThrow(), name, Set.of(SymbolKind.UNIT));
-        if (timeUnit.isPresent()) return timeUnit;
-        String shortName = name.substring("INTERLIS.".length());
-        String parent = switch (shortName) {
-            case "ANYUNIT" -> "";
-            case "DIMENSIONLESS", "LENGTH", "MASS", "TIME", "ELECTRIC_CURRENT", "TEMPERATURE",
-                    "AMOUNT_OF_MATTER", "ANGLE", "SOLID_ANGLE", "LUMINOUS_INTENSITY", "MONEY" -> "ANYUNIT";
-            case "m" -> "LENGTH"; case "kg" -> "MASS"; case "s" -> "TIME";
-            case "A" -> "ELECTRIC_CURRENT"; case "K" -> "TEMPERATURE"; case "mol" -> "AMOUNT_OF_MATTER";
-            case "rad" -> "ANGLE"; case "sr" -> "SOLID_ANGLE"; case "cd" -> "LUMINOUS_INTENSITY";
-            default -> null;
-        };
-        if (parent == null) return Optional.empty();
-        var language = index.byId(context).orElseThrow().language();
-        SymbolId id = new SymbolId("predefined:" + language + ":unit:" + name);
-        if (state.hasSymbol(id)) return Optional.of(id);
-        Optional<SymbolId> base = parent.isEmpty() ? Optional.empty() : builtinUnit(context, "INTERLIS." + parent);
-        boolean abstractUnit = parent.isEmpty() || parent.equals("ANYUNIT");
-        String designation = switch (shortName) {
-            case "m" -> "METER"; case "kg" -> language==guru.interlis.model.LanguageVersion.ILI23?"KILOGRAMM":"KILOGRAM"; case "s" -> "SECOND";
-            case "A" -> "AMPERE"; case "K" -> "DEGREE_KELVIN"; case "mol" -> "MOLE";
-            case "rad" -> "RADIAN"; case "sr" -> "STERADIAN"; case "cd" -> "CANDELA";
-            default -> shortName;
-        };
-        Origin origin = new Origin.PredefinedOrigin(language, name);
-        state.defineSymbol(new UnitSymbol(new SymbolHeader(id, SymbolKind.UNIT, DeclaredName.synthetic(name),
-                Optional.empty(), 0, origin, Optional.empty(), language,
-                Documentation.empty(), MetaAttributeSet.empty(), abstractUnit
-                    ? Set.of(guru.interlis.model.Modifier.ABSTRACT) : Set.of(), List.of()),
-                designation, abstractUnit, base, Optional.empty(), List.of(), List.of(), Optional.empty(), Optional.empty()));
-        return Optional.of(id);
-    }
-
-    /** Validate bound dependencies after all declarations exist; file order is immaterial. */
-    private void validateUnits() {
-        for (Symbol symbol : state.symbolsInBuildOrder()) {
-            if (!(symbol instanceof UnitSymbol unit)) continue;
-            DeclInfo decl = index.byId(unit.id()).orElse(null);
-            if (decl == null) continue;
-            checkWork();
-            var syntax = (UnitDeclarationSyntax) decl.syntax();
-            for (var factor : unit.conversionFactors()) {
-                checkWork();
-                if (factor.decimal().filter(value -> value.exactValue().signum() == 0).isPresent()) {
-                    boolean divide = factor.operator() == UnitSymbol.Operator.DIVIDE;
-                    emitRule(decl, divide ? "unit conversion divides by zero" : "unit conversion multiplies by zero",
-                            divide ? "UNIT_CONVERSION_ZERO_DIVISOR" : "UNIT_CONVERSION_ZERO_FACTOR", factor.range());
-                }
-            }
-            if (index.children(decl.owner().orElseThrow()).stream()
-                    .anyMatch(other -> !other.id().equals(decl.id()) && other.name().equals(decl.name())))
-                emitRule(decl, "unit short name is not unique in its scope", "UNIT_NAME_UNIQUE");
-            var pending = new java.util.ArrayDeque<SymbolId>(unitDependencies(unit));
-            Set<SymbolId> seen = new HashSet<>();
-            while (!pending.isEmpty()) {
-                checkWork();
-                SymbolId next = pending.removeFirst();
-                if (next.equals(unit.id())) {
-                    emitRule(decl, "cyclic unit dependency", "UNIT_CYCLE"); break;
-                }
-                if (seen.add(next) && state.symbol(next) instanceof UnitSymbol dependency)
-                    pending.addAll(unitDependencies(dependency));
-            }
-            for (var component : unit.components()) {
-                UnitSymbol target = (UnitSymbol) state.symbol(component.unit());
-                if (target.abstractUnit() != unit.abstractUnit())
-                    emitRule(decl, "composed unit and all components must agree on abstraction", "UNIT_COMPONENT_ABSTRACT");
-            }
-            if (unit.derivedFrom().isPresent()) {
-                UnitSymbol target = (UnitSymbol) state.symbol(unit.derivedFrom().orElseThrow());
-                if (unit.abstractUnit() || target.abstractUnit())
-                    emitRule(decl, "derived units require a concrete conversion target and are concrete", "UNIT_DERIVED_ABSTRACT");
-            }
-            UnitSymbol base = unit.base().map(state::symbol).filter(UnitSymbol.class::isInstance).map(UnitSymbol.class::cast).orElse(null);
-            if (base == null) continue;
-            if (!base.abstractUnit()) emitRule(decl, "only abstract units can be extended", "UNIT_BASE_ABSTRACT");
-            if (!syntax.components().isEmpty()) {
-                boolean compatible = !base.components().isEmpty() && base.components().size() == unit.components().size();
-                if (compatible) for (int i = 0; i < unit.components().size(); i++) {
-                    var actual = unit.components().get(i); var expected = base.components().get(i);
-                    if (actual.operator() != expected.operator() || !unitExtends(actual.unit(), expected.unit())) compatible = false;
-                }
-                if (!compatible) emitRule(decl, "composition must specialize the base component by component", "UNIT_COMPOSITION_EXTENSION");
-            } else if (unit.derivedFrom().isPresent() && !unitExtends(unit.derivedFrom().orElseThrow(), base.id())) {
-                emitRule(decl, "conversion target must specialize the declared abstract base", "UNIT_DERIVED_EXTENSION");
-            }
-        }
-    }
-
-    private List<SymbolId> unitDependencies(UnitSymbol unit) {
-        List<SymbolId> result = new ArrayList<>();
-        unit.base().ifPresent(result::add); unit.derivedFrom().ifPresent(result::add);
-        unit.components().forEach(c -> result.add(c.unit())); return result;
-    }
-
-    boolean unitExtends(SymbolId actual, SymbolId expected) {
-        UnitSymbol target = extensionUnit(expected);
-        if (target == null) return false;
-        if (target.name().value().equals("INTERLIS.ANYUNIT")) return true;
-        var pending = new java.util.ArrayDeque<SymbolId>(); pending.add(actual);
-        Set<SymbolId> seen = new HashSet<>();
-        while (!pending.isEmpty()) {
-            checkWork(); SymbolId next = pending.removeFirst();
-            if (next.equals(expected)) return true;
-            if (!seen.add(next)) continue;
-            UnitSymbol unit = extensionUnit(next);
-            if (unit == null) continue;
-            if (unit.header().origin() instanceof Origin.SyntheticOrigin
-                    && target.header().origin() instanceof Origin.SyntheticOrigin && unit.name().equals(target.name())) return true;
-            unit.base().ifPresent(pending::add); unit.derivedFrom().ifPresent(pending::add);
-        }
-        return false;
-    }
-
-    boolean unitsConvertible(SymbolId actual, SymbolId expected) {
-        return guru.interlis.model.internal.TypeCompatibility.unitRelation(actual, expected, this::extensionUnit)
-                .filter(relation -> relation.decision() == guru.interlis.model.RelationDecision.ALLOWED).isPresent();
-    }
 
     private DomainSymbol buildDomain(DeclInfo decl) {
-        TypeId type = domainType(decl);
+        TypeId type = types.domainType(decl);
         Set<String> constraintNames = new LinkedHashSet<>();
         for (DeclInfo child : index.children(decl.id())) {
             checkWork();
@@ -1661,305 +1294,37 @@ final class GraphBuilder {
                 decl.modifiers().contains(guru.interlis.model.Modifier.GENERIC));
     }
 
-    /** Bind referenced types before expressions without recursively building their constraints. */
-    private TypeId domainType(DeclInfo decl) {
-        TypeId existing = state.declaredType(decl.id());
-        if (existing != null) return existing;
-        checkWork();
-        if (!resolvingDomainTypes.add(decl.id())) {
-            TypeId error = nextTypeId();
-            state.storeType(new ErrorType(error, decl.origin(),
-                    List.of(emitRule(decl, "cyclic domain type dependency", "DOMAIN_TYPE_CYCLE"))));
-            state.bindDeclaredType(decl.id(), error);
-            return error;
-        }
-        try {
-            DomainDeclarationSyntax syntax = (DomainDeclarationSyntax) decl.syntax();
-            Optional<SymbolId> base=syntax.baseDomain().flatMap(name->names.bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.BASE_TYPE,new ArrayList<>()));
-
-            base.ifPresent(id -> {
-                state.bindBase(decl.id(), id);
-                index.byId(id).ifPresent(this::domainType);
-                if ((state.symbol(id) != null && state.symbol(id).header().has(guru.interlis.model.Modifier.FINAL))
-                        || index.byId(id).filter(d -> d.modifiers().contains(guru.interlis.model.Modifier.FINAL)).isPresent())
-                    emitRule(decl, "cannot extend FINAL domain", "DOMAIN_FINAL");
-            });
-            TypeId type;
-            if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name()) && base.isPresent()) {
-                type = nextTypeId();
-                state.storeType(new DomainReferenceType(type, new Origin.DeclaredOrigin(syntax.type().range()), base.orElseThrow()));
-            } else type = buildType(syntax.type(), decl.id(), decl.sourceId());
-            TypeDescriptor inherited = base.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
-            inheritTypeProperties(type, syntax.type(), inherited,decl);
-            if (syntax.type() instanceof LineTypeSyntax) lines.effective(type, inherited, decl);
-            else if (inherited instanceof GeometryType && !(effectiveDescriptor(type) instanceof GeometryType))
-                emitRule(decl, "geometry base requires a geometric extension", "GEOMETRY_EXTENSION");
-            if (effectiveDescriptor(type) instanceof NumericType numeric && inherited instanceof NumericType parent) {
-                var relation = numericExtension(numeric, parent, decl.language());
-                if (relation.decision() == guru.interlis.model.RelationDecision.DISALLOWED)
-                    emitRule(decl, "numeric type does not specialize its base: " + relation.reason(), relation.reason().startsWith("numeric-unit") || relation.reason().contains("unit-") ? "NUMERIC_UNIT_EXTENSION" : "NUMERIC_EXTENSION");
-            }
-            state.bindDeclaredTypeIfAbsent(decl.id(), type);
-            if (syntax.type() instanceof EnumerationTypeSyntax enumeration) {
-                if (base.isPresent() && inherited == null) emitRule(decl, "enumeration base must already be defined", "ENUM_BASE");
-                state.storeType(effectiveEnumeration(type, enumeration, inherited, decl));
-            }
-            TypeDescriptor own=effectiveDescriptor(type);
-            if(inherited!=null && !(inherited instanceof NumericType && own instanceof NumericType)
-                    && !(own instanceof GeometryType) && !(inherited instanceof guru.interlis.model.OidType)
-                    && !(own instanceof ErrorType) && !(inherited instanceof ErrorType)) {
-                var relation=extension(own,inherited,decl.language());
-                if(relation.decision()==guru.interlis.model.RelationDecision.DISALLOWED)
-                    emitRule(decl,"domain does not specialize its base: "+relation.reason(),"TYPE_EXTENSION");
-            }
-            if (base.isPresent() && effectiveDescriptor(state.declaredType(base.orElseThrow())) instanceof guru.interlis.model.OidType oid
-                    && (Optional.ofNullable(state.symbol(base.orElseThrow()))
-                            .filter(s -> s.name().value().equals("INTERLIS.NOOID")).isPresent()
-                    || oid.oidKind() != guru.interlis.model.OidKind.ANY
-                    || !(effectiveDescriptor(type) instanceof guru.interlis.model.OidType derived)
-                    || derived.oidKind() == guru.interlis.model.OidKind.ANY))
-                emitRule(decl, "concrete OID domain cannot be extended", "OID_EXTENSION");
-            return state.declaredType(decl.id());
-        } finally {
-            resolvingDomainTypes.remove(decl.id());
-        }
-    }
-
-    private EnumerationType effectiveEnumeration(TypeId id, EnumerationTypeSyntax syntax,
-            TypeDescriptor inherited, DeclInfo declaration) {
-        EnumerationType base = inherited instanceof EnumerationType e ? e : null;
-        if (inherited != null && (base == null || base.treeValues())) emitRule(declaration, "enumeration definition requires an enumeration definition as base", "ENUM_BASE");
-        if (base != null && base.id().equals(id)) emitRule(declaration, "cyclic enumeration inheritance", "ENUM_BASE");
-        if (base != null && base.circular()) emitRule(declaration, "circular enumeration cannot be extended", "ENUM_CIRCULAR");
-        if (base != null && syntax.circular()) emitRule(declaration, "enumeration extension cannot introduce circular ordering", "ENUM_ORDER");
-        Map<String, EnumerationValue> values = new LinkedHashMap<>();
-        if (base != null) base.values().forEach(v -> values.put(v.path(), v));
-        Set<String> own = new LinkedHashSet<>();
-        Set<String> finals = new LinkedHashSet<>(base == null ? Set.of() : base.finalSubtrees());
-        for (var value : syntax.values()) {
-            checkWork();
-            String path = value.path();
-            String parent = path.contains(".") ? path.substring(0, path.lastIndexOf('.')) : "";
-            if (value.qualified() && (base == null || base.values().stream().noneMatch(v -> v.path().equals(path))))
-                emitRule(declaration, "qualified enum name must identify an inherited element", "ENUM_PARENT");
-            if (!own.add(path)) emitRule(declaration, "duplicate enumeration value " + path, "ENUM_VALUE_UNIQUE");
-            if (values.containsKey(path)) {
-                if (!value.hasChildren()) emitRule(declaration, "extended enumeration repeats inherited value " + path, "ENUM_VALUE_UNIQUE");
-            } else {
-                if (!parent.isEmpty() && !values.containsKey(parent)) emitRule(declaration, "unknown enumeration parent " + parent, "ENUM_PARENT");
-                if (finals.contains(parent)) emitRule(declaration, "enumeration sibling list is FINAL: " + parent, "ENUM_FINAL");
-                values.put(path, new EnumerationValue(path, 0, Optional.of(value.range())));
-            }
-        }
-        finals.addAll(syntax.finalSubtrees());
-        // Preserve inherited sibling order and place new descendants under their parent.
-        List<EnumerationValue> ordered = new ArrayList<>();
-        appendEnumerationChildren("", values, ordered);
-        return new EnumerationType(id, new Origin.DeclaredOrigin(syntax.range()), ordered,
-                syntax.ordered() || syntax.circular() || base != null && base.ordered(), syntax.circular(), finals, Optional.ofNullable(base).map(EnumerationType::id), false);
-    }
-
-    private void appendEnumerationChildren(String parent, Map<String, EnumerationValue> values, List<EnumerationValue> result) {
-        for (var value : values.values()) {
-            checkWork();
-            String path = value.path();
-            String candidate = path.contains(".") ? path.substring(0, path.lastIndexOf('.')) : "";
-            if (candidate.equals(parent)) {
-                result.add(new EnumerationValue(path, result.size(), value.range()));
-                appendEnumerationChildren(path, values, result);
-            }
-        }
-    }
-
-    private UnitSymbol extensionUnit(SymbolId id) {
-        checkWork();
-        Symbol symbol = state.symbol(id);
-        if (symbol == null) symbol = index.byId(id).map(this::buildSymbol).orElse(null);
-        return symbol instanceof UnitSymbol unit ? unit : null;
-    }
-
-    private guru.interlis.model.TypeRelation numericExtension(NumericType actual, NumericType base, guru.interlis.model.LanguageVersion language) {
-        return guru.interlis.model.internal.TypeCompatibility.numericExtension(actual, base, language, this::extensionUnit);
-    }
-
-    private List<DiagnosticId> numericErrors(NumericTypeSyntax syntax, DeclInfo declaration) {
-        List<DiagnosticId> errors = new ArrayList<>();
-        if (syntax.minimum().isPresent() && syntax.maximum().isPresent()) {
-            var minimum = syntax.minimum().orElseThrow(); var maximum = syntax.maximum().orElseThrow();
-            if (minimum.exactValue().compareTo(maximum.exactValue()) > 0)
-                errors.add(emitRule(declaration, "numeric minimum exceeds maximum", "NUMERIC_BOUNDS", syntax.range()));
-            if (minimum.precision().fractionalDigits() != maximum.precision().fractionalDigits())
-                errors.add(emitRule(declaration, "numeric bounds must have the same precision", "NUMERIC_PRECISION", syntax.range()));
-        }
-        return List.copyOf(errors);
-    }
-
-    private void validateNumericUnit(NumericRange range,DeclInfo declaration,SourceRange sourceRange,List<DiagnosticId> errors) {
-        if(range.minimum().isPresent() && range.maximum().isPresent() && range.unit().isPresent()) {
-            UnitSymbol unit=extensionUnit(range.unit().orElseThrow());
-            if(unit!=null && unit.abstractUnit())errors.add(emitRule(declaration,"concrete numeric range requires a concrete unit","NUMERIC_ABSTRACT_UNIT",sourceRange));
-        }
-    }
-
-    private void validateNumericUses() {
-        for(var entry:state.declaredTypesInBuildOrder()) {
-            checkWork();var declaration=index.byId(entry.getKey()).orElse(null);
-            if(declaration==null || declaration.kind()!=SymbolKind.DOMAIN && declaration.kind()!=SymbolKind.ATTRIBUTE)continue;
-            var type=effectiveDescriptor(entry.getValue());
-            while(type instanceof CollectionType collection)type=effectiveDescriptor(collection.elementType());
-            boolean incomplete=type instanceof NumericType number && (number.range().minimum().isEmpty() || number.range().maximum().isEmpty())
-                    || type instanceof CoordinateType coordinate && coordinate.axes().stream().anyMatch(axis->axis.minimum().isEmpty() || axis.maximum().isEmpty());
-            if(!incomplete || declaration.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))continue;
-            if(declaration.syntax() instanceof AttributeDeclarationSyntax attribute && attribute.type() instanceof GenericTypeSyntax inferred && inferred.name().equals("INFERRED"))continue;
-            boolean generic=declaration.language()==guru.interlis.model.LanguageVersion.ILI24 && type instanceof CoordinateType
-                    && (declaration.modifiers().contains(guru.interlis.model.Modifier.GENERIC) || genericCoordinateType(entry.getValue(),new HashSet<>()));
-            if(!generic)emitRule(declaration,"incomplete numeric or coordinate declaration requires ABSTRACT","NUMERIC_ABSTRACT");
-        }
-    }
-
-    private boolean genericCoordinateType(TypeId id,Set<TypeId> seen) {
-        if(!seen.add(id))return false;
-        if(state.type(id) instanceof DomainReferenceType reference) {
-            var domain=state.symbol(reference.targetDomain());
-            return domain instanceof DomainSymbol d && (d.generic() || genericCoordinateType(d.typeId(),seen));
-        }
-        return false;
-    }
-
-    private boolean mandatoryDomain(SymbolId domain) {
-        Set<SymbolId> seen = new HashSet<>();
-        for (SymbolId current = domain; current != null && seen.add(current); current = state.baseOf(current)) {
-            checkWork();
-            if (index.byId(current).filter(d -> d.modifiers().contains(guru.interlis.model.Modifier.MANDATORY)).isPresent()) return true;
-            if (state.symbol(current) instanceof DomainSymbol d && d.mandatory()) return true;
-        }
-        return false;
-    }
-
-    private boolean mandatoryType(TypeId type) {
-        Set<TypeId> seen = new HashSet<>();
-        while (type != null && seen.add(type) && state.type(type) instanceof DomainReferenceType reference) {
-            if (mandatoryDomain(reference.targetDomain())) return true;
-            type = state.declaredType(reference.targetDomain());
-        }
-        return false;
-    }
-
-    /** Complete only owned inline types; referenced alias descriptors are never mutated. */
-    private void inheritTypeProperties(TypeId id, TypeSyntax syntax, TypeDescriptor base,DeclInfo declaration) {
-        if (syntax instanceof NumericTypeSyntax own && state.type(id) instanceof NumericType numeric && base instanceof NumericType parent) {
-            var range=inheritRange(numeric.range(),parent.range(),own);var errors=new ArrayList<DiagnosticId>();
-            validateNumericUnit(range,declaration,syntax.range(),errors);
-            state.storeType(errors.isEmpty()?new NumericType(id,numeric.origin(),range):new ErrorType(id,numeric.origin(),errors));
-        }
-        else if(syntax instanceof CoordinateTypeSyntax own && state.type(id) instanceof CoordinateType coordinate && base instanceof CoordinateType parent) {
-            List<NumericRange> axes=new ArrayList<>(coordinate.axes());
-            for(int i=0;i<Math.min(axes.size(),parent.axes().size());i++)axes.set(i,inheritRange(axes.get(i),parent.axes().get(i),own.axes().get(i)));
-            var errors=new ArrayList<DiagnosticId>();
-            for(int i=0;i<axes.size();i++)validateNumericUnit(axes.get(i),declaration,own.axes().get(i).range(),errors);
-            state.storeType(errors.isEmpty()?new CoordinateType(id,coordinate.origin(),coordinate.dimensions(),axes,coordinate.multiCoordinate(),
-                    coordinate.referenceSystem().isPresent()?coordinate.referenceSystem():parent.referenceSystem(),
-                    coordinate.rotation().isPresent()?coordinate.rotation():parent.rotation()):new ErrorType(id,coordinate.origin(),errors));
-        } else if(syntax instanceof CollectionTypeSyntax own && state.type(id) instanceof CollectionType collection && base instanceof CollectionType parent)
-            inheritTypeProperties(collection.elementType(),own.elementType(),effectiveDescriptor(parent.elementType()),declaration);
-    }
-
-    private NumericRange inheritRange(NumericRange own, NumericRange base, NumericTypeSyntax syntax) {
-        return new NumericRange(own.minimum(),own.maximum(),own.circular()||base.circular(),
-                syntax.direction()==guru.interlis.model.NumericDirection.NONE?base.direction():own.direction(),
-                syntax.unit().isEmpty()?base.unit():own.unit(),syntax.referenceSystem().isEmpty()?base.referenceSystem():own.referenceSystem());
-    }
 
     private AttributeSymbol buildAttribute(DeclInfo decl) {
         AttributeDeclarationSyntax syntax = (AttributeDeclarationSyntax) decl.syntax();
-        TypeId type = attributeType(decl);
+        TypeId type = types.attributeType(decl);
         for(var child:index.children(decl.id()))if(child.kind()==SymbolKind.ENUM_ELEMENT)buildSymbol(child);
         if (syntax.transientAttribute() && !syntax.assigned()
                 && !syntax.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT)) {
             emitRule(decl, "transient attribute requires an assignment", "TRANSIENT_ASSIGNMENT");
         }
-        return new AttributeSymbol(header(decl), type, syntax.mandatory() || mandatoryType(type),
+        return new AttributeSymbol(header(decl), type, syntax.mandatory() || types.mandatoryType(type),
                 syntax.transientAttribute(), syntax.continuous(), syntax.subdivision(),
                 Optional.empty(), bindAttributeDerivations(decl, syntax, type));
     }
 
-    private final Map<SymbolId, List<ExpressionId>> inferredDerivations = new LinkedHashMap<>();
-
-    boolean assignable(TypeId actual, TypeId expected) {
-        if(mandatoryType(expected) && guru.interlis.model.internal.TypeCompatibility.isUndefined(effectiveDescriptor(actual)))return false;
-        return guru.interlis.model.internal.TypeCompatibility.assign(effectiveDescriptor(actual), effectiveDescriptor(expected), this::effectiveDescriptor, state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
-    }
 
     private List<ExpressionId> bindAttributeDerivations(DeclInfo decl, AttributeDeclarationSyntax syntax, TypeId type) {
-        if (inferredDerivations.containsKey(decl.id())) return inferredDerivations.get(decl.id());
+        List<ExpressionId> inferred = types.inferredDerivations(decl.id());
+        if (inferred != null) return inferred;
         List<ExpressionId> result = new ArrayList<>();
         for (var expression : syntax.derivations()) {
             var bound = contextualValue(buildExpression(expression, decl.owner().orElseThrow()),type,decl.id());
             result.add(bound.id());
-            if(!bound.error() && (syntax.mandatory() || mandatoryType(type))
-                    && guru.interlis.model.internal.TypeCompatibility.isUndefined(effectiveDescriptor(bound.typeId())))
+            if(!bound.error() && (syntax.mandatory() || types.mandatoryType(type))
+                    && guru.interlis.model.internal.TypeCompatibility.isUndefined(types.effectiveDescriptor(bound.typeId())))
                 emitRule(decl,"MANDATORY attribute excludes an explicitly undefined derived value","MANDATORY_VALUE",expression.range());
-            if (!bound.error() && !assignable(bound.typeId(), type))
-                emitTypeMismatch(decl.sourceId(), expression.range(), typeName(bound.typeId()), typeName(type));
+            if (!bound.error() && !types.assignable(bound.typeId(), type))
+                emitTypeMismatch(decl.sourceId(), expression.range(), types.typeName(bound.typeId()), types.typeName(type));
         }
         return List.copyOf(result);
     }
 
-    /** Resolve once so every expression and the published attribute share the same type. */
-    TypeId attributeType(DeclInfo decl) {
-        TypeId existing = state.declaredType(decl.id());
-        if (existing != null) return existing;
-        checkWork();
-        AttributeDeclarationSyntax syntax = (AttributeDeclarationSyntax) decl.syntax();
-        TypeId type;
-        if (!resolvingAttributeTypes.add(decl.id())) {
-            type = nextTypeId();
-            state.storeType(new ErrorType(type, decl.origin(),
-                    List.of(emitRule(decl, "cyclic inherited attribute type", "INHERITANCE_CYCLE"))));
-            return type;
-        }
-        try {
-            decl.owner().flatMap(this::objectInheritanceBase).flatMap(base->findMember(base,decl.name()))
-                    .filter(base->state.symbol(base) instanceof AttributeSymbol || index.byId(base).filter(d->d.kind()==SymbolKind.ATTRIBUTE).isPresent())
-                    .ifPresent(base->state.bindBase(decl.id(),base));
-            if (syntax.type() instanceof GenericTypeSyntax inferred && "INFERRED".equals(inferred.name())) {
-                var result = buildExpression(syntax.derivations().getFirst(), decl.owner().orElseThrow());
-                inferredDerivations.put(decl.id(), List.of(result.id()));
-                type = result.typeId();
-            } else if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name())) {
-                Optional<SymbolId> base = decl.owner().flatMap(this::objectInheritanceBase)
-                        .flatMap(owner -> findMember(owner, decl.name()));
-                DeclInfo inherited = base.flatMap(index::byId).orElse(null);
-                if (inherited != null && inherited.kind() == SymbolKind.ATTRIBUTE) {
-                    type = attributeType(inherited);
-                } else if (base.map(state::symbol).orElse(null) instanceof AttributeSymbol attribute) {
-                    // ALL OF members have a bound type but no separate syntax declaration.
-                    type = attribute.declaredType();
-                } else {
-                    type = nextTypeId();
-                    state.storeType(new ErrorType(type, decl.origin(), List.of(emitRule(decl,
-                            "MANDATORY without a type requires an inherited attribute", "ATTRIBUTE_INHERITED_TYPE"))));
-                }
-            } else {
-                type = buildType(syntax.type(), decl.id(), decl.sourceId());
-                TypeDescriptor inheritedGeometry = null;
-                if (decl.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-                    var base = decl.owner().flatMap(this::objectInheritanceBase).flatMap(owner -> findMember(owner, decl.name()));
-                    TypeId baseType = base.flatMap(index::byId).filter(d -> d.kind() == SymbolKind.ATTRIBUTE)
-                            .map(this::attributeType).orElseGet(() -> base.map(state::symbol)
-                                    .filter(AttributeSymbol.class::isInstance).map(AttributeSymbol.class::cast)
-                                    .map(AttributeSymbol::declaredType).orElse(null));
-                    inheritTypeProperties(type, syntax.type(), effectiveDescriptor(baseType),decl);
-                    inheritedGeometry = effectiveDescriptor(baseType);
-                }
-                if (syntax.type() instanceof LineTypeSyntax) lines.effective(type, inheritedGeometry, decl);
-            }
-            state.bindDeclaredType(decl.id(), type);
-            return type;
-        } finally {
-            resolvingAttributeTypes.remove(decl.id());
-        }
-    }
 
     private RoleSymbol buildRole(DeclInfo decl) {
         RoleDeclarationSyntax syntax = (RoleDeclarationSyntax) decl.syntax();
@@ -2023,12 +1388,12 @@ final class GraphBuilder {
     private Optional<ExpressionId> bindRoleDerivation(DeclInfo decl, RoleDeclarationSyntax syntax, List<guru.interlis.model.RoleTarget> targets) {
         return syntax.derivation().map(expression -> {
             var bound = buildExpression(expression, decl.owner().orElseThrow());
-            var actual = effectiveDescriptor(bound.typeId());
+            var actual = types.effectiveDescriptor(bound.typeId());
             if (!bound.error()) {
                 var roots = targets.stream().flatMap(t -> t.allowedRoots().stream()).toList();
-                var expected = new guru.interlis.model.ObjectArgumentType(nextTypeId(), decl.origin(), Optional.empty(), roots, false);
+                var expected = new guru.interlis.model.ObjectArgumentType(types.nextTypeId(), decl.origin(), Optional.empty(), roots, false);
                 state.storeType(expected);
-                if (!assignable(bound.typeId(), expected.id())) emitTypeMismatch(decl.sourceId(), expression.range(), typeName(bound.typeId()), "single role target");
+                if (!types.assignable(bound.typeId(), expected.id())) emitTypeMismatch(decl.sourceId(), expression.range(), types.typeName(bound.typeId()), "single role target");
             }
             return bound.id();
         });
@@ -2057,7 +1422,7 @@ final class GraphBuilder {
         return role.targetRoots().stream().anyMatch(base -> targetSpecializes(candidate, base));
     }
 
-    private SymbolId bindObjectTarget(DeclInfo decl, guru.interlis.syntax.NameSyntax name, ReferenceUsage usage) {
+    SymbolId bindObjectTarget(DeclInfo decl, guru.interlis.syntax.NameSyntax name, ReferenceUsage usage) {
         Optional<SymbolId> target = name.text().equals("ANYCLASS") ? Optional.of(anyClass(decl))
                 : resolver.resolve(decl.id(), name, Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION)).target();
         if (target.isEmpty() && name.segments().size() == 1) {
@@ -2246,14 +1611,14 @@ final class GraphBuilder {
                 ExpressionResult path = constraintPath(target.path(), decl, targetScope, false);
                 requireConstraintValue(decl, path, false);
                 if (!source.error() && !path.error() && !existenceCompatible(source.typeId(), path.typeId())) {
-                    TypeDescriptor from = effectiveDescriptor(source.typeId()), to = effectiveDescriptor(path.typeId());
+                    TypeDescriptor from = types.effectiveDescriptor(source.typeId()), to = types.effectiveDescriptor(path.typeId());
                     boolean familyPending = from.kind() == to.kind() && switch (from.kind()) {
                         case GENERIC, DEFERRED, PENDING -> true;
                         default -> false;
                     };
                     if (familyPending) emitUnsupported(decl.sourceId(), target.path().range(),
                             "EXISTENCE_TYPE_COMPATIBILITY", "EXISTENCE compatibility for " + from.kind());
-                    else emitTypeMismatch(decl.sourceId(), target.path().range(), typeName(source.typeId()), typeName(path.typeId()));
+                    else emitTypeMismatch(decl.sourceId(), target.path().range(), types.typeName(source.typeId()), types.typeName(path.typeId()));
                 }
                 targets.add(new guru.interlis.model.ExistenceConstraint.ExistenceTarget(targetScope, path.id()));
             }
@@ -2266,8 +1631,8 @@ final class GraphBuilder {
         if (syntax.constraintKind() == guru.interlis.syntax.ConstraintKind.UNIQUENESS) {
             Optional<ExpressionId> where = syntax.expression().map(e -> {
                 ExpressionResult condition = buildExpression(e, decl.id());
-                if (!condition.error() && !isBoolean(condition.typeId()))
-                    emitTypeMismatch(decl.sourceId(), e.range(), typeName(condition.typeId()), "BOOLEAN");
+                if (!condition.error() && !types.isBoolean(condition.typeId()))
+                    emitTypeMismatch(decl.sourceId(), e.range(), types.typeName(condition.typeId()), "BOOLEAN");
                 return condition.id();
             });
             List<ExpressionId> keys = new ArrayList<>();
@@ -2275,7 +1640,7 @@ final class GraphBuilder {
             if (syntax.localPrefix().isPresent()) {
                 if (syntax.basket()) emitRule(decl, "UNIQUE cannot combine BASKET and LOCAL", "UNIQUE_KEY");
                 ExpressionResult prefix = constraintPath(syntax.localPrefix().orElseThrow(), decl, context, true);
-                SymbolId structure = structures.target(effectiveDescriptor(prefix.typeId()));
+                SymbolId structure = structures.target(types.effectiveDescriptor(prefix.typeId()));
                 if (!prefix.error() && structure == null)
                     emitRule(decl, "LOCAL prefix must select a structure attribute", "UNIQUE_LOCAL_PREFIX");
                 for (var key : syntax.uniqueKeys()) {
@@ -2299,7 +1664,7 @@ final class GraphBuilder {
         }
         Optional<ExpressionId> setWhere=syntax.where().map(e->{
             var condition=buildExpression(e,decl.id());
-            if(!condition.error() && !isBoolean(condition.typeId()))emitTypeMismatch(decl.sourceId(),e.range(),typeName(condition.typeId()),"BOOLEAN");
+            if(!condition.error() && !types.isBoolean(condition.typeId()))emitTypeMismatch(decl.sourceId(),e.range(),types.typeName(condition.typeId()),"BOOLEAN");
             return condition.id();
         });
         if(syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.PLAUSIBILITY && syntax.plausibility().isEmpty()) {
@@ -2310,11 +1675,11 @@ final class GraphBuilder {
         ExpressionResult expression = syntax.expression()
                 .map(e -> buildExpression(e, expressionOwner))
                 .orElseGet(() -> missingConstraintExpression(decl,syntax.range()));
-        if (!expression.error() && !isBoolean(expression.typeId())) {
-            emitTypeMismatch(decl.sourceId(), syntax.range(), typeName(expression.typeId()),
+        if (!expression.error() && !types.isBoolean(expression.typeId())) {
+            emitTypeMismatch(decl.sourceId(), syntax.range(), types.typeName(expression.typeId()),
                     "BOOLEAN");
         }
-        if (!expression.error() && isBoolean(expression.typeId()) && syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.SET
+        if (!expression.error() && types.isBoolean(expression.typeId()) && syntax.constraintKind()==guru.interlis.syntax.ConstraintKind.SET
                 && decl.language()==guru.interlis.model.LanguageVersion.ILI24 && !hasObjectSetFunction(expression.id())) {
             var cause=emitTypeMismatch(decl.sourceId(),state.expression(expression.id()).range(),
                     "SET condition without OBJECTS function","SET condition with OBJECTS function");
@@ -2342,7 +1707,7 @@ final class GraphBuilder {
             checkWork();var id=pending.removeFirst();if(!seen.add(id))continue;var expression=state.expression(id);
             if(expression instanceof guru.interlis.model.FunctionCallExpression call
                     && call.targetFunction().map(state::symbol).filter(FunctionSymbol.class::isInstance).map(FunctionSymbol.class::cast)
-                    .stream().flatMap(f->f.parameters().stream()).map(p->effectiveDescriptor(p.typeId()))
+                    .stream().flatMap(f->f.parameters().stream()).map(p->types.effectiveDescriptor(p.typeId()))
                     .anyMatch(t->t instanceof guru.interlis.model.ObjectArgumentType objects&&objects.objects()))return true;
             pending.addAll(expression.children());
         }
@@ -2374,7 +1739,7 @@ final class GraphBuilder {
     private void requireConstraintValue(DeclInfo owner, ExpressionResult result, boolean unique) {
         if (result.error()) return;
         TypedExpression expression = state.expression(result.id());
-        TypeDescriptor type = effectiveDescriptor(result.typeId());
+        TypeDescriptor type = types.effectiveDescriptor(result.typeId());
         boolean invalid = unique && type instanceof CollectionType || type instanceof guru.interlis.model.ObjectArgumentType o && o.objects();
         if (unique) invalid |= type instanceof StructureValueType;
         else invalid |= !(expression instanceof guru.interlis.model.PathExpression p
@@ -2387,12 +1752,12 @@ final class GraphBuilder {
     // EXISTENCE compares values, it does not assign the complete source domain.
     // Numeric/text bounds are data restrictions, not an assignment precondition.
     private boolean existenceCompatible(TypeId source, TypeId target) {
-        TypeDescriptor actual = effectiveDescriptor(source);
-        TypeDescriptor expected = effectiveDescriptor(target);
+        TypeDescriptor actual = types.effectiveDescriptor(source);
+        TypeDescriptor expected = types.effectiveDescriptor(target);
         if (actual instanceof CollectionType a && expected instanceof CollectionType b)
             return a.collectionKind() == b.collectionKind() && existenceCompatible(a.elementType(), b.elementType());
-        if (actual instanceof CollectionType a && !isMany(a.cardinality())) actual = effectiveDescriptor(a.elementType());
-        if (expected instanceof CollectionType b && !isMany(b.cardinality())) expected = effectiveDescriptor(b.elementType());
+        if (actual instanceof CollectionType a && !isMany(a.cardinality())) actual = types.effectiveDescriptor(a.elementType());
+        if (expected instanceof CollectionType b && !isMany(b.cardinality())) expected = types.effectiveDescriptor(b.elementType());
         if (actual == null || expected == null) return false;
         if (actual instanceof guru.interlis.model.OidType a && expected instanceof guru.interlis.model.OidType b)
             return a.oidKind() == guru.interlis.model.OidKind.ANY || b.oidKind() == guru.interlis.model.OidKind.ANY
@@ -2401,7 +1766,7 @@ final class GraphBuilder {
                     && existenceCompatible(a.valueType().orElseThrow(), b.valueType().orElseThrow()));
         if (actual.id().equals(expected.id())) return true;
         if (actual instanceof GeometryType geometry && expected instanceof CoordinateType) {
-            actual = geometry.vertexDomain().map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
+            actual = geometry.vertexDomain().map(state::declaredType).map(types::effectiveDescriptor).orElse(null);
         }
         if (actual instanceof NumericType a && expected instanceof NumericType b)
             return numericValueCompatible(a.range(), b.range());
@@ -2423,11 +1788,11 @@ final class GraphBuilder {
                     .equals(b.parts().stream().map(p -> List.of(p.attribute(), p.width(), p.format(), p.literal())).toList());
         }
         if (actual instanceof EnumerationType a && expected instanceof EnumerationType b)
-            return guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a, b, this::effectiveDescriptor) || a.ordered() == b.ordered() && a.circular() == b.circular()
+            return guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a, b, types::effectiveDescriptor) || a.ordered() == b.ordered() && a.circular() == b.circular()
                     && a.values().stream().map(EnumerationValue::path).toList()
                     .equals(b.values().stream().map(EnumerationValue::path).toList());
         return guru.interlis.model.internal.TypeCompatibility.assign(actual, expected,
-                this::effectiveDescriptor, state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
+                types::effectiveDescriptor, state::baseOf, domain -> types.effectiveDescriptor(state.declaredType(domain))).decision() == guru.interlis.model.RelationDecision.ALLOWED;
     }
 
     private boolean numericValueCompatible(NumericRange a, NumericRange b) {
@@ -2438,7 +1803,7 @@ final class GraphBuilder {
     private EnumElementSymbol buildEnumElement(DeclInfo decl) {
         String path = decl.name();
         List<String> segments = List.of(path.split("\\."));
-        TypeDescriptor type = decl.owner().map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
+        TypeDescriptor type = decl.owner().map(state::declaredType).map(types::effectiveDescriptor).orElse(null);
         int ordinal = type instanceof EnumerationType enumeration ? enumeration.values().stream()
                 .filter(value -> value.path().equals(path)).mapToInt(EnumerationValue::order).findFirst().orElse(-1) : -1;
         if (ordinal < 0) {
@@ -2462,93 +1827,6 @@ final class GraphBuilder {
 
     private ViewSymbol buildView(DeclInfo decl) { return views.build(decl); }
 
-
-
-    private void bindOidRules() {
-        Map<SymbolId, List<guru.interlis.model.OidRule>> bound = new LinkedHashMap<>();
-        for (Symbol symbol : List.copyOf(state.symbolsInBuildOrder())) {
-            if (symbol instanceof ClassSymbol || symbol instanceof TopicSymbol || symbol instanceof AssociationSymbol)
-                bindOidRules(symbol.id(), bound, new HashSet<>());
-        }
-    }
-
-    private List<guru.interlis.model.OidRule> bindOidRules(SymbolId id,
-            Map<SymbolId, List<guru.interlis.model.OidRule>> bound, Set<SymbolId> active) {
-        checkWork();
-        if (bound.containsKey(id)) return bound.get(id);
-        if (!active.add(id)) return List.of(); // Existing inheritance checks diagnose the cycle.
-        Symbol symbol = state.symbol(id);
-        DeclInfo decl = index.byId(id).orElse(null);
-        if (decl == null || !(symbol instanceof ClassSymbol || symbol instanceof TopicSymbol || symbol instanceof AssociationSymbol))
-            return List.of();
-        List<guru.interlis.syntax.OidRuleSyntax> declared = switch (decl.syntax()) {
-            case ClassDeclarationSyntax c -> c.oidRules();
-            case TopicSyntax t -> t.oidRules();
-            case AssociationDeclarationSyntax a -> a.oidRules();
-            default -> List.of();
-        };
-        List<guru.interlis.model.OidRule> inherited = state.hasBase(id)
-                ? bindOidRules(state.baseOf(id), bound, active) : List.of();
-        List<guru.interlis.model.OidRule> rules = new ArrayList<>(inherited);
-        if (!(symbol instanceof TopicSymbol) && rules.isEmpty()) {
-            SymbolId topic = scopeRoot(id);
-            if (topic != null && !topic.equals(id) && state.symbol(topic) instanceof TopicSymbol)
-                bindOidRules(topic, bound, active).stream().filter(r -> !r.basket()).forEach(rules::add);
-        }
-        for (var rule : declared) {
-            checkWork();
-            if (symbol instanceof TopicSymbol && rule.domain().isEmpty()) {
-                emitRule(decl, "NO OID is only allowed on classes and associations", "OID_TOPIC");
-                continue;
-            }
-            Optional<SymbolId> domain = Optional.empty();
-            if (rule.domain().isPresent()) {
-                var name = rule.domain().orElseThrow();
-                domain=names.bindTarget(decl,name,Set.of(SymbolKind.DOMAIN),ReferenceUsage.TYPE_USE,new ArrayList<>());
-                if (domain.isEmpty()) continue;
-                if (!(effectiveDescriptor(state.declaredType(domain.orElseThrow())) instanceof guru.interlis.model.OidType)) {
-                    emitRule(decl, "OID AS must bind an OID domain", "OID_DOMAIN"); continue;
-                }
-            }
-            var own = new guru.interlis.model.OidRule(rule.basket(), domain, new Origin.DeclaredOrigin(rule.range()));
-            var previous = inherited.stream().filter(r -> r.basket() == own.basket()).findFirst();
-            if (previous.isPresent() && !oidOverrideAllowed(previous.orElseThrow(), own, decl.language(), symbol instanceof TopicSymbol))
-                emitRule(decl, "OID rule cannot change its inherited domain", "OID_OVERRIDE");
-            rules.removeIf(r -> r.basket() == own.basket()); rules.add(own);
-        }
-        // Only 2.4 defines an omitted class rule as inherited NO OID.
-        if (decl.language() == guru.interlis.model.LanguageVersion.ILI24
-                && state.symbol(state.baseOf(id)) instanceof ClassSymbol && inherited.isEmpty()
-                && rules.stream().anyMatch(r -> !r.basket() && oidState(r) == 2))
-            emitRule(decl, "inherited NO OID must first be concretized as ANYOID", "OID_OVERRIDE");
-        rules.sort(Comparator.comparing(r -> !r.basket()));
-        for (var rule : rules) {
-            if (oidState(rule) == 1 && !decl.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
-                emitRule(decl, "ANYOID requires an abstract topic, class or association", "OID_ABSTRACT");
-        }
-        if (symbol instanceof AssociationSymbol association) {
-            Cardinality cardinality = association.cardinality();
-            boolean multiple = !(cardinality.upper() instanceof guru.interlis.model.CardinalityUpper.Finite finite)
-                    || finite.value().compareTo(java.math.BigInteger.ONE) > 0;
-            boolean identified = rules.isEmpty()
-                    ? baseChain(id).stream().map(index::byId).flatMap(Optional::stream)
-                        .anyMatch(d -> d.modifiers().contains(guru.interlis.model.Modifier.OID))
-                    : rules.stream().anyMatch(r -> !r.basket() && oidState(r) != 0);
-            if (multiple && !identified)
-                emitRule(decl, "multiple links for the same participants require OID", "ASSOCIATION_CARDINALITY_OID");
-        }
-        var h = symbol.header();
-        var header = new SymbolHeader(h.id(), h.kind(), h.name(), h.owner(), h.declarationOrder(), h.origin(),
-                h.nameRange(), h.languageVersion(), h.documentation(), h.metaAttributes(), h.modifiers(), rules);
-        Symbol replacement = switch (symbol) {
-            case ClassSymbol c -> new ClassSymbol(header, c.baseType(), c.members(), c.constraints());
-            case TopicSymbol t -> new TopicSymbol(header, t.baseTopic(), t.members(), t.dependencies(), t.deferredGenerics(), t.genericBindings());
-            case AssociationSymbol a -> new AssociationSymbol(header, a.baseAssociation(), a.cardinality(), a.roles(), a.attributes(), a.constraints(), a.derivedFrom());
-            default -> symbol;
-        };
-        state.replaceSymbol(replacement); active.remove(id);
-        var result = List.copyOf(rules); bound.put(id, result); return result;
-    }
 
     private void validateReferenceTargets() {
         for (var entry : state.effectiveMembersInBuildOrder()) {
@@ -2577,9 +1855,9 @@ final class GraphBuilder {
                         roots = role.targetRoots(); external = role.external();
                     }
                     else if (declaration instanceof AttributeSymbol attribute) {
-                        TypeDescriptor type = effectiveDescriptor(attribute.declaredType());
+                        TypeDescriptor type = types.effectiveDescriptor(attribute.declaredType());
                         while (type instanceof CollectionType collection) {
-                            checkWork(); type = effectiveDescriptor(collection.elementType());
+                            checkWork(); type = types.effectiveDescriptor(collection.elementType());
                         }
                         if (type instanceof StructureValueType structure) pending.addAll(structure.targetRoots());
                         if (type instanceof ReferenceType reference) {
@@ -2594,7 +1872,7 @@ final class GraphBuilder {
                         if (target == null || index.byId(target.id()).isEmpty()) continue; // ANYCLASS/unresolved: no invented OID.
                         validateReferenceScope(site, topic, target.id(), external,
                                 declaration instanceof RoleSymbol ? "ROLE_EXTERNAL" : "REFERENCE_EXTERNAL");
-                        boolean objectOid = target.header().oidRules().stream().anyMatch(r -> !r.basket() && oidState(r) != 0);
+                        boolean objectOid = target.header().oidRules().stream().anyMatch(r -> !r.basket() && oid.oidState(r) != 0);
                         if (target instanceof ClassSymbol && owner.language() == guru.interlis.model.LanguageVersion.ILI24 && !objectOid)
                             emitRule(site, "reference target " + target.name().value() + " has NO OID in INTERLIS 2.4", "REFERENCE_TARGET_NO_OID");
                         if (target instanceof AssociationSymbol) {
@@ -2609,27 +1887,6 @@ final class GraphBuilder {
         }
     }
 
-    private int oidState(guru.interlis.model.OidRule rule) {
-        if (rule.domain().isEmpty()) return 0;
-        Symbol domain = state.symbol(rule.domain().orElseThrow());
-        if (domain != null && domain.name().value().equals("INTERLIS.NOOID")) return 0;
-        return effectiveDescriptor(state.declaredType(rule.domain().orElseThrow())) instanceof guru.interlis.model.OidType oid
-                && oid.oidKind() == guru.interlis.model.OidKind.ANY ? 1 : 2;
-    }
-
-    private boolean oidOverrideAllowed(guru.interlis.model.OidRule base, guru.interlis.model.OidRule derived,
-            guru.interlis.model.LanguageVersion language, boolean topic) {
-        if (base.domain().equals(derived.domain())) return true;
-        if (base.domain().isPresent() && derived.domain().isPresent()) {
-            Symbol a = state.symbol(base.domain().orElseThrow()), b = state.symbol(derived.domain().orElseThrow());
-            if (a != null && b != null && a.header().origin() instanceof Origin.SyntheticOrigin
-                    && b.header().origin() instanceof Origin.SyntheticOrigin && a.name().equals(b.name())) return true;
-        }
-        int from = oidState(base), to = oidState(derived);
-        if (topic) return false; // A topic assignment is fixed, including ANYOID.
-        return from == 0 && to == 0 || from == 1 && to == 2
-                || language == guru.interlis.model.LanguageVersion.ILI24 && from == 0 && to == 1;
-    }
 
     SymbolHeader header(DeclInfo decl) {
         var values=new LinkedHashMap<String,MetaAttributeSet.Value>();
@@ -2655,7 +1912,7 @@ final class GraphBuilder {
                 && attribute.transientAttribute()) {
             modifiers.add(guru.interlis.model.Modifier.TRANSIENT);
         }
-        if (decl.kind() == SymbolKind.DOMAIN && mandatoryDomain(decl.id())) modifiers.add(guru.interlis.model.Modifier.MANDATORY);
+        if (decl.kind() == SymbolKind.DOMAIN && types.mandatoryDomain(decl.id())) modifiers.add(guru.interlis.model.Modifier.MANDATORY);
         return new SymbolHeader(decl.id(), decl.kind(), declaredName, decl.owner(),
                 decl.order(), decl.origin(), decl.nameRange(), decl.language(),
                 documentation, new MetaAttributeSet(values,entries), modifiers, List.of());
@@ -2668,446 +1925,12 @@ final class GraphBuilder {
 
     // ---- types -----------------------------------------------------------------
 
-    /** Simple predefined domains allowed by DomainRef. No fallback for unknown names. */
-    private Optional<SymbolId> builtinSimpleDomain(DeclInfo context, String name) {
-        if (!Set.of("INTERLIS.URI", "INTERLIS.NAME", "INTERLIS.BOOLEAN", "INTERLIS.INTERLIS_1_DATE", "INTERLIS.HALIGNMENT", "INTERLIS.VALIGNMENT").contains(name))
-            return Optional.empty();
-        SymbolId symbol = new SymbolId("predefined:" + context.language() + ":domain:" + name);
-        if (state.hasSymbol(symbol)) return Optional.of(symbol);
-        Origin origin = new Origin.PredefinedOrigin(context.language(), name);
-        TypeId type = nextTypeId();
-        TypeDescriptor descriptor=switch(name) {
-            case "INTERLIS.URI" -> new TextType(type,origin,TextKind.URI,java.util.OptionalInt.of(1023));
-            case "INTERLIS.NAME" -> new TextType(type,origin,TextKind.NAME,java.util.OptionalInt.of(255));
-            case "INTERLIS.BOOLEAN" -> new guru.interlis.model.BooleanType(type,origin);
-            case "INTERLIS.INTERLIS_1_DATE" -> new TextType(type,origin,TextKind.TEXT,java.util.OptionalInt.of(8));
-            default -> new guru.interlis.model.AlignmentType(type,origin,name.equals("INTERLIS.HALIGNMENT")
-                    ? guru.interlis.model.AlignmentKind.HORIZONTAL : guru.interlis.model.AlignmentKind.VERTICAL);
-        };
-        state.storeType(descriptor);
-        state.bindDeclaredType(symbol, type);
-        state.defineSymbol(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN,
-                DeclaredName.synthetic(name), Optional.empty(), 0, origin, Optional.empty(), context.language(),
-                Documentation.empty(), MetaAttributeSet.empty(), Set.of(guru.interlis.model.Modifier.FINAL), List.of()),
-                type, Optional.empty(), false));
-        return Optional.of(symbol);
-    }
 
-    private Optional<SymbolId> builtinOidDomain(SymbolId context, String name) {
-        if (!Set.of("INTERLIS.NOOID", "INTERLIS.ANYOID", "INTERLIS.I32OID", "INTERLIS.STANDARDOID", "INTERLIS.UUIDOID").contains(name))
-            return Optional.empty();
-        var language = index.byId(context).orElseThrow().language();
-        if (name.equals("INTERLIS.NOOID") && language == guru.interlis.model.LanguageVersion.ILI23)
-            return Optional.empty();
-        SymbolId symbol = new SymbolId("predefined:" + language + ":domain:" + name);
-        if (state.hasSymbol(symbol)) return Optional.of(symbol);
-        Optional<SymbolId> base = language == guru.interlis.model.LanguageVersion.ILI23 || name.equals("INTERLIS.NOOID")
-                ? Optional.empty()
-                : builtinOidDomain(context, name.equals("INTERLIS.ANYOID") ? "INTERLIS.NOOID" : "INTERLIS.ANYOID");
-        Origin origin = new Origin.PredefinedOrigin(language, name);
-        var kind = name.equals("INTERLIS.I32OID") ? guru.interlis.model.OidKind.NUMERIC
-                : name.equals("INTERLIS.UUIDOID") ? guru.interlis.model.OidKind.UUID
-                : name.equals("INTERLIS.STANDARDOID") ? guru.interlis.model.OidKind.TEXT : guru.interlis.model.OidKind.ANY;
-        Optional<TypeId> carrier = Optional.empty();
-        if (kind != guru.interlis.model.OidKind.ANY) {
-            TypeId value = nextTypeId();
-            state.storeType(kind == guru.interlis.model.OidKind.NUMERIC
-                    ? new NumericType(value, origin, NumericRange.of(guru.interlis.model.DecimalLiteral.parse("0"), guru.interlis.model.DecimalLiteral.parse("2147483647")))
-                    : new TextType(value, origin, TextKind.TEXT, java.util.OptionalInt.of(kind == guru.interlis.model.OidKind.UUID ? 36 : 16)));
-            carrier = Optional.of(value);
-        }
-        TypeId type = nextTypeId(); state.storeType(new guru.interlis.model.OidType(type, origin, kind, carrier));
-        state.bindDeclaredType(symbol, type); base.ifPresent(b -> state.bindBase(symbol, b));
-        state.defineSymbol(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN, DeclaredName.synthetic(name),
-                Optional.empty(), 0, origin, Optional.empty(), language,
-                Documentation.empty(), MetaAttributeSet.empty(), language == guru.interlis.model.LanguageVersion.ILI24 && name.equals("INTERLIS.ANYOID")
-                        ? Set.of(guru.interlis.model.Modifier.ABSTRACT) : Set.of(), List.of()), type, base, false));
-        return Optional.of(symbol);
-    }
-
-    private Optional<SymbolId> bindFormatName(SymbolId context,guru.interlis.syntax.NameSyntax name,Set<SymbolKind> kinds) {
-        var target=names.bindTarget(index.byId(context).orElseThrow(),name,kinds,ReferenceUsage.TYPE_USE,new ArrayList<>());
-        target.flatMap(index::byId).filter(d->d.kind()==SymbolKind.DOMAIN).ifPresent(this::domainType);
-        return target;
-    }
-
-    private TypeDescriptor buildFormattedType(TypeId id, FormattedTypeSyntax syntax, SymbolId context) {
-        DeclInfo owner = index.byId(context).orElseThrow();
-        List<DiagnosticId> errors=new ArrayList<>();
-        Optional<SymbolId> domain = syntax.basedOnStructure() || syntax.base().isEmpty()
-                ? Optional.ofNullable(state.baseOf(context)) : Optional.empty();
-        Optional<SymbolId> structure = Optional.empty();
-        Optional<guru.interlis.model.TemporalKind> predefined = Optional.empty();
-        if (syntax.base().isPresent()) {
-            var name = syntax.base().orElseThrow();
-            if (syntax.basedOnStructure()) structure = bindFormatName(context, name, Set.of(SymbolKind.STRUCTURE));
-            else domain = bindFormatName(context, name, Set.of(SymbolKind.DOMAIN));
-        }
-        TypeDescriptor inherited = domain.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
-        FormattedType base = inherited instanceof FormattedType f ? f : null;
-        List<FormattedType.Part> parts = new ArrayList<>();
-        if (!syntax.basedOnStructure()) {
-            if (base == null) errors.add(emitRule(owner, "FORMAT requires a bound formatted base domain", "FORMAT_BASE"));
-            else { structure = base.structure(); predefined = base.predefined(); parts.addAll(base.parts()); }
-        } else if (syntax.inheritance()) {
-            if (base == null || structure.isEmpty() || base.structure().isEmpty()
-                    || !targetSpecializes(structure.orElseThrow(), base.structure().orElseThrow()))
-                errors.add(emitRule(owner, "FORMAT INHERITANCE requires the base structure or a specialization", "FORMAT_INHERITANCE"));
-            else for (var part : base.parts()) {
-                // INHERITANCE keeps the layout and provenance, but uses the effective
-                // attribute of the specialized structure (including its precision).
-                Optional<SymbolId> attribute = part.attribute().isEmpty() ? Optional.empty()
-                        : findMember(structure.orElseThrow(), state.symbol(part.attribute().orElseThrow()).name().value());
-                parts.add(new FormattedType.Part(attribute, part.width(), part.format(), part.literal(), part.origin()));
-            }
-        } else if (base != null) errors.add(emitRule(owner, "extended FORMAT must retain its inherited prefix", "FORMAT_INHERITANCE"));
-        for (var part : syntax.parts()) {
-            checkWork();
-            Optional<SymbolId> attribute = Optional.empty(), nested = Optional.empty();
-            if (part.attribute().isEmpty()) {
-                if (!part.literal().isEmpty() && Character.isDigit(part.literal().charAt(0)))
-                    errors.add(emitRule(owner, "FORMAT separator must not start with a digit", "FORMAT_SEPARATOR"));
-            } else {
-                var name = part.attribute().orElseThrow();
-                attribute = structure.flatMap(st -> findMember(st, name.text()));
-                references.recordReference(owner, name, attribute.orElse(null), ReferenceUsage.TYPE_USE);
-                if (attribute.isEmpty()) errors.add(unresolved(name));
-                attribute.flatMap(index::byId).ifPresent(this::attributeType);
-                TypeDescriptor value = attribute.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
-                if (part.format().isPresent()) {
-                    nested = bindFormatName(context, part.format().orElseThrow(), Set.of(SymbolKind.DOMAIN));
-                    TypeDescriptor nestedType = nested.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
-                    SymbolId selected = value instanceof CollectionType c && !isMany(c.cardinality()) ? structures.target(c) : structures.target(value);
-                    if (value instanceof CollectionType c && isMany(c.cardinality())) selected = null;
-                    if (!(nestedType instanceof FormattedType f) || f.structure().isEmpty() || selected == null
-                            || !targetSpecializes(selected, f.structure().orElseThrow()))
-                        errors.add(emitRule(owner, "nested FORMAT requires a compatible singleton structure", "FORMAT_ATTRIBUTE"));
-                } else if (!(value instanceof NumericType)) errors.add(emitRule(owner, "FORMAT attribute must be numeric", "FORMAT_ATTRIBUTE"));
-                else {
-                    NumericRange range = ((NumericType)value).range();
-                    if (range.minimum().isPresent() && range.maximum().isPresent()
-                            && range.minimum().orElseThrow().precision().fractionalDigits()
-                            != range.maximum().orElseThrow().precision().fractionalDigits())
-                        errors.add(emitRule(owner, "FORMAT component bounds must have matching precision", "FORMAT_PRECISION"));
-                }
-                if (part.width().filter(w -> w.signum() <= 0).isPresent()) errors.add(emitRule(owner, "FORMAT width must be positive", "FORMAT_WIDTH"));
-            }
-            parts.add(new FormattedType.Part(attribute, part.width(), nested, part.literal(), new Origin.DeclaredOrigin(part.range())));
-        }
-        var result = new FormattedType(id, new Origin.DeclaredOrigin(syntax.range()),
-                syntax.base().map(guru.interlis.syntax.NameSyntax::text).orElse("<inherited>"),
-                predefined, domain, structure, parts, syntax.minimum(), syntax.maximum());
-        if (result.minimum().isPresent() || result.maximum().isPresent()) {
-            var min = result.minimum().flatMap(v -> formatValue(result, v));
-            var max = result.maximum().flatMap(v -> formatValue(result, v));
-            if (min.isEmpty() || max.isEmpty() || FormattedValues.compare(min.orElseThrow(), max.orElseThrow()) > 0)
-                errors.add(emitRule(owner, "FORMAT bounds must fit the layout and component ranges", "FORMAT_BOUNDS"));
-            else {
-                Set<TypeId> seen = new LinkedHashSet<>();
-                for (FormattedType ancestor = base; ancestor != null && seen.add(ancestor.id());) {
-                    checkWork();
-                    var lower = ancestor.minimum().isPresent() ? formatValue(ancestor, ancestor.minimum().orElseThrow()) : Optional.<List<java.math.BigDecimal>>empty();
-                    var upper = ancestor.maximum().isPresent() ? formatValue(ancestor, ancestor.maximum().orElseThrow()) : Optional.<List<java.math.BigDecimal>>empty();
-                    if (lower.filter(v -> FormattedValues.compare(min.orElseThrow(), v) < 0).isPresent()
-                            || upper.filter(v -> FormattedValues.compare(max.orElseThrow(), v) > 0).isPresent())
-                        errors.add(emitRule(owner, "FORMAT extension widens base bounds", "FORMAT_BOUNDS"));
-                    TypeDescriptor next = ancestor.baseDomain().map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
-                    ancestor = next instanceof FormattedType f ? f : null;
-                }
-            }
-        }
-        return errors.isEmpty()?result:new ErrorType(id,new Origin.DeclaredOrigin(syntax.range()),errors);
-    }
-
-    private void validateFormattedUses() {
-        for (var entry : state.declaredTypesInBuildOrder()) {
-            checkWork();
-            DeclInfo declaration = index.byId(entry.getKey()).orElse(null);
-            if (declaration == null || declaration.kind() != SymbolKind.DOMAIN && declaration.kind() != SymbolKind.ATTRIBUTE)
-                continue;
-            TypeDescriptor type = effectiveDescriptor(entry.getValue());
-            while (type instanceof CollectionType collection) type = effectiveDescriptor(collection.elementType());
-            if (type instanceof FormattedType format && formattedValues().isAbstract(format)
-                    && !declaration.modifiers().contains(guru.interlis.model.Modifier.ABSTRACT))
-                emitRule(declaration, "FORMAT with abstract components requires an abstract domain or attribute", "FORMAT_ABSTRACT");
-        }
-    }
-
-    private FormattedValues formattedValues() {
-        return new FormattedValues(id -> effectiveDescriptor(state.declaredType(id)), this::checkWork);
-    }
-
-    private Optional<List<java.math.BigDecimal>> formatValue(FormattedType type, String value) {
-        return formattedValues().parse(type, value, false);
-    }
-
-    private TypeId buildType(TypeSyntax syntax, SymbolId context, SourceId source) {
-        checkWork();
-        Objects.requireNonNull(syntax, "syntax");
-        TypeId id = nextTypeId();
-        TypeDescriptor descriptor = switch (syntax) {
-            case TextTypeSyntax text -> {
-                if (text.maxLength().isPresent() && text.maxLength().getAsInt() == 0)
-                    yield new ErrorType(id, new Origin.DeclaredOrigin(text.range()), List.of(emitRule(index.byId(context).orElseThrow(),
-                            "declared text maximum length must be positive", "TEXT_LENGTH", text.range())));
-                yield new TextType(id, new Origin.DeclaredOrigin(text.range()), text.textKind(),
-                    text.maxLength().isPresent() ? text.maxLength() : switch (text.textKind()) {
-                        case NAME -> java.util.OptionalInt.of(255);
-                        case URI -> java.util.OptionalInt.of(1023);
-                        default -> java.util.OptionalInt.empty();
-                    });
-            }
-            case BooleanTypeSyntax bool -> new guru.interlis.model.BooleanType(id,
-                    new Origin.DeclaredOrigin(bool.range()));
-            case TemporalTypeSyntax syntaxTime -> {
-                String name = switch (syntaxTime.temporalKind()) {
-                    case DATE -> "XMLDate"; case TIMEOFDAY -> "XMLTime"; case DATETIME -> "XMLDateTime";
-                };
-                var domain = temporal.find(index.byId(context).orElseThrow(), "INTERLIS." + name, Set.of(SymbolKind.DOMAIN)).orElseThrow();
-                yield new DomainReferenceType(id, new Origin.DeclaredOrigin(syntaxTime.range()), domain);
-            }
-            case OidTypeSyntax oid -> {
-                Optional<TypeId> carrier = oid.valueType().map(t -> buildType(t, context, source));
-                if (oid.oidKind() == guru.interlis.model.OidKind.UUID) {
-                    TypeId text = nextTypeId(); state.storeType(new TextType(text, new Origin.DeclaredOrigin(oid.range()), TextKind.TEXT, java.util.OptionalInt.of(36)));
-                    carrier = Optional.of(text);
-                }
-                yield new guru.interlis.model.OidType(id, new Origin.DeclaredOrigin(oid.range()), oid.oidKind(), carrier);
-            }
-            case BlackboxTypeSyntax blackbox -> new guru.interlis.model.BlackboxType(id,
-                    new Origin.DeclaredOrigin(blackbox.range()), blackbox.blackboxKind());
-            case AlignmentTypeSyntax alignment -> new guru.interlis.model.AlignmentType(id,
-                    new Origin.DeclaredOrigin(alignment.range()), alignment.alignment());
-            case EnumTreeValueSyntax enumTree -> {
-                List<DiagnosticId> errors = new ArrayList<>();
-                Optional<SymbolId> domain = names.bindTarget(index.byId(context).orElseThrow(), enumTree.target(),
-                        Set.of(SymbolKind.DOMAIN), ReferenceUsage.TYPE_USE, errors);
-                if (domain.isEmpty()) yield new ErrorType(id, new Origin.DeclaredOrigin(enumTree.range()), errors);
-                index.byId(domain.orElseThrow()).ifPresent(this::domainType);
-                TypeDescriptor base=effectiveDescriptor(state.declaredType(domain.orElseThrow()));
-                if(!(base instanceof EnumerationType enumeration) || enumeration.treeValues())
-                    yield new ErrorType(id,new Origin.DeclaredOrigin(enumTree.range()),List.of(emitRule(index.byId(context).orElseThrow(),"ALL OF requires an enumeration domain","ENUM_TREE_TARGET",enumTree.range())));
-                yield new EnumerationType(id,new Origin.DeclaredOrigin(enumTree.range()),enumeration.values(),enumeration.ordered(),
-                        enumeration.circular(),enumeration.finalSubtrees(),Optional.of(enumeration.id()),true);
-            }
-            case guru.interlis.syntax.EnumArgumentTypeSyntax argument ->
-                new guru.interlis.model.EnumArgumentType(id,new Origin.DeclaredOrigin(argument.range()),argument.treeValues());
-
-            case guru.interlis.syntax.StructureValueTypeSyntax structure -> structures.bind(id,structure,index.byId(context).orElseThrow());
-            case GenericTypeSyntax generic -> {
-                if ("INHERITED".equals(generic.name())) {
-                    yield new ErrorType(id, new Origin.DeclaredOrigin(generic.range()), List.of(emitRule(
-                            index.byId(context).orElseThrow(), "a type can only be omitted on an inherited attribute",
-                            "INHERITED_TYPE_CONTEXT")));
-                }
-                yield new GenericType(id, new Origin.DeclaredOrigin(generic.range()), generic.name());
-            }
-            case guru.interlis.syntax.AttributePathTypeSyntax path -> {
-                Optional<guru.interlis.model.AttributePathType.Owner> owner = Optional.empty();
-                if (path.argument().isPresent()) {
-                    DeclInfo declaration = index.byId(context).orElseThrow();
-                    String name = path.argument().orElseThrow().text();
-                    int position = -1;
-                    if (declaration.syntax() instanceof FunctionDeclarationSyntax function) {
-                        for (int i = 0; i < function.parameters().size(); i++)
-                            if (function.parameters().get(i).name().equals(name)) { position = i; break; }
-                    }
-                    if (position < 0) {
-                        yield new ErrorType(id, new Origin.DeclaredOrigin(path.range()), List.of(emitRule(declaration,
-                                "ATTRIBUTE OF @ requires an argument of this function", "ATTRIBUTE_ARGUMENT")));
-                    }
-                    TypeDescriptor argumentType = effectiveDescriptor(functionArgumentType(declaration, position));
-                    if (!(argumentType instanceof guru.interlis.model.ObjectArgumentType || argumentType instanceof StructureValueType
-                            || argumentType instanceof ClassValueType || argumentType instanceof guru.interlis.model.AttributePathType || argumentType instanceof ErrorType))
-                        emitRule(declaration, "ATTRIBUTE OF @ argument must describe objects, classes or an attribute path", "ATTRIBUTE_ARGUMENT_TYPE");
-                    owner = Optional.of(new guru.interlis.model.AttributePathType.Argument(context, position));
-                }
-                Optional<ExpressionResult> ownerClass = path.ownerClass().map(expression -> buildExpression(expression, index.byId(context).orElseThrow().owner().orElse(context)));
-                List<TypeId> restrictions = path.restrictions().stream().map(t -> buildType(t, context, source)).toList();
-                if (ownerClass.isPresent() && !(effectiveDescriptor(ownerClass.orElseThrow().typeId()) instanceof ClassValueType))
-                    emitRule(index.byId(context).orElseThrow(), "ATTRIBUTE OF requires a class-valued attribute path", "ATTRIBUTE_PATH_TYPE");
-                yield new guru.interlis.model.AttributePathType(id, new Origin.DeclaredOrigin(path.range()),
-                        ownerClass.isPresent() ? Optional.of(new guru.interlis.model.AttributePathType.ClassAttribute(ownerClass.orElseThrow().id())) : owner, restrictions);
-            }
-            case ClassValueTypeSyntax classValue -> {
-                List<DiagnosticId> errors = new ArrayList<>();
-                List<SymbolId> restrictions = new ArrayList<>();
-                var kinds = classValue.structureValue() ? Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE)
-                        : Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW);
-                for (var name : classValue.restrictions()) {
-                    names.bindTarget(index.byId(context).orElseThrow(), name, kinds, ReferenceUsage.TYPE_USE, errors).ifPresent(target -> {
-                        SymbolId current = target;
-                        Set<SymbolId> visited = new HashSet<>();
-                        while (current != null && visited.add(current)) { checkWork(); current = objectInheritanceBase(current).orElse(null); }
-                        restrictions.add(target);
-                    });
-                }
-                yield errors.isEmpty() ? new ClassValueType(id, new Origin.DeclaredOrigin(classValue.range()), classValue.structureValue(), restrictions)
-                        : new ErrorType(id, new Origin.DeclaredOrigin(classValue.range()), errors);
-            }
-            case guru.interlis.syntax.ObjectArgumentTypeSyntax object ->
-                    buildObjectArgumentType(id, object, context);
-            case guru.interlis.syntax.MetaObjectTypeSyntax meta -> {
-                var declaration = index.byId(context).orElseThrow();
-                var target = meta.target().flatMap(name -> {
-                    var predefined = metadata.predefined(declaration, name.text(), Set.of(SymbolKind.CLASS));
-                    if (predefined.isPresent()) references.recordReference(declaration, name, predefined.get(), ReferenceUsage.TYPE_USE);
-                    return predefined.isPresent() ? predefined : names.bindTarget(declaration, name, Set.of(SymbolKind.CLASS), ReferenceUsage.TYPE_USE, new ArrayList<>());
-                });
-                target.ifPresent(idTarget -> {
-                    metadata.ensureBases(idTarget);
-                    var root = metadata.predefined(declaration, "INTERLIS.METAOBJECT", Set.of(SymbolKind.CLASS)).orElseThrow();
-                    if (!guru.interlis.model.internal.TypeCompatibility.specializes(idTarget, root, state::baseOf))
-                        emitRule(declaration, "METAOBJECT OF requires a metadata class", "PARAMETER_METAOBJECT_TARGET");
-                });
-                yield new guru.interlis.model.MetaObjectType(id, new Origin.DeclaredOrigin(meta.range()), target);
-            }
-            case LineTypeSyntax line -> lines.buildType(id, line, index.byId(context).orElseThrow());
-            case FormattedTypeSyntax formatted -> buildFormattedType(id, formatted, context);
-            case guru.interlis.syntax.NumericTypeSyntax numeric -> {
-                var invalid = new ArrayList<>(numericErrors(numeric, index.byId(context).orElseThrow()));
-                if (!invalid.isEmpty()) yield new ErrorType(id, new Origin.DeclaredOrigin(numeric.range()), invalid);
-                var range=metadata.numeric(numeric,index.byId(context).orElseThrow(),invalid);
-                validateNumericUnit(range,index.byId(context).orElseThrow(),numeric.range(),invalid);
-                yield invalid.isEmpty()?new NumericType(id,new Origin.DeclaredOrigin(numeric.range()),range)
-                        :new ErrorType(id,new Origin.DeclaredOrigin(numeric.range()),invalid);
-            }
-            case EnumerationTypeSyntax enumeration -> {
-                DeclInfo declaration = index.byId(context).orElseThrow();
-                TypeDescriptor inherited = null;
-                if (declaration.kind() == SymbolKind.ATTRIBUTE && declaration.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
-                    SymbolId owner = declaration.owner().orElse(null);
-                    AttributeSymbol baseAttribute = owner == null ? null : findBaseAttribute(state.baseOf(owner), declaration.name());
-                    if (baseAttribute != null) inherited = effectiveDescriptor(baseAttribute.declaredType());
-                }
-                // Domains are merged after their base reference has been bound.
-                yield declaration.kind() == SymbolKind.DOMAIN
-                        ? new EnumerationType(id, new Origin.DeclaredOrigin(enumeration.range()), List.of(),
-                                enumeration.ordered(), enumeration.circular(), enumeration.finalSubtrees(), Optional.empty(), false)
-                        : effectiveEnumeration(id, enumeration, inherited, declaration);
-            }
-            case DomainReferenceSyntax reference -> {
-                var declaration=index.byId(context).orElseThrow();var errors=new ArrayList<DiagnosticId>();
-                var target=names.bindTarget(declaration,reference.name(),Set.of(SymbolKind.DOMAIN,SymbolKind.STRUCTURE),ReferenceUsage.TYPE_USE,errors);
-                if(target.isEmpty())yield new ErrorType(id,new Origin.DeclaredOrigin(reference.range()),errors);
-                SymbolId selected=target.orElseThrow();
-                var sourceDeclaration=index.byId(selected);
-                SymbolKind kind=sourceDeclaration.map(DeclInfo::kind).orElseGet(()->state.symbol(selected).kind());
-                if(kind==SymbolKind.STRUCTURE)yield new StructureValueType(id,new Origin.DeclaredOrigin(reference.range()),Optional.of(selected),List.of());
-                sourceDeclaration.ifPresent(this::domainType);
-                yield new DomainReferenceType(id,new Origin.DeclaredOrigin(reference.range()),selected);
-            }
-            case ReferenceTypeSyntax reference -> {
-                DeclInfo declaration = index.byId(context).orElseThrow();
-                Optional<SymbolId> target = reference.target().text().equals("ANYCLASS") ? Optional.empty()
-                        : Optional.of(bindObjectTarget(declaration, reference.target(), ReferenceUsage.TYPE_USE));
-                List<SymbolId> restrictions = reference.restrictions().stream()
-                        .map(name -> bindObjectTarget(declaration, name, ReferenceUsage.TYPE_USE)).toList();
-                for (SymbolId restriction : restrictions) {
-                    checkWork();
-                    if (target.isPresent() && !targetSpecializes(restriction, target.orElseThrow()))
-                        emitRule(declaration, "reference restriction must specialize its primary target", "REFERENCE_TARGET_RESTRICTION");
-                }
-                yield new ReferenceType(id, new Origin.DeclaredOrigin(reference.range()), target, restrictions, reference.external());
-            }
-            case CollectionTypeSyntax collection -> {
-                TypeId element = buildType(collection.elementType(), context, source);
-                if (index.byId(context).orElseThrow().language() == guru.interlis.model.LanguageVersion.ILI23
-                        && !(effectiveDescriptor(element) instanceof StructureValueType)
-                        && !(effectiveDescriptor(element) instanceof ErrorType))
-                    emitRule(index.byId(context).orElseThrow(), "INTERLIS 2.3 collections require structure elements", "COLLECTION_ELEMENT_VERSION");
-                yield new CollectionType(id, new Origin.DeclaredOrigin(collection.range()),
-                        collection.collectionKind(), collection.cardinality(), element);
-            }
-            case CoordinateTypeSyntax coordinate -> {
-                List<DiagnosticId> invalid = new ArrayList<>();
-                for (var axis : coordinate.axes()) invalid.addAll(numericErrors(axis, index.byId(context).orElseThrow()));
-                if (!invalid.isEmpty()) yield new ErrorType(id, new Origin.DeclaredOrigin(coordinate.range()), invalid);
-                var axes=new ArrayList<NumericRange>();
-                for(var axis:coordinate.axes()) {
-                    var range=metadata.numeric(axis,index.byId(context).orElseThrow(),invalid);
-                    validateNumericUnit(range,index.byId(context).orElseThrow(),axis.range(),invalid);axes.add(range);
-                }
-                yield invalid.isEmpty()?new guru.interlis.model.CoordinateType(id,
-                    new Origin.DeclaredOrigin(coordinate.range()),coordinate.dimensions(),axes,coordinate.multiCoordinate(),coordinate.referenceSystem(),coordinate.rotation())
-                        :new ErrorType(id,new Origin.DeclaredOrigin(coordinate.range()),invalid);
-            }
-            case guru.interlis.syntax.UnsupportedTypeSyntax unsupported -> {
-                if (unsupported.featureId().equals("MISSING_ATTRIBUTE_TYPE") || unsupported.featureId().equals("MISSING_FUNCTION_RETURN_TYPE")) {
-                    DiagnosticId cause = null;
-                    int distance = Integer.MAX_VALUE;
-                    for (var diagnostic : diagnostics.syntaxErrors()) {
-                        checkWork();
-                        var range = diagnostic.primaryRange().orElse(null);
-                        if (range == null || !range.source().equals(unsupported.range().source())
-                                || !range.revision().equals(unsupported.range().revision())) continue;
-                        int candidate = Math.abs(range.startOffset() - unsupported.range().endOffset());
-                        if (candidate < distance) { cause = diagnostic.id(); distance = candidate; }
-                    }
-                    if (cause == null) cause = emitRule(index.byId(context).orElseThrow(), "attribute type is missing", "SOURCE_MISSING_TYPE", unsupported.range());
-                    yield new ErrorType(id, new Origin.DeclaredOrigin(unsupported.range()), List.of(cause));
-                }
-                DiagnosticId diagnostic = emitUnsupported(source, unsupported.range(),
-                        unsupported.featureId(), unsupported.construct());
-                yield new ErrorType(id, new Origin.DeclaredOrigin(unsupported.range()),
-                        List.of(diagnostic));
-            }
-        };
-        state.storeType(descriptor);
-        return id;
-    }
-
-    private TypeDescriptor buildObjectArgumentType(TypeId id,
-            guru.interlis.syntax.ObjectArgumentTypeSyntax syntax, SymbolId context) {
-        DeclInfo owner = index.byId(context).orElseThrow();
-        List<DiagnosticId> errors = new ArrayList<>();
-        List<SymbolId> restrictions = new ArrayList<>();
-        Optional<SymbolId> base = syntax.base().flatMap(name ->
-                bindObjectTarget(owner, name, errors));
-        for (var name : syntax.restrictions()) {
-            checkWork();
-            Optional<SymbolId> restriction = bindObjectTarget(owner, name, errors);
-            restriction.ifPresent(restrictions::add);
-            if (base.isPresent() && restriction.isPresent()
-                    && !guru.interlis.model.internal.TypeCompatibility.specializes(
-                            restriction.get(), base.get(), state::baseOf)) {
-                errors.add(diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0005"),
-                                Severity.ERROR, Phase.TYPE_CHECKING, "diagnostic.semantics.type")
-                        .at(name.range())
-                        .argument(new DiagnosticArgument.TypeNameArgument("actual", name.text()))
-                        .argument(new DiagnosticArgument.TypeNameArgument("expected",
-                                "specialization of " + syntax.base().orElseThrow().text()))));
-            }
-        }
-        Origin origin = new Origin.DeclaredOrigin(syntax.range());
-        return errors.isEmpty()
-                ? new guru.interlis.model.ObjectArgumentType(id, origin, base, restrictions, syntax.objects())
-                : new ErrorType(id, origin, errors);
-    }
-
-    private Optional<SymbolId> bindObjectTarget(DeclInfo owner,
+    Optional<SymbolId> bindObjectTarget(DeclInfo owner,
             guru.interlis.syntax.NameSyntax name, List<DiagnosticId> errors) {
         return names.bindTarget(owner, name, Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW), ReferenceUsage.TYPE_USE, errors);
     }
 
-    private TypeId errorType(SourceId source, SourceRange range, String feature) {
-        TypeId id = nextTypeId();
-        DiagnosticId diagnostic = emitUnsupported(source, range, feature, feature);
-        state.storeType(new ErrorType(id, new Origin.SyntheticOrigin(
-                guru.interlis.model.SyntheticReason.MISSING_TYPE, Optional.of(range)),
-                List.of(diagnostic)));
-        return id;
-    }
-
-    private TypeId builtinBoolean(guru.interlis.model.LanguageVersion language) {
-        return booleanTypes.computeIfAbsent(language,version->{
-            TypeId id=nextTypeId();state.storeType(new guru.interlis.model.BooleanType(id,new Origin.PredefinedOrigin(version,"BOOLEAN")));return id;
-        });
-    }
-
-    TypeId nextTypeId() {
-        return state.nextTypeId();
-    }
 
     // ---- expressions -----------------------------------------------------------
 
@@ -3135,7 +1958,7 @@ final class GraphBuilder {
             case UnsupportedExpressionSyntax unsupported -> {
                 DiagnosticId diagnostic = emitUnsupported(ownerSource(owner), unsupported.range(),
                         unsupported.featureId(), unsupported.construct());
-                TypeId error = errorType(ownerSource(owner), unsupported.range(),
+                TypeId error = types.errorType(ownerSource(owner), unsupported.range(),
                         unsupported.featureId());
                 ErrorExpression expression = new ErrorExpression(id, error,
                         guru.interlis.model.ExpressionTypeState.ERROR, unsupported.range(),
@@ -3150,19 +1973,19 @@ final class GraphBuilder {
             guru.interlis.syntax.ObjectSetExpressionSyntax syntax, SymbolId owner) {
         TypeId type;
         if (syntax.selection().isPresent()) {
-            type = buildType(syntax.selection().orElseThrow(), owner, ownerSource(owner));
+            type = types.buildType(syntax.selection().orElseThrow(), owner, ownerSource(owner));
         } else {
             SymbolId context = expressionContext(owner);
             var kind = index.byId(context).map(DeclInfo::kind).orElse(null);
-            type = nextTypeId();
+            type = types.nextTypeId();
             if (kind == SymbolKind.CLASS || kind == SymbolKind.ASSOCIATION || kind == SymbolKind.VIEW) {
                 state.storeType(new guru.interlis.model.ObjectArgumentType(type,
                         new Origin.DeclaredOrigin(syntax.range()), Optional.of(context), List.of(), true));
             } else {
-                type = errorType(ownerSource(owner), syntax.range(), "ALL requires an object context");
+                type = types.errorType(ownerSource(owner), syntax.range(), "ALL requires an object context");
             }
         }
-        boolean error = effectiveDescriptor(type) instanceof ErrorType;
+        boolean error = types.effectiveDescriptor(type) instanceof ErrorType;
         state.storeExpression(new guru.interlis.model.ObjectSetExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range()));
@@ -3182,7 +2005,7 @@ final class GraphBuilder {
     private ExpressionResult genericConstantExpression(ExpressionId id,
                                                        GenericConstantExpressionSyntax syntax,
                                                        SymbolId owner) {
-        TypeId type = nextTypeId();
+        TypeId type = types.nextTypeId();
         state.storeType(new GenericType(type, new Origin.DeclaredOrigin(syntax.range()), syntax.name()));
         state.storeExpression(new guru.interlis.model.ConstantExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
@@ -3201,7 +2024,7 @@ final class GraphBuilder {
         if (target.isEmpty()) target = names.bindTarget(declaration, syntax.target(), kinds, ReferenceUsage.EXPRESSION, errors);
         else references.recordReference(declaration, syntax.target(), target.orElseThrow(), ReferenceUsage.EXPRESSION);
         if (target.isEmpty()) return failedValueExpression(id, syntax.range(), errors);
-        TypeId type = nextTypeId();
+        TypeId type = types.nextTypeId();
         boolean structure = state.symbol(target.orElseThrow()) instanceof StructureSymbol
                 || index.byId(target.orElseThrow()).map(d -> d.kind() == SymbolKind.STRUCTURE).orElse(false);
         state.storeType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()), structure, target.stream().toList()));
@@ -3231,9 +2054,9 @@ final class GraphBuilder {
             errors.add(unresolved(syntax.attribute()));
             return failedValueExpression(id, syntax.range(), errors);
         }
-        TypeId attributeType = index.byId(attribute.orElseThrow()).map(this::attributeType)
+        TypeId attributeType = index.byId(attribute.orElseThrow()).map(types::attributeType)
                 .orElseGet(() -> ((AttributeSymbol) state.symbol(attribute.orElseThrow())).declaredType());
-        TypeId type = nextTypeId();
+        TypeId type = types.nextTypeId();
         state.storeType(new guru.interlis.model.AttributePathType(type, new Origin.DeclaredOrigin(syntax.range()),
                 Optional.of(new guru.interlis.model.AttributePathType.Viewable(viewable.orElseThrow())), List.of(attributeType)));
         state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, type, guru.interlis.model.ExpressionTypeState.RESOLVED,
@@ -3246,7 +2069,7 @@ final class GraphBuilder {
         var target = names.bindTarget(index.byId(owner).orElseThrow(), syntax.parameter(), Set.of(SymbolKind.PARAMETER), ReferenceUsage.EXPRESSION, errors);
         if (target.isEmpty()) return failedValueExpression(id, syntax.range(), errors);
         var parameter = (guru.interlis.model.ParameterSymbol) buildSymbol(index.byId(target.orElseThrow()).orElseThrow());
-        boolean error = effectiveDescriptor(parameter.typeId()) instanceof ErrorType;
+        boolean error = types.effectiveDescriptor(parameter.typeId()) instanceof ErrorType;
         state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, parameter.typeId(),
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), parameter.id()));
@@ -3254,7 +2077,7 @@ final class GraphBuilder {
     }
 
     private ExpressionResult failedValueExpression(ExpressionId id, SourceRange range, List<DiagnosticId> errors) {
-        TypeId type = nextTypeId();
+        TypeId type = types.nextTypeId();
         state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(range), errors));
         state.storeExpression(new guru.interlis.model.ErrorExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.ERROR, range, List.of(), errors));
@@ -3266,7 +2089,7 @@ final class GraphBuilder {
     }
 
     ExpressionResult blockedFunctionArgument(SourceRange range,ExpressionResult dependency,DeclInfo owner) {
-        var descriptor=effectiveDescriptor(dependency.typeId());var source=state.expression(dependency.id()).range();
+        var descriptor=types.effectiveDescriptor(dependency.typeId());var source=state.expression(dependency.id()).range();
         var causes=descriptor instanceof ErrorType error?error.diagnosticIds():diagnostics.snapshot().stream()
                 .filter(d->d.severity()==Severity.ERROR&&d.primaryRange().filter(r->r.source().equals(source.source())&&r.revision().equals(source.revision())
                         &&r.startOffset()<=source.endOffset()&&r.endOffset()>=source.startOffset()).isPresent()).map(guru.interlis.diagnostics.Diagnostic::id).toList();
@@ -3279,14 +2102,14 @@ final class GraphBuilder {
                                                            SymbolId owner) {
         String text = syntax.text().toLowerCase(java.util.Locale.ROOT);
         if (text.equals("#true") || text.equals("#false")) {
-            TypeId type = builtinBoolean(index.byId(owner).orElseThrow().language());
+            TypeId type = types.builtinBoolean(index.byId(owner).orElseThrow().language());
             state.storeExpression(new guru.interlis.model.LiteralExpression(id, type,
                     guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                     guru.interlis.model.LiteralKind.BOOLEAN, syntax.text(), Optional.empty(),
                     Optional.empty()));
             return new ExpressionResult(id, type, false);
         }
-        TypeId type = nextTypeId();
+        TypeId type = types.nextTypeId();
         state.storeType(new guru.interlis.model.EnumArgumentType(type,new Origin.DeclaredOrigin(syntax.range()),false));
         state.storeExpression(new guru.interlis.model.ConstantExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
@@ -3308,7 +2131,7 @@ final class GraphBuilder {
                 && declaration.language() != guru.interlis.model.LanguageVersion.ILI24) {
             DiagnosticId cause = emitRule(declaration, "Unknown standard function INTERLIS." + syntax.functionName().segments().getLast().text(),
                     "BUILTIN_NAME");
-            type = nextTypeId();
+            type = types.nextTypeId();
             state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(cause)));
             error = true;
 
@@ -3328,7 +2151,7 @@ final class GraphBuilder {
                             && state.expression(actual.id()) instanceof guru.interlis.model.UndefinedExpression)
                         && !builtinArgumentMatches(actual.typeId(), expected, declaration.language())) {
                     emitTypeMismatch(ownerSource(owner), syntax.arguments().get(i).range(),
-                            typeName(actual.typeId()), expected.name());
+                            types.typeName(actual.typeId()), expected.name());
                     error = true;
                 }
             }
@@ -3336,7 +2159,7 @@ final class GraphBuilder {
         if(!error && (signature.name().equals("isEnumSubVal") || signature.name().equals("inEnumRange")))
             error=!enumArgumentsValid(arguments,signature,declaration,syntax.range());
         if (!error && syntax.functionName().segments().getLast().text().equals("myClass")) {
-            TypeDescriptor argument = effectiveDescriptor(arguments.getFirst().typeId());
+            TypeDescriptor argument = types.effectiveDescriptor(arguments.getFirst().typeId());
             List<SymbolId> targets = argument instanceof ReferenceType r ? r.targetRoots()
                     : argument instanceof guru.interlis.model.ObjectArgumentType o ? (o.restrictions().isEmpty() ? o.base().stream().toList() : o.restrictions())
                     : argument instanceof StructureValueType structure ? structure.targetRoots() : List.of();
@@ -3344,8 +2167,8 @@ final class GraphBuilder {
                     argument instanceof StructureValueType || guru.interlis.model.internal.TypeCompatibility.isUndefined(argument), targets));
         }
         if (!error && signature.rule()==BuiltinFunctions.Rule.CONVERT_UNIT) {
-            var from=effectiveDescriptor(arguments.getFirst().typeId());
-            type=nextTypeId();
+            var from=types.effectiveDescriptor(arguments.getFirst().typeId());
+            type=types.nextTypeId();
             state.storeType(new NumericType(type,new Origin.DeclaredOrigin(syntax.range()),new NumericRange(Optional.empty(),Optional.empty(),false,
                     guru.interlis.model.NumericDirection.NONE,from instanceof NumericType n?n.range().unit():Optional.empty(),Optional.empty())));
         }
@@ -3365,11 +2188,11 @@ final class GraphBuilder {
     }
 
     private boolean enumArgumentsValid(List<ExpressionResult> arguments, BuiltinFunctions.Signature signature, DeclInfo owner, SourceRange range) {
-        var anchor=arguments.stream().filter(a->!isEnumConstant(a)).map(a->effectiveDescriptor(a.typeId()))
+        var anchor=arguments.stream().filter(a->!isEnumConstant(a)).map(a->types.effectiveDescriptor(a.typeId()))
                 .filter(a->a instanceof EnumerationType || a instanceof guru.interlis.model.BooleanType || a instanceof guru.interlis.model.AlignmentType).findFirst().orElse(null);
         if(anchor==null)return true; // Polymorphic literal-only calls have no declared enum identity.
         for(int i=0;i<arguments.size();i++) {
-            var argument=arguments.get(i);var actual=effectiveDescriptor(argument.typeId());
+            var argument=arguments.get(i);var actual=types.effectiveDescriptor(argument.typeId());
             boolean valid;
             if(isEnumConstant(argument)) {
                 var path=((guru.interlis.model.ConstantExpression)state.expression(argument.id())).constantName().substring(1);
@@ -3377,7 +2200,7 @@ final class GraphBuilder {
                 valid=values.contains(path) && (signature.arguments().get(i)==BuiltinFunctions.Value.ENUM_TREE
                         || values.stream().noneMatch(v->v.startsWith(path+".")));
             } else valid=anchor instanceof EnumerationType a && actual instanceof EnumerationType b
-                        && guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a,b,this::effectiveDescriptor)
+                        && guru.interlis.model.internal.TypeCompatibility.relatedEnumerations(a,b,types::effectiveDescriptor)
                     || anchor instanceof guru.interlis.model.BooleanType && actual instanceof guru.interlis.model.BooleanType
                     || anchor instanceof guru.interlis.model.AlignmentType a && actual instanceof guru.interlis.model.AlignmentType b && a.alignment()==b.alignment();
             if(guru.interlis.model.internal.TypeCompatibility.isUndefined(actual))continue;
@@ -3386,7 +2209,7 @@ final class GraphBuilder {
                 TypeId context=anchor.id();
                 if(anchor instanceof EnumerationType enumeration && !enumeration.treeValues()
                         && signature.arguments().get(i)==BuiltinFunctions.Value.ENUM_TREE) {
-                    context=nextTypeId();state.storeType(new EnumerationType(context,enumeration.origin(),enumeration.values(),enumeration.ordered(),
+                    context=types.nextTypeId();state.storeType(new EnumerationType(context,enumeration.origin(),enumeration.values(),enumeration.ordered(),
                             enumeration.circular(),enumeration.finalSubtrees(),Optional.of(enumeration.id()),true));
                 }
                 arguments.set(i,contextualEnumConstant(argument,context,owner.id()));
@@ -3412,7 +2235,7 @@ final class GraphBuilder {
         for(int i=0;i<signature.arguments().size();i++) {
             TypeId parameter;
             if(signature.arguments().get(i)==BuiltinFunctions.Value.ATTRIBUTE) {
-                parameter=nextTypeId();
+                parameter=types.nextTypeId();
                 TypeId restriction=builtinResultType(i==1?BuiltinFunctions.Value.BAG:BuiltinFunctions.Value.SURFACE,language);
                 state.storeType(new guru.interlis.model.AttributePathType(parameter,new Origin.PredefinedOrigin(language,"INTERLIS."+signature.name()),
                         Optional.of(new guru.interlis.model.AttributePathType.Argument(id,i-1)),List.of(restriction)));
@@ -3426,8 +2249,8 @@ final class GraphBuilder {
 
     private TypeId builtinResultType(BuiltinFunctions.Value value,
                                     guru.interlis.model.LanguageVersion language) {
-        if (value == BuiltinFunctions.Value.BOOLEAN) return builtinBoolean(language);
-        TypeId id = nextTypeId();
+        if (value == BuiltinFunctions.Value.BOOLEAN) return types.builtinBoolean(language);
+        TypeId id = types.nextTypeId();
         var origin = new Origin.PredefinedOrigin(language, value.name());
         TypeDescriptor descriptor = switch (value) {
             case NUMERIC -> new NumericType(id, origin, NumericRange.unbounded());
@@ -3450,9 +2273,9 @@ final class GraphBuilder {
     }
 
     private boolean builtinArgumentMatches(TypeId actual, BuiltinFunctions.Value expected, guru.interlis.model.LanguageVersion language) {
-        return guru.interlis.model.internal.TypeCompatibility.assign(effectiveDescriptor(actual),
-                effectiveDescriptor(builtinResultType(expected,language)),this::effectiveDescriptor,state::baseOf,
-                domain->effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT)
+        return guru.interlis.model.internal.TypeCompatibility.assign(types.effectiveDescriptor(actual),
+                types.effectiveDescriptor(builtinResultType(expected,language)),types::effectiveDescriptor,state::baseOf,
+                domain->types.effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT)
                 .decision()==guru.interlis.model.RelationDecision.ALLOWED;
     }
 
@@ -3473,7 +2296,7 @@ final class GraphBuilder {
         TypeId type;
         if (function == null) {
             checkWork();
-            type = nextTypeId();
+            type = types.nextTypeId();
             state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()),
                     bindingErrors));
             error = true;
@@ -3489,12 +2312,12 @@ final class GraphBuilder {
                 var actual = arguments.get(i);
                 TypeId expected = function.parameters().get(i).typeId();
                 actual=contextualValue(actual,expected,owner);arguments.set(i,actual);
-                if (!actual.error() && !(effectiveDescriptor(expected) instanceof guru.interlis.model.AttributePathType) && guru.interlis.model.internal.TypeCompatibility.assign(
-                        effectiveDescriptor(actual.typeId()), effectiveDescriptor(expected),
-                        this::effectiveDescriptor, state::baseOf, domain -> effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
+                if (!actual.error() && !(types.effectiveDescriptor(expected) instanceof guru.interlis.model.AttributePathType) && guru.interlis.model.internal.TypeCompatibility.assign(
+                        types.effectiveDescriptor(actual.typeId()), types.effectiveDescriptor(expected),
+                        types::effectiveDescriptor, state::baseOf, domain -> types.effectiveDescriptor(state.declaredType(domain)),guru.interlis.model.AssignmentContext.FUNCTION_ARGUMENT).decision()
                         != guru.interlis.model.RelationDecision.ALLOWED) {
                     emitTypeMismatch(ownerSource(owner), syntax.arguments().get(i).range(),
-                            typeName(actual.typeId()), typeName(expected));
+                            types.typeName(actual.typeId()), types.typeName(expected));
                     error = true;
                 }
             }
@@ -3513,7 +2336,7 @@ final class GraphBuilder {
         TypedExpression expression;
         if (syntax.literalKind() == guru.interlis.model.LiteralKind.TEXT) {
             String value = unquote(syntax.lexeme());
-            type = nextTypeId();
+            type = types.nextTypeId();
             state.storeType(new TextType(type, new Origin.DeclaredOrigin(syntax.range()),
                     value.indexOf('\r')>=0 || value.indexOf('\n')>=0 || value.indexOf('\t')>=0 ? TextKind.MTEXT : TextKind.TEXT,
                     java.util.OptionalInt.of(TextLengths.canonicalLength(value))));
@@ -3524,22 +2347,22 @@ final class GraphBuilder {
         } else {
             type = numericLiteralType(syntax.decimal(), syntax.unit(), syntax.range(), owner);
             expression = new guru.interlis.model.LiteralExpression(id, type,
-                    effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
+                    types.effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                     syntax.literalKind(), syntax.lexeme(), syntax.decimal(), Optional.empty());
         }
         state.storeExpression(expression);
-        return new ExpressionResult(id, type, effectiveDescriptor(type) instanceof ErrorType);
+        return new ExpressionResult(id, type, types.effectiveDescriptor(type) instanceof ErrorType);
     }
 
     private TypeId numericLiteralType(Optional<DecimalLiteral> decimal, Optional<guru.interlis.syntax.NameSyntax> unitName, SourceRange sourceRange, SymbolId owner) {
-        TypeId type = nextTypeId();
-        Optional<SymbolId> unit = unitName.flatMap(name -> bindUnit(index.byId(owner).orElseThrow(), name));
+        TypeId type = types.nextTypeId();
+        Optional<SymbolId> unit = unitName.flatMap(name -> units.bindUnit(index.byId(owner).orElseThrow(), name));
         if (unitName.isPresent() && unit.isEmpty()) {
             var diagnostic = emitRule(index.byId(owner).orElseThrow(), "Numeric constant requires a known unit", "CONSTANT_UNIT", unitName.orElseThrow().range());
             state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
             return type;
         }
-        if (unit.isPresent() && extensionUnit(unit.orElseThrow()).abstractUnit()) {
+        if (unit.isPresent() && units.extensionUnit(unit.orElseThrow()).abstractUnit()) {
             var diagnostic = emitRule(index.byId(owner).orElseThrow(), "Numeric constant requires a concrete unit", "CONSTANT_UNIT", unitName.orElseThrow().range());
             state.storeType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
             return type;
@@ -3621,7 +2444,7 @@ final class GraphBuilder {
                             || java.util.Objects.equals(currentScope, expressionContext(owner)));
                 if (!valid) {
                     var diagnostic = emitRule(index.byId(owner).orElseThrow(), "invalid inspection path context", "VIEW_INSPECTION_CONTEXT");
-                    currentType = nextTypeId();
+                    currentType = types.nextTypeId();
                     state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                     steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, name.range()));
                     error = true; break;
@@ -3632,13 +2455,13 @@ final class GraphBuilder {
                 continue;
             }
             if ("THIS".equals(text) && segment.index().isEmpty() && !segment.associationAccess() && (currentScope != null || currentType != null
-                    && effectiveDescriptor(currentType) instanceof guru.interlis.model.ObjectArgumentType)) {
+                    && types.effectiveDescriptor(currentType) instanceof guru.interlis.model.ObjectArgumentType)) {
                 steps.add(new guru.interlis.model.PathStep.ThisStep(name.range()));
                 currentType = i == 0 ? state.declaredType(currentScope) : currentType;
                 if (currentType == null) {
                     currentType = objectPathType(currentScope, name.range());
                 }
-                TypeDescriptor descriptor = effectiveDescriptor(currentType);
+                TypeDescriptor descriptor = types.effectiveDescriptor(currentType);
                 if (!(descriptor instanceof ReferenceType)
                         && !(descriptor instanceof StructureValueType)
                         && !(descriptor instanceof guru.interlis.model.ObjectArgumentType)) {
@@ -3646,7 +2469,7 @@ final class GraphBuilder {
                 }
                 continue;
             }
-            boolean incomingMany = currentType != null && effectiveDescriptor(currentType)
+            boolean incomingMany = currentType != null && types.effectiveDescriptor(currentType)
                     instanceof guru.interlis.model.ObjectArgumentType set && set.objects();
             Optional<SymbolId> member = currentScope == null || segment.associationAccess() || segment.associationQualifier().isPresent()
                     ? Optional.empty() : findMember(currentScope, text);
@@ -3663,7 +2486,7 @@ final class GraphBuilder {
                 }
             }
             List<SymbolId> objectScopes = currentScope == null ? List.of() : List.of(currentScope);
-            if (currentType != null && effectiveDescriptor(currentType) instanceof guru.interlis.model.ObjectArgumentType objects) {
+            if (currentType != null && types.effectiveDescriptor(currentType) instanceof guru.interlis.model.ObjectArgumentType objects) {
                 if (!objects.restrictions().isEmpty()) objectScopes = objects.restrictions();
                 else if (objects.base().isPresent()) objectScopes = List.of(objects.base().orElseThrow());
             }
@@ -3689,7 +2512,7 @@ final class GraphBuilder {
                             : commonRoleScope(access.target().orElseThrow(), contextTopic);
                     Cardinality cardinality = accessCardinality(access, associationObject);
                     boolean many = incomingMany || isMany(cardinality);
-                    currentType = nextTypeId();
+                    currentType = types.nextTypeId();
                     state.storeType(associationObject
                             ? new guru.interlis.model.ObjectArgumentType(currentType, new Origin.DeclaredOrigin(segment.range()),
                                     Optional.of(currentScope), List.of(), many)
@@ -3711,7 +2534,7 @@ final class GraphBuilder {
                             .at(name.range()).argument(new DiagnosticArgument.IdentifierArgument("name", text))
                             .argument(new DiagnosticArgument.IdentifierListArgument("candidates",
                                     accesses.stream().map(a -> a.association().value() + ":" + a.source().id().value()).toList())));
-                    currentType = nextTypeId();
+                    currentType = types.nextTypeId();
                     state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
                     steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, segment.range()));
                     error = true;
@@ -3721,7 +2544,7 @@ final class GraphBuilder {
             if (member.isEmpty()) {
                 DiagnosticId diagnostic = unresolved(name);
                 steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, name.range()));
-                TypeId errorType = nextTypeId();
+                TypeId errorType = types.nextTypeId();
                 state.storeType(new ErrorType(errorType,
                         new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                 currentType = errorType;
@@ -3735,7 +2558,7 @@ final class GraphBuilder {
             SymbolKind kind = index.byId(member.get()).map(DeclInfo::kind).orElse(SymbolKind.ATTRIBUTE);
             if ((localPrefix || segment.index().isPresent()) && kind != SymbolKind.ATTRIBUTE) {
                 DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), name.range(), "role", "structure attribute");
-                currentType = nextTypeId();
+                currentType = types.nextTypeId();
                 state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                 error = true;
                 break;
@@ -3752,37 +2575,37 @@ final class GraphBuilder {
                 // not turn that participant into an object set.
                 RoleSymbol role = (RoleSymbol) buildSymbol(index.byId(member.get()).orElseThrow());
                 currentScope = commonRoleScope(role, contextTopic);
-                currentType = nextTypeId();
+                currentType = types.nextTypeId();
                 state.storeType(rolePathType(currentType, role, contextTopic, name.range(), incomingMany));
             } else {
                 steps.add(new guru.interlis.model.PathStep.AttributeStep(text, member.get(),
                         name.range()));
                 currentType = state.declaredType(member.get());
-                if (currentType == null) currentType = attributeType(index.byId(member.get()).orElseThrow());
+                if (currentType == null) currentType = types.attributeType(index.byId(member.get()).orElseThrow());
                 TypeDescriptor descriptor = currentType == null ? null
-                        : effectiveDescriptor(currentType);
+                        : types.effectiveDescriptor(currentType);
                 currentScope = null;
                 if (segment.index().isPresent()) {
                     var selection = segment.index().orElseThrow();
                     TypeId selected = incomingMany ? null : indexedType(descriptor, selection, segment.range());
                     if (selected == null) {
                         DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), segment.range(),
-                                typeName(currentType), "valid LIST position or coordinate axis");
-                        currentType = nextTypeId();
+                                types.typeName(currentType), "valid LIST position or coordinate axis");
+                        currentType = types.nextTypeId();
                         state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
                         error = true;
                         break;
                     }
                     currentType = selected;
-                    descriptor = effectiveDescriptor(currentType);
+                    descriptor = types.effectiveDescriptor(currentType);
                     steps.add(new guru.interlis.model.PathStep.IndexStep(selection, currentType, segment.range()));
                 }
                 if (localPrefix) {
                     currentScope = structures.target(descriptor);
                     if (currentScope == null) {
                         DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), name.range(),
-                                typeName(currentType), "structure attribute");
-                        currentType = nextTypeId();
+                                types.typeName(currentType), "structure attribute");
+                        currentType = types.nextTypeId();
                         state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                         error = true;
                         break;
@@ -3793,7 +2616,7 @@ final class GraphBuilder {
                 } else if (descriptor instanceof ReferenceType reference) {
                     List<SymbolId> roots = reference.targetRoots().stream().map(t -> contextualObject(t, contextTopic)).toList();
                     currentScope = commonObjectScope(roots);
-                    currentType = nextTypeId();
+                    currentType = types.nextTypeId();
                     if (incomingMany) {
                         state.storeType(new guru.interlis.model.ObjectArgumentType(currentType,
                                 new Origin.DeclaredOrigin(name.range()), roots.size() == 1 ? Optional.of(roots.getFirst()) : Optional.empty(),
@@ -3815,7 +2638,7 @@ final class GraphBuilder {
                 } else if (incomingMany) {
                     DiagnosticId diagnostic = emitTypeMismatch(ownerSource(owner), name.range(),
                             "multiple attribute values", "single attribute value");
-                    currentType = nextTypeId();
+                    currentType = types.nextTypeId();
                     state.storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                     error = true;
                     break;
@@ -3823,7 +2646,7 @@ final class GraphBuilder {
             }
         }
         if (currentType == null) {
-            currentType = errorType(ownerSource(owner), syntax.range(), "PATH");
+            currentType = types.errorType(ownerSource(owner), syntax.range(), "PATH");
             error = true;
         }
         guru.interlis.model.ObjectPath path = new guru.interlis.model.ObjectPath(steps.isEmpty()
@@ -3848,7 +2671,7 @@ final class GraphBuilder {
         }
         if (type instanceof CoordinateType coordinate && !coordinate.multiCoordinate() && position.isPresent()
                 && position.orElseThrow().compareTo(java.math.BigInteger.valueOf(coordinate.dimensions())) <= 0) {
-            TypeId result = nextTypeId();
+            TypeId result = types.nextTypeId();
             state.storeType(new NumericType(result, new Origin.DeclaredOrigin(range),
                     coordinate.axes().get(position.orElseThrow().intValueExact() - 1)));
             return result;
@@ -3856,7 +2679,7 @@ final class GraphBuilder {
         return null;
     }
 
-    private boolean isMany(Cardinality cardinality) {
+    boolean isMany(Cardinality cardinality) {
         return !(cardinality.upper() instanceof guru.interlis.model.CardinalityUpper.Finite finite)
                 || finite.value().compareTo(java.math.BigInteger.ONE) > 0;
     }
@@ -3998,11 +2821,11 @@ final class GraphBuilder {
     /** Same participant-value type as an ordinary role path, for implicit 2.4
      * ALL OF values. One basis row denotes one link, not all its peer links. */
     TypeId roleValueType(RoleSymbol role,SymbolId owner,SourceRange range) {
-        TypeId id=nextTypeId();state.storeType(rolePathType(id,role,scopeRoot(owner),range,false));return id;
+        TypeId id=types.nextTypeId();state.storeType(rolePathType(id,role,scopeRoot(owner),range,false));return id;
     }
 
     TypeId objectPathType(SymbolId target, SourceRange range) {
-        TypeId type = nextTypeId();
+        TypeId type = types.nextTypeId();
         if (objectBase(target).isEmpty()) {
             state.storeType(new guru.interlis.model.ObjectArgumentType(type, new Origin.DeclaredOrigin(range),
                     Optional.empty(), List.of(), false));
@@ -4042,13 +2865,13 @@ final class GraphBuilder {
                                               SymbolId owner) {
         ExpressionResult left = buildExpression(syntax.left(), owner);
         ExpressionResult right = buildExpression(syntax.right(), owner);
-        TypeId result = builtinBoolean(index.byId(owner).orElseThrow().language());
+        TypeId result = types.builtinBoolean(index.byId(owner).orElseThrow().language());
         boolean error = left.error() || right.error();
         switch (syntax.operator()) {
             case AND, OR, IMPLIES -> {
-                if (!error && (!isBoolean(left.typeId()) || !isBoolean(right.typeId()))) {
+                if (!error && (!types.isBoolean(left.typeId()) || !types.isBoolean(right.typeId()))) {
                     emitTypeMismatch(ownerSource(owner), syntax.range(),
-                            typeName(left.typeId()) + "," + typeName(right.typeId()), "BOOLEAN");
+                            types.typeName(left.typeId()) + "," + types.typeName(right.typeId()), "BOOLEAN");
                     error = true;
                 }
             }
@@ -4061,15 +2884,15 @@ final class GraphBuilder {
                 right=contextualValue(right,left.typeId(),owner);
                 error |= left.error() || right.error();
                 if(!error && !comparisonAllowed(left,right,comparison)) {
-                    emitTypeMismatch(ownerSource(owner),syntax.range(),typeName(left.typeId())+","+typeName(right.typeId()),"COMPARABLE "+comparison);
+                    emitTypeMismatch(ownerSource(owner),syntax.range(),types.typeName(left.typeId())+","+types.typeName(right.typeId()),"COMPARABLE "+comparison);
                     error=true;
                 }
             }
             case PLUS, MINUS, MUL, DIV, POW -> {
                 result = left.typeId();
-                if (!error && (!isNumeric(left.typeId()) || !isNumeric(right.typeId()))) {
+                if (!error && (!types.isNumeric(left.typeId()) || !types.isNumeric(right.typeId()))) {
                     emitTypeMismatch(ownerSource(owner), syntax.range(),
-                            typeName(left.typeId()) + "," + typeName(right.typeId()), "NUMERIC");
+                            types.typeName(left.typeId()) + "," + types.typeName(right.typeId()), "NUMERIC");
                     error = true;
                 }
             }
@@ -4086,10 +2909,10 @@ final class GraphBuilder {
     private ExpressionResult unaryExpression(ExpressionId id, UnaryExpressionSyntax syntax,
                                              SymbolId owner) {
         ExpressionResult operand = buildExpression(syntax.operand(), owner);
-        TypeId type = builtinBoolean(index.byId(owner).orElseThrow().language());
+        TypeId type = types.builtinBoolean(index.byId(owner).orElseThrow().language());
         boolean error = operand.error();
-        if (!error && syntax.operator() == guru.interlis.model.UnaryOperator.NOT && !isBoolean(operand.typeId())) {
-            emitTypeMismatch(ownerSource(owner), syntax.range(), typeName(operand.typeId()),
+        if (!error && syntax.operator() == guru.interlis.model.UnaryOperator.NOT && !types.isBoolean(operand.typeId())) {
+            emitTypeMismatch(ownerSource(owner), syntax.range(), types.typeName(operand.typeId()),
                     "BOOLEAN");
             error = true;
         }
@@ -4104,7 +2927,7 @@ final class GraphBuilder {
     private ExpressionResult definedExpression(ExpressionId id, DefinedExpressionSyntax syntax,
                                                SymbolId owner) {
         ExpressionResult operand = buildExpression(syntax.operand(), owner);
-        TypeId type = builtinBoolean(index.byId(owner).orElseThrow().language());
+        TypeId type = types.builtinBoolean(index.byId(owner).orElseThrow().language());
         TypedExpression expression = new guru.interlis.model.DefinedExpression(id, type,
                 operand.error() ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
@@ -4116,14 +2939,14 @@ final class GraphBuilder {
     private ExpressionResult constantExpression(ExpressionId id, ConstantExpressionSyntax syntax, SymbolId owner) {
         TypeId type = numericLiteralType(Optional.empty(), syntax.unit(), syntax.range(), owner);
         TypedExpression expression = new guru.interlis.model.ConstantExpression(id, type,
-                effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
+                types.effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.constantName());
         state.storeExpression(expression);
-        return new ExpressionResult(id, type, effectiveDescriptor(type) instanceof ErrorType);
+        return new ExpressionResult(id, type, types.effectiveDescriptor(type) instanceof ErrorType);
     }
 
     private ExpressionResult undefinedExpression(ExpressionId id, UndefinedExpressionSyntax syntax, SymbolId owner) {
-        TypeId type = nextTypeId();
+        TypeId type = types.nextTypeId();
         state.storeType(new guru.interlis.model.GenericType(type,
                 new Origin.PredefinedOrigin(index.byId(owner).orElseThrow().language(), "UNDEFINED"),
                 "UNDEFINED"));
@@ -4144,7 +2967,7 @@ final class GraphBuilder {
 
     private ExpressionResult errorExpression(SourceId source, SourceRange range, String feature) {
         ExpressionId id = state.nextExpressionId();
-        TypeId type = errorType(source, range, feature);
+        TypeId type = types.errorType(source, range, feature);
         DiagnosticId diagnostic = emitUnsupported(source, range, feature, feature);
         TypedExpression expression = new ErrorExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.ERROR, range, List.of(),
@@ -4154,8 +2977,8 @@ final class GraphBuilder {
     }
 
     private boolean formattedTextValid(ExpressionResult left, ExpressionResult right) {
-        TypeDescriptor leftDescriptor = effectiveDescriptor(left.typeId());
-        TypeDescriptor rightDescriptor = effectiveDescriptor(right.typeId());
+        TypeDescriptor leftDescriptor = types.effectiveDescriptor(left.typeId());
+        TypeDescriptor rightDescriptor = types.effectiveDescriptor(right.typeId());
         guru.interlis.model.FormattedType formatted;
         ExpressionId textId;
         if (leftDescriptor instanceof guru.interlis.model.FormattedType f) {
@@ -4173,11 +2996,11 @@ final class GraphBuilder {
             return true;
         }
         String value = literal.textValue().orElseThrow();
-        return formattedValues().parse(formatted, value, true).isPresent();
+        return formats.formattedValues().parse(formatted, value, true).isPresent();
     }
 
     private boolean isEnumTreeType(TypeId id) {
-        return effectiveDescriptor(id) instanceof EnumerationType enumeration && enumeration.treeValues();
+        return types.effectiveDescriptor(id) instanceof EnumerationType enumeration && enumeration.treeValues();
     }
 
     private boolean isEnumConstant(ExpressionResult result) {
@@ -4189,10 +3012,10 @@ final class GraphBuilder {
     private boolean enumConstantValid(ExpressionResult left, ExpressionResult right) {
         ExpressionResult enumSide = null;
         ExpressionResult constSide = null;
-        if (effectiveDescriptor(left.typeId()) instanceof EnumerationType) {
+        if (types.effectiveDescriptor(left.typeId()) instanceof EnumerationType) {
             enumSide = left;
             constSide = right;
-        } else if (effectiveDescriptor(right.typeId()) instanceof EnumerationType) {
+        } else if (types.effectiveDescriptor(right.typeId()) instanceof EnumerationType) {
             enumSide = right;
             constSide = left;
         }
@@ -4205,7 +3028,7 @@ final class GraphBuilder {
             return true;
         }
         String path = value.constantName().substring(1);
-        EnumerationType enumeration = (EnumerationType) effectiveDescriptor(enumSide.typeId());
+        EnumerationType enumeration = (EnumerationType) types.effectiveDescriptor(enumSide.typeId());
         boolean exact = enumeration.values().stream().anyMatch(v -> v.path().equals(path));
         boolean hasChildren = enumeration.values().stream().anyMatch(v -> v.path().startsWith(path + "."));
         return exact && (!hasChildren || isEnumTreeType(enumSide.typeId()));
@@ -4216,13 +3039,13 @@ final class GraphBuilder {
         if(value.error())return value;
         value=contextualNumericConstant(value,expected);
         if (state.expression(value.id()) instanceof guru.interlis.model.FunctionCallExpression call && isUnitConversion(call)
-                && effectiveDescriptor(expected) instanceof NumericType numeric) {
+                && types.effectiveDescriptor(expected) instanceof NumericType numeric) {
             // Unrestricted NUMERIC is a wildcard formal, not a new unitless destination.
             if(numeric.range().unit().isEmpty() && numeric.range().minimum().isEmpty() && numeric.range().maximum().isEmpty())return value;
             TypeId type=expected;boolean error=!conversionCompatible(call,numeric);
             if(error) {
                 var diagnostic=emitRule(index.byId(owner).orElseThrow(),"convertUnit source and destination need a common conversion unit","CONVERT_UNIT",call.range());
-                type=nextTypeId();state.storeType(new ErrorType(type,new Origin.DeclaredOrigin(call.range()),List.of(diagnostic)));
+                type=types.nextTypeId();state.storeType(new ErrorType(type,new Origin.DeclaredOrigin(call.range()),List.of(diagnostic)));
             }
             state.storeExpression(new guru.interlis.model.FunctionCallExpression(call.id(),type,
                     error?guru.interlis.model.ExpressionTypeState.ERROR:call.typeState(),call.range(),call.children(),call.functionName(),call.targetFunction(),call.argumentPaths()));
@@ -4230,8 +3053,8 @@ final class GraphBuilder {
         }
         var result=contextualEnumConstant(value,expected,owner);
         if(state.expression(result.id()) instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent()
-                && effectiveDescriptor(expected) instanceof FormattedType formatted
-                && formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent()) {
+                && types.effectiveDescriptor(expected) instanceof FormattedType formatted
+                && formats.formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent()) {
             state.storeExpression(new guru.interlis.model.LiteralExpression(literal.id(),expected,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
             return new ExpressionResult(result.id(),expected,false);
         }
@@ -4239,12 +3062,12 @@ final class GraphBuilder {
     }
 
     private ExpressionResult contextualNumericConstant(ExpressionResult value, TypeId expected) {
-        if(value.error() || !(effectiveDescriptor(expected) instanceof NumericType target) || target.range().unit().isEmpty()
-                || !(effectiveDescriptor(value.typeId()) instanceof NumericType source) || source.range().unit().isPresent())return value;
+        if(value.error() || !(types.effectiveDescriptor(expected) instanceof NumericType target) || target.range().unit().isEmpty()
+                || !(types.effectiveDescriptor(value.typeId()) instanceof NumericType source) || source.range().unit().isPresent())return value;
         var expression=state.expression(value.id());
         if(!(expression instanceof guru.interlis.model.LiteralExpression literal && literal.literalKind()==guru.interlis.model.LiteralKind.NUMBER)
                 && !(expression instanceof guru.interlis.model.ConstantExpression constant && (constant.constantName().equals("PI") || constant.constantName().equals("LNBASE"))))return value;
-        TypeId type=nextTypeId();var range=source.range();
+        TypeId type=types.nextTypeId();var range=source.range();
         state.storeType(new NumericType(type,source.origin(),new NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),target.range().unit(),range.referenceSystem())));
         if(expression instanceof guru.interlis.model.LiteralExpression literal)
             state.storeExpression(new guru.interlis.model.LiteralExpression(literal.id(),type,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
@@ -4260,17 +3083,17 @@ final class GraphBuilder {
     }
 
     private boolean conversionCompatible(guru.interlis.model.FunctionCallExpression call,NumericType target) {
-        var descriptor=effectiveDescriptor(state.expression(call.children().getFirst()).typeId());
+        var descriptor=types.effectiveDescriptor(state.expression(call.children().getFirst()).typeId());
         if(guru.interlis.model.internal.TypeCompatibility.isUndefined(descriptor))return true;
         var from=(NumericType)descriptor;
         var sourceUnit=from.range().unit();var targetUnit=target.range().unit();
         if(sourceUnit.isEmpty() || targetUnit.isEmpty())return sourceUnit.isEmpty() && targetUnit.isEmpty();
-        return guru.interlis.model.internal.TypeCompatibility.unitRelation(sourceUnit.orElseThrow(),targetUnit.orElseThrow(),this::extensionUnit)
+        return guru.interlis.model.internal.TypeCompatibility.unitRelation(sourceUnit.orElseThrow(),targetUnit.orElseThrow(),units::extensionUnit)
                 .map(relation->relation.decision()==guru.interlis.model.RelationDecision.ALLOWED).orElse(false);
     }
 
     boolean valueAssignable(TypedExpression value, TypeId expected) {
-        var descriptor=effectiveDescriptor(expected);
+        var descriptor=types.effectiveDescriptor(expected);
         if(value instanceof guru.interlis.model.FunctionCallExpression call && isUnitConversion(call) && descriptor instanceof NumericType numeric)
             return conversionCompatible(call,numeric);
         if(value instanceof guru.interlis.model.ConstantExpression constant && constant.constantName().startsWith("#")) {
@@ -4279,14 +3102,14 @@ final class GraphBuilder {
                     || paths.stream().noneMatch(p->p.startsWith(path+".")));
         }
         if(value instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent() && descriptor instanceof FormattedType formatted)
-            return formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent();
-        return assignable(value.typeId(),expected);
+            return formats.formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent();
+        return types.assignable(value.typeId(),expected);
     }
 
     private ExpressionResult contextualEnumConstant(ExpressionResult value, TypeId context, SymbolId owner) {
         if(!isEnumConstant(value))return value;
         var actual=(guru.interlis.model.ConstantExpression)state.expression(value.id());
-        TypeDescriptor expected=effectiveDescriptor(context);
+        TypeDescriptor expected=types.effectiveDescriptor(context);
         String path=actual.constantName().substring(1);
         var paths=enumerationPaths(expected);
         boolean valid=paths.contains(path) && (!(expected instanceof EnumerationType e) || e.treeValues()
@@ -4312,59 +3135,29 @@ final class GraphBuilder {
         Set<TypeId> seen=new HashSet<>();
         for(var current=type;current!=null && seen.add(current.id());) {
             for(var entry:state.declaredTypesInBuildOrder()) {
-                checkWork();TypeDescriptor candidate=effectiveDescriptor(entry.getValue());
-                while(candidate instanceof CollectionType collection)candidate=effectiveDescriptor(collection.elementType());
+                checkWork();TypeDescriptor candidate=types.effectiveDescriptor(entry.getValue());
+                while(candidate instanceof CollectionType collection)candidate=types.effectiveDescriptor(collection.elementType());
                 if(candidate==null || !candidate.id().equals(current.id()))continue;
                 for(var child:index.children(entry.getKey()))if(child.kind()==SymbolKind.ENUM_ELEMENT && child.name().equals(path))return child.id();
             }
-            var base=current.baseType().map(this::effectiveDescriptor).orElse(null);current=base instanceof EnumerationType e?e:null;
+            var base=current.baseType().map(types::effectiveDescriptor).orElse(null);current=base instanceof EnumerationType e?e:null;
         }
         return null;
     }
 
     private boolean comparisonAllowed(ExpressionResult left, ExpressionResult right, guru.interlis.model.ComparisonOperator operator) {
         if(!enumConstantValid(left,right) || !formattedTextValid(left,right))return false;
-        TypeDescriptor a=effectiveDescriptor(left.typeId()),b=effectiveDescriptor(right.typeId());
+        TypeDescriptor a=types.effectiveDescriptor(left.typeId()),b=types.effectiveDescriptor(right.typeId());
         if(isEnumConstant(left) && b instanceof EnumerationType)a=b;
         if(isEnumConstant(right) && a instanceof EnumerationType)b=a;
         if(a instanceof FormattedType && state.expression(right.id()) instanceof guru.interlis.model.LiteralExpression literal
                 && literal.literalKind()==guru.interlis.model.LiteralKind.TEXT)b=a;
         if(b instanceof FormattedType && state.expression(left.id()) instanceof guru.interlis.model.LiteralExpression literal
                 && literal.literalKind()==guru.interlis.model.LiteralKind.TEXT)a=b;
-        return guru.interlis.model.internal.TypeCompatibility.compare(a,b,operator,this::effectiveDescriptor,id->effectiveDescriptor(state.declaredType(id))).decision()
+        return guru.interlis.model.internal.TypeCompatibility.compare(a,b,operator,types::effectiveDescriptor,id->types.effectiveDescriptor(state.declaredType(id))).decision()
                 ==guru.interlis.model.RelationDecision.ALLOWED;
     }
 
-    boolean isBoolean(TypeId typeId) {
-        var type=effectiveDescriptor(typeId);
-        return type instanceof guru.interlis.model.BooleanType || guru.interlis.model.internal.TypeCompatibility.isUndefined(type);
-    }
-
-    private boolean isNumeric(TypeId typeId) {
-        var type=effectiveDescriptor(typeId);
-        return type instanceof NumericType || guru.interlis.model.internal.TypeCompatibility.isUndefined(type);
-    }
-
-    TypeDescriptor effectiveDescriptor(TypeId typeId) {
-        TypeDescriptor descriptor = state.type(typeId);
-        Set<TypeId> seen = new HashSet<>();
-        while (descriptor instanceof DomainReferenceType reference && seen.add(descriptor.id())) {
-            checkWork();
-            TypeId target = state.declaredType(reference.targetDomain());
-            if (target == null) break;
-            descriptor = state.type(target);
-        }
-        return descriptor;
-    }
-
-    String typeName(TypeId id) {
-        TypeDescriptor descriptor = effectiveDescriptor(id);
-        if(descriptor instanceof guru.interlis.model.EnumArgumentType argument)return argument.treeValues()?"ENUMTREEVAL":"ENUMVAL";
-        if (descriptor instanceof TextType text) {
-            return text.textKind().name() + (text.maxLength().isPresent() ? "*" + text.maxLength().getAsInt() : "");
-        }
-        return descriptor == null ? "UNKNOWN" : descriptor.kind().name();
-    }
 
     private Optional<DecimalLiteral> decimal(String lexeme) {
         try {
@@ -4542,36 +3335,6 @@ final class GraphBuilder {
         return List.copyOf(result);
     }
 
-    private void buildEffectiveTypes() {
-        for (Map.Entry<SymbolId, TypeId> entry : state.declaredTypesInBuildOrder()) {
-            checkWork();
-            state.setEffectiveType(entry.getKey(), effectiveType(entry.getValue()));
-        }
-    }
-
-    private EffectiveType effectiveType(TypeId declared) {
-        List<SymbolId> aliasPath = new ArrayList<>();
-        TypeId current = declared;
-        Set<TypeId> seen = new HashSet<>();
-        while (true) {
-            checkWork();
-            TypeDescriptor descriptor = state.type(current);
-            if (!(descriptor instanceof DomainReferenceType reference)) {
-                break;
-            }
-            if (!seen.add(current)) {
-                break;
-            }
-            aliasPath.add(reference.targetDomain());
-            Symbol symbol = state.symbol(reference.targetDomain());
-            if (symbol instanceof DomainSymbol domain) {
-                current = domain.typeId();
-            } else {
-                break;
-            }
-        }
-        return new EffectiveType(declared, current, aliasPath);
-    }
 
     // ---- references and coverage ----------------------------------------------
 
@@ -4635,7 +3398,7 @@ final class GraphBuilder {
                 .findFirst();
     }
 
-    private static String unquote(String text) {
+    static String unquote(String text) {
         return InterlisStrings.decode(text).text();
     }
 

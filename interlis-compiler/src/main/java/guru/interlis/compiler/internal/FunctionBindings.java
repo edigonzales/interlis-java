@@ -39,7 +39,7 @@ final class FunctionBindings {
             }
             for(int n=chain.size()-1;n>=0;n--) {
                 g.checkWork();int position=chain.get(n);if(values[position]!=null)continue;
-                var formal=position<function.parameters().size()?g.effectiveDescriptor(function.parameters().get(position).typeId()):null;
+                var formal=position<function.parameters().size()?g.types.effectiveDescriptor(function.parameters().get(position).typeId()):null;
                 int dependency=dependency(function,position);
                 if(dependency>=0&&dependency<values.length&&values[dependency]!=null&&values[dependency].error()) {
                     values[position]=g.blockedFunctionArgument(syntax.get(position).range(),values[dependency],owner);continue;
@@ -56,7 +56,7 @@ final class FunctionBindings {
 
     private int dependency(FunctionSymbol function,int position) {
         if(position>=function.parameters().size())return -1;
-        var formal=g.effectiveDescriptor(function.parameters().get(position).typeId());
+        var formal=g.types.effectiveDescriptor(function.parameters().get(position).typeId());
         return formal instanceof AttributePathType attribute&&attribute.owner().orElse(null) instanceof AttributePathType.Argument argument
                 &&argument.function().equals(function.id())?argument.index():-1;
     }
@@ -66,13 +66,13 @@ final class FunctionBindings {
      * dependency, with the actual still reachable through the call's children.
      * The declaration stays immutable; no external function is evaluated. */
     TypeId returnType(FunctionSymbol function,List<GraphBuilder.ExpressionResult> arguments,SourceRange range) {
-        var descriptor=g.effectiveDescriptor(function.returnType());
+        var descriptor=g.types.effectiveDescriptor(function.returnType());
         if(!(descriptor instanceof AttributePathType attribute)
                 ||!(attribute.owner().orElse(null) instanceof AttributePathType.Argument dependency)
                 ||!dependency.function().equals(function.id())||dependency.index()>=arguments.size())return function.returnType();
         var actual=arguments.get(dependency.index());
         AttributePathType.Owner owner;
-        if(g.effectiveDescriptor(actual.typeId()) instanceof ClassValueType) {
+        if(g.types.effectiveDescriptor(actual.typeId()) instanceof ClassValueType) {
             var value=state.expression(actual.id());
             owner=value instanceof SymbolValueExpression symbol&&Set.of(SymbolKind.CLASS,SymbolKind.STRUCTURE,SymbolKind.ASSOCIATION,SymbolKind.VIEW)
                     .contains(g.index.byId(symbol.target()).map(DeclInfo::kind).orElseGet(()->state.symbol(symbol.target()).kind()))
@@ -82,7 +82,7 @@ final class FunctionBindings {
             if(roots.size()!=1)return function.returnType();
             owner=new AttributePathType.Viewable(roots.getFirst());
         }
-        var id=g.nextTypeId();
+        var id=g.types.nextTypeId();
         state.storeType(new AttributePathType(id,new Origin.DeclaredOrigin(range),Optional.of(owner),attribute.restrictions()));
         return id;
     }
@@ -100,10 +100,10 @@ final class FunctionBindings {
         var paths=new LinkedHashMap<Integer,FunctionCallExpression.ArgumentPath>();
         for(int i=0;i<Math.min(function.parameters().size(),arguments.size());i++) {
             g.checkWork();
-            var formal=g.effectiveDescriptor(function.parameters().get(i).typeId());
+            var formal=g.types.effectiveDescriptor(function.parameters().get(i).typeId());
             var actual=arguments.get(i);
             if(actual.error())continue;
-            boolean undefinedValue=guru.interlis.model.internal.TypeCompatibility.isUndefined(g.effectiveDescriptor(actual.typeId()));
+            boolean undefinedValue=guru.interlis.model.internal.TypeCompatibility.isUndefined(g.types.effectiveDescriptor(actual.typeId()));
             if(undefinedValue && function.parameters().get(i).mandatory()) {
                 error=true;g.emitRule(owner,"MANDATORY function parameter excludes undefined","FUNCTION_ARGUMENT_MANDATORY",state.expression(actual.id()).range());continue;
             }
@@ -147,10 +147,10 @@ final class FunctionBindings {
         // Reuse the ATTRIBUTE signatures of the same operation, not a second type family.
         var signature=BuiltinFunctions.find("areAreas").orElseThrow();
         var formal=g.builtinDeclaration(signature,language).parameters().get(index).typeId();
-        return ((AttributePathType)g.effectiveDescriptor(formal)).restrictions().getFirst();
+        return ((AttributePathType)g.types.effectiveDescriptor(formal)).restrictions().getFirst();
     }
 
-    private boolean undefined(GraphBuilder.ExpressionResult argument) { return guru.interlis.model.internal.TypeCompatibility.isUndefined(g.effectiveDescriptor(argument.typeId())); }
+    private boolean undefined(GraphBuilder.ExpressionResult argument) { return guru.interlis.model.internal.TypeCompatibility.isUndefined(g.types.effectiveDescriptor(argument.typeId())); }
 
     private List<SymbolId> ownerRoots(Optional<AttributePathType.Owner> owner,FunctionSymbol function,
             List<GraphBuilder.ExpressionResult> arguments,Set<TypeId> visited) {
@@ -165,7 +165,7 @@ final class FunctionBindings {
 
     private boolean attributeMatches(TypeId actual,AttributePathType formal,List<SymbolId> owners,
             FunctionSymbol function,List<GraphBuilder.ExpressionResult> arguments) {
-        if(!(g.effectiveDescriptor(actual) instanceof AttributePathType attribute))return false;
+        if(!(g.types.effectiveDescriptor(actual) instanceof AttributePathType attribute))return false;
         boolean sameDependentValue=attribute.owner().orElse(null) instanceof AttributePathType.ClassAttribute path
                 &&formal.owner().orElse(null) instanceof AttributePathType.Argument argument
                 &&argument.function().equals(function.id())&&argument.index()<arguments.size()
@@ -177,14 +177,14 @@ final class FunctionBindings {
     }
 
     private boolean assign(TypeId source,TypeId target) {
-        return guru.interlis.model.internal.TypeCompatibility.assign(g.effectiveDescriptor(source),g.effectiveDescriptor(target),
-                g::effectiveDescriptor,state::baseOf,domain->g.effectiveDescriptor(state.declaredType(domain)),AssignmentContext.FUNCTION_ARGUMENT)
+        return guru.interlis.model.internal.TypeCompatibility.assign(g.types.effectiveDescriptor(source),g.types.effectiveDescriptor(target),
+                g.types::effectiveDescriptor,state::baseOf,domain->g.types.effectiveDescriptor(state.declaredType(domain)),AssignmentContext.FUNCTION_ARGUMENT)
                 .decision()==RelationDecision.ALLOWED;
     }
 
     private List<SymbolId> roots(TypeId id,Set<TypeId> visited) {
         g.checkWork();if(!visited.add(id))return List.of();
-        var type=g.effectiveDescriptor(id);
+        var type=g.types.effectiveDescriptor(id);
         if(type instanceof ObjectArgumentType object)return object.restrictions().isEmpty()?object.base().stream().toList():object.restrictions();
         if(type instanceof ReferenceType reference)return reference.targetRoots();
         if(type instanceof StructureValueType structure)return structure.targetRoots();
