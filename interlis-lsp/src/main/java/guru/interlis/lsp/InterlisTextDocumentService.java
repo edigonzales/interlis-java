@@ -111,21 +111,14 @@ final class InterlisTextDocumentService implements TextDocumentService {
     private final LspDocumentRegistry documents = new LspDocumentRegistry();
     private volatile java.util.function.Consumer<String> operations = ignored -> { };
     private final AnalysisScheduler scheduler;
+    private final LspInputReadiness readiness;
     private final LspFileIdentityRegistry fileIdentities = new LspFileIdentityRegistry();
-    private final java.util.ArrayDeque<Runnable> documentOperations=new java.util.ArrayDeque<>();
-    private boolean resolvingOpen;
-    private long nextOpen;
     private java.util.function.BiFunction<String,Map<SourceId,String>,CompletableFuture<ProjectSourceLoader.IdentityMatch>> identifyFile=
             (uri,known) -> CompletableFuture.completedFuture(new ProjectSourceLoader.IdentityMatch(Optional.empty(),Optional.empty()));
     private volatile java.util.function.Consumer<String> externalReload;
     private java.util.function.BiFunction<List<ProjectSourceLoader.FileContent>,CancellationToken,CompletableFuture<Void>> verifyFiles =
             (files,token) -> failed(ResponseErrorCode.RequestFailed,"project file service is not initialized");
     private boolean versionedEdits;
-    private final Map<String,Long> pendingFiles=new LinkedHashMap<>();
-    private CompletableFuture<Void> filesReady=CompletableFuture.completedFuture(null);
-    private Throwable filesFailure;
-    private final java.util.concurrent.atomic.AtomicInteger waitingRequests=new java.util.concurrent.atomic.AtomicInteger();
-    private final java.util.Set<CompletableFuture<?>> fileWaiters=java.util.concurrent.ConcurrentHashMap.newKeySet();
     private final LanguageQueries queries = LanguageQueries.create();
     private final LspDiagramService diagrams=new LspDiagramService();
     private volatile java.util.function.Consumer<AnalysisReady> analysisReady=ignored -> { };
@@ -142,6 +135,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         scheduler = new AnalysisScheduler(workspace, engine, services, this::accepted,
                 message -> operations.accept(message));
         scheduler.repositoryResult(this::repositoryResolved,id -> !externalSources.contains(id));
+        readiness = new LspInputReadiness(documents::generation, scheduler::completeOnOwner, this::operation);
     }
 
     void sink(DiagnosticSink sink) {
@@ -153,17 +147,19 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     void close() { scheduler.close(() -> {
-        fileWaiters.forEach(result -> result.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing")));
-        fileWaiters.clear();
-        filesReady.completeExceptionally(LspFailures.error(ResponseErrorCode.RequestCancelled,"server is closing"));
+        readiness.cancelPendingOnClose();
         externalSources.close(); publishedExternal.clear();
         diagrams.close();analysisReady=ignored -> { };
-        pendingFiles.clear(); fileIdentities.clear(); documentOperations.clear(); documents.clear();
+        fileIdentities.clear(); documents.clear();
     }); }
 
     CompletableFuture<guru.interlis.compiler.CompilationOutcome> compileWorkspace() {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
-        return afterFiles(() -> !documents.needsResync()?scheduler.compile():failed(ResponseErrorCode.ContentModified,"full document resynchronization is required"));
+        return afterFiles(() -> {
+            if (documents.needsResync()) return failed(ResponseErrorCode.ContentModified, "full document resynchronization is required");
+            long generation = documents.generation();
+            return scheduler.compileRoots(null, () -> requireInputGeneration(generation));
+        });
     }
 
     CompletableFuture<CompileReport> compileModel(CompileModelParams params) {
@@ -221,7 +217,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 for(var e:success.schema().sourceRevisions().entrySet()){var source=view.source(e.getKey()).orElse(null);if(source==null||!source.revision().equals(e.getValue()))return failed(ResponseErrorCode.ContentModified,"export dependency changed");revisions.put(view.uri(e.getKey()),Long.toString(e.getValue().value()));var file=view.closedFiles().get(e.getKey().value());if(file!=null&&view.open(e.getKey())==null)closed.add(file);}
                 var provenance=new ExportArtifact.SourceSnapshot(diagrams.serverInstanceId(),success.schema().snapshotId().value(),p.textDocument().getUri(),state.lspVersion(),view.workspaceRevision(),revisions);
                 var artifact=new LspExportService().render(success.schema(),p,provenance,token);
-                return closed.isEmpty()?CompletableFuture.completedFuture(artifact):verifyFiles.apply(List.copyOf(closed),token).thenApply(ignored->artifact);
+                return closed.isEmpty()?CompletableFuture.completedFuture(artifact):LspFutures.map(verifyFiles.apply(List.copyOf(closed),token), ignored -> artifact, operations);
             });
         },operations),operations);
     }
@@ -261,10 +257,21 @@ final class InterlisTextDocumentService implements TextDocumentService {
 
     private <T> CompletableFuture<T> requestReady(java.util.function.BiFunction<HostView,CancellationToken,CompletableFuture<T>> action) {
         try { requestGuard.run(); } catch(ResponseErrorException invalid) { return CompletableFuture.failedFuture(invalid); }
-        return afterFiles(() -> !documents.needsResync()?scheduler.requestNow(token -> {
-            HostView view=captureView();
-            return scheduler.detached(token,() -> action.apply(view,token));
-        }):failed(ResponseErrorCode.ContentModified,"full document resynchronization is required"));
+        return afterFiles(() -> {
+            if (documents.needsResync()) return failed(ResponseErrorCode.ContentModified, "full document resynchronization is required");
+            long generation = documents.generation();
+            return scheduler.requestNow(token -> {
+                requireInputGeneration(generation);
+                HostView view = captureView();
+                return scheduler.detached(token, () -> action.apply(view, token));
+            });
+        });
+    }
+
+    private void requireInputGeneration(long generation) {
+        if (documents.generation() != generation) {
+            throw LspFailures.error(ResponseErrorCode.ContentModified, "CONTENT_MODIFIED: workspace inputs changed");
+        }
     }
 
     private record HostView(Map<String,Synchronized> documents,Map<SourceId,SourceText> sources,
@@ -284,39 +291,11 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private <T> CompletableFuture<T> afterFiles(java.util.function.Supplier<CompletableFuture<T>> start) {
-        if(waitingRequests.incrementAndGet()>128) {
-            waitingRequests.decrementAndGet(); return failed(ResponseErrorCode.RequestFailed,"language request queue is full");
+        try {
+            return scheduler.onOwner(() -> readiness.awaitReady(start));
+        } catch (RuntimeException failure) {
+            return CompletableFuture.failedFuture(LspFailures.response(failure, operations));
         }
-        var active=new java.util.concurrent.atomic.AtomicReference<CompletableFuture<T>>();
-        var result=new CompletableFuture<T>() {
-            @Override public boolean cancel(boolean interrupt) {
-                boolean changed=super.cancel(interrupt); var running=active.get();
-                if(changed && running!=null) running.cancel(interrupt); return changed;
-            }
-        };
-        fileWaiters.add(result);
-        result.whenComplete((ignored,failure) -> { waitingRequests.decrementAndGet(); fileWaiters.remove(result); });
-        try { scheduler.onOwner(() -> { orderedDocumentOperation(() -> {
-            long captured=documents.generation();
-            filesReady.whenComplete((ignored,failure) -> {
-                if(result.isDone()) return;
-                try { scheduler.onOwner(() -> {
-                    if(captured!=documents.generation()) result.completeExceptionally(LspFailures.error(ResponseErrorCode.ContentModified,"CONTENT_MODIFIED: workspace inputs changed"));
-                    else if(failure!=null) result.completeExceptionally(LspFailures.response(failure,operations));
-                    else {
-                        var current=start.get(); active.set(current);
-                        if(result.isCancelled()) current.cancel(false);
-                        current.whenComplete((value,problem) -> {
-                            if(problem!=null) result.completeExceptionally(LspFailures.response(problem,operations));
-                            else result.complete(value);
-                        });
-                    }
-                    return null;
-                }); } catch(RuntimeException closed) { result.completeExceptionally(LspFailures.response(closed,operations)); }
-            });
-        }); return null;
-        }); } catch(RuntimeException failure) { result.completeExceptionally(LspFailures.response(failure,operations)); }
-        return result;
     }
 
     private Map<SourceId, String> fileSources() {
@@ -353,32 +332,21 @@ final class InterlisTextDocumentService implements TextDocumentService {
                 .orElseGet(() -> fileIdentities.canonicalUri(uri));
     }
 
-    void beginExternal(String uri,long request) {
+    void beginExternal(String uri, long request) {
         scheduler.onOwner(() -> {
-            documents.advanceGeneration();
-            if(pendingFiles.isEmpty()) { filesReady=new CompletableFuture<>(); filesFailure=null; }
-            pendingFiles.put(uri,request); scheduler.invalidate(); return null;
-        });
-    }
-
-    private void finishExternal(String uri,long request,Throwable failure) {
-        if(!Objects.equals(pendingFiles.get(uri),request)) return;
-        if(failure!=null && filesFailure==null) filesFailure=failure;
-        pendingFiles.remove(uri);
-        if(pendingFiles.isEmpty()) {
-            reanalyzeOpenNow();
-            var completed=filesReady;
-            filesReady=CompletableFuture.completedFuture(null);
-            if(filesFailure==null) completed.complete(null); else completed.completeExceptionally(LspFailures.response(filesFailure,operations));
-            filesFailure=null;
-        }
-    }
-
-    void externalFailed(String uri,long request,Throwable failure) {
-        scheduler.onOwner(() -> {
-            finishExternal(uri, request, failure);
+            readiness.beginExternal(uri, request);
+            invalidateInputs();
             return null;
         });
+    }
+
+    private void invalidateInputs() {
+        documents.advanceGeneration();
+        scheduler.invalidate();
+    }
+
+    void externalFailed(String uri, long request, Throwable failure) {
+        scheduler.completeOnOwner(() -> readiness.completeExternal(uri, request, failure, this::reanalyzeOpenNow));
     }
 
     void fileServices(java.util.function.Consumer<String> reload,
@@ -422,7 +390,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     void applyExternal(String uri, String requestedUri, long request, Optional<ProjectSourceLoader.FileContent> file,
                        Optional<SourceId> verifiedSource, boolean requestedMissing, java.util.function.Predicate<String> claimCurrent) {
         scheduler.onOwner(() -> {
-            if (!Objects.equals(pendingFiles.get(uri), request)) return null;
+            if (!readiness.isCurrentExternal(uri, request)) return null;
             // Closing the last client can leave only the catalog's physical aliases.
             var established = file.flatMap(value -> verifiedSource.map(SourceId::value)
                     .or(() -> fileIdentities.sourceForKey(value.identity()))
@@ -431,7 +399,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             String canonical = file.map(value -> established.orElseGet(() -> value.path().toUri().toString()))
                     .orElseGet(() -> canonicalUriNow(requestedUri));
             if (!claimCurrent.test(canonical)) {
-                finishExternal(uri, request, null);
+                readiness.completeExternal(uri, request, null, this::reanalyzeOpenNow);
                 return null;
             }
             var id = new SourceId(canonical);
@@ -441,7 +409,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
                     throw LspFailures.error(ResponseErrorCode.ContentModified, "surviving alias belongs to a different source");
                 }
                 if (wouldRebindOpenFile(loaded.identity(), canonical)) {
-                    finishExternal(uri, request, null);
+                    readiness.completeExternal(uri, request, null, this::reanalyzeOpenNow);
                     return null;
                 }
                 var existing = fileIdentities.closedFile(canonical);
@@ -462,7 +430,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
                     fileIdentities.removeClosed(canonical);
                 }
             }
-            finishExternal(uri, request, null);
+            readiness.completeExternal(uri, request, null, this::reanalyzeOpenNow);
             return null;
         });
     }
@@ -487,17 +455,12 @@ final class InterlisTextDocumentService implements TextDocumentService {
         if(!notificationReady()) return;
         var item=copyParams(params,DidOpenTextDocumentParams.class).getTextDocument();
         scheduler.onOwner(() -> {
-            orderedDocumentOperation(() -> openWithIdentity(item.getUri(), item.getVersion(), item.getText()));
+            readiness.orderDocumentOperation(() -> openWithIdentity(item.getUri(), item.getVersion(), item.getText()));
             return null;
         });
     }
 
-    /** Keeps document notifications and request barriers ordered while bounded IO resolves an unknown URI. */
-    private void orderedDocumentOperation(Runnable operation) {
-        if(!resolvingOpen) { operation.run(); return; }
-        if(documentOperations.size()>=256) throw LspFailures.error(ResponseErrorCode.RequestFailed,"document operation queue is full");
-        documentOperations.addLast(operation);
-    }
+    private record OpenInput(String uri, int version, String text) { }
 
     private void openWithIdentity(String uri, int version, String text) {
         var previous = documents.find(uri);
@@ -505,61 +468,73 @@ final class InterlisTextDocumentService implements TextDocumentService {
             if (version <= previous.lspVersion()) return;
             if (!previous.hasClientAuthority()) documents.observeRejectedVersion(uri, version);
         }
-        openWithIdentity(uri, version, text, 0);
+        var known = fileSources();
+        if (LspFileIdentityRegistry.path(uri).isEmpty() || known.isEmpty()) {
+            didOpenNow(uri, version, text);
+        } else {
+            resolveOpenIdentity(new OpenInput(uri, version, text), known, 0, readiness.beginOpen());
+        }
     }
 
-    private void openWithIdentity(String uri, int version, String text, int retries) {
-        var known = fileSources();
-        if (LspFileIdentityRegistry.path(uri).isEmpty() || known.isEmpty()) { didOpenNow(uri, version, text); return; }
+    private void resolveOpenIdentity(OpenInput input, Map<SourceId, String> known, int retries, long request) {
         long capturedIdentities = fileIdentities.identityRevision();
-        resolvingOpen=true; long request=++nextOpen; String pending="open-identity:"+request;
-        beginExternal(pending,request);
-        identifyFile.apply(uri,known).whenComplete((match,failure) -> {
-            try { scheduler.onOwner(() -> {
-                if (failure == null && (capturedIdentities != fileIdentities.identityRevision() || !known.equals(fileSources()))) {
-                    // A watcher may have admitted a hardlink while IO ran, even
-                    // on providers without file keys. Re-resolve that new set.
-                    Optional<String> retiredAlias = Optional.empty();
-                    if (retries >= 3) {
-                        var previous = documents.find(uri);
-                        var id = previous == null ? new SourceId(uri) : previous.sourceId();
-                        if (!documents.hasSynchronizedAlias(uri, id)) {
-                            documents.advanceGeneration();
-                            retiredAlias = documents.requireResync(uri, id, version);
-                        }
-                        operation("Document identities kept changing; reopen required");
+        try {
+            invalidateInputs();
+            var lookup = Objects.requireNonNull(identifyFile.apply(input.uri(), known));
+            readiness.trackOpen(request, lookup);
+            lookup.whenComplete((match, failure) -> scheduler.completeOnOwner(() ->
+                    completeOpenIdentity(input, known, capturedIdentities, retries, request, match, failure)));
+        } catch (RuntimeException failure) {
+            completeOpenIdentity(input, known, capturedIdentities, retries, request, null, failure);
+        }
+    }
+
+    private void completeOpenIdentity(OpenInput input, Map<SourceId, String> known, long capturedIdentities,
+                                      int retries, long request, ProjectSourceLoader.IdentityMatch match, Throwable failure) {
+        if (!readiness.isCurrentOpen(request)) return;
+        Throwable problem = failure;
+        try {
+            if (failure != null) {
+                operation("Document identity lookup failed; reopen required");
+                return;
+            }
+            var current = fileSources();
+            if (capturedIdentities != fileIdentities.identityRevision() || !known.equals(current)) {
+                // A watcher can admit a new physical alias while the lookup runs.
+                if (retries >= 3) {
+                    var previous = documents.find(input.uri());
+                    var id = previous == null ? new SourceId(input.uri()) : previous.sourceId();
+                    if (!documents.hasSynchronizedAlias(input.uri(), id)) {
+                        documents.advanceGeneration();
+                        documents.requireResync(input.uri(), id, input.version()).ifPresent(this::clearDocumentDiagnostics);
                     }
-                    finishExternal(pending, request, null);
-                    resolvingOpen = false;
-                    retiredAlias.ifPresent(this::clearDocumentDiagnostics);
-                    if(retries<3) { openWithIdentity(uri, version, text, retries+1); return null; }
-                    while(!resolvingOpen && !documentOperations.isEmpty()) documentOperations.removeFirst().run();
-                    return null;
+                    operation("Document identities kept changing; reopen required");
+                } else if (current.isEmpty()) {
+                    didOpenNow(input.uri(), input.version(), input.text());
+                } else {
+                    resolveOpenIdentity(input, current, retries + 1, readiness.retryOpen(request));
                 }
-                Throwable problem=failure;
-                try {
-                    if(problem==null) {
-                        match.identity().ifPresent(identity -> {
-                            var verifiedSource = fileIdentities.sourceForKey(identity)
-                                    .or(() -> match.source().map(SourceId::value));
-                            String canonical = verifiedSource.orElse(uri);
-                            if (wouldRebindOpenFile(identity, canonical)) {
-                                throw LspFailures.error(ResponseErrorCode.ContentModified, "file identity changed before open");
-                            }
-                            var existing = fileIdentities.closedFile(canonical);
-                            if (verifiedSource.isEmpty() && existing != null && !identity.path().equals(existing.path())) {
-                                throw LspFailures.error(ResponseErrorCode.ContentModified, "file identity changed before open");
-                            }
-                            fileIdentities.rememberPhysicalIdentity(identity, canonical);
-                        });
-                        didOpenNow(uri, version, text);
-                    } else operation("Document identity lookup failed; reopen required");
-                } catch(RuntimeException rejected) { problem=rejected; operation("Document identity admission failed; reopen required"); }
-                finally { finishExternal(pending,request,problem); resolvingOpen=false; }
-                while(!resolvingOpen && !documentOperations.isEmpty()) documentOperations.removeFirst().run();
-                return null;
-            }); } catch(RuntimeException closed) { operation("Document identity operation stopped"); }
-        });
+                return;
+            }
+            match.identity().ifPresent(identity -> {
+                var verifiedSource = fileIdentities.sourceForKey(identity).or(() -> match.source().map(SourceId::value));
+                String canonical = verifiedSource.orElse(input.uri());
+                if (wouldRebindOpenFile(identity, canonical)) {
+                    throw LspFailures.error(ResponseErrorCode.ContentModified, "file identity changed before open");
+                }
+                var existing = fileIdentities.closedFile(canonical);
+                if (verifiedSource.isEmpty() && existing != null && !identity.path().equals(existing.path())) {
+                    throw LspFailures.error(ResponseErrorCode.ContentModified, "file identity changed before open");
+                }
+                fileIdentities.rememberPhysicalIdentity(identity, canonical);
+            });
+            didOpenNow(input.uri(), input.version(), input.text());
+        } catch (RuntimeException rejected) {
+            problem = rejected;
+            operation("Document identity admission failed; reopen required");
+        } finally {
+            readiness.completeOpen(request, problem, this::reanalyzeOpenNow);
+        }
     }
 
     private void didOpenNow(String uri, int version, String text) {
@@ -623,7 +598,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     public void didChange(DidChangeTextDocumentParams params) {
         if(!notificationReady()) return;
         var captured=copyParams(params,DidChangeTextDocumentParams.class);
-        scheduler.onOwner(() -> { orderedDocumentOperation(() -> didChangeNow(captured)); return null; });
+        scheduler.onOwner(() -> { readiness.orderDocumentOperation(() -> didChangeNow(captured)); return null; });
     }
 
     private void didChangeNow(DidChangeTextDocumentParams params) {
@@ -673,7 +648,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     public void didClose(DidCloseTextDocumentParams params) {
         if(!notificationReady()) return;
         var captured=copyParams(params,DidCloseTextDocumentParams.class);
-        scheduler.onOwner(() -> { orderedDocumentOperation(() -> didCloseNow(captured)); return null; });
+        scheduler.onOwner(() -> { readiness.orderDocumentOperation(() -> didCloseNow(captured)); return null; });
     }
 
     private void didCloseNow(DidCloseTextDocumentParams params) {
@@ -699,7 +674,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     public void didSave(DidSaveTextDocumentParams params) {
         if(!notificationReady()) return;
         var captured=copyParams(params,DidSaveTextDocumentParams.class);
-        scheduler.onOwner(() -> { orderedDocumentOperation(() -> didSaveNow(captured)); return null; });
+        scheduler.onOwner(() -> { readiness.orderDocumentOperation(() -> didSaveNow(captured)); return null; });
     }
 
     boolean notificationReady() {
@@ -929,7 +904,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
         WorkspaceEdit edit = new WorkspaceEdit();
         if(view.versionedEdits()) { edit.setChanges(null); edit.setDocumentChanges(versioned); } else edit.setChanges(changes);
         return closed.isEmpty() ? CompletableFuture.completedFuture(edit)
-                : verifyFiles.apply(List.copyOf(closed),token).thenApply(ignored -> edit);
+                : LspFutures.map(verifyFiles.apply(List.copyOf(closed),token), ignored -> edit, operations);
     }
 
     private static boolean editable(HostView view,SourceId id) {
@@ -1048,7 +1023,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void scheduleOpenAnalysis() {
-        if (pendingFiles.isEmpty() && !documents.needsResync()) scheduler.schedule();
+        if (readiness.isReady() && !documents.needsResync()) scheduler.schedule();
         else scheduler.invalidate();
     }
 
@@ -1202,7 +1177,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
             if(source==null||!source.revision().equals(range.revision()))return failed(ResponseErrorCode.ContentModified,"diagram source revision changed");
             var result=new DiagramNavigation(diagrams.serverInstanceId(),anchor.snapshotId().value(),view.uri(range.source()),toLspRange(source,range),!editable(view,range.source()));
             var closed=view.closedFiles().get(range.source().value());
-            return closed!=null&&view.open(range.source())==null?verifyFiles.apply(List.of(closed),token).thenApply(ignored->result):CompletableFuture.completedFuture(result);
+            return closed!=null&&view.open(range.source())==null?LspFutures.map(verifyFiles.apply(List.of(closed),token), ignored -> result, operations):CompletableFuture.completedFuture(result);
         });
     }
 
@@ -1285,7 +1260,7 @@ final class InterlisTextDocumentService implements TextDocumentService {
     }
 
     private void accepted(AnalysisSnapshot analysis) {
-        if (documents.needsResync()) return;
+        if (!readiness.isReady() || documents.needsResync()) return;
         long generation = documents.generation();
         publishClosedDiagnostics(analysis);
         for(var diagnostic:analysis.diagnostics()) if(diagnostic.primaryRange().isEmpty())

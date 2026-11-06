@@ -63,6 +63,35 @@ class ProjectRenameConsistencyTest {
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
+    @Test void aRenameWaitingForDiskVerificationIsCancelledWhenItsBufferChanges() throws Exception {
+        Path folder = project(), root = folder.resolve("Root.ili");
+        var server = open(folder, true, null, null);
+        var verification = new CompletableFuture<Void>();
+        var verifying = new CountDownLatch(1);
+        try {
+            ready(server, root);
+            server.textDocumentsForTest().fileServices(uri -> { }, (files, token) -> {
+                verifying.countDown();
+                return verification;
+            }, (uri, known) -> CompletableFuture.failedFuture(new AssertionError("unexpected identity lookup")));
+
+            String uri = root.toUri().toString();
+            var result = server.getTextDocumentService().rename(new RenameParams(new TextDocumentIdentifier(uri), cursor(), "Renamed"));
+            assertTrue(verifying.await(5, TimeUnit.SECONDS));
+            server.getTextDocumentService().didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(uri, 6),
+                    List.of(new TextDocumentContentChangeEvent(ROOT + "\n!! newer buffer"))));
+
+            var failure = assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
+            assertEquals(ResponseErrorCode.ContentModified.getValue(),
+                    assertInstanceOf(ResponseErrorException.class, failure.getCause()).getResponseError().getCode());
+            assertThrows(CancellationException.class, () -> verification.get(5, TimeUnit.SECONDS));
+            ready(server, root);
+        } finally {
+            verification.cancel(false);
+            server.shutdown().get(5, TimeUnit.SECONDS);
+        }
+    }
+
     @Test void aKnownSourceOutsideTheEditableProjectCannotReceiveAPartialRename() throws Exception {
         Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili");
         Files.delete(base);
@@ -230,6 +259,30 @@ class ProjectRenameConsistencyTest {
             assertEquals(newText, server.workspaceForTest().source(primary).orElseThrow().text());
             assertEquals(2, server.workspaceForTest().state().sourceRevisions().size());
             assertEquals(2, rename(server, root).getDocumentChanges().size());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
+    @Test void aFileFailureDoesNotPoisonASupersedingRefreshWhileAnotherFileIsPending() throws Exception {
+        Path folder = project(), root = folder.resolve("Root.ili");
+        var server = open(folder, true, null, null);
+        try {
+            ready(server, root);
+            String replaced = folder.resolve("Replaced.ili").toUri().toString();
+            String pending = folder.resolve("Pending.ili").toUri().toString();
+            var documents = server.textDocumentsForTest();
+            var workspaceService = (InterlisWorkspaceService) server.getWorkspaceService();
+            assertNotNull(workspaceService.beginFileReload(replaced, 100));
+            assertNotNull(workspaceService.beginFileReload(pending, 101));
+            documents.externalFailed(replaced, 100, LspFailures.error(ResponseErrorCode.RequestFailed, "prior file read failed"));
+            assertNotNull(workspaceService.beginFileReload(replaced, 102));
+            var outline = server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(root.toUri().toString())));
+            assertFalse(outline.isDone());
+
+            documents.applyExternal(pending, pending, 101, Optional.empty(), Optional.empty(), true,
+                    resolved -> workspaceService.claimFileRequest(pending, resolved, 101));
+            documents.applyExternal(replaced, replaced, 102, Optional.empty(), Optional.empty(), true,
+                    resolved -> workspaceService.claimFileRequest(replaced, resolved, 102));
+            assertFalse(outline.get(5, TimeUnit.SECONDS).isEmpty());
         } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
     }
 

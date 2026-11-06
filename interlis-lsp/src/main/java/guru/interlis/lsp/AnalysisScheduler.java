@@ -64,7 +64,10 @@ final class AnalysisScheduler implements AutoCloseable {
 
     /** Short ordered host action; never waits for a compiler worker. */
     <T> T onOwner(Supplier<T> action) {
-        if (Thread.currentThread() == ownerThread) return action.get();
+        if (Thread.currentThread() == ownerThread) {
+            if (closing.get()) throw stopped();
+            return action.get();
+        }
         var result = new CompletableFuture<T>();
         enqueue(() -> {
             try { result.complete(action.get()); }
@@ -77,6 +80,13 @@ final class AnalysisScheduler implements AutoCloseable {
         }
     }
 
+    /** Delivers completion of admitted work without competing for a new request slot. */
+    void completeOnOwner(Runnable action) {
+        if (Thread.currentThread() == ownerThread) {
+            if (!closing.get()) action.run();
+        } else enqueue(action, null);
+    }
+
     /** Invalidates even when only client generation/version changed, without a core text change. */
     void invalidate() {
         requireOwner();
@@ -85,8 +95,9 @@ final class AnalysisScheduler implements AutoCloseable {
         captureFailure=null;
         running.forEach(job -> job.cancelled.set(true));
         pending = null;
-        for (var query : List.copyOf(queries)) query.result.completeExceptionally(changed());
+        for (var result : List.copyOf(activeQueries)) result.completeExceptionally(changed());
         queries.clear();
+        for (var result : List.copyOf(compiles)) result.completeExceptionally(changed());
     }
 
     /** Called on owner after the complete source/configuration update has been accepted. */
@@ -112,28 +123,46 @@ final class AnalysisScheduler implements AutoCloseable {
     /** Captures the query generation, promotes current work and propagates request cancellation. */
     <T> CompletableFuture<T> requestNow(Function<CancellationToken, CompletableFuture<T>> action) {
         var result = new CompletableFuture<T>();
-        result.whenComplete((ignored,failure) -> {
-            Runnable cleanup=() -> { queries.removeIf(query -> query.result==result); activeQueries.remove(result); };
-            if(Thread.currentThread()==ownerThread) cleanup.run(); else enqueue(cleanup,null);
-        });
         enqueue(() -> {
             if(result.isDone()) return;
-            activeQueries.add(result);
             if(current && !workspace.currentRevision().equals(acceptedRevision)) schedule();
             if(captureFailure!=null) { result.completeExceptionally(captureFailure); return; }
             if (current || workspace.state().sourceRevisions().isEmpty()) {
+                trackQuery(result);
                 invoke(new PendingQuery<>(generation, action, result));
             } else {
-                if (running.stream().noneMatch(job -> job.generation == generation) && pending == null) schedule();
-                if(captureFailure!=null) { result.completeExceptionally(captureFailure); return; }
+                if (!analysisScheduled()) {
+                    schedule();
+                    if (captureFailure != null) {
+                        result.completeExceptionally(captureFailure);
+                        return;
+                    }
+                    if (!analysisScheduled()) {
+                        result.completeExceptionally(changed());
+                        return;
+                    }
+                }
                 if (queries.size() >= 128) {
                     result.completeExceptionally(error(ResponseErrorCode.RequestFailed, "language request queue is full"));
                     return;
                 }
                 queries.add(new PendingQuery<>(generation, action, result));
+                trackQuery(result);
             }
         }, result);
         return result;
+    }
+
+    private void trackQuery(CompletableFuture<?> result) {
+        activeQueries.add(result);
+        result.whenComplete((ignored, failure) -> completeOnOwner(() -> {
+            queries.removeIf(query -> query.result == result);
+            activeQueries.remove(result);
+        }));
+    }
+
+    private boolean analysisScheduled() {
+        return pending != null || running.stream().anyMatch(job -> job.generation == generation);
     }
 
     /** Runs a pure operation over a host snapshot, outside owner and workspace mutation. */
@@ -142,8 +171,13 @@ final class AnalysisScheduler implements AutoCloseable {
         var result=new CompletableFuture<T>();
         try { language.execute(() -> {
             try {
+                if (result.isDone()) return;
                 token.throwIfCancellationRequested();
-                operation.get().whenComplete((value,failure) -> {
+                var active = operation.get();
+                result.whenComplete((ignored, failure) -> {
+                    if (result.isCancelled()) active.cancel(false);
+                });
+                active.whenComplete((value,failure) -> {
                     if(failure!=null) result.completeExceptionally(LspFailures.response(failure,operations));
                     else result.complete(value);
                 });
@@ -162,6 +196,7 @@ final class AnalysisScheduler implements AutoCloseable {
     CompletableFuture<CompilationOutcome> compileRoots(List<ModelSelector> selection,Runnable validate) {
         var result=new CompletableFuture<CompilationOutcome>();
         enqueue(() -> {
+            if (result.isDone()) return;
             validate.run();
             var roots=selection==null?workspace.state().sourceRevisions().keySet().stream().filter(localSource)
                     .<ModelSelector>map(ModelSelector.BySource::new).toList():List.copyOf(selection);
@@ -203,6 +238,7 @@ final class AnalysisScheduler implements AutoCloseable {
                     catch(RuntimeException problem) { result.completeExceptionally(LspFailures.response(problem,operations));return; }
                     var outcome=value;
                     enqueue(() -> {
+                        if (result.isDone()) return;
                         if(initialGeneration!=generation || !workspace.currentRevision().equals(capture.workspaceRevision())) { result.completeExceptionally(changed());return; }
                         if(outcome instanceof CompilationOutcome.Succeeded success) workspace.acceptAnalysis(capture,success.analysis());
                         else if(outcome instanceof CompilationOutcome.Rejected rejected) workspace.acceptAnalysis(capture,rejected.analysis());
@@ -289,7 +325,12 @@ final class AnalysisScheduler implements AutoCloseable {
         };
         try {
             token.throwIfCancellationRequested();
-            query.action.apply(token).whenComplete((value, failure) -> {
+            var active = query.action.apply(token);
+            query.result.whenComplete((ignored, failure) -> {
+                if (failure != null) active.cancel(false);
+            });
+            active.whenComplete((value, failure) -> {
+                if (query.result.isDone()) return;
                 enqueue(() -> {
                     if(query.generation!=generation || !workspace.currentRevision().equals(revision)
                             || !workspace.configuration().fullFingerprint().equals(configuration)) query.result.completeExceptionally(changed());
@@ -309,7 +350,10 @@ final class AnalysisScheduler implements AutoCloseable {
     private void enqueue(Runnable action, CompletableFuture<?> result) {
         Runnable task=() -> {
             ownerThread = Thread.currentThread();
-            if(closed) { if(result!=null) result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"server is closed")); return; }
+            if (closing.get()) {
+                if (result != null) result.completeExceptionally(stopped());
+                return;
+            }
             try { action.run(); }
             catch(RuntimeException failure) {
                 var response=LspFailures.response(failure,operations);
@@ -317,8 +361,8 @@ final class AnalysisScheduler implements AutoCloseable {
                 else {
                     var waiting=List.copyOf(queries);
                     queries.clear();
-                    invalidate();
                     for(var query:waiting) query.result.completeExceptionally(response);
+                    invalidate();
                 }
             }
         };
@@ -326,10 +370,14 @@ final class AnalysisScheduler implements AutoCloseable {
             if (closed || closing.get()) throw new RejectedExecutionException();
             owner.execute(task);
         } catch (RejectedExecutionException unavailable) {
-            if(result!=null) result.completeExceptionally(error(ResponseErrorCode.RequestFailed,"owner queue is full or closed"));
+            if (result != null) result.completeExceptionally(closing.get() ? stopped()
+                    : error(ResponseErrorCode.RequestFailed, "owner queue is full"));
             else if(!closed && !closing.get()) {
-                try { owner.getQueue().put(task); }
-                catch(InterruptedException interrupted) { Thread.currentThread().interrupt(); }
+                if (Thread.currentThread() == ownerThread) task.run();
+                else {
+                    try { owner.getQueue().put(task); }
+                    catch (InterruptedException interrupted) { Thread.currentThread().interrupt(); }
+                }
             }
         }
     }
@@ -346,8 +394,13 @@ final class AnalysisScheduler implements AutoCloseable {
         if(closing.compareAndSet(false,true)) {
             Runnable shutdown=() -> {
                 ownerThread=Thread.currentThread();
-                try { hostCleanup.run(); invalidate(); List.copyOf(activeQueries).forEach(result -> result.cancel(false)); activeQueries.clear();
-                    running.clear(); compiles.forEach(result -> result.cancel(false)); compiles.clear(); }
+                try {
+                    hostCleanup.run();
+                    List.copyOf(activeQueries).forEach(result -> result.cancel(false));
+                    List.copyOf(compiles).forEach(result -> result.cancel(false));
+                    invalidate();
+                    activeQueries.clear(); running.clear(); compiles.clear();
+                }
                 finally {
                     closed=true; repositories.close(); compiler.shutdownNow(); workers.shutdownNow(); language.shutdownNow(); owner.shutdown(); terminated.complete(null);
                 }
@@ -361,13 +414,14 @@ final class AnalysisScheduler implements AutoCloseable {
                 }
             }
         }
-        terminated.join();
+        if (Thread.currentThread() != ownerThread) terminated.join();
     }
 
     private static Thread daemon(Runnable runnable, String name) {
         var thread = new Thread(runnable, name); thread.setDaemon(true); return thread;
     }
     private static ResponseErrorException changed() { return error(ResponseErrorCode.ContentModified, "CONTENT_MODIFIED: document or configuration changed"); }
+    private static ResponseErrorException stopped() { return error(ResponseErrorCode.RequestCancelled, "server is closing"); }
     private static ResponseErrorException error(ResponseErrorCode code, String message) {
         return new ResponseErrorException(new ResponseError(code, message, null));
     }

@@ -2,12 +2,20 @@ package guru.interlis.lsp;
 
 import guru.interlis.compiler.*;
 import guru.interlis.execution.*;
+import guru.interlis.source.SourceId;
 import guru.interlis.workspace.*;
 import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.jsonrpc.ResponseErrorException;
+import org.eclipse.lsp4j.jsonrpc.messages.ResponseErrorCode;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.lang.reflect.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -63,6 +71,92 @@ class StaleAnalysisSchedulingTest {
         } finally { scheduler.close();workspace.close(); }
     }
 
+    @Test void fileWaitersReleaseCancelledSlotsAndCompleteOnLoadOrShutdown(@TempDir Path temporary) throws Exception {
+        var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults());
+        var server = new InterlisLanguageServer(workspace);
+        server.initialize(new InitializeParams()).get(5, TimeUnit.SECONDS);
+        try {
+            var documents = server.textDocumentsForTest();
+            var outline = new DocumentSymbolParams(new TextDocumentIdentifier(URI));
+            documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(URI, "interlis", 1, TEXT)));
+            assertFalse(documents.documentSymbol(outline).get(5, TimeUnit.SECONDS).isEmpty());
+            var file = Files.writeString(temporary.resolve("Dependency.ili"),
+                    TEXT.replace("MODEL F", "MODEL Dependency").replace("END F.", "END Dependency."));
+            String fileUri = file.toUri().toString();
+            documents.beginExternal(fileUri, 1);
+
+            var accepted = new ArrayList<CompletableFuture<?>>();
+            for (int i = 0; i < 128; i++) accepted.add(documents.documentSymbol(outline));
+            assertTrue(accepted.stream().noneMatch(CompletableFuture::isDone));
+            assertRequestFailure(documents.documentSymbol(outline), ResponseErrorCode.RequestFailed);
+
+            var cancelled = accepted.removeFirst();
+            assertTrue(cancelled.cancel(false));
+            assertThrows(CancellationException.class, () -> cancelled.get(5, TimeUnit.SECONDS));
+            accepted.add(documents.documentSymbol(outline));
+            assertFalse(accepted.getLast().isDone());
+            assertRequestFailure(documents.documentSymbol(outline), ResponseErrorCode.RequestFailed);
+
+            var loaded = new ProjectSourceLoader().read(fileUri, List.of(temporary.toRealPath()),
+                    CancellationToken.none()).orElseThrow();
+            documents.applyExternal(fileUri, fileUri, 1, Optional.of(loaded), Optional.empty(), false, ignored -> true);
+            for (var request : accepted) request.get(5, TimeUnit.SECONDS);
+            assertTrue(workspace.source(new SourceId(fileUri)).isPresent());
+            assertTrue(cancelled.isCancelled());
+
+            documents.beginExternal(fileUri, 2);
+            var awaitingShutdown = documents.documentSymbol(outline);
+            assertFalse(awaitingShutdown.isDone());
+            server.shutdown().get(5, TimeUnit.SECONDS);
+            assertRequestFailure(awaitingShutdown, ResponseErrorCode.RequestCancelled);
+        } finally {
+            if (!server.shutdownRequested()) server.shutdown().get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test void identityLookupBoundsDeferredDocumentOperationsAndReleasesThemInOrder(@TempDir Path temporary) throws Exception {
+        var known = Files.createDirectory(temporary.resolve("known"));
+        Files.writeString(known.resolve("Dependency.ili"),
+                TEXT.replace("MODEL F", "MODEL Dependency").replace("END F.", "END Dependency."));
+        var workspace = Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults());
+        var server = new InterlisLanguageServer(workspace);
+        server.initialize(new InitializeParams()).get(5, TimeUnit.SECONDS);
+        var lookup = new CompletableFuture<ProjectSourceLoader.IdentityMatch>();
+        try {
+            var documents = server.textDocumentsForTest();
+            documents.installProject(new ProjectSourceLoader().scan(List.of(known.toUri().toString()),
+                    CancellationToken.none()), ignored -> true);
+            var lookupStarted = new CountDownLatch(1);
+            documents.fileServices(ignored -> { }, (files, token) -> CompletableFuture.completedFuture(null),
+                    (uri, sources) -> {
+                        lookupStarted.countDown();
+                        return lookup;
+                    });
+            String uri = temporary.resolve("Unsaved.ili").toUri().toString();
+            var document = new TextDocumentIdentifier(uri);
+            documents.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri, "interlis", 1, TEXT)));
+            assertTrue(lookupStarted.await(5, TimeUnit.SECONDS));
+
+            var stale = new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(uri, 1),
+                    List.of(new TextDocumentContentChangeEvent(TEXT + "\n!! stale")));
+            for (int i = 0; i < 255; i++) documents.didChange(stale);
+            String replacement = TEXT + "\n!! last admitted operation";
+            documents.didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(uri, 2),
+                    List.of(new TextDocumentContentChangeEvent(replacement))));
+            var overflow = assertThrows(ResponseErrorException.class, () ->
+                    documents.didClose(new DidCloseTextDocumentParams(document)));
+            assertEquals(ResponseErrorCode.RequestFailed.getValue(), overflow.getResponseError().getCode());
+            assertTrue(workspace.source(new SourceId(uri)).isEmpty());
+
+            lookup.complete(new ProjectSourceLoader.IdentityMatch(Optional.empty(), Optional.empty()));
+            assertFalse(documents.documentSymbol(new DocumentSymbolParams(document)).get(5, TimeUnit.SECONDS).isEmpty());
+            assertEquals(replacement, workspace.source(new SourceId(uri)).orElseThrow().text());
+        } finally {
+            server.shutdown().get(5, TimeUnit.SECONDS);
+            lookup.cancel(false);
+        }
+    }
+
     @Test void anObsoleteCompilerCannotBlockNotificationsOrPublishAfterANewerGeneration() throws Exception {
         var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
         var cancellations = new AtomicBoolean(); var analysisCalls = new AtomicInteger();
@@ -113,5 +207,11 @@ class StaleAnalysisSchedulingTest {
         } finally {
             release.countDown(); notifications.shutdownNow(); server.shutdown().get(5, TimeUnit.SECONDS);
         }
+    }
+
+    private static void assertRequestFailure(CompletableFuture<?> request, ResponseErrorCode expected) {
+        var failure = assertThrows(ExecutionException.class, () -> request.get(5, TimeUnit.SECONDS));
+        assertEquals(expected.getValue(),
+                assertInstanceOf(ResponseErrorException.class, failure.getCause()).getResponseError().getCode());
     }
 }

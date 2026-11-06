@@ -134,16 +134,16 @@ public final class InterlisLanguageServer implements InterlisLanguageServerApi, 
     public CompletableFuture<Object> shutdown() {
         try { requireReady(); } catch(org.eclipse.lsp4j.jsonrpc.ResponseErrorException unavailable) { return CompletableFuture.failedFuture(unavailable); }
         shutdown = true;
-        workspaceService.close();
         textDocuments.close();
+        workspaceService.close();
         workspace.close();
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public void exit() {
-        workspaceService.close();
         textDocuments.close();
+        workspaceService.close();
         workspace.close();
         processExit.accept(shutdown?0:1);
     }
