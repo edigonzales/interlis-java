@@ -12,7 +12,8 @@ import org.w3c.dom.Document;
 public final class JvmBuildInputs {
     public static final List<String> MODULES = List.of("interlis-model", "interlis-compiler",
             "interlis-workspace", "interlis-repository", "interlis-projection", "interlis-documentation",
-            "interlis-wasm-bridge", "interlis-compiler-cli", "interlis-lsp", "interlis-compiler-gui", "interlis-verification");
+            "interlis-transfer", "interlis-wasm-bridge", "interlis-compiler-cli", "interlis-lsp",
+            "interlis-compiler-gui", "interlis-verification");
 
     public static void requireProject(Path root) throws Exception {
         if (Runtime.version().feature() != 25) throw new IllegalStateException("Java25 required");
