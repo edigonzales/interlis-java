@@ -56,18 +56,10 @@ class TestReportInventoryTest {
         var bound=receipt(control);Files.writeString(control.resolve("TEST-extra.xml"),suite(testcase(2,""),1,0,0,0));
         assertThrows(IllegalArgumentException.class,()->reader.readJenesis(control,bound));
     }
-    @Test void gradleDisplayOnlyParametersRequireExecutedDescriptorMetadata()throws Exception {
-        Path raw=report("<testsuite name=\"example.ProbeTest\" tests=\"1\" failures=\"0\" errors=\"0\" skipped=\"0\"><testcase classname=\"example.ProbeTest\" name=\"[1] value\"/></testsuite>");
-        var nativeReceipt=receipt(raw);var empty=new ExecutionReceipt("interlis-compiler","gradle","fixture",nativeReceipt.started(),0,"EXECUTED",nativeReceipt.reportHashes(),Map.of());
-        assertThrows(IllegalArgumentException.class,()->reader.readGradle(raw,empty));
-        var id=new TestIdentity("interlis-compiler","example.ProbeTest","parameter(String)","1");
-        var metadata=new ExecutionReceipt("interlis-compiler","gradle","fixture",empty.started(),0,"EXECUTED",empty.reportHashes(),Map.of("example.ProbeTest\0[1] value",id));
-        assertEquals(id,reader.readGradle(raw,metadata).cases().getFirst().identity());
-    }
     @Test void modifiedProjectionAndUnsuccessfulProcessAreRejected()throws Exception {
         Path raw=report(suite(testcase(1,""),1,0,0,0));var actual=reader.readJenesis(raw,receipt(raw));var projected=reader.projectPerSuite(actual,temporary.resolve("derived"));reader.verifyRawBindings(projected);
         Files.writeString(projected.projectedHashes().keySet().iterator().next(),"changed");assertThrows(IllegalArgumentException.class,()->reader.verifyRawBindings(projected));
-        var r=actual.receipt();var failed=new ExecutionReceipt(r.module(),r.builder(),r.runId(),r.started(),1,r.execution(),r.reportHashes(),r.descriptorIdentities());
+        var r=actual.receipt();var failed=new ExecutionReceipt(r.module(),r.builder(),r.runId(),r.started(),1,r.execution(),r.reportHashes(),r.requiredProperties());
         assertThrows(IllegalArgumentException.class,()->reader.requireSuccessful(new TestInventory(failed,actual.cases(),actual.rawBindings())));
     }
 }

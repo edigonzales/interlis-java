@@ -195,7 +195,7 @@ der versionierten Normerwartungen und die gepinnten portablen Originalfixtures.
 `host --profile conformance` startet den unveränderten externen
 `InterlisConformance.java` direkt mit Java25;
 Archivprüfung, Konfiguration und direkte Prozessausführung stehen in
-`build/interlis/HostVerificationProfiles.java`, die Pins in `gradle/conformance-suite.properties`.
+`build/interlis/HostVerificationProfiles.java`, die Pins in `testdata/conformance/suite.properties`.
 Der rohe Bericht und Runner-Exit bleiben unter dem expliziten Hostlauf unter `target/jenesis-jvm/host/` erhalten.
 Eine separate Java-Testhilfe bewertet ausschliesslich die expliziten
 Normabweichungen mit Original-/Kontrollhashes und strukturierten Diagnosen und

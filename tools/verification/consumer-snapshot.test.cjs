@@ -1,14 +1,19 @@
 'use strict';
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process'),crypto=require('node:crypto');
-const root=path.resolve(__dirname,'../..'),classes=process.env.INTERLIS_BUILD_TEST_CLASSES,scratch=process.env.INTERLIS_SNAPSHOT_TEST_SCRATCH;
-if(!classes||!scratch||!path.isAbsolute(classes)||!path.isAbsolute(scratch))throw Error('Explicit compiled build-tool classes and private scratch required');
-const handoff=JSON.parse(fs.readFileSync(path.join(root,'target/jenesis-jvm/reports/wasm-export.json'))),original=JSON.parse(fs.readFileSync(handoff.manifest));
+const root=path.resolve(__dirname,'../..');
+const handoffPath=process.env.INTERLIS_SNAPSHOT_HANDOFF;
+if(!handoffPath||!path.isAbsolute(handoffPath))throw Error('INTERLIS_SNAPSHOT_HANDOFF must be the absolute wasm-export receipt path');
+const handoff=JSON.parse(fs.readFileSync(handoffPath));
+const original=JSON.parse(fs.readFileSync(handoff.manifest));
+const os=require('node:os'),scratch=fs.mkdtempSync(path.join(os.tmpdir(),'interlis-snapshot-test-'));
+test.after(()=>fs.rmSync(scratch,{recursive:true,force:true}));
+const java=process.env.JAVA_HOME?path.join(process.env.JAVA_HOME,'bin','java'):'java';
 const sha=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;
 const payloadKeys=['schemaVersion','kind','projectVersion','productInputDigest','enginePinDigest','artifacts','closures','files'];
 function fixture(name){const dir=path.join(scratch,name);fs.cpSync(path.dirname(handoff.manifest),dir,{recursive:true});return {dir,manifest:path.join(dir,'consumer-manifest.json'),data:structuredClone(original)};}
 function write(f,recompute=true){if(recompute)f.data.snapshotDigest=sha(JSON.stringify(canonical(Object.fromEntries(payloadKeys.map(k=>[k,f.data[k]])))));fs.writeFileSync(f.manifest,JSON.stringify(canonical(f.data))+'\n');return sha(fs.readFileSync(f.manifest));}
-function check(manifest,expected,accept){const result=cp.spawnSync(path.join(process.env.JAVA_HOME,'bin/java'),['-cp',classes,'build.interlis.ConsumerSnapshot','verify',manifest,expected],{cwd:root,encoding:'utf8',timeout:20000});assert.equal(result.signal,null);assert.equal(result.error,undefined);if(accept)assert.equal(result.status,0,result.stderr);else assert.notEqual(result.status,0,'Invalid snapshot accepted');return result;}
+function check(manifest,expected,accept){const result=cp.spawnSync(java,['build/interlis/ConsumerSnapshot.java','verify',manifest,expected],{cwd:root,encoding:'utf8',timeout:20000});assert.equal(result.signal,null);assert.equal(result.error,undefined);if(accept)assert.equal(result.status,0,result.stderr);else assert.notEqual(result.status,0,'Invalid snapshot accepted');return result;}
 test('real producer snapshot is accepted',()=>check(handoff.manifest,handoff.manifestSha256,true));
 test('independent expected hash is mandatory',()=>check(handoff.manifest,'0'.repeat(64),false));
 test('unknown schema fails even with a matching local hash',()=>{const f=fixture('schema');f.data.schemaVersion=2;check(f.manifest,write(f),false);});

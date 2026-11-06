@@ -1,6 +1,6 @@
 // Local executable-distribution checks for HTTP network policy; never uses public repositories.
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),cp=require('node:child_process'),assert=require('node:assert/strict'),crypto=require('node:crypto');
-const root=path.resolve(__dirname,'../..'),out=path.join(root,'build/http-network-policy/processes');fs.mkdirSync(out,{recursive:true});
+const root=path.resolve(__dirname,'../..'),out=path.join(root,'target/verification/http-network');fs.mkdirSync(out,{recursive:true});
 const launcher=process.argv[2]||path.join(require('./layout.cjs').resolveRole(require('./layout.cjs').readVerificationInputs(root),'compiler'),'bin/interlis-compiler'+(process.platform==='win32'?'.bat':''));
 const dir=fs.mkdtempSync(path.join(out,'run-')),home=path.join(dir,'home');fs.mkdirSync(home);
 const model='INTERLIS 2.4; MODEL Basis AT "x" VERSION "1" = END Basis.';

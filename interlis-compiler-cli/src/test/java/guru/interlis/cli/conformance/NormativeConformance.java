@@ -252,7 +252,7 @@ public final class NormativeConformance {
         Path output = Path.of(args[1]), reports = Path.of(args[2]);
         for (Path path : List.of(output, reports)) require(path.isAbsolute() && path.normalize().startsWith(root.resolve("target/jenesis-jvm")), "Foreign conformance output");
         var pins = new Properties();
-        try (var input = Files.newInputStream(root.resolve("gradle/conformance-suite.properties"))) { pins.load(input); }
+        try (var input = Files.newInputStream(root.resolve("testdata/conformance/suite.properties"))) { pins.load(input); }
         var config = read(output.resolve("run-config.json"));
         long started = Long.parseLong(Files.readString(output.resolve("run-start.txt")));
         requireFreshReports(output, started);

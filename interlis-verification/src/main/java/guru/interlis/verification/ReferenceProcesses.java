@@ -42,7 +42,7 @@ public final class ReferenceProcesses {
         require(profile.get("schemaVersion").getAsInt()==1 && s(profile,"tool").equals("ili2c")
                 && s(profile,"sourceSha256").equals(ARCHIVE), "Unknown reference profile");
         List<Map<String,Object>> results=new ArrayList<>();
-        Properties fixturePins=new Properties();try(var reader=Files.newBufferedReader(root.resolve("gradle/reference-fixtures.properties"))){fixturePins.load(reader);}
+        Properties fixturePins=new Properties();try(var reader=Files.newBufferedReader(root.resolve("testdata/verification/reference-fixtures.properties"))){fixturePins.load(reader);}
         var cases=rows(profile,"cases");require(cases.size()==5 && cases.stream().map(r->s(r,"id")).collect(java.util.stream.Collectors.toSet()).equals(Set.of("base-survey-24","legacy-23","broken-24","trailing-24","missing-import")),"Changed reference profile");
         for(var entry:cases) {
             var files=strings(entry.get("files"));for(String file:files){

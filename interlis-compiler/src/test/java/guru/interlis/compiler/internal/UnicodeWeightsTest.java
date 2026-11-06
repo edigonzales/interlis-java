@@ -22,7 +22,12 @@ class UnicodeWeightsTest {
         assertEquals(sha,sha(bytes));return new String(bytes,StandardCharsets.UTF_8);
     }
     @Test void frozenTableAndBothOriginalUnicodeSourcesRemainPinned() throws Exception {
-        assertEquals("47e90b02842b0305ff9ef63fc20a8eb9478d2c9f44385408392a9381eaecd207",sha(Files.readAllBytes(ROOT.resolve("interlis-compiler/src/main/java/guru/interlis/compiler/internal/TextLengths.java"))));
+        var field = TextLengths.class.getDeclaredField("WEIGHTS");
+        field.setAccessible(true);
+        int[] weights = (int[]) field.get(null);
+        var bytes = java.nio.ByteBuffer.allocate(Integer.BYTES * weights.length);
+        for (int weight : weights) bytes.putInt(weight);
+        assertEquals("ac144cbb01f6e608b767d0f4016882b92dacadd38d7617319e766b1109dd6687", sha(bytes.array()));
         pinned("UnicodeData","2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c");
         pinned("NormalizationTest","5019ffd530751a741900c849c0e010332f142a3612234639bd200b82138a87db");
         Path changed=Files.createTempFile("interlis-unicode-", ".gz");

@@ -40,11 +40,6 @@ public final class InterlisJvmBuild {
             } else if(request.profile().equals("contracts")) {
                 if(request.module()!=null||request.tests()!=null)throw new IllegalArgumentException("contracts uses the full current binding selection");
                 CompilerContractRun.run(request.root());
-            } else if(request.profile().equals("parity")) {
-                var existing=JenesisBridge.readExistingOutcome(request.root());
-                CompilerContractRun.host(request.root(),JenesisBridge.runtimeClasspath("interlis-verification",existing),"guru.interlis.verification.JvmBuildParity",
-                        List.of(request.options().get("--baseline"),target.resolve("reports/parity.json").toString()),target.resolve("reports/parity-process"));
-                System.out.println("Parity completed: "+target.resolve("reports/parity.json"));
             } else if(request.profile().equals("editor-check")) {
                 build.interlis.EditorCompatibilityRun.run(request);
             } else if(List.of("gui-run", "gui-runtime", "gui-package", "gui-check").contains(request.profile())) {
@@ -76,7 +71,7 @@ public final class InterlisJvmBuild {
         var options=new java.util.HashMap<String,String>();
         int i = 0;
         if (args.length > 0 && !args[0].startsWith("--")) profile = args[i++];
-        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "parity", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-package", "gui-check").contains(profile))
+        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-package", "gui-check").contains(profile))
             throw new IllegalArgumentException("Unknown profile: " + profile);
         while (i < args.length) {
             String option = args[i++];
@@ -93,7 +88,7 @@ public final class InterlisJvmBuild {
                         throw new IllegalArgumentException("Expected one explicit class regex with optional #method");
                     tests = value;
                 }
-                case "--baseline", "--extension-dir", "--reference-bundle", "--inputs" -> {
+                case "--extension-dir", "--reference-bundle", "--inputs" -> {
                     if(options.put(option,value)!=null||!Path.of(value).isAbsolute()||!Files.exists(Path.of(value)))throw new IllegalArgumentException("Expected existing absolute path for "+option);
                 }
                 case "--application" -> {
@@ -118,7 +113,7 @@ public final class InterlisJvmBuild {
             }
         }
         if (tests != null && module == null) throw new IllegalArgumentException("--tests requires --module");
-        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("parity")?java.util.Set.of("--baseline"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check","gui-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
+        var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check","gui-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
         if(!options.keySet().equals(expected))throw new IllegalArgumentException("Expected options for "+profile+": "+expected);
         if(!List.of("build","artifacts").contains(profile)&&(module!=null||tests!=null))throw new IllegalArgumentException("Module/test restrictions are only available for build/artifacts");
         if(profile.equals("artifacts")&&tests!=null)throw new IllegalArgumentException("artifacts never selects tests");

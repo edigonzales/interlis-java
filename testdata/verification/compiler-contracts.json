@@ -4981,7 +4981,7 @@
         },
         {
           "source": "build/interlis/HostVerificationProfiles.java",
-          "sha256": "8758fb14d8e2d14a5fb6ce7c2664a9465089573dcb857f18001f79e03ca6b8b1",
+          "sha256": "c390fd1d0705387be4109a727c6bc29aaced27fa00a76bc52212c0e68d1b4fae",
           "reason": "Auftrag B Reviewkorrektur: portable Layoutproduktion, einheitliche echte CLI-Versionsbytes und kontrollierter Consumer-Lockumfang; ursprüngliche Assertions bleiben unverändert."
         }
       ],
@@ -5030,12 +5030,12 @@
       "scope": "Gepinnte P3-Fixtures mit getrenntem stdout/stderr/Exitcode sind nur teilweise assertiert.",
       "processEvidence": [
         {
-          "source": "gradle/reference-fixtures.properties",
+          "source": "testdata/verification/reference-fixtures.properties",
           "sha256": "27dd6884d90f90a0de39709936fccfb1f593478597f149bdcd5270f85ab2c442"
         },
         {
           "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",
-          "sha256": "dd78471feb063d9c6a1a0e17bfe69f5e61dee2ccbe3966ceef280607c49f199d",
+          "sha256": "20e39e09348eff1b154723a8e9b2928ea732417e721a0da0bba553cd425592b3",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         },
         {

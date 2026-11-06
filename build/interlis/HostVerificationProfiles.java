@@ -187,7 +187,7 @@ public final class HostVerificationProfiles {
             return output;
         }
         void conformance()throws Exception {
-            perform("sdk");var pin=new Properties();try(var reader=Files.newBufferedReader(root.resolve("gradle/conformance-suite.properties"))){pin.load(reader);}
+            perform("sdk");var pin=new Properties();try(var reader=Files.newBufferedReader(root.resolve("testdata/conformance/suite.properties"))){pin.load(reader);}
             String override=System.getenv("CONFORMANCE_CACHE");Path cache=override==null?Path.of(System.getProperty("user.home"),".cache/interlis-java/conformance"):Path.of(override).toAbsolutePath();
             Files.createDirectories(cache);Path archive=cache.resolve("suite-"+pin.getProperty("commit")+".tar.gz");
             if(!Files.exists(archive)) {

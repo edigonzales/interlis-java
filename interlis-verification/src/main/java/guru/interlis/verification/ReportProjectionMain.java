@@ -44,7 +44,7 @@ public final class ReportProjectionMain {
         require(s(data,"execution").equals("EXECUTED")&&data.get("exitCode").getAsInt()==0,"Producer not freshly successful");
         Map<String,String> hashes=new TreeMap<>();data.getAsJsonObject("reportHashes").entrySet().forEach(e->hashes.put(e.getKey(),e.getValue().getAsString()));
         Map<String,String> properties=Map.of("contract.runId",runId,"interlis.build.inputs",s(data,"inputFingerprint"));
-        var receipt=new ExecutionReceipt(module,"jenesis",runId,Instant.parse(s(data,"started")),0,"EXECUTED",hashes,Map.of(),properties);
+        var receipt=new ExecutionReceipt(module,"jenesis",runId,Instant.parse(s(data,"started")),0,"EXECUTED",hashes,properties);
         var reader=new TestReportInventory();var actual=reader.readJenesis(raw,receipt);reader.requireSuccessful(actual);
         Set<String> expected=new TreeSet<>();
         for(var entry:CompilerContractCatalog.load(root).document().getAsJsonObject("bindings").entrySet()) {

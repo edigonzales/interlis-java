@@ -1,10 +1,8 @@
 # Eingefrorene Unicode-17-Eingaben
 
-Diese unveränderten Originaltexte waren bereits die gepinnten Eingaben von
-`generate_text_weights.py` am Basiscommit
-`abde84ef666184e128827894d63e176709e7c3db`. Der einmalige Generator ist entfernt;
-seine Ausgabe `TextLengths.java` bleibt bytegleich und weiterhin gepinnt:
-`47e90b02842b0305ff9ef63fc20a8eb9478d2c9f44385408392a9381eaecd207`.
+Die unveränderten Unicode-Originale und die kompilierten Tabellenwerte sind
+gepinnt. `UnicodeWeightsTest` prüft die Tabellenwerte als Big-Endian-32-Bit-Zahlen
+mit SHA-256 `ac144cbb01f6e608b767d0f4016882b92dacadd38d7617319e766b1109dd6687`.
 
 | Entpackte Datei | Bestehender SHA-256 |
 |---|---|

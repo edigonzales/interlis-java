@@ -1,9 +1,9 @@
 package guru.interlis.compiler.internal;
 
 /** INTERLIS 2.4 text length: CCC=0 code points after canonical decomposition.
- * Generated from pinned Unicode 17.0.0; see tools/reference/generate_text_weights.py.
- * Copyright Unicode, Inc.; Unicode License v3 is included under docs/evidence/
- * stabilization/registries/UNICODE-LICENSE.txt. Ordering decomposed marks does not
+ * Data comes from Unicode 17.0.0 and is checked by UnicodeWeightsTest.
+ * Copyright Unicode, Inc.; see testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt.
+ * Ordering decomposed marks does not
  * change the count. Source strings and UTF-16 positions are never normalized.
  */
 final class TextLengths {

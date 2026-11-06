@@ -12,8 +12,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.*;
 
 /**
- * Reads executed JUnit reports. Identities come from native events or real Gradle
- * descriptors, never from an expected selection. Values and mappings are immutable.
+ * Reads executed JUnit reports. Identities come from native test events, never from an expected selection. Values and mappings are immutable.
  * Reports containing failures remain inspectable; requireSuccessful is the gate.
  */
 public final class TestReportInventory {
@@ -22,16 +21,13 @@ public final class TestReportInventory {
     }
     public record ExecutionReceipt(String module, String builder, String runId, Instant started,
             int exitCode, String execution, Map<String,String> reportHashes,
-            Map<String,TestIdentity> descriptorIdentities, Map<String,String> requiredProperties) {
+            Map<String,String> requiredProperties) {
         public ExecutionReceipt {
             Objects.requireNonNull(module); Objects.requireNonNull(builder); Objects.requireNonNull(runId); Objects.requireNonNull(started);
-            reportHashes=Map.copyOf(reportHashes); descriptorIdentities=Map.copyOf(descriptorIdentities);requiredProperties=Map.copyOf(requiredProperties);
+            reportHashes=Map.copyOf(reportHashes); requiredProperties=Map.copyOf(requiredProperties);
             if(!Set.of("EXECUTED","REUSED").contains(execution)||runId.isBlank())throw new IllegalArgumentException("Missing execution provenance");
         }
-        public ExecutionReceipt(String module,String builder,String runId,Instant started,int exitCode,String execution,
-                Map<String,String> reportHashes,Map<String,TestIdentity> descriptorIdentities) {
-            this(module,builder,runId,started,exitCode,execution,reportHashes,descriptorIdentities,Map.of());
-        }
+
     }
     public record TestCase(TestIdentity identity, String displayName, String outcome, Path rawReport, String rawSha256, String nativeId) {}
     public record TestInventory(ExecutionReceipt receipt, List<TestCase> cases, Map<Path,String> rawBindings) {
@@ -47,11 +43,8 @@ public final class TestReportInventory {
     private static final Pattern NATIVE_METHOD=Pattern.compile("\\[(?:method|test-template):([^]]+)]");
     private static final Pattern NATIVE_INVOCATION=Pattern.compile("\\[test-template-invocation:#(\\d+)]");
 
-    public TestInventory readGradle(Path rawDirectory, ExecutionReceipt receipt) throws Exception { return read(rawDirectory,receipt,false); }
-    public TestInventory readJenesis(Path rawDirectory, ExecutionReceipt receipt) throws Exception { return read(rawDirectory,receipt,true); }
-
-    private TestInventory read(Path directory, ExecutionReceipt receipt, boolean jenesis) throws Exception {
-        if(!receipt.builder().equals(jenesis?"jenesis":"gradle"))throw new IllegalArgumentException("Foreign builder receipt");
+    public TestInventory readJenesis(Path directory, ExecutionReceipt receipt) throws Exception {
+        if(!receipt.builder().equals("jenesis"))throw new IllegalArgumentException("Foreign builder receipt");
         Map<Path,String> bindings=new TreeMap<>(); List<TestCase> cases=new ArrayList<>(); Set<TestIdentity> identities=new HashSet<>();
         Set<String> files=new TreeSet<>();
         try(var stream=Files.list(directory)) {
@@ -75,29 +68,19 @@ public final class TestReportInventory {
                     Element test=(Element)nodes.item(i);
                     if(test.getParentNode()!=suite)throw new IllegalArgumentException("Nested/malformed testcase");
                     String clazz=test.getAttribute("classname"),display=test.getAttribute("name"),nativeId="";
-                    if(clazz.isBlank()||display.isBlank()||(!jenesis&&!clazz.equals(suite.getAttribute("name"))))throw new IllegalArgumentException("Missing/wrong testcase class");
-                    TestIdentity id;
-                    if(jenesis) {
-                        String output="";for(int j=0;j<test.getElementsByTagName("system-out").getLength();j++)output+=test.getElementsByTagName("system-out").item(j).getTextContent();
-                        var ids=output.lines().filter(l->l.startsWith("unique-id: ")).toList();
-                        var names=output.lines().filter(l->l.startsWith("display-name: ")).toList();
-                        if(ids.size()!=1||names.size()!=1)throw new IllegalArgumentException("Missing/ambiguous native test identity");
-                        nativeId=ids.getFirst().substring(11); display=names.getFirst().substring(14);
-                        if(!nativeId.contains("[class:"+clazz+"]"))throw new IllegalArgumentException("Foreign native class");
-                        var method=NATIVE_METHOD.matcher(nativeId);if(!method.find())throw new IllegalArgumentException("Missing native method");
-                        String signature=simpleSignature(method.group(1));var invocation=NATIVE_INVOCATION.matcher(nativeId);
-                        String index=invocation.find()?invocation.group(1):"";
-                        var declared=METHOD.matcher(test.getAttribute("name"));
-                        if(!declared.matches()||!simpleSignature(declared.group(1)).equals(signature)||!Objects.toString(declared.group(2),"").equals(index))throw new IllegalArgumentException("Conflicting native identities");
-                        id=new TestIdentity(receipt.module(),clazz,signature,index);
-                    } else {
-                        var method=METHOD.matcher(display);
-                        if(method.matches())id=new TestIdentity(receipt.module(),clazz,simpleSignature(method.group(1)),Objects.toString(method.group(2),""));
-                        else {
-                            id=receipt.descriptorIdentities().get(clazz+"\0"+display);
-                            if(id==null||!id.module().equals(receipt.module())||!id.className().equals(clazz))throw new IllegalArgumentException("Missing executed Gradle method descriptor: "+clazz+"/"+display);
-                        }
-                    }
+                    if(clazz.isBlank()||display.isBlank())throw new IllegalArgumentException("Missing/wrong testcase class");
+                    String output="";for(int j=0;j<test.getElementsByTagName("system-out").getLength();j++)output+=test.getElementsByTagName("system-out").item(j).getTextContent();
+                    var ids=output.lines().filter(l->l.startsWith("unique-id: ")).toList();
+                    var names=output.lines().filter(l->l.startsWith("display-name: ")).toList();
+                    if(ids.size()!=1||names.size()!=1)throw new IllegalArgumentException("Missing/ambiguous native test identity");
+                    nativeId=ids.getFirst().substring(11); display=names.getFirst().substring(14);
+                    if(!nativeId.contains("[class:"+clazz+"]"))throw new IllegalArgumentException("Foreign native class");
+                    var method=NATIVE_METHOD.matcher(nativeId);if(!method.find())throw new IllegalArgumentException("Missing native method");
+                    String signature=simpleSignature(method.group(1));var invocation=NATIVE_INVOCATION.matcher(nativeId);
+                    String index=invocation.find()?invocation.group(1):"";
+                    var declared=METHOD.matcher(test.getAttribute("name"));
+                    if(!declared.matches()||!simpleSignature(declared.group(1)).equals(signature)||!Objects.toString(declared.group(2),"").equals(index))throw new IllegalArgumentException("Conflicting native identities");
+                    var id=new TestIdentity(receipt.module(),clazz,signature,index);
                     if(!identities.add(id))throw new IllegalArgumentException("Duplicate test invocation: "+id);
                     int f=test.getElementsByTagName("failure").getLength(),e=test.getElementsByTagName("error").getLength(),s=test.getElementsByTagName("skipped").getLength();
                     if(f+e+s>1)throw new IllegalArgumentException("Conflicting testcase outcomes");

@@ -2,7 +2,7 @@
 const fs = require('node:fs'), path = require('node:path'), http = require('node:http');
 const cp = require('node:child_process'), crypto = require('node:crypto'), assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '../..');
-const out = path.join(root, 'build/ili2c-cache-policy/processes');
+const out = path.join(root, 'target/verification/repository-cache');
 fs.mkdirSync(out, {recursive: true});
 const launcher = process.argv[2] || path.join(require('./layout.cjs').resolveRole(require('./layout.cjs').readVerificationInputs(root),'compiler'),'bin/interlis-compiler'+(process.platform==='win32'?'.bat':''));
 const dir = fs.mkdtempSync(path.join(out, 'run-')), home = path.join(dir, 'home');
