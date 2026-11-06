@@ -26,10 +26,11 @@ final class Xtf23Lexemes {
                 && Arrays.stream(value.split("\\.", -1)).allMatch(part -> NAME.matcher(part).matches());
     }
 
+    static boolean decimal(String value) {
+        return DECIMAL.matcher(value).matches();
+    }
+
     static NumberValue number(String value) {
-        if (!DECIMAL.matcher(value).matches()) {
-            throw new NumberFormatException("Invalid XTF decimal");
-        }
         return new NumberValue(value, new BigDecimal(value));
     }
 

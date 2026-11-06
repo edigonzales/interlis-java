@@ -20,12 +20,16 @@ import static javax.xml.stream.XMLStreamConstants.*;
 final class Xtf23Input {
     static final int MAX_TEXT = 1_048_576;
     static final int MAX_TOKEN_BYTES = 8 * MAX_TEXT;
+    static final int MAX_OBJECT_UNITS = 16 * MAX_TEXT;
+    private static final int MAX_OBJECT_TOKENS = 1_000_000;
     private static final int MAX_DEPTH = 128;
     private static final int MAX_ATTRIBUTES = 64;
     private static final int MAX_NAME = 1024;
 
     private final BorrowedInput input;
     private XMLStreamReader xml;
+    private int objectTokens = -1;
+    private long objectUnits;
 
     Xtf23Input(InputStream input) {
         this.input = new BorrowedInput(Objects.requireNonNull(input, "input"));
@@ -76,6 +80,36 @@ final class Xtf23Input {
         return xml;
     }
 
+    void beginObject() {
+        objectTokens = MAX_OBJECT_TOKENS;
+        objectUnits = MAX_OBJECT_UNITS;
+        accountObjectToken(START_ELEMENT);
+    }
+
+    void endObject() {
+        objectTokens = -1;
+    }
+
+    private void accountObjectToken(int token) {
+        if (objectTokens < 0) {
+            return;
+        }
+        objectTokens--;
+        switch (token) {
+            case START_ELEMENT -> {
+                for (int i = 0; i < xml.getAttributeCount(); i++) {
+                    objectUnits -= xml.getAttributeValue(i).length();
+                }
+            }
+            case CHARACTERS, CDATA, SPACE, COMMENT -> objectUnits -= xml.getTextLength();
+            case PROCESSING_INSTRUCTION -> objectUnits -= Objects.toString(xml.getPIData(), "").length();
+            default -> { }
+        }
+        if (objectTokens < 0 || objectUnits < 0) {
+            throw error(LIMIT_EXCEEDED, "XTF object exceeds its XML event or character budget");
+        }
+    }
+
     int next() throws XMLStreamException {
         input.cancellation.throwIfCancellationRequested();
         input.remaining = MAX_TOKEN_BYTES;
@@ -83,6 +117,7 @@ final class Xtf23Input {
         if (token == DTD || token == ENTITY_REFERENCE) {
             throw error(UNSAFE_XML, "DTD declarations and custom XML entities are forbidden");
         }
+        accountObjectToken(token);
         return token;
     }
 

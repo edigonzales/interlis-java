@@ -2,11 +2,14 @@ package guru.interlis.xtf23;
 
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionType;
+import guru.interlis.model.CoordinateType;
 import guru.interlis.model.DomainReferenceType;
 import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.SymbolKind;
@@ -22,6 +25,7 @@ import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
 import guru.interlis.transfer.TopicDescriptor;
 import guru.interlis.transfer.TransferEvent;
+import guru.interlis.transfer.TransferGeometry;
 import guru.interlis.transfer.TransferIdentity;
 import guru.interlis.transfer.TransferName;
 import guru.interlis.transfer.TransferObject;
@@ -57,6 +61,8 @@ import static javax.xml.stream.XMLStreamConstants.*;
  * Events are immutable and can be retained after the reader advances.
  * The XML reader bounds depth to 128 elements, scalar text to 1,048,576 UTF-16
  * code units, and input read during any individual parser advance to 8 MiB.
+ * One object, including its nested values, is limited to 1,000,000 XML events and
+ * 16,777,216 UTF-16 code units of XML text and attribute values.
  * The reader holds a transfer-wide index of occurrence IDs whose size grows with
  * the number of distinct BIDs and TIDs.
  */
@@ -322,6 +328,15 @@ public final class Xtf23Reader extends TransferReader {
         if (layout.embedded(descriptor).isPresent()) {
             throw xml.error(INVALID_WIRE, "Embedded XTF association cannot occur as a standalone object: " + tag);
         }
+        try {
+            xml.beginObject();
+            return readObject(descriptor, tag);
+        } finally {
+            xml.endObject();
+        }
+    }
+
+    private ObjectEvent readObject(ObjectDescriptor descriptor, String tag) throws XMLStreamException {
         var attributes = attributes(false, "TID", "BID", "OPERATION", "CONSISTENCY");
         if (attributes.containsKey("OPERATION")) {
             throw xml.error(INVALID_WIRE, "A FULL object cannot carry an incremental OPERATION");
@@ -423,6 +438,7 @@ public final class Xtf23Reader extends TransferReader {
                 yield result;
             }
             case COLLECTION -> readCollection((CollectionType) type, tag);
+            case COORDINATE, GEOMETRY -> readGeometry(type, tag);
             default -> throw xml.error(UNSUPPORTED, "Unsupported XTF type " + type.kind() + " for " + tag);
         };
     }
@@ -462,10 +478,172 @@ public final class Xtf23Reader extends TransferReader {
         if (Xtf23Lexemes.nonDecimalNumber(value)) {
             throw xml.error(UNSUPPORTED, "Nondecimal XTF numbers are unsupported");
         }
+        if (!Xtf23Lexemes.decimal(value)) {
+            throw xml.error(INVALID_WIRE, "Invalid XTF decimal value");
+        }
         try {
             return Xtf23Lexemes.number(value);
         } catch (NumberFormatException e) {
-            throw xml.error(INVALID_WIRE, "Invalid XTF decimal value");
+            throw xml.error(LIMIT_EXCEEDED, "XTF decimal exceeds the supported exact exponent range");
+        }
+    }
+
+    private TransferGeometry readGeometry(TypeDescriptor type, String tag) throws XMLStreamException {
+        attributes(false);
+        int token = xml.nextTag();
+        TransferGeometry geometry = switch (type) {
+            case CoordinateType coordinate -> readCoordinate(token, dimensions(coordinate));
+            case GeometryType line -> {
+                var curve = curveEncoding(line);
+                yield switch (line.geometryKind()) {
+                    case POLYLINE -> readPolyline(token, curve);
+                    case SURFACE, AREA -> readSurface(token, curve);
+                    default -> throw xml.error(UNSUPPORTED, "XTF 2.3 does not encode " + line.geometryKind());
+                };
+            }
+            default -> throw new IllegalStateException("Expected a plan geometry type");
+        };
+        require(END_ELEMENT, xml.nextTag(), tag);
+        return geometry;
+    }
+
+    private int dimensions(CoordinateType type) {
+        if (type.multiCoordinate() || type.dimensions() < 2) {
+            throw xml.error(UNSUPPORTED, "Only single two- and three-dimensional XTF coordinates are supported");
+        }
+        return type.dimensions();
+    }
+
+    private record CurveEncoding(int dimensions, boolean straights, boolean arcs) { }
+
+    private CurveEncoding curveEncoding(GeometryType type) {
+        if (type.lineAttributes().isPresent()) {
+            throw xml.error(UNSUPPORTED, "XTF LINEATTR is unsupported");
+        }
+        var domain = type.vertexDomain().flatMap(id -> plan.symbol(new SymbolRef(plan.snapshotId(), id)).known());
+        if (domain.isEmpty() || !(domain.orElseThrow() instanceof DomainSymbol vertex)
+                || !(type(new TypeRef(plan.snapshotId(), vertex.typeId())) instanceof CoordinateType coordinate)) {
+            throw xml.error(UNSUPPORTED, "XTF line type requires a concrete coordinate domain");
+        }
+        boolean straights = type.lineForms().isEmpty();
+        boolean arcs = type.lineForms().isEmpty();
+        for (var id : type.lineForms()) {
+            var symbol = plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow();
+            if (!(symbol.origin() instanceof Origin.PredefinedOrigin origin)) {
+                throw xml.error(UNSUPPORTED, "Custom XTF line forms are unsupported");
+            }
+            switch (origin.key()) {
+                case "INTERLIS.STRAIGHTS" -> straights = true;
+                case "INTERLIS.ARCS" -> arcs = true;
+                default -> throw xml.error(UNSUPPORTED, "Unsupported XTF line form " + origin.key());
+            }
+        }
+        return new CurveEncoding(dimensions(coordinate), straights, arcs);
+    }
+
+    private TransferGeometry.Coordinate readCoordinate(int token, int dimensions) throws XMLStreamException {
+        require(START_ELEMENT, token, "COORD");
+        attributes(false);
+        var coordinate = readPosition("C", dimensions);
+        require(END_ELEMENT, xml.nextTag(), "COORD");
+        return coordinate;
+    }
+
+    private TransferGeometry.Coordinate readPosition(String prefix, int dimensions) throws XMLStreamException {
+        var ordinates = new ArrayList<TransferValue.NumberValue>(dimensions);
+        for (int axis = 1; axis <= dimensions; axis++) {
+            require(START_ELEMENT, xml.nextTag(), prefix + axis);
+            attributes(false);
+            ordinates.add(readNumber());
+        }
+        return new TransferGeometry.Coordinate(ordinates);
+    }
+
+    private TransferGeometry.Polyline readPolyline(int token, CurveEncoding curve) throws XMLStreamException {
+        require(START_ELEMENT, token, "POLYLINE");
+        attributes(false);
+        token = xml.nextTag();
+        rejectGeometryExtension(token);
+        var start = readCoordinate(token, curve.dimensions());
+        var segments = new ArrayList<TransferGeometry.Segment>();
+        token = xml.nextTag();
+        while (!is(END_ELEMENT, token, "POLYLINE")) {
+            rejectGeometryExtension(token);
+            String segment = elementName(token);
+            segments.add(switch (segment) {
+                case "COORD" -> {
+                    if (!curve.straights()) {
+                        throw xml.error(INVALID_WIRE, "Straight segment is not declared by the line type");
+                    }
+                    yield new TransferGeometry.Straight(readCoordinate(token, curve.dimensions()));
+                }
+                case "ARC" -> {
+                    if (!curve.arcs()) {
+                        throw xml.error(INVALID_WIRE, "ARC is not declared by the line type");
+                    }
+                    yield readArc(curve.dimensions());
+                }
+                default -> throw xml.error(INVALID_WIRE, "Unexpected XTF line segment " + segment);
+            });
+            token = xml.nextTag();
+        }
+        if (segments.isEmpty()) {
+            throw xml.error(INVALID_WIRE, "XTF POLYLINE requires at least one segment after its start position");
+        }
+        return new TransferGeometry.Polyline(List.of(new TransferGeometry.CurvePart(start, segments)));
+    }
+
+    private TransferGeometry.Arc readArc(int dimensions) throws XMLStreamException {
+        attributes(false);
+        var end = readPosition("C", dimensions);
+        var support = readPosition("A", 2);
+        Optional<TransferValue.NumberValue> radius = Optional.empty();
+        int token = xml.nextTag();
+        if (is(START_ELEMENT, token, "R")) {
+            attributes(false);
+            var value = readNumber();
+            if (value.exactValue().signum() == 0) {
+                throw xml.error(INVALID_WIRE, "XTF ARC radius must be nonzero");
+            }
+            radius = Optional.of(value);
+            token = xml.nextTag();
+        }
+        require(END_ELEMENT, token, "ARC");
+        return new TransferGeometry.Arc(support, end, radius);
+    }
+
+    private TransferGeometry.Surface readSurface(int token, CurveEncoding curve) throws XMLStreamException {
+        require(START_ELEMENT, token, "SURFACE");
+        attributes(false);
+        var shell = readBoundary(xml.nextTag(), curve);
+        var holes = new ArrayList<TransferGeometry.Ring>();
+        token = xml.nextTag();
+        while (!is(END_ELEMENT, token, "SURFACE")) {
+            holes.add(readBoundary(token, curve));
+            token = xml.nextTag();
+        }
+        return new TransferGeometry.Surface(shell, holes);
+    }
+
+    private TransferGeometry.Ring readBoundary(int token, CurveEncoding curve) throws XMLStreamException {
+        rejectGeometryExtension(token);
+        require(START_ELEMENT, token, "BOUNDARY");
+        attributes(false);
+        var lines = new ArrayList<TransferGeometry.Polyline>();
+        token = xml.nextTag();
+        while (!is(END_ELEMENT, token, "BOUNDARY")) {
+            lines.add(readPolyline(token, curve));
+            token = xml.nextTag();
+        }
+        if (lines.isEmpty()) {
+            throw xml.error(INVALID_WIRE, "XTF BOUNDARY requires at least one POLYLINE");
+        }
+        return new TransferGeometry.Ring(lines);
+    }
+
+    private void rejectGeometryExtension(int token) {
+        if (is(START_ELEMENT, token, "CLIPPED") || is(START_ELEMENT, token, "LINEATTR")) {
+            throw xml.error(UNSUPPORTED, "Unsupported XTF geometry element " + elementName(token));
         }
     }
 
