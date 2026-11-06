@@ -198,20 +198,31 @@ final class TransferSequence {
                         "Expected one generic-to-concrete assignment for " + generic.name().value());
             }
         }
-        var required = new HashSet<SymbolId>();
+        var effective = new HashMap<SymbolId, SymbolId>();
         for (var topic : topics) {
             for (var binding : topic.genericBindings()) {
-                required.add(binding.genericDomain());
-                SymbolId concrete = selected.get(binding.genericDomain());
+                SymbolId genericId = binding.genericDomain();
+                SymbolId supplied = selected.get(genericId);
+                SymbolId concrete = switch (binding.state()) {
+                    case CONCRETE -> supplied == null ? binding.alternatives().getFirst() : supplied;
+                    case DEFERRED -> supplied;
+                    case ABSTRACT -> null;
+                };
                 if (concrete == null || !binding.alternatives().contains(concrete)) {
-                    var generic = requireDomain(new SymbolRef(plan.snapshotId(), binding.genericDomain()));
+                    var generic = requireDomain(new SymbolRef(plan.snapshotId(), genericId));
                     throw new TransferProtocolException(CONTEXT_MISMATCH,
                             "Basket for " + topic.name().declared() + " needs a permitted assignment for "
                                     + generic.name().value());
                 }
+                SymbolId previous = effective.putIfAbsent(genericId, concrete);
+                if (previous != null && !previous.equals(concrete)) {
+                    var generic = requireDomain(new SymbolRef(plan.snapshotId(), genericId));
+                    throw new TransferProtocolException(CONTEXT_MISMATCH,
+                            "Basket topics resolve " + generic.name().value() + " to different domains");
+                }
             }
         }
-        if (!selected.keySet().equals(required)) {
+        if (!effective.keySet().containsAll(selected.keySet())) {
             throw new TransferProtocolException(CONTEXT_MISMATCH, "Basket assigns an unused generic domain");
         }
     }

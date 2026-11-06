@@ -6,9 +6,12 @@ import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.model.CompiledSchema;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TopicSymbol.BindingState;
+import guru.interlis.model.TopicSymbol.GenericBinding;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
 import guru.interlis.source.SourceText;
+import guru.interlis.transfer.TransferEvent.BasketKind;
 import guru.interlis.transfer.TransferEvent.DomainBinding;
 import guru.interlis.transfer.TransferEvent.EndBasket;
 import guru.interlis.transfer.TransferEvent.EndTransfer;
@@ -17,12 +20,15 @@ import guru.interlis.transfer.TransferEvent.ObjectEvent;
 import guru.interlis.transfer.TransferEvent.StartBasket;
 import guru.interlis.transfer.TransferEvent.StartTransfer;
 import guru.interlis.transfer.TransferIdentity.BasketId;
+import guru.interlis.transfer.TransferIdentity.ObjectOid;
 import guru.interlis.transfer.TransferIdentity.TransferId;
 import guru.interlis.transfer.TransferStreamingContractTest.MemoryReader;
 import guru.interlis.transfer.TransferStreamingContractTest.MemoryWriter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static guru.interlis.transfer.TransferEvent.BasketKind.FULL;
+import static guru.interlis.transfer.TransferEvent.BasketKind.INITIAL;
 import static guru.interlis.transfer.TransferEvent.BasketKind.UPDATE;
 import static guru.interlis.transfer.TransferEvent.Consistency.ADAPTED;
 import static guru.interlis.transfer.TransferEvent.Consistency.COMPLETE;
@@ -265,29 +272,93 @@ class TransferEventProtocolTest {
         }
     }
 
-    @Test
-    void checksBasketAndFullObjectIdsAcrossBasketsInSeparateNamespaces() {
+    @ParameterizedTest
+    @EnumSource(LanguageVersion.class)
+    void checksBasketAndFullObjectIdsAcrossBasketsInSeparateNamespaces(LanguageVersion language) {
+        var fixture = compileInline(MODEL, MODEL_TEXT.replace("INTERLIS 2.4;", "INTERLIS " + language.literal() + ";"));
+        var fixturePlan = ready(fixture);
         var second = new BasketId("second", SOURCE);
         var duplicateBid = new BasketId(BASKET.value(), SYNTHETIC);
-        var tid = new TransferId(BASKET.value(), SOURCE);
-        var duplicateTid = new TransferId(tid.value(), SYNTHETIC);
-        var firstObject = object(BASKET, Optional.of(tid));
-        var secondObject = object(second, Optional.of(new TransferId("other", SOURCE)));
-        var writer = new MemoryWriter(plan);
+        var firstTid = new TransferId(second.value(), SYNTHETIC);
+        var duplicateTid = new TransferId(firstTid.value(), SOURCE);
+        var secondTid = new TransferId(BASKET.value(), SOURCE);
+        var firstObject = object(fixture, BASKET, Optional.of(firstTid), Optional.empty());
+        var secondObject = object(fixture, second, Optional.of(secondTid), Optional.empty());
+        var start = startTransfer(fixture, language);
+        var firstBasket = startBasket(fixture, BASKET, FULL);
+        var secondBasket = startBasket(fixture, second, FULL);
+        List<TransferEvent> expected = List.of(start, firstBasket, firstObject, new EndBasket(BASKET),
+                secondBasket, secondObject, new EndBasket(second), new EndTransfer());
+        var writer = new MemoryWriter(fixturePlan);
         try (writer) {
-            writer.write(startTransfer());
-            writer.write(startBasket());
+            writer.write(start);
+            writer.write(firstBasket);
             writer.write(firstObject);
             writer.write(new EndBasket(BASKET));
-            expect(DUPLICATE_ID, () -> writer.write(startBasket(duplicateBid)));
-            writer.write(startBasket(second));
-            expect(DUPLICATE_ID, () -> writer.write(object(second, Optional.of(duplicateTid))));
+            expect(DUPLICATE_ID, () -> writer.write(startBasket(fixture, duplicateBid, FULL)));
+            writer.write(secondBasket);
+            expect(DUPLICATE_ID, () -> writer.write(object(fixture, second, Optional.of(duplicateTid), Optional.empty())));
             writer.write(secondObject);
             writer.write(new EndBasket(second));
             writer.write(new EndTransfer());
         }
-        assertEquals(List.of(firstObject, secondObject), writer.events.stream()
-                .filter(ObjectEvent.class::isInstance).toList());
+        assertEquals(expected, writer.events);
+        assertReads(fixturePlan, writer.events);
+
+        var independentWriter = new MemoryWriter(fixturePlan);
+        try (independentWriter) {
+            expected.forEach(independentWriter::write);
+        }
+        assertEquals(expected, independentWriter.events);
+        assertReads(fixturePlan, independentWriter.events);
+    }
+
+    @Test
+    void tracksBasketIdsAcrossAllKindsAndKeepsIncrementalKeysOutsideTheFullTidScope() {
+        var initial = new BasketId("initial", SOURCE);
+        var update = new BasketId("update", SOURCE);
+        var last = new BasketId("last", SOURCE);
+        var fullTid = new TransferId("full-id", SOURCE);
+        var incrementalTid = new TransferId("incremental-id", SOURCE);
+        var stableOid = new ObjectOid(fullTid.value());
+        var firstObject = object(schema, BASKET, Optional.of(fullTid), Optional.empty());
+        var initialObject = new ObjectEvent(objectData(schema, initial, Optional.of(incrementalTid),
+                Optional.of(stableOid)), Optional.of(TransferEvent.Operation.INSERT), COMPLETE);
+        var updatedObject = new ObjectEvent(objectData(schema, update, Optional.of(incrementalTid),
+                Optional.of(stableOid)), Optional.of(TransferEvent.Operation.UPDATE), COMPLETE);
+        var lastObject = object(schema, last, Optional.of(incrementalTid), Optional.empty());
+        var start = startTransfer();
+        var fullBasket = startBasket();
+        var initialBasket = startBasket(schema, initial, INITIAL);
+        var updatedBasket = startBasket(schema, update, UPDATE);
+        var lastBasket = startBasket(schema, last, FULL);
+        var writer = new MemoryWriter(plan);
+        try (writer) {
+            writer.write(start);
+            writer.write(fullBasket);
+            writer.write(firstObject);
+            writer.write(new EndBasket(BASKET));
+            expect(DUPLICATE_ID, () -> writer.write(startBasket(schema, BASKET, INITIAL)));
+            writer.write(initialBasket);
+            writer.write(initialObject);
+            writer.write(new EndBasket(initial));
+            expect(DUPLICATE_ID, () -> writer.write(startBasket(schema, initial, UPDATE)));
+            writer.write(updatedBasket);
+            writer.write(updatedObject);
+            writer.write(new EndBasket(update));
+            expect(DUPLICATE_ID, () -> writer.write(startBasket(schema, update, FULL)));
+            writer.write(lastBasket);
+            expect(DUPLICATE_ID, () -> writer.write(object(schema, last, Optional.of(fullTid), Optional.empty())));
+            writer.write(lastObject);
+            writer.write(new EndBasket(last));
+            writer.write(new EndTransfer());
+        }
+        List<TransferEvent> expected = List.of(start, fullBasket, firstObject, new EndBasket(BASKET),
+                initialBasket, initialObject,
+                new EndBasket(initial), updatedBasket, updatedObject, new EndBasket(update), lastBasket, lastObject,
+                new EndBasket(last), new EndTransfer());
+        assertEquals(expected, writer.events);
+        assertReads(plan, writer.events);
     }
 
     @Test
@@ -338,6 +409,84 @@ class TransferEventProtocolTest {
         }
     }
 
+    @Test
+    void acceptsAnImplicitOrMatchingConcreteAssignmentForInheritedUses() {
+        var fixture = compileInline(MODEL, """
+                INTERLIS 2.4;
+                MODEL ProtocolFixture AT "https://example.org" VERSION "1" =
+                  DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+                         A = COORD 0..100,0..100;
+                         B = COORD 200..300,200..300;
+                  CONTEXT Default = G = A;
+                  TOPIC Base =
+                    CLASS Entry = first: G; second: G; END Entry;
+                  END Base;
+                  TOPIC Data EXTENDS Base = END Data;
+                END ProtocolFixture.
+                """);
+        var fixturePlan = ready(fixture);
+        var topic = ref(fixture, MODEL, "Data");
+        var generic = ref(fixture, MODEL, "G");
+        var fixed = ref(fixture, MODEL, "A");
+        var descriptor = fixturePlan.topic(topic).orElseThrow();
+        assertEquals(List.of(ref(fixture, MODEL, "Base", "Entry")), descriptor.objectTypes());
+        assertEquals(List.of(new GenericBinding(generic.symbol(), List.of(fixed.symbol()),
+                List.of(ref(fixture, MODEL, "Default").symbol()), BindingState.CONCRETE)),
+                descriptor.genericBindings());
+
+        var start = startTransfer(fixture, LanguageVersion.ILI24);
+        var implicit = domainBasket(BASKET, topic, List.of());
+        var other = new BasketId("explicit", SOURCE);
+        var matching = domainBasket(other, topic, List.of(new DomainBinding(generic, fixed)));
+        var mismatched = domainBasket(BASKET, topic, List.of(new DomainBinding(generic, ref(fixture, MODEL, "B"))));
+        List<TransferEvent> expected = List.of(start, implicit, new EndBasket(BASKET),
+                matching, new EndBasket(other), new EndTransfer());
+        var writer = new MemoryWriter(fixturePlan);
+        try (writer) {
+            writer.write(start);
+            expect(CONTEXT_MISMATCH, () -> writer.write(mismatched));
+            expected.subList(1, expected.size()).forEach(writer::write);
+        }
+        assertEquals(expected, writer.events);
+        assertReads(fixturePlan, expected);
+    }
+
+    @Test
+    void keepsAnAbstractGenericInThePlanAndRejectsItsBasket() {
+        var fixture = compileInline(MODEL, """
+                INTERLIS 2.4;
+                MODEL ProtocolFixture AT "https://example.org" VERSION "1" =
+                  DOMAIN G (GENERIC) = COORD NUMERIC, NUMERIC;
+                         A = COORD 0..100,0..100;
+                  TOPIC Data (ABSTRACT) =
+                    CLASS Entry = point: G; END Entry;
+                  END Data;
+                END ProtocolFixture.
+                """);
+        var fixturePlan = ready(fixture);
+        var topic = ref(fixture, MODEL, "Data");
+        var generic = ref(fixture, MODEL, "G");
+        assertEquals(List.of(new GenericBinding(generic.symbol(), List.of(), List.of(), BindingState.ABSTRACT)),
+                fixturePlan.topic(topic).orElseThrow().genericBindings());
+
+        var start = startTransfer(fixture, LanguageVersion.ILI24);
+        var supplied = new DomainBinding(generic, ref(fixture, MODEL, "A"));
+        var writer = new MemoryWriter(fixturePlan);
+        try (writer) {
+            writer.write(start);
+            expect(CONTEXT_MISMATCH, () -> writer.write(domainBasket(BASKET, topic, List.of())));
+            expect(CONTEXT_MISMATCH, () -> writer.write(domainBasket(BASKET, topic, List.of(supplied))));
+            writer.write(new EndTransfer());
+        }
+        assertEquals(List.of(start, new EndTransfer()), writer.events);
+        assertReads(fixturePlan, writer.events);
+    }
+
+    private static StartBasket domainBasket(BasketId id, SymbolRef topic, List<DomainBinding> bindings) {
+        return new StartBasket(id, topic, List.of(), FULL, COMPLETE,
+                Optional.empty(), Optional.empty(), Optional.empty(), bindings);
+    }
+
     private static StartBasket updatedBasket(CompiledSchema schema, List<DomainBinding> assignments) {
         return new StartBasket(BASKET, ref(schema, "GenericExample", "Data"), List.of(), UPDATE, ADAPTED,
                 Optional.of("state-9"), Optional.of("state-10"), Optional.of("basket-oid"), assignments);
@@ -347,29 +496,46 @@ class TransferEventProtocolTest {
         assertEquals(reason, assertThrows(TransferProtocolException.class, operation).reason());
     }
 
+    private static void assertReads(TransferPlan plan, List<TransferEvent> events) {
+        try (var reader = new MemoryReader(plan, events.iterator())) {
+            for (TransferEvent event : events) {
+                assertEquals(Optional.of(event), reader.readNext(TOKEN));
+            }
+            assertEquals(Optional.empty(), reader.readNext(TOKEN));
+        }
+    }
+
     private static StartTransfer startTransfer() {
+        return startTransfer(schema, LanguageVersion.ILI24);
+    }
+
+    private static StartTransfer startTransfer(CompiledSchema fixture, LanguageVersion language) {
         return new StartTransfer(Optional.empty(), Optional.empty(), Optional.empty(), List.of(
-                new ModelDeclaration(ref(schema, MODEL), LanguageVersion.ILI24, Optional.of("1"), Optional.empty())));
+                new ModelDeclaration(ref(fixture, MODEL), language, Optional.of("1"), Optional.empty())));
     }
 
     private static StartBasket startBasket() {
-        return startBasket(BASKET);
+        return startBasket(schema, BASKET, FULL);
     }
 
-    private static StartBasket startBasket(BasketId id) {
-        return new StartBasket(id, ref(schema, MODEL, "Data"), List.of(), FULL, COMPLETE,
+    private static StartBasket startBasket(CompiledSchema fixture, BasketId id, BasketKind kind) {
+        return new StartBasket(id, ref(fixture, MODEL, "Data"), List.of(), kind, COMPLETE,
                 Optional.empty(), Optional.empty(), Optional.empty(), List.of());
     }
 
     private static ObjectEvent object(BasketId basket) {
-        return object(basket, Optional.empty());
+        return object(schema, basket, Optional.empty(), Optional.empty());
     }
 
-    private static ObjectEvent object(BasketId basket, Optional<TransferId> tid) {
-        var identity = new TransferIdentity(basket, Optional.empty(), tid, Optional.empty(),
-                Optional.empty());
-        return new ObjectEvent(new TransferObject(identity,
-                new TransferValue.Structured(ref(schema, MODEL, "Data", "Entry"), Map.of())),
-                Optional.empty(), COMPLETE);
+    private static ObjectEvent object(CompiledSchema fixture, BasketId basket, Optional<TransferId> tid,
+                                      Optional<ObjectOid> oid) {
+        return new ObjectEvent(objectData(fixture, basket, tid, oid), Optional.empty(), COMPLETE);
+    }
+
+    private static TransferObject objectData(CompiledSchema fixture, BasketId basket, Optional<TransferId> tid,
+                                             Optional<ObjectOid> oid) {
+        var identity = new TransferIdentity(basket, Optional.empty(), tid, oid, Optional.empty());
+        return new TransferObject(identity, new TransferValue.Structured(ref(fixture, MODEL, "Data", "Entry"),
+                Map.of()));
     }
 }

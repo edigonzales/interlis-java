@@ -101,6 +101,8 @@ Die Zuordnung formatspezifischer Tags gehört zum späteren Adapter. `TransferPl
 
 Ein `TransferObject` hält Identität, Typbezug und Attribut-/Rollenwerte eines einzelnen Objekts. Adapter legen Grössen- und Tiefengrenzen für einzelne Objekte fest. Der Kern hält die Modelldeklarationen, den aktiven Basketkontext und getrennte Mengen für BID und FULL-TID. Der Speicher für diese Kennungen wächst mit ihrer Anzahl und wird bei Transferende, Fehler oder Close freigegeben.
 
+Der Kern vergleicht die Zeichenwerte innerhalb dieser Namensräume unabhängig von der Herkunft `SOURCE` oder `SYNTHETIC`. Die OID-Regeln für INITIAL und UPDATE gehören zum jeweiligen Transferprofil. Der XTF-2.3-Adapter muss für FULL zusätzlich BID und TID gemeinsam prüfen, auch wenn die gleichlautende Kennung zuerst als TID erscheint. In XTF 2.4 gilt die transferweite Eindeutigkeit der FULL-TIDs und die allgemeine Objektstromregel für Behälter- und Objektidentifikationen. Die Akzeptanz gleicher Zeichenwerte in den getrennten Namensräumen des Kerns trifft keine Aussage über die Gültigkeit einer konkreten XTF-Codierung. [Gepinnte Normbelege und P4.0-Befunde](../reference/iox-legacy.md#normbelege)
+
 Das Datenmodell unterscheidet mindestens:
 
 - nicht vorhandenen Slot beziehungsweise Wert;
@@ -113,7 +115,9 @@ Das Datenmodell unterscheidet mindestens:
 
 Eine Java-`null`-Sammlung ist kein Ersatz für diese Unterscheidungen. Ein allgemeines `Map<String,Object>` darf an einer Adaptergrenze hilfreich sein, aber nicht der einzige typisierte Vertrag des neuen Stacks werden.
 
-`StartBasket` erhält Basketidentität, Topics, Zustandsmetadaten und Laufzeitdomänen. Das Protokoll prüft die Zuordnungen gegen die vom Modell veröffentlichten Alternativen. Unterschiedliche Baskets dürfen unterschiedliche rechtmässige Konkretisierungen besitzen. Die Auswertung inkrementeller Änderungen gehört zum späteren Verbraucher.
+`StartBasket` erhält Basketidentität, Topics, Zustandsmetadaten und Laufzeitdomänen. Im neutralen Kern gilt bei `CONCRETE` die einzige vom Modell festgelegte Alternative. Eine mitgelieferte Zuordnung muss damit übereinstimmen. `DEFERRED` erfordert eine explizite Auswahl aus den veröffentlichten Alternativen. `ABSTRACT` beschreibt eine unaufgelöste Bindung. Ein Basket braucht ein konkretes Topic. Für alle wirksamen Verwendungen derselben generischen Domäne im Basket gilt dieselbe Konkretisierung, einschliesslich geerbter Verwendungen.
+
+Der XTF-2.4-Adapter muss nach §4.3.6 auch schemafeste generische Verwendungen in `domains` explizit zuordnen. Die Auswertung inkrementeller Änderungen gehört zum späteren Verbraucher.
 
 <a id="iom-iox-adapter"></a>
 ### IOM-/iox-Adapter

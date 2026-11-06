@@ -64,8 +64,9 @@ public sealed interface TransferEvent permits TransferEvent.StartTransfer, Trans
      * @param startState opaque initial state of an incremental basket, if supplied
      * @param endState opaque final state of an incremental basket, if supplied
      * @param stableOid independently supplied stable basket identity, if present
-     * @param domainBindings immutable list of permitted runtime bindings for the active topics,
-     *                       covering every generic domain used by those topics, in input order
+     * @param domainBindings immutable list of supplied assignments for the active topics in input order.
+     *                       Deferred domains require an assignment. A supplied assignment for a fixed
+     *                       domain must agree with its model binding.
      */
     record StartBasket(BasketId id, SymbolRef topic, List<SymbolRef> additionalTopics, BasketKind kind,
                        Consistency consistency, Optional<String> startState, Optional<String> endState,
