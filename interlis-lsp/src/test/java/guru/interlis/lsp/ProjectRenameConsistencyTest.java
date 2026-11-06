@@ -1,6 +1,7 @@
 package guru.interlis.lsp;
 
 import guru.interlis.compiler.CompilerEngines;
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.source.*;
 import guru.interlis.workspace.*;
 import org.eclipse.lsp4j.*;
@@ -311,6 +312,60 @@ class ProjectRenameConsistencyTest {
             assertEquals(updated,server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text());
             var edit=rename(server,root); assertEquals(2,edit.getChanges().size());
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void aFullReplacementCanRecoverAfterIdentityLookupRetriesAreExhausted() throws Exception {
+        Path folder = Files.createDirectory(temporary.resolve("known"));
+        Files.writeString(folder.resolve("Base.ili"), BASE);
+        String clientText = "INTERLIS 2.4; MODEL Client AT \"x\" VERSION \"1\" = END Client.";
+        Path client = Files.writeString(temporary.resolve("Client.ili"), clientText);
+        String uri = client.toUri().toString();
+        var document = new TextDocumentIdentifier(uri);
+        var token = CancellationToken.none();
+        var loader = new ProjectSourceLoader();
+        var roots = List.of(folder.toUri().toString());
+        var server = new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
+        server.initialize(new InitializeParams()).get(5, TimeUnit.SECONDS);
+        try {
+            var service = server.textDocumentsForTest();
+            service.installProject(loader.scan(roots, token), ignored -> true);
+            record Lookup(Map<SourceId, String> known, CompletableFuture<ProjectSourceLoader.IdentityMatch> answer) { }
+            var lookups = new LinkedBlockingQueue<Lookup>();
+            service.fileServices(ignored -> { }, (files, cancellation) -> CompletableFuture.completedFuture(null),
+                    (address, known) -> {
+                        var answer = new CompletableFuture<ProjectSourceLoader.IdentityMatch>();
+                        lookups.add(new Lookup(known, answer));
+                        return answer;
+                    });
+            service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri, "interlis", 1, clientText)));
+            for (int i = 0; i < 4; i++) {
+                var lookup = lookups.poll(5, TimeUnit.SECONDS);
+                assertNotNull(lookup);
+                var match = loader.identify(uri, lookup.known(), token);
+                String name = "NewSource" + i;
+                Files.writeString(folder.resolve(name + ".ili"),
+                        "INTERLIS 2.4; MODEL " + name + " AT \"x\" VERSION \"1\" = END " + name + ".");
+                service.installProject(loader.scan(roots, token), ignored -> true);
+                lookup.answer().complete(match);
+            }
+            var failed = assertThrows(ExecutionException.class, () ->
+                    service.documentSymbol(new DocumentSymbolParams(document)).get(5, TimeUnit.SECONDS));
+            assertEquals(ResponseErrorCode.ContentModified.getValue(),
+                    assertInstanceOf(ResponseErrorException.class, failed.getCause()).getResponseError().getCode());
+            assertTrue(server.workspaceForTest().source(new SourceId(uri)).isEmpty());
+
+            String replacement = clientText + "\n!! client full replacement";
+            service.didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(uri, 2),
+                    List.of(new TextDocumentContentChangeEvent(replacement))));
+            var recovery = lookups.poll(5, TimeUnit.SECONDS);
+            assertNotNull(recovery);
+            recovery.answer().complete(loader.identify(uri, recovery.known(), token));
+            var symbols = service.documentSymbol(new DocumentSymbolParams(document)).get(5, TimeUnit.SECONDS);
+            assertEquals(List.of("Client"), symbols.stream().map(symbol -> symbol.getRight().getName()).toList());
+            assertEquals(replacement, server.workspaceForTest().source(new SourceId(uri)).orElseThrow().text());
+        } finally {
+            server.shutdown().get(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test void primaryDeletionReportedThroughTheSurvivingAliasPreservesTheCoreIdentity() throws Exception {
