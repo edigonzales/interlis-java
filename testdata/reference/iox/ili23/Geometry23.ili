@@ -1,0 +1,12 @@
+INTERLIS 2.3;
+
+MODEL Geometry23 (en) AT "https://example.invalid/iox-reference" VERSION "2026-11-06" =
+  TOPIC Samples =
+    DOMAIN Point = COORD 0.00 .. 100.00 [INTERLIS.m], 0.00 .. 100.00 [INTERLIS.m];
+
+    CLASS SurfaceParcel =
+      shape : MANDATORY SURFACE WITH (STRAIGHTS, ARCS) VERTEX Point WITHOUT OVERLAPS > 0.01;
+      SET CONSTRAINT INTERLIS.areAreas(ALL, UNDEFINED, >>shape);
+    END SurfaceParcel;
+  END Samples;
+END Geometry23.

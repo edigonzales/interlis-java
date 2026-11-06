@@ -1,0 +1,365 @@
+[
+  {
+    "id": "area-grid-disjoint-100",
+    "mode": "validate",
+    "model": "ili23/Reference23.ili",
+    "xtf": "generated/area-grid-disjoint-100.xtf",
+    "expectation": "positive",
+    "workload": {
+      "profile": "grid-disjoint",
+      "check": "AREA",
+      "objects": 100,
+      "polygons": 100,
+      "rings": 100,
+      "straightSegments": 400,
+      "arcSegments": 0,
+      "spatialCandidates": null,
+      "seed": 3,
+      "gridSpacing": 3
+    },
+    "requiredInfo": [
+      "validate AREA Reference23.Records.Parcel.shape...",
+      "object count 100 (structured elements 0)"
+    ],
+    "diagnostics": [],
+    "generate": {
+      "class": "Reference23.Records.Parcel",
+      "seed": 3,
+      "spacing": 3
+    }
+  },
+  {
+    "id": "area-grid-disjoint-1000",
+    "mode": "validate",
+    "model": "ili23/Reference23.ili",
+    "xtf": "generated/area-grid-disjoint-1000.xtf",
+    "expectation": "positive",
+    "workload": {
+      "profile": "grid-disjoint",
+      "check": "AREA",
+      "objects": 1000,
+      "polygons": 1000,
+      "rings": 1000,
+      "straightSegments": 4000,
+      "arcSegments": 0,
+      "spatialCandidates": null,
+      "seed": 3,
+      "gridSpacing": 3
+    },
+    "requiredInfo": [
+      "validate AREA Reference23.Records.Parcel.shape...",
+      "object count 1000 (structured elements 0)"
+    ],
+    "diagnostics": [],
+    "generate": {
+      "class": "Reference23.Records.Parcel",
+      "seed": 3,
+      "spacing": 3
+    }
+  },
+  {
+    "id": "area-grid-shared-edges-100",
+    "mode": "validate",
+    "model": "ili23/Reference23.ili",
+    "xtf": "generated/area-grid-shared-edges-100.xtf",
+    "expectation": "positive",
+    "workload": {
+      "profile": "grid-shared-edges",
+      "check": "AREA",
+      "objects": 100,
+      "polygons": 100,
+      "rings": 100,
+      "straightSegments": 400,
+      "arcSegments": 0,
+      "spatialCandidates": null,
+      "seed": 3,
+      "gridSpacing": 2
+    },
+    "requiredInfo": [
+      "validate AREA Reference23.Records.Parcel.shape...",
+      "object count 100 (structured elements 0)"
+    ],
+    "diagnostics": [],
+    "generate": {
+      "class": "Reference23.Records.Parcel",
+      "seed": 3,
+      "spacing": 2
+    }
+  },
+  {
+    "id": "area-grid-shared-edges-1000",
+    "mode": "validate",
+    "model": "ili23/Reference23.ili",
+    "xtf": "generated/area-grid-shared-edges-1000.xtf",
+    "expectation": "positive",
+    "workload": {
+      "profile": "grid-shared-edges",
+      "check": "AREA",
+      "objects": 1000,
+      "polygons": 1000,
+      "rings": 1000,
+      "straightSegments": 4000,
+      "arcSegments": 0,
+      "spatialCandidates": null,
+      "seed": 3,
+      "gridSpacing": 2
+    },
+    "requiredInfo": [
+      "validate AREA Reference23.Records.Parcel.shape...",
+      "object count 1000 (structured elements 0)"
+    ],
+    "diagnostics": [],
+    "generate": {
+      "class": "Reference23.Records.Parcel",
+      "seed": 3,
+      "spacing": 2
+    }
+  },
+  {
+    "id": "area-rounding-shared",
+    "mode": "validate",
+    "model": "ili23/Reference23.ili",
+    "xtf": "generated/area-rounding-shared.xtf",
+    "expectation": "positive",
+    "workload": {
+      "profile": "decimal-rounding",
+      "check": "AREA",
+      "objects": 2,
+      "polygons": 2,
+      "rings": 2,
+      "straightSegments": 8,
+      "arcSegments": 0,
+      "spatialCandidates": null
+    },
+    "requiredInfo": [
+      "validate AREA Reference23.Records.Parcel.shape...",
+      "object count 2 (structured elements 0)"
+    ],
+    "diagnostics": [],
+    "generate": {
+      "class": "Reference23.Records.Parcel",
+      "rings": [
+        [["10.00", "10.00"], ["20.00", "10.00"], ["20.00", "20.00"], ["10.00", "20.00"], ["10.00", "10.00"]],
+        [["19.995", "10.00"], ["30.00", "10.00"], ["30.00", "20.00"], ["19.995", "20.00"], ["19.995", "10.00"]]
+      ]
+    }
+  },
+  {
+    "id": "area-rounding-overlap",
+    "mode": "validate",
+    "model": "ili23/Reference23.ili",
+    "xtf": "generated/area-rounding-overlap.xtf",
+    "expectation": "negative",
+    "workload": {
+      "profile": "decimal-rounding",
+      "check": "AREA",
+      "objects": 2,
+      "polygons": 2,
+      "rings": 2,
+      "straightSegments": 8,
+      "arcSegments": 0,
+      "spatialCandidates": null
+    },
+    "requiredInfo": [
+      "validate AREA Reference23.Records.Parcel.shape...",
+      "object count 2 (structured elements 0)"
+    ],
+    "diagnostics": [
+      "Error: Reference23.Records.Parcel: tid parcel-1: Overlay coord1 (19.990, 10.000), coord2 (20.000, 10.000), tids parcel-1, parcel-2",
+      "Error: Reference23.Records.Parcel: tid parcel-1: Intersection coord1 (19.990, 10.000), tids parcel-1, parcel-2",
+      "Error: Reference23.Records.Parcel: tid parcel-1: Intersection coord1 (20.000, 10.000), tids parcel-1, parcel-2",
+      "Error: Reference23.Records.Parcel: tid parcel-1: Intersection coord1 (20.000, 20.000), tids parcel-1, parcel-2",
+      "Error: Reference23.Records.Parcel: tid parcel-1: Intersection coord1 (19.990, 20.000), tids parcel-1, parcel-2",
+      "Error: Reference23.Records.Parcel: tid parcel-1: Overlay coord1 (19.990, 20.000), coord2 (20.000, 20.000), tids parcel-1, parcel-2",
+      "Error: failed to validate AREA Reference23.Records.Parcel.shape"
+    ],
+    "generate": {
+      "class": "Reference23.Records.Parcel",
+      "rings": [
+        [["10.00", "10.00"], ["20.00", "10.00"], ["20.00", "20.00"], ["10.00", "20.00"], ["10.00", "10.00"]],
+        [["19.994", "10.00"], ["30.00", "10.00"], ["30.00", "20.00"], ["19.994", "20.00"], ["19.994", "10.00"]]
+      ]
+    }
+  },
+  {
+    "id": "area-self-crossing-ring",
+    "mode": "validate",
+    "model": "ili23/Reference23.ili",
+    "xtf": "generated/area-self-crossing-ring.xtf",
+    "expectation": "negative",
+    "workload": {
+      "profile": "invalid-ring",
+      "check": "SURFACE topology; AREA skipped",
+      "objects": 1,
+      "polygons": 1,
+      "rings": 1,
+      "straightSegments": 4,
+      "arcSegments": 0,
+      "spatialCandidates": null
+    },
+    "requiredInfo": [
+      "AREA topology of attribute shape not validated, validation of SURFACE topology failed in attribute shape",
+      "object count 1 (structured elements 0)"
+    ],
+    "diagnostics": [
+      "Error: Reference23.Records.Parcel.shape: Intersection coord1 (15.000, 15.000), tids parcel-1, parcel-1"
+    ],
+    "forbiddenInfo": [
+      "validate AREA Reference23.Records.Parcel.shape..."
+    ],
+    "generate": {
+      "class": "Reference23.Records.Parcel",
+      "rings": [
+        [["10.00", "10.00"], ["20.00", "20.00"], ["20.00", "10.00"], ["10.00", "20.00"], ["10.00", "10.00"]]
+      ]
+    }
+  },
+  {
+    "id": "areareas-shared-edge-23",
+    "mode": "validate",
+    "model": "ili23/Geometry23.ili",
+    "xtf": "generated/areareas-shared-edge-23.xtf",
+    "expectation": "positive",
+    "workload": {
+      "profile": "areAreas-straight",
+      "check": "areAreas(ALL, ...)",
+      "objects": 2,
+      "polygons": 2,
+      "rings": 2,
+      "straightSegments": 8,
+      "arcSegments": 0,
+      "spatialCandidates": null
+    },
+    "requiredInfo": [
+      "validate set constraint Geometry23.Samples.SurfaceParcel.Constraint1...",
+      "object count 2 (structured elements 0)"
+    ],
+    "requiredPools": ["ItfAreaPolygon2Linetable"],
+    "diagnostics": [],
+    "forbiddenInfo": [
+      "validate AREA Geometry23.Samples.SurfaceParcel.shape..."
+    ],
+    "generate": {
+      "class": "Geometry23.Samples.SurfaceParcel",
+      "rings": [
+        [["10.00", "10.00"], ["20.00", "10.00"], ["20.00", "20.00"], ["10.00", "20.00"], ["10.00", "10.00"]],
+        [["20.00", "10.00"], ["30.00", "10.00"], ["30.00", "20.00"], ["20.00", "20.00"], ["20.00", "10.00"]]
+      ]
+    }
+  },
+  {
+    "id": "areareas-overlap-23",
+    "mode": "validate",
+    "model": "ili23/Geometry23.ili",
+    "xtf": "generated/areareas-overlap-23.xtf",
+    "expectation": "negative",
+    "workload": {
+      "profile": "areAreas-straight",
+      "check": "areAreas(ALL, ...)",
+      "objects": 2,
+      "polygons": 2,
+      "rings": 2,
+      "straightSegments": 8,
+      "arcSegments": 0,
+      "spatialCandidates": null
+    },
+    "requiredInfo": [
+      "validate set constraint Geometry23.Samples.SurfaceParcel.Constraint1...",
+      "evaluateAreArea1(): Geometry23.Samples.SurfaceParcel:INTERLIS.areAreas returned false (Validator.java:2658)",
+      "object count 2 (structured elements 0)"
+    ],
+    "requiredPools": ["ItfAreaPolygon2Linetable"],
+    "diagnostics": [
+      "Error: Geometry23.Samples.SurfaceParcel: tid parcel-2/shape[1]: Intersection coord1 (20.000, 15.000), tids parcel-1/shape[1], parcel-2/shape[1]",
+      "Error: Geometry23.Samples.SurfaceParcel: tid parcel-2/shape[1]: Intersection coord1 (15.000, 20.000), tids parcel-1/shape[1], parcel-2/shape[1]",
+      "Error: Set Constraint Geometry23.Samples.SurfaceParcel.Constraint1 is not true."
+    ],
+    "forbiddenInfo": [
+      "validate AREA Geometry23.Samples.SurfaceParcel.shape..."
+    ],
+    "generate": {
+      "class": "Geometry23.Samples.SurfaceParcel",
+      "rings": [
+        [["10.00", "10.00"], ["20.00", "10.00"], ["20.00", "20.00"], ["10.00", "20.00"], ["10.00", "10.00"]],
+        [["15.00", "15.00"], ["25.00", "15.00"], ["25.00", "25.00"], ["15.00", "25.00"], ["15.00", "15.00"]]
+      ]
+    }
+  },
+  {
+    "id": "area-arc-below-tolerance-24",
+    "mode": "validate",
+    "model": "ili24/GeometryArc24.ili",
+    "xtf": "ili24/arc-below-tolerance.xtf",
+    "expectation": "positive",
+    "workload": {
+      "profile": "arc-tolerance",
+      "check": "AREA",
+      "objects": 2,
+      "polygons": 2,
+      "rings": 2,
+      "straightSegments": 7,
+      "arcSegments": 1,
+      "spatialCandidates": null
+    },
+    "requiredInfo": [
+      "validate AREA GeometryArc24.Records.Parcel.shape...",
+      "object count 2 (structured elements 0)"
+    ],
+    "diagnostics": []
+  },
+  {
+    "id": "area-arc-above-tolerance-24",
+    "mode": "validate",
+    "model": "ili24/GeometryArc24.ili",
+    "xtf": "ili24/arc-above-tolerance.xtf",
+    "expectation": "negative",
+    "workload": {
+      "profile": "arc-tolerance",
+      "check": "AREA",
+      "objects": 2,
+      "polygons": 2,
+      "rings": 2,
+      "straightSegments": 7,
+      "arcSegments": 1,
+      "spatialCandidates": null
+    },
+    "requiredInfo": [
+      "validate AREA GeometryArc24.Records.Parcel.shape...",
+      "object count 2 (structured elements 0)"
+    ],
+    "diagnostics": [
+      "Error: GeometryArc24.Records.Parcel: tid arc-left: Intersection overlap 0.052109638456386165, coord1 (20.000, 10.000), coord2 (20.000, 29.123), tids arc-left, arc-right",
+      "Error: failed to validate AREA GeometryArc24.Records.Parcel.shape"
+    ]
+  },
+  {
+    "id": "areareas-arc-below-tolerance-24",
+    "mode": "validate",
+    "model": "ili24/areareas/GeometryArc24.ili",
+    "xtf": "ili24/arc-below-tolerance.xtf",
+    "expectation": "negative",
+    "workload": {
+      "profile": "arc-tolerance-policy",
+      "check": "areAreas(ALL, ...)",
+      "objects": 2,
+      "polygons": 2,
+      "rings": 2,
+      "straightSegments": 7,
+      "arcSegments": 1,
+      "spatialCandidates": null,
+      "assessment": "UNRESOLVED"
+    },
+    "requiredInfo": [
+      "validate set constraint GeometryArc24.Records.Parcel.Constraint1...",
+      "evaluateAreArea1(): GeometryArc24.Records.Parcel:INTERLIS.areAreas returned false (Validator.java:2658)",
+      "object count 2 (structured elements 0)"
+    ],
+    "diagnostics": [
+      "Error: GeometryArc24.Records.Parcel: tid arc-left/shape[1]: Intersection overlap 0.04811791461327175, coord1 (20.000, 10.000), coord2 (20.000, 29.057), tids arc-left/shape[1], arc-right/shape[1]",
+      "Error: Set Constraint GeometryArc24.Records.Parcel.Constraint1 is not true."
+    ],
+    "forbiddenInfo": [
+      "validate AREA GeometryArc24.Records.Parcel.shape..."
+    ]
+  }
+]

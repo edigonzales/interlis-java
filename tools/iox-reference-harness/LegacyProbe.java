@@ -30,7 +30,7 @@ final class LegacyProbe {
     private static final int SAMPLE_INTERVAL_MILLIS = 5;
 
     public static void main(String[] args) throws Exception {
-        measureHeap(Path.of(args[0]));
+        measureHeap(Path.of(args[0]), args[1].equals("benchmark"));
         switch (args[1]) {
             case "read" -> {
                 int exitCode = read(args[2], args[3], Path.of(args[4]));
@@ -38,7 +38,7 @@ final class LegacyProbe {
                     System.exit(exitCode);
                 }
             }
-            case "validate" -> org.interlis2.validator.Main.main(Arrays.copyOfRange(args, 2, args.length));
+            case "validate", "benchmark" -> org.interlis2.validator.Main.main(Arrays.copyOfRange(args, 2, args.length));
             default -> throw new IllegalArgumentException("Unknown probe: " + args[1]);
         }
     }
@@ -129,7 +129,7 @@ final class LegacyProbe {
                 "attributes", attributes);
     }
 
-    private static void measureHeap(Path output) {
+    private static void measureHeap(Path output, boolean includeGc) {
         var memory = ManagementFactory.getMemoryMXBean();
         var peak = new AtomicLong();
         Runnable sample = () -> peak.accumulateAndGet(memory.getHeapMemoryUsage().getUsed(), Math::max);
@@ -147,12 +147,32 @@ final class LegacyProbe {
         Runtime.getRuntime().addShutdownHook(Thread.ofPlatform().unstarted(() -> {
             sample.run();
             try {
-                Files.writeString(output, json(fields("heapLimitBytes", memory.getHeapMemoryUsage().getMax(),
-                        "sampledPeakHeapBytes", peak.get(), "heapSampleIntervalMillis", SAMPLE_INTERVAL_MILLIS)));
+                var measurements = fields("heapLimitBytes", memory.getHeapMemoryUsage().getMax(),
+                        "sampledPeakHeapBytes", peak.get(), "heapSampleIntervalMillis", SAMPLE_INTERVAL_MILLIS);
+                if (includeGc) {
+                    measurements.put("gcCollectionMillis", gcCollectionMillis());
+                }
+                Files.writeString(output, json(measurements));
             } catch (IOException failure) {
                 failure.printStackTrace(System.err);
             }
         }));
+    }
+
+    private static Long gcCollectionMillis() {
+        var collectors = ManagementFactory.getGarbageCollectorMXBeans();
+        if (collectors.isEmpty()) {
+            return null;
+        }
+        long total = 0;
+        for (var collector : collectors) {
+            long millis = collector.getCollectionTime();
+            if (millis < 0) {
+                return null;
+            }
+            total += millis;
+        }
+        return total;
     }
 
     private static Map<String, Object> fields(Object... values) {

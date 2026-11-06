@@ -1,5 +1,10 @@
 """Small regression checks for the validator output oracle."""
 
+import os
+from pathlib import Path
+import signal
+import sys
+from tempfile import TemporaryDirectory
 import unittest
 
 import run
@@ -28,6 +33,50 @@ class ValidatorOutputTest(unittest.TestCase):
         self.assertEqual(invalid["diagnostics"], [])
         self.assertEqual(invalid["missingInfo"], [])
         self.assertTrue(invalid["mismatches"])
+
+
+class BenchmarkLimitsTest(unittest.TestCase):
+    def test_sampled_scratch_limit_terminates_a_running_child(self):
+        with TemporaryDirectory() as directory:
+            work = Path(directory)
+            scratch = work / "temp"
+            scratch.mkdir()
+            limits = {"timeoutSeconds": 5, "tempLimitBytes": 16}
+            script = "from pathlib import Path; import time; Path('spill').write_bytes(b'x' * 128); time.sleep(10)"
+            result = run.run_probe([sys.executable, "-c", script], work, scratch, limits)
+            self.assertEqual(result["stopReason"], "temp_limit")
+            self.assertIn("terminate", result["stopSignals"])
+            self.assertNotEqual(result["exitCode"], 0)
+            self.assertEqual(result["sampledPeakTempBytes"], 128)
+            self.assertEqual(result["tempAtExitBytes"], 128)
+
+    @unittest.skipUnless(os.name == "posix", "SIGTERM and SIGKILL escalation requires POSIX")
+    def test_temp_limit_kills_a_child_that_ignores_termination(self):
+        script = """\
+from pathlib import Path
+import signal
+import time
+
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+Path("spill").write_bytes(b"x" * 128)
+time.sleep(10)
+"""
+        with TemporaryDirectory() as directory:
+            work = Path(directory)
+            scratch = work / "temp"
+            scratch.mkdir()
+            limits = {"timeoutSeconds": 5, "tempLimitBytes": 16}
+            result = run.run_probe([sys.executable, "-c", script], work, scratch, limits)
+            self.assertEqual(result["stopReason"], "temp_limit")
+            self.assertEqual(result["stopSignals"], ["terminate", "kill"])
+            self.assertEqual(result["exitCode"], -signal.SIGKILL)
+
+    def test_pool_size_uses_recognized_close_file_size(self):
+        prefix = "Info: close(): LinkPool KEY: "
+        suffix = " </tmp/a b> (BTree.java:396)"
+        match = run.POOL_CLOSE.fullmatch(prefix + "size 3, filesize 4096" + suffix)
+        self.assertEqual(match.groups(), ("LinkPool KEY", "4096"))
+        self.assertIsNone(run.POOL_CLOSE.fullmatch(prefix + "size 3" + suffix))
 
 
 if __name__ == "__main__":
