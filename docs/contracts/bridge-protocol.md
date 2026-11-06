@@ -121,7 +121,7 @@ Diese Summary wird ausschliesslich vom CompilationGate erzeugt und ist auf die a
 
 Fehlende Modellanforderungen und deren Locator/Provenienz stammen aus `WorkspaceCapture.resolution().pendingFetches()` beziehungsweise dessen PreparedClosure-Bericht nach [Workspace-Vertrag](workspace-and-lsp.md) und [Repositoryvertrag](repositories.md). Dieser Bericht muss zu demselben eingefrorenen Eingabestand wie die Analyseantwort gehören. Die Bridge betreibt keine zweite Header-/Resolverimplementierung, um `missingModels` zu erzeugen.
 
-`query.params.query.kind` ist eine feste Union: `symbolAt`, `definition`, `semanticProperties`, `hover`, `completion`, `references`, `prepareRename`, `rename`. Jede Variante besitzt ihr eigenes JSON-Schema. Der Server kündigt nur implementierte Varianten an. Ein Positionquery enthält SourceId, SourceRevision und UTF-16-Offset; ein Symbolquery enthält SnapshotId und SymbolId. Nicht unterstützte P3-Queries werden als `UNSUPPORTED_OPERATION` abgelehnt und niemals mit einer irreführend leeren Trefferliste beantwortet.
+`query.params.query.kind` ist eine feste Union: `symbolAt`, `definition`, `semanticProperties`, `hover`, `completion`, `references`, `prepareRename`, `rename`. Jede Variante besitzt ihr eigenes JSON-Schema. Der Server kündigt nur implementierte Varianten an. Ein Positionquery enthält SourceId, SourceRevision und UTF-16-Offset; ein Symbolquery enthält SnapshotId und SymbolId. Nicht unterstützte Abfragevarianten werden als `UNSUPPORTED_OPERATION` abgelehnt und niemals mit einer irreführend leeren Trefferliste beantwortet.
 
 Für `diagram` ist genau eines von `snapshotId` und `schemaId` erforderlich.
 Eine fehlende `selection` verwendet die belegten Wurzelmodelle dieses Eingangs;

@@ -86,7 +86,7 @@ Der Adapter prüft die tatsächlichen ANTLR-Konventionen des gepinnten CharStrea
 <a id="einstieg-und-optionen"></a>
 ### Einstieg und Optionen
 
-`ParseOptions` enthält `ParseMode mode`, `Optional<LanguageVersion> expectedVersion` und das in [Compilervertrag](compiler-and-model.md) definierte `AnalysisBudget`. Die Budgetwerte sind reine Zahlen; keine Uhr, kein Threadpool und kein globales Timeout werden hineingesteckt. In P1 genügt vollständiges Dateiparsen. Fragmentmethoden werden erst als implementiert veröffentlicht, wenn ihre Tests vorliegen; ein öffentliches leeres Ergebnis als Platzhalter ist unzulässig.
+`ParseOptions` enthält `ParseMode mode`, `Optional<LanguageVersion> expectedVersion` und das in [Compilervertrag](compiler-and-model.md) definierte `AnalysisBudget`. Die Budgetwerte sind reine Zahlen; keine Uhr, kein Threadpool und kein globales Timeout werden hineingesteckt. Vollständiges Dateiparsen ist der Standard. Fragmentmethoden haben eigene Tests und unterscheiden erfolgreiche Fragmente von unvollständigen oder abgebrochenen Ergebnissen.
 
 `SyntaxServices.create()` ist die öffentliche statische Fabrik für einen eigenständig verwendbaren `SyntaxService`. Sie liefert dieselbe Syntaximplementierung, die die Compiler-Engine intern benutzt, und führt keine Quellenbeschaffung aus. Jeder Parseaufruf besitzt eigene Lexer-/Parserzustände. Ein Sprachdienst muss für reine Syntaxfragen keine internen ANTLR-Klassen instanziieren und keinen vollständigen Modellcompile erzwingen.
 
@@ -452,7 +452,7 @@ ILI-SYN-0006 am Originaltoken. Zeichenketten werden dekodiert, ihr Original-
 Konstruktbereich bleibt über DeclaredOrigin erhalten. Fehlende Angaben bleiben
 leer und werden nicht als tatsächlich deklarierte Defaults vorgetäuscht.
 
-E1-Profile (SYN-004/013/015, SEM-005/010/014, META-003/014): DATE,
+Vordefinierte Datums- und Zeitdomänen (SYN-004/013/015, SEM-005/010/014, META-003/014). DATE,
 TIMEOFDAY und DATETIME sind 2.4-Syntax; die XML-Domänen bleiben in beiden
 Versionen verfügbar. TYPE MODEL enthält die vorgesehenen Deklarationsfamilien;
 SYMBOLOGY benötigt nur in 2.3 CONTRACTED. Dokumentarische Familienempfehlungen
@@ -472,12 +472,13 @@ Objektfamilie und ursprüngliche Quellbezüge werden weiterhin gemeinsam gebunde
 und geprüft. Normabweichung und Referenznachweise stehen in
 [Normentscheidungen](norm-decisions.md).
 
-E2 konkretisiert META-003/006/009/014 und SEM-005/010/014 gemäss [Modellvertrag](compiler-and-model.md) und [Compilervertrag](compiler-and-model.md):
+Die [Typrelationen](compiler-and-model.md) konkretisieren META-003/006/009/014 und SEM-005/010/014.
 DomainSymbol.mandatory(), gebundene CLASS-Domänen, unverfälschte fehlerhafte
 NumericTypeSyntax und QueryResult<UnitRelation> mit NOT_A_UNIT. Verbraucher
 verwenden die gemeinsame Typrelation. UnitRelationContractTest und
 DomainRestrictionContractTest prüfen Modell, Queries, Fehlursachen und Edits.
-Die weiterführende Normabnahme bleibt in g2-rule-matrix.json ausdrücklich offen.
+Der [Compilerkatalog](../../testdata/verification/compiler-contracts.json)
+nennt die gebundenen Normfälle und erforderlichen Testinvocations.
 
 <a id="gebundene-strukturwerte-und-restriktionen"></a>
 ### Gebundene Strukturwerte und Restriktionen
@@ -537,7 +538,7 @@ verschachtelte FunctionParameterSyntax mandatory als letzten Parameter. Beide
 Booleanwerte stammen aus dem strukturierten ArgumentType; eine benannte
 Domänenpflicht wird erst bei der semantischen Bindung ergänzt.
 
-E1 Wortprofile (SYN-002/004/013): Massgeblich sind die vollständigen Tabellen
+Wortprofile (SYN-002/004/013). Massgeblich sind die vollständigen Tabellen
 reservierter Wörter in 2.3 §2.2.7 und 2.4 §3.2.7. Auch weiterhin reservierte
 Legacywörter dürfen keine Namen sein. Neue 2.4-Wörter bleiben in 2.3 zulässige
 Namen, sofern sie dort nicht bereits reserviert sind; DATE ist bereits in 2.3
@@ -594,11 +595,9 @@ die Float-Mantisse aus 2.3 §2.2.4 S.24 / §2.8.5 S.41–42 und 2.4 §3.2.4 S.28
 Nachkommastelle ist von null verschieden oder die ganze Mantisse ist null.
 0.00e1 bleibt zulässig. Fehler erhalten ILI-SYN-0002/PARSING am ursprünglichen
 Literalbereich, auch in Fragmenten. Die Budgetprüfung erfolgt vor exakter
-Zahlenauswertung. Die zuvor getrennt offenen Konstanten-/Faktorproduktionen
-und das Exponentenverhältnis beider Grenzen sind durch die ausdrücklichen
-L1-2-Nutzerentscheidungen in [Compilervertrag](compiler-and-model.md) und Vertrag geklärt: Das bestehende breitere
-Profil bleibt erhalten; die strengere Mantissenprüfung bleibt auf numerische
-Typgrenzen beschränkt.
+Zahlenauswertung. Für Konstanten, Faktoren und das Exponentenverhältnis beider Grenzen gilt
+das bestätigte [numerische Profil](language-semantics.md#freigegebene-numerische-kompatibilitätsprofile).
+Die strengere Mantissenprüfung gilt für numerische Typgrenzen.
 
 <a id="continuous-im-attributfragment"></a>
 ### CONTINUOUS im Attributfragment

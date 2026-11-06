@@ -206,8 +206,9 @@ SCALSYSTEM und AXIS mit Unit-Parameter besitzen gemeinsame vordefinierte
 Identitäten je Sprachversion. Unit-Überschreibungen behalten Typ und
 Override-Ziel; bei Referenzsystemen/Achsen sind keine beliebigen Parameter erlaubt.
 Der Owner unterscheidet Laufzeit- und Klassenparameter. Funktionsargumente bleiben
-`FunctionParameter`. SIGN/METAOBJECT-Signaturparameter bleiben bis K5 ausdrücklich
-gesperrt; weder Grafikdaten noch externe Metadatenwerte werden ausgeführt/eingelesen.
+`FunctionParameter`. SIGN-/METAOBJECT-Signaturparameter folgen den
+[gebundenen Grafikregeln](#gebundene-grafikdefinitionen). Der Compiler liest
+oder verarbeitet dabei keine Grafik- oder externen Metadatenwerte.
 
 Geometrieinspektionen verwenden die bestehenden `StructureSymbol`, Typ- und
 Ausdruckswerte. Die lokale Segmentfamilie übernimmt den tatsächlichen
@@ -220,7 +221,7 @@ ExpressionId erreichbar. SurfaceEdge besitzt gerichtete Geometry; nur in 2.3
 kommt LineAttrs mit gebundener Struktur bzw. ANYSTRUCTURE hinzu. 2.4 hat
 Linienattribute abgeschafft (Vorwort, §3.15, Anhang A): LINE ATTRIBUTES wird als
 versionswidrig abgelehnt, nicht als Implementierungslücke. SurfaceBoundary enthält Lines.
-L1-1 bindet `INTERLIS.LineGeometry`, `INTERLIS.SurfaceEdge` und
+Die vordefinierte Bindung erfasst `INTERLIS.LineGeometry`, `INTERLIS.SurfaceEdge` und
 `INTERLIS.SurfaceBoundary` auch als gewöhnliche Strukturtypen. Die Deklarationen
 aus Anhang A bewahren LIST {0..*}, gerichtete aber noch unbestimmte POLYLINE,
 optionale Felder, nur in 2.3 ANYSTRUCTURE-LineAttrs und die echte gebundene
@@ -329,7 +330,7 @@ Die allgemeine Zuweisungsprüfung erhält dadurch keine automatische Umrechnung
 oder pauschale neue Regel für Literale. Koordinatenachsen und vollständige
 Dimensions-/Präzisionsregeln bleiben gesonderte Verpflichtungen.
 
-`NumericUnitConversionContractTest` prüft die sechs K6-Regressionen, öffentliche
+`NumericUnitConversionContractTest` prüft sechs Regressionen für Einheiten und Umrechnungen, öffentliche
 Werte, Fehlerbereiche, importierte Bindungen, Vererbung, Typqueries,
 Übersetzungen sowie frische und wiederverwendete Analyse in 2.3/2.4.
 
@@ -419,7 +420,7 @@ URI-Referenzen werden nicht allein wegen dieser Empfehlung abgelehnt.
 Die Optionssyntax ist nur in 2.4 zulässig. CONTRACTED hat dort auch für den
 Übersetzungsvergleich keine semantische Wirkung; die 2.3-Regel bleibt erhalten.
 
-E1 ergänzt `ModelOptions.language(): Optional<TextValue>` mit der dokumentarischen
+`ModelOptions.language()` bewahrt der dokumentarischen
 Modellsprache und Originalherkunft. `ModelSyntax.language()` ist daraus abgeleitet;
 der redundante String-Konstruktorparameter entfällt in API 0.2. Modell- und
 Übersetzungssprache bleiben getrennt. Eigene Sprachbezeichnungen bleiben zulässig.
@@ -456,7 +457,7 @@ Restriktionen und ihre typisierten CONSTRAINTS. resolveAliases/canAssign/
 canExtend/areComparable bewahren Invalid und Pending-Ursachen; Aliaszyklen
 werden über besuchte IDs begrenzt, nicht über eine willkürliche Länge von 64.
 
-E2-Präzision ist versionsabhängig: 2.3 §2.8.5 S.42 erlaubt Verfeinerung,
+Numerische Präzision ist versionsabhängig: 2.3 §2.8.5 S.42 erlaubt Verfeinerung,
 sofern gerundete Grenzen im Basisbereich bleiben (7.9949 ja, 7.9999 nein bei
 Basismaximum 7.99). 2.4 §3.8.5 S.53 verlangt unveränderte Präzision.
 `TypeRelations.canExtend(derived, base, context, language)` erhält daher einen
@@ -564,14 +565,12 @@ Dies umfasst isEnumSubVal/inEnumRange sowie die 2.4-Funktionen length,
 multilength, surface und multisurface. AREA ist als einzelner Flächenwert für
 surface zulässig, MULTIAREA für multisurface. Es wird nichts ausgeführt.
 UNQUALIFIED INTERLIS eröffnet unqualifizierte Aufrufe; lokale Funktionen behalten
-ihre eigene Identität. convertUnit und die areAreas-Varianten bleiben bis zu
-ihrer vollständigen Kontextbindung ausdrücklich gesperrt; diese Teillieferung
-behauptet keine vollständige Builtin- oder E4-Abnahme.
+ihre eigene Identität. `convertUnit` und die `areAreas`-Varianten verwenden
+den [gebundenen Funktionskontext](#funktionskontext-und-konstanteneinheiten).
 
 Formatvergleiche verlangen gebundene verwandte Komponenten oder eine
 Formatbasisbeziehung; gleicher TypeKind genügt nicht (z.B. XMLDate/XMLTime).
-Die weitergehende gemeinsame FORMAT-Zuweisungs-/Erweiterungsprüfung bleibt
-als eigene E2-Abnahme bestehen. Der Dateiendevertrag wird ausschliesslich
+Die [FORMAT-Zuweisungs- und Erweiterungsprüfung](#gemeinsame-format-relationen) folgt den gemeinsamen Typrelationen. Der Dateiendevertrag wird ausschliesslich
 im Syntaxdienst geprüft, mit ILI-SYN-0004 für Folgetokens.
 
 <a id="gebundene-funktionsargumentpfade-und-zahlenkonstanten"></a>
@@ -646,7 +645,7 @@ den tatsächlichen Vertextyp bezogen; er wird nicht durch diese Vollständigkeit
 prüfung als fehlerhafter konkreter Koordinatenbereich umgedeutet. Die zulässigen
 Verwendungskontexte des Platzhalters bleiben eine eigene Prüfung.
 
-E1 zu META-015: Vordefinierte Boolean-Typen für Literale, logische/vergleichende
+META-015. Vordefinierte Boolean-Typen für Literale, logische/vergleichende
 Ausdrücke und Standardfunktionssignaturen werden nach Sprachversion besessen.
 Eine gemischte Closure darf keine 2.3-Herkunft für ein 2.4-Ergebnis erhalten.
 Unbenutzte parallele Primitive werden nicht vorsorglich materialisiert.
@@ -714,7 +713,7 @@ MANDATORY-/Plausibilitätsbedingungen auch in 2.4 wie in ili2c zulässig
 
 Vordefinierte OID-Domänen besitzen innerhalb eines Sprachprofils eine kanonische
 Identität, `PredefinedOrigin` und keine künstliche Benutzermodell-Eigentümerschaft.
-L1-1 ergänzt den tatsächlichen vordefinierten Owner `INTERLIS` je Sprachversion:
+Vordefinierte Symbole besitzen den Owner `INTERLIS` je Sprachversion:
 ein `ModelSymbol` mit `ModelKind.TYPE`, Sprache `en`, Issuer
 `http://www.interlis.ch/`, Version `2005-06-16` und CONTRACTED in 2.3 bzw.
 `2014-07-09` ohne CONTRACTED in 2.4. Seine `members()` enthalten die im
@@ -865,7 +864,7 @@ dieselbe Dimension; ihre Symbolidentitäten bleiben verschieden. Diese
 Dimensionsaussage erteilt keine Umrechnungserlaubnis: Die bestehende öffentliche
 Unit-Relation bleibt ohne deklarierten Umrechnungspfad DISALLOWED.
 
-L3-1 ergänzt Origin.OverlayOrigin(String overlayId,int priority,
+Overlaywerte verwenden Origin.OverlayOrigin(String overlayId,int priority,
 Optional<SourceRange> range) und ModelTranslation.origin:Optional<Origin>.
 Die bisherige fünfparametrige ModelTranslation-Konstruktion bleibt erhalten.
 Die Konfigurationsherkunft kann ausserhalb des Modell-SourceSet liegen und
@@ -898,7 +897,7 @@ Quellfehler nennen fehlende Parameter, unpassende Metaobjektklassen oder
 unverträgliche Werte. Geerbte Werte und ihre Quellen werden nicht mutiert.
 Die Prüfung ist statisch; sie führt weder Zeichenregeln noch Bedingungen aus.
 
-E1-Modellkopfbindung verwendet ModelOptions aus [Modellvertrag](compiler-and-model.md). Der gepinnte
+Modellkopfbindung verwendet ModelOptions aus [Modellvertrag](compiler-and-model.md). Der gepinnte
 IANA-Registerstand prüft CHARSET ohne Abhängigkeit von JVM-Hostcodecs oder Netz.
 Ungültige Namen/Namensräume liefern MODEL_CHARSET/MODEL_XMLNS. Übersetzungen
 prüfen gleichen Inkrementaltransferumfang und semantisch gleiche Zeichenvorräte;
@@ -909,7 +908,7 @@ von Quellenreihenfolge. Der gebundene Strukturvergleich interpretiert diese
 Optionen nicht nochmals aus Text. Der 2.4-CONTRACTED-Marker wird nicht als semantischer
 Übersetzungsunterschied gewertet.
 
-E1-Profile (SYN-004/013/015, SEM-005/010/014, META-003/014): DATE,
+Datums- und Zeitprofile (SYN-004/013/015, SEM-005/010/014, META-003/014): DATE,
 TIMEOFDAY und DATETIME sind 2.4-Syntax; die XML-Domänen bleiben in beiden
 Versionen verfügbar. TYPE MODEL enthält die vorgesehenen Deklarationsfamilien;
 SYMBOLOGY benötigt nur in 2.3 CONTRACTED. Dokumentarische Familienempfehlungen
@@ -953,7 +952,7 @@ Restriktionen und ihre typisierten CONSTRAINTS. resolveAliases/canAssign/
 canExtend/areComparable bewahren Invalid und Pending-Ursachen; Aliaszyklen
 werden über besuchte IDs begrenzt, nicht über eine willkürliche Länge von 64.
 
-E2-Präzision ist versionsabhängig: 2.3 §2.8.5 S.42 erlaubt Verfeinerung,
+Numerische Präzision ist versionsabhängig: 2.3 §2.8.5 S.42 erlaubt Verfeinerung,
 sofern gerundete Grenzen im Basisbereich bleiben (7.9949 ja, 7.9999 nein bei
 Basismaximum 7.99). 2.4 §3.8.5 S.53 verlangt unveränderte Präzision.
 `TypeRelations.canExtend(derived, base, context, language)` erhält daher einen
@@ -1014,14 +1013,14 @@ Konstruktorverbraucher und Tests werden direkt angepasst. Relevante Vererbungs-
 und Aliasketten verwenden besuchte IDs statt stiller Abschneidung bei 16/32/64;
 Abbruch und Arbeitsbudget bleiben aktiv. Keine neue Pass-/Plugin-Infrastruktur.
 
-E2: Die Erweiterungsprüfung für Domänen, Attributüberschreibungen und öffentliche
+Die Erweiterungsprüfung für Domänen, Attributüberschreibungen und öffentliche
 Queries verwendet denselben Typvergleich. Collections prüfen Elemente rekursiv
 als Erweiterung, nicht als Wertzuweisung. Eigene numerische und Koordinaten-
 Inline-Typen erhalten vererbte Einheiten/Referenzen/Richtungen/Rotation vor
 der Ausdrucksbindung. Aliasziele bleiben unverändert. TEXT-Längen verwenden
 dieselbe NFD-Regel in 2.3 und 2.4 ([Modellvertrag](compiler-and-model.md)). SEM-005/010/014, TEST-011/012.
 
-E4 (SEM-005/010/014/017, TEST-011/012): Vergleichsoperatoren werden nach
+SEM-005/010/014/017 und TEST-011/012. Vergleichsoperatoren werden nach
 Operandfamilie gemeinsam mit den öffentlichen Queries geprüft. Enum-/FORMAT-
 Konstanten werden bei konkretem Typkontext gebunden; Enumreferenzen erhalten
 die tatsächlichen Ziele und Originalbereiche. Auch Inline-Enums veröffentlichen
@@ -1080,7 +1079,7 @@ SET-Kontext unterscheidet dagegen den individuellen WHERE-Filter vom
 Hauptausdruck ohne individuelles Objekt; [Modellvertrag](compiler-and-model.md) beschreibt Fehlerausdrücke,
 Diagnostik, Konstanten und separat gebundene TEXT-Pfade.
 
-E4-Definiertheit: Allgemeine UNDEFINED-Zuweisung und Funktionsargumente verwenden
+Definiertheit. Allgemeine UNDEFINED-Zuweisung und Funktionsargumente verwenden
 dieselbe Typregel. Eine Textkonstante kanonischer Länge null gilt gemäss
 2.3 §2.8.1 / 2.4 §3.8.1 ebenfalls als undefiniert. Ungelöste oder fehlerhafte
 Zieltypen werden dadurch nicht passend. MANDATORY-Signaturparameter lehnen
@@ -1089,7 +1088,7 @@ Compilezeit-Pfadparameter von areAreas2/3/WithoutGaps2 verlangen weiterhin
 gültige konstante Pfade, abgesehen vom ausdrücklich erlaubten SurfaceBag-
 UNDEFINED. Es entsteht kein Auswerter für Laufzeitargumente.
 
-E2 FORMAT: Compiler und öffentliche canAssign/canExtend-Abfragen verwenden
+FORMAT. Compiler und öffentliche canAssign/canExtend-Abfragen verwenden
 gemeinsame Layout-/Komponenten-/Bereichsregeln. Präfixerweiterungen berücksichtigen
 die gebundenen überschriebenen Attribute; ein gleicher einfacher Attributname
 allein genügt nicht. Fehlende explizite Grenzen werden aus den Komponenten und
@@ -1097,7 +1096,7 @@ verschachtelten/inherited FORMAT-Grenzen ermittelt. Ungültige FORMAT-Bindungen
 veröffentlichen ErrorType mit tatsächlichen Diagnose-IDs, keine scheinbar gültige
 Relation. Der Compiler besitzt keine pauschale FORMAT-Ausnahme für Overrides.
 
-E2 numerische Vollständigkeit (2.3 §2.8/2.8.5/2.8.8; 2.4 §3.8/3.8.5/3.8.8):
+Numerische Vollständigkeit (2.3 §2.8/2.8.5/2.8.8; 2.4 §3.8/3.8.5/3.8.8):
 Prüfungen unterscheiden formale Funktionssignaturen von Domänen und Attributen.
 Die Prüfung erfolgt nach früher Typauflösung und Übernahme geerbter Eigenschaften.
 Numerische Referenzsystemangaben auf generische Koordinaten dürfen ohne
@@ -1111,14 +1110,14 @@ Die Erlaubnis generischer Koordinaten in 2.4 ersetzt weder deren Dimensionen-
 noch CONTEXT-/DEFERRED-Prüfung. Fehlerhafte Zielbindungen bleiben von legalen
 abstrakten Typen unterscheidbar; kein gültiges Schema entsteht aus Quellfehlern.
 
-E1 zu SYN-002/004/013 und META-015: Lexikalische Klassifikation und Prüfung
+SYN-002/004/013 und META-015. Lexikalische Klassifikation und Prüfung
 kontextabhängiger Wörter gelten auch bei Fragmenten und Rename. Ein in 2.3
 nicht reserviertes neues Wort kann eine benannte Deklaration bezeichnen;
 fehlende Bindungen bleiben gewöhnliche Quellfehler. Das Ausdrücken einer
 2.4-Konstruktion in 2.3 wird dadurch nicht erlaubt. Boolean-Herkünfte bleiben
 in gemischten Closures nach Besitzer/Sprachversion getrennt.
 
-E5 zu META-006/010/014/017 und SEM-010/014/017: Quell-Metaattribute werden aus der
+META-006/010/014/017 und SEM-010/014/017. Quell-Metaattribute werden aus der
 strukturierten Syntax an die deklarierte Identität gebunden. Eine erneute globale
 Textsuche bildet keine Metadaten- oder Übersetzungssemantik. CRS-Metaangaben
 werden beim Übersetzungsvergleich an den korrespondierenden Koordinaten-
@@ -1128,7 +1127,7 @@ Beschriftungs-Metaattribute müssen in Übersetzungen nicht textgleich sein.
 Hover übernimmt gebundene Dokumentation und Funktionserläuterungen.
 Externe Overlayeingaben und deren Auflösung bleiben Lieferung F.
 
-E5-Übersetzungsvergleich verwendet die zugeordneten Deklarationen der gebundenen
+Der Übersetzungsvergleich verwendet die zugeordneten Deklarationen der gebundenen
 Closure. Er prüft Eigenschaften aller repräsentierten Typvarianten, die Struktur
 der Enumeltern und geschlossenen Teilbäume, FORMAT-Komponentenidentitäten,
 Collectionart/-kardinalität, Modifikatoren und vollständige Constraintdefinitionen.
@@ -1142,7 +1141,7 @@ anders lauten, ihre strukturelle Präsenz bleibt erhalten (2.3 §2.5.1/2.14;
 2.4 §3.5.1/3.14). Fehlende Implementierung oder ein fehlender Zieltyp ist keine
 positive Übersetzungsgleichheit.
 
-E1 OID-Bindung verwendet dieselbe vordefinierte Identität in importierten
+OID-Bindung verwendet dieselbe vordefinierte Identität in importierten
 Funktionssignaturen und lokalen Attributen, getrennt nach 2.3/2.4. Jeder
 Namensgebrauch wird unmittelbar aufgezeichnet, auch Funktionsparameter/-ergebnis
 und verschachtelte Typverweise. Ein nachträglicher Attributscan ersetzt dies
@@ -1266,7 +1265,7 @@ Nutzerentscheidungen vom 29.10.2026, jeweils für 2.3 und 2.4:
 Dies ändert keine Suite-Fall-ID, keine Originalquelle, keinen Suite-/Archivpin
 und keine der 18 gesonderten Conformance-Erwartungen. Es erlaubt keine
 pauschale numerische Normabweichung ausserhalb dieser ausdrücklich gewählten
-Profile. Sämtliche Nachweise gehören zum unabhängigen L1-2-Review.
+Profile.
 
 Die fortgeltende CIRCULAR-Prüfung deckt im Suite-Positivfall
 `ili23.Attribute23Test.attributeComplete` zwei fehlende CIRCULAR-Marker auf.
@@ -1275,9 +1274,7 @@ Dieser konkrete Fall ergänzt die bisherigen 18 unveränderten Bewertungen als
 SEMANTIC_CHECKING-Diagnosen sowie eine erfolgreiche Kontrollquelle, die nur
 die beiden Marker ergänzt. Das erfasst die Konsequenz der im bestätigten
 Profil ausdrücklich erhaltenen CIRCULAR-Regel; eine gesonderte ausdrückliche
-Nutzerfreigabe dieses einzelnen Fixture-Namens wird nicht behauptet. Rohe
-Suiteklassifikation und Projektbewertung bleiben getrennt. Der unabhängige
-L1-2-Review prüft auch diese Herleitung und sämtliche Original-/Kontrollpins.
+Nutzerfreigabe dieses einzelnen Fixture-Namens wird nicht behauptet. Die Suite-Klassifikation, Projektbewertung und Pins stehen im [Conformance-Profil](../../testdata/conformance/normative/expectations.json).
 
 Im freigegebenen Unterteilungsprofil ist eine fehlende deklarierte
 Umrechnungsroute von einem nachgewiesenen Dimensionswiderspruch zu unterscheiden.
@@ -1336,7 +1333,7 @@ in nachfolgende Läufe übertragen. Budget und Abbruch gelten auch für die Bind
 Ungültige Konfigurationen bleiben im Analyseergebnis sichtbar; globale
 Overlayfehler sind im Compile-Gate relevant, auch ohne Modell-Quellbereich.
 
-L3-1 trennt CompilationFingerprint (SHA-256/compilation-v2, tatsächliche
+Der Compiler trennt CompilationFingerprint (SHA-256/compilation-v2, tatsächliche
 Eingaben, kanonische Importstellenreihenfolge, unabhängig von AnalysisReuse)
 von SnapshotId. Letztere enthält zusätzlich Parsemodus und die konkrete
 Wiederverwendungsprovenienz, weil stabile Symbol-IDs innerhalb verschiedener
@@ -1351,7 +1348,7 @@ fehlende normale Deklarationsziele ungültige Konfiguration sind. Alle drei
 globalen Diagnosearten bleiben im gemeinsamen Gate ohne erfundene Modellstelle
 relevant; spätere Lieferung eines Originals erlaubt erneute normale Bindung.
 
-L3-2: `CompilationRequest.fingerprint()` verwendet dieselbe feldweise kanonische
+`CompilationRequest.fingerprint()` verwendet dieselbe feldweise kanonische
 Compileridentität wie die Engine (compilation-v3). Roots, Importstellen/-resultate/
 -probleme, TranslationBindings und sämtliche ResolutionDiagnostics werden mit
 Längen, Listenanzahlen und Optionalmarkern serialisiert. Record-/Listen-

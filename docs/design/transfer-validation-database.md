@@ -270,7 +270,7 @@ Ein `CompatibilityProfileDetector.detect(ExistingSchemaMetadata metadata, Profil
 <a id="planung"></a>
 ### Planung
 
-`SchemaOverlays` ist der unveränderliche verbraucherspezifische Kontext für die DB-Abbildung. Er enthält ausschliesslich Informationen, die die Abbildung eines bereits gültigen Schemas beeinflussen. `SemanticOverlays` aus Kapitel 06 verändert dagegen die fachliche Analyse und muss vor der Erzeugung des `CompiledSchema` angewandt werden. Der DB-Planer darf mit `SchemaOverlays` keine neue Sprachbindung, veränderte Vererbungsregel oder unvalidierte Typänderung einschleusen. Beide Aggregate besitzen getrennte Typen und Fingerprints. CRS-/Übersetzungs-/Metadatenoptionen werden anhand ihrer tatsächlichen Wirkung einer dieser Grenzen zugeordnet; allein ihr Name entscheidet dies nicht.
+`SchemaOverlays` ist der unveränderliche verbraucherspezifische Kontext für die DB-Abbildung. Er enthält ausschliesslich Informationen, die die Abbildung eines bereits gültigen Schemas beeinflussen. [`SemanticOverlays`](../contracts/language-semantics.md#fachliche-semanticoverlays) verändert dagegen die fachliche Analyse und muss vor der Erzeugung des `CompiledSchema` angewandt werden. Der DB-Planer darf mit `SchemaOverlays` keine neue Sprachbindung, veränderte Vererbungsregel oder unvalidierte Typänderung einschleusen. Beide Aggregate besitzen getrennte Typen und Fingerprints. CRS-/Übersetzungs-/Metadatenoptionen werden anhand ihrer tatsächlichen Wirkung einer dieser Grenzen zugeordnet; allein ihr Name entscheidet dies nicht.
 
 `SchemaPlanner` besitzt:
 
@@ -369,8 +369,8 @@ Das alte Werkzeug hat zwei lange Namen auf gespeicherte unterschiedliche SQL-Nam
 <a id="anforderungen-an-die-heutige-compilersicht"></a>
 ## Anforderungen an die heutige Compilersicht
 
-Die heutigen Compilerverträge müssen die Metamodellinformationen und Grenzen dieses Dokuments berücksichtigen. Die Tests zeigen, dass mindestens eine kompakte Projektion aus dem geprüften Schema erzeugt werden kann und ein begrenzter Verbraucher fehlende Fähigkeiten korrekt meldet. Vollständiges XTF-I/O, ausführbare Geometrievalidierung und JDBC-Schemaerzeugung sind P4/P5-Arbeit.
+Die heutigen Compilerverträge müssen die Metamodellinformationen und Grenzen dieses Dokuments berücksichtigen. Die Tests zeigen, dass mindestens eine kompakte Projektion aus dem geprüften Schema erzeugt werden kann und ein begrenzter Verbraucher fehlende Fähigkeiten korrekt meldet. Vollständiges XTF-I/O, ausführbare Geometrievalidierung und JDBC-Schemaerzeugung gehören zu den geplanten Verbrauchern.
 
 Die Verbraucher werden als eigene Implementierungen geliefert. Die Compilerarbeit bewahrt ihre Eingabeverträge und fachlichen Modellinformationen.
 
-Die Weiterentwicklung wird nach [Implementierungsplan](../design/transfer-validation-database.md) freigegeben und durch die [Kompatibilitätsmatrix](../development/testing.md) abgesichert. Die historische Quelle wird anhand des [Quellenregisters](../contracts/norm-decisions.md) gepinnt; Aussagen über erreichte Kompatibilität müssen auf tatsächlich ausgeführten Tests beruhen.
+Die [Kompatibilitätsprüfungen](../development/testing.md) unterscheiden Referenzverhalten und tatsächlich nachgewiesene Unterstützung. Die historische Quelle wird anhand des [Quellenregisters](../contracts/norm-decisions.md) gepinnt; Aussagen über erreichte Kompatibilität müssen auf tatsächlich ausgeführten Tests beruhen.

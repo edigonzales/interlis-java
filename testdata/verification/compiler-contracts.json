@@ -5150,7 +5150,7 @@
         },
         {
           "source": "docs/contracts/sources-and-syntax.md",
-          "sha256": "e63544d2bf94b6a46120ec5994035f8733040d8c2213bc054bfa3d462a567a74"
+          "sha256": "272da3d4216d7feee13718e444af6c9fb703a87a489b320c4bcba71ae190dfce"
         },
         {
           "source": "docs/contracts/compiler-and-model.md",
@@ -5202,12 +5202,12 @@
         },
         {
           "source": "docs/contracts/bridge-protocol.md",
-          "sha256": "0a303f8e89ecbe0f0414724b2558696c2b2a38ea65f2c71f31b9d050e69e290b",
+          "sha256": "384b4dd40f79da9b0d8dc3ce76f9a0f2f9e78fba8e1283cdce3701f5c4df8bbf",
           "reason": "Redaktioneller Reviewhinweis O-01: bestehende Jenesis-/Backend-Einstiege statt entfernter Gradle-Roottasknamen; Sprach-/Bridge-/Abnahmeverträge unverändert."
         },
         {
           "source": "docs/contracts/requirements.md",
-          "sha256": "e950402b66a11ca6854821c914c6a61f651584052298ae90a1b02438413ac57d",
+          "sha256": "fa64094305cd364535e9409582d229f206e27eab46b8c061e9973ec1f15661de",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         }
       ],
@@ -16379,6 +16379,6 @@
     "testdata/reference/norms/builtin-inventory.json": "be9dc5e65b20c15163ebaf42829961bb632105f88d57d6c2f4ead7175ba2451b",
     "testdata/verification/predefined-catalogue.json": "ea279974005f7dace7922099e8ea8ea499bb96ddcac9a9c5eeacb19721911e85",
     "testdata/compiler/character-sets/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e",
-    "docs/contracts/requirements.md": "e950402b66a11ca6854821c914c6a61f651584052298ae90a1b02438413ac57d"
+    "docs/contracts/requirements.md": "fa64094305cd364535e9409582d229f206e27eab46b8c061e9973ec1f15661de"
   }
 }
