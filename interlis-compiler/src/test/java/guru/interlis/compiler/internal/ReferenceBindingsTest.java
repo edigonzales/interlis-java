@@ -10,6 +10,7 @@ import guru.interlis.model.ReferenceSegment;
 import guru.interlis.model.ReferenceUsage;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
+import guru.interlis.model.UnresolvedReason;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRange;
 import guru.interlis.source.SourceRevision;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ReferenceBindingsTest {
     @Test
-    void deduplicatesOnlyTheSameOwnerRangeUsageAndTargetBeforeAllocating() {
+    void deduplicatesOnlyTheSameOwnerRangeUsageAndResolutionBeforeAllocating() {
         var source = new SourceId("memory:/references.ili");
         var range = new SourceRange(source, SourceRevision.initial(), 2, 3);
         var name = new NameSyntax(new SyntaxNodeId("name"), range,
@@ -52,12 +53,26 @@ class ReferenceBindingsTest {
                 List.of(new NameSyntax.NameSegmentSyntax("X", shifted)));
         bindings.recordReference(owner, secondName, target, ReferenceUsage.EXPRESSION);
         bindings.recordReference(owner, secondName, null, ReferenceUsage.EXPRESSION);
-        assertEquals(List.of("ref-1", "ref-2", "ref-3", "ref-4", "ref-5", "ref-6"),
+        bindings.recordReference(owner, secondName, null, ReferenceUsage.EXPRESSION);
+        var candidates = List.of(other, target);
+        var ambiguous = new NameResolver.Resolution(NameResolver.Status.AMBIGUOUS, Optional.empty(), candidates);
+        bindings.recordResolution(owner, secondName, ambiguous, ReferenceUsage.EXPRESSION);
+        bindings.recordResolution(owner, secondName, ambiguous, ReferenceUsage.EXPRESSION);
+        var differentCandidates = List.of(other, new SymbolId("third-target"));
+        bindings.recordResolution(owner, secondName,
+                new NameResolver.Resolution(NameResolver.Status.AMBIGUOUS, Optional.empty(), differentCandidates),
+                ReferenceUsage.EXPRESSION);
+        assertEquals(List.of("ref-1", "ref-2", "ref-3", "ref-4", "ref-5", "ref-6", "ref-7", "ref-8"),
                 recorded.stream().map(NameReference::id).map(ReferenceId::value).toList());
         assertEquals(List.of(new ReferenceSegment("X", range, Optional.of(target))), recorded.getFirst().segments());
         assertEquals(new BindingResolution.BoundTarget(other), recorded.get(2).resolution());
         assertEquals(shifted, recorded.get(4).range());
-        assertInstanceOf(BindingResolution.UnresolvedTarget.class, recorded.getLast().resolution());
+        assertEquals(new BindingResolution.UnresolvedTarget(UnresolvedReason.NAME_NOT_FOUND, List.of()),
+                recorded.get(5).resolution());
+        assertEquals(new BindingResolution.UnresolvedTarget(UnresolvedReason.AMBIGUOUS_NAME, candidates),
+                recorded.get(6).resolution());
+        assertEquals(new BindingResolution.UnresolvedTarget(UnresolvedReason.AMBIGUOUS_NAME, differentCandidates),
+                recorded.getLast().resolution());
     }
 
     private static DeclInfo owner(String id, NameSyntax name) {

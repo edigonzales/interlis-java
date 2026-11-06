@@ -39,6 +39,7 @@ import guru.interlis.syntax.PathExpressionSyntax;
 import guru.interlis.syntax.TopicSyntax;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -220,11 +221,16 @@ final class ObjectPathBindings {
                 }
                 if (segment.associationQualifier().isPresent()) {
                     var qualifier = segment.associationQualifier().orElseThrow();
-                    var target = resolver.resolve(owner, qualifier, Set.of(SymbolKind.ASSOCIATION)).target();
-                    if (target.isEmpty()) target = inheritance.baseTopicMember(owner, qualifier.text(), Set.of(SymbolKind.ASSOCIATION));
-                    references.recordReference(index.byId(owner).orElseThrow(), qualifier, target.orElse(null), ReferenceUsage.EXPRESSION);
-                    if (target.isEmpty()) diagnostics.unresolved(qualifier);
-                    SymbolId selected = target.orElse(null);
+                    var resolution = resolver.resolve(owner, qualifier, Set.of(SymbolKind.ASSOCIATION));
+                    if (resolution.status() == NameResolver.Status.UNRESOLVED) {
+                        var inherited = inheritance.baseTopicMember(owner, qualifier.text(), Set.of(SymbolKind.ASSOCIATION));
+                        if (inherited.isPresent()) {
+                            resolution = new NameResolver.Resolution(NameResolver.Status.BOUND, inherited, List.of());
+                        }
+                    }
+                    references.recordResolution(index.byId(owner).orElseThrow(), qualifier, resolution, ReferenceUsage.EXPRESSION);
+                    if (resolution.target().isEmpty()) diagnostics.unresolved(qualifier);
+                    SymbolId selected = resolution.target().orElse(null);
                     accesses = accesses.stream().filter(a -> a.association().equals(selected)).toList();
                 }
                 if (accesses.size() == 1) {
@@ -256,6 +262,12 @@ final class ObjectPathBindings {
                             .at(name.range()).argument(new DiagnosticArgument.IdentifierArgument("name", text))
                             .argument(new DiagnosticArgument.IdentifierListArgument("candidates",
                                     accesses.stream().map(a -> a.association().value() + ":" + a.source().id().value()).toList())));
+                    // Distinct accesses may still lead to the same declared role.
+                    var candidates = accesses.stream().map(access -> access.target().orElse(access.source()).id())
+                            .distinct().sorted(Comparator.comparing(SymbolId::value)).toList();
+                    references.recordResolution(index.byId(owner).orElseThrow(), name,
+                            new NameResolver.Resolution(NameResolver.Status.AMBIGUOUS, Optional.empty(), candidates),
+                            ReferenceUsage.EXPRESSION);
                     currentType = typeBindings.get().nextTypeId();
                     typeBindings.get().defineType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
                     steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, segment.range()));

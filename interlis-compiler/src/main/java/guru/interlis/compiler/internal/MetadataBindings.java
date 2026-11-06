@@ -142,8 +142,9 @@ final class MetadataBindings {
     }
 
     private Optional<SymbolId> objectReference(DeclInfo context, NameSyntax name,List<DiagnosticId> errors) {
-        Optional<SymbolId> target = resolver.resolve(context.id(), name, Set.of(SymbolKind.METAOBJECT)).target();
-        if (target.isEmpty()) {
+        var resolution = resolver.resolve(context.id(), name, Set.of(SymbolKind.METAOBJECT));
+        var target = resolution.target();
+        if (resolution.status() == NameResolver.Status.UNRESOLVED) {
             List<SymbolId> baskets = new ArrayList<>();
             if (name.segments().size() > 1) {
                 var prefix = new NameSyntax(name.id(), name.range(), name.segments().subList(0, name.segments().size() - 1));
@@ -158,8 +159,12 @@ final class MetadataBindings {
             }
             if (baskets.size() == 1) target = inheritedObject(baskets.getFirst(), name.segments().getLast().text(), new HashSet<>());
         }
-        references.recordReference(context, name, target.orElse(null), ReferenceUsage.TYPE_USE);
-        if (target.isEmpty()) errors.add(diagnostics.emitRule(context, "metadata object reference is missing or ambiguous: " + name.text(), "METAOBJECT_REFERENCE"));
+        if (target.isPresent()) {
+            references.recordReference(context, name, target.orElseThrow(), ReferenceUsage.TYPE_USE);
+        } else {
+            references.recordResolution(context, name, resolution, ReferenceUsage.TYPE_USE);
+            errors.add(diagnostics.emitRule(context, "metadata object reference is missing or ambiguous: " + name.text(), "METAOBJECT_REFERENCE"));
+        }
         target.ifPresent(id -> ensureSymbol.apply(index.byId(id).orElseThrow()));
         return target;
     }

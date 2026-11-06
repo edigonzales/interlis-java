@@ -57,7 +57,6 @@ final class ConstraintBindings {
     private final SemanticDiagnostics diagnostics;
     private final NameResolver resolver;
     private final Supplier<ObjectPathBindings> paths;
-    private final NameBindings names;
     private final InheritanceBindings inheritance;
     private final ReferenceBindings references;
     private final Supplier<ExpressionBindings> expressions;
@@ -72,7 +71,6 @@ final class ConstraintBindings {
                        SemanticDiagnostics diagnostics,
                        NameResolver resolver,
                        Supplier<ObjectPathBindings> paths,
-                       NameBindings names,
                        InheritanceBindings inheritance,
                        ReferenceBindings references,
                        Supplier<ExpressionBindings> expressions,
@@ -85,7 +83,6 @@ final class ConstraintBindings {
         this.diagnostics = diagnostics;
         this.resolver = resolver;
         this.paths = paths;
-        this.names = names;
         this.inheritance = inheritance;
         this.references = references;
         this.expressions = expressions;
@@ -124,14 +121,17 @@ final class ConstraintBindings {
         Optional<SymbolId> externalTarget = Optional.empty();
         if (decl.syntax() instanceof ExternalConstraintSyntax external) {
             syntax = external.constraint();
-            externalTarget = names.tryResolve(decl, external.target(),
-                    Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION));
-            if (externalTarget.isEmpty() && external.target().segments().size() == 1) {
-                externalTarget = inheritance.baseTopicMember(decl.id(), external.target().text(),
-                        Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION));
+            var targetKinds = Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION);
+            var resolution = resolver.resolve(decl.id(), external.target(), targetKinds);
+            externalTarget = resolution.target();
+            if (resolution.status() == NameResolver.Status.UNRESOLVED && external.target().segments().size() == 1) {
+                externalTarget = inheritance.baseTopicMember(decl.id(), external.target().text(), targetKinds);
             }
             if (externalTarget.isEmpty()) {
                 diagnostics.unresolved(external.target());
+                if (resolution.status() == NameResolver.Status.AMBIGUOUS) {
+                    references.recordResolution(decl, external.target(), resolution, ReferenceUsage.EXPRESSION);
+                }
             } else {
                 SymbolId target = externalTarget.orElseThrow();
                 references.recordReference(decl, external.target(), target, ReferenceUsage.EXPRESSION);
@@ -155,14 +155,19 @@ final class ConstraintBindings {
             List<guru.interlis.model.ExistenceConstraint.ExistenceTarget> targets = new ArrayList<>();
             for (var target : existence.targets()) {
                 work.checkpoint();
-                var resolved = resolver.resolve(decl.id(), target.viewable(),
-                        Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW), false).target();
-                if (resolved.isEmpty() && target.viewable().segments().size() == 1)
-                    resolved = inheritance.baseTopicMember(decl.id(), target.viewable().text(),
-                            Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW));
-                references.recordReference(decl, target.viewable(), resolved.orElse(null), ReferenceUsage.EXPRESSION);
-                if (resolved.isEmpty()) { diagnostics.unresolved(target.viewable()); continue; }
+                var targetKinds = Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION, SymbolKind.VIEW);
+                var resolution = resolver.resolve(decl.id(), target.viewable(), targetKinds, false);
+                var resolved = resolution.target();
+                if (resolution.status() == NameResolver.Status.UNRESOLVED && target.viewable().segments().size() == 1) {
+                    resolved = inheritance.baseTopicMember(decl.id(), target.viewable().text(), targetKinds);
+                }
+                if (resolved.isEmpty()) {
+                    references.recordResolution(decl, target.viewable(), resolution, ReferenceUsage.EXPRESSION);
+                    diagnostics.unresolved(target.viewable());
+                    continue;
+                }
                 SymbolId targetScope = resolved.orElseThrow();
+                references.recordReference(decl, target.viewable(), targetScope, ReferenceUsage.EXPRESSION);
                 SymbolId ownerTopic = paths.get().scopeRoot(decl.id());
                 SymbolId targetTopic = paths.get().scopeRoot(targetScope);
                 boolean depends = ownerTopic == null || targetTopic == null

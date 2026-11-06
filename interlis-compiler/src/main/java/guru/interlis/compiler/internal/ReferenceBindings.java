@@ -12,6 +12,7 @@ import guru.interlis.model.ReferenceUsage;
 import guru.interlis.model.ScopeId;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.TypeDescriptor;
+import guru.interlis.model.UnresolvedReason;
 import guru.interlis.source.SourceRange;
 import guru.interlis.syntax.AssociationDeclarationSyntax;
 import guru.interlis.syntax.AttributeDeclarationSyntax;
@@ -25,8 +26,10 @@ import guru.interlis.syntax.TopicSyntax;
 import guru.interlis.syntax.TypeSyntax;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -34,12 +37,16 @@ import java.util.function.Function;
 
 /** Registers resolved and unresolved references in their original build order. */
 final class ReferenceBindings {
+    private static final BindingResolution NAME_NOT_FOUND =
+            new BindingResolution.UnresolvedTarget(UnresolvedReason.NAME_NOT_FOUND, List.of());
+
     private final IndexedDeclarations index;
     private final SemanticGraphRead state;
     private final SemanticWork work;
     private final Consumer<NameReference> storeReference;
     private final Function<LanguageVersion, SymbolId> ensurePredefined;
-    private final Set<ReferenceSite> recordedReferences = new HashSet<>();
+    private final Set<RecordedReference> recordedReferences = new HashSet<>();
+    private final Map<ReferenceSite, BindingResolution.UnresolvedTarget> ambiguousSites = new HashMap<>();
     private int referenceCounter;
 
     ReferenceBindings(IndexedDeclarations index, SemanticGraphRead state, SemanticWork work,
@@ -80,21 +87,18 @@ final class ReferenceBindings {
 
     private void referenceFor(DeclInfo decl) {
         if (decl.syntax() instanceof ClassDeclarationSyntax clazz && clazz.baseType().isPresent()) {
-            recordReference(decl, clazz.baseType().get(), state.baseOf(decl.id()), ReferenceUsage.BASE_TYPE);
+            completeBaseReference(decl, clazz.baseType().get());
         } else if (decl.syntax() instanceof StructureDeclarationSyntax structure
                 && structure.baseType().isPresent()) {
-            recordReference(decl, structure.baseType().get(), state.baseOf(decl.id()),
-                    ReferenceUsage.BASE_TYPE);
+            completeBaseReference(decl, structure.baseType().get());
         } else if (decl.syntax() instanceof TopicSyntax topic && topic.baseTopic().isPresent()) {
-            recordReference(decl, topic.baseTopic().get(), state.baseOf(decl.id()),
-                    ReferenceUsage.BASE_TYPE);
+            completeBaseReference(decl, topic.baseTopic().get());
         } else if (decl.syntax() instanceof DomainDeclarationSyntax domain
                 && domain.baseDomain().isPresent()) {
-            recordReference(decl, domain.baseDomain().get(), state.baseOf(decl.id()),
-                    ReferenceUsage.BASE_TYPE);
+            completeBaseReference(decl, domain.baseDomain().get());
         } else if (decl.syntax() instanceof AssociationDeclarationSyntax association
                 && association.baseAssociation().isPresent()) {
-            recordReference(decl, association.baseAssociation().orElseThrow(), state.baseOf(decl.id()), ReferenceUsage.BASE_TYPE);
+            completeBaseReference(decl, association.baseAssociation().orElseThrow());
         } else if (decl.syntax() instanceof AttributeDeclarationSyntax attribute) {
             referenceForType(decl, attribute.type());
         }
@@ -112,14 +116,53 @@ final class ReferenceBindings {
         }
     }
 
-    private record ReferenceSite(SymbolId owner, SourceRange range, ReferenceUsage usage, Optional<SymbolId> target) { }
+    private void completeBaseReference(DeclInfo owner, NameSyntax name) {
+        var site = new ReferenceSite(owner.id(), name.range(), ReferenceUsage.BASE_TYPE);
+        var ambiguity = ambiguousSites.get(site);
+        if (ambiguity == null)
+            recordReference(owner, name, state.baseOf(owner.id()), ReferenceUsage.BASE_TYPE);
+        else
+            record(owner, name, ambiguity, ReferenceUsage.BASE_TYPE);
+    }
+
+    /** Topic and association base references are published by the final reference walk. */
+    void deferBaseAmbiguity(DeclInfo owner, NameSyntax name, NameResolver.Resolution resolution) {
+        if (resolution.status() == NameResolver.Status.AMBIGUOUS)
+            ambiguousSites.putIfAbsent(new ReferenceSite(owner.id(), name.range(), ReferenceUsage.BASE_TYPE),
+                    ambiguous(resolution));
+    }
+
+    private record ReferenceSite(SymbolId owner, SourceRange range, ReferenceUsage usage) { }
+
+    private record RecordedReference(ReferenceSite site, BindingResolution resolution) { }
 
     void recordReference(DeclInfo owner, NameSyntax name,
                                  SymbolId target, ReferenceUsage usage) {
-        ReferenceId id = reserveReference(owner.id(), name.range(), usage, target);
+        record(owner, name, target == null ? NAME_NOT_FOUND : new BindingResolution.BoundTarget(target), usage);
+    }
+
+    void recordResolution(DeclInfo owner, NameSyntax name, NameResolver.Resolution resolution, ReferenceUsage usage) {
+        BindingResolution binding = switch (resolution.status()) {
+            case BOUND -> new BindingResolution.BoundTarget(resolution.target().orElseThrow());
+            case UNRESOLVED -> NAME_NOT_FOUND;
+            case AMBIGUOUS -> ambiguous(resolution);
+        };
+        record(owner, name, binding, usage);
+    }
+
+    private static BindingResolution.UnresolvedTarget ambiguous(NameResolver.Resolution resolution) {
+        return new BindingResolution.UnresolvedTarget(UnresolvedReason.AMBIGUOUS_NAME, resolution.candidates());
+    }
+
+    private void record(DeclInfo owner, NameSyntax name, BindingResolution resolution, ReferenceUsage usage) {
+        var site = new ReferenceSite(owner.id(), name.range(), usage);
+        if (usage == ReferenceUsage.BASE_TYPE && resolution instanceof BindingResolution.UnresolvedTarget unresolved
+                && unresolved.reason() == UnresolvedReason.AMBIGUOUS_NAME)
+            ambiguousSites.putIfAbsent(site, unresolved);
+        ReferenceId id = reserveReference(site, resolution);
         if (id == null) return;
         List<ReferenceSegment> segments = new ArrayList<>();
-        SymbolId current = target;
+        SymbolId current = resolution instanceof BindingResolution.BoundTarget bound ? bound.target() : null;
         for (int i = name.segments().size() - 1; i >= 0; i--) {
             work.checkpoint();
             var segment = name.segments().get(i);
@@ -132,10 +175,6 @@ final class ReferenceBindings {
             }
             segments.addFirst(new ReferenceSegment(segment.text(), segment.range(), Optional.ofNullable(current)));
         }
-        BindingResolution resolution = target == null
-                ? new BindingResolution.UnresolvedTarget(guru.interlis.model.UnresolvedReason.NAME_NOT_FOUND,
-                List.of())
-                : new BindingResolution.BoundTarget(target);
         storeReference.accept(new NameReference(id, new ScopeId(owner.id().value()), usage,
                 segments, name.range(), resolution));
     }
@@ -160,14 +199,15 @@ final class ReferenceBindings {
 
     void recordEnumReference(SymbolId owner, SourceRange range, List<ReferenceSegment> segments, SymbolId target) {
         if (target == null) return;
-        var id = reserveReference(owner, range, ReferenceUsage.EXPRESSION, target);
+        var binding = new BindingResolution.BoundTarget(target);
+        var id = reserveReference(new ReferenceSite(owner, range, ReferenceUsage.EXPRESSION), binding);
         if (id == null) return;
         storeReference.accept(new NameReference(id, new ScopeId(owner.value()), ReferenceUsage.EXPRESSION,
-                segments, range, new BindingResolution.BoundTarget(target)));
+                segments, range, binding));
     }
 
-    private ReferenceId reserveReference(SymbolId owner, SourceRange range, ReferenceUsage usage, SymbolId target) {
-        if (!recordedReferences.add(new ReferenceSite(owner, range, usage, Optional.ofNullable(target)))) return null;
+    private ReferenceId reserveReference(ReferenceSite site, BindingResolution resolution) {
+        if (!recordedReferences.add(new RecordedReference(site, resolution))) return null;
         return new ReferenceId("ref-" + (++referenceCounter));
     }
 }

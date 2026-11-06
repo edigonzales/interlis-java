@@ -107,18 +107,22 @@ final class NameBindings {
             Set<SymbolKind> kinds, ReferenceUsage usage, List<DiagnosticId> errors, boolean relativeQualifiers) {
         var resolution = resolveName(owner, name, kinds, relativeQualifiers);
         Optional<SymbolId> target = resolution.target();
-        references.recordReference(owner, name, target.orElse(null), usage);
+        references.recordResolution(owner, name, resolution, usage);
         if (resolution.status() == NameResolver.Status.AMBIGUOUS) {
-            errors.add(diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0002"),
-                            Severity.ERROR, Phase.BINDING, "diagnostic.semantics.ambiguous")
-                    .at(name.range())
-                    .argument(new DiagnosticArgument.IdentifierArgument("name", name.text()))
-                    .argument(new DiagnosticArgument.IdentifierListArgument("candidates",
-                            resolution.candidates().stream().map(SymbolId::value).toList()))));
+            errors.add(reportAmbiguity(name, resolution));
         } else if (target.isEmpty()) {
             errors.add(diagnostics.unresolved(name));
         }
         return target;
+    }
+
+    DiagnosticId reportAmbiguity(NameSyntax name, NameResolver.Resolution resolution) {
+        return diagnostics.emit(DiagnosticDraft.of(new DiagnosticCode("ILI-SEM-0002"),
+                        Severity.ERROR, Phase.BINDING, "diagnostic.semantics.ambiguous")
+                .at(name.range())
+                .argument(new DiagnosticArgument.IdentifierArgument("name", name.text()))
+                .argument(new DiagnosticArgument.IdentifierListArgument("candidates",
+                        resolution.candidates().stream().map(SymbolId::value).toList())));
     }
 
     Optional<SymbolId> tryResolve(DeclInfo context,

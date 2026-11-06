@@ -104,6 +104,9 @@ final class ViewBuilder {
                 Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE, SymbolKind.ASSOCIATION, SymbolKind.VIEW), false);
         if (resolution.target().isEmpty()) {
             diagnostics.unresolved(targetName);
+            if (resolution.status() == NameResolver.Status.AMBIGUOUS) {
+                references.recordResolution(decl, targetName, resolution, ReferenceUsage.EXPRESSION);
+            }
             // An invalid basis remains explicitly unsupported in partial analysis.
             return new UnsupportedSymbol(new SymbolHeader(decl.id(), SymbolKind.UNSUPPORTED,
                     DeclaredName.declared(decl.name()), decl.owner(), decl.order(), decl.origin(), decl.nameRange(),
@@ -136,8 +139,15 @@ final class ViewBuilder {
             Optional<ViewSymbol.Formation> formation = Optional.empty();
             if (syntax.baseView().isPresent() || syntax.modifiers().contains(Modifier.EXTENDED)) {
                 var name = syntax.baseView().orElse(null);
-                parent = name == null ? inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.VIEW))
-                        : resolver.resolve(decl.id(), name, Set.of(SymbolKind.VIEW), false).target();
+                if (name == null) {
+                    parent = inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.VIEW));
+                } else {
+                    var resolution = resolver.resolve(decl.id(), name, Set.of(SymbolKind.VIEW), false);
+                    parent = resolution.target();
+                    if (resolution.status() == NameResolver.Status.AMBIGUOUS) {
+                        references.recordResolution(decl, name, resolution, ReferenceUsage.EXPRESSION);
+                    }
+                }
                 if (parent.isEmpty()) { if (name != null) diagnostics.unresolved(name); else diagnostics.emitRule(decl, "EXTENDED view needs an inherited view", "EXTENDED_BASE"); }
                 else {
                     if (name != null) references.recordReference(decl, name, parent.orElseThrow(), ReferenceUsage.EXPRESSION);
@@ -402,8 +412,12 @@ final class ViewBuilder {
         if (syntax.view().isPresent()) {
             var name = syntax.view().orElseThrow();
             var resolution = resolver.resolve(owner, name, Set.of(SymbolKind.VIEW), false);
-            if (resolution.target().isEmpty()) diagnostics.unresolved(name);
-            else {
+            if (resolution.target().isEmpty()) {
+                diagnostics.unresolved(name);
+                if (resolution.status() == NameResolver.Status.AMBIGUOUS) {
+                    references.recordResolution(decl, name, resolution, ReferenceUsage.EXPRESSION);
+                }
+            } else {
                 var target = resolution.target().orElseThrow();
                 references.recordReference(decl, name, target, ReferenceUsage.EXPRESSION);
                 if (building.contains(target)) diagnostics.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");
@@ -418,8 +432,12 @@ final class ViewBuilder {
         } else {
             var f = syntax.formation().orElseThrow(); var name = f.bases().getFirst().target();
             var resolution = resolver.resolve(owner, name, Set.of(SymbolKind.CLASS, SymbolKind.STRUCTURE, SymbolKind.VIEW, SymbolKind.ASSOCIATION), false);
-            if (resolution.target().isEmpty()) diagnostics.unresolved(name);
-            else {
+            if (resolution.target().isEmpty()) {
+                diagnostics.unresolved(name);
+                if (resolution.status() == NameResolver.Status.AMBIGUOUS) {
+                    references.recordResolution(decl, name, resolution, ReferenceUsage.EXPRESSION);
+                }
+            } else {
                 source = resolution.target().orElseThrow();
                 references.recordReference(decl, name, source, ReferenceUsage.EXPRESSION);
                 if (building.contains(source)) diagnostics.emitRule(decl, "cyclic inspection factor", "VIEW_CYCLE");

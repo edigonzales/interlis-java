@@ -369,17 +369,13 @@ final class DeclarationBindings {
             diagnostics.emitRule(decl, "TOPIC end name does not match declaration", "TOPIC_END_NAME");
         }
         Optional<SymbolId> base = syntax.baseTopic().flatMap(name -> {
-            Optional<SymbolId> resolved = names.tryResolve(decl, name, Set.of(SymbolKind.TOPIC));
-            if (resolved.isEmpty()) {
-                List<SymbolId> matches = state.symbolsInBuildOrder().stream()
-                        .filter(TopicSymbol.class::isInstance).map(TopicSymbol.class::cast)
-                        .filter(topic -> topic.name().value().equals(name.text()))
-                        .map(TopicSymbol::id).toList();
-                if (matches.size() == 1) {
-                    return Optional.of(matches.getFirst());
-                }
-            }
-            return resolved;
+            var resolution = resolver.resolve(decl.id(), name, Set.of(SymbolKind.TOPIC));
+            references.deferBaseAmbiguity(decl, name, resolution);
+            if (resolution.status() == NameResolver.Status.AMBIGUOUS)
+                names.reportAmbiguity(name, resolution);
+            else if (resolution.status() == NameResolver.Status.UNRESOLVED)
+                diagnostics.unresolved(name);
+            return resolution.target();
         });
         base.ifPresent(id -> inheritance.bindBase(decl.id(), id));
         if (base.filter(inheritance::isFinalDeclaration).isPresent())
@@ -459,10 +455,11 @@ final class DeclarationBindings {
         List<SymbolId> dependencies = new ArrayList<>();
         for (guru.interlis.syntax.NameSyntax dependency : syntax.dependencies()) {
             work.checkpoint();
-            Optional<SymbolId> resolved = resolver.resolve(decl.id(), dependency, Set.of(SymbolKind.TOPIC)).target();
+            var resolution = resolver.resolve(decl.id(), dependency, Set.of(SymbolKind.TOPIC));
+            Optional<SymbolId> resolved = resolution.target();
             if (resolved.isEmpty()) diagnostics.unresolved(dependency);
             resolved.ifPresent(dependencies::add);
-            references.recordReference(decl, dependency, resolved.orElse(null), ReferenceUsage.TYPE_USE);
+            references.recordResolution(decl, dependency, resolution, ReferenceUsage.TYPE_USE);
         }
         Set<String> memberNames = new LinkedHashSet<>();
         for (DeclInfo child : index.children(decl.id())) {
@@ -543,12 +540,16 @@ final class DeclarationBindings {
     private AssociationSymbol buildAssociation(DeclInfo decl) {
         AssociationDeclarationSyntax syntax = (AssociationDeclarationSyntax) decl.syntax();
         buildingAssociations.add(decl.id());
-        Optional<SymbolId> base = syntax.baseAssociation().flatMap(name -> {
-            var resolved = resolver.resolve(decl.id(), name, Set.of(SymbolKind.ASSOCIATION)).target();
-            if (resolved.isEmpty()) diagnostics.unresolved(name);
-            return resolved;
-        });
-        if (base.isEmpty() && syntax.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
+        var explicitBase = syntax.baseAssociation()
+                .map(name -> resolver.resolve(decl.id(), name, Set.of(SymbolKind.ASSOCIATION)));
+        Optional<SymbolId> base = explicitBase.flatMap(NameResolver.Resolution::target);
+        if (explicitBase.isPresent()) {
+            var name = syntax.baseAssociation().orElseThrow();
+            references.deferBaseAmbiguity(decl, name, explicitBase.orElseThrow());
+            if (base.isEmpty()) diagnostics.unresolved(name);
+        }
+        if (base.isEmpty() && explicitBase.stream().noneMatch(r -> r.status() == NameResolver.Status.AMBIGUOUS)
+                && syntax.modifiers().contains(guru.interlis.model.Modifier.EXTENDED)) {
             base = inheritance.baseTopicMember(decl.id(), decl.name(), Set.of(SymbolKind.ASSOCIATION));
             if (base.isEmpty()) diagnostics.emitRule(decl, "EXTENDED association needs an inherited base", "ASSOCIATION_BASE");
         }
@@ -778,14 +779,23 @@ final class DeclarationBindings {
     }
 
     SymbolId bindObjectTarget(DeclInfo decl, guru.interlis.syntax.NameSyntax name, ReferenceUsage usage) {
-        Optional<SymbolId> target = name.text().equals("ANYCLASS") ? Optional.of(anyClass(decl))
-                : resolver.resolve(decl.id(), name, Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION)).target();
-        if (target.isEmpty() && name.segments().size() == 1) {
-            target = inheritance.baseTopicMember(decl.id(), name.text(), Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION));
+        if (name.text().equals("ANYCLASS")) {
+            SymbolId target = anyClass(decl);
+            references.recordReference(decl, name, target, usage);
+            return target;
         }
-        if (target.isEmpty()) diagnostics.unresolved(name);
-        references.recordReference(decl, name, target.orElse(null), usage);
-        return target.orElseGet(() -> syntheticClass(decl, name));
+        var kinds = Set.of(SymbolKind.CLASS, SymbolKind.ASSOCIATION);
+        var resolution = resolver.resolve(decl.id(), name, kinds);
+        if (resolution.status() == NameResolver.Status.UNRESOLVED && name.segments().size() == 1) {
+            var inherited = inheritance.baseTopicMember(decl.id(), name.text(), kinds);
+            if (inherited.isPresent()) {
+                references.recordReference(decl, name, inherited.orElseThrow(), usage);
+                return inherited.orElseThrow();
+            }
+        }
+        if (resolution.target().isEmpty()) diagnostics.unresolved(name);
+        references.recordResolution(decl, name, resolution, usage);
+        return resolution.target().orElseGet(() -> syntheticClass(decl, name));
     }
 
     private SymbolId bindRoleTarget(DeclInfo decl, guru.interlis.syntax.NameSyntax name) {
@@ -814,7 +824,7 @@ final class DeclarationBindings {
                 Optional.of(model), 0,
                 new Origin.SyntheticOrigin(guru.interlis.model.SyntheticReason.MISSING_REFERENCE,
                         Optional.of(name.range())),
-                Optional.of(name.range()), owner.language(), Documentation.empty(),
+                Optional.empty(), owner.language(), Documentation.empty(),
                 MetaAttributeSet.empty(), Set.of(), List.of());
         ClassSymbol synthetic = new ClassSymbol(header, Optional.empty(),
                 List.of(), List.of());

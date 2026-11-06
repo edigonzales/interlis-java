@@ -1,6 +1,10 @@
 package guru.interlis.compiler;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.BindingResolution;
+import guru.interlis.model.ReferenceUsage;
+import guru.interlis.model.SymbolId;
+import guru.interlis.model.UnresolvedReason;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +29,21 @@ class ScopeNamespaceContractTest {
     }
     @Test void typeAndRuntimeParameterNamesRemainDifferentNamespaces() {
         for(String version:List.of("2.3","2.4"))assertInstanceOf(CompilationOutcome.Succeeded.class,CompilerEngines.create().compile(request(version,"DOMAIN Value=TEXT;PARAMETER Value:TEXT;TOPIC T=CLASS C=Value:TEXT;END C;END T;"),CancellationToken.none()));
+    }
+    @Test void ambiguousBaseKeepsOneReferenceAfterTheFinalReferenceWalk() {
+        for (String version : List.of("2.3", "2.4")) {
+            var result = assertInstanceOf(CompilationOutcome.Rejected.class, CompilerEngines.create().compile(
+                    request(version, "TOPIC T=CLASS A=END A;CLASS A=END A;CLASS B EXTENDS A=END B;END T;"),
+                    CancellationToken.none()));
+            var graph = result.analysis().semanticGraph();
+            var uses = graph.references().stream().filter(ref -> ref.usage() == ReferenceUsage.BASE_TYPE).toList();
+            assertEquals(1, uses.size());
+            var resolution = assertInstanceOf(BindingResolution.UnresolvedTarget.class, uses.getFirst().resolution());
+            assertEquals(UnresolvedReason.AMBIGUOUS_NAME, resolution.reason());
+            assertEquals(graph.symbols().stream().filter(symbol -> symbol.name().value().equals("A"))
+                    .map(symbol -> symbol.id()).sorted(Comparator.comparing(SymbolId::value)).toList(),
+                    resolution.candidates());
+        }
     }
     @Test void anonymousAssociationsDoNotInventCollidingUserTypeNames() {
         for(String version:List.of("2.3","2.4")) {

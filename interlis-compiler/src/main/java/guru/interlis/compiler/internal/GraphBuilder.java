@@ -104,7 +104,7 @@ final class GraphBuilder {
                 inheritance, this::paths, references, structures);
         this.lines = new LineForms(state, work, index, diagnostics, names, inheritance, references, this::types,
                 units, this::expressions, symbolHeader, ensureSymbol);
-        this.constraints = new ConstraintBindings(state, work, index, diagnostics, resolver, this::paths, names,
+        this.constraints = new ConstraintBindings(state, work, index, diagnostics, resolver, this::paths,
                 inheritance, references, this::expressions, this::types, structures, symbolHeader);
         this.paths = new ObjectPathBindings(state, work, index, diagnostics, resolver, sourceSet, cancellation,
                 this::expressions, this::views, this::types, inheritance, references, structures,
