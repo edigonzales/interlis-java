@@ -654,10 +654,10 @@ Literals bleibt möglich. CR/LF/TAB erfordern MTEXT, auch bei Unicode-Escapes.
 
 Der portable Compiler verwendet gepinnte Unicode-17.0.0-Gewichtungsintervalle
 und Hanguls kanonische Zerlegung, ohne Laufzeit-Normalizer und ohne neue
-Abhängigkeit. Generierung und Normalisierungskontrolle liegen unter
-`tools/reference/generate_text_weights.py` und
-`tools/reference/TextLengthNormalizationProbe.java`; die Eingaben und Pins
-stehen im Nachweis. Klassen von kombinierenden Zeichen werden nicht aus der
+Abhängigkeit. `UnicodeWeightsTest` prüft die Tabellenwerte und das vollständige
+explizite NFD-Orakel anhand der [gepinnten Unicode-Originale](../../testdata/reference/unicode/17.0.0/README.md).
+Den Test startet `java build/InterlisJvmBuild.java build --module interlis-compiler --tests '.*UnicodeWeightsTest'`.
+Klassen von kombinierenden Zeichen werden nicht aus der
 allgemeinen Zeichenkategorie Mn/Mc abgeleitet. NFKD-Kompatibilitätszerlegungen
 werden nicht angewendet. Bisheriges Codepoint-Längenverhalten in 2.3 bleibt
 unverändert; dies erklärt keine vollständige 2.3-Unicode-Abnahme.

@@ -5154,11 +5154,11 @@
         },
         {
           "source": "docs/spec/05-metamodell-und-typensystem.md",
-          "sha256": "54da24d1fb19d51fc1c733596f67b06ed39635b216312e700d33a6d6c70d22f5"
+          "sha256": "8008c7f9b80f7601028eee948683050d37e7be89fa157c7d4ef640310bb44d86"
         },
         {
           "source": "docs/spec/06-kompilierung-und-semantik.md",
-          "sha256": "12111193f8be47078e3057fc887475502345a331c60da4d69ddd6e69cce67ab5"
+          "sha256": "f5a5c26c249e1e8684469ccbc6cd13964f02384083c2caa238e9eb9495e223dd"
         },
         {
           "source": "docs/spec/07-workspace-inkrementalitaet-und-lsp.md",
