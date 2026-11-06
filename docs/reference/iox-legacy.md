@@ -34,6 +34,46 @@ hier auf Quellbefunde. Für spätere ausführbare Profile braucht es eine
 separat gepinnte Closure. [ilivalidator-Build][validator-build],
 [iox-wkf-Build][wkf-build].
 
+## Issue-Abdeckung von iox-ili
+
+Der [Fallindex](../../testdata/reference/iox-issue-index.json) erfasst unter
+`issueCoverage` alle 61 am 6. November 2026 per GitHub-API ermittelten Issues
+von `claeis/iox-ili` (14 offen, 47 geschlossen). Aus dem unter `retrievedAt`
+datierten Abruf wurden 105 Pull Requests herausgefiltert. Acht Issues sind
+den bestehenden 35 Fallgruppen zugeordnet, 18 begründet ausgeschlossen
+und 35 mit einer offenen Folgeaufgabe erfasst. Issue-Texte und vorhandene Kommentare
+dienen der Einordnung. Der GitHub-Status und die fachliche Abdeckung sind
+getrennt. Den Umfang einer ausgeführten oder quellengestützten Prüfung
+geben die zugeordneten Fallgruppen an.
+[Upstream-Issues](https://github.com/claeis/iox-ili/issues?q=is%3Aissue).
+
+Die wichtigsten Geometrielücken betreffen Schnitt- und Ringdiagnosen,
+die separaten SURFACE-Überlappungsproben, Bogen-Overlay und den
+Zusammenbau mehrteiliger Ränder. Die alten
+Bogen-Overlay-Tests zu #37 wurden mit `CurvePolygon.polygonOverlays`
+entfernt. Ihre beiden Laufrichtungsfälle brauchen einen Abgleich mit dem
+heutigen AREA-Pfad. Der ignorierte Test zu #89 betrifft ITF.
+Die XTF-relevante POLYLINE-Prüfung verwendet ebenfalls die Routine zum
+Entfernen zulässiger Selbstschnitte und braucht eine eigene Grenzprobe zum
+Punktversatz. #94 betrifft doppelte Nahtpunkte bei der IOM-JTS-Konvertierung.
+Die XTF-2.4-Flächendaten zu #146 wurden als Low-Level-Parserproben erläutert.
+Für Geometrieabnahmen braucht es getrennte, konforme Flächentransfers.
+[#37](https://github.com/claeis/iox-ili/issues/37),
+[Entfernung der Overlay-Tests](https://github.com/claeis/iox-ili/commit/fe5a75d95783a9e339ffcfc6c5eb0c3dcd7a861e),
+[#89](https://github.com/claeis/iox-ili/issues/89),
+[POLYLINE-Prüfung im Pin](https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/validator/Validator.java#L4750-L4775),
+[#94](https://github.com/claeis/iox-ili/issues/94),
+[#146 mit Einordnung](https://github.com/claeis/iox-ili/issues/146#issuecomment-3532215860).
+
+Der Cache-Fall #107 ist bereits abgedeckt. Der Ressourcenbedarf unter
+repräsentativer Last bleibt offen. Die einschlägigen Noder- und
+Spill-Belege stehen in den bestehenden Fallgruppen und stammen auch aus
+Pull Requests und anderen Upstream-Repositories. Weitere offene
+Transfer- und Validatorproben betreffen wiederholte BAG-Strukturen,
+BLACKBOX-Werte, Objektpfade mit Rollenende und die Coverage bei
+abgeschalteten Regeln.
+[#107](https://github.com/claeis/iox-ili/issues/107).
+
 ## Transfer und Identitäten
 
 - `IoxReader` und `IoxWriter` beschreiben Transferstart, null oder mehr
@@ -190,6 +230,14 @@ Standardnamen im Legacy-Pin. Lückenfreiheit ist eine eigene Operation.
 [Funktionsdispatch][areareas-dispatch], [TEXT-Funktionen][areareas-ext],
 [Funktionsauswertung][areareas], [AREA-Typprüfung][area-type],
 [#468][v468], [#161][i161], [#162][i162], [Normentscheidung 11][decision-11].
+
+Der offene PR #166 schlägt für die Gruppenprüfung das Maximum der
+modellierten Überlappungstoleranzen der beteiligten Flächenattribute vor.
+Der Diff ermittelt die Toleranzen anhand der konkreten Klassen der
+Objekte und Strukturelemente und ergänzt 2.3-Proben für gemischte
+Toleranzen. Für die spätere Abnahme bleiben die Wahl der Gruppenregel
+und ihr Zusammenspiel mit der Einzelprüfung zu klären.
+[PR #166](https://github.com/claeis/iox-ili/pull/166).
 
 **Wiederverwendung.** #308 beschreibt 2021 den Unterschied zwischen
 Sammeln im ersten Durchlauf und wiederholter SET-Auswertung. 2022

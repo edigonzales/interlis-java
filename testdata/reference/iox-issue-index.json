@@ -580,5 +580,544 @@
         "https://github.com/claeis/iox-wkf/blob/2098c4b4851a6c8a9911ca82a4ffdf2798868d89/build.gradle#L21-L44"
       ]
     }
-  ]
+  ],
+  "issueCoverage": {
+    "repository": "claeis/iox-ili",
+    "retrievedAt": "2026-11-06T16:05:52Z",
+    "source": {
+      "pageUrls": [
+        "https://api.github.com/repos/claeis/iox-ili/issues?state=all&sort=created&direction=desc&per_page=100&page=1",
+        "https://api.github.com/repositories/41913139/issues?state=all&sort=created&direction=desc&per_page=100&page=2&after=Y3Vyc29yOnYyOpLPAAABZ2TXgIDOFwTPdw%3D%3D"
+      ],
+      "itemsRetrieved": 166
+    },
+    "pullRequestsExcluded": 105,
+    "relevanceValues": {
+      "interlis-2": "Transfer, Geometrie oder Validierung für INTERLIS 2 ohne Eingrenzung auf eine einzelne Sprachfassung.",
+      "interlis-2.3": "Konkreter Bezug zu INTERLIS 2.3.",
+      "interlis-2.4": "Konkreter Bezug zu INTERLIS 2.4.",
+      "format-adapter": "Relevante Abbildung von INTERLIS-Daten an einer Formatgrenze.",
+      "out-of-scope": "Ausserhalb der fachlichen Transfer- und Validatorfälle, mit fallbezogener Begründung."
+    },
+    "coverageValues": {
+      "covered": "Das Thema hat eine bestehende Fallgruppe. Deren scope und evidenceLevel begrenzen die fachliche Prüfung.",
+      "excluded": "Das Issue liegt aus dem angegebenen Grund ausserhalb der Abdeckung.",
+      "open": "Für das relevante Thema ist eine Folgeaufgabe erfasst, unabhängig vom GitHub-Status."
+    },
+    "issues": [
+      {
+        "number": 2,
+        "url": "https://github.com/claeis/iox-ili/issues/2",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Automatisierung der Upstream-Tests ohne konkreten Transfer- oder Validierungsfall."
+      },
+      {
+        "number": 3,
+        "url": "https://github.com/claeis/iox-ili/issues/3",
+        "state": "closed",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "Beim GML-Writer-Profil die Abbildung nach eCH-0118 2.0 mit Referenzen und Kurven gegen Originaltransfers prüfen."
+      },
+      {
+        "number": 4,
+        "url": "https://github.com/claeis/iox-ili/issues/4",
+        "state": "closed",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "Beim GML-Reader-Profil das Einlesen nach eCH-0118 2.0 mit Typen, Referenzen und Geometrie prüfen."
+      },
+      {
+        "number": 5,
+        "url": "https://github.com/claeis/iox-ili/issues/5",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Historischer Java-8-/Ant-Build auf macOS mit fehlenden generierten Repository-Klassen im JAR, ohne fachliche Transferabweichung."
+      },
+      {
+        "number": 7,
+        "url": "https://github.com/claeis/iox-ili/issues/7",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Fehlendes Hauptobjekt beim ITF-Lesen. Der Issue und die genannte Korrektur betreffen den INTERLIS-1-Transfer."
+      },
+      {
+        "number": 8,
+        "url": "https://github.com/claeis/iox-ili/issues/8",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Zwei deaktivierte Attributkardinalitäten und zwei deaktivierte Rollenkardinalitäten prüfen. Der Report muss alle Skips getrennt ausweisen."
+      },
+      {
+        "number": 9,
+        "url": "https://github.com/claeis/iox-ili/issues/9",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Im Validatorprofil die Schwere und Coverage bei fehlender benutzerdefinierter Funktion festlegen und gegen eine vorhandene Funktion testen."
+      },
+      {
+        "number": 11,
+        "url": "https://github.com/claeis/iox-ili/issues/11",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Herabstufung auf Warnung und leere oder benutzerdefinierte Meldungen für die Constraintarten getrennt prüfen."
+      },
+      {
+        "number": 12,
+        "url": "https://github.com/claeis/iox-ili/issues/12",
+        "state": "closed",
+        "relevance": "interlis-2.4",
+        "coverage": "covered",
+        "caseIds": [
+          "event-sequence",
+          "iom-api-24-gaps"
+        ],
+        "note": "Der 2.4-Reader ist als Ereignisquelle erfasst. Die Fallgruppen halten die nötigen konkreten IOM-Erweiterungen getrennt fest."
+      },
+      {
+        "number": 13,
+        "url": "https://github.com/claeis/iox-ili/issues/13",
+        "state": "closed",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "Für die generische Reader-Auswahl Format- und Modellerkennung sowie Verhalten bei unbekanntem Eingabetyp getrennt spezifizieren."
+      },
+      {
+        "number": 14,
+        "url": "https://github.com/claeis/iox-ili/issues/14",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Ein generischer CSV-Reader ohne im Issue beschriebene INTERLIS-2-Abbildung."
+      },
+      {
+        "number": 15,
+        "url": "https://github.com/claeis/iox-ili/issues/15",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Ein generischer CSV-Writer ohne im Issue beschriebene INTERLIS-2-Abbildung. Die konkrete Geometrieabbildung steht separat in #115."
+      },
+      {
+        "number": 16,
+        "url": "https://github.com/claeis/iox-ili/issues/16",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "covered",
+        "caseIds": [
+          "area-shared-boundary-and-containment"
+        ],
+        "note": "Der historische Test behandelt die Lage eines zweiten Polygons zum Innenring und teilweise deckungsgleiche Randlinien."
+      },
+      {
+        "number": 17,
+        "url": "https://github.com/claeis/iox-ili/issues/17",
+        "state": "closed",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "IOM nach JTS für MULTICOORD, MULTIPOLYLINE und MULTISURFACE mit Anzahl, Reihenfolge und erhaltener Dimension prüfen."
+      },
+      {
+        "number": 18,
+        "url": "https://github.com/claeis/iox-ili/issues/18",
+        "state": "closed",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "JTS nach IOM für die drei Mehrfachgeometrien prüfen. Erwartete Tags und Gruppierung getrennt von der Gegenrichtung festlegen."
+      },
+      {
+        "number": 19,
+        "url": "https://github.com/claeis/iox-ili/issues/19",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Buildanleitung für den Upstream-Wechsel von Ant zu Gradle, ohne fachlichen Datenfall."
+      },
+      {
+        "number": 20,
+        "url": "https://github.com/claeis/iox-ili/issues/20",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Austausch der Lesehilfe im CSV-Writer-Test, ohne Änderung der Transferabbildung."
+      },
+      {
+        "number": 21,
+        "url": "https://github.com/claeis/iox-ili/issues/21",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Umstellung der Testassertionen von Zeichenkettenvergleich auf andere Vergleiche, ohne benannte Konvertierungsabweichung."
+      },
+      {
+        "number": 22,
+        "url": "https://github.com/claeis/iox-ili/issues/22",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Strafft vorhandene Plausibilitätstests und ihre Beschreibungen. Der Issue meldet keine Abweichung der Schwellenberechnung."
+      },
+      {
+        "number": 23,
+        "url": "https://github.com/claeis/iox-ili/issues/23",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Für die relevanten AREA-/SURFACE23-Fälle die Sollbefunde für 2D- und 3D-Schnitte, überlappende Segmente und ungültige Ringe getrennt ableiten."
+      },
+      {
+        "number": 24,
+        "url": "https://github.com/claeis/iox-ili/issues/24",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Die AREA-Toleranzfallgruppe deckt die AREA-Proben ab. Für SURFACE die positiven und negativen XTF-Fälle samt den ignorierten Tests aus Surface23OverlapTest gesondert bewerten."
+      },
+      {
+        "number": 25,
+        "url": "https://github.com/claeis/iox-ili/issues/25",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Für die genannten 2.3-AREA-/SURFACE-Fälle echte Cut Edges von redundanten Folgefehlern und fehlerhaften Testorakeln unterscheiden."
+      },
+      {
+        "number": 27,
+        "url": "https://github.com/claeis/iox-ili/issues/27",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Den korrigierten Testfall mit Innenrand auf Aussenrand nachstellen und prüfen, wie viele Cut-Edge-Diagnosen er geometrisch rechtfertigt."
+      },
+      {
+        "number": 28,
+        "url": "https://github.com/claeis/iox-ili/issues/28",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Den Schnitt zweier Innenrandlinien als eigene Probe nachstellen und die historische Doppelmeldung von Schnitt und Überlappung prüfen."
+      },
+      {
+        "number": 29,
+        "url": "https://github.com/claeis/iox-ili/issues/29",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Im 2.3-SURFACE-Fall Meldungen pro geometrischem Schnittpunkt zählen. Die 1.0-Meldungsanzahl dient als historischer Vergleich."
+      },
+      {
+        "number": 30,
+        "url": "https://github.com/claeis/iox-ili/issues/30",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Der Issue nennt lediglich die Straffung der SET-Tests ohne konkrete Laufzeitfrage oder Eingabe."
+      },
+      {
+        "number": 31,
+        "url": "https://github.com/claeis/iox-ili/issues/31",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Segmentüberlagerung, Punktschnitt und vollständiges Polygon-Overlay mit getrennten Diagnosearten prüfen. Die vorhandene AREA-Fallgruppe deckt Polygon-Overlay ab."
+      },
+      {
+        "number": 32,
+        "url": "https://github.com/claeis/iox-ili/issues/32",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Einen offenen CompoundCurveRing in SURFACE und AREA einspeisen und Ort, Zeitpunkt und Diagnose der Ringprüfung nachweisen."
+      },
+      {
+        "number": 33,
+        "url": "https://github.com/claeis/iox-ili/issues/33",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Beim AREA-Gerade-Gerade-Schnitt die Diagnose ohne Überlappungsmass von der Diagnose mit positivem Mass unterscheiden."
+      },
+      {
+        "number": 34,
+        "url": "https://github.com/claeis/iox-ili/issues/34",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "covered",
+        "caseIds": [
+          "geometry-rounding-before-topology"
+        ],
+        "note": "Die historische Gegenprobe macht den Ring erst durch Rundung auf drei Nachkommastellen gültig."
+      },
+      {
+        "number": 35,
+        "url": "https://github.com/claeis/iox-ili/issues/35",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Reader ohne gesetztes Modell prüfen und seinen Ereignisstrom sowie die dabei verfügbaren Typinformationen dem modellgestützten Pfad gegenüberstellen."
+      },
+      {
+        "number": 36,
+        "url": "https://github.com/claeis/iox-ili/issues/36",
+        "state": "closed",
+        "relevance": "interlis-2.4",
+        "coverage": "covered",
+        "caseIds": [
+          "event-sequence"
+        ],
+        "note": "Die Fallgruppe vergleicht die geordnete Ereignisfolge in den 2.3- und 2.4-Readern."
+      },
+      {
+        "number": 37,
+        "url": "https://github.com/claeis/iox-ili/issues/37",
+        "state": "open",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Die zwei alten Bogen-Overlay-Fälle mit gleicher und entgegengesetzter Laufrichtung gegen die Proben des heutigen AREA-Pfads abgleichen."
+      },
+      {
+        "number": 38,
+        "url": "https://github.com/claeis/iox-ili/issues/38",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "covered",
+        "caseIds": [
+          "embedded-links-with-attributes"
+        ],
+        "note": "Die Fallgruppe erfasst eingebettete Rollenbezüge und eigene Attribute des Link-Unterobjekts in beiden Readern."
+      },
+      {
+        "number": 41,
+        "url": "https://github.com/claeis/iox-ili/issues/41",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Historische INI-Syntax des Validator-Hosts mit Quotes, Kommentaren und UTF-8, getrennt von Transfer und Validierungsregeln."
+      },
+      {
+        "number": 43,
+        "url": "https://github.com/claeis/iox-ili/issues/43",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "XML- und Binär-BLACKBOX in beiden XTF-Readern auf Werterhalt prüfen, einschliesslich verschachteltem XML und dessen Namensräumen."
+      },
+      {
+        "number": 52,
+        "url": "https://github.com/claeis/iox-ili/issues/52",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Den UNIQUE-Schlüssel über einen Pfad zum Container einer eingebetteten Assoziation prüfen. Der vorhandene UNIQUE-Fall belegt den Geltungsbereich."
+      },
+      {
+        "number": 64,
+        "url": "https://github.com/claeis/iox-ili/issues/64",
+        "state": "closed",
+        "relevance": "interlis-2.3",
+        "coverage": "open",
+        "openTask": "Unpassende IOM-Werttypen für COORD, POLYLINE und SURFACE vor der Topologieprüfung ablehnen und die spezifischen Typdiagnosen prüfen."
+      },
+      {
+        "number": 70,
+        "url": "https://github.com/claeis/iox-ili/issues/70",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Die bestehenden Ereignis- und Assoziationsfälle belegen einen Teil der Assertions aus PR #74. Die Prüfungen der Reader- und Datentyp-Testklassen mit eigenen Eingaben ergänzen."
+      },
+      {
+        "number": 73,
+        "url": "https://github.com/claeis/iox-ili/issues/73",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Die Textwertkorrekturen der Reader getrennt prüfen, vor allem leere Zeilen und die Abbildung von Leerraum in XTF."
+      },
+      {
+        "number": 78,
+        "url": "https://github.com/claeis/iox-ili/issues/78",
+        "state": "closed",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Verlagerung von INTERLIS-Funktionen aus der Validator-Klasse, ohne im Issue benannte Änderung des Funktionsverhaltens."
+      },
+      {
+        "number": 79,
+        "url": "https://github.com/claeis/iox-ili/issues/79",
+        "state": "open",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Remote-Verteilung von Plugin-JARs und ihre Sicherheitsfreigabe gehören zum Hostbetrieb."
+      },
+      {
+        "number": 87,
+        "url": "https://github.com/claeis/iox-ili/issues/87",
+        "state": "closed",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "Die im Pin vorhandene WKB-/EWKB-Auswahl für 3D mit Z-Flag, Byte-Reihenfolge und MULTI-Verschachtelung auf beiden Pfaden prüfen."
+      },
+      {
+        "number": 89,
+        "url": "https://github.com/claeis/iox-ili/issues/89",
+        "state": "open",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Den ignorierten ITF-Test für den Punktversatz vom XTF-Pfad trennen. Die gemeinsam verwendete Überlappungskorrektur mit XTF-POLYLINE nahe der Distanzschwelle prüfen."
+      },
+      {
+        "number": 90,
+        "url": "https://github.com/claeis/iox-ili/issues/90",
+        "state": "open",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Tabulator wurde laut Diskussion von GRETL-Settings beim Trimmen entfernt. Direkt mit gesetztem Tabulator wurde die Datei im CsvReader gelesen."
+      },
+      {
+        "number": 91,
+        "url": "https://github.com/claeis/iox-ili/issues/91",
+        "state": "open",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Auflösung externer Konfiguration und Referenzdateien über ilidata und Dateipfade samt Override-Reihenfolge ist Host-Konfigurationspolitik."
+      },
+      {
+        "number": 92,
+        "url": "https://github.com/claeis/iox-ili/issues/92",
+        "state": "closed",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "Im WKB-Adapter den CircularString direkt im CurvePolygon und denselben Bogen in einer CompoundCurve vergleichen. Der Upstream-Fix ist historisch dokumentiert."
+      },
+      {
+        "number": 94,
+        "url": "https://github.com/claeis/iox-ili/issues/94",
+        "state": "open",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "An einer Grenze aus mehreren POLYLINE-Teilen beide JTS-Konverter auf doppelte Nahtpunkte prüfen. Ringabschluss und absichtlich wiederholte Punkte getrennt testen."
+      },
+      {
+        "number": 100,
+        "url": "https://github.com/claeis/iox-ili/issues/100",
+        "state": "closed",
+        "relevance": "interlis-2.4",
+        "coverage": "open",
+        "openTask": "Die Upstream-BAG-Regression aus Commit 8165262 übernehmen. Sie liest zwei StructA-Werte in attrL1 und danach attrL2. Der P4.0-B-Harness prüft separat eine LIST von Strukturen."
+      },
+      {
+        "number": 107,
+        "url": "https://github.com/claeis/iox-ili/issues/107",
+        "state": "closed",
+        "relevance": "interlis-2",
+        "coverage": "covered",
+        "caseIds": [
+          "areareas-this-cache"
+        ],
+        "note": "Die Diskussion grenzt sicheren Cachegebrauch auf ALL mit konstanten Pfaden ein. Die Fallgruppe trennt ihn von der fehlerhaften Wiederverwendung für THIS."
+      },
+      {
+        "number": 115,
+        "url": "https://github.com/claeis/iox-ili/issues/115",
+        "state": "open",
+        "relevance": "format-adapter",
+        "coverage": "open",
+        "openTask": "Für einen CSV-Geometrieadapter WKT und getrennte Punktkoordinaten als explizite Profile mit Regel für Bögen und Mehrfachwerte behandeln."
+      },
+      {
+        "number": 116,
+        "url": "https://github.com/claeis/iox-ili/issues/116",
+        "state": "open",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "NBSP und Zeichencodierung im menschenlesbaren Statistiktext, ohne Änderung der Objektzählung oder Transferdaten."
+      },
+      {
+        "number": 129,
+        "url": "https://github.com/claeis/iox-ili/issues/129",
+        "state": "closed",
+        "relevance": "interlis-2.4",
+        "coverage": "open",
+        "openTask": "DMAVTYM covers als modellgebundene Funktion separat prüfen, mit umgekehrter Linienrichtung, mehreren Flächen und falscher Randlage."
+      },
+      {
+        "number": 130,
+        "url": "https://github.com/claeis/iox-ili/issues/130",
+        "state": "closed",
+        "relevance": "interlis-2.4",
+        "coverage": "open",
+        "openTask": "Den breiten 2.4-Support am Pin in konkrete Transferproben aufteilen, vor allem Laufzeitdomänen und Mehrfachwerte über den kleinen Reader-Korpus hinaus."
+      },
+      {
+        "number": 133,
+        "url": "https://github.com/claeis/iox-ili/issues/133",
+        "state": "open",
+        "relevance": "interlis-2.4",
+        "coverage": "open",
+        "openTask": "Den im Pin vorhandenen Regressionstest für einen Objektpfad mit Rollenende übernehmen. Den Objektwert am Pfadende vom Zugriff auf ein nachfolgendes Attribut unterscheiden."
+      },
+      {
+        "number": 139,
+        "url": "https://github.com/claeis/iox-ili/issues/139",
+        "state": "open",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Upstream-POM unterscheidet Produktionsabhängigkeit und neuere Testabhängigkeit. Die reproduzierbare Distributionsclosure ist separat im Harness gepinnt."
+      },
+      {
+        "number": 146,
+        "url": "https://github.com/claeis/iox-ili/issues/146",
+        "state": "closed",
+        "relevance": "interlis-2.4",
+        "coverage": "open",
+        "openTask": "Die Low-Level-Parserdaten mit mehreren Polylines im exterior von konformen AREA-/SURFACE-Transfers mit geschlossenem Einzelring trennen."
+      },
+      {
+        "number": 152,
+        "url": "https://github.com/claeis/iox-ili/issues/152",
+        "state": "open",
+        "relevance": "out-of-scope",
+        "coverage": "excluded",
+        "reason": "Offener Dokumentationspunkt zum Migrationsleitfaden ohne konkreten fachlichen Fall."
+      },
+      {
+        "number": 160,
+        "url": "https://github.com/claeis/iox-ili/issues/160",
+        "state": "open",
+        "relevance": "interlis-2",
+        "coverage": "open",
+        "openTask": "Meldung im interaktiven Log und maschinenlesbare Constraintdiagnose in IliVErrors separat spezifizieren und Herkunft, Ort und Länge prüfen."
+      },
+      {
+        "number": 161,
+        "url": "https://github.com/claeis/iox-ili/issues/161",
+        "state": "open",
+        "relevance": "interlis-2.4",
+        "coverage": "covered",
+        "caseIds": [
+          "areareas-standard-names-and-gaps"
+        ],
+        "note": "Die Fallgruppe trennt Standardmodellnamen von INTERLIS_ext und hält die fehlende Runtime-Unterstützung fest."
+      },
+      {
+        "number": 162,
+        "url": "https://github.com/claeis/iox-ili/issues/162",
+        "state": "open",
+        "relevance": "interlis-2.4",
+        "coverage": "covered",
+        "caseIds": [
+          "areareas-standard-names-and-gaps"
+        ],
+        "note": "Die Fallgruppe behandelt die Lückenprüfung als eigene Fähigkeit neben areAreas und verweist auf den Normkonflikt."
+      }
+    ]
+  }
 }
