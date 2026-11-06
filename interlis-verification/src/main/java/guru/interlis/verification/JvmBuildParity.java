@@ -20,7 +20,7 @@ public final class JvmBuildParity {
     private final List<String> variations=new ArrayList<>();
     private static final Set<String> MODULES=Set.of("interlis-model","interlis-compiler","interlis-workspace","interlis-repository","interlis-projection","interlis-documentation","interlis-wasm-bridge","interlis-compiler-cli","interlis-lsp","interlis-verification");
     private static final Set<String> ADAPTERS=Set.of("PythonFreeCheck","CompilerCliProcesses","HostChecks","ProfileFingerprint","SdkArchiveCheck","SdkProcesses","VerificationLayout");
-    private static final Set<String> NEW_ADAPTERS=Set.of("CurrentContractSelection","ReportProjectionMain","TestReportInventory","JvmBuildParity");
+    private static final Set<String> NEW_ADAPTERS=Set.of("ContractSelectionWriter","ReportProjectionMain","TestReportInventory","JvmBuildParity");
     private static final Set<String> SCOPES=Set.of("mainCompile","mainRuntime","testCompile","testRuntime");
     public static void main(String[] args)throws Exception {
         if(args.length!=2)throw new IllegalArgumentException("Expected parity input JSON and output JSON");

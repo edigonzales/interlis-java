@@ -2,7 +2,7 @@
 // Explicit small integration check: actual local CLI/SDK producers in an otherwise
 // synthetic release envelope. This validates interoperability, not a P3 release.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const {root,hash,fingerprint,commitInfo}=require('../performance/profile.cjs');
+const {root,hash,fingerprint,commitInfo}=require('../verification/source-fingerprint.cjs');
 const {validate,compilerCliCases,diagnosticCatalogVersion}=require('./evidence.cjs');
 const {fixture}=require('./test-fixtures.cjs');
 function verify(){

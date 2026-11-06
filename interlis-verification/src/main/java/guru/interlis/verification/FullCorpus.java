@@ -16,7 +16,7 @@ public final class FullCorpus {
     static final String INDEX_SHA="ff9561b4e248da29c0bde4f65e77c1e22e00e45a4f7c8538756debd11451d93c";
     private FullCorpus() { }
     public static void main(String[] args) throws Exception {
-        Path root=Path.of(args[0]).toAbsolutePath(),directory=root.resolve("docs/evidence/p3/full-corpus");
+        Path root=Path.of(args[0]).toAbsolutePath(),directory=root.resolve("testdata/corpus/full");
         Path output=VerificationLayout.forInvocation(root).rootReport("performance/full-corpus/prepared.json");Files.deleteIfExists(output);
         var prepared=prepare(directory);
         write(output,prepared);

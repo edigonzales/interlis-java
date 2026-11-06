@@ -55,7 +55,7 @@ for(const [name,mutate]of [
 ])test('P3 fails closed: '+name,()=>{const f=fixture();mutate(f);assert.throws(()=>validate(f));});
 
 test('downloaded platform XML must match the recorded hashes',()=>{
- const {validateJvmReports}=require('./evidence.cjs'),{hash}=require('../performance/profile.cjs');
+ const {validateJvmReports}=require('./evidence.cjs'),{hash}=require('../verification/source-fingerprint.cjs');
  const p=fixture().platforms[0],bytes=Buffer.from('archived XML fixture');
  for(const file of Object.keys(p.xmlHashes))p.xmlHashes[file]=hash(bytes);
  validateJvmReports(p,()=>bytes);
@@ -64,7 +64,7 @@ test('downloaded platform XML must match the recorded hashes',()=>{
 });
 
 test('release profile matches current Java CLI case and diagnostic producers',()=>{
- const fs=require('node:fs'),path=require('node:path'),{root}=require('../performance/profile.cjs');
+ const fs=require('node:fs'),path=require('node:path'),{root}=require('../verification/source-fingerprint.cjs');
  const {compilerCliCases,diagnosticCatalogVersion}=require('./evidence.cjs');
  const cli=fs.readFileSync(path.join(root,'interlis-verification/src/main/java/guru/interlis/verification/CompilerCliProcesses.java'),'utf8');
  const declaration=cli.match(/static final Set<String> REQUIRED = Set\.of\(([\s\S]*?)\);/);

@@ -1,0 +1,17 @@
+{
+  "purpose": "Synthetic parser input for RuntimeReportValidationTest",
+  "nodeVersion": "fixture-node",
+  "projectVersion": "fixture-compiler",
+  "portableCases": 3,
+  "conformance": {
+    "selectedCases": 2,
+    "suiteCases": 2,
+    "excludedCases": 0,
+    "caseIdsSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "languages": [
+      "2.3",
+      "2.4"
+    ],
+    "suiteCommit": "1111111111111111111111111111111111111111"
+  }
+}

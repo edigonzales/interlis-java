@@ -24,7 +24,7 @@ function wasmPath() {
 (async () => {
   const root = path.resolve(__dirname, '..');
   const manifest = JSON.parse(fs.readFileSync(path.join(root,
-    'docs/evidence/p3/geo-corpus.json'), 'utf8'));
+    'testdata/corpus/seed/manifest.json'), 'utf8'));
   const cache = path.resolve(root, process.env.GEO_CORPUS_CACHE || process.env.CONFORMANCE_CACHE || path.join(os.homedir(), '.cache/interlis-java/geo-corpus'));
   require(runtimePath());
   const api = (await globalThis.TeaVM.wasmGC.load(wasmPath())).exports;
@@ -75,7 +75,7 @@ function wasmPath() {
   }
   const result = {schemaVersion: '1.0', runtime: 'teavm-wasm-gc', node: process.version,
     iterationsPerModel: 3, warmupPerModel: 1,
-    corpus: 'docs/evidence/p3/geo-corpus.json',
+    corpus: 'testdata/corpus/seed/manifest.json',
     corpusIndexSha256: manifest.index.sha256,
     wasmBytes: fs.statSync(wasmPath()).size, models,
     notes: 'In-process TeaVM WasmGC API measurements; warmup excluded.'};

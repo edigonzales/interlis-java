@@ -10,7 +10,7 @@ java build/InterlisJvmBuild.java host --profile browser-benchmark
 java build/InterlisJvmBuild.java host --profile performance   # all of the above
 ```
 
-The corpus is pinned by `docs/evidence/p3/geo-corpus.json`. Model bytes are
+The corpus is pinned by `testdata/corpus/seed/manifest.json`. Model bytes are
 cached outside the repository under `~/.cache/interlis-java/geo-corpus`;
 the manifest records URL, version, byte size and SHA-256.
 
@@ -24,7 +24,7 @@ cover them.
 
 L0B-3 runs corpus verification and JVM measurement through Java host tools.
 The original index and all thirteen source byte sequences are preserved in
-`docs/evidence/p3/corpus-seed.zip` (provenance in `corpus-seed.md`); no pin changes.
+`testdata/corpus/seed/sources.zip` (provenance in `corpus-seed.md`); no pin changes.
 Set `GEO_CORPUS_CACHE` to choose the shared JVM/Node cache; relative paths use the
 repository root. `CONFORMANCE_CACHE` remains a compatible fallback.
 JVM RSS is now recorded explicitly in **bytes per child** using `/usr/bin/time`

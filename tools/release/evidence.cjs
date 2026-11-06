@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),path=require('node:path');const {root,hash,fingerprint,commitInfo}=require('../performance/profile.cjs');
+const fs=require('node:fs'),path=require('node:path');const {root,hash,fingerprint,commitInfo}=require('../verification/source-fingerprint.cjs');
 const comparison=require('./artifact-comparison.cjs');
 const jvmProfile=require('../../testdata/verification/jvm-profile.json');
 const assert=(condition,message)=>{if(!condition)throw Error(message);};

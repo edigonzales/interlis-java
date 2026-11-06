@@ -7,11 +7,11 @@ import static guru.interlis.verification.contracts.ContractFiles.*;
 class NormativeDecisionsContractTest {
     @Tag("compiler-contract")
     @Test void currentExpectationsAndCitedOriginalNormsStayBound() throws Exception {
-        var matrix=data("rule-matrix"); var packet=data("normative-decision-packet-2026-10-28");
+        var matrix=data("documents"); var packet=data("normative-decisions");
         var packetPin=matrix.getAsJsonObject("normativeDecisionPacket");pin(BASE+s(packetPin,"path"),s(packetPin,"sha256"));
         var sourcePin=matrix.getAsJsonObject("sourceInventory");pin(BASE+s(sourcePin,"path"),s(sourcePin,"sha256"));
         var inventory=data("norm-inventory");
-        pin(BASE+"g2-norm-inventory.json",s(matrix.getAsJsonObject("normInventory"),"sha256"));
+        pin(BASE+"norm-inventory.json",s(matrix.getAsJsonObject("normInventory"),"sha256"));
         NormativeDecisionAssertions.decisions(packet,inventory);
         for(var recorded:rows(data("source-inventory"),"normDocuments")) {
             String version=s(recorded,"document");
@@ -26,9 +26,9 @@ class NormativeDecisionsContractTest {
         }
     }
     @Test void setProfileAdditionsCannotChangeHistoricalCasesOrInventApproval() throws Exception {
-        var packet=data("normative-decision-packet-2026-10-28");
-        var expected=json("docs/evidence/conformance/normative-expectations.json");
-        var historical=json("docs/evidence/conformance/normative-expectations-before-set-context.json");
+        var packet=data("normative-decisions");
+        var expected=json("testdata/conformance/normative/expectations.json");
+        var historical=json("testdata/reference/norms/decision-expectation-digests.json");
         NormativeDecisionAssertions.decisionSources(packet,expected,historical);
         for(String change:List.of("old-case","missing","new-id","authorization")) {
             var altered=expected.deepCopy();var cases=altered.getAsJsonArray("cases");
@@ -45,7 +45,7 @@ class NormativeDecisionsContractTest {
     @Test void expectationAndQuoteMutationsAreRejected() throws Exception {
         var inventory=data("norm-inventory");
         for(String key:List.of("ownExpectation","quote","quoteSha256","missing")) {
-            var changed=data("normative-decision-packet-2026-10-28");var row=rows(changed,"cases").getFirst();
+            var changed=data("normative-decisions");var row=rows(changed,"cases").getFirst();
             if(key.equals("missing"))changed.getAsJsonArray("cases").remove(0);
             else if(key.startsWith("quote"))rows(rows(row,"normEvidence").getFirst(),"paragraphs").getFirst().addProperty(key,"broken");
             else row.addProperty(key,"broken");

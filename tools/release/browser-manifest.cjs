@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),path=require('node:path');const {root,hash}=require('../performance/profile.cjs'),runtimeEvidence=require('../verification/runtime-evidence.cjs');
+const fs=require('node:fs'),path=require('node:path');const {root,hash}=require('../verification/source-fingerprint.cjs'),runtimeEvidence=require('../verification/runtime-evidence.cjs');
 (async()=>{
  const web=path.resolve(process.argv[2]||path.join(root,'interlis-wasm-teavm/build/web'));if(!web.startsWith(root+path.sep))throw Error('browser output outside project');
  const compiler=path.join(web,'interlis-compiler.wasm'),runtime=path.join(web,'interlis-compiler.wasm-runtime.js');

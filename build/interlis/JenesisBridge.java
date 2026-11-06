@@ -155,27 +155,6 @@ public final class JenesisBridge {
         if(classpath.isEmpty())throw new IllegalStateException("Empty archive-tool closure");return List.copyOf(classpath);
     }
 
-    /** Additional source files read by the current source-binding validators. */
-    @SuppressWarnings("unchecked")
-    public static Set<String> currentBindingInputs(Path root) throws Exception {
-        var original=(Map<String,Object>)Json.parse(Files.readString(root.resolve("testdata/g2/completion-links.json")));
-        var overlay=(Map<String,Object>)Json.parse(Files.readString(root.resolve("testdata/verification/current-bindings.json")));
-        var bindings=new LinkedHashMap<>((Map<String,Object>)original.get("bindings"));
-        bindings.putAll((Map<String,Object>)overlay.get("overrides"));bindings.putAll((Map<String,Object>)overlay.get("extras"));
-        Set<String> inputs=new TreeSet<>();
-        for(Object value:bindings.values())inputs.add((String)((Map<String,Object>)value).get("source"));
-        var overrides=(Map<String,Object>)overlay.get("processOverrides");
-        for(Object requirement:(List<Object>)original.get("requirements")) {
-            Object evidence=((Map<String,Object>)requirement).get("processEvidence");
-            if(evidence==null)continue;
-            for(Object row:(List<Object>)evidence) {
-                var process=(Map<String,Object>)row;
-                if(overrides.containsKey(process.get("source")))process=(Map<String,Object>)overrides.get(process.get("source"));
-                inputs.add((String)process.get("source"));
-            }
-        }
-        return Set.copyOf(inputs);
-    }
 
     public static BuildOutcome run(BuildRequest request) throws Exception {
         return run(request, Map.of());
@@ -210,7 +189,7 @@ public final class JenesisBridge {
             if (module.equals("interlis-compiler") && !descriptor.name().startsWith("test")) {
                 var resources = new LinkedHashMap<Path, Path>();
                 resources.put(Path.of("META-INF/licenses/UNICODE-LICENSE.txt"),
-                        root.resolve("docs/evidence/stabilization/registries/UNICODE-LICENSE.txt"));
+                        root.resolve("testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt"));
                 assembler = assembler.resources(resources);
             }
             if(descriptor.test()&&Files.isRegularFile(root.resolve(module+"/src/main/java/module-info.java"))) {

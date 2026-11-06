@@ -47,7 +47,7 @@ public final class JvmBenchmark {
         }
         require(artifacts.equals(artifacts(root)),"Benchmark artifacts changed");
         var report=new LinkedHashMap<String,Object>(Map.of("schemaVersion","1.0","runtime","jvm","tool",root.relativize(cli(root)).toString(),"iterationsPerModel",3,"warmupPerModel",1,
-                "corpus","docs/evidence/p3/geo-corpus.json","corpusIndexSha256",manifest.getAsJsonObject("index").get("sha256"),"models",models,
+                "corpus","testdata/corpus/seed/manifest.json","corpusIndexSha256",manifest.getAsJsonObject("index").get("sha256"),"models",models,
                 "machine",Map.of("platform",System.getProperty("os.name"),"machine",System.getProperty("os.arch"),"cpus",Runtime.getRuntime().availableProcessors(),"java",System.getProperty("java.runtime.version")),
                 "notes","Wall-clock subprocess measurements; warmup excluded. Eleven successful compiles and two exact approved source rejections; format succeeds for all. RSS in bytes per child via /usr/bin/time. No production claim."));
         report.put("expectations","testdata/g2/corpus-expectations.json");report.put("expectationsSha256",hash(root.resolve("testdata/g2/corpus-expectations.json")));write(output,report);

@@ -24,10 +24,10 @@ class CorpusOuterNameContractTest {
         return new CompilationRequest(List.of(new ModelSelector.ByName(model,Optional.empty(),Optional.empty())),SourceSet.of(Map.of(source.id(),source)),CompilerOptions.defaults());
     }
     @Test void pinnedOriginalHasOneExactSourceErrorAndRenamedControlHasActualInheritedMembers(@org.junit.jupiter.api.io.TempDir Path folder) throws Exception {
-        var manifest=read(ROOT.resolve("docs/evidence/p3/geo-corpus.json"));
+        var manifest=read(ROOT.resolve("testdata/corpus/seed/manifest.json"));
         for(var expected:CorpusExpectations.load(ROOT,manifest)) {
         String original;
-        try(var zip=new ZipFile(ROOT.resolve("docs/evidence/p3/corpus-seed.zip").toFile())) {
+        try(var zip=new ZipFile(ROOT.resolve("testdata/corpus/seed/sources.zip").toFile())) {
             byte[] bytes=zip.getInputStream(zip.getEntry(s(expected,"file").replace("/","__"))).readAllBytes();assertEquals(s(expected,"sha256"),hash(bytes));original=new String(bytes,StandardCharsets.UTF_8);
         }
         var engine=CompilerEngines.create();var rejected=assertInstanceOf(CompilationOutcome.Rejected.class,engine.compile(request(s(expected,"model"),original,1),CancellationToken.none()));
@@ -62,7 +62,7 @@ class CorpusOuterNameContractTest {
         }
     }
     @Test void wrongSuccessExitDiagnosticSourceRangeAndMultiplicityCannotPassTheNegativeBenchmark() throws Exception {
-        var expected=CorpusExpectations.load(ROOT,read(ROOT.resolve("docs/evidence/p3/geo-corpus.json"))).getFirst();Path source=ROOT.resolve("original.ili");
+        var expected=CorpusExpectations.load(ROOT,read(ROOT.resolve("testdata/corpus/seed/manifest.json"))).getFirst();Path source=ROOT.resolve("original.ili");
         var diagnostic=rows(expected,"diagnostics").getFirst().deepCopy();diagnostic.addProperty("id","diag-example");var range=diagnostic.getAsJsonObject("range");range.addProperty("source",source.toUri().toString());range.addProperty("revision","1");
         diagnostic.addProperty("message","Readable message");diagnostic.addProperty("hint","Readable hint");
         diagnostic.add("relatedLocations",expected.getAsJsonArray("cliRelatedLocations").deepCopy());

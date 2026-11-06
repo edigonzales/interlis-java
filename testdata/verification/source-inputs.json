@@ -1,0 +1,13 @@
+{
+  "paths": [
+    ".gitattributes", "pom.xml", "jenesis.properties", "jenesis-contracts.properties",
+    "build/InterlisJvmBuild.java", "build/JENESIS-UPSTREAM.json", "build.gradle",
+    "settings.gradle", "gradle.properties", "gradlew", "gradlew.bat",
+    "docs/p3/diagram-adapter-pin.json"
+  ],
+  "prefixes": [
+    ".github/workflows/", "build.jenesis/", "build/jenesis/", "build/interlis/",
+    "docs/spec/", "frontend/diagram-ui/", "gradle/", "interlis-", "testdata/", "tools/"
+  ],
+  "suffixes": ["/.jenesis.skip"]
+}

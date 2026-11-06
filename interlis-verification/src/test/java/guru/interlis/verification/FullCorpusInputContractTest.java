@@ -10,7 +10,7 @@ import static guru.interlis.verification.HostChecks.*;
 class FullCorpusInputContractTest {
     @TempDir Path temporary;
     private Path copy() throws Exception {
-        Path directory=Path.of(System.getProperty("repo.root")).resolve("docs/evidence/p3/full-corpus");
+        Path directory=Path.of(System.getProperty("repo.root")).resolve("testdata/corpus/full");
         Files.copy(directory.resolve("manifest.json"),temporary.resolve("manifest.json"));
         Files.copy(directory.resolve("sources.zip"),temporary.resolve("sources.zip"));return temporary;
     }

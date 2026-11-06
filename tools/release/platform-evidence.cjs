@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');const {root,hash,commitInfo}=require('../performance/profile.cjs');
+const fs=require('node:fs'),path=require('node:path'),cp=require('node:child_process');const {root,hash,commitInfo}=require('../verification/source-fingerprint.cjs');
 const {validateJvmReports}=require('./evidence.cjs');
 const repository='edigonzales/interlis-java',directory=require('../verification/layout.cjs').report(root,'p3/platform-evidence'),output=path.join(directory,'result.json'),gh=process.env.GH_EXECUTABLE||'gh';
 const assert=(value,message)=>{if(!value)throw Error(message);};

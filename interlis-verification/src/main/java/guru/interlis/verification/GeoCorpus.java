@@ -18,9 +18,9 @@ public final class GeoCorpus {
     }
     static JsonObject verify(Path root) throws Exception {
         Path report=VerificationLayout.forInvocation(root).rootReport("performance/corpus-verification.json");Files.deleteIfExists(report);
-        JsonObject manifest=read(root.resolve("docs/evidence/p3/geo-corpus.json"));Path cache=cacheDirectory(root);
+        JsonObject manifest=read(root.resolve("testdata/corpus/seed/manifest.json"));Path cache=cacheDirectory(root);
         var index=manifest.getAsJsonObject("index");Path indexPath=cache.resolve("ilimodels.xml");
-        seed(root.resolve("docs/evidence/p3/corpus-seed.zip"),cache,manifest);
+        seed(root.resolve("testdata/corpus/seed/sources.zip"),cache,manifest);
         pin(indexPath,s(index,"sha256"));
         validateIndex(indexPath,manifest);
         var models=rows(manifest,"models");require(models.size()==13,"Changed corpus selection");Set<String> files=new HashSet<>();

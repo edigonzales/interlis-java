@@ -47,7 +47,7 @@ public final class ReportProjectionMain {
         var receipt=new ExecutionReceipt(module,"jenesis",runId,Instant.parse(s(data,"started")),0,"EXECUTED",hashes,Map.of(),properties);
         var reader=new TestReportInventory();var actual=reader.readJenesis(raw,receipt);reader.requireSuccessful(actual);
         Set<String> expected=new TreeSet<>();
-        for(var entry:CurrentContractSelection.read(root).getAsJsonObject("bindings").entrySet()) {
+        for(var entry:CompilerContractCatalog.load(root).document().getAsJsonObject("bindings").entrySet()) {
             var binding=entry.getValue().getAsJsonObject();if(!s(binding,"source").startsWith(module+"/"))continue;
             for(String invocation:strings(binding.get("invocations")))require(expected.add(s(binding,"suite")+"\0"+invocation),"Duplicate expected invocation");
         }
@@ -58,7 +58,7 @@ public final class ReportProjectionMain {
         manifest.add("gitCommit",data.get("gitCommit"));manifest.add("treeSha",data.get("treeSha"));
         var derived=new JsonObject();projection.projectedHashes().forEach((file,hash)->derived.addProperty(file.getFileName().toString(),hash));manifest.add("hashes",derived);
         manifest.addProperty("receiptSha256",hash(receiptFile));manifest.add("rawHashes",data.get("reportHashes"));manifest.add("artifactHashes",data.get("artifactHashes"));
-        manifest.addProperty("adapterHash",projection.adapterHash());manifest.addProperty("selectionSha256",hash(root.resolve("testdata/verification/current-bindings.json")));
+        manifest.addProperty("adapterHash",projection.adapterHash());manifest.addProperty("selectionSha256",hash(root.resolve("testdata/verification/compiler-contracts.json")));
         write(manifestFile,manifest);System.out.println(actual.cases().size()+" real producer invocations projected and bound");
     }
 }

@@ -16,7 +16,7 @@ Phasenpflichten oder G2-Norm-/Kompatibilitätsprofile umzunummerieren.
 
 L4-1 konkretisiert SYN-001–012, SEM-001–019, INC-001–017 und die bestehenden
 DIAG-/LOG-/API-Verträge durch den Einzelabgleich in
-`testdata/g2/completion-links.json`. Die historischen Norm-/Grammatik-/Builtin-
+`testdata/verification/compiler-contracts.json`. Die historischen Norm-/Grammatik-/Builtin-
 IDs bleiben erhalten. AC4-01–03 verlangen tatsächliche öffentliche Assertions,
 einen realen A3-Semantikvergleich und ausdrückliche Profilentscheidungen;
 Quelllinks und erfolgreiche Integritätsprüfungen ersetzen kein unabhängiges

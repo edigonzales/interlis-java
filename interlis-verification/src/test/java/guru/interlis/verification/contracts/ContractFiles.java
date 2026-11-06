@@ -21,7 +21,7 @@ final class ContractFiles {
         require(value != null && !value.isBlank(), "Missing repo.root for repository contracts");
         return Path.of(value).toAbsolutePath().normalize();
     }
-    static final String BASE = "docs/evidence/stabilization/";
+    static final String BASE = "testdata/reference/norms/";
     static void require(boolean ok, String message) { if (!ok) throw new IllegalArgumentException(message); }
     static Path inside(Path root, String relative) throws IOException {
         Path rel = Path.of(relative);
@@ -32,7 +32,7 @@ final class ContractFiles {
     }
     static String text(String relative) throws IOException { return Files.readString(inside(root(), relative)); }
     static JsonObject json(String relative) throws IOException { return JsonParser.parseString(text(relative)).getAsJsonObject(); }
-    static JsonObject data(String name) throws IOException { return json(BASE + "g2-" + name + ".json"); }
+    static JsonObject data(String name) throws IOException { return json(BASE + name + ".json"); }
     static List<JsonObject> rows(JsonObject value, String key) {
         return StreamSupport.stream(value.getAsJsonArray(key).spliterator(), false).map(JsonElement::getAsJsonObject).toList();
     }

@@ -9,6 +9,6 @@ child.on('error',error=>{console.error(error);process.exitCode=1;});child.on('ex
  try{
   if(code!==0||signal)throw Error('Node contract failed: '+code+'/'+signal);
   const text=fs.readFileSync(xml,'utf8'),counts=require('./node-junit.cjs').parseJUnit(text,profile.minimum);
-  fs.writeFileSync(output,JSON.stringify({...evidence.finish(stamp),status:'passed',profile:process.argv[2],...counts,junitSha256:require('../performance/profile.cjs').hash(text)},null,2)+'\n');
+  fs.writeFileSync(output,JSON.stringify({...evidence.finish(stamp),status:'passed',profile:process.argv[2],...counts,junitSha256:require('../verification/source-fingerprint.cjs').hash(text)},null,2)+'\n');
  }catch(error){console.error(error);process.exitCode=1;}
 });

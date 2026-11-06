@@ -1,5 +1,5 @@
 'use strict';
-const sourceFingerprint=require('./profile.cjs').fingerprint(),commitInfo=require('./profile.cjs').commitInfo();
+const sourceFingerprint=require('../verification/source-fingerprint.cjs').fingerprint(),commitInfo=require('../verification/source-fingerprint.cjs').commitInfo();
 const fs=require('node:fs'),path=require('node:path'),http=require('node:http'),os=require('node:os'),cp=require('node:child_process');
 const root=path.resolve(__dirname,'../..'),directory=require('../verification/layout.cjs').report(root,'performance/full-corpus'),web=process.env.FULL_CORPUS_WEB_ROOT?path.resolve(process.env.FULL_CORPUS_WEB_ROOT):path.join(root,'interlis-wasm-teavm/build/web');
 const prepared=JSON.parse(fs.readFileSync(path.join(directory,'prepared.json'),'utf8')),baseline=JSON.parse(fs.readFileSync(path.join(directory,'jvm.json'),'utf8'));
@@ -25,7 +25,7 @@ async function playwright(url){
   const selected=process.argv[2];if(selected&&!['chromium','firefox','webkit'].includes(selected))throw Error('unknown browser target');
   for(const [name,type]of [['chromium',chromium],['firefox',firefox],['webkit',webkit]].filter(([name])=>!selected||selected===name)){
     const out=path.join(directory,name+'.json');fs.rmSync(out,{force:true});let browser;
-    const report={...commitInfo,wasmSha256:require('./profile.cjs').hash(fs.readFileSync(path.join(web,'interlis-compiler.wasm'))),sourceFingerprint,runtime:'teavm-wasm-gc-browser',browser:name,node:process.version,os:os.platform(),arch:os.arch(),profile:prepared.profile,manifestSha256:prepared.manifestSha256,roots:[]};const started=performance.now();
+    const report={...commitInfo,wasmSha256:require('../verification/source-fingerprint.cjs').hash(fs.readFileSync(path.join(web,'interlis-compiler.wasm'))),sourceFingerprint,runtime:'teavm-wasm-gc-browser',browser:name,node:process.version,os:os.platform(),arch:os.arch(),profile:prepared.profile,manifestSha256:prepared.manifestSha256,roots:[]};const started=performance.now();
     try{
       browser=await type.launch({headless:true});report.browserVersion=browser.version();const context=await browser.newContext();const external=[];
       await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==new URL(url).origin){external.push(route.request().url());return route.abort();}return route.continue();});
@@ -40,7 +40,7 @@ async function playwright(url){
 }
 async function safari(url){
   const out=path.join(directory,'safari.json');fs.rmSync(out,{force:true});const driver='/System/Cryptexes/App/usr/bin/safaridriver';
-  if(!fs.existsSync(driver))throw Error('real Safari WebDriver unavailable');const report={...commitInfo,sourceFingerprint,wasmSha256:require('./profile.cjs').hash(fs.readFileSync(path.join(web,'interlis-compiler.wasm'))),runtime:'teavm-wasm-gc-browser',browser:'Safari',driverVersion:cp.execFileSync(driver,['--version'],{encoding:'utf8'}).trim(),node:process.version,os:os.platform(),arch:os.arch(),profile:prepared.profile,manifestSha256:prepared.manifestSha256,roots:[]};
+  if(!fs.existsSync(driver))throw Error('real Safari WebDriver unavailable');const report={...commitInfo,sourceFingerprint,wasmSha256:require('../verification/source-fingerprint.cjs').hash(fs.readFileSync(path.join(web,'interlis-compiler.wasm'))),runtime:'teavm-wasm-gc-browser',browser:'Safari',driverVersion:cp.execFileSync(driver,['--version'],{encoding:'utf8'}).trim(),node:process.version,os:os.platform(),arch:os.arch(),profile:prepared.profile,manifestSha256:prepared.manifestSha256,roots:[]};
   const port=44000+Math.floor(Math.random()*1000),base='http://127.0.0.1:'+port,child=cp.spawn(driver,['-p',String(port)],{stdio:['ignore','ignore','pipe']});let stderr='',session;child.stderr.on('data',b=>stderr+=b.toString());
   async function request(method,route,body,timeout=150000){const response=await fetch(base+route,{method,headers:{'content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(timeout)}),json=await response.json();if(!response.ok||json.value?.error)throw Error('Safari '+route+': '+JSON.stringify(json));return json.value;}
   const started=performance.now();

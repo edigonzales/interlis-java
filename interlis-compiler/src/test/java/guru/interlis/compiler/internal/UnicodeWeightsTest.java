@@ -14,7 +14,7 @@ class UnicodeWeightsTest {
     static final Path ROOT=Path.of(System.getProperty("repo.root"));
     static String sha(byte[] value) throws Exception {return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value));}
     static String pinned(String name,String sha) throws Exception {
-        return pinned(ROOT.resolve("docs/evidence/stabilization/registries/unicode-17.0.0/"+name+".txt.gz"),sha);
+        return pinned(ROOT.resolve("testdata/reference/unicode/17.0.0/"+name+".txt.gz"),sha);
     }
     static String pinned(Path path,String sha) throws Exception {
         byte[] bytes;

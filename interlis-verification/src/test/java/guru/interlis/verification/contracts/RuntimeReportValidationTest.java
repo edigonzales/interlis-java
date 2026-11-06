@@ -11,14 +11,14 @@ class RuntimeReportValidationTest {
     @ParameterizedTest @ValueSource(strings={"reference","project","teaVmJavaScript","teaVmWasmGC","webImageNode","safari","webImageBrowsers","sdkProcesses"})
     void eightEmptyGreenReportVariantsFail(String key) throws Exception {
         JsonElement value=JsonParser.parseString(key.equals("webImageBrowsers")?"[{\"browser\":\"chromium\",\"status\":\"passed\",\"result\":{\"status\":\"ok\"}},{\"browser\":\"firefox\",\"status\":\"passed\",\"result\":{\"status\":\"ok\"}},{\"browser\":\"webkit\",\"status\":\"passed\",\"result\":{\"status\":\"ok\"}}]":"{\"status\":\"passed\",\"overallResult\":\"PASS\",\"schemaVersion\":\"1.0\",\"commands\":[]}");
-        assertThrows(Exception.class,()->RuntimeReportAssertions.report(key,value,json("testdata/g2/a1-evidence-profile.json")));
+        assertThrows(Exception.class,()->RuntimeReportAssertions.report(key,value,json("testdata/verification/fixtures/runtime-report-profile.json")));
     }
     private JsonObject browser(JsonObject profile) {
         var row=JsonParser.parseString("{\"status\":\"ok\",\"analyzeRevision\":\"1\",\"compiledOutcome\":\"succeeded\",\"rejectedOutcome\":\"rejected\",\"workerRestartOutcome\":\"succeeded\",\"exactDecimal\":true,\"diagnostics\":0,\"diagramNodes\":2,\"diagramEdges\":0,\"diagramAssociations\":0}").getAsJsonObject();
         row.add("stabilizationCases",profile.get("portableCases"));row.add("capabilities",profile.get("projectVersion"));row.addProperty("outcome","succeeded");return row;
     }
-    @Test void completePortableAndBrowserFormatPassesWithExplicitHistoricalProfile() throws Exception {
-        var profile=json("testdata/g2/a1-evidence-profile.json");
+    @Test void completePortableAndBrowserFormatPassesWithSyntheticProfile() throws Exception {
+        var profile=json("testdata/verification/fixtures/runtime-report-profile.json");
         var runtime=JsonParser.parseString("{\"status\":\"passed\",\"runtime\":\"teavm-wasm-gc\",\"outcome\":\"succeeded\"}").getAsJsonObject();
         runtime.add("node",profile.get("nodeVersion"));runtime.add("tool",profile.get("projectVersion"));runtime.add("stabilizationCases",profile.get("portableCases"));
         RuntimeReportAssertions.report("teaVmWasmGC",runtime,profile); RuntimeReportAssertions.portable(browser(profile),profile,true);
@@ -26,14 +26,14 @@ class RuntimeReportValidationTest {
     }
     @ParameterizedTest @ValueSource(strings={"exactDecimal","diagnostics","diagramNodes","diagramEdges","diagramAssociations","analyzeRevision","compiledOutcome","rejectedOutcome","workerRestartOutcome","stabilizationCases"})
     void missingOrWrongBrowserPayloadFails(String key) throws Exception {
-        var profile=json("testdata/g2/a1-evidence-profile.json");var row=browser(profile);
+        var profile=json("testdata/verification/fixtures/runtime-report-profile.json");var row=browser(profile);
         if(key.equals("exactDecimal"))row.addProperty(key,false);else if(row.get(key).getAsJsonPrimitive().isNumber())row.addProperty(key,999);else row.addProperty(key,"broken");
         assertThrows(Exception.class,()->RuntimeReportAssertions.portable(row,profile,true));
     }
     @ParameterizedTest @ValueSource(strings={"[]","[{\"browser\":\"chromium\"}]","[{\"browser\":\"chromium\"},{\"browser\":\"chromium\"},{\"browser\":\"chromium\"}]"})
-    void partialOrDuplicateBrowserMatrixFails(String value) throws Exception {assertThrows(Exception.class,()->RuntimeReportAssertions.report("teaVmBrowsers",JsonParser.parseString(value),json("testdata/g2/a1-evidence-profile.json")));}
+    void partialOrDuplicateBrowserMatrixFails(String value) throws Exception {assertThrows(Exception.class,()->RuntimeReportAssertions.report("teaVmBrowsers",JsonParser.parseString(value),json("testdata/verification/fixtures/runtime-report-profile.json")));}
     @Test void completeBrowserAndSafariReportsPassAndFailedPayloadsDoNot() throws Exception {
-        var profile=json("testdata/g2/a1-evidence-profile.json"); JsonArray matrix=new JsonArray();
+        var profile=json("testdata/verification/fixtures/runtime-report-profile.json"); JsonArray matrix=new JsonArray();
         for(String name:java.util.List.of("chromium","firefox","webkit")) {
             JsonObject row=new JsonObject();row.addProperty("browser",name);row.addProperty("status","passed");
             row.addProperty("browserVersion","fixture-version");row.addProperty("playwright","fixture-version");row.add("node",profile.get("nodeVersion"));row.add("result",browser(profile));matrix.add(row);
@@ -59,7 +59,7 @@ class RuntimeReportValidationTest {
         var missing=data.deepCopy();missing.getAsJsonArray("commands").remove(0);assertThrows(Exception.class,()->RuntimeReportAssertions.sdk(missing));
     }
     @Test void detailedReferenceSummaryAndProjectReclassificationMustAgree() throws Exception {
-        var profile=json("testdata/g2/a1-evidence-profile.json");profile.getAsJsonObject("conformance").addProperty("selectedCases",2);profile.getAsJsonObject("conformance").addProperty("caseIdsSha256",hash("[\"one\",\"two\"]"));
+        var profile=json("testdata/verification/fixtures/runtime-report-profile.json");profile.getAsJsonObject("conformance").addProperty("selectedCases",2);profile.getAsJsonObject("conformance").addProperty("caseIdsSha256",hash("[\"one\",\"two\"]"));
         var raw=JsonParser.parseString("""
                 {"schemaVersion":"1.0","overallResult":"FAIL","summary":{"PASS":1,"XFAIL":0,"FAIL":1,"XPASS":0,"ERROR":0,"TOTAL":2},"compilers":[{"id":"interlis-java","tests":[{"testId":"one","classification":"PASS","languageVersion":"2.4","timedOut":false,"exitCode":0,"command":["compiler","one"],"actualOutcome":"accepted"},{"testId":"two","classification":"FAIL","languageVersion":"2.4","timedOut":false,"exitCode":1,"command":["compiler","two"],"actualOutcome":"rejected"}],"summary":{"PASS":1,"XFAIL":0,"FAIL":1,"XPASS":0,"ERROR":0,"TOTAL":2}}]}
                 """).getAsJsonObject();

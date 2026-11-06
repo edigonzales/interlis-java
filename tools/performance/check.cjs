@@ -1,5 +1,5 @@
 'use strict';
-const fs=require('node:fs'),path=require('node:path');const {root,hash,fingerprint}=require('./profile.cjs');
+const fs=require('node:fs'),path=require('node:path');const {root,hash,fingerprint}=require('../verification/source-fingerprint.cjs');
 const assert=(condition,message)=>{if(!condition)throw Error(message);};
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(k=>[k,canonical(value[k])])):value;
 const equal=(a,b)=>JSON.stringify(canonical(a))===JSON.stringify(canonical(b));
@@ -58,11 +58,11 @@ function evaluate({assessment,budgets,manifestSha256,sourceFingerprint,reports,e
 }
 function main(){
  const directory=require('../verification/layout.cjs').report(root,'performance/full-corpus'),read=p=>JSON.parse(fs.readFileSync(p,'utf8')),output=path.join(directory,'result.json');fs.rmSync(output,{force:true});
- const assessment=read(path.join(root,'docs/evidence/p3/full-corpus/assessment.json')),budgets=read(path.join(root,'docs/evidence/p3/full-corpus/budgets.json'));
+ const assessment=read(path.join(root,'testdata/corpus/full/assessment.json')),budgets=read(path.join(root,'testdata/corpus/full/budgets.json'));
  for(const rule of assessment.rules){assert(hash(fs.readFileSync(path.join(root,rule.control.source)))===rule.control.sourceSha256,'stale assessed control '+rule.id);}
  const reports=['jvm','wasm','chromium','firefox','webkit','safari'].map(target=>({...read(path.join(directory,target+'.json')),target}));
  const editors=['jvm','wasm'].map(target=>({...read(path.join(directory,'editor-'+target+'.json')),target}));
- const result=evaluate({assessment,budgets,manifestSha256:hash(fs.readFileSync(path.join(root,'docs/evidence/p3/full-corpus/manifest.json'))),sourceFingerprint:fingerprint(),productCommit:require('./profile.cjs').commitInfo().gitCommit,machine:{os:process.platform,arch:process.arch,cpu:require('node:os').cpus()[0].model,logicalCpus:require('node:os').cpus().length,memoryBytes:require('node:os').totalmem()},reports,editors,artifacts:read(path.join(directory,'artifacts.json')),observation:read(path.join(directory,'observation-pressure.json'))});
+ const result=evaluate({assessment,budgets,manifestSha256:hash(fs.readFileSync(path.join(root,'testdata/corpus/full/manifest.json'))),sourceFingerprint:fingerprint(),productCommit:require('../verification/source-fingerprint.cjs').commitInfo().gitCommit,machine:{os:process.platform,arch:process.arch,cpu:require('node:os').cpus()[0].model,logicalCpus:require('node:os').cpus().length,memoryBytes:require('node:os').totalmem()},reports,editors,artifacts:read(path.join(directory,'artifacts.json')),observation:read(path.join(directory,'observation-pressure.json'))});
  fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n');console.log('FULL_CORPUS_PERFORMANCE_PASS',JSON.stringify(result));
 }
 module.exports={evaluate};if(require.main===module)try{main();}catch(error){console.error('FULL_CORPUS_PERFORMANCE_FAIL',error);process.exitCode=1;}

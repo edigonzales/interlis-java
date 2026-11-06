@@ -13,8 +13,8 @@ public final class CompilerContractRun {
         Files.createDirectories(run);
         var verification=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
         var classpath=JenesisBridge.runtimeClasspath("interlis-verification",verification);
-        host(root,classpath,"guru.interlis.verification.CurrentContractSelection",List.of(root.toString(),run.resolve("plan").toString()),run.resolve("plan-process"));
-        host(root,classpath,"guru.interlis.verification.CurrentContractSelection",List.of("norms",root.toString(),run.resolve("norms").toString()),run.resolve("norm-process"));
+        host(root,classpath,"guru.interlis.verification.ContractSelectionWriter",List.of(root.toString(),run.resolve("plan").toString()),run.resolve("plan-process"));
+        host(root,classpath,"guru.interlis.verification.ContractSelectionWriter",List.of("norms",root.toString(),run.resolve("norms").toString()),run.resolve("norm-process"));
         var selection=new Properties();try(var reader=Files.newBufferedReader(run.resolve("plan/selection.properties"))){selection.load(reader);}
         var layout=new Properties();layout.setProperty("schemaVersion","1");layout.setProperty("builder","jenesis");layout.setProperty("root",root.toString());
         for(var entry:Map.of("compiler","target/jenesis-jvm/delivery/compiler","lsp","target/jenesis-jvm/delivery/lsp","sdk","target/jenesis-jvm/delivery/sdk.zip").entrySet())layout.setProperty(entry.getKey(),entry.getValue());

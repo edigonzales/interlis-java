@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipFile;
 import static guru.interlis.verification.HostChecks.*;
 
-/** The small historical reference profiles, separate from the external conformance runner. */
+/** The pinned reference profiles, separate from the external conformance runner. */
 public final class ReferenceProcesses {
     static final String ARCHIVE="0d6fc5dc739a490ef6b027072d58281bb0731c932f03d95662f83d20dc07c8ee";
     static final String JAR="37d94573d476fb7a187bf190dc2d5d3130050f46f90e8ab916af95bbffbfd49e";
@@ -38,11 +38,18 @@ public final class ReferenceProcesses {
     }
     static void profile(Path root,Path jar) throws Exception {
         Path output=VerificationLayout.forInvocation(root).rootReport("reference/reference-results.json");Files.deleteIfExists(output);
-        var original=read(root.resolve("docs/evidence/reference/reference-results.json"));List<Map<String,Object>> results=new ArrayList<>();
+        var profile=read(root.resolve("testdata/verification/reference-profile.json"));
+        require(profile.get("schemaVersion").getAsInt()==1 && s(profile,"tool").equals("ili2c")
+                && s(profile,"sourceSha256").equals(ARCHIVE), "Unknown reference profile");
+        List<Map<String,Object>> results=new ArrayList<>();
         Properties fixturePins=new Properties();try(var reader=Files.newBufferedReader(root.resolve("gradle/reference-fixtures.properties"))){fixturePins.load(reader);}
-        var cases=rows(original,"results");require(cases.size()==5 && cases.stream().map(r->s(r,"id")).collect(java.util.stream.Collectors.toSet()).equals(Set.of("base-survey-24","legacy-23","broken-24","trailing-24","missing-import")),"Changed reference profile");
+        var cases=rows(profile,"cases");require(cases.size()==5 && cases.stream().map(r->s(r,"id")).collect(java.util.stream.Collectors.toSet()).equals(Set.of("base-survey-24","legacy-23","broken-24","trailing-24","missing-import")),"Changed reference profile");
         for(var entry:cases) {
-            var files=strings(entry.get("files"));for(String file:files)pin(root.resolve(file),Objects.requireNonNull(fixturePins.getProperty(file),"Missing reference fixture pin"));
+            var files=strings(entry.get("files"));for(String file:files){
+                String expected = Objects.requireNonNull(fixturePins.getProperty(file), "Missing reference fixture pin");
+                require(expected.equals(s(entry.getAsJsonObject("fixtureSha256"), file)), "Reference fixture pins disagree: " + file);
+                pin(root.resolve(file), expected);
+            }
             var command=new ArrayList<>(strings(entry.get("extraArgs")));command.addAll(files);var result=reference(root,jar,command);
             require(result.exitCode()==entry.get("expectedExit").getAsInt() && !processError(result),"Reference profile failed: "+s(entry,"id")+": "+result);
             Map<String,Object> row=new LinkedHashMap<>();for(String key:List.of("id","files","extraArgs","expectedExit"))row.put(key,entry.get(key));

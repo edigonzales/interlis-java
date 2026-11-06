@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');const {evaluate}=require('./check.cjs');
 function fixture(){
- const assessment=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../docs/evidence/p3/full-corpus/assessment.json'))),budgets=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../docs/evidence/p3/full-corpus/budgets.json')));
+ const assessment=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../testdata/corpus/full/assessment.json'))),budgets=JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../testdata/corpus/full/budgets.json')));
  const sourceFingerprint='fixture-product',manifestSha256=assessment.manifestSha256;
  const roots=assessment.roots.map(r=>({...r,openMs:1,firstCompileMs:2,warmCompileMs:[1,1,1],semantic:{compile:r.outcome==='rejected'?{rejection:{reasons:r.reasons,diagnosticIds:r.diagnosticIds},diagnostics:r.diagnostics}:{outcome:'succeeded'},diagram:{completeness:'COMPLETE'},properties:[]}}));
  const reports=['jvm','wasm','chromium','firefox','webkit','safari'].map(target=>({gitCommit:'fixture-commit',dirty:false,target,java:'25.0.3',node:'v24.22.0',os:'darwin',arch:target==='jvm'?'aarch64':'arm64',browserVersion:'fixture-version',sourceFingerprint,manifestSha256,captureStatus:'complete',wasmSha256:'fixture-module',roots:structuredClone(roots),coldProcessMs:1,peakHeapBytes:1000,coldLoadMs:1,maxRssBytes:1000,externalRequests:[]}));

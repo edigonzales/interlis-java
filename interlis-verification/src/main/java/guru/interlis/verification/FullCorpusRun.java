@@ -60,7 +60,7 @@ public final class FullCorpusRun {
         var coldCommand=new ArrayList<>(javaCommand(FullCorpusCold.class.getName()));coldCommand.add(root.toString());
         var cold=run(root,coldCommand,java.time.Duration.ofSeconds(30));
         require(cold.exitCode()==0&&cold.stdout().startsWith("FULL_CORPUS_COLD_PASS "),"Fresh JVM process failed: "+cold);
-        var prepared=FullCorpus.prepare(root.resolve("docs/evidence/p3/full-corpus"));var bridge=new BridgeDispatcher();var results=new JsonArray();long started=System.nanoTime();
+        var prepared=FullCorpus.prepare(root.resolve("testdata/corpus/full"));var bridge=new BridgeDispatcher();var results=new JsonArray();long started=System.nanoTime();
         var report=new JsonObject();report.addProperty("sourceFingerprint",sourceFingerprint);report.addProperty("gitCommit",gitCommit);report.addProperty("dirty",dirty);report.addProperty("profile",s(prepared,"profile"));report.addProperty("manifestSha256",s(prepared,"manifestSha256"));report.addProperty("runtime","jvm");report.addProperty("java",System.getProperty("java.runtime.version"));report.addProperty("os",System.getProperty("os.name"));report.addProperty("arch",System.getProperty("os.arch"));report.addProperty("processors",Runtime.getRuntime().availableProcessors());report.add("roots",results);report.addProperty("coldProcessMs",cold.durationMs());
         try {
             for(var input:rows(prepared,"roots")){var result=capture(bridge,input,3);results.add(result);System.out.println("FULL_CORPUS_JVM "+results.size()+" "+s(input,"model")+" "+s(result,"outcome"));if(results.size()%10==0){Files.createDirectories(out.getParent());Files.writeString(out,RAW.toJson(report)+"\n");}}

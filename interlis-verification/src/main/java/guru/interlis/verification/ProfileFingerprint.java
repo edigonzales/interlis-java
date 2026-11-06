@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.*;
 import static guru.interlis.verification.HostChecks.*;
 
-/** Same explicit product/test/profile source binding as tools/performance/profile.cjs. */
+/** Same explicit product/test/profile source binding as tools/verification/source-fingerprint.cjs. */
 final class ProfileFingerprint {
     private ProfileFingerprint() { }
     static String commit(Path root) throws Exception {
@@ -21,17 +21,27 @@ final class ProfileFingerprint {
     static String current(Path root) throws Exception {
         var result=run(root,List.of("git","ls-files","--cached","--others","--exclude-standard","-z"),Duration.ofSeconds(10));
         require(result.exitCode()==0,"Cannot enumerate verification sources");
-        var files=new TreeSet<String>();for(var file:result.stdout().split("\\x00"))if(included(file))files.add(file);
-        require(files.size()>500,"Incomplete verification source binding");var text=new StringBuilder();
-        for(var file:files)text.append(file).append('\0').append(Files.isRegularFile(root.resolve(file))?hash(root.resolve(file)):"<deleted>").append('\n');
+        var inputs = read(root.resolve("testdata/verification/source-inputs.json"));
+        var paths = Set.copyOf(strings(inputs.get("paths")));
+        var prefixes = strings(inputs.get("prefixes"));
+        var suffixes = strings(inputs.get("suffixes"));
+        var files = new TreeSet<String>();
+        for (String file : result.stdout().split("\\x00")) {
+            if (paths.contains(file) || prefixes.stream().anyMatch(file::startsWith)
+                    || suffixes.stream().anyMatch(file::endsWith)) files.add(file);
+        }
+        require(files.size() > 500, "Incomplete verification source binding");
+        Path realRoot = root.toRealPath();
+        var text = new StringBuilder();
+        for (String file : files) {
+            Path path = realRoot.resolve(file);
+            String digest = "<deleted>";
+            if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+                require(Files.isRegularFile(path) && path.toRealPath().equals(path), "Unsafe source input: " + file);
+                digest = hash(path);
+            }
+            text.append(file).append('\0').append(digest).append('\n');
+        }
         return hash(text.toString().getBytes(StandardCharsets.UTF_8));
-    }
-    private static boolean included(String file) {
-        return file.endsWith("/.jenesis.skip")||file.startsWith("frontend/diagram-ui/")||file.startsWith("testdata/verification/")||file.startsWith("interlis-")||file.startsWith("tools/")||file.startsWith("gradle/")
-                ||file.startsWith(".github/workflows/")||file.startsWith("docs/spec/")
-                ||file.startsWith("docs/evidence/p3/full-corpus/")
-                ||file.startsWith("build.jenesis/")||file.startsWith("build/jenesis/")||file.startsWith("build/interlis/")
-                ||Set.of("pom.xml","jenesis.properties","jenesis-contracts.properties","build/InterlisJvmBuild.java","build/JENESIS-UPSTREAM.json",
-                        "build.gradle","settings.gradle","gradle.properties","gradlew","gradlew.bat").contains(file);
     }
 }

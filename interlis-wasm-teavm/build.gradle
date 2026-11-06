@@ -98,7 +98,7 @@ tasks.register('prepareBrowserHarness', Sync) {
     inputs.file(rootProject.file('tools/release/browser-manifest.cjs'))
     inputs.property('candidate', providers.exec {
         workingDir rootProject.projectDir
-        commandLine nodeExecutable.get(), '-e', "const p=require('./tools/performance/profile.cjs');process.stdout.write(JSON.stringify({fingerprint:p.fingerprint(),...p.commitInfo()}));"
+        commandLine nodeExecutable.get(), '-e', "const p=require('./tools/verification/source-fingerprint.cjs');process.stdout.write(JSON.stringify({fingerprint:p.fingerprint(),...p.commitInfo()}));"
     }.standardOutput.asText)
     doLast {
         providers.exec {
@@ -156,7 +156,7 @@ tasks.register('safariContractTest', Exec) {
 }
 
 tasks.named('prepareBrowserHarness') {
-    from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt'))
+    from(rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt'))
 }
 
 // The existing Node builder prepares the neutral renderer directly.

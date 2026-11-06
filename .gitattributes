@@ -2,3 +2,5 @@
 frontend/diagram-ui/test/fixtures/interactive.ili -text whitespace=cr-at-eol
 # Preserve the existing Gradle Windows launcher bytes in the Jenesis templates.
 build/interlis/templates/*.bat -text whitespace=cr-at-eol
+# Preserve the IANA registry source bytes and its CRLF line endings.
+testdata/reference/character-sets/character-sets-2026-10-02.csv -text whitespace=cr-at-eol,-blank-at-eol

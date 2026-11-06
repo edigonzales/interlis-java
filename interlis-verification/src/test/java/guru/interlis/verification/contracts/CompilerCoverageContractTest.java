@@ -13,9 +13,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /** Checks the manually reconciled existing worklist links, never accepts semantics by counting. */
 class CompilerCoverageContractTest {
-    private static final String LINKS="testdata/g2/completion-links.json";
     static JsonObject current() throws Exception {
-        return guru.interlis.verification.CurrentContractSelection.read(root());
+        return guru.interlis.verification.CompilerContractCatalog.load(root()).document();
     }
     private static void sameIds(List<JsonObject> actual,List<JsonObject> expected) {
         require(ids(actual,"id").equals(ids(expected,"id")),"Missing/foreign/duplicate worklist id");
@@ -28,14 +27,14 @@ class CompilerCoverageContractTest {
         }
     }
     static void validateCoverage(JsonObject document) throws Exception {
-        require(s(document,"status").equals("ASSERTION_LINKS_NOT_AUTOMATIC_ACCEPTANCE"),"Invented acceptance claim");pins(document.getAsJsonObject("sourcePins"));
+        require(document.get("schemaVersion").getAsInt()==1,"Invented acceptance claim");pins(document.getAsJsonObject("sourcePins"));
         var norm=new ArrayList<JsonObject>();for(var language:rows(data("norm-conditions"),"documents"))for(var condition:rows(language,"conditions"))if(s(condition,"kind").equals("COMPILER_RULE"))norm.add(condition);
         sameIds(rows(document,"conditions"),norm);
         for(var row:rows(document,"conditions")) {
             var original=norm.stream().filter(c->s(c,"id").equals(s(row,"id"))).findFirst().orElseThrow();require(s(row,"quoteSha256").equals(s(original,"quoteSha256")),"Changed norm quote");
             require(!row.has("pendingDetail")&&!s(row,"scope").isBlank(),"Unresolved compiler scope");
-            if(s(row,"disposition").equals("ASSERTIONS_LINKED"))require(!strings(row.get("links")).isEmpty(),"Unlinked compiler clause");
-            else require(s(row,"disposition").equals("OUTSIDE_G2_COMPILER"),"Unrecognised scope disposition");
+            if(s(row,"disposition").equals("COMPILER_REQUIRED"))require(!strings(row.get("links")).isEmpty(),"Unlinked compiler clause");
+            else require(Set.of("DEFERRED_PRODUCT_CONTRACT","NOT_APPLICABLE").contains(s(row,"disposition")),"Unrecognised scope disposition");
         }
         sameIds(rows(document,"requirements"),rows(data("test-candidate-index"),"requirements"));
         var grammar=data("grammar-inventory");sameIds(rows(document,"grammar"),rows(grammar,"productions"));
@@ -69,7 +68,7 @@ class CompilerCoverageContractTest {
     static void validateExecutedAssertions(JsonObject document) throws Exception {
         var modules=new TreeMap<String,Set<JUnitReportAssertions.Binding>>();
         for(var entry:document.getAsJsonObject("bindings").entrySet()) {
-            var b=entry.getValue().getAsJsonObject();String module=s(b,"source").split("/")[0];
+            var b=entry.getValue().getAsJsonObject();String module=s(b,"module");
             var expected=modules.computeIfAbsent(module,k->new LinkedHashSet<>());
             for(String name:strings(b.get("invocations")))require(expected.add(new JUnitReportAssertions.Binding(s(b,"suite"),name)),"Duplicate invocation binding");
         }

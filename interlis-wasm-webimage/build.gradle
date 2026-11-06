@@ -106,5 +106,5 @@ tasks.register('webImageProbe') {
 }
 
 tasks.named('webImagePrepareBrowser') {
-    from(rootProject.file('docs/evidence/stabilization/registries/UNICODE-LICENSE.txt'))
+    from(rootProject.file('testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt'))
 }

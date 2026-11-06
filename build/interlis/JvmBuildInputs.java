@@ -117,8 +117,6 @@ public final class JvmBuildInputs {
             try (var reader = Files.newBufferedReader(matrix)) { inputs.load(reader); }
             for (String value : inputs.values().stream().map(Object::toString).toList()) add(root, value, paths);
         }
-        if (module.equals("interlis-verification"))
-            for (String source : JenesisBridge.currentBindingInputs(root)) add(root, source, paths);
         var hashes=new TreeMap<String,String>();
         for(Path file:paths)hashes.put(root.relativize(file).toString().replace('\\','/'),sha256(file));
         return new InputSnapshot(hashes);
