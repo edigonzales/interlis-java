@@ -228,7 +228,7 @@ final class GraphBuilder {
             Objects.requireNonNull(graph, "graph");
             roots = List.copyOf(Objects.requireNonNull(roots, "roots"));
             models = List.copyOf(Objects.requireNonNull(models, "models"));
-            unsupportedFeatures = Map.copyOf(unsupportedFeatures);
+            unsupportedFeatures = unsupportedFeatures.isEmpty() ? Map.of() : Map.copyOf(unsupportedFeatures);
             fragmentTypeFailures = Set.copyOf(fragmentTypeFailures);
         }
     }

@@ -10,6 +10,7 @@ import guru.interlis.workspace.Workspace;
 import guru.interlis.workspace.WorkspaceConfiguration;
 import guru.interlis.workspace.Workspaces;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
+import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializedParams;
@@ -17,15 +18,17 @@ import org.eclipse.lsp4j.MessageActionItem;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
 import org.eclipse.lsp4j.ShowMessageRequestParams;
+import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4j.TextDocumentItem;
 import org.eclipse.lsp4j.launch.LSPLauncher;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.junit.jupiter.api.Test;
 
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -77,23 +80,22 @@ class LspProtocolCancellationTest {
                     }
                 });
         InterlisLanguageServer server = new InterlisLanguageServer(real, slow, CompilerServices.defaults());
-        PipedOutputStream clientOut = new PipedOutputStream();
-        PipedInputStream serverIn = new PipedInputStream(clientOut);
-        PipedOutputStream serverOut = new PipedOutputStream();
-        PipedInputStream clientIn = new PipedInputStream(serverOut);
-        var serverLauncher = LSPLauncher.createServerLauncher(server, serverIn, serverOut);
-        server.connect(serverLauncher.getRemoteProxy());
-        serverLauncher.startListening();
-        var clientLauncher = LSPLauncher.createClientLauncher(new Client(), clientIn, clientOut);
-        clientLauncher.startListening();
-        var endpoint = clientLauncher.getRemoteEndpoint();
-        try {
+        try (var listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+             var clientSocket = new Socket(listener.getInetAddress(), listener.getLocalPort());
+             var serverSocket = listener.accept()) {
+            var serverLauncher = LSPLauncher.createServerLauncher(server, serverSocket.getInputStream(), serverSocket.getOutputStream());
+            server.connect(serverLauncher.getRemoteProxy());
+            serverLauncher.startListening();
+            var clientLauncher = LSPLauncher.createClientLauncher(new Client(), clientSocket.getInputStream(), clientSocket.getOutputStream());
+            clientLauncher.startListening();
+            var endpoint = clientLauncher.getRemoteEndpoint();
             endpoint.request("initialize", new InitializeParams()).get(5, TimeUnit.SECONDS);
             endpoint.notify("initialized", new InitializedParams());
             String uri = "memory:/cancel.ili";
             endpoint.notify("textDocument/didOpen", new DidOpenTextDocumentParams(
                     new TextDocumentItem(uri, "interlis", 1, MODEL)));
-            Thread.sleep(100);
+            endpoint.request("textDocument/documentSymbol", new DocumentSymbolParams(new TextDocumentIdentifier(uri)))
+                    .get(5, TimeUnit.SECONDS);
 
             var compile = endpoint.request("workspace/executeCommand",
                     new ExecuteCommandParams("interlis.compile", List.of()));
@@ -112,12 +114,7 @@ class LspProtocolCancellationTest {
             endpoint.request("shutdown", null).get(5, TimeUnit.SECONDS);
             endpoint.notify("exit", null);
         } finally {
-            try {
-                clientOut.close();
-                serverOut.close();
-            } catch (java.io.IOException ignored) {
-                // Best-effort cleanup.
-            }
+            if (!server.shutdownRequested()) server.exit();
         }
     }
 

@@ -1,5 +1,6 @@
 package guru.interlis.compiler.internal;
 
+import guru.interlis.model.ClassValueType;
 import guru.interlis.model.ConstantExpression;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.EffectiveType;
@@ -91,7 +92,13 @@ final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGra
             case ENUMERATION, GEOMETRY -> type.kind() == previous.kind();
             default -> false;
         };
-        if (!completion || !previous.origin().equals(type.origin()))
+        // The builtin call specializes its unrestricted result at the call site.
+        boolean contextualClass = previous instanceof ClassValueType generic && generic.structureValue()
+                && generic.restrictions().isEmpty() && type instanceof ClassValueType
+                && generic.origin() instanceof Origin.PredefinedOrigin predefined
+                && predefined.key().equals(BuiltinFunctions.Value.CLASS_VALUE.name())
+                && type.origin() instanceof Origin.DeclaredOrigin;
+        if (!contextualClass && (!completion || !previous.origin().equals(type.origin())))
             throw new IllegalStateException("Invalid type completion: " + type.id());
         types.replace(type.id(), type);
     }

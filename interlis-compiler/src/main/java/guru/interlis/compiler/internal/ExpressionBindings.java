@@ -357,7 +357,7 @@ final class ExpressionBindings {
             List<SymbolId> targets = argument instanceof ReferenceType r ? r.targetRoots()
                     : argument instanceof guru.interlis.model.ObjectArgumentType o ? (o.restrictions().isEmpty() ? o.base().stream().toList() : o.restrictions())
                     : argument instanceof StructureValueType structure ? structure.targetRoots() : List.of();
-            typeBindings.defineType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()),
+            typeBindings.replaceType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()),
                     argument instanceof StructureValueType || guru.interlis.model.internal.TypeCompatibility.isUndefined(argument), targets));
         }
         if (!error && signature.rule()==BuiltinFunctions.Rule.CONVERT_UNIT) {
