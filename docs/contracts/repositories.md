@@ -152,7 +152,7 @@ hinzugefügtes Original oder Änderungen seiner Imports werden neu vorbereitet
 (RES-003/006). `WorkspaceTest` prüft Quellen in getrennten Dateien, Fehler und
 anschliessende Korrektur sowie das spätere Hinzufügen des Originals.
 
-L3-1 ergänzt ResolutionRequest.overlays mit SemanticOverlays; der bisherige
+`ResolutionRequest.overlays` führt `SemanticOverlays`. Der
 vierparametrige Konstruktor verwendet empty(). Workspace-Captures reichen
 dieselbe Compilerkonfiguration an die Vorbereitung weiter. Extern konfigurierte
 Translationen erzeugen wie Quelltranslationen Originalabhängigkeiten samt
@@ -160,7 +160,7 @@ transitiven Imports, ohne Originalnamensräume zu importieren. Auswahl und
 negative Abhängigkeiten berücksichtigen exakte Version/SourceHint; der
 Compiler überprüft die tatsächliche fachliche Zielbindung selbst.
 
-L3-1: SourceInventory.fingerprint ist eine längenpräfixierte UTF-16-Inhaltsidentität
+`SourceInventory.fingerprint` ist eine längenpräfixierte UTF-16-Inhaltsidentität
 (inventory-v2) aus SourceIds, Quellrevisionen/-inhalten und ResolverCatalog; der
 allgemeine WorkspaceRevision-Zähler gehört nicht hinein. Captures prüfen ihn
 weiterhin getrennt. ResolverCatalog.fingerprint verwendet ebenfalls sortierte
@@ -477,10 +477,7 @@ Offline lädt ausschliesslich verifizierte lokale Inhalte und kontaktiert keinen
 Proxy. FetchPolicy-Felder gehen in die deterministische Katalogrevision v4 ein;
 Proxywerte gehören weder zu Locks noch zum Compilerzustand.
 
-Abnahme: NET-01–05 in
-EXECUTION_PLAN.md,
-HttpNetworkPolicyTest, HttpSourceLoaderTest, RepositoryClientTest sowie die
-gezielten Cache-/CLI- und Distributionsfälle. Kein neues Compiler-/Bridgeformat.
+`HttpNetworkPolicyTest`, `HttpSourceLoaderTest` und `RepositoryClientTest` prüfen Connect-, Read- und Requestlimits, die Proxywahl, die typisierten Fehler und Offlinezugriffe. Cache-, CLI- und Distributionsfälle prüfen die Hostgrenzen gemeinsam.
 
 HTTP-Adressfehler (RES-009): Syntaktisch ungültige Redirect-Location und von der
 HTTP-Requestkonstruktion abgewiesene Zieladressen ergeben IO_FAILURE mit festem,

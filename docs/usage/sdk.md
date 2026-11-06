@@ -19,3 +19,21 @@ unveränderlich. Die [Compiler- und Modellverträge](../contracts/compiler-and-m
 definieren diese Gültigkeitsbereiche. Für Signaturen und Packageexports gilt
 die Javadoc der jeweiligen JVM-Module. Bibliotheks-, Wire-, Katalog- und
 Ausgabeformate haben getrennte Versionsidentitäten.
+
+
+## Getrennte Versionen
+
+| Vertrag | Wert | Bedeutung |
+|---|---|---|
+| Werkzeug und Artefakte | `0.2.0-SNAPSHOT` | Entwicklungsstand der ausgelieferten Module |
+| Öffentliche Java-API | `0.2` | Öffentliche Packages und Typen von `guru.interlis` |
+| Diagnosekatalog | `interlis-diagnostics/v4` | Stabile Diagnosecodes und typisierte Argumente |
+| Bridge | `interlis.compiler/1.0` | Nachrichtenhülle, Ergebnisse und Abfragen |
+| Quellformatierung | `2.0` | Formatierungsoptionen und Ergebnisvertrag |
+| Diagramm und Diagrammoptionen | `1.0` | Diagrammstruktur, Identitäten und Optionsschema |
+| Sprachprofile | INTERLIS 2.3 und 2.4 | [Geltende Sprachauslegung](../contracts/norm-decisions.md) |
+
+`version --json`, Bridge-Capabilities und das mitgelieferte
+Versionsmanifest stimmen in den gemeinsamen Feldern überein. Snapshot-
+und Schemahandles gehören zu ihrer Sitzung und Generation. Sie werden
+weder persistiert noch zwischen Clients übertragen.

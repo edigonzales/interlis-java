@@ -5145,7 +5145,7 @@
       "processEvidence": [
         {
           "source": "docs/usage/sdk.md",
-          "sha256": "5f00f953d2d50f129edea8f0eb41902147be33a8aafe073fdaaea7c5f932c3e2",
+          "sha256": "4207805f8f6c2e5ba73a30f4e6633b954afc7675703030afc6d143ce50db3c29",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
@@ -5197,7 +5197,7 @@
       "processEvidence": [
         {
           "source": "docs/usage/sdk.md",
-          "sha256": "5f00f953d2d50f129edea8f0eb41902147be33a8aafe073fdaaea7c5f932c3e2",
+          "sha256": "4207805f8f6c2e5ba73a30f4e6633b954afc7675703030afc6d143ce50db3c29",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
@@ -5207,7 +5207,7 @@
         },
         {
           "source": "docs/contracts/requirements.md",
-          "sha256": "8f8cb4c7eb049d29e12b565775381af4a186dbafe76c765545894a0750082f23",
+          "sha256": "b717397dd12ac1b1a720a1dd5e2591fc8ee035a2442f6a045ef236b5efedad61",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         }
       ],
@@ -16379,6 +16379,6 @@
     "testdata/reference/norms/builtin-inventory.json": "be9dc5e65b20c15163ebaf42829961bb632105f88d57d6c2f4ead7175ba2451b",
     "testdata/verification/predefined-catalogue.json": "ea279974005f7dace7922099e8ea8ea499bb96ddcac9a9c5eeacb19721911e85",
     "testdata/compiler/character-sets/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e",
-    "docs/contracts/requirements.md": "8f8cb4c7eb049d29e12b565775381af4a186dbafe76c765545894a0750082f23"
+    "docs/contracts/requirements.md": "b717397dd12ac1b1a720a1dd5e2591fc8ee035a2442f6a045ef236b5efedad61"
   }
 }
