@@ -1,0 +1,11 @@
+INTERLIS 2.4;
+
+MODEL GeometryArc24 (en) AT "https://example.invalid/iox-reference" VERSION "2026-11-06" =
+  TOPIC Records =
+    DOMAIN Point = COORD 0.000 .. 100.000 [INTERLIS.m], 0.000 .. 100.000 [INTERLIS.m];
+    CLASS Parcel =
+      shape : MANDATORY SURFACE WITH (STRAIGHTS, ARCS) VERTEX Point WITHOUT OVERLAPS > 0.050;
+      SET CONSTRAINT INTERLIS.areAreas(ALL, UNDEFINED, >>shape);
+    END Parcel;
+  END Records;
+END GeometryArc24.

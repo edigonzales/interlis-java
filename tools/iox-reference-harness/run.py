@@ -23,6 +23,8 @@ CORPUS = HARNESS.parents[1] / "testdata/reference/iox"
 JAVA_SOURCE = HARNESS / "LegacyProbe.java"
 LOCK_FILE = HARNESS / "legacy-lock.json"
 CASES_FILE = CORPUS / "cases.json"
+GEOMETRY_CASES_FILE = CORPUS / "geometry-cases.json"
+GEOMETRY_SOURCE = HARNESS / "geometry.py"
 TEMP_SAMPLE_MS = 5
 CASE_TIMEOUT_SECONDS = 30
 HEAP_LIMIT_BYTES = 2 * 1024**3
@@ -40,6 +42,7 @@ JVM_OPTIONS = [
     "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8",
     "-Djavax.xml.accessExternalDTD=", "-Djavax.xml.accessExternalSchema=",
 ]
+GC_LOG_OPTION = "-Xlog:gc,gc+heap=debug,gc+init,gc+heap+exit:file=../gc.log:uptimemillis,level,tags:filecount=0"
 ENV = {key: value for key, value in os.environ.items() if key not in {
     "CLASSPATH", "JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "JDK_JAVAC_OPTIONS", "_JAVA_OPTIONS",
 }}
@@ -252,9 +255,12 @@ def validator_check(case, stdout, stderr, versions, result):
         result["mismatches"].append("Unexpected validator output outside Info, Error, and Warning lines")
     if result["missingInfo"]:
         result["mismatches"].append("Missing validator phase, coverage, or version messages")
+    forbidden = [marker for marker in case.get("forbiddenInfo", []) if marker in info]
+    if forbidden:
+        result["mismatches"].append(f"Unexpected validation coverage: {forbidden}")
 
 
-def run_case(case, output, classpath, versions, limits=None, java="java"):
+def run_case(case, output, classpath, versions, limits=None, java="java", generated=None):
     work = output / case["id"]
     temp = work / "temp"
     home = (temp if limits else work) / "home"
@@ -265,11 +271,14 @@ def run_case(case, output, classpath, versions, limits=None, java="java"):
     model = inputs / Path(case["model"]).name
     xtf = inputs / Path(case["xtf"]).name
     shutil.copyfile(CORPUS / case["model"], model)
-    shutil.copyfile(CORPUS / case["xtf"], xtf)
+    if generated is None:
+        shutil.copyfile(CORPUS / case["xtf"], xtf)
+    else:
+        xtf.write_bytes(generated)
     heap_log = work / "heap.json"
     options = [*JVM_OPTIONS, f"-Duser.home={home}", f"-Djava.io.tmpdir={temp}"]
     if limits:
-        options += ["-Xlog:gc,gc+heap=debug,gc+init,gc+heap+exit:file=../gc.log:uptimemillis,level,tags:filecount=0"]
+        options.append(GC_LOG_OPTION)
     mode = "benchmark" if limits else case["mode"]
     argv = [java, *options, "-cp", classpath, "LegacyProbe", str(heap_log), mode]
     if case["mode"] == "read":
@@ -346,8 +355,11 @@ def benchmark_result(case, model, xtf, stdout, stderr, result):
     lines = stdout.splitlines() + stderr.splitlines()
     pools = [match.groups() for line in lines if (match := POOL_CLOSE.fullmatch(line))]
     result["poolCloseSizes"] = [{"pool": pool, "logicalBytes": int(size)} for pool, size in pools] or None
+    missing_pools = set(case.get("requiredPools", [])) - {pool for pool, _ in pools}
+    if missing_pools:
+        result["mismatches"].append(f"Missing required trace pools: {sorted(missing_pools)}")
     result["inputBytes"] = {case["model"]: model.stat().st_size, case["xtf"]: xtf.stat().st_size}
-    result["workload"] = case.get("workload")
+    result["workload"] = case.get("workload", {"profile": "reference-smoke-control"})
     result["verifiedInfo"] = [marker for marker in
                               ["first validation pass...", "second validation pass...", *case["requiredInfo"]]
                               if f"Info: {marker}" in lines]
@@ -357,6 +369,8 @@ def benchmark_result(case, model, xtf, stdout, stderr, result):
 
 
 def benchmark_limits(parser, args, selected):
+    import geometry
+
     if not args.archive or not args.archive.is_file():
         parser.error("BLOCKED_INPUT: --benchmark requires a local release ZIP via --archive")
     output = args.output or Path(tempfile.gettempdir())
@@ -370,11 +384,23 @@ def benchmark_limits(parser, args, selected):
         parser.error("--temp-limit-bytes must be between 1 and 1073741824")
     if not len(selected) <= args.max_cases <= 32:
         parser.error("--max-cases must cover the selected cases and be at most 32")
-    input_bytes = sum((CORPUS / case[key]).stat().st_size for case in selected for key in ("model", "xtf"))
-    if input_bytes > BENCHMARK_INPUT_BYTES or args.archive.stat().st_size > BENCHMARK_INPUT_BYTES:
-        parser.error("benchmark inputs or release ZIP exceed the 16 MiB preflight bound")
-    return {"timeoutSeconds": args.timeout_seconds, "tempLimitBytes": args.temp_limit_bytes,
-            "maxCases": args.max_cases, "maxInputBytes": BENCHMARK_INPUT_BYTES}
+    generated = {}
+    input_bytes = 0
+    for case in selected:
+        input_bytes += (CORPUS / case["model"]).stat().st_size
+        if "generate" in case:
+            transfer = geometry.transfer(case)
+            generated[case["id"]] = transfer
+            input_bytes += len(transfer)
+        else:
+            input_bytes += (CORPUS / case["xtf"]).stat().st_size
+        if input_bytes > BENCHMARK_INPUT_BYTES:
+            parser.error("benchmark inputs exceed the 16 MiB preflight bound")
+    if args.archive.stat().st_size > BENCHMARK_INPUT_BYTES:
+        parser.error("benchmark release ZIP exceeds the 16 MiB preflight bound")
+    limits = {"timeoutSeconds": args.timeout_seconds, "tempLimitBytes": args.temp_limit_bytes,
+              "maxCases": args.max_cases, "maxInputBytes": BENCHMARK_INPUT_BYTES}
+    return limits, generated
 
 
 def benchmark_jdk(output, report, env):
@@ -407,6 +433,10 @@ def main():
         parser.error("benchmark budget options require --benchmark")
 
     cases = read_json(CASES_FILE)
+    source_files = [Path(__file__), JAVA_SOURCE, LOCK_FILE, CASES_FILE]
+    if args.benchmark:
+        cases += read_json(GEOMETRY_CASES_FILE)
+        source_files += [GEOMETRY_CASES_FILE, GEOMETRY_SOURCE]
     ids = {case["id"] for case in cases}
     if not ids or len(ids) != len(cases):
         parser.error("case inventory must be nonempty with unique IDs")
@@ -414,6 +444,7 @@ def main():
         parser.error(f"unknown case IDs: {', '.join(sorted(set(args.case) - ids))}")
     selected = [case for case in cases if not args.case or case["id"] in args.case]
     limits = None
+    generated = {}
     if args.benchmark:
         if args.timeout_seconds is None:
             args.timeout_seconds = 30
@@ -421,7 +452,7 @@ def main():
             args.temp_limit_bytes = 64 * 1024**2
         if args.max_cases is None:
             args.max_cases = 8
-        limits = benchmark_limits(parser, args, selected)
+        limits, generated = benchmark_limits(parser, args, selected)
     archive_arg = str(args.archive.resolve()) if args.archive else None
     try:
         if args.output:
@@ -438,13 +469,15 @@ def main():
     report = {
         "schema": 1, "python": sys.version.splitlines()[0], "platform": platform.platform(),
         "invocation": [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]],
-        "sourceSha256": {path.name: sha256(path) for path in (Path(__file__), JAVA_SOURCE, LOCK_FILE, CASES_FILE)},
+        "sourceSha256": {path.name: sha256(path) for path in source_files},
         "selectedCases": [case["id"] for case in selected], "setup": [], "cases": [],
         "versions": lock["versions"], "logSha256Scope": "raw-output-of-this-run", "status": "FAIL",
     }
     if limits:
-        report.update(mode="benchmark", budgets=limits, architecture=platform.machine(), measurementScope={
+        report.update(mode="benchmark", budgets=limits, architecture=platform.machine(),
+                      jvmOptions=[*JVM_OPTIONS, GC_LOG_OPTION], measurementScope={
             "wallMillis": "JVM launch through exit observation, including model compilation and shutdown",
+            "processCpuMillis and peakRssBytes": "whole JVM process, including startup and shutdown",
             "heap": "JVM used heap sampled from probe startup through shutdown; GC time is a JVM estimate",
             "sampledPeakTempBytes": "named logical files in isolated JVM cwd, home and tmpdir",
             "sampledPeakScratchBytes": "temp bytes plus output logs and heap.json; sampled, not a filesystem quota",
@@ -466,7 +499,7 @@ def main():
                        "-d", str(classes), str(JAVA_SOURCE)], output, report, setup_env)
         classpath = os.pathsep.join(map(str, (classes, entrypoint)))
         for case in selected:
-            result = run_case(case, output, classpath, lock["versions"], limits, java)
+            result = run_case(case, output, classpath, lock["versions"], limits, java, generated.get(case["id"]))
             report["cases"].append(result)
             print(f"{result['status']:5} {result['id']} (exit {result['exitCode']})")
             if result.get("stopReason") == "interrupted":
