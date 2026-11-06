@@ -1,6 +1,6 @@
 # Entwurf für Transfer, Validierung und Datenbanken
 
-Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die API-Skizzen beschreiben den vorgesehenen Ausbau.
+Der formatunabhängige Transferkern steht in `interlis-transfer` für INTERLIS 2.3 und 2.4 zur Verfügung. `interlis-xtf23` liest und schreibt XTF-2.3-FULL-Transfers objektweise. Weitere Formatadapter, Datenvalidierung und Datenbankabbildung sind geplant. Die API-Skizzen beschreiben den vorgesehenen Ausbau.
 
 Die Verantwortung wird entlang fachlicher Produkte geschnitten:
 
@@ -102,6 +102,10 @@ Die Zuordnung formatspezifischer Tags gehört zum späteren Adapter. `TransferPl
 Ein `TransferObject` hält Identität, Typbezug und Attribut-/Rollenwerte eines einzelnen Objekts. Adapter legen Grössen- und Tiefengrenzen für einzelne Objekte fest. Der Kern hält die Modelldeklarationen, den aktiven Basketkontext und getrennte Mengen für BID und FULL-TID. Der Speicher für diese Kennungen wächst mit ihrer Anzahl und wird bei Transferende, Fehler oder Close freigegeben.
 
 Der Kern vergleicht die Zeichenwerte innerhalb dieser Namensräume unabhängig von der Herkunft `SOURCE` oder `SYNTHETIC`. Die OID-Regeln für INITIAL und UPDATE gehören zum jeweiligen Transferprofil. Der XTF-2.3-Adapter muss für FULL zusätzlich BID und TID gemeinsam prüfen, auch wenn die gleichlautende Kennung zuerst als TID erscheint. In XTF 2.4 gilt die transferweite Eindeutigkeit der FULL-TIDs und die allgemeine Objektstromregel für Behälter- und Objektidentifikationen. Die Akzeptanz gleicher Zeichenwerte in den getrennten Namensräumen des Kerns trifft keine Aussage über die Gültigkeit einer konkreten XTF-Codierung. [Gepinnte Normbelege und P4.0-Befunde](../reference/iox-legacy.md#normbelege)
+
+`Xtf23Reader` und `Xtf23Writer` verwenden vom Aufrufer verwaltete Streams. OIDSPACE-Deklarationen bleiben in Quellreihenfolge am Adapter verfügbar und lösen die Präfixe stabiler Identitäten auf. Der FULL-Adapter meldet nichtleere ALIAS-Tabellen, inkrementelle Transfers, CLIPPED-Geometrien, benutzerdefinierte Linienformen, Linienattribute, BLACKBOX, OID-Attributwerte und Modellpfadwerte ausdrücklich als nicht unterstützt. Er prüft die XML- und Wire-Struktur. Datenconstraints und Geometrietopologie gehören zur späteren Validierung.
+
+Der XTF-2.3-Header führt mindestens ein Modell. Ein leerer Datenbereich ist zulässig. Ein vorhandener BAG- oder LIST-Wrapper enthält mindestens eine Struktur. XTF 2.3 lässt undefinierte Attribute aus und erhält leeren TEXT als eigenen Wert.
 
 Das Datenmodell unterscheidet mindestens:
 

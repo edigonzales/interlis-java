@@ -184,7 +184,8 @@ final class Xtf23ObjectEncodingTest {
     void rejectsMalformedValuesAndFieldsWithoutDroppingThem() {
         for (String malformed : List.of(
                 "<quantity>01.20</quantity>", "<quantity>١٢</quantity>", "<flag>True</flag>",
-                "<shade>dark..red</shade>", "<label>a&#10;b</label>", "<details/>", "<sequence/>",
+                "<shade>dark..red</shade>", "<shade>OTHERS</shade>", "<shade>dark.OTHERS</shade>",
+                "<label>a&#10;b</label>", "<details/>", "<sequence/>",
                 "<one><Values.Data.Parent/></one>", "<flag>true</flag><flag>false</flag>",
                 "<label>before</label><flag>false</flag>", "<unknown/>",
                 "<one><Values.Data.Detail><owner REF=\"x\" ORDER_POS=\"1\"/></Values.Data.Detail></one>")) {

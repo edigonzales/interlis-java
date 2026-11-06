@@ -3,13 +3,10 @@ package guru.interlis.xtf23;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
-import guru.interlis.model.DomainReferenceType;
-import guru.interlis.model.DomainSymbol;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Modifier;
-import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
 import guru.interlis.model.SymbolKind;
@@ -70,8 +67,8 @@ public final class Xtf23Reader extends TransferReader {
     static final String NAMESPACE = "http://www.interlis.ch/INTERLIS2.3";
     static final Pattern XML_ID = Pattern.compile("(?:" + Xtf23OidSpace.NC_NAME + ":)?[A-Za-z0-9_][A-Za-z0-9_.-]*");
     private static final String VERSION = "2.3";
-    private static final int MAX_OID_SPACES = 4096;
-    private static final int MAX_IDENTIFIER = 4096;
+    static final int MAX_OID_SPACES = 4096;
+    static final int MAX_IDENTIFIER = 4096;
 
     private final TransferPlan plan;
     private final Xtf23Input xml;
@@ -131,7 +128,7 @@ public final class Xtf23Reader extends TransferReader {
             throw xml.translate(failure);
         } catch (RuntimeException failure) {
             clearTransferState();
-            throw failure;
+            throw failure instanceof Xtf23Exception xtfFailure ? xml.locate(xtfFailure) : failure;
         } finally {
             xml.finish();
         }
@@ -215,6 +212,9 @@ public final class Xtf23Reader extends TransferReader {
                 throw xml.error(UNSUPPORTED, "Model " + name + " does not use INTERLIS 2.3");
             }
             var symbol = (ModelSymbol) plan.symbol(model.symbol()).known().orElseThrow();
+            if (symbol.translation().isPresent()) {
+                throw xml.error(UNSUPPORTED, "Translated models require an XTF ALIAS table");
+            }
             if (!version.equals(model.modelVersion()) || !issuer.equals(symbol.issuer())) {
                 throw xml.error(INVALID_WIRE, "XTF declaration conflicts with model " + name);
             }
@@ -397,23 +397,13 @@ public final class Xtf23Reader extends TransferReader {
             lastPosition = positioned.position();
             var field = positioned.field();
             var value = field.embeddings().isEmpty() ? switch (field.slot()) {
-                case AttributeSlot attribute -> readValue(type(attribute.effectiveType()), name);
+                case AttributeSlot attribute -> readValue(layout.type(attribute.effectiveType()), name);
                 case RoleSlot role -> readRole(role, name);
             } : readEmbedded(field, name);
             data.put(field.slot().symbol(), value);
             token = xml.nextTag();
         }
         return data;
-    }
-
-    private TypeDescriptor type(TypeRef ref) {
-        var descriptor = plan.type(ref).known().orElseThrow();
-        while (descriptor instanceof DomainReferenceType alias) {
-            var domain = (DomainSymbol) plan.symbol(new SymbolRef(plan.snapshotId(), alias.targetDomain()))
-                    .known().orElseThrow();
-            descriptor = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
-        }
-        return descriptor;
     }
 
     private TransferValue readValue(TypeDescriptor type, String tag) throws XMLStreamException {
@@ -492,9 +482,9 @@ public final class Xtf23Reader extends TransferReader {
         attributes(false);
         int token = xml.nextTag();
         TransferGeometry geometry = switch (type) {
-            case CoordinateType coordinate -> readCoordinate(token, dimensions(coordinate));
+            case CoordinateType coordinate -> readCoordinate(token, layout.dimensions(coordinate));
             case GeometryType line -> {
-                var curve = curveEncoding(line);
+                var curve = layout.curveEncoding(line);
                 yield switch (line.geometryKind()) {
                     case POLYLINE -> readPolyline(token, curve);
                     case SURFACE, AREA -> readSurface(token, curve);
@@ -505,40 +495,6 @@ public final class Xtf23Reader extends TransferReader {
         };
         require(END_ELEMENT, xml.nextTag(), tag);
         return geometry;
-    }
-
-    private int dimensions(CoordinateType type) {
-        if (type.multiCoordinate() || type.dimensions() < 2) {
-            throw xml.error(UNSUPPORTED, "Only single two- and three-dimensional XTF coordinates are supported");
-        }
-        return type.dimensions();
-    }
-
-    private record CurveEncoding(int dimensions, boolean straights, boolean arcs) { }
-
-    private CurveEncoding curveEncoding(GeometryType type) {
-        if (type.lineAttributes().isPresent()) {
-            throw xml.error(UNSUPPORTED, "XTF LINEATTR is unsupported");
-        }
-        var domain = type.vertexDomain().flatMap(id -> plan.symbol(new SymbolRef(plan.snapshotId(), id)).known());
-        if (domain.isEmpty() || !(domain.orElseThrow() instanceof DomainSymbol vertex)
-                || !(type(new TypeRef(plan.snapshotId(), vertex.typeId())) instanceof CoordinateType coordinate)) {
-            throw xml.error(UNSUPPORTED, "XTF line type requires a concrete coordinate domain");
-        }
-        boolean straights = type.lineForms().isEmpty();
-        boolean arcs = type.lineForms().isEmpty();
-        for (var id : type.lineForms()) {
-            var symbol = plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow();
-            if (!(symbol.origin() instanceof Origin.PredefinedOrigin origin)) {
-                throw xml.error(UNSUPPORTED, "Custom XTF line forms are unsupported");
-            }
-            switch (origin.key()) {
-                case "INTERLIS.STRAIGHTS" -> straights = true;
-                case "INTERLIS.ARCS" -> arcs = true;
-                default -> throw xml.error(UNSUPPORTED, "Unsupported XTF line form " + origin.key());
-            }
-        }
-        return new CurveEncoding(dimensions(coordinate), straights, arcs);
     }
 
     private TransferGeometry.Coordinate readCoordinate(int token, int dimensions) throws XMLStreamException {
@@ -559,7 +515,7 @@ public final class Xtf23Reader extends TransferReader {
         return new TransferGeometry.Coordinate(ordinates);
     }
 
-    private TransferGeometry.Polyline readPolyline(int token, CurveEncoding curve) throws XMLStreamException {
+    private TransferGeometry.Polyline readPolyline(int token, Xtf23Layout.CurveEncoding curve) throws XMLStreamException {
         require(START_ELEMENT, token, "POLYLINE");
         attributes(false);
         token = xml.nextTag();
@@ -612,7 +568,7 @@ public final class Xtf23Reader extends TransferReader {
         return new TransferGeometry.Arc(support, end, radius);
     }
 
-    private TransferGeometry.Surface readSurface(int token, CurveEncoding curve) throws XMLStreamException {
+    private TransferGeometry.Surface readSurface(int token, Xtf23Layout.CurveEncoding curve) throws XMLStreamException {
         require(START_ELEMENT, token, "SURFACE");
         attributes(false);
         var shell = readBoundary(xml.nextTag(), curve);
@@ -625,7 +581,7 @@ public final class Xtf23Reader extends TransferReader {
         return new TransferGeometry.Surface(shell, holes);
     }
 
-    private TransferGeometry.Ring readBoundary(int token, CurveEncoding curve) throws XMLStreamException {
+    private TransferGeometry.Ring readBoundary(int token, Xtf23Layout.CurveEncoding curve) throws XMLStreamException {
         rejectGeometryExtension(token);
         require(START_ELEMENT, token, "BOUNDARY");
         attributes(false);
@@ -660,7 +616,7 @@ public final class Xtf23Reader extends TransferReader {
 
     private TransferValue.Repeated readCollection(CollectionType collection, String tag) throws XMLStreamException {
         attributes(false);
-        if (!(type(new TypeRef(plan.snapshotId(), collection.elementType())) instanceof StructureValueType structure)) {
+        if (!(layout.type(new TypeRef(plan.snapshotId(), collection.elementType())) instanceof StructureValueType structure)) {
             throw xml.error(UNSUPPORTED, "XTF 2.3 collections require structure values");
         }
         var values = new ArrayList<TransferValue>();
@@ -757,7 +713,7 @@ public final class Xtf23Reader extends TransferReader {
         return value;
     }
 
-    private static Optional<String> stableId(String value) {
+    static Optional<String> stableId(String value) {
         return value.indexOf(':') >= 0 ? Optional.of(value) : Optional.empty();
     }
 

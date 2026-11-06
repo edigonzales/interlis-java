@@ -22,7 +22,7 @@ final class Xtf23Input {
     static final int MAX_TOKEN_BYTES = 8 * MAX_TEXT;
     static final int MAX_OBJECT_UNITS = 16 * MAX_TEXT;
     private static final int MAX_OBJECT_TOKENS = 1_000_000;
-    private static final int MAX_DEPTH = 128;
+    static final int MAX_DEPTH = 128;
     private static final int MAX_ATTRIBUTES = 64;
     private static final int MAX_NAME = 1024;
 
@@ -169,6 +169,13 @@ final class Xtf23Input {
 
     Xtf23Exception error(Xtf23Exception.Reason reason, String message) {
         return failure(reason, message, xml == null ? null : xml.getLocation(), null);
+    }
+
+    Xtf23Exception locate(Xtf23Exception error) {
+        if (xml == null || error.line() > 0) {
+            return error;
+        }
+        return failure(error.reason(), error.getMessage(), xml.getLocation(), error);
     }
 
     Xtf23Exception translate(XMLStreamException e) {

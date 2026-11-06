@@ -22,8 +22,8 @@ final class Xtf23Lexemes {
     }
 
     static boolean enumeration(String value) {
-        return value.length() <= 4096 && !value.equals("OTHERS")
-                && Arrays.stream(value.split("\\.", -1)).allMatch(part -> NAME.matcher(part).matches());
+        return value.length() <= 4096 && Arrays.stream(value.split("\\.", -1))
+                .allMatch(part -> !part.equals("OTHERS") && NAME.matcher(part).matches());
     }
 
     static boolean decimal(String value) {

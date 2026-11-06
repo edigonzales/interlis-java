@@ -1,10 +1,17 @@
 package guru.interlis.xtf23;
 
 import guru.interlis.model.CardinalityUpper;
+import guru.interlis.model.CoordinateType;
+import guru.interlis.model.DomainReferenceType;
+import guru.interlis.model.DomainSymbol;
+import guru.interlis.model.GeometryType;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.Origin;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
+import guru.interlis.model.TypeDescriptor;
+import guru.interlis.model.TypeRef;
 import guru.interlis.transfer.AttributeSlot;
 import guru.interlis.transfer.ObjectDescriptor;
 import guru.interlis.transfer.RoleSlot;
@@ -119,6 +126,54 @@ final class Xtf23Layout {
     boolean matchesRoots(ObjectDescriptor descriptor, List<SymbolId> allowed) {
         return allowed.isEmpty() || ancestors(descriptor).stream()
                 .anyMatch(base -> allowed.contains(base.symbol().symbol()));
+    }
+
+    TypeDescriptor type(TypeRef ref) {
+        var descriptor = plan.type(ref).known().orElseThrow();
+        while (descriptor instanceof DomainReferenceType alias) {
+            var domain = (DomainSymbol) plan.symbol(new SymbolRef(plan.snapshotId(), alias.targetDomain()))
+                    .known().orElseThrow();
+            descriptor = plan.type(new TypeRef(plan.snapshotId(), domain.typeId())).known().orElseThrow();
+        }
+        return descriptor;
+    }
+
+    int dimensions(CoordinateType type) {
+        if (type.multiCoordinate() || type.dimensions() < 2) {
+            throw unsupported("Only single two- and three-dimensional XTF coordinates are supported");
+        }
+        return type.dimensions();
+    }
+
+    record CurveEncoding(int dimensions, boolean straights, boolean arcs) { }
+
+    CurveEncoding curveEncoding(GeometryType type) {
+        if (type.lineAttributes().isPresent()) {
+            throw unsupported("XTF LINEATTR is unsupported");
+        }
+        var domain = type.vertexDomain().flatMap(id -> plan.symbol(new SymbolRef(plan.snapshotId(), id)).known());
+        if (domain.isEmpty() || !(domain.orElseThrow() instanceof DomainSymbol vertex)
+                || !(type(new TypeRef(plan.snapshotId(), vertex.typeId())) instanceof CoordinateType coordinate)) {
+            throw unsupported("XTF line type requires a concrete coordinate domain");
+        }
+        boolean straights = type.lineForms().isEmpty();
+        boolean arcs = type.lineForms().isEmpty();
+        for (var id : type.lineForms()) {
+            var symbol = plan.symbol(new SymbolRef(plan.snapshotId(), id)).known().orElseThrow();
+            if (!(symbol.origin() instanceof Origin.PredefinedOrigin origin)) {
+                throw unsupported("Custom XTF line forms are unsupported");
+            }
+            switch (origin.key()) {
+                case "INTERLIS.STRAIGHTS" -> straights = true;
+                case "INTERLIS.ARCS" -> arcs = true;
+                default -> throw unsupported("Unsupported XTF line form " + origin.key());
+            }
+        }
+        return new CurveEncoding(dimensions(coordinate), straights, arcs);
+    }
+
+    private static Xtf23Exception unsupported(String message) {
+        return new Xtf23Exception(Xtf23Exception.Reason.UNSUPPORTED, message, -1, -1, null);
     }
 
     private Optional<Embedded> placement(ObjectDescriptor association) {
