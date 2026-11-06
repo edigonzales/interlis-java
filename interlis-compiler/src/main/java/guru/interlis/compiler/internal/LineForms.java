@@ -114,7 +114,7 @@ final class LineForms {
                 && c.axes().stream().allMatch(a -> a.minimum().isPresent() && a.maximum().isPresent()))
             tolerance = Optional.of(new GeometryType.TrackWidth(vertex.orElseThrow()));
         var result = new GeometryType(id, own.origin(), own.geometryKind(), forms, vertex, own.lineAttributes(), own.directed(), without, tolerance);
-        typeBindings.get().storeType(result);
+        typeBindings.get().replaceType(result);
         if (parent != null) {
             var relation = extension(result, parent);
             if (relation.decision() == RelationDecision.DISALLOWED)
@@ -233,7 +233,7 @@ final class LineForms {
             members.add(attribute(language, id, "ArcPoint", lineCoord(language), true));
             TypeId numeric = typeBindings.get().nextTypeId();
             var unit = units.builtinUnit(context.id(), "INTERLIS.LENGTH");
-            typeBindings.get().storeType(new NumericType(numeric, header.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
+            typeBindings.get().defineType(new NumericType(numeric, header.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
                     NumericDirection.NONE, unit, Optional.empty())));
             members.add(attribute(language, id, "Radius", numeric, false));
         }
@@ -253,18 +253,18 @@ final class LineForms {
         List<SymbolId> members = new ArrayList<>();
         if (name.equals("SurfaceEdge")) {
             TypeId geometry = typeBindings.get().nextTypeId();
-            typeBindings.get().storeType(new GeometryType(geometry, h.origin(), GeometryKind.POLYLINE, List.of(),
+            typeBindings.get().defineType(new GeometryType(geometry, h.origin(), GeometryKind.POLYLINE, List.of(),
                     Optional.empty(), Optional.empty(), true, false, Optional.empty()));
             members.add(attribute(language, h.id(), "Geometry", geometry, false));
             if (language == LanguageVersion.ILI23) {
-                TypeId attrs = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new GenericType(attrs, h.origin(), "ANYSTRUCTURE"));
+                TypeId attrs = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new GenericType(attrs, h.origin(), "ANYSTRUCTURE"));
                 members.add(attribute(language, h.id(), "LineAttrs", attrs, false, 1));
             }
         } else {
             String targetName = name.equals("SurfaceBoundary") ? "SurfaceEdge" : "LineSegment";
             var target = predefined(context, "INTERLIS." + targetName, Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            TypeId element = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new StructureValueType(element, h.origin(), Optional.of(target), List.of()));
-            TypeId list = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.unboundedFrom(0), element));
+            TypeId element = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new StructureValueType(element, h.origin(), Optional.of(target), List.of()));
+            TypeId list = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.unboundedFrom(0), element));
             members.add(attribute(language, h.id(), name.equals("SurfaceBoundary") ? "Lines" : "Segments", list, false));
         }
         state.defineSymbol(new StructureSymbol(h, Optional.empty(), members, List.of()));
@@ -285,16 +285,16 @@ final class LineForms {
         var structure = (StructureSymbol)state.symbol(line);
         if (!structure.constraints().isEmpty()) return;
         SymbolId attribute = structure.members().getFirst();
-        TypeId element = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
+        TypeId element = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new StructureValueType(element, structure.origin(), Optional.of(segment), List.of()));
         ExpressionId path = new ExpressionId(line.value() + ":first");
-        expressions.get().storeExpression(new PathExpression(path, element, ExpressionTypeState.RESOLVED, range, List.of(), new ObjectPath(List.of(
+        expressions.get().defineExpression(new PathExpression(path, element, ExpressionTypeState.RESOLVED, range, List.of(), new ObjectPath(List.of(
                 new PathStep.AttributeStep("Segments", attribute, range), new PathStep.IndexStep(new PathIndex(PathIndex.Kind.FIRST, Optional.empty()), element, range)))));
-        TypeId classType = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new ClassValueType(classType, structure.origin(), true, List.of(start)));
+        TypeId classType = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new ClassValueType(classType, structure.origin(), true, List.of(start)));
         ExpressionId value = new ExpressionId(line.value() + ":start");
-        expressions.get().storeExpression(new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
-        TypeId bool = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new BooleanType(bool, structure.origin()));
+        expressions.get().defineExpression(new SymbolValueExpression(value, classType, ExpressionTypeState.RESOLVED, range, start));
+        TypeId bool = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new BooleanType(bool, structure.origin()));
         ExpressionId call = new ExpressionId(line.value() + ":isStart");
-        expressions.get().storeExpression(new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(expressions.get().builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
+        expressions.get().defineExpression(new FunctionCallExpression(call, bool, ExpressionTypeState.RESOLVED, range, List.of(path, value), "INTERLIS.isOfClass", Optional.of(expressions.get().builtinDeclaration(BuiltinFunctions.find("isOfClass").orElseThrow(),owner.language()).id()), Map.of()));
         SymbolId constraint = new SymbolId(line.value() + ":startConstraint");
         Origin constraintOrigin = structure.origin() instanceof Origin.PredefinedOrigin predefined
                 ? new Origin.PredefinedOrigin(predefined.language(), predefined.key() + ".StartSegment")
@@ -310,7 +310,7 @@ final class LineForms {
         if (state.hasDeclaredType(domain)) return state.declaredType(domain);
         TypeId type = typeBindings.get().nextTypeId();
         var h = header(language, "LineCoord", SymbolKind.DOMAIN, Optional.empty(), Set.of(Modifier.ABSTRACT));
-        typeBindings.get().storeType(new CoordinateType(type, h.origin(), 2, List.of(NumericRange.unbounded(), NumericRange.unbounded()), false, Optional.empty(), Optional.empty()));
+        typeBindings.get().defineType(new CoordinateType(type, h.origin(), 2, List.of(NumericRange.unbounded(), NumericRange.unbounded()), false, Optional.empty(), Optional.empty()));
         state.defineSymbol(new DomainSymbol(h, type, Optional.empty(), false)); typeBindings.get().bindDeclaredType(domain, type);
         return type;
     }

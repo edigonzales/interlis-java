@@ -44,6 +44,7 @@ import guru.interlis.syntax.TopicSyntax;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -73,6 +74,7 @@ final class DeclarationBindings {
     private final ReferenceBindings references;
     private final TypeBindings typeBindings;
     private final ExpressionBindings expressions;
+    private final Map<SymbolId, Optional<Symbol>> provisionalSymbols = new HashMap<>();
     private final Set<SymbolId> buildingAssociations = new HashSet<>();
     private final Map<String, DeclInfo> modelNames = new LinkedHashMap<>();
 
@@ -302,11 +304,33 @@ final class DeclarationBindings {
 
     Symbol buildSymbol(DeclInfo decl) {
         work.checkpoint();
-        Symbol existing = state.symbol(decl.id());
+        SymbolId id = decl.id();
+        Symbol existing = state.symbol(id);
         if (existing != null) {
             return existing;
         }
-        Symbol symbol = switch (decl.kind()) {
+        boolean outermost = provisionalSymbols.putIfAbsent(id, Optional.empty()) == null;
+        try {
+            Symbol symbol = bindDeclaration(decl);
+            if (!id.equals(symbol.id()))
+                throw new IllegalStateException("Binder returned a different declaration: " + id);
+            Symbol published = state.symbol(id);
+            if (published != symbol) {
+                // Complete only the exact value published by a recursive dispatch of this declaration.
+                if (published != null && provisionalSymbols.get(id).orElse(null) == published)
+                    state.replaceSymbol(symbol);
+                else
+                    state.defineSymbol(symbol);
+            }
+            if (!outermost) provisionalSymbols.put(id, Optional.of(symbol));
+            return symbol;
+        } finally {
+            if (outermost) provisionalSymbols.remove(id);
+        }
+    }
+
+    private Symbol bindDeclaration(DeclInfo decl) {
+        return switch (decl.kind()) {
             case TOPIC -> buildTopic(decl);
             case CLASS -> buildClass(decl);
             case STRUCTURE -> buildStructure(decl);
@@ -333,10 +357,6 @@ final class DeclarationBindings {
             case VIEW_BASE -> views.buildBase(decl);
             case MODEL -> throw new IllegalStateException("model symbols are built separately");
         };
-        // A specialized binder can publish a provisional or shared declaration during dispatch.
-        if (state.hasSymbol(symbol.id())) state.replaceSymbol(symbol);
-        else state.defineSymbol(symbol);
-        return symbol;
     }
 
     private TopicSymbol buildTopic(DeclInfo decl) {
@@ -750,7 +770,7 @@ final class DeclarationBindings {
             if (!bound.error()) {
                 var roots = targets.stream().flatMap(t -> t.allowedRoots().stream()).toList();
                 var expected = new guru.interlis.model.ObjectArgumentType(typeBindings.nextTypeId(), decl.origin(), Optional.empty(), roots, false);
-                typeBindings.storeType(expected);
+                typeBindings.defineType(expected);
                 if (!typeBindings.assignable(bound.typeId(), expected.id())) diagnostics.emitTypeMismatch(decl.sourceId(), expression.range(), typeBindings.typeName(bound.typeId()), "single role target");
             }
             return bound.id();

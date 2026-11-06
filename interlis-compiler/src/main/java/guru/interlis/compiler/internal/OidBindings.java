@@ -196,12 +196,12 @@ final class OidBindings {
         Optional<TypeId> carrier = Optional.empty();
         if (kind != guru.interlis.model.OidKind.ANY) {
             TypeId value = typeBindings.get().nextTypeId();
-            typeBindings.get().storeType(kind == guru.interlis.model.OidKind.NUMERIC
+            typeBindings.get().defineType(kind == guru.interlis.model.OidKind.NUMERIC
                     ? new NumericType(value, origin, NumericRange.of(guru.interlis.model.DecimalLiteral.parse("0"), guru.interlis.model.DecimalLiteral.parse("2147483647")))
                     : new TextType(value, origin, TextKind.TEXT, java.util.OptionalInt.of(kind == guru.interlis.model.OidKind.UUID ? 36 : 16)));
             carrier = Optional.of(value);
         }
-        TypeId type = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new guru.interlis.model.OidType(type, origin, kind, carrier));
+        TypeId type = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new guru.interlis.model.OidType(type, origin, kind, carrier));
         typeBindings.get().bindDeclaredType(symbol, type); base.ifPresent(b -> inheritance.get().bindBase(symbol, b));
         defineOidDomain.accept(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN, DeclaredName.synthetic(name),
                 Optional.empty(), 0, origin, Optional.empty(), language,

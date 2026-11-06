@@ -126,6 +126,14 @@ class GraphicBindingContractTest {
         }
     }
 
+    @Test void cyclicGraphicInheritanceRejectsWithoutAnInternalFailure() {
+        for (var version : List.of("2.3", "2.4")) {
+            var body = BODY.replace("GRAPHIC Map BASED ON", "GRAPHIC Map EXTENDS Child BASED ON")
+                    .replace("END Maps;", "GRAPHIC Child EXTENDS Map = END Child; END Maps;");
+            bad(model(version, body), "GRAPHIC_CYCLE");
+        }
+    }
+
     @Test void translatedGraphicsCompareBoundAssignmentsAndTargets() {
         for(var version:List.of("2.3","2.4")) {
             var source=model(version,BODY).replace("MODEL M", "MODEL Original").replace("END M.","END Original.").replace("M.Data.Point","Original.Data.Point").replace("M.Signs.Mark","Original.Signs.Mark");

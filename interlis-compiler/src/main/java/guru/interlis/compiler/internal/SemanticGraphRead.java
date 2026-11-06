@@ -34,23 +34,23 @@ interface SemanticGraphRead {
     /** The portion of build state responsible for defining and completing symbols. */
     interface Symbols extends SemanticGraphRead {
         void defineSymbol(Symbol symbol);
-        void defineSymbolIfAbsent(Symbol symbol);
         void replaceSymbol(Symbol symbol);
     }
 
     /** Type descriptors, their allocation sequence, and declaration assignments. */
     interface Types extends SemanticGraphRead {
-        void storeType(TypeDescriptor type);
+        void defineType(TypeDescriptor type);
+        void replaceType(TypeDescriptor type);
         TypeId nextTypeId();
         int nextTypeSequence();
         void bindDeclaredType(SymbolId symbol, TypeId type);
-        void bindDeclaredTypeIfAbsent(SymbolId symbol, TypeId type);
         void setEffectiveType(SymbolId symbol, EffectiveType type);
     }
 
     /** Bound expressions and their allocation sequence. */
     interface Expressions extends SemanticGraphRead {
-        void storeExpression(TypedExpression expression);
+        void defineExpression(TypedExpression expression);
+        void replaceExpression(TypedExpression expression);
         ExpressionId nextExpressionId();
     }
 

@@ -206,7 +206,7 @@ final class SegmentContextualizer {
             }), t.restrictions().stream().map(this::type).toList());
             default -> throw new IllegalStateException("unhandled segment type: " + state.type(original).kind());
         };
-        typeBindings.storeType(result); return id;
+        typeBindings.defineType(result); return id;
     }
 
     private ExpressionId expression(ExpressionId original) {
@@ -229,7 +229,7 @@ final class SegmentContextualizer {
             case UndefinedExpression x -> new UndefinedExpression(id, type, state, range, children);
             case ErrorExpression x -> new ErrorExpression(id, type, state, range, children, x.causes());
         };
-        expressionBindings.storeExpression(result); return id;
+        expressionBindings.defineExpression(result); return id;
     }
 
     private PathStep step(PathStep step) {

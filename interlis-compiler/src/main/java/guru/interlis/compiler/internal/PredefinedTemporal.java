@@ -74,7 +74,7 @@ final class PredefinedTemporal {
                 : Optional.of(require(context, unit, SymbolKind.UNIT));
         var reference = system == null ? Optional.<NumericRange.ReferenceSystem>empty()
                 : Optional.of(new NumericRange.ReferenceSystem(timeSystem(context, system), false, OptionalInt.empty()));
-        typeBindings.get().storeType(new NumericType(id, origin(context, "numeric:" + unit),
+        typeBindings.get().defineType(new NumericType(id, origin(context, "numeric:" + unit),
                 new NumericRange(Optional.of(DecimalLiteral.parse(lo)), Optional.of(DecimalLiteral.parse(hi)),
                         circular, NumericDirection.NONE, boundUnit, reference)));
         return id;
@@ -90,7 +90,7 @@ final class PredefinedTemporal {
             var h = header(context, "TIMESYSTEMS." + className, SymbolKind.CLASS, Optional.of(topic.id()), classes.size(), Set.of());
             inheritance.bindBase(h.id(), base);
             var unitType = typeBindings.get().nextTypeId();
-            typeBindings.get().storeType(new NumericType(unitType, h.origin(), new NumericRange(Optional.empty(), Optional.empty(),
+            typeBindings.get().defineType(new NumericType(unitType, h.origin(), new NumericRange(Optional.empty(), Optional.empty(),
                     false, NumericDirection.NONE, units.builtinUnit(context.id(), "INTERLIS.TIME"), Optional.empty())));
             var original = header(context, "TIMESYSTEMS." + className + ".Unit", SymbolKind.PARAMETER, Optional.of(h.id()), 0, Set.of(Modifier.EXTENDED));
             var parameter = new SymbolHeader(original.id(), original.kind(), DeclaredName.declared("Unit"), original.owner(), 0,
@@ -125,7 +125,7 @@ final class PredefinedTemporal {
         List<SymbolId> members = new ArrayList<>();
         if (name.equals("GregorianDate")) {
             var type = typeBindings.get().nextTypeId();
-            typeBindings.get().storeType(new DomainReferenceType(type, h.origin(), require(context, "GregorianYear", SymbolKind.DOMAIN)));
+            typeBindings.get().defineType(new DomainReferenceType(type, h.origin(), require(context, "GregorianYear", SymbolKind.DOMAIN)));
             members.add(attribute(context, h, "Year", type, false, false, Optional.empty(), 0));
             members.add(attribute(context, h, "Month", number(context, "1", "12", "M", false, null), true, false, Optional.empty(), 1));
             members.add(attribute(context, h, "Day", number(context, "1", "31", "d", false, null), true, false, Optional.empty(), 2));
@@ -178,7 +178,7 @@ final class PredefinedTemporal {
             }
             type = typeBindings.get().nextTypeId();
             var kind = name.equals("XMLDate") ? TemporalKind.DATE : name.equals("XMLTime") ? TemporalKind.TIMEOFDAY : TemporalKind.DATETIME;
-            typeBindings.get().storeType(new FormattedType(type, h.origin(), "INTERLIS." + name, Optional.of(kind), base,
+            typeBindings.get().defineType(new FormattedType(type, h.origin(), "INTERLIS." + name, Optional.of(kind), base,
                     Optional.of(structure), parts, Optional.empty(), Optional.empty()));
         }
         state.defineSymbol(new DomainSymbol(h, type, base, false)); typeBindings.get().bindDeclaredType(h.id(), type);

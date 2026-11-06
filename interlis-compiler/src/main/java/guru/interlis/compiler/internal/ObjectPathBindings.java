@@ -167,7 +167,7 @@ final class ObjectPathBindings {
                 if (!valid) {
                     var diagnostic = diagnostics.emitRule(index.byId(owner).orElseThrow(), "invalid inspection path context", "VIEW_INSPECTION_CONTEXT");
                     currentType = typeBindings.get().nextTypeId();
-                    typeBindings.get().storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                    typeBindings.get().defineType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                     steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, name.range()));
                     error = true; break;
                 }
@@ -235,7 +235,7 @@ final class ObjectPathBindings {
                     Cardinality cardinality = accessCardinality(access, associationObject);
                     boolean many = incomingMany || isMany(cardinality);
                     currentType = typeBindings.get().nextTypeId();
-                    typeBindings.get().storeType(associationObject
+                    typeBindings.get().defineType(associationObject
                             ? new guru.interlis.model.ObjectArgumentType(currentType, new Origin.DeclaredOrigin(segment.range()),
                                     Optional.of(currentScope), List.of(), many)
                             : rolePathType(currentType, access.target().orElseThrow(), contextTopic, segment.range(), many));
@@ -257,7 +257,7 @@ final class ObjectPathBindings {
                             .argument(new DiagnosticArgument.IdentifierListArgument("candidates",
                                     accesses.stream().map(a -> a.association().value() + ":" + a.source().id().value()).toList())));
                     currentType = typeBindings.get().nextTypeId();
-                    typeBindings.get().storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
+                    typeBindings.get().defineType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
                     steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, segment.range()));
                     error = true;
                     break;
@@ -267,7 +267,7 @@ final class ObjectPathBindings {
                 DiagnosticId diagnostic = diagnostics.unresolved(name);
                 steps.add(new guru.interlis.model.PathStep.UnresolvedStep(text, name.range()));
                 TypeId errorType = typeBindings.get().nextTypeId();
-                typeBindings.get().storeType(new ErrorType(errorType,
+                typeBindings.get().defineType(new ErrorType(errorType,
                         new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                 currentType = errorType;
                 error = true;
@@ -281,7 +281,7 @@ final class ObjectPathBindings {
             if ((localPrefix || segment.index().isPresent()) && kind != SymbolKind.ATTRIBUTE) {
                 DiagnosticId diagnostic = diagnostics.emitTypeMismatch(expressions.get().ownerSource(owner), name.range(), "role", "structure attribute");
                 currentType = typeBindings.get().nextTypeId();
-                typeBindings.get().storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                typeBindings.get().defineType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                 error = true;
                 break;
             }
@@ -298,7 +298,7 @@ final class ObjectPathBindings {
                 RoleSymbol role = (RoleSymbol) ensureSymbol.apply(index.byId(member.get()).orElseThrow());
                 currentScope = commonRoleScope(role, contextTopic);
                 currentType = typeBindings.get().nextTypeId();
-                typeBindings.get().storeType(rolePathType(currentType, role, contextTopic, name.range(), incomingMany));
+                typeBindings.get().defineType(rolePathType(currentType, role, contextTopic, name.range(), incomingMany));
             } else {
                 steps.add(new guru.interlis.model.PathStep.AttributeStep(text, member.get(),
                         name.range()));
@@ -314,7 +314,7 @@ final class ObjectPathBindings {
                         DiagnosticId diagnostic = diagnostics.emitTypeMismatch(expressions.get().ownerSource(owner), segment.range(),
                                 typeBindings.get().typeName(currentType), "valid LIST position or coordinate axis");
                         currentType = typeBindings.get().nextTypeId();
-                        typeBindings.get().storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
+                        typeBindings.get().defineType(new ErrorType(currentType, new Origin.DeclaredOrigin(segment.range()), List.of(diagnostic)));
                         error = true;
                         break;
                     }
@@ -328,7 +328,7 @@ final class ObjectPathBindings {
                         DiagnosticId diagnostic = diagnostics.emitTypeMismatch(expressions.get().ownerSource(owner), name.range(),
                                 typeBindings.get().typeName(currentType), "structure attribute");
                         currentType = typeBindings.get().nextTypeId();
-                        typeBindings.get().storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                        typeBindings.get().defineType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                         error = true;
                         break;
                     }
@@ -340,11 +340,11 @@ final class ObjectPathBindings {
                     currentScope = commonObjectScope(roots);
                     currentType = typeBindings.get().nextTypeId();
                     if (incomingMany) {
-                        typeBindings.get().storeType(new guru.interlis.model.ObjectArgumentType(currentType,
+                        typeBindings.get().defineType(new guru.interlis.model.ObjectArgumentType(currentType,
                                 new Origin.DeclaredOrigin(name.range()), roots.size() == 1 ? Optional.of(roots.getFirst()) : Optional.empty(),
                                 roots.size() <= 1 ? List.of() : roots, true));
                     } else {
-                        typeBindings.get().storeType(new ReferenceType(currentType, new Origin.DeclaredOrigin(name.range()),
+                        typeBindings.get().defineType(new ReferenceType(currentType, new Origin.DeclaredOrigin(name.range()),
                                 reference.target().map(t -> contextualObject(t, contextTopic)),
                                 reference.restrictions().stream().map(t -> contextualObject(t, contextTopic)).toList(), reference.external()));
                     }
@@ -361,7 +361,7 @@ final class ObjectPathBindings {
                     DiagnosticId diagnostic = diagnostics.emitTypeMismatch(expressions.get().ownerSource(owner), name.range(),
                             "multiple attribute values", "single attribute value");
                     currentType = typeBindings.get().nextTypeId();
-                    typeBindings.get().storeType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
+                    typeBindings.get().defineType(new ErrorType(currentType, new Origin.DeclaredOrigin(name.range()), List.of(diagnostic)));
                     error = true;
                     break;
                 }
@@ -377,7 +377,7 @@ final class ObjectPathBindings {
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(), path);
-        expressions.get().storeExpression(expression);
+        expressions.get().defineExpression(expression);
         return new ExpressionResult(id, currentType, error);
     }
 
@@ -394,7 +394,7 @@ final class ObjectPathBindings {
         if (type instanceof CoordinateType coordinate && !coordinate.multiCoordinate() && position.isPresent()
                 && position.orElseThrow().compareTo(java.math.BigInteger.valueOf(coordinate.dimensions())) <= 0) {
             TypeId result = typeBindings.get().nextTypeId();
-            typeBindings.get().storeType(new NumericType(result, new Origin.DeclaredOrigin(range),
+            typeBindings.get().defineType(new NumericType(result, new Origin.DeclaredOrigin(range),
                     coordinate.axes().get(position.orElseThrow().intValueExact() - 1)));
             return result;
         }
@@ -541,18 +541,18 @@ final class ObjectPathBindings {
     /** Same participant-value type as an ordinary role path, for implicit 2.4
      * ALL OF values. One basis row denotes one link, not all its peer links. */
     TypeId roleValueType(RoleSymbol role,SymbolId owner,SourceRange range) {
-        TypeId id=typeBindings.get().nextTypeId();typeBindings.get().storeType(rolePathType(id,role,scopeRoot(owner),range,false));return id;
+        TypeId id=typeBindings.get().nextTypeId();typeBindings.get().defineType(rolePathType(id,role,scopeRoot(owner),range,false));return id;
     }
 
     TypeId objectPathType(SymbolId target, SourceRange range) {
         TypeId type = typeBindings.get().nextTypeId();
         if (inheritance.objectBase(target).isEmpty()) {
-            typeBindings.get().storeType(new guru.interlis.model.ObjectArgumentType(type, new Origin.DeclaredOrigin(range),
+            typeBindings.get().defineType(new guru.interlis.model.ObjectArgumentType(type, new Origin.DeclaredOrigin(range),
                     Optional.empty(), List.of(), false));
         } else if (index.byId(target).map(DeclInfo::kind).orElse(null) == SymbolKind.STRUCTURE) {
-            typeBindings.get().storeType(new StructureValueType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of()));
+            typeBindings.get().defineType(new StructureValueType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of()));
         } else {
-            typeBindings.get().storeType(new ReferenceType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of(), false));
+            typeBindings.get().defineType(new ReferenceType(type, new Origin.DeclaredOrigin(range), Optional.of(target), List.of(), false));
         }
         return type;
     }

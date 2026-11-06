@@ -199,9 +199,9 @@ final class ViewBuilder {
                             formation = Optional.of(new ViewSymbol.Aggregation(formationBases.getFirst(), equal));
                             var basis = (ViewSymbol.Base)state.symbol(formationBases.getFirst());
                             TypeId element = typeBindings.nextTypeId();
-                            typeBindings.storeType(new StructureValueType(element, decl.origin(), Optional.of(basis.target()), List.of()));
+                            typeBindings.defineType(new StructureValueType(element, decl.origin(), Optional.of(basis.target()), List.of()));
                             TypeId bag = typeBindings.nextTypeId();
-                            typeBindings.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG,
+                            typeBindings.defineType(new CollectionType(bag, decl.origin(), CollectionKind.BAG,
                                     new Cardinality(java.math.BigInteger.ZERO, new CardinalityUpper.Unbounded()), element));
                             SymbolId aggregateId = new SymbolId(decl.id().value() + ":AGGREGATES");
                             var h = new SymbolHeader(aggregateId, SymbolKind.ATTRIBUTE, DeclaredName.synthetic("AGGREGATES"),
@@ -240,21 +240,31 @@ final class ViewBuilder {
                     }
                     for (SymbolId id : inherited) {
                         work.checkpoint();
-                        if (state.symbol(id) instanceof RoleSymbol role && decl.language()==LanguageVersion.ILI24) {
-                            includeRole(decl,basis,all,role,result,scope);
+                        var original = state.symbol(id);
+                        if (!(original instanceof AttributeSymbol)
+                                && !(original instanceof RoleSymbol && decl.language() == LanguageVersion.ILI24)) continue;
+                        var copyId = new SymbolId(decl.id().value() + ":all:" + basis.id().value() + ":" + id.value());
+                        if (state.hasSymbol(copyId)) {
+                            diagnostics.emitRule(decl, "duplicate view attribute or basis name", "VIEW_ATTRIBUTE_DUPLICATE");
                             continue;
                         }
-                        if (!(state.symbol(id) instanceof AttributeSymbol attribute)) continue;
-                        var copyId = new SymbolId(decl.id().value() + ":all:" + basis.id().value() + ":" + id.value());
-                        var h = new SymbolHeader(copyId, SymbolKind.ATTRIBUTE, attribute.name(), Optional.of(decl.id()), result.size(),
-                                new Origin.DerivedOrigin(id, DerivationKind.ALIAS), Optional.empty(), decl.language(),
-                                attribute.header().documentation(), attribute.header().metaAttributes(), attribute.header().modifiers(), List.of());
-                        var expressionId = new ExpressionId(copyId.value() + ":expression");
-                        expressions.storeExpression(new PathExpression(expressionId, attribute.declaredType(), ExpressionTypeState.RESOLVED,
-                                all.base().range(), List.of(), new ObjectPath(List.of(new PathStep.ViewBaseStep(basis.id(), basisTarget(basis), all.base().range()),
-                                new PathStep.AttributeStep(attribute.name().value(), attribute.id(), all.base().range())))));
-                        var copy = new AttributeSymbol(h, attribute.declaredType(), attribute.mandatory() && !basis.orNull(),
-                                attribute.transientAttribute(), attribute.continuous(), attribute.subdivision(), Optional.empty(), List.of(expressionId));
+                        AttributeSymbol copy;
+                        if (original instanceof RoleSymbol role) {
+                            copy = copyRole(decl, basis, all, role, copyId, result.size());
+                        } else {
+                            var attribute = (AttributeSymbol) original;
+                            var h = new SymbolHeader(copyId, SymbolKind.ATTRIBUTE, attribute.name(), Optional.of(decl.id()), result.size(),
+                                    new Origin.DerivedOrigin(id, DerivationKind.ALIAS), Optional.empty(), decl.language(),
+                                    attribute.header().documentation(), attribute.header().metaAttributes(), attribute.header().modifiers(), List.of());
+                            var expressionId = new ExpressionId(copyId.value() + ":expression");
+                            expressions.defineExpression(new PathExpression(expressionId, attribute.declaredType(), ExpressionTypeState.RESOLVED,
+                                    all.base().range(), List.of(), new ObjectPath(List.of(new PathStep.ViewBaseStep(basis.id(), basisTarget(basis), all.base().range()),
+                                    new PathStep.AttributeStep(attribute.name().value(), attribute.id(), all.base().range())))));
+                            copy = new AttributeSymbol(h, attribute.declaredType(), attribute.mandatory() && !basis.orNull(),
+                                    attribute.transientAttribute(), attribute.continuous(), attribute.subdivision(), Optional.empty(), List.of(expressionId));
+                        }
+                        state.defineSymbol(copy);
+                        typeBindings.bindDeclaredType(copy.id(), copy.declaredType());
                         add(decl, copy, result, scope);
                     }
                 } else {
@@ -341,19 +351,18 @@ final class ViewBuilder {
      * attributes. Their value is one participant of this basis row, irrespective
      * of the relationship cardinality. The source role stays reachable through
      * both origin and path; optional joins do not promise a mandatory value. */
-    private void includeRole(DeclInfo owner,ViewSymbol.Base basis,ViewDeclarationSyntax.AllOf all,
-            RoleSymbol role,List<SymbolId> result,List<SymbolId> scope) {
-        var id=new SymbolId(owner.id().value()+":all:"+basis.id().value()+":"+role.id().value());
+    private AttributeSymbol copyRole(DeclInfo owner, ViewSymbol.Base basis, ViewDeclarationSyntax.AllOf all,
+            RoleSymbol role, SymbolId id, int position) {
         var type=paths.roleValueType(role,owner.id(),all.base().range());
         var modifiers=new HashSet<>(role.header().modifiers());modifiers.retainAll(Set.of(Modifier.ABSTRACT,Modifier.FINAL));
-        var header=new SymbolHeader(id,SymbolKind.ATTRIBUTE,role.name(),Optional.of(owner.id()),result.size(),
+        var header=new SymbolHeader(id,SymbolKind.ATTRIBUTE,role.name(),Optional.of(owner.id()),position,
                 new Origin.DerivedOrigin(role.id(),DerivationKind.ALIAS),Optional.empty(),owner.language(),
                 role.header().documentation(),role.header().metaAttributes(),modifiers,List.of());
         var expressionId=new ExpressionId(id.value()+":expression");
-        expressions.storeExpression(new PathExpression(expressionId,type,ExpressionTypeState.RESOLVED,all.base().range(),List.of(),
+        expressions.defineExpression(new PathExpression(expressionId,type,ExpressionTypeState.RESOLVED,all.base().range(),List.of(),
                 new ObjectPath(List.of(new PathStep.ViewBaseStep(basis.id(),basisTarget(basis),all.base().range()),
                         new PathStep.RoleStep(role.name().value(),role.id(),all.base().range())))));
-        add(owner,new AttributeSymbol(header,type,false,false,false,false,Optional.empty(),List.of(expressionId)),result,scope);
+        return new AttributeSymbol(header,type,false,false,false,false,Optional.empty(),List.of(expressionId));
     }
 
     record Inspected(ExpressionId path, SymbolId element, SymbolId parent, boolean area) {}
@@ -424,23 +433,23 @@ final class ViewBuilder {
         var restriction = syntax.restriction().map(r -> expressions.buildExpression(r, owner));
         if (inspected == null) {
             var diagnostic = diagnostics.emitRule(decl, "factor requires a bound inspection", "INSPECTION_FACTOR_TARGET");
-            TypeId type = typeBindings.nextTypeId(); typeBindings.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
-            expressions.storeExpression(new ErrorExpression(id, type, ExpressionTypeState.ERROR, syntax.range(), restriction.stream().map(ExpressionBindings.ExpressionResult::id).toList(), List.of(diagnostic)));
+            TypeId type = typeBindings.nextTypeId(); typeBindings.defineType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(diagnostic)));
+            expressions.defineExpression(new ErrorExpression(id, type, ExpressionTypeState.ERROR, syntax.range(), restriction.stream().map(ExpressionBindings.ExpressionResult::id).toList(), List.of(diagnostic)));
             return new ExpressionBindings.ExpressionResult(id, type, true);
         }
         factorSources.computeIfAbsent(decl.id(), ignored -> new LinkedHashSet<>()).add(view.orElse(source));
         boolean error = restriction.map(ExpressionBindings.ExpressionResult::error).orElse(false);
         if (restriction.isPresent() && !error) {
             TypeId expected = typeBindings.nextTypeId();
-            typeBindings.storeType(new ObjectArgumentType(expected, decl.origin(), Optional.of(source), List.of(), false));
+            typeBindings.defineType(new ObjectArgumentType(expected, decl.origin(), Optional.of(source), List.of(), false));
             if (!typeBindings.assignable(restriction.orElseThrow().typeId(), expected)) {
                 diagnostics.emitRule(decl, "inspection restriction requires one object specializing its source", "INSPECTION_FACTOR_RESTRICTION");
                 error = true;
             }
         }
-        TypeId element = typeBindings.nextTypeId(); typeBindings.storeType(new StructureValueType(element, decl.origin(), Optional.of(inspected.element()), List.of()));
-        TypeId bag = typeBindings.nextTypeId(); typeBindings.storeType(new CollectionType(bag, decl.origin(), CollectionKind.BAG, Cardinality.unboundedFrom(0), element));
-        expressions.storeExpression(new InspectionExpression(id, bag, error ? ExpressionTypeState.ERROR : ExpressionTypeState.RESOLVED,
+        TypeId element = typeBindings.nextTypeId(); typeBindings.defineType(new StructureValueType(element, decl.origin(), Optional.of(inspected.element()), List.of()));
+        TypeId bag = typeBindings.nextTypeId(); typeBindings.defineType(new CollectionType(bag, decl.origin(), CollectionKind.BAG, Cardinality.unboundedFrom(0), element));
+        expressions.defineExpression(new InspectionExpression(id, bag, error ? ExpressionTypeState.ERROR : ExpressionTypeState.RESOLVED,
                 syntax.range(), view, source, inspected.element(), inspected.path(), restriction.map(ExpressionBindings.ExpressionResult::id), inspected.area()));
         return new ExpressionBindings.ExpressionResult(id, bag, error);
     }
@@ -456,9 +465,6 @@ final class ViewBuilder {
     private void add(DeclInfo owner, AttributeSymbol attribute, List<SymbolId> result, List<SymbolId> scope) {
         if (scope.stream().anyMatch(id -> state.symbol(id).name().equals(attribute.name())))
             diagnostics.emitRule(owner, "duplicate view attribute or basis name", "VIEW_ATTRIBUTE_DUPLICATE");
-        if (state.hasSymbol(attribute.id())) state.replaceSymbol(attribute);
-        else state.defineSymbol(attribute);
-        typeBindings.bindDeclaredType(attribute.id(), attribute.declaredType());
         result.add(attribute.id()); scope.add(attribute.id());
     }
 
@@ -480,14 +486,14 @@ final class ViewBuilder {
         registerGeometryElement(lineGeometry, geometry, context, GeometryElementRole.LINE_GEOMETRY);
         if (geometry.geometryKind() == GeometryKind.POLYLINE || geometry.geometryKind() == GeometryKind.MULTIPOLYLINE) return lineGeometry;
         TypeId polyline = typeBindings.nextTypeId();
-        typeBindings.storeType(new GeometryType(polyline, geometry.origin(), GeometryKind.POLYLINE, geometry.lineForms(), geometry.vertexDomain(), geometry.lineAttributes(), true, geometry.withoutOverlaps(), geometry.overlap()));
+        typeBindings.defineType(new GeometryType(polyline, geometry.origin(), GeometryKind.POLYLINE, geometry.lineForms(), geometry.vertexDomain(), geometry.lineAttributes(), true, geometry.withoutOverlaps(), geometry.overlap()));
         Map<String, TypeId> fields = new LinkedHashMap<>(); fields.put("Geometry", polyline);
         if (owner.language() == LanguageVersion.ILI23) {
             TypeId lineAttrs = typeBindings.nextTypeId();
             if (geometry.lineAttributes().isPresent()) {
                 SymbolId target = geometry.lineAttributes().orElseThrow(); index.byId(target).ifPresent(ensureSymbol::apply);
-                typeBindings.storeType(new StructureValueType(lineAttrs, geometry.origin(), Optional.of(target), List.of()));
-            } else typeBindings.storeType(new GenericType(lineAttrs, geometry.origin(), "ANYSTRUCTURE"));
+                typeBindings.defineType(new StructureValueType(lineAttrs, geometry.origin(), Optional.of(target), List.of()));
+            } else typeBindings.defineType(new GenericType(lineAttrs, geometry.origin(), "ANYSTRUCTURE"));
             fields.put("LineAttrs", lineAttrs);
         }
         var edge = syntheticStructure(owner, geometry, "SurfaceEdge", fields);
@@ -499,8 +505,8 @@ final class ViewBuilder {
     }
 
     private TypeId collection(DeclInfo owner, SymbolId structure) {
-        TypeId element = typeBindings.nextTypeId(); typeBindings.storeType(new StructureValueType(element, owner.origin(), Optional.of(structure), List.of()));
-        TypeId list = typeBindings.nextTypeId(); typeBindings.storeType(new CollectionType(list, owner.origin(), CollectionKind.LIST,
+        TypeId element = typeBindings.nextTypeId(); typeBindings.defineType(new StructureValueType(element, owner.origin(), Optional.of(structure), List.of()));
+        TypeId list = typeBindings.nextTypeId(); typeBindings.defineType(new CollectionType(list, owner.origin(), CollectionKind.LIST,
                 Cardinality.unboundedFrom(0), element)); return list;
     }
 

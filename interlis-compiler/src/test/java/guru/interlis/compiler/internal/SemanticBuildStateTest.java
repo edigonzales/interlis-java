@@ -1,19 +1,27 @@
 package guru.interlis.compiler.internal;
 
+import guru.interlis.model.BooleanType;
 import guru.interlis.model.ClassSymbol;
+import guru.interlis.model.ConstantExpression;
 import guru.interlis.model.DeclaredName;
 import guru.interlis.model.Documentation;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.EffectiveMemberOrigin;
+import guru.interlis.model.ExpressionTypeState;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.MetaAttributeSet;
 import guru.interlis.model.Origin;
+import guru.interlis.model.PendingReason;
+import guru.interlis.model.PendingType;
 import guru.interlis.model.SnapshotId;
 import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolHeader;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.TypeId;
+import guru.interlis.source.SourceId;
+import guru.interlis.source.SourceRevision;
+import guru.interlis.source.SourceText;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -30,15 +38,15 @@ class SemanticBuildStateTest {
         var state = new SemanticBuildState();
         var first = declaration("first", "First");
         var second = declaration("second", "Second");
-        var replacement = declaration("first", "Completed");
+        var replacement = new ClassSymbol(first.header(), Optional.empty(), List.of(), List.of(new SymbolId("constraint")));
         state.defineSymbol(first);
         var live = state.symbolsInBuildOrder();
         var earlier = List.copyOf(live);
         state.defineSymbol(second);
-        state.defineSymbolIfAbsent(replacement);
         assertSame(first, state.symbol(first.id()));
         assertThrows(IllegalStateException.class, () -> state.defineSymbol(replacement));
         assertThrows(IllegalStateException.class, () -> state.replaceSymbol(declaration("missing", "Missing")));
+        assertThrows(IllegalStateException.class, () -> state.replaceSymbol(declaration("first", "Different")));
         state.replaceSymbol(replacement);
         assertEquals(List.of(replacement, second), List.copyOf(live));
         assertEquals(List.of(first), earlier);
@@ -62,10 +70,51 @@ class SemanticBuildStateTest {
         var reserved = state.nextTypeId();
         var other = state.nextTypeId();
         state.bindDeclaredType(owner, reserved);
-        state.bindDeclaredTypeIfAbsent(owner, other);
+        assertThrows(IllegalStateException.class, () -> state.bindDeclaredType(owner, other));
         assertEquals(reserved, state.declaredType(owner));
         assertThrows(UnsupportedOperationException.class,
                 () -> state.declaredTypesInBuildOrder().iterator().next().setValue(other));
+    }
+
+    @Test
+    void typeCompletionAndExpressionRetypingKeepTheirAllocatedIdentities() {
+        var state = new SemanticBuildState();
+        var source = new SourceText(new SourceId("memory:/state.ili"), new SourceRevision(1), "PI");
+        var range = source.range(0, 2);
+        var origin = new Origin.DeclaredOrigin(range);
+        var reserved = state.nextTypeId();
+        var other = state.nextTypeId();
+        var pending = new PendingType(reserved, origin, PendingReason.NOT_ANALYZED);
+        var completed = new BooleanType(reserved, origin);
+        var otherType = new BooleanType(other, origin);
+        assertThrows(IllegalStateException.class, () -> state.replaceType(completed));
+        state.defineType(pending);
+        assertThrows(IllegalStateException.class, () -> state.defineType(completed));
+        state.defineType(otherType);
+        assertThrows(IllegalStateException.class,
+                () -> state.replaceType(new BooleanType(reserved, new Origin.DeclaredOrigin(source.range(1, 2)))));
+        state.replaceType(completed);
+
+        var id = state.nextExpressionId();
+        var original = new ConstantExpression(id, other, ExpressionTypeState.RESOLVED, range, List.of(), "PI");
+        var retyped = new ConstantExpression(id, reserved, ExpressionTypeState.RESOLVED, range, List.of(), "PI");
+        assertThrows(IllegalStateException.class, () -> state.replaceExpression(retyped));
+        state.defineExpression(original);
+        assertThrows(IllegalStateException.class, () -> state.defineExpression(retyped));
+        assertThrows(IllegalStateException.class, () -> state.replaceExpression(
+                new ConstantExpression(id, reserved, ExpressionTypeState.RESOLVED, source.range(1, 2), List.of(), "PI")));
+        state.replaceExpression(retyped);
+
+        var graph = state.freeze(new SnapshotId("graph"), List.of(), List.of(), Set.of(),
+                Map.of(source.id(), source.revision()));
+        assertEquals(List.of(completed, otherType), List.copyOf(graph.types()));
+        assertEquals(List.of(retyped), List.copyOf(graph.expressions()));
+        assertThrows(IllegalStateException.class, () -> state.defineType(pending));
+        assertThrows(IllegalStateException.class, () -> state.replaceType(completed));
+        assertThrows(IllegalStateException.class, () -> state.defineExpression(original));
+        assertThrows(IllegalStateException.class, () -> state.replaceExpression(retyped));
+        assertThrows(IllegalStateException.class, state::nextTypeId);
+        assertThrows(IllegalStateException.class, state::nextTypeSequence);
     }
 
     @Test

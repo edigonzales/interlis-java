@@ -1,10 +1,14 @@
 package guru.interlis.compiler.internal;
 
+import guru.interlis.model.ConstantExpression;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.EffectiveType;
 import guru.interlis.model.ExpressionId;
+import guru.interlis.model.FunctionCallExpression;
 import guru.interlis.model.LanguageVersion;
+import guru.interlis.model.LiteralExpression;
 import guru.interlis.model.NameReference;
+import guru.interlis.model.Origin;
 import guru.interlis.model.ReferenceId;
 import guru.interlis.model.SemanticGraph;
 import guru.interlis.model.SnapshotId;
@@ -12,6 +16,7 @@ import guru.interlis.model.Symbol;
 import guru.interlis.model.SymbolId;
 import guru.interlis.model.TypeDescriptor;
 import guru.interlis.model.TypeId;
+import guru.interlis.model.TypeKind;
 import guru.interlis.model.TypedExpression;
 import guru.interlis.source.SourceId;
 import guru.interlis.source.SourceRevision;
@@ -49,16 +54,20 @@ final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGra
         }
     }
 
-    public void defineSymbolIfAbsent(Symbol symbol) {
-        requireOpen();
-        symbols.putIfAbsent(symbol.id(), symbol);
-    }
-
     public void replaceSymbol(Symbol symbol) {
         requireOpen();
-        if (symbols.replace(symbol.id(), symbol) == null) {
-            throw new IllegalStateException("Symbol not defined: " + symbol.id());
+        Symbol previous = symbols.get(symbol.id());
+        if (previous == null) throw new IllegalStateException("Symbol not defined: " + symbol.id());
+        boolean attachingPredefined = previous.origin() instanceof Origin.PredefinedOrigin
+                && previous.owner().isEmpty() && symbol.owner().isPresent();
+        if (previous.kind() != symbol.kind() || !previous.name().equals(symbol.name())
+                || !previous.origin().equals(symbol.origin()) || !previous.nameRange().equals(symbol.nameRange())
+                || previous.languageVersion() != symbol.languageVersion()
+                || (!attachingPredefined && (!previous.owner().equals(symbol.owner())
+                        || previous.declarationOrder() != symbol.declarationOrder()))) {
+            throw new IllegalStateException("Replacement changes symbol identity: " + symbol.id());
         }
+        symbols.replace(symbol.id(), symbol);
     }
 
     /** Read-only live view in insertion order. Take a snapshot before adding symbols while iterating. */
@@ -66,21 +75,51 @@ final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGra
 
     public TypeDescriptor type(TypeId id) { return types.get(id); }
 
-    public void storeType(TypeDescriptor type) {
+    public void defineType(TypeDescriptor type) {
         requireOpen();
-        types.put(type.id(), type);
+        if (types.putIfAbsent(type.id(), type) != null)
+            throw new IllegalStateException("Type already defined: " + type.id());
+    }
+
+    public void replaceType(TypeDescriptor type) {
+        requireOpen();
+        TypeDescriptor previous = types.get(type.id());
+        if (previous == null) throw new IllegalStateException("Type not defined: " + type.id());
+        boolean completion = switch (previous.kind()) {
+            case PENDING -> type.kind() != TypeKind.PENDING;
+            case NUMERIC, COORDINATE -> type.kind() == previous.kind() || type.kind() == TypeKind.ERROR;
+            case ENUMERATION, GEOMETRY -> type.kind() == previous.kind();
+            default -> false;
+        };
+        if (!completion || !previous.origin().equals(type.origin()))
+            throw new IllegalStateException("Invalid type completion: " + type.id());
+        types.replace(type.id(), type);
     }
 
     public TypedExpression expression(ExpressionId id) { return expressions.get(id); }
 
-    public void storeExpression(TypedExpression expression) {
+    public void defineExpression(TypedExpression expression) {
         requireOpen();
-        expressions.put(expression.id(), expression);
+        if (expressions.putIfAbsent(expression.id(), expression) != null)
+            throw new IllegalStateException("Expression already defined: " + expression.id());
+    }
+
+    public void replaceExpression(TypedExpression expression) {
+        requireOpen();
+        TypedExpression previous = expressions.get(expression.id());
+        if (previous == null) throw new IllegalStateException("Expression not defined: " + expression.id());
+        if (!(previous instanceof LiteralExpression || previous instanceof ConstantExpression
+                || previous instanceof FunctionCallExpression) || previous.getClass() != expression.getClass()
+                || !previous.range().equals(expression.range()) || !previous.children().equals(expression.children())) {
+            throw new IllegalStateException("Replacement changes expression identity: " + expression.id());
+        }
+        expressions.replace(expression.id(), expression);
     }
 
     void storeReference(NameReference reference) {
         requireOpen();
-        references.put(reference.id(), reference);
+        if (references.putIfAbsent(reference.id(), reference) != null)
+            throw new IllegalStateException("Reference already defined: " + reference.id());
     }
 
     public TypeId declaredType(SymbolId id) { return declaredTypes.get(id); }
@@ -90,12 +129,8 @@ final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGra
 
     public void bindDeclaredType(SymbolId symbol, TypeId type) {
         requireOpen();
-        declaredTypes.put(symbol, type);
-    }
-
-    public void bindDeclaredTypeIfAbsent(SymbolId symbol, TypeId type) {
-        requireOpen();
-        declaredTypes.putIfAbsent(symbol, type);
+        if (declaredTypes.putIfAbsent(symbol, type) != null)
+            throw new IllegalStateException("Declared type already bound: " + symbol);
     }
 
     /** Read-only live view in insertion order. */
@@ -105,7 +140,8 @@ final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGra
 
     public void setEffectiveType(SymbolId symbol, EffectiveType type) {
         requireOpen();
-        effectiveTypes.put(symbol, type);
+        if (effectiveTypes.putIfAbsent(symbol, type) != null)
+            throw new IllegalStateException("Effective type already defined: " + symbol);
     }
 
     /** Returns the members in effective order, or an empty list if none have been recorded. */
@@ -115,7 +151,8 @@ final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGra
 
     public void setEffectiveMembers(SymbolId owner, List<EffectiveMember> members) {
         requireOpen();
-        effectiveMembers.put(owner, List.copyOf(members));
+        if (effectiveMembers.putIfAbsent(owner, List.copyOf(members)) != null)
+            throw new IllegalStateException("Effective members already defined: " + owner);
     }
 
     /** Read-only live view in insertion order, with immutable member lists. */
@@ -129,7 +166,9 @@ final class SemanticBuildState implements SemanticGraphRead.Symbols, SemanticGra
 
     public void bindBase(SymbolId symbol, SymbolId base) {
         requireOpen();
-        bases.put(symbol, base);
+        SymbolId previous = bases.putIfAbsent(symbol, base);
+        if (previous != null && !previous.equals(base))
+            throw new IllegalStateException("Conflicting base for symbol: " + symbol);
     }
 
     public TypeId nextTypeId() { return new TypeId("type-" + nextTypeSequence()); }

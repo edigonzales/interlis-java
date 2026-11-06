@@ -296,7 +296,7 @@ final class MetadataBindings {
         List<SymbolId> members = new ArrayList<>();
         List<SymbolId> constraints = new ArrayList<>();
         if (name.equals("INTERLIS.METAOBJECT") || name.equals("INTERLIS.METAOBJECT_TRANSLATION")) {
-            var t = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new TextType(t, h.origin(), TextKind.NAME, OptionalInt.of(255)));
+            var t = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new TextType(t, h.origin(), TextKind.NAME, OptionalInt.of(255)));
             var names = name.equals("INTERLIS.METAOBJECT") ? List.of("Name") : List.of("Name", "NameInBaseLanguage");
             for (int i = 0; i < names.size(); i++) {
                 work.checkpoint(); members.add(member(h, names.get(i), t, false, true, i));
@@ -308,25 +308,25 @@ final class MetadataBindings {
                 var ch = header(context.language(), name.substring(9) + "." + names.get(i) + "Unique",
                         SymbolKind.CONSTRAINT, Optional.of(h.id()), names.size() + i, Set.of());
                 var expression = new ExpressionId(ch.id().value() + ":path");
-                expressions.get().storeExpression(new PathExpression(expression, t, ExpressionTypeState.RESOLVED, range, List.of(),
+                expressions.get().defineExpression(new PathExpression(expression, t, ExpressionTypeState.RESOLVED, range, List.of(),
                         new ObjectPath(List.of(new PathStep.AttributeStep(names.get(i), members.get(i), range)))));
                 state.defineSymbol(new ConstraintSymbol(ch, new UniquenessConstraint(Optional.empty(), false, Optional.empty(), List.of(expression), List.of()), Optional.empty()));
                 constraints.add(ch.id());
             }
         }
         if (name.equals("INTERLIS.AXIS") || name.equals("INTERLIS.SCALSYSTEM")) {
-            var t = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new NumericType(t, h.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
+            var t = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new NumericType(t, h.origin(), new NumericRange(Optional.empty(), Optional.empty(), false,
                     NumericDirection.NONE, units.builtinUnit(context.id(), "INTERLIS.ANYUNIT"), Optional.empty())));
             members.add(member(h, "Unit", t, true, false, 0));
         }
         if (name.equals("INTERLIS.COORDSYSTEM")) {
             var axis = predefined(context, "INTERLIS.AXIS", Set.of(SymbolKind.STRUCTURE)).orElseThrow();
-            var t = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new StructureValueType(t, h.origin(), Optional.of(axis), List.of()));
-            var list = typeBindings.get().nextTypeId(); typeBindings.get().storeType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.of(1, 3), t));
+            var t = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new StructureValueType(t, h.origin(), Optional.of(axis), List.of()));
+            var list = typeBindings.get().nextTypeId(); typeBindings.get().defineType(new CollectionType(list, h.origin(), CollectionKind.LIST, Cardinality.of(1, 3), t));
             members.add(member(h, "Axis", list, false, false, 0));
         }
         if (name.equals("INTERLIS.SIGN")) {
-            var type=typeBindings.get().nextTypeId(); typeBindings.get().storeType(new MetaObjectType(type,h.origin(),Optional.empty()));
+            var type=typeBindings.get().nextTypeId(); typeBindings.get().defineType(new MetaObjectType(type,h.origin(),Optional.empty()));
             members.add(member(h,"Sign",type,true,false, 0));
         }
         state.defineSymbol(kind == SymbolKind.CLASS ? new ClassSymbol(h, base, members, constraints) : new StructureSymbol(h, base, members, constraints));

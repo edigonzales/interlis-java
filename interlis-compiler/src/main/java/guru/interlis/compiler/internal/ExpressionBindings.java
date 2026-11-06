@@ -157,7 +157,7 @@ final class ExpressionBindings {
                 ErrorExpression expression = new ErrorExpression(id, error,
                         guru.interlis.model.ExpressionTypeState.ERROR, unsupported.range(),
                         List.of(), List.of(diagnostic));
-                state.storeExpression(expression);
+                state.defineExpression(expression);
                 yield new ExpressionResult(id, error, true);
             }
         };
@@ -173,14 +173,14 @@ final class ExpressionBindings {
             var kind = index.byId(context).map(DeclInfo::kind).orElse(null);
             type = typeBindings.nextTypeId();
             if (kind == SymbolKind.CLASS || kind == SymbolKind.ASSOCIATION || kind == SymbolKind.VIEW) {
-                typeBindings.storeType(new guru.interlis.model.ObjectArgumentType(type,
+                typeBindings.defineType(new guru.interlis.model.ObjectArgumentType(type,
                         new Origin.DeclaredOrigin(syntax.range()), Optional.of(context), List.of(), true));
             } else {
                 type = typeBindings.errorType(ownerSource(owner), syntax.range(), "ALL requires an object context");
             }
         }
         boolean error = typeBindings.effectiveDescriptor(type) instanceof ErrorType;
-        state.storeExpression(new guru.interlis.model.ObjectSetExpression(id, type,
+        state.defineExpression(new guru.interlis.model.ObjectSetExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range()));
         return new ExpressionResult(id, type, error);
@@ -200,8 +200,8 @@ final class ExpressionBindings {
                                                        GenericConstantExpressionSyntax syntax,
                                                        SymbolId owner) {
         TypeId type = typeBindings.nextTypeId();
-        typeBindings.storeType(new GenericType(type, new Origin.DeclaredOrigin(syntax.range()), syntax.name()));
-        state.storeExpression(new guru.interlis.model.ConstantExpression(id, type,
+        typeBindings.defineType(new GenericType(type, new Origin.DeclaredOrigin(syntax.range()), syntax.name()));
+        state.defineExpression(new guru.interlis.model.ConstantExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.name()));
         return new ExpressionResult(id, type, false);
@@ -221,8 +221,8 @@ final class ExpressionBindings {
         TypeId type = typeBindings.nextTypeId();
         boolean structure = state.symbol(target.orElseThrow()) instanceof StructureSymbol
                 || index.byId(target.orElseThrow()).map(d -> d.kind() == SymbolKind.STRUCTURE).orElse(false);
-        typeBindings.storeType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()), structure, target.stream().toList()));
-        state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, type,
+        typeBindings.defineType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()), structure, target.stream().toList()));
+        state.defineExpression(new guru.interlis.model.SymbolValueExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), target.orElseThrow()));
         return new ExpressionResult(id, type, false);
     }
@@ -251,9 +251,9 @@ final class ExpressionBindings {
         TypeId attributeType = index.byId(attribute.orElseThrow()).map(typeBindings::attributeType)
                 .orElseGet(() -> ((AttributeSymbol) state.symbol(attribute.orElseThrow())).declaredType());
         TypeId type = typeBindings.nextTypeId();
-        typeBindings.storeType(new guru.interlis.model.AttributePathType(type, new Origin.DeclaredOrigin(syntax.range()),
+        typeBindings.defineType(new guru.interlis.model.AttributePathType(type, new Origin.DeclaredOrigin(syntax.range()),
                 Optional.of(new guru.interlis.model.AttributePathType.Viewable(viewable.orElseThrow())), List.of(attributeType)));
-        state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, type, guru.interlis.model.ExpressionTypeState.RESOLVED,
+        state.defineExpression(new guru.interlis.model.SymbolValueExpression(id, type, guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), attribute.orElseThrow()));
         return new ExpressionResult(id, type, false);
     }
@@ -264,7 +264,7 @@ final class ExpressionBindings {
         if (target.isEmpty()) return failedValueExpression(id, syntax.range(), errors);
         var parameter = (guru.interlis.model.ParameterSymbol) ensureSymbol.apply(index.byId(target.orElseThrow()).orElseThrow());
         boolean error = typeBindings.effectiveDescriptor(parameter.typeId()) instanceof ErrorType;
-        state.storeExpression(new guru.interlis.model.SymbolValueExpression(id, parameter.typeId(),
+        state.defineExpression(new guru.interlis.model.SymbolValueExpression(id, parameter.typeId(),
                 error ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), parameter.id()));
         return new ExpressionResult(id, parameter.typeId(), error);
@@ -272,8 +272,8 @@ final class ExpressionBindings {
 
     ExpressionResult failedValueExpression(ExpressionId id, SourceRange range, List<DiagnosticId> errors) {
         TypeId type = typeBindings.nextTypeId();
-        typeBindings.storeType(new ErrorType(type, new Origin.DeclaredOrigin(range), errors));
-        state.storeExpression(new guru.interlis.model.ErrorExpression(id, type,
+        typeBindings.defineType(new ErrorType(type, new Origin.DeclaredOrigin(range), errors));
+        state.defineExpression(new guru.interlis.model.ErrorExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.ERROR, range, List.of(), errors));
         return new ExpressionResult(id, type, true);
     }
@@ -297,15 +297,15 @@ final class ExpressionBindings {
         String text = syntax.text().toLowerCase(java.util.Locale.ROOT);
         if (text.equals("#true") || text.equals("#false")) {
             TypeId type = typeBindings.builtinBoolean(index.byId(owner).orElseThrow().language());
-            state.storeExpression(new guru.interlis.model.LiteralExpression(id, type,
+            state.defineExpression(new guru.interlis.model.LiteralExpression(id, type,
                     guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                     guru.interlis.model.LiteralKind.BOOLEAN, syntax.text(), Optional.empty(),
                     Optional.empty()));
             return new ExpressionResult(id, type, false);
         }
         TypeId type = typeBindings.nextTypeId();
-        typeBindings.storeType(new guru.interlis.model.EnumArgumentType(type,new Origin.DeclaredOrigin(syntax.range()),false));
-        state.storeExpression(new guru.interlis.model.ConstantExpression(id, type,
+        typeBindings.defineType(new guru.interlis.model.EnumArgumentType(type,new Origin.DeclaredOrigin(syntax.range()),false));
+        state.defineExpression(new guru.interlis.model.ConstantExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.text()));
         return new ExpressionResult(id, type, false);
@@ -326,7 +326,7 @@ final class ExpressionBindings {
             DiagnosticId cause = diagnostics.emitRule(declaration, "Unknown standard function INTERLIS." + syntax.functionName().segments().getLast().text(),
                     "BUILTIN_NAME");
             type = typeBindings.nextTypeId();
-            typeBindings.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(cause)));
+            typeBindings.defineType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()), List.of(cause)));
             error = true;
 
         } else {
@@ -357,13 +357,13 @@ final class ExpressionBindings {
             List<SymbolId> targets = argument instanceof ReferenceType r ? r.targetRoots()
                     : argument instanceof guru.interlis.model.ObjectArgumentType o ? (o.restrictions().isEmpty() ? o.base().stream().toList() : o.restrictions())
                     : argument instanceof StructureValueType structure ? structure.targetRoots() : List.of();
-            typeBindings.storeType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()),
+            typeBindings.defineType(new ClassValueType(type, new Origin.DeclaredOrigin(syntax.range()),
                     argument instanceof StructureValueType || guru.interlis.model.internal.TypeCompatibility.isUndefined(argument), targets));
         }
         if (!error && signature.rule()==BuiltinFunctions.Rule.CONVERT_UNIT) {
             var from=typeBindings.effectiveDescriptor(arguments.getFirst().typeId());
             type=typeBindings.nextTypeId();
-            typeBindings.storeType(new NumericType(type,new Origin.DeclaredOrigin(syntax.range()),new NumericRange(Optional.empty(),Optional.empty(),false,
+            typeBindings.defineType(new NumericType(type,new Origin.DeclaredOrigin(syntax.range()),new NumericRange(Optional.empty(),Optional.empty(),false,
                     guru.interlis.model.NumericDirection.NONE,from instanceof NumericType n?n.range().unit():Optional.empty(),Optional.empty())));
         }
         FunctionBindings.Result bound = FunctionBindings.Result.empty();
@@ -373,7 +373,7 @@ final class ExpressionBindings {
         }
         if(available)references.recordReference(declaration,syntax.functionName(),
                 builtinDeclaration(signature,declaration.language()).id(),ReferenceUsage.EXPRESSION);
-        state.storeExpression(new guru.interlis.model.FunctionCallExpression(id, type,
+        state.defineExpression(new guru.interlis.model.FunctionCallExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), arguments.stream().map(ExpressionResult::id).toList(),
@@ -403,7 +403,7 @@ final class ExpressionBindings {
                 TypeId context=anchor.id();
                 if(anchor instanceof EnumerationType enumeration && !enumeration.treeValues()
                         && signature.arguments().get(i)==BuiltinFunctions.Value.ENUM_TREE) {
-                    context=typeBindings.nextTypeId();typeBindings.storeType(new EnumerationType(context,enumeration.origin(),enumeration.values(),enumeration.ordered(),
+                    context=typeBindings.nextTypeId();typeBindings.defineType(new EnumerationType(context,enumeration.origin(),enumeration.values(),enumeration.ordered(),
                             enumeration.circular(),enumeration.finalSubtrees(),Optional.of(enumeration.id()),true));
                 }
                 arguments.set(i,contextualEnumConstant(argument,context,owner.id()));
@@ -431,7 +431,7 @@ final class ExpressionBindings {
             if(signature.arguments().get(i)==BuiltinFunctions.Value.ATTRIBUTE) {
                 parameter=typeBindings.nextTypeId();
                 TypeId restriction=builtinResultType(i==1?BuiltinFunctions.Value.BAG:BuiltinFunctions.Value.SURFACE,language);
-                typeBindings.storeType(new guru.interlis.model.AttributePathType(parameter,new Origin.PredefinedOrigin(language,"INTERLIS."+signature.name()),
+                typeBindings.defineType(new guru.interlis.model.AttributePathType(parameter,new Origin.PredefinedOrigin(language,"INTERLIS."+signature.name()),
                         Optional.of(new guru.interlis.model.AttributePathType.Argument(id,i-1)),List.of(restriction)));
             } else parameter=builtinResultType(signature.arguments().get(i),language);
             parameters.add(new guru.interlis.model.FunctionParameter(names.get(i),parameter,false));
@@ -462,7 +462,7 @@ final class ExpressionBindings {
                     java.util.OptionalInt.empty());
             default -> throw new IllegalArgumentException("unsupported builtin result " + value);
         };
-        typeBindings.storeType(descriptor);
+        typeBindings.defineType(descriptor);
         return id;
     }
 
@@ -491,7 +491,7 @@ final class ExpressionBindings {
         if (function == null) {
             work.checkpoint();
             type = typeBindings.nextTypeId();
-            typeBindings.storeType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()),
+            typeBindings.defineType(new ErrorType(type, new Origin.DeclaredOrigin(syntax.range()),
                     bindingErrors));
             error = true;
         } else {
@@ -518,7 +518,7 @@ final class ExpressionBindings {
         }
         if (!error) error = functions.bind(function,arguments,index.byId(owner).orElseThrow(),syntax.range(),BuiltinFunctions.Rule.SIMPLE).error();
         if (!error) type=functions.returnType(function,arguments,syntax.range());
-        state.storeExpression(new guru.interlis.model.FunctionCallExpression(id, type,
+        state.defineExpression(new guru.interlis.model.FunctionCallExpression(id, type,
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), children, syntax.functionName().text(), target,Map.of()));
@@ -531,7 +531,7 @@ final class ExpressionBindings {
         if (syntax.literalKind() == guru.interlis.model.LiteralKind.TEXT) {
             String value = InterlisStrings.decode(syntax.lexeme()).text();
             type = typeBindings.nextTypeId();
-            typeBindings.storeType(new TextType(type, new Origin.DeclaredOrigin(syntax.range()),
+            typeBindings.defineType(new TextType(type, new Origin.DeclaredOrigin(syntax.range()),
                     value.indexOf('\r')>=0 || value.indexOf('\n')>=0 || value.indexOf('\t')>=0 ? TextKind.MTEXT : TextKind.TEXT,
                     java.util.OptionalInt.of(TextLengths.canonicalLength(value))));
             expression = new guru.interlis.model.LiteralExpression(id, type,
@@ -544,7 +544,7 @@ final class ExpressionBindings {
                     typeBindings.effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                     syntax.literalKind(), syntax.lexeme(), syntax.decimal(), Optional.empty());
         }
-        state.storeExpression(expression);
+        state.defineExpression(expression);
         return new ExpressionResult(id, type, typeBindings.effectiveDescriptor(type) instanceof ErrorType);
     }
 
@@ -553,17 +553,17 @@ final class ExpressionBindings {
         Optional<SymbolId> unit = unitName.flatMap(name -> units.bindUnit(index.byId(owner).orElseThrow(), name));
         if (unitName.isPresent() && unit.isEmpty()) {
             var diagnostic = diagnostics.emitRule(index.byId(owner).orElseThrow(), "Numeric constant requires a known unit", "CONSTANT_UNIT", unitName.orElseThrow().range());
-            typeBindings.storeType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
+            typeBindings.defineType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
             return type;
         }
         if (unit.isPresent() && units.extensionUnit(unit.orElseThrow()).abstractUnit()) {
             var diagnostic = diagnostics.emitRule(index.byId(owner).orElseThrow(), "Numeric constant requires a concrete unit", "CONSTANT_UNIT", unitName.orElseThrow().range());
-            typeBindings.storeType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
+            typeBindings.defineType(new ErrorType(type, new Origin.DeclaredOrigin(sourceRange), List.of(diagnostic)));
             return type;
         }
         NumericRange range = new NumericRange(decimal, decimal, false,
                 guru.interlis.model.NumericDirection.NONE, unit, Optional.empty());
-        typeBindings.storeType(new NumericType(type, new Origin.DeclaredOrigin(sourceRange), range));
+        typeBindings.defineType(new NumericType(type, new Origin.DeclaredOrigin(sourceRange), range));
         return type;
     }
 
@@ -608,7 +608,7 @@ final class ExpressionBindings {
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(left.id(), right.id()), syntax.operator(),
                 left.id(), right.id());
-        state.storeExpression(expression);
+        state.defineExpression(expression);
         return new ExpressionResult(id, result, error);
     }
 
@@ -626,7 +626,7 @@ final class ExpressionBindings {
                 error ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(operand.id()), syntax.operator(), operand.id());
-        state.storeExpression(expression);
+        state.defineExpression(expression);
         return new ExpressionResult(id, type, error);
     }
 
@@ -638,7 +638,7 @@ final class ExpressionBindings {
                 operand.error() ? guru.interlis.model.ExpressionTypeState.ERROR
                         : guru.interlis.model.ExpressionTypeState.RESOLVED,
                 syntax.range(), List.of(operand.id()), operand.id());
-        state.storeExpression(expression);
+        state.defineExpression(expression);
         return new ExpressionResult(id, type, operand.error());
     }
 
@@ -647,18 +647,18 @@ final class ExpressionBindings {
         TypedExpression expression = new guru.interlis.model.ConstantExpression(id, type,
                 typeBindings.effectiveDescriptor(type) instanceof ErrorType ? guru.interlis.model.ExpressionTypeState.ERROR : guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of(),
                 syntax.constantName());
-        state.storeExpression(expression);
+        state.defineExpression(expression);
         return new ExpressionResult(id, type, typeBindings.effectiveDescriptor(type) instanceof ErrorType);
     }
 
     private ExpressionResult undefinedExpression(ExpressionId id, UndefinedExpressionSyntax syntax, SymbolId owner) {
         TypeId type = typeBindings.nextTypeId();
-        typeBindings.storeType(new guru.interlis.model.GenericType(type,
+        typeBindings.defineType(new guru.interlis.model.GenericType(type,
                 new Origin.PredefinedOrigin(index.byId(owner).orElseThrow().language(), "UNDEFINED"),
                 "UNDEFINED"));
         TypedExpression expression = new guru.interlis.model.UndefinedExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.RESOLVED, syntax.range(), List.of());
-        state.storeExpression(expression);
+        state.defineExpression(expression);
         return new ExpressionResult(id, type, false);
     }
 
@@ -669,7 +669,7 @@ final class ExpressionBindings {
         TypedExpression expression = new ErrorExpression(id, type,
                 guru.interlis.model.ExpressionTypeState.ERROR, range, List.of(),
                 List.of(diagnostic));
-        state.storeExpression(expression);
+        state.defineExpression(expression);
         return new ExpressionResult(id, type, true);
     }
 
@@ -742,9 +742,9 @@ final class ExpressionBindings {
             TypeId type=expected;boolean error=!conversionCompatible(call,numeric);
             if(error) {
                 var diagnostic=diagnostics.emitRule(index.byId(owner).orElseThrow(),"convertUnit source and destination need a common conversion unit","CONVERT_UNIT",call.range());
-                type=typeBindings.nextTypeId();typeBindings.storeType(new ErrorType(type,new Origin.DeclaredOrigin(call.range()),List.of(diagnostic)));
+                type=typeBindings.nextTypeId();typeBindings.defineType(new ErrorType(type,new Origin.DeclaredOrigin(call.range()),List.of(diagnostic)));
             }
-            state.storeExpression(new guru.interlis.model.FunctionCallExpression(call.id(),type,
+            state.replaceExpression(new guru.interlis.model.FunctionCallExpression(call.id(),type,
                     error?guru.interlis.model.ExpressionTypeState.ERROR:call.typeState(),call.range(),call.children(),call.functionName(),call.targetFunction(),call.argumentPaths()));
             return new ExpressionResult(call.id(),type,error);
         }
@@ -752,7 +752,7 @@ final class ExpressionBindings {
         if(state.expression(result.id()) instanceof guru.interlis.model.LiteralExpression literal && literal.textValue().isPresent()
                 && typeBindings.effectiveDescriptor(expected) instanceof FormattedType formatted
                 && formats.formattedValues().parse(formatted,literal.textValue().orElseThrow(),true).isPresent()) {
-            state.storeExpression(new guru.interlis.model.LiteralExpression(literal.id(),expected,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
+            state.replaceExpression(new guru.interlis.model.LiteralExpression(literal.id(),expected,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
             return new ExpressionResult(result.id(),expected,false);
         }
         return result;
@@ -765,11 +765,11 @@ final class ExpressionBindings {
         if(!(expression instanceof guru.interlis.model.LiteralExpression literal && literal.literalKind()==guru.interlis.model.LiteralKind.NUMBER)
                 && !(expression instanceof guru.interlis.model.ConstantExpression constant && (constant.constantName().equals("PI") || constant.constantName().equals("LNBASE"))))return value;
         TypeId type=typeBindings.nextTypeId();var range=source.range();
-        typeBindings.storeType(new NumericType(type,source.origin(),new NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),target.range().unit(),range.referenceSystem())));
+        typeBindings.defineType(new NumericType(type,source.origin(),new NumericRange(range.minimum(),range.maximum(),range.circular(),range.direction(),target.range().unit(),range.referenceSystem())));
         if(expression instanceof guru.interlis.model.LiteralExpression literal)
-            state.storeExpression(new guru.interlis.model.LiteralExpression(literal.id(),type,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
+            state.replaceExpression(new guru.interlis.model.LiteralExpression(literal.id(),type,literal.typeState(),literal.range(),literal.children(),literal.literalKind(),literal.lexeme(),literal.decimal(),literal.textValue()));
         else {var constant=(guru.interlis.model.ConstantExpression)expression;
-            state.storeExpression(new guru.interlis.model.ConstantExpression(constant.id(),type,constant.typeState(),constant.range(),constant.children(),constant.constantName()));}
+            state.replaceExpression(new guru.interlis.model.ConstantExpression(constant.id(),type,constant.typeState(),constant.range(),constant.children(),constant.constantName()));}
         return new ExpressionResult(value.id(),type,false);
     }
 
@@ -812,7 +812,7 @@ final class ExpressionBindings {
         boolean valid=paths.contains(path) && (!(expected instanceof EnumerationType e) || e.treeValues()
                 || paths.stream().noneMatch(p->p.startsWith(path+".")));
         if(!valid)return value;
-        state.storeExpression(new guru.interlis.model.ConstantExpression(actual.id(),context,actual.typeState(),actual.range(),actual.children(),actual.constantName()));
+        state.replaceExpression(new guru.interlis.model.ConstantExpression(actual.id(),context,actual.typeState(),actual.range(),actual.children(),actual.constantName()));
         if(expected instanceof EnumerationType enumeration) {
             var segments=new ArrayList<ReferenceSegment>();int start=actual.range().startOffset()+1;String prefix="";
             for(String part:path.split("\\.")) {
@@ -871,7 +871,7 @@ final class ExpressionBindings {
     record ExpressionResult(ExpressionId id, TypeId typeId, boolean error) {
     }
 
-    void storeExpression(TypedExpression expression) { state.storeExpression(expression); }
+    void defineExpression(TypedExpression expression) { state.defineExpression(expression); }
 
     ExpressionId nextExpressionId() { return state.nextExpressionId(); }
 }

@@ -109,7 +109,7 @@ final class FunctionBindings {
             owner=new AttributePathType.Viewable(roots.getFirst());
         }
         var id=typeBindings.nextTypeId();
-        typeBindings.storeType(new AttributePathType(id,new Origin.DeclaredOrigin(range),Optional.of(owner),attribute.restrictions()));
+        typeBindings.defineType(new AttributePathType(id,new Origin.DeclaredOrigin(range),Optional.of(owner),attribute.restrictions()));
         return id;
     }
 

@@ -44,7 +44,9 @@ final class PredefinedModels {
         }
     }
     static SymbolId ensure(SemanticGraphRead.Symbols state, LanguageVersion language) {
-        state.defineSymbolIfAbsent(declaration(language, List.of())); return id(language);
+        SymbolId model = id(language);
+        if (!state.hasSymbol(model)) state.defineSymbol(declaration(language, List.of()));
+        return model;
     }
     private static ModelSymbol declaration(LanguageVersion language, List<SymbolId> members) {
         var model=id(language); var origin=new Origin.PredefinedOrigin(language,"INTERLIS");

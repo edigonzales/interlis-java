@@ -65,6 +65,22 @@ class ViewBindingContractTest {
             rule(v, "TOPIC T = CLASS A = x : TEXT; END A; VIEW V PROJECTION OF A; = A := A->x; END V; END T;", "VIEW_ATTRIBUTE_DUPLICATE");
         }
     }
+    @Test void repeatedAllOfRejectsTheDuplicateAndKeepsTheFirstDerivation() {
+        for (String v : List.of("2.3", "2.4")) {
+            var result = assertInstanceOf(CompilationOutcome.Rejected.class, compile(v,
+                    "TOPIC T = CLASS A = x : TEXT; END A; VIEW V PROJECTION OF A; = ALL OF A; ALL OF A; END V; END T;"));
+            var analysis = result.analysis();
+            assertTrue(analysis.diagnostics().stream().anyMatch(d -> d.arguments().toString().contains("VIEW_ATTRIBUTE_DUPLICATE")),
+                    () -> analysis.diagnostics().toString());
+            var graph = analysis.semanticGraph();
+            var view = graph.symbols().stream().filter(ViewSymbol.class::isInstance).map(ViewSymbol.class::cast).findFirst().orElseThrow();
+            assertEquals(1, view.members().size());
+            var attribute = (AttributeSymbol) graph.symbol(view.members().getFirst()).orElseThrow();
+            var expression = graph.expression(attribute.derivations().getFirst()).orElseThrow();
+            var source = analysis.syntaxSnapshots().get(expression.range().source()).source();
+            assertEquals(source.text().indexOf("ALL OF A;") + "ALL OF ".length(), expression.range().startOffset());
+        }
+    }
     @Test void explicitAndTopicViewInheritancePreserveMembers() {
         for (String v : List.of("2.3", "2.4")) {
             var result = success(v, """
@@ -110,6 +126,21 @@ class ViewBindingContractTest {
             var aggregate = graph.symbols().stream().filter(s -> s.name().value().equals("AGGREGATES")).findFirst().orElseThrow();
             assertFalse(view.members().contains(aggregate.id()));
             assertInstanceOf(CollectionType.class, graph.type(((AttributeSymbol)aggregate).declaredType()).orElseThrow());
+        }
+    }
+
+    @Test void recursiveInspectionInAClassConstraintRemainsALanguageError() {
+        for (String version : List.of("2.3", "2.4")) {
+            rule(version, """
+                    TOPIC T =
+                      STRUCTURE Child = value : TEXT; END Child;
+                      CLASS A =
+                        children : BAG OF Child;
+                        MANDATORY CONSTRAINT INTERLIS.elementCount(INSPECTION I) > 0;
+                      END A;
+                      VIEW I INSPECTION OF child~A->children; = END I;
+                    END T;
+                    """, "VIEW_CYCLE");
         }
     }
 

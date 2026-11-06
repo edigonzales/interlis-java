@@ -145,7 +145,7 @@ final class TypeBindings {
         if (bound != null) return bound;
         if (!resolvingFunctionArguments.add(key)) {
             TypeId error = nextTypeId();
-            state.storeType(new ErrorType(error, function.origin(), List.of(diagnostics.emitRule(function,
+            state.defineType(new ErrorType(error, function.origin(), List.of(diagnostics.emitRule(function,
                     "cyclic attribute-path argument dependency", "FUNCTION_ARGUMENT_CYCLE"))));
             return error;
         }
@@ -162,7 +162,7 @@ final class TypeBindings {
         work.checkpoint();
         if (!resolvingDomainTypes.add(decl.id())) {
             TypeId error = nextTypeId();
-            state.storeType(new ErrorType(error, decl.origin(),
+            state.defineType(new ErrorType(error, decl.origin(),
                     List.of(diagnostics.emitRule(decl, "cyclic domain type dependency", "DOMAIN_TYPE_CYCLE"))));
             state.bindDeclaredType(decl.id(), error);
             return error;
@@ -181,7 +181,7 @@ final class TypeBindings {
             TypeId type;
             if (syntax.type() instanceof GenericTypeSyntax generic && "INHERITED".equals(generic.name()) && base.isPresent()) {
                 type = nextTypeId();
-                state.storeType(new DomainReferenceType(type, new Origin.DeclaredOrigin(syntax.type().range()), base.orElseThrow()));
+                state.defineType(new DomainReferenceType(type, new Origin.DeclaredOrigin(syntax.type().range()), base.orElseThrow()));
             } else type = buildType(syntax.type(), decl.id(), decl.sourceId());
             TypeDescriptor inherited = base.map(state::declaredType).map(this::effectiveDescriptor).orElse(null);
             inheritTypeProperties(type, syntax.type(), inherited,decl);
@@ -193,10 +193,17 @@ final class TypeBindings {
                 if (relation.decision() == guru.interlis.model.RelationDecision.DISALLOWED)
                     diagnostics.emitRule(decl, "numeric type does not specialize its base: " + relation.reason(), relation.reason().startsWith("numeric-unit") || relation.reason().contains("unit-") ? "NUMERIC_UNIT_EXTENSION" : "NUMERIC_EXTENSION");
             }
-            state.bindDeclaredTypeIfAbsent(decl.id(), type);
+            // Recursive cycle recovery can assign the declaration an error type while its descriptor is built.
+            TypeId assigned = state.declaredType(decl.id());
+            if (assigned == null) {
+                state.bindDeclaredType(decl.id(), type);
+                assigned = type;
+            } else if (!(state.type(assigned) instanceof ErrorType error && error.origin().equals(decl.origin()))) {
+                throw new IllegalStateException("Domain type already bound: " + decl.id());
+            }
             if (syntax.type() instanceof EnumerationTypeSyntax enumeration) {
                 if (base.isPresent() && inherited == null) diagnostics.emitRule(decl, "enumeration base must already be defined", "ENUM_BASE");
-                state.storeType(effectiveEnumeration(type, enumeration, inherited, decl));
+                state.replaceType(effectiveEnumeration(type, enumeration, inherited, decl));
             }
             TypeDescriptor own=effectiveDescriptor(type);
             if(inherited!=null && !(inherited instanceof NumericType && own instanceof NumericType)
@@ -213,7 +220,7 @@ final class TypeBindings {
                     || !(effectiveDescriptor(type) instanceof guru.interlis.model.OidType derived)
                     || derived.oidKind() == guru.interlis.model.OidKind.ANY))
                 diagnostics.emitRule(decl, "concrete OID domain cannot be extended", "OID_EXTENSION");
-            return state.declaredType(decl.id());
+            return assigned;
         } finally {
             resolvingDomainTypes.remove(decl.id());
         }
@@ -289,14 +296,14 @@ final class TypeBindings {
         if (syntax instanceof NumericTypeSyntax own && state.type(id) instanceof NumericType numeric && base instanceof NumericType parent) {
             var range=inheritRange(numeric.range(),parent.range(),own);var errors=new ArrayList<DiagnosticId>();
             units.validateNumericUnit(range,declaration,syntax.range(),errors);
-            state.storeType(errors.isEmpty()?new NumericType(id,numeric.origin(),range):new ErrorType(id,numeric.origin(),errors));
+            state.replaceType(errors.isEmpty()?new NumericType(id,numeric.origin(),range):new ErrorType(id,numeric.origin(),errors));
         }
         else if(syntax instanceof CoordinateTypeSyntax own && state.type(id) instanceof CoordinateType coordinate && base instanceof CoordinateType parent) {
             List<NumericRange> axes=new ArrayList<>(coordinate.axes());
             for(int i=0;i<Math.min(axes.size(),parent.axes().size());i++)axes.set(i,inheritRange(axes.get(i),parent.axes().get(i),own.axes().get(i)));
             var errors=new ArrayList<DiagnosticId>();
             for(int i=0;i<axes.size();i++)units.validateNumericUnit(axes.get(i),declaration,own.axes().get(i).range(),errors);
-            state.storeType(errors.isEmpty()?new CoordinateType(id,coordinate.origin(),coordinate.dimensions(),axes,coordinate.multiCoordinate(),
+            state.replaceType(errors.isEmpty()?new CoordinateType(id,coordinate.origin(),coordinate.dimensions(),axes,coordinate.multiCoordinate(),
                     coordinate.referenceSystem().isPresent()?coordinate.referenceSystem():parent.referenceSystem(),
                     coordinate.rotation().isPresent()?coordinate.rotation():parent.rotation()):new ErrorType(id,coordinate.origin(),errors));
         } else if(syntax instanceof CollectionTypeSyntax own && state.type(id) instanceof CollectionType collection && base instanceof CollectionType parent)
@@ -323,7 +330,7 @@ final class TypeBindings {
         TypeId type;
         if (!resolvingAttributeTypes.add(decl.id())) {
             type = nextTypeId();
-            state.storeType(new ErrorType(type, decl.origin(),
+            state.defineType(new ErrorType(type, decl.origin(),
                     List.of(diagnostics.emitRule(decl, "cyclic inherited attribute type", "INHERITANCE_CYCLE"))));
             return type;
         }
@@ -346,7 +353,7 @@ final class TypeBindings {
                     type = attribute.declaredType();
                 } else {
                     type = nextTypeId();
-                    state.storeType(new ErrorType(type, decl.origin(), List.of(diagnostics.emitRule(decl,
+                    state.defineType(new ErrorType(type, decl.origin(), List.of(diagnostics.emitRule(decl,
                             "MANDATORY without a type requires an inherited attribute", "ATTRIBUTE_INHERITED_TYPE"))));
                 }
             } else {
@@ -386,7 +393,7 @@ final class TypeBindings {
             default -> new guru.interlis.model.AlignmentType(type,origin,name.equals("INTERLIS.HALIGNMENT")
                     ? guru.interlis.model.AlignmentKind.HORIZONTAL : guru.interlis.model.AlignmentKind.VERTICAL);
         };
-        state.storeType(descriptor);
+        state.defineType(descriptor);
         state.bindDeclaredType(symbol, type);
         definePredefinedDomain.accept(new DomainSymbol(new SymbolHeader(symbol, SymbolKind.DOMAIN,
                 DeclaredName.synthetic(name), Optional.empty(), 0, origin, Optional.empty(), context.language(),
@@ -423,7 +430,7 @@ final class TypeBindings {
             case OidTypeSyntax oid -> {
                 Optional<TypeId> carrier = oid.valueType().map(t -> buildType(t, context, source));
                 if (oid.oidKind() == guru.interlis.model.OidKind.UUID) {
-                    TypeId text = nextTypeId(); state.storeType(new TextType(text, new Origin.DeclaredOrigin(oid.range()), TextKind.TEXT, java.util.OptionalInt.of(36)));
+                    TypeId text = nextTypeId(); state.defineType(new TextType(text, new Origin.DeclaredOrigin(oid.range()), TextKind.TEXT, java.util.OptionalInt.of(36)));
                     carrier = Optional.of(text);
                 }
                 yield new guru.interlis.model.OidType(id, new Origin.DeclaredOrigin(oid.range()), oid.oidKind(), carrier);
@@ -607,7 +614,7 @@ final class TypeBindings {
                         List.of(diagnostic));
             }
         };
-        state.storeType(descriptor);
+        state.defineType(descriptor);
         return id;
     }
 
@@ -642,7 +649,7 @@ final class TypeBindings {
     TypeId errorType(SourceId source, SourceRange range, String feature) {
         TypeId id = nextTypeId();
         DiagnosticId diagnostic = diagnostics.emitUnsupported(source, range, feature, feature);
-        state.storeType(new ErrorType(id, new Origin.SyntheticOrigin(
+        state.defineType(new ErrorType(id, new Origin.SyntheticOrigin(
                 guru.interlis.model.SyntheticReason.MISSING_TYPE, Optional.of(range)),
                 List.of(diagnostic)));
         return id;
@@ -650,7 +657,7 @@ final class TypeBindings {
 
     TypeId builtinBoolean(guru.interlis.model.LanguageVersion language) {
         return booleanTypes.computeIfAbsent(language,version->{
-            TypeId id=nextTypeId();state.storeType(new guru.interlis.model.BooleanType(id,new Origin.PredefinedOrigin(version,"BOOLEAN")));return id;
+            TypeId id=nextTypeId();state.defineType(new guru.interlis.model.BooleanType(id,new Origin.PredefinedOrigin(version,"BOOLEAN")));return id;
         });
     }
 
@@ -724,7 +731,9 @@ final class TypeBindings {
         return inferredDerivations.get(declaration);
     }
 
-    void storeType(TypeDescriptor type) { state.storeType(type); }
+    void defineType(TypeDescriptor type) { state.defineType(type); }
+
+    void replaceType(TypeDescriptor type) { state.replaceType(type); }
 
     void bindDeclaredType(SymbolId symbol, TypeId type) { state.bindDeclaredType(symbol, type); }
 
