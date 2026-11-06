@@ -323,6 +323,33 @@ getrennte Vertragsfelder. [#296][v296], [PR #112][i112],
   unter `-Xmx2g` erfordert Messungen für die zugelassenen Workloads.
   [Entwurf zu Ressourcen und Geometrie][resource-contract].
 
+### Lokale Geometrie-Baseline
+
+Zwölf synthetische [Profile](../../testdata/reference/iox/geometry-cases.json)
+liefen am 6. November 2026 mit ilivalidator 1.15.0, Temurin 25.0.2+10
+und `-Xmx2g` auf macOS arm64. Sieben Transfers wurden akzeptiert,
+fünf mit den erwarteten Diagnosen abgewiesen. AREA und `areAreas(ALL, …)`
+akzeptierten den gemeinsamen geraden Rand und erkannten die Kreuzung.
+Bei identischen XTF-2.4-Bytes akzeptierte AREA eine Bogenüberlappung von
+rund 0,0481 m bei modellierten 0,050 m. `areAreas(ALL, …)` wies sie mit
+seiner Nulltoleranz ab. Die normative Funktionspolicy bleibt offen.
+Die separate Rundungsprobe vergleicht gemeinsame Kante und geradlinige
+Überlagerung. Beim selbstschneidenden Ring belegt das Log den Ausfall
+der AREA-Gruppenprüfung nach dem SURFACE-Fehler. [#468][v468]
+
+Die zwölf Läufe erreichten bis 76,8 MiB abgetasteten Heap, 160,4 MiB RSS
+und 1 ms kumulierte GC-Zeit. Die abgetastete Temp-Spitze stieg in beiden
+Gittern von rund 57 KiB bei 100 Polygonen auf 574 KiB bei 1’000 Polygonen.
+Beim JVM-Exit war das Temp-Verzeichnis in allen zwölf Läufen leer.
+Je drei Wiederholungen der beiden 1’000er-Gitter ergaben Medianwerte von
+328 ms für disjunkte Flächen und 316 ms für gemeinsame Ränder.
+Nach einer am Ende des Messblocks beobachteten Lastspitze wurde der
+letzte Lauf mit gemeinsamen Rändern gezielt wiederholt. Die Zeiten
+enthalten den JVM-Start. Die Stichproben können
+kurze Heap- und Temp-Spitzen verfehlen. Produktionsdaten und
+Kandidatenzahlen blieben offen.
+[Benchmarkmodus](../../tools/iox-reference-harness/README.md#geometrie-und-ressourcen-messen)
+
 ## Normbelege
 
 | Aussage | Gepinnte PDF-Seiten und Auszüge |

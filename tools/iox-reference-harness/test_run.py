@@ -1,6 +1,8 @@
 """Small regression checks for the validator output oracle."""
 
+import os
 from pathlib import Path
+import signal
 import sys
 from tempfile import TemporaryDirectory
 import unittest
@@ -47,6 +49,27 @@ class BenchmarkLimitsTest(unittest.TestCase):
             self.assertNotEqual(result["exitCode"], 0)
             self.assertEqual(result["sampledPeakTempBytes"], 128)
             self.assertEqual(result["tempAtExitBytes"], 128)
+
+    @unittest.skipUnless(os.name == "posix", "SIGTERM and SIGKILL escalation requires POSIX")
+    def test_temp_limit_kills_a_child_that_ignores_termination(self):
+        script = """\
+from pathlib import Path
+import signal
+import time
+
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+Path("spill").write_bytes(b"x" * 128)
+time.sleep(10)
+"""
+        with TemporaryDirectory() as directory:
+            work = Path(directory)
+            scratch = work / "temp"
+            scratch.mkdir()
+            limits = {"timeoutSeconds": 5, "tempLimitBytes": 16}
+            result = run.run_probe([sys.executable, "-c", script], work, scratch, limits)
+            self.assertEqual(result["stopReason"], "temp_limit")
+            self.assertEqual(result["stopSignals"], ["terminate", "kill"])
+            self.assertEqual(result["exitCode"], -signal.SIGKILL)
 
     def test_pool_size_uses_recognized_close_file_size(self):
         prefix = "Info: close(): LinkPool KEY: "

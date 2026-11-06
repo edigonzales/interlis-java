@@ -139,3 +139,37 @@ Byte Heap und bis zu 1'170 Byte temporäre Dateien.
 Es sind Smoke-Messungen an kleinen Eingaben. RSS, native Allokationen,
 physisch belegte Blöcke und das Verhalten bei grossen Datenmengen brauchen
 eigene Messungen.
+
+## Geometrie und Ressourcen messen
+
+Der Benchmarkmodus verwendet ein lokales, hashgeprüftes ZIP und explizit
+gewählte Fälle. Die [Profile](../../testdata/reference/iox/geometry-cases.json)
+erfassen Prüfpunkte, Sollbefunde und Geometriezahlen. Sie enthalten
+Gitter mit 100 und 1’000 Polygonen, gemeinsame Ränder, Rundung,
+Selbstschnitt sowie Bogen- und `areAreas(ALL, …)`-Proben.
+
+```sh
+python3 -B tools/iox-reference-harness/run.py --benchmark \
+  --archive /absolute/ilivalidator-1.15.0.zip --output /tmp/iox-geometry \
+  --case area-grid-disjoint-1000 --case area-grid-shared-edges-1000
+```
+
+Jeder Aufruf startet die Fälle seriell in frischen JVMs unter `-Xmx2g`
+mit beiden Validierungspässen und `--trace`. Standardmässig gelten pro
+Aufruf höchstens acht Fälle und pro Fall 30 s sowie 64 MiB abgetasteter
+Scratch inklusive Logs. `--max-cases`, `--timeout-seconds` und
+`--temp-limit-bytes` setzen die Limits innerhalb fester Obergrenzen.
+Der Runner prüft die Eingabegrössen vor dem Start. Bei einem Limitstopp
+meldet er Grund, JVM-Exit und Bereinigung. Der Budgettest tastet logische
+Dateigrössen ab. Zwischen zwei Stichproben kann die Belegung weiter steigen.
+Rohlogs, GC-Log und Bericht bleiben im neuen Ausgabeverzeichnis ausserhalb
+des Repositorys.
+
+Wandzeit, Prozess-CPU und RSS umfassen den JVM-Start. Der abgetastete
+Heap und die kumulierte GC-Zeit sind JVM-Messwerte. RSS und CPU stammen,
+soweit verfügbar, aus dem OS-Kindprozessstatus. I/O-Mengen und tatsächliche
+räumliche Kandidaten bleiben offen. Die erkannten `filesize`-Zeilen im
+Trace geben Poolgrössen beim Schliessen an. Sie ergänzen die abgetastete
+Temp-Spitze und den Temp-Endbestand.
+`PASS` bedeutet weiterhin, dass der Lauf den Sollbefund erfüllt hat,
+einschliesslich der erwarteten Zurückweisung eines Negativfalls.
