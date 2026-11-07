@@ -148,6 +148,21 @@ abgeschalteten Regeln.
   [Shapefile #45][wkf-45], [Shapefile #46][wkf-46], [GeoPackage-Tests][wkf-gpkg],
   [Db2Ili #27][wkf-27].
 
+### Linienattribute in XTF 2.3
+
+Das Referenzhandbuch 2.3 beschreibt `LINEATTR` vor dem Startsegment
+(§ 3.3.11.12) und verlangt das Strukturelement in jeder Randlinie einer
+entsprechend modellierten SURFACE oder AREA (§ 3.3.11.13). Mit ilivalidator
+1.15.0 und iox-ili 1.24.4 endet ein so kodierter Transfer im Standardreader
+mit Exit 1 und `expected segment type`. Mit
+`ILI_XTF23_READER=ch.interlis.iom_j.xtf.Xtf23Reader0` erreicht derselbe
+Transfer die Geometriekonvertierung und endet mit Exit 1 und
+`Lineattributes not supported`. Die Diagnosen belegen Grenzen der
+Referenzwerkzeuge. Der Adapter prüft die Kodierung und die Werterhaltung
+durch Roundtrips.
+[Standardreader](https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iom_j/xtf/Xtf23Reader.java#L1200),
+[Geometriekonvertierung](https://github.com/claeis/iox-ili/blob/8e966a086a72e7e2990a312b1229ee5878fd5994/src/main/java/ch/interlis/iox_j/jts/Iox2jtsext.java#L192).
+
 ## Validierungsphasen und Rollen
 
 ilivalidator liest die Eingaben und gegebenenfalls Referenzdaten, steuert

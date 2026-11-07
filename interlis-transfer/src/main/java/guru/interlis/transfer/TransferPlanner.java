@@ -225,7 +225,7 @@ public final class TransferPlanner {
         private void checkType(TypeDescriptor type, QualifiedName path) {
             switch (type.kind()) {
                 case TEXT, BOOLEAN, NUMERIC, ENUMERATION, ALIGNMENT, FORMATTED, OID,
-                        REFERENCE, STRUCTURE_VALUE, GENERIC, DEFERRED -> { }
+                        BLACKBOX, CLASS_VALUE, ATTRIBUTE_PATH, REFERENCE, STRUCTURE_VALUE, GENERIC, DEFERRED -> { }
                 case COLLECTION -> checkType(known(queries.type(typeRef(((CollectionType) type).elementType())), path), path);
                 case DOMAIN_REFERENCE -> checkType(typeOf(ref(((DomainReferenceType) type).targetDomain()), path), path);
                 case COORDINATE -> {
@@ -247,9 +247,12 @@ public final class TransferPlanner {
                     issues.add(new Issue(path, Feature.CUSTOM_LINE_FORM));
                 }
             }
-            if (geometry.lineAttributes().isPresent()) {
-                issues.add(new Issue(path, Feature.LINE_ATTRIBUTES));
-            }
+            geometry.lineAttributes().ifPresent(id -> {
+                // The structure's effective fields are checked by projectObject, as for other structures.
+                if (!(known(queries.symbol(ref(id)), path) instanceof StructureSymbol)) {
+                    issues.add(new Issue(path, Feature.LINE_ATTRIBUTES));
+                }
+            });
             geometry.vertexDomain().ifPresent(vertex -> checkType(typeOf(ref(vertex), path), path));
         }
 
