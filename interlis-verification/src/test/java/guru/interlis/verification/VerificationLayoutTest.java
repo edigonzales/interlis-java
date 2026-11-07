@@ -43,7 +43,7 @@ class VerificationLayoutTest {
         Path root=Files.createDirectory(temporary.resolve("root"));
         Path output=Files.createDirectories(root.resolve("target/jenesis-jvm"));
         Path file=output.resolve("layout.properties");
-        String valid="schemaVersion=1\nbuilder=jenesis\nroot="+root+"\nreports=target/jenesis-jvm/reports\ncompiler=target/jenesis-jvm/delivery/compiler\n";
+        String valid="schemaVersion=1\nbuilder=jenesis\nroot="+root.toString().replace("\\","\\\\")+"\nreports=target/jenesis-jvm/reports\ncompiler=target/jenesis-jvm/delivery/compiler\n";
         Files.writeString(file,valid);var layout=VerificationLayout.read(root,file);
         assertEquals(output.resolve("delivery/compiler/bin/interlis-compiler"),layout.compilerLauncher(false));
         assertThrows(IllegalArgumentException.class,()->layout.junitDirectory("interlis-compiler","test"));
@@ -60,9 +60,14 @@ class VerificationLayoutTest {
         Path file=Files.createDirectories(root.resolve("target/jenesis-jvm")).resolve("layout.properties");
         var properties=new java.util.Properties();properties.setProperty("schemaVersion","1");properties.setProperty("builder","jenesis");properties.setProperty("root",root.toString());
         String nativeReports="target\\jenesis-jvm\\host\\run\\reports";
+        properties.setProperty("junit.interlis-xtf23.test","target/jenesis-jvm/host/run/reports/xtf23");
+        properties.setProperty("manifest.interlis-xtf23","target/jenesis-jvm/host/run/reports/xtf23.json");
         properties.setProperty("reports",nativeReports.replace('\\','/'));
         try(var writer=Files.newBufferedWriter(file)){properties.store(writer,"portable layout format");}
-        assertEquals(root.resolve("target/jenesis-jvm/host/run/reports/probe.json"),VerificationLayout.read(root,file).rootReport("probe.json"));
+        var layout = VerificationLayout.read(root,file);
+        assertEquals(root.resolve("target/jenesis-jvm/host/run/reports/probe.json"),layout.rootReport("probe.json"));
+        assertEquals(root.resolve("target/jenesis-jvm/host/run/reports/xtf23"),layout.junitDirectory("interlis-xtf23","test"));
+        assertEquals(root.resolve("target/jenesis-jvm/host/run/reports/xtf23.json"),layout.contractAssertionManifest("interlis-xtf23"));
         properties.setProperty("reports",nativeReports);
         try(var writer=Files.newBufferedWriter(file)){properties.store(writer,"nonportable input");}
         assertThrows(IllegalArgumentException.class,()->VerificationLayout.read(root,file));
