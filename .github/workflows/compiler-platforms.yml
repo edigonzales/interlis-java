@@ -45,3 +45,13 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: ${{ steps.jvm.outputs.evidence }}
+      - name: Retain failed JVM test reports and process logs
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: compiler-test-failures-${{ matrix.platform }}-${{ github.sha }}
+          if-no-files-found: ignore
+          retention-days: 30
+          path: |
+            target/jenesis-jvm/engine/**/executed~/supplement/
+            target/jenesis-jvm/engine/**/executed~/output/reports/
