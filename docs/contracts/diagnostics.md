@@ -373,13 +373,20 @@ weiterhin am Gate wirksam. Observerfehler ändern kein Ladeergebnis.
 <a id="cacheinformationen-im-gemeinsamen-meldungsstil"></a>
 ## Cacheinformationen im gemeinsamen Meldungsstil
 
-Cacheinformationen beschreiben die tatsächliche Beschaffung. `ILI-RES-0014`
-bezeichnet einen lokalen Online-Treffer innerhalb der Frist. Die Darstellung
-enthält den sicheren angefragten Ursprung und den Cachezustand in DE oder EN.
+Cacheinformationen (`ILI-RES-0010`) beschreiben die tatsächliche Beschaffung.
+Die Darstellung nennt zuerst den Cachezustand, etwa einen lokalen Online-Treffer
+innerhalb der Frist, und danach den sicheren angefragten Ursprung in DE oder EN.
 `ILI-RES-0013` bleibt reserviert. Die [Repositoryregeln](repositories.md#cache-nach-ili2c)
 definieren Fristen, Inhaltsprüfung und Offlinezugriffe.
 
-Bei ausführlichen CLI-Läufen kommen Modelllookup, Auswahl, Download, Treffer
-und Cachefehler einmal in der Reihenfolge des tatsächlichen Zugriffs an.
-Provenienz aus einem gelesenen Lock ist keine neue Suchmeldung. Der
-Diagnosekatalog v4 bleibt die Quelle für Codes und Argumente.
+Mit `--verbose` meldet die CLI lokale Verzeichnissuche (`ILI-RES-0015`),
+Modelllookup, Auswahl, Download, Treffer und Cachefehler in der Reihenfolge
+des tatsächlichen Zugriffs. Der lokale Suchhinweis erscheint einmal pro
+tatsächlich gelesenem Verzeichnis; er gehört weder zum Diagnoseergebnis
+noch zum Lock. Provenienz aus einem gelesenen Lock ist keine neue Suchmeldung.
+Der Diagnosekatalog v4 bleibt die Quelle für Codes und Argumente. In der
+CLI-Textausgabe steht der Code am Ende der ersten Zeile; `--diagnostic-context`
+ergänzt davon unabhängig Quellausschnitte, verwandte Fundstellen und Hinweise.
+Die CLI umrahmt Modellläufe mit `--verbose` auf stderr mit der Produktversion
+und einer Abschlusszeile mit Laufstatus und lokaler Zeit. Diese Zeilen sind
+Laufmeldungen. Sie gehören weder zum Diagnosekatalog noch zum JSON-Ergebnis.

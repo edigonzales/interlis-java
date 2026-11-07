@@ -61,7 +61,7 @@ class DiagnosticSnippetRendererTest {
             String plain=renderer.render(d,Map.of(ID,source),language,RenderOptions.defaults(false));
             String ansi=renderer.render(d,Map.of(ID,source),language,RenderOptions.defaults(true));
             assertEquals(plain,ColorOutputContractTest.stripSgr(ansi));
-            assertTrue(ansi.contains("\u001b[36mmemory:/frame.ili:2:1\u001b[0m"));
+            assertTrue(ansi.contains("\u001b[36m<memory:/frame.ili>:2:1\u001b[0m"));
             assertTrue(ansi.contains("\u001b[90mILI-SEM-0001\u001b[0m"));
             assertTrue(ansi.contains("^~~~~~~\u001b[0m"));
             assertEquals(plain,renderer.render(d,Map.of(ID,source),language));

@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /** Discovers loose model files beside the explicitly supplied sources. */
 final class LocalModelDiscovery {
@@ -35,13 +36,16 @@ final class LocalModelDiscovery {
     }
 
     void addNeighbours(Workspace workspace, Set<SourceId> inputs, Optional<ResolutionLock> lock,
-                       Map<SourceId, ContentDigest> sourcePins, CancellationToken token) {
+                       Map<SourceId, ContentDigest> sourcePins, Consumer<Path> directorySearch,
+                       CancellationToken token) {
         var directories = new LinkedHashSet<Path>();
         inputs.forEach(id -> directories.add(Path.of(URI.create(id.value())).getParent()));
         var budget = workspace.configuration().compilerOptions().budget();
         long remainingEntries = budget.maxSemanticWorkUnits();
         var paths = new LinkedHashSet<Path>();
         for (Path directory : directories) {
+            token.throwIfCancellationRequested();
+            directorySearch.accept(directory);
             try (var entries = Files.list(directory)) {
                 for (var iterator = entries.iterator(); iterator.hasNext();) {
                     token.throwIfCancellationRequested();

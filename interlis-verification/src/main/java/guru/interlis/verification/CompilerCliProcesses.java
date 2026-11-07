@@ -72,7 +72,7 @@ public final class CompilerCliProcesses {
                     new Fixture("syntax", List.of("check", "Syntax.ili"), 1, false),
                     new Fixture("semantic", List.of("check", "Bad.ili"), 1, false),
                     new Fixture("compact", List.of("check", "Bad.ili"), 1, false),
-                    new Fixture("verbose", List.of("check", "--verbose", "Bad.ili"), 1, false),
+                    new Fixture("verbose", List.of("check", "--diagnostic-context", "Bad.ili"), 1, false),
                     new Fixture("missing-file", List.of("check", "missing.ili"), 1, false),
                     new Fixture("missing-import", List.of("check", "Root.ili"), 1, false),
                     new Fixture("explicit-import", List.of("check", "--root", "Root", "Root.ili", "Base.ili"), 0, false),
@@ -102,7 +102,7 @@ public final class CompilerCliProcesses {
                     && diagnostic.get("message").getAsString().contains("kann an dieser Stelle nicht aufgelöst werden"), "Canonical JSON or presentation missing");
             String compact = cases.get("compact").stderr(), verbose = cases.get("verbose").stderr();
             require(compact.lines().count() == 1 && !compact.contains(" | "), "Compact diagnostic contains details");
-            require(verbose.contains(" | ") && verbose.startsWith(compact.stripTrailing()+"\n"), "Verbose diagnostic lost header/frame");
+            require(verbose.contains(" | ") && verbose.startsWith(compact.stripTrailing()+"\n"), "Diagnostic context lost header/frame");
             repositoryHttp(folder, launcher, cases);
             colorCases(folder, launcher, cases);
             verifyColorCases(cases);
@@ -186,7 +186,7 @@ public final class CompilerCliProcesses {
                 new ColorCase("color-compile",List.of("compile","--color=always","Bad.ili"),standard,1,false),
                 new ColorCase("color-analyze",List.of("analyze","--color=always","Bad.ili"),standard,0,false));
         for (var fixture : fixtures) {
-            var command = new ArrayList<String>(); command.add(launcher.toString()); command.addAll(fixture.args()); command.add("--verbose");
+            var command = new ArrayList<String>(); command.add(launcher.toString()); command.addAll(fixture.args()); command.add("--diagnostic-context");
             var result = run(folder, command, Duration.ofSeconds(45), fixture.environment());
             verify(fixture.name(),result,fixture.exit(),fixture.stdout()); cases.put(fixture.name(),result);
         }

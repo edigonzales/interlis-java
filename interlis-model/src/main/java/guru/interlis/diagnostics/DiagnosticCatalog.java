@@ -167,6 +167,9 @@ public final class DiagnosticCatalog {
         list.add(def("ILI-RES-0013", "operational source verification information", Severity.INFO,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.verification",
                 DiagnosticDefinition.PositionRule.FORBIDDEN));
+        list.add(def("ILI-RES-0015", "operational local model directory search information", Severity.INFO,
+                Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.localSearch",
+                DiagnosticDefinition.PositionRule.FORBIDDEN, arg("directory", ArgumentKind.TEXT)));
         list.add(def("ILI-RES-0008", "repository selection adjustment", Severity.WARNING,
                 Set.of(Phase.SOURCE_RESOLUTION), "diagnostic.resolution.adjustment",
                 DiagnosticDefinition.PositionRule.OPTIONAL, arg("model", ArgumentKind.IDENTIFIER),

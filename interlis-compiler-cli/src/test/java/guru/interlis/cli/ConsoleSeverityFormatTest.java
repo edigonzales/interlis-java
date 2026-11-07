@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ConsoleSeverityFormatTest {
-    @Test void everySeverityPrecedesCodeAndOptionalRevisionFaithfulLocationInBothLanguages() {
+    @Test void everySeverityPrecedesOptionalRevisionFaithfulLocationAndEndsWithCodeInBothLanguages() {
         var id = new SourceId("memory:/😀.ili");
         var source = new SourceText(id, new SourceRevision(7), "😀\r\n  Missing");
         var range = new SourceRange(id, source.revision(), 6, 13);
@@ -22,15 +22,16 @@ class ConsoleSeverityFormatTest {
                     String rendered = renderer.render(diagnostic, Map.of(id, source), language,
                             new RenderOptions(color, 0, 0, 160, false));
                     String plain = rendered.replaceAll("\u001b\\[[0-9;]*m", "");
-                    assertTrue(plain.startsWith(severity.name() + " [ILI-SEM-0001] "), plain);
-                    if (position.isPresent()) assertTrue(plain.startsWith(severity.name() + " [ILI-SEM-0001] memory:/😀.ili:2:3: "), plain);
+                    assertTrue(plain.startsWith(severity.name() + " "), plain);
+                    assertTrue(plain.endsWith(" [ILI-SEM-0001]"), plain);
+                    if (position.isPresent()) assertTrue(plain.startsWith(severity.name() + " <memory:/😀.ili>:2:3: "), plain);
                     assertTrue(plain.contains("Missing\\u000a\\u001b"), plain);
                     assertEquals(color, rendered.contains("\u001b["));
                 }
                 if (position.isPresent()) {
                     String stale = renderer.render(diagnostic, Map.of(id, new SourceText(id, new SourceRevision(8), source.text())), language,
                             new RenderOptions(false, 0, 0, 160, false));
-                    assertTrue(stale.startsWith(severity.name() + " [ILI-SEM-0001] memory:/😀.ili@7 (UTF-16 6..13): "), stale);
+                    assertTrue(stale.startsWith(severity.name() + " <memory:/😀.ili>@7 (UTF-16 6..13): "), stale);
                 }
             }
         }

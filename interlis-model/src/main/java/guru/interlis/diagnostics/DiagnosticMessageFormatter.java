@@ -29,7 +29,9 @@ public final class DiagnosticMessageFormatter {
             text("resolution.lookup", "Model lookup: {model} @ {repository}", "Modellsuche: {model} @ {repository}"),
             text("resolution.selected", "Model selected: {model} {detail}", "Modellauswahl: {model} {detail}"),
             text("resolution.verification", "Completion check: checking resolved sources for changes.", "Abschlussprüfung: verwendete Quellen auf Änderungen prüfen."),
-            text("resolution.cache", "Cache access for source '{source}': {event}.", "Cachezugriff für Quelle '{source}': {event}."),
+            text("resolution.cache", "{event}: {source}", "{event}: {source}"),
+            text("resolution.localSearch", "Searching for models in local directory: {directory}",
+                    "Suche nach Modellen im lokalen Verzeichnis: {directory}"),
             text("resolution.adjustment", "Repository '{repository}', model '{model}': {reason}.", "Repository '{repository}', Modell '{model}': {reason}."),
             text("resolution.rejected", "Model '{model}' could not be provided: {reason}.", "Das Modell '{model}' konnte nicht bereitgestellt werden: {reason}."),
             text("semantics.unresolved", "The name '{name}' cannot be resolved at this location.", "Der Name '{name}' kann an dieser Stelle nicht aufgelöst werden."),
@@ -93,12 +95,13 @@ public final class DiagnosticMessageFormatter {
     private static String cacheEvent(String event, DiagnosticLanguage language) {
         boolean de = language == DiagnosticLanguage.DE;
         return switch (event) {
-            case "FRESH_HIT" -> de ? "lokalen Cache innerhalb der Gültigkeitsfrist verwendet" : "content used from fresh cache";
-            case "NOT_MODIFIED" -> de ? "Inhalt aus Cache verwendet (HTTP 304)" : "content used from cache (HTTP 304)";
-            case "OFFLINE_HIT" -> de ? "Inhalt offline aus Cache verwendet" : "content used from cache offline";
-            case "DOWNLOAD" -> de ? "Quelle heruntergeladen" : "source downloaded";
-            case "CACHE_MISS" -> de ? "Cache konnte nicht verwendet werden" : "cache could not be used";
-            case "OFFLINE_MISS" -> de ? "Quelle im Offlinecache nicht verfügbar" : "source unavailable in offline cache";
+            case "FRESH_HIT" -> de ? "Aus lokalem Cache geladen (innerhalb der Gültigkeitsfrist)"
+                    : "Loaded from local cache (within freshness period)";
+            case "NOT_MODIFIED" -> de ? "Aus Cache geladen (HTTP 304)" : "Loaded from cache (HTTP 304)";
+            case "OFFLINE_HIT" -> de ? "Offline aus Cache geladen" : "Loaded from cache offline";
+            case "DOWNLOAD" -> de ? "Quelle heruntergeladen" : "Source downloaded";
+            case "CACHE_MISS" -> de ? "Cache konnte nicht verwendet werden" : "Cache could not be used";
+            case "OFFLINE_MISS" -> de ? "Quelle im Offlinecache nicht verfügbar" : "Source unavailable in offline cache";
             default -> event;
         };
     }

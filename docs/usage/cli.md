@@ -35,12 +35,25 @@ Dateien bleiben UTF-8 und frei von automatisch eingefügten ANSI-Sequenzen.
 ## Diagnosen und Farbe
 
 `--diagnostic-language de|en` wählt die Diagnoseprosa. Default ist Englisch.
-`--verbose` ergänzt bei `check`, `compile`, `analyze`, `diagram` und
-`format` sichere Quellausschnitte, verwandte Fundstellen und Hinweise. Bei
-Repositoryläufen erscheinen Suche, Auswahl und Cachezugriffe unmittelbar in
-der tatsächlichen Reihenfolge. Quellframes zeigen bis zu drei revisionstreue
+`--diagnostic-context` ergänzt bei `check`, `compile`, `analyze`, `diagram` und
+`format` sichere Quellausschnitte, verwandte Fundstellen und Hinweise. Der
+Diagnosecode steht am Ende der ersten Zeile. Quellframes zeigen bis zu drei revisionstreue
 Zeilen mit höchstens 160 sichtbaren Spalten. Bei unsicherer Unicodebreite
 ersetzt ein UTF-16-Hinweis das Caret. Steuerzeichen werden druckbar escaped.
+
+`--verbose` zeigt bei `check`, `compile`, `analyze` und `diagram` die lokale
+Suche, Repositorysuche, Modellauswahl und Cachezugriffe in der tatsächlichen
+Reihenfolge auf stderr. Der Schalter ist mit `--diagnostic-context`
+kombinierbar, hat bei `format` keine Wirkung und erzeugt bei `--json` keine
+Suchmeldungen.
+
+Bei diesen Modellbefehlen beginnt die Textausgabe mit `--verbose` auf stderr
+mit der Compilerversion und, wenn beim Build verfügbar, der Git-SHA von
+`HEAD`. Sie endet mit dem Laufstatus und der lokalen Uhrzeit
+im Format `yyyy-MM-dd HH:mm:ss`. Die Abschlussmeldung unterscheidet Erfolg,
+Fehler und Abbruch. `--json` und `--explain-config` schalten die Laufanzeige aus.
+Quellorte in Textdiagnosen und Adressen in der Such- und Cacheanzeige stehen
+in spitzen Klammern.
 
 `--color=auto|always|never` oder `--color MODE` gilt für die fünf
 Diagnosebefehle. AUTO färbt nur sicher interaktives stderr. Umleitung,

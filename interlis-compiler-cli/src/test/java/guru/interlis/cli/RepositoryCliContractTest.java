@@ -12,11 +12,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RepositoryCliContractTest {
     @TempDir Path directory;
-    record Run(CliExecutionResult result,String output) { }
+    record Run(CliExecutionResult result,String output,String stderr) { }
     Run run(String... args) {
         var out=new ByteArrayOutputStream();var err=new ByteArrayOutputStream();
         var env=new CliEnvironment(directory,new ByteArrayInputStream(new byte[0]),new PrintStream(out),new PrintStream(err),Map.of());
-        return new Run(new DefaultCompilerCli().run(List.of(args),env,CancellationToken.none()),out.toString(StandardCharsets.UTF_8));
+        return new Run(new DefaultCompilerCli().run(List.of(args),env,CancellationToken.none()),
+                out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
     }
     static String model(String version) { return "INTERLIS 2.4; MODEL Dep AT \"https://example.org\" VERSION \""+version+"\"=DOMAIN P=TEXT;END Dep."; }
     static String entry(String version,String file) { return "<ModelMetadata><Name>Dep</Name><SchemaLanguage>ili2_4</SchemaLanguage><File>"+file+"</File><Version>"+version+"</Version></ModelMetadata>"; }
@@ -92,9 +93,13 @@ class RepositoryCliContractTest {
         cache(cache, "https://models.interlis.ch/ilimodels.xml", "<TRANSFER>" + entry("2", "remote.ili") + "</TRANSFER>");
         cache(cache, "https://models.interlis.ch/remote.ili", model("2"));
 
-        var local = run("check", "root.ili", "--offline", "--cache", "cache", "--write-lock", "local.xml");
+        var local = run("check", "root.ili", "--offline", "--cache", "cache", "--write-lock", "local.xml", "--verbose");
         assertEquals(CliTermination.SUCCESS, local.result().termination(), local.result().output());
         assertTrue(local.result().repositorySteps().isEmpty());
+        String scan = "INFO Searching for models in local directory: <" + directory.toAbsolutePath().normalize() + "> [ILI-RES-0015]";
+        assertEquals(List.of(scan), local.stderr().lines().filter(line -> line.contains(" [ILI-RES-")).toList());
+        assertTrue(local.result().diagnostics().isEmpty());
+        assertFalse(Files.readString(directory.resolve("local.xml")).contains("ILI-RES-0015"));
         assertEquals(neighbour.toUri().toString(),
                 local.result().resolutionLock().orElseThrow().models().get("Dep").getFirst().source().value());
         assertEquals(CliTermination.SUCCESS, run("check", "root.ili", "--offline", "--no-cache",
@@ -102,11 +107,25 @@ class RepositoryCliContractTest {
 
         Path nested = Files.createDirectory(directory.resolve("nested"));
         Files.move(neighbour, nested.resolve(neighbour.getFileName()));
-        var remote = run("check", "root.ili", "--offline", "--cache", "cache");
+        var remote = run("check", "root.ili", "--offline", "--cache", "cache", "--verbose");
         assertEquals(CliTermination.SUCCESS, remote.result().termination(), remote.result().output());
         assertEquals("https://models.interlis.ch/remote.ili",
                 remote.result().resolutionLock().orElseThrow().models().get("Dep").getFirst().source().value());
         assertEquals("https://models.interlis.ch/", remote.result().repositorySteps().getFirst().repository().toString());
+        var remoteLogs = remote.stderr().lines().filter(line -> line.contains(" [ILI-RES-")).toList();
+        assertEquals(scan, remoteLogs.getFirst());
+        assertTrue(remoteLogs.get(1).endsWith(" [ILI-RES-0011]"));
+        var explicit = run("check", "root.ili", "--repository", repository(false).toString(), "--verbose");
+        assertEquals(0, explicit.result().exitCode(), explicit.stderr());
+        assertFalse(explicit.stderr().contains("ILI-RES-0015"));
+        var complete = run("check", "root.ili", "nested/different-filename.ili", "--verbose");
+        assertEquals(0, complete.result().exitCode(), complete.stderr());
+        assertEquals(2, complete.stderr().lines().count());
+        assertFalse(complete.stderr().contains("ILI-RES-"));
+        var json = run("check", "root.ili", "--offline", "--cache", "cache", "--json", "--verbose");
+        assertEquals(0, json.result().exitCode(), json.output());
+        assertTrue(json.stderr().isEmpty());
+        assertFalse(json.output().contains("ILI-RES-0015"));
     }
 
     static void cache(Path root, String uri, String content) throws IOException {

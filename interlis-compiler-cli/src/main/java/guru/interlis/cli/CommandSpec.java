@@ -54,6 +54,7 @@ public record CommandSpec(String command, List<Option> options, boolean acceptsF
         };
         if (files) {
             options.add(new Option("--verbose", 0, false));
+            options.add(new Option("--diagnostic-context", 0, false));
             options.add(new Option("--diagnostic-language", 1, false));
             options.add(new Option("--color", 1, false));
         }

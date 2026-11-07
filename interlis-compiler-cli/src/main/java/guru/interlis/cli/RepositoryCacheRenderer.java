@@ -17,7 +17,8 @@ public final class RepositoryCacheRenderer {
         var code=new DiagnosticCode("ILI-RES-0010");
         var key="diagnostic.resolution.cache";
         List<DiagnosticArgument> arguments=List.of(new DiagnosticArgument.TextArgument("event",observation.event().name()),
-                new DiagnosticArgument.TextArgument("source",observation.safeSource().orElse("?")));
+                new DiagnosticArgument.TextArgument("source", observation.safeSource()
+                        .map(ConsoleDiagnosticRenderer::delimitedLocation).orElse("?")));
         var diagnostic=new Diagnostic(DiagnosticIds.create(code,Phase.SOURCE_RESOLUTION,Optional.empty(),key,arguments),
                 code,Severity.INFO,Phase.SOURCE_RESOLUTION,key,arguments,Optional.empty(),List.of(),Optional.empty(),
                 List.of(),Optional.empty(),Optional.empty(),List.of());

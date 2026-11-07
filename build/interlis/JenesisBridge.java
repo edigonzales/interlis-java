@@ -162,6 +162,7 @@ public final class JenesisBridge {
 
     public static BuildOutcome run(BuildRequest request, Map<String,String> overrides) throws Exception {
         Path root = request.root();
+        Path cliRevision = cliRevisionResource(root);
         var settings = new LinkedHashMap<>(Make.settings(root).keys());
         settings.put("maven.local", "");
         settings.put("module.local", "");
@@ -190,6 +191,12 @@ public final class JenesisBridge {
                 var resources = new LinkedHashMap<Path, Path>();
                 resources.put(Path.of("META-INF/licenses/UNICODE-LICENSE.txt"),
                         root.resolve("testdata/reference/unicode/17.0.0/UNICODE-LICENSE.txt"));
+                assembler = assembler.resources(resources);
+            }
+            if (module.equals("interlis-compiler-cli") && descriptor.name().equals("module-" + module)
+                    && cliRevision != null) {
+                var resources = new LinkedHashMap<Path, Path>();
+                resources.put(Path.of("guru/interlis/cli/build-revision.txt"), cliRevision);
                 assembler = assembler.resources(resources);
             }
             if(descriptor.test()&&Files.isRegularFile(root.resolve(module+"/src/main/java/module-info.java"))) {
@@ -395,6 +402,20 @@ public final class JenesisBridge {
 
     private static String localIdentity(String value) {
         while(value.startsWith("../"))value=value.substring(3);return value;
+    }
+
+    private static Path cliRevisionResource(Path root) throws Exception {
+        String revision;
+        try {
+            revision = git(root, "rev-parse", "--verify", "HEAD");
+        } catch (java.io.IOException | IllegalStateException unavailable) {
+            return null;
+        }
+        if (!revision.matches("[0-9a-f]{40}|[0-9a-f]{64}")) return null;
+        Path resource = JvmBuildInputs.requireOutputRoot(root, "target/jenesis-jvm/build-revisions/" + revision + ".txt");
+        Files.createDirectories(resource.getParent());
+        if (!Files.exists(resource) || !Files.readString(resource).equals(revision)) Files.writeString(resource, revision);
+        return resource;
     }
 
     private static String git(Path root,String... args) throws Exception {

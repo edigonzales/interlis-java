@@ -42,11 +42,10 @@ public final class ConsoleDiagnosticRenderer {
         var formatter = new DiagnosticMessageFormatter();
         var message = formatter.format(diagnostic, language);
         var out = new StringBuilder();
-        out.append(styler.style(AnsiStyler.Role.valueOf(diagnostic.severity().name()),
-                diagnostic.severity().name(), ansiEnabled)).append(" [")
-                .append(styler.style(AnsiStyler.Role.CODE, diagnostic.code().value(), ansiEnabled)).append("] ");
+        out.append(severityPrefix(diagnostic.severity(), ansiEnabled));
         diagnostic.primaryRange().ifPresent(range -> out.append(styler.style(AnsiStyler.Role.LOCATION, location(range, sources), ansiEnabled)).append(": "));
-        out.append(message.text());
+        out.append(message.text()).append(" [")
+                .append(styler.style(AnsiStyler.Role.CODE, diagnostic.code().value(), ansiEnabled)).append(']');
         if (!options.verbose()) return out.toString();
         new DiagnosticSnippetRenderer().renderPrimary(diagnostic, sources, options, styler)
                 .ifPresent(frame -> out.append('\n').append(frame));
@@ -60,8 +59,20 @@ public final class ConsoleDiagnosticRenderer {
         return out.toString();
     }
 
+    static String renderLog(Severity severity, String message, boolean ansiEnabled) {
+        return severityPrefix(severity, ansiEnabled) + DiagnosticMessageFormatter.safeText(message);
+    }
+
+    private static String severityPrefix(Severity severity, boolean ansiEnabled) {
+        return new AnsiStyler().style(AnsiStyler.Role.valueOf(severity.name()), severity.name(), ansiEnabled) + " ";
+    }
+
+    static String delimitedLocation(String value) {
+        return "<" + DiagnosticMessageFormatter.safeText(value).replace("<", "\\u003c").replace(">", "\\u003e") + ">";
+    }
+
     private static String location(SourceRange range, Map<SourceId, SourceText> sources) {
-        String id = DiagnosticMessageFormatter.safeText(range.source().value());
+        String id = delimitedLocation(range.source().value());
         var source = sources.get(range.source());
         if (source != null && source.id().equals(range.source()) && source.revision().equals(range.revision())
                 && range.startOffset() <= source.length() && range.endOffset() <= source.length()) {

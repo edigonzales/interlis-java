@@ -7,6 +7,7 @@ import guru.interlis.diagnostics.Diagnostic;
 import guru.interlis.diagnostics.DiagnosticPresentation;
 import guru.interlis.diagnostics.DiagnosticDisplayPolicy;
 import guru.interlis.diagnostics.DiagnosticLanguage;
+import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.execution.OperationCancelledException;
 import guru.interlis.execution.RunContext;
@@ -56,9 +57,15 @@ import java.util.Optional;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 /** Default CLI implementation using the same CompilerEngine as the SDK. */
 public final class DefaultCompilerCli implements CliApplication {
+    private static final DateTimeFormatter RUN_TIMESTAMP =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
     private final CliOutputWriter fileWriter;
     private final ModelFormatter formatter;
 
@@ -95,6 +102,19 @@ public final class DefaultCompilerCli implements CliApplication {
             environment.err().flush();
             if (environment.out().checkError() || environment.err().checkError()) {
                 outcome = result(CliTermination.OPERATIONAL_FAILURE, outcome.diagnostics(), "output write failed");
+            }
+            if (invocation.runBannerStarted) {
+                var timestamp = RUN_TIMESTAMP.withZone(ZoneId.systemDefault())
+                        .format(Instant.ofEpochMilli(services.clock().wallTimeEpochMillis()));
+                Severity severity = switch (outcome.termination()) {
+                    case SUCCESS, CANCELLED -> Severity.INFO;
+                    default -> Severity.ERROR;
+                };
+                environment.err().println(ConsoleDiagnosticRenderer.renderLog(severity,
+                        runEndMessage(outcome.termination(), invocation.language) + " " + timestamp, invocation.ansiEnabled));
+                if (environment.err().checkError()) {
+                    outcome = result(CliTermination.OPERATIONAL_FAILURE, outcome.diagnostics(), "output write failed");
+                }
             }
         } catch (RuntimeException failure) {
             outcome = result(CliTermination.OPERATIONAL_FAILURE, outcome.diagnostics(), "output flush failed");
@@ -167,6 +187,28 @@ public final class DefaultCompilerCli implements CliApplication {
         }
     }
 
+    private static String runEndMessage(CliTermination termination, DiagnosticLanguage language) {
+        boolean german = language == DiagnosticLanguage.DE;
+        return switch (termination) {
+            case SUCCESS -> german ? "...Compilerlauf abgeschlossen" : "...compiler run done";
+            case CANCELLED -> german ? "...Compilerlauf abgebrochen" : "...compiler run cancelled";
+            default -> german ? "...Compilerlauf fehlgeschlagen" : "...compiler run failed";
+        };
+    }
+
+    static String compilerVersionLine() {
+        String version = "interlis-compiler " + VersionManifest.current().toolVersion();
+        try (var resource = DefaultCompilerCli.class.getResourceAsStream("build-revision.txt")) {
+            if (resource != null) {
+                String revision = new String(resource.readNBytes(65), StandardCharsets.US_ASCII);
+                if (revision.matches("[0-9a-f]{40}|[0-9a-f]{64}")) return version + " (git " + revision + ")";
+            }
+        } catch (java.io.IOException unavailable) {
+            // The build revision is optional presentation metadata.
+        }
+        return version;
+    }
+
     private CliExecutionResult help(List<String> arguments, CliEnvironment environment) {
         parseCommand(arguments);
         var help = new StringBuilder("interlis-compiler ")
@@ -200,9 +242,10 @@ public final class DefaultCompilerCli implements CliApplication {
         appendHelpOptions(help, "Configuration (check, compile, analyze, diagram)", modelOptions,
                 "--config", "--explain-config", "--warnings");
         appendHelpOptions(help, "Text diagnostics (check, compile, analyze, diagram, format)", modelOptions,
-                "--verbose", "--diagnostic-language", "--color");
+                "--diagnostic-context", "--diagnostic-language", "--color");
         help.append("  Also accepted: --color=auto|always|never.\n");
         help.append("  Auto color applies only to interactive stderr. NO_COLOR, TERM=dumb, and Windows disable it.\n");
+        appendHelpOptions(help, "Model search logging (check, compile, analyze, diagram)", modelOptions, "--verbose");
         appendHelpOptions(help, "JSON output (check, compile, analyze, version)", modelOptions, "--json");
         appendHelpOptions(help, "Diagram output (diagram)", CommandSpec.standard("diagram").options(), "--format");
         appendHelpOptions(help, "Formatting (format)", CommandSpec.standard("format").options(),
@@ -237,7 +280,8 @@ public final class DefaultCompilerCli implements CliApplication {
                 case "--config" -> new HelpOption("FILE", "Read settings from a Java properties file.");
                 case "--explain-config" -> new HelpOption("", "Show effective settings and where they came from.");
                 case "--warnings" -> new HelpOption("allow|reject", "Choose whether warnings fail validation.");
-                case "--verbose" -> new HelpOption("", "Show source excerpts, hints, and repository activity.");
+                case "--verbose" -> new HelpOption("", "Show compiler version and completion, model searches, selections, and cache activity.");
+                case "--diagnostic-context" -> new HelpOption("", "Show source excerpts, related locations, and hints.");
                 case "--diagnostic-language" -> new HelpOption("de|en", "Choose the diagnostic language (default: en).");
                 case "--color" -> new HelpOption("auto|always|never", "Color text diagnostics (default: auto).");
                 case "--json" -> new HelpOption("", "Write the result as JSON.");
@@ -338,6 +382,11 @@ public final class DefaultCompilerCli implements CliApplication {
         }
         if (parsed.files().isEmpty() && parsed.roots().isEmpty())
             return usage(environment, "no source files or root models");
+        if (supplied.has("--verbose") && !parsed.json()) {
+            environment.err().println(ConsoleDiagnosticRenderer.renderLog(
+                    Severity.INFO, compilerVersionLine(), invocation.ansiEnabled));
+            invocation.runBannerStarted = true;
+        }
         Loaded loaded = load(parsed.files(), environment, token);
         try (Workspace workspace = workspace(loaded, environment, warningPolicy)) {
             List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
@@ -372,29 +421,35 @@ public final class DefaultCompilerCli implements CliApplication {
                     } catch (java.io.IOException unavailable) { return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be read"); }
                     catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid resolution lock"); }
                 }
+                boolean logResolution = invocation.command.has("--verbose") && !parsed.json();
+                var resolutionRenderer = new RepositoryResolutionRenderer();
                 if (pendingModels && !loaded.sources().isEmpty()) {
                     new LocalModelDiscovery(environment).addNeighbours(workspace, loaded.sources().keySet(),
-                            lock, sourcePins, token);
+                            lock, sourcePins, directory -> {
+                                if (logResolution) environment.err().println(resolutionRenderer.renderLocalSearch(
+                                        directory, invocation.language, invocation.ansiEnabled));
+                            }, token);
                 }
                 var cacheConfiguration = parsed.cache().map(path -> RepositoryCacheConfiguration.at(hostPath(path, environment)))
                         .orElseGet(RepositoryCacheConfiguration::disabled);
                 var access = HostRepositories.createObserved(environment.workingDirectory(), cacheConfiguration, observation -> {
                     var event=observation.event();
                     invocation.lifecycle.cacheLookup("repository", event==RepositoryCacheEvent.FRESH_HIT || event==RepositoryCacheEvent.NOT_MODIFIED || event==RepositoryCacheEvent.OFFLINE_HIT,event.name());
-                    if (invocation.command.has("--verbose") && !parsed.json()) {
+                    if (logResolution) {
                         new RepositoryCacheRenderer().render(observation,invocation.language,invocation.ansiEnabled)
                                 .ifPresent(environment.err()::println);
                     }
                     if(event==RepositoryCacheEvent.WRITE_UNAVAILABLE) {
                         var warning=RepositoryDiagnostics.cacheUnavailable();
-                        environment.err().println(new ConsoleDiagnosticRenderer().render(warning,Map.of(),invocation.language,invocation.ansiEnabled));
+                        environment.err().println(new ConsoleDiagnosticRenderer().render(warning, Map.of(),
+                                invocation.language, diagnosticOptions(invocation)));
                     }
                 }, RepositoryNetworkOptions.proxy(configuration.command()));
                 var outcome = access.closureService()
                         .resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
                                 new RepositoryResolveOptions(config, parsed.modelPins(), sourcePins, lock), observation -> {
-                                    if (invocation.command.has("--verbose") && !parsed.json()) {
-                                        new RepositoryResolutionRenderer().render(observation, invocation.language, invocation.ansiEnabled)
+                                    if (logResolution) {
+                                        resolutionRenderer.render(observation, invocation.language, invocation.ansiEnabled)
                                                 .ifPresent(environment.err()::println);
                                     }
                                 }, token);
@@ -550,7 +605,7 @@ public final class DefaultCompilerCli implements CliApplication {
             if (outcome instanceof FormatOutcome.Rejected rejected) {
                 ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
                 for (Diagnostic diagnostic : rejected.diagnostics()) {
-                    environment.err().println(renderer.render(diagnostic, sources, invocation.language, new RenderOptions(invocation.ansiEnabled, 1, 1, 160, invocation.command.has("--verbose"))));
+                    environment.err().println(renderer.render(diagnostic, sources, invocation.language, diagnosticOptions(invocation)));
                 }
                 return result(CliTermination.SOURCE_REJECTED, rejected.diagnostics(),
                         "format rejected");
@@ -574,7 +629,7 @@ public final class DefaultCompilerCli implements CliApplication {
                     .filter(output -> !output.text().equals(output.input().source().text()))
                     .map(output -> output.input().file().toString()).toList();
             if (!changed.isEmpty()) {
-                changed.forEach(path -> environment.err().println("would format: " + guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(path)));
+                changed.forEach(path -> environment.err().println("would format: " + ConsoleDiagnosticRenderer.delimitedLocation(path)));
                 return result(CliTermination.FORMAT_CHECK_FAILED, List.of(),
                         String.join("\n", changed));
             }
@@ -743,9 +798,13 @@ public final class DefaultCompilerCli implements CliApplication {
         } else {
             ConsoleDiagnosticRenderer renderer = new ConsoleDiagnosticRenderer();
             for (Diagnostic diagnostic : new DiagnosticPresentation().project(diagnostics, new DiagnosticDisplayPolicy(true, Integer.MAX_VALUE)).visibleDiagnostics()) {
-                environment.err().println(renderer.render(diagnostic, sources, invocation.language, new RenderOptions(invocation.ansiEnabled, 1, 1, 160, invocation.command.has("--verbose"))));
+                environment.err().println(renderer.render(diagnostic, sources, invocation.language, diagnosticOptions(invocation)));
             }
         }
+    }
+
+    private static RenderOptions diagnosticOptions(Invocation invocation) {
+        return new RenderOptions(invocation.ansiEnabled, 1, 1, 160, invocation.command.has("--diagnostic-context"));
     }
 
     private CliExecutionResult usage(CliEnvironment environment, String message) {
@@ -779,6 +838,7 @@ public final class DefaultCompilerCli implements CliApplication {
         final RunContext context;
         RunLifecycle lifecycle;
         boolean ansiEnabled;
+        boolean runBannerStarted;
         boolean schemaProduced;
         boolean analysisComplete;
         final List<CliExecutionResult.Artifact> artifacts = new ArrayList<>();

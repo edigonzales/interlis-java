@@ -144,7 +144,7 @@ class SemanticRepositoryCommandsTest {
     @Test void analyzeStillReturnsDiagnosticsAndLockWithoutCertifyingSchema() throws Exception {
         Path repo = repository("repo");
         Files.writeString(repo.resolve("Base.ili"), model("Base", "DOMAIN Value=TEXT*20; TOPIC Office=CLASS Office=END Office;END Office;"));
-        var analysis = run("analyze", "--repository", repo.toString(), "--root", "Root", "--verbose", "--write-lock", "analysis.lock");
+        var analysis = run("analyze", "--repository", repo.toString(), "--root", "Root", "--diagnostic-context", "--write-lock", "analysis.lock");
         assertEquals(0, analysis.result.exitCode(), analysis.err+analysis.result.output()); assertFalse(analysis.result.diagnostics().isEmpty());
         assertTrue(analysis.err.contains(" | "), analysis.err); assertFalse(analysis.err.contains("@1 (UTF-16"));
         assertTrue(Files.exists(directory.resolve("analysis.lock")));

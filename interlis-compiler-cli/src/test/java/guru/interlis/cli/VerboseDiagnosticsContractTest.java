@@ -1,55 +1,98 @@
 package guru.interlis.cli;
 
+import guru.interlis.compiler.CompilerServices;
 import guru.interlis.diagnostics.*;
-import guru.interlis.execution.CancellationToken;
+import guru.interlis.execution.*;
 import guru.interlis.source.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class VerboseDiagnosticsContractTest {
+    private static final String RUN_TIME = "2026-11-07 19:20:19";
     @TempDir Path directory;
     record Run(CliExecutionResult result, String out, String err) { }
     Run run(String... args) {
+        return run(CancellationToken.none(), args);
+    }
+    Run run(CancellationToken token, String... args) {
         var out = new ByteArrayOutputStream(); var err = new ByteArrayOutputStream();
+        long time = LocalDateTime.of(2026, 11, 7, 19, 20, 19).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+        var services = new CompilerServices(RunObserver.noop(), new ClockSource() {
+            @Override public long wallTimeEpochMillis() { return time; }
+            @Override public long monotonicNanos() { return 0; }
+        }, RunContextFactory.defaults());
         var result = new DefaultCompilerCli().run(List.of(args), new CliEnvironment(directory, InputStream.nullInputStream(),
-                new PrintStream(out), new PrintStream(err), Map.of()), CancellationToken.none());
+                new PrintStream(out), new PrintStream(err), Map.of(), services), token);
         return new Run(result, out.toString(StandardCharsets.UTF_8), err.toString(StandardCharsets.UTF_8));
     }
-    @Test void allDiagnosticCommandsDefaultToHeaderAndVerboseRestoresDetails() throws Exception {
+
+    private static String framed(String body, String footer) {
+        return "INFO " + DefaultCompilerCli.compilerVersionLine() + System.lineSeparator()
+                + body + footer + " " + RUN_TIME + System.lineSeparator();
+    }
+    @Test void allDiagnosticCommandsDefaultToHeaderAndContextRestoresDetails() throws Exception {
         Files.writeString(directory.resolve("conflict.ili"), "INTERLIS 2.4;\nMODEL F AT \"x\" VERSION \"1\" =\nTOPIC Office=\nCLASS Office=END Office;END Office;END F.");
         Files.writeString(directory.resolve("syntax.ili"), "INTERLIS 2.4;\nMODEL Syntax AT \"x\" VERSION \"1\" = TOPIC");
         for (String command : List.of("check", "compile", "analyze", "diagram", "format")) {
             String file = command.equals("format") ? "syntax.ili" : "conflict.ili";
             for (String language : List.of("en", "de")) {
                 var compact = run(command, "--diagnostic-language", language, "--color=never", file);
-                var verbose = run(command, "--verbose", "--diagnostic-language", language, "--color=never", file);
+                var detailed = run(command, "--diagnostic-context", "--diagnostic-language", language, "--color=never", file);
                 assertFalse(compact.result.diagnostics().isEmpty(), command);
-                assertEquals(compact.result.diagnostics(), verbose.result.diagnostics());
-                assertEquals(compact.result.exitCode(), verbose.result.exitCode()); assertEquals(compact.out, verbose.out);
+                assertEquals(compact.result.diagnostics(), detailed.result.diagnostics());
+                assertEquals(compact.result.exitCode(), detailed.result.exitCode()); assertEquals(compact.out, detailed.out);
                 assertEquals(compact.result.diagnostics().size(), compact.err.lines().count(), compact.err);
                 assertFalse(compact.err.contains(" | ")); assertFalse(compact.err.contains("Related location:")); assertFalse(compact.err.contains("Hint:"));
-                assertTrue(verbose.err.contains(" | "), verbose.err);
+                boolean german = language.equals("de");
+                String footer = compact.result.exitCode() == 0
+                        ? (german ? "INFO ...Compilerlauf abgeschlossen" : "INFO ...compiler run done")
+                        : (german ? "ERROR ...Compilerlauf fehlgeschlagen" : "ERROR ...compiler run failed");
+                boolean format = command.equals("format");
+                assertEquals(format ? compact.err : framed(compact.err, footer),
+                        run(command, "--verbose", "--diagnostic-language", language, "--color=never", file).err);
+                assertTrue(detailed.err.contains(" | "), detailed.err);
                 if (!command.equals("format")) {
-                    assertTrue(verbose.err.contains(language.equals("en") ? "Related location:" : "Verwandte Stelle:"));
-                    assertTrue(verbose.err.contains(language.equals("en") ? "Hint:" : "Hinweis:"));
+                    assertTrue(detailed.err.contains(language.equals("en") ? "Related location:" : "Verwandte Stelle:"));
+                    assertTrue(detailed.err.contains(language.equals("en") ? "Hint:" : "Hinweis:"));
                 }
-                var color = run(command, "--verbose", "--diagnostic-language", language, "--color=always", file);
-                assertEquals(verbose.err, ColorOutputContractTest.stripSgr(color.err));
+                var color = run(command, "--verbose", "--diagnostic-context", "--diagnostic-language", language, "--color=always", file);
+                assertEquals(format ? detailed.err : framed(detailed.err, footer), ColorOutputContractTest.stripSgr(color.err));
                 var compactColor = run(command, "--diagnostic-language", language, "--color=always", file);
                 assertEquals(compact.err, ColorOutputContractTest.stripSgr(compactColor.err));
             }
         }
     }
+    @Test void successAndCancellationHaveDistinctVerboseFooters() throws Exception {
+        Files.writeString(directory.resolve("good.ili"), "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\"=END F.");
+        assertEquals("", run("check", "good.ili").err);
+        var success = run("check", "--verbose", "good.ili");
+        assertEquals(0, success.result.exitCode());
+        assertEquals(framed("", "INFO ...compiler run done"), success.err);
+        var cancelled = run(CancellationToken.requested(CancellationReason.DEADLINE_EXCEEDED),
+                "check", "--verbose", "good.ili");
+        assertEquals(CliTermination.CANCELLED, cancelled.result.termination());
+        assertEquals(framed("cancelled: DEADLINE_EXCEEDED" + System.lineSeparator(),
+                "INFO ...compiler run cancelled"), cancelled.err);
+        var explain = run("check", "--verbose", "--explain-config");
+        assertEquals(0, explain.result.exitCode());
+        assertEquals("", explain.err);
+        var invalid = run("check", "--verbose", "--warnings", "invalid", "good.ili");
+        assertEquals(2, invalid.result.exitCode());
+        assertFalse(invalid.err.contains("INFO interlis-compiler"));
+        assertFalse(invalid.err.contains("compiler run failed"));
+    }
     @Test void jsonAndArtifactsAreIdenticalAndInvalidFlagsFailBeforeIo() throws Exception {
         Files.writeString(directory.resolve("bad.ili"), "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\"=DOMAIN D=Missing;END F.");
         Files.writeString(directory.resolve("good.ili"), "INTERLIS 2.4; MODEL F AT \"x\" VERSION \"1\"=END F.");
         for (String command : List.of("check", "compile", "analyze")) {
-            var a = run(command, "--json", "bad.ili"); var b = run(command, "--json", "--verbose", "bad.ili");
+            var a = run(command, "--json", "bad.ili"); var b = run(command, "--json", "--verbose", "--diagnostic-context", "bad.ili");
             assertEquals(a.out, b.out); assertTrue(b.err.isEmpty());
         }
         for (String format : List.of("mermaid", "plantuml", "json"))
@@ -66,6 +109,8 @@ class VerboseDiagnosticsContractTest {
         for (String command : List.of("check", "compile", "analyze", "diagram", "format")) {
             assertEquals(2, run(command, "--verbose", "--verbose", "missing.ili").result.exitCode());
             assertEquals(2, run(command, "--verbose=true", "missing.ili").result.exitCode());
+            assertEquals(2, run(command, "--diagnostic-context", "--diagnostic-context", "missing.ili").result.exitCode());
+            assertEquals(2, run(command, "--diagnostic-context=true", "missing.ili").result.exitCode());
         }
         for (String command : List.of("help", "version", "capabilities")) assertEquals(2, run(command,"--verbose").result.exitCode());
         assertEquals(2, run("format","--repository","missing","missing.ili").result.exitCode());

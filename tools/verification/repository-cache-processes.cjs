@@ -43,8 +43,8 @@ async function run(name, args, exit = 0) {
     return row;
 }
 function ordered(row, miss = false) {
-    const infos = row.stderr.split('\n').filter(line => line.startsWith('INFO '));
-    assert.deepEqual(infos.map(line => line.match(/\[(ILI-RES-\d+)\]/)[1]),
+    const infos = row.stderr.split('\n').filter(line => line.startsWith('INFO ') && / \[ILI-RES-\d+\]$/.test(line));
+    assert.deepEqual(infos.map(line => line.match(/ \[(ILI-RES-\d+)\]$/)[1]),
         ['ILI-RES-0011', 'ILI-RES-0010', 'ILI-RES-0012', ...(miss ? ['ILI-RES-0010'] : []), 'ILI-RES-0010'], row.stderr);
     assert.ok(infos[1].includes('ilimodels.xml')); assert.ok(infos[3].includes('Basis.ili'));
 }
@@ -55,32 +55,35 @@ function ordered(row, miss = false) {
     const lock = path.join(dir, 'project.lock');
     const cold = await run('cold', ['check', ...common, '--verbose', '--write-lock', lock]);
     ordered(cold); assert.deepEqual(cold.http.map(r => r.status), [200, 200]); assert.equal(cold.stdout, '');
+    assert.ok(cold.stderr.includes('Source downloaded: <' + base + 'Basis.ili> [ILI-RES-0010]'));
     for (const command of ['check', 'compile', 'analyze', 'diagram']) {
         const hot = await run('warm-' + command, [command, ...common, '--verbose', '--warnings', 'reject', ...(command === 'diagram' ? ['--format', 'json'] : [])]);
-        ordered(hot); assert.deepEqual(hot.http.map(r => r.status), []);
+        ordered(hot); assert.deepEqual(hot.http.map(r => r.status), []); assert.ok(hot.stderr.includes('Loaded from local cache (within freshness period): <' + base + 'Basis.ili>'));
         if (command === 'diagram') assert.ok(JSON.parse(hot.stdout)); else assert.equal(hot.stdout, '');
     }
     const de = await run('german', ['compile', ...common, '--verbose', '--diagnostic-language', 'de']);
-    ordered(de); assert.ok(de.stderr.includes('INFO [ILI-RES-0011] Modellsuche:')); assert.ok(!de.stderr.includes('ILI-RES-0013')); assert.ok(de.stderr.includes('Gültigkeitsfrist'));
+    ordered(de); assert.ok(de.stderr.includes('INFO Modellsuche:')); assert.ok(!de.stderr.includes('ILI-RES-0013')); assert.ok(de.stderr.includes('Gültigkeitsfrist'));
     const compact = await run('compact', ['check', ...common]); assert.equal(compact.stderr, ''); assert.equal(compact.stdout, '');
     const json = await run('json', ['check', ...common, '--json']);
     const jsonVerbose = await run('json-verbose', ['check', ...common, '--json', '--verbose']);
     assert.deepEqual(JSON.parse(json.stdout), JSON.parse(jsonVerbose.stdout)); assert.equal(jsonVerbose.stderr, '');
     for (const locked of [false, true]) {
         const row = await run('offline-' + locked, ['compile', ...common, '--offline', '--verbose', ...(locked ? ['--read-lock', lock] : [])]);
-        assert.equal(row.http.length, 0); assert.ok(!row.stderr.includes('ILI-RES-0013'));
+        assert.equal(row.http.length, 0); assert.ok(row.stderr.includes('Loaded from cache offline: <' + base + 'Basis.ili>')); assert.ok(!row.stderr.includes('ILI-RES-0013'));
         if (locked) assert.ok(!row.stderr.includes('ILI-RES-0011') && !row.stderr.includes('ILI-RES-0012'));
     }
     const local = path.join(dir, 'Local.ili'); fs.writeFileSync(local, 'INTERLIS 2.4; MODEL Local AT "x" VERSION "1" = END Local.');
     const noWork = await run('no-work', ['check', local, '--repository', base, '--verbose']);
-    assert.equal(noWork.http.length, 0); assert.equal(noWork.stderr, '');
+    assert.equal(noWork.http.length, 0);
+    assert.match(noWork.stderr, /^INFO interlis-compiler [^\r\n]+\r?\nINFO \.\.\.compiler run done \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\r?\n$/);
     const missing = await run('missing', ['check', '--root', 'Absent', '--repository', base, '--offline', '--verbose'], 1);
-    assert.ok(missing.stderr.indexOf('INFO [ILI-RES-0011]') >= 0);
-    assert.ok(missing.stderr.indexOf('INFO [ILI-RES-0011]') < missing.stderr.indexOf('ERROR [')); assert.equal(missing.http.length, 0);
+    assert.ok(missing.stderr.indexOf(' [ILI-RES-0011]') >= 0);
+    assert.ok(missing.stderr.indexOf(' [ILI-RES-0011]') < missing.stderr.indexOf('ERROR ')); assert.equal(missing.http.length, 0);
+    assert.match(missing.stderr.trimEnd().split('\n').at(-1), /^ERROR \.\.\.compiler run failed \d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
     fs.writeFileSync(input, project.replace('END Projekt.', 'DOMAIN D = Missing; END Projekt.'));
     const bad = await run('compiler-error', ['compile', ...common, '--verbose', '--diagnostic-language', 'de'], 1);
-    assert.ok(bad.stderr.indexOf('INFO [ILI-RES-0011]') < bad.stderr.indexOf('ERROR [')); assert.ok(!bad.stderr.includes('ILI-RES-0013'));
-    assert.ok(bad.stderr.split('\n').some(line => /^ERROR \[ILI-SEM-\d+\] .*Projekt\.ili:\d+:\d+:/.test(line)), bad.stderr);
+    assert.ok(bad.stderr.indexOf(' [ILI-RES-0011]') < bad.stderr.indexOf('ERROR ')); assert.ok(!bad.stderr.includes('ILI-RES-0013'));
+    assert.ok(bad.stderr.split('\n').some(line => /^ERROR .*Projekt\.ili>:\d+:\d+: .* \[ILI-SEM-\d+\]$/.test(line)), bad.stderr);
     assert.equal(bad.stdout, ''); fs.writeFileSync(input, project);
     const disabled = await run('no-cache', ['check', ...common, '--no-cache', '--verbose']);
     ordered(disabled); assert.deepEqual(disabled.http.map(r => r.status), [200, 200]);
@@ -90,7 +93,7 @@ function ordered(row, miss = false) {
     mode = 'gzip';
     const compressed = await run('unexpected-compression', ['check', ...common, '--cache', path.join(dir, 'gzip-cache'), '--verbose'], 1);
     assert.ok(compressed.stderr.includes('ILI-RES-0003') && compressed.stderr.includes('input/output failure while loading'));
-    assert.ok(!fs.existsSync(path.join(dir, 'gzip-cache', 'metadata-v2'))); assert.ok(!compressed.stderr.includes('source downloaded'));
+    assert.ok(!fs.existsSync(path.join(dir, 'gzip-cache', 'metadata-v2'))); assert.ok(!compressed.stderr.includes('Source downloaded'));
     mode = 'identity';
     const color = await run('color-always', ['check', ...common, '--verbose', '--color', 'always']);
     assert.ok(color.stderr.startsWith('\x1b[36mINFO\x1b[0m')); assert.ok(color.stderr.includes('\x1b[90mILI-RES-0012\x1b[0m'));
@@ -108,7 +111,7 @@ function ordered(row, miss = false) {
     index = index.replace(/<md5>[^<]+<\/md5>/, '<md5>' + crypto.createHash('md5').update(model).digest('hex') + '</md5>');
     expireIndex();
     const changed = await run('changed-model-md5', ['check', ...common, '--verbose']);
-    ordered(changed, true); assert.ok(changed.stderr.includes('cache could not be used')); assert.deepEqual(changed.http.map(r => r.url), ['/ilimodels.xml', '/Basis.ili']);
+    ordered(changed, true); assert.ok(changed.stderr.includes('Cache could not be used')); assert.deepEqual(changed.http.map(r => r.url), ['/ilimodels.xml', '/Basis.ili']);
     const version = await run('version', ['version', '--json']);
     assert.equal(JSON.parse(version.stdout).diagnosticCatalogVersion, 'interlis-diagnostics/v4');
     const lib = path.resolve(path.dirname(launcher), '../lib');

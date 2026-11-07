@@ -53,27 +53,27 @@ Auch hier bleiben stdout und stderr leer. Der Exitcode ist `0`.
 
 ## 3. Eine Fehlermeldung lesen
 
-`--diagnostic-language de` wählt deutsche Meldungen. `--verbose` zeigt
+`--diagnostic-language de` wählt deutsche Meldungen. `--diagnostic-context` zeigt
 zusätzlich die betroffene Stelle im Quelltext. Mit `--color never` bleibt
 die Ausgabe beim Kopieren und in Protokollen frei von Farbsteuerzeichen.
 
 ```sh
-"$compiler" check --diagnostic-language de --verbose --color never \
+"$compiler" check --diagnostic-language de --diagnostic-context --color never \
   testdata/models/broken24.ili
 ```
 
 Ein Ausschnitt aus stderr mit gekürztem Dateipfad. stdout ist leer, der Exitcode ist `1`.
 
 ```text
-ERROR [ILI-SYN-0002] file:///…/testdata/models/broken24.ili:10:5: Unerwartetes Token 'END'; erwartet wird <unknown>.
+ERROR <file:///…/testdata/models/broken24.ili>:10:5: Unerwartetes Token 'END'; erwartet wird <unknown>. [ILI-SYN-0002]
    9 |       missingType :
   10 |     END BrokenClass;
      |     ^~~
   11 |   END Data;
 ```
 
-Die Meldung beginnt mit Schweregrad und Diagnosecode. Danach folgen Datei,
-Zeile und Spalte. Die Markierung im Quellausschnitt zeigt, wo der Parser
+Die Meldung beginnt mit dem Schweregrad, gefolgt von Datei, Zeile und Spalte.
+Der Diagnosecode steht nach dem Meldungstext. Die Markierung im Quellausschnitt zeigt, wo der Parser
 den Fehler bemerkt. Schau auch auf die Zeile davor, wenn etwa ein Typ nach
 einem Doppelpunkt fehlt.
 

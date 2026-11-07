@@ -30,10 +30,10 @@ class RepositoryDiagnosticsContractTest {
         for(String command:List.of("check","compile","analyze","diagram")) {
             var compact=run(command,"--repository",repo.toString(),root.toString());
             assertEquals(1,compact.result.exitCode());assertEquals(CliTermination.INPUT_UNRESOLVED,compact.result.termination());
-            assertTrue(compact.err.contains("ILI-RES-0001"));assertTrue(compact.err.contains("Missing"));assertTrue(compact.err.contains("root.ili:1:"));
+            assertTrue(compact.err.contains("ILI-RES-0001"));assertTrue(compact.err.contains("Missing"));assertTrue(compact.err.contains("root.ili>:1:"));
             assertFalse(compact.err.contains("resolution rejected:"));assertFalse(compact.err.contains("Hint:"));assertTrue(compact.result.artifacts().isEmpty());
-            var verbose=run(command,"--repository",repo.toString(),"--verbose","--diagnostic-language","de",root.toString());
-            assertTrue(verbose.err.contains("ERROR [ILI-RES-0001]"));assertTrue(verbose.err.contains("Hinweis:"));assertTrue(verbose.err.contains("LOOKUP"));assertTrue(verbose.err.contains("IMPORTS Missing"));
+            var verbose=run(command,"--repository",repo.toString(),"--verbose","--diagnostic-context","--diagnostic-language","de",root.toString());
+            assertTrue(verbose.err.lines().anyMatch(line -> line.startsWith("ERROR ") && line.endsWith(" [ILI-RES-0001]")));assertTrue(verbose.err.contains("Hinweis:"));assertTrue(verbose.err.contains("LOOKUP"));assertTrue(verbose.err.contains("IMPORTS Missing"));
             if (command.equals("diagram")) continue; // --format json selects diagram artifacts, not diagnostic JSON.
             var json=run(command,"--repository",repo.toString(),"--json",root.toString());
             var payload=JsonParser.parseString(json.out).getAsJsonObject();assertFalse(payload.getAsJsonArray("diagnostics").isEmpty());
@@ -45,10 +45,10 @@ class RepositoryDiagnosticsContractTest {
         var repo=repository(entry("Base","1","Base.ili"));
         String text="INTERLIS 2.4;\n!! 😀 ä\nMODEL Base AT \"x\" VERSION \"1\" = IMPORTS Missing; END Base.";
         Files.writeString(repo.resolve("Base.ili"),text);Files.writeString(directory.resolve("root.ili"),model("Root","IMPORTS Base;"));
-        var out=run("check","--repository",repo.toString(),"--verbose","root.ili");
+        var out=run("check","--repository",repo.toString(),"--diagnostic-context","root.ili");
         var diagnostic=out.result.diagnostics().stream().filter(d->d.code().value().equals("ILI-RES-0001")).findFirst().orElseThrow();
         assertEquals(text.indexOf("Missing"),diagnostic.primaryRange().orElseThrow().startOffset());
-        assertTrue(out.err.contains("Base.ili:3:"));assertTrue(out.err.contains("IMPORTS Missing"));
+        assertTrue(out.err.contains("Base.ili>:3:"));assertTrue(out.err.contains("IMPORTS Missing"));
     }
     @Test void missingImportDependentsAreHiddenOnlyInTextAndIndependentNamesRemainVisible() throws Exception {
         Files.writeString(directory.resolve("root.ili"),model("Root","IMPORTS Missing; STRUCTURE P=p:Missing.Point; q:Other; END P;"));
@@ -67,7 +67,7 @@ class RepositoryDiagnosticsContractTest {
             assertEquals(CliTermination.WARNINGS_REJECTED,rejected.result.termination(),rejected.err);
             assertTrue(rejected.result.rejectionSummary().orElseThrow().reasons().contains(guru.interlis.compiler.RejectionReason.WARNINGS_REJECTED));
         }
-        var analysis=run("analyze","--repository",repo.toString(),"--root","Dep","--warnings","reject");assertEquals(0,analysis.result.exitCode());assertTrue(analysis.err.contains("WARNING [ILI-RES-0008]"));
+        var analysis=run("analyze","--repository",repo.toString(),"--root","Dep","--warnings","reject");assertEquals(0,analysis.result.exitCode());assertTrue(analysis.err.lines().anyMatch(line -> line.startsWith("WARNING ") && line.endsWith(" [ILI-RES-0008]")));
         var selected=run("check","--repository",repo.toString(),"--root","Dep","--json");
         assertEquals("1",JsonParser.parseString(selected.out).getAsJsonObject().getAsJsonObject("resolution").getAsJsonArray("models").get(0).getAsJsonObject().get("version").getAsString());
         assertEquals(2,selected.result.resolutionLock().orElseThrow().formatVersion());
@@ -85,7 +85,7 @@ class RepositoryDiagnosticsContractTest {
         Files.writeString(repo.resolve("Base.ili"),"INTERLIS 2.4; MODEL Base AT \"x\" VERSION \"1\" = STRUCTURE P= p:TEXT END Base.");
         Files.writeString(directory.resolve("root.ili"),model("Root","IMPORTS Base;"));
         var out=run("check","--repository",repo.toString(),"--verbose","root.ili");
-        assertEquals(1,out.result.exitCode());assertTrue(out.err.contains("Base.ili:1:"));
+        assertEquals(1,out.result.exitCode());assertTrue(out.err.contains("Base.ili>:1:"));
         assertTrue(out.result.diagnostics().stream().anyMatch(d -> d.code().value().startsWith("ILI-SYN-")),out.err);
         assertTrue(out.result.artifacts().isEmpty());
     }

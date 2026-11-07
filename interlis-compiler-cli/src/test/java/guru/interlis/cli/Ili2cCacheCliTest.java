@@ -19,7 +19,7 @@ class Ili2cCacheCliTest {
         int before=fixture.requests.get();
         var warm=fixture.run("check","Projekt.ili","--repository",base,"--verbose");
         fixture.success(warm); assertEquals(before,fixture.requests.get(),warm.err());
-        assertFalse(warm.err().contains("304") || warm.err().contains("ILI-RES-0013"),warm.err());
-        assertTrue(warm.err().contains("fresh cache"),warm.err());
+        assertFalse(warm.err().contains("HTTP 304") || warm.err().contains("ILI-RES-0013"),warm.err());
+        assertTrue(warm.err().contains("Loaded from local cache"),warm.err());
     }
 }
