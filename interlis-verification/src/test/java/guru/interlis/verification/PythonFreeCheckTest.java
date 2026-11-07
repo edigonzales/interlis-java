@@ -4,6 +4,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class PythonFreeCheckTest {
+    @Test void permitsOnlyPythonSourcesInTheStandaloneReferenceHarness() {
+        String harness = "tools/iox-reference-harness/";
+        assertDoesNotThrow(() -> PythonFreeCheck.validate(harness + "run.py", ""));
+        for (String path : new String[]{harness + "run.pyc", harness + "requirements.txt",
+                "tools/iox-reference-harness-copy/run.py", "interlis-compiler/src/main/run.py"}) {
+            assertThrows(IllegalArgumentException.class, () -> PythonFreeCheck.validate(path, ""), path);
+        }
+    }
     @Test void sourceManifestAndGradleShellNodeOrJavaCallsFail() {
         for(String path:new String[]{"tool.py","docs/archived.py","pyproject.toml","requirements.txt"}) assertThrows(Exception.class,()->PythonFreeCheck.validate(path,""));
         for(String path:new String[]{"build.gradle","tools/tool.sh","tools/tool.cjs","tools/Host.java",".github/workflows/build.yml"}) {

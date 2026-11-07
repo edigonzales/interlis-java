@@ -46,8 +46,8 @@ public final class VerificationLayout {
         for (String key : data.stringPropertyNames()) {
             if (Set.of("schemaVersion", "builder", "root").contains(key)) continue;
             if (!Set.of("compiler", "lsp", "sdk", "reports", "norms", "conformance", "reference").contains(key)
-                    && !key.matches("junit\\.interlis-[a-z-]+\\.(test|contractTest|contractAssertionsTest)")
-                    && !key.matches("manifest\\.interlis-[a-z-]+"))
+                    && !key.matches("junit\\.interlis-[a-z0-9-]+\\.(test|contractTest|contractAssertionsTest)")
+                    && !key.matches("manifest\\.interlis-[a-z0-9-]+"))
                 throw new IllegalArgumentException("Unknown layout key: " + key);
             paths.put(key, data.getProperty(key));
         }

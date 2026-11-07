@@ -53,7 +53,7 @@ public final class JvmBuildInputs {
         return portablePath(relative);
     }
     /** Converts the native platform separator without changing path ownership or resolution. */
-    public static String portablePath(Path path) { return path.toString().replace('\\','/'); }
+    public static String portablePath(Path path) { return path.toString().replace(path.getFileSystem().getSeparator(), "/"); }
 
     /** Authoritative product version from the root POM, shared by builders and consumers. */
     public static String projectVersion(Path root) throws Exception {
@@ -137,7 +137,7 @@ public final class JvmBuildInputs {
         Path path = confined(root, relative);
         if (Files.isDirectory(path)) {
             try (var walk = Files.walk(path)) {
-                for (Path p : walk.filter(Files::isRegularFile).toList()) files.add(confined(root, root.relativize(p).toString()));
+                for (Path p : walk.filter(Files::isRegularFile).toList()) files.add(confined(root, portableRelative(root, p)));
             }
         } else files.add(path);
     }
