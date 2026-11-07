@@ -8,6 +8,15 @@ Pflichtbelege halten das Gate geschlossen.
 
 ## Plattformen und Ablauf
 
+Ein Push auf `main` publiziert nach erfolgreichen Plattformprüfungen ein
+Compiler-ZIP unter `guru.interlis:interlis-compiler-bindist` im
+[Snapshot-Repository](https://jars.interlis.guru/snapshots). Das Paket enthält
+die CLI mit POSIX- und Windows-Launcher und setzt Java 25 voraus. Der
+Workflow prüft den öffentlichen Download und gibt dessen konkreten Link aus.
+Der Publikationsjob verwendet `INTERLIS_MAVEN_USERNAME` und
+`INTERLIS_MAVEN_TOKEN` als GitHub-Actions-Secrets. Der Job ist dem
+Environment `compiler-snapshots` zugeordnet.
+
 Der Workflow [Compiler platform contracts](../../.github/workflows/compiler-platforms.yml)
 prüft Linux x64 und Windows x64 mit Java 25.0.3. Die beiden Checknamen
 lauten `JVM and distribution (linux-x64)` und

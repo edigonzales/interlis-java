@@ -9,6 +9,55 @@ import java.util.*;
 public final class ExistingJvmDistribution {
     public static void run(Path root)throws Exception { run(root,true); }
     public static void generate(Path root)throws Exception { run(root,false); }
+
+    /** Packages the compiler installation from a completed local platform run. */
+    public static void packageCompiler(Path root, Path platformRun) throws Exception {
+        Path run = JvmBuildInputs.requireOutputRoot(root, root.relativize(platformRun.normalize()).toString());
+        if (!run.getParent().equals(root.resolve("target/jenesis-jvm/host"))
+                || !run.getFileName().toString().startsWith("platform-")) {
+            throw new IllegalArgumentException("Expected a local platform verification run");
+        }
+        var receipt = (Map<?, ?>) Json.parse(Files.readString(run.resolve("receipt.json")));
+        Path reportPath = run.resolve("reports/platform/result.json");
+        var report = (Map<?, ?>) Json.parse(Files.readString(reportPath));
+        var reports = (Map<?, ?>) receipt.get("reports");
+        if (!"platform".equals(receipt.get("profile")) || !"passed".equals(report.get("status"))
+                || !JvmBuildInputs.sha256(reportPath).equals(reports.get("reports/platform/result.json"))) {
+            throw new IllegalArgumentException("Expected successful platform verification");
+        }
+        var versions = (Map<?, ?>) report.get("versions");
+        String version = Objects.toString(versions.get("version"), "");
+        if (!version.matches("[0-9]+\\.[0-9]+\\.[0-9]+-SNAPSHOT")) {
+            throw new IllegalArgumentException("Expected a compiler snapshot version");
+        }
+        Path output = Files.createDirectory(run.resolve("bindist"));
+        Path staging = Files.createDirectory(run.resolve("bindist-staging"));
+        Path compiler = run.resolve("delivery/compiler");
+        copyTree(compiler, staging.resolve("cli"));
+        var jars = new TreeMap<String, String>();
+        try (var entries = Files.list(staging.resolve("cli/lib"))) {
+            for (Path jar : entries.toList()) {
+                Path installed = compiler.resolve("lib").resolve(jar.getFileName());
+                jars.put(JvmBuildInputs.portableRelative(root, installed), JvmBuildInputs.sha256(jar));
+            }
+        }
+        if (jars.isEmpty() || !jars.equals(report.get("installedJars"))) {
+            throw new IllegalArgumentException("Compiler libraries differ from the verified installation");
+        }
+        Files.copy(root.resolve("LICENSE"), staging.resolve("LICENSE"));
+        Files.writeString(staging.resolve("README.txt"), """
+                INTERLIS Compiler CLI
+                Requires Java 25. Set JAVA_HOME or make java available on PATH.
+
+                macOS/Linux: ./cli/bin/interlis-compiler check model.ili
+                Windows:     cli\\bin\\interlis-compiler.bat check model.ili
+                """);
+        Path zip = output.resolve("interlis-compiler-bindist-" + version + ".zip");
+        CompilerContractRun.host(root, JenesisBridge.buildArchiveTool(root, false),
+                "build.interlis.archive.ArchiveWriter", List.of(staging.toString(), zip.toString()),
+                run.resolve("bindist-archive-process"));
+        Files.writeString(output.resolve("SHA256SUMS"), JvmBuildInputs.sha256(zip) + "  " + zip.getFileName() + "\n");
+    }
     private static void run(Path root,boolean checks)throws Exception {
         var outcome=JenesisBridge.run(new BuildRequest("artifacts",null,null,root));
         Path delivery=JvmBuildInputs.requireOutputRoot(root,"target/jenesis-jvm/delivery");

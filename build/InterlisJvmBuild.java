@@ -50,6 +50,8 @@ public final class InterlisJvmBuild {
                 build.interlis.ModulePathContract.run(request.root());
             } else if(request.profile().equals("sdk-package")) {
                 build.interlis.ExistingJvmDistribution.generate(request.root());
+            } else if(request.profile().equals("compiler-bindist")) {
+                build.interlis.ExistingJvmDistribution.packageCompiler(request.root(), Path.of(request.options().get("--inputs")));
             } else if(request.profile().equals("release-check")) {
                 build.interlis.HostVerificationProfiles.release(request.root(),lease);
             } else if(request.profile().equals("sdk-check")) {
@@ -71,7 +73,7 @@ public final class InterlisJvmBuild {
         var options=new java.util.HashMap<String,String>();
         int i = 0;
         if (args.length > 0 && !args[0].startsWith("--")) profile = args[i++];
-        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "runtime-check", "module-check", "release-check", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-package", "gui-check").contains(profile))
+        if (!List.of("build", "artifacts", "wasm-export", "wasm", "host", "clean", "contracts", "sdk-check", "sdk-package", "compiler-bindist", "runtime-check", "module-check", "release-check", "editor-check", "editor-bundle", "gui-run", "gui-runtime", "gui-package", "gui-check").contains(profile))
             throw new IllegalArgumentException("Unknown profile: " + profile);
         while (i < args.length) {
             String option = args[i++];
@@ -114,6 +116,7 @@ public final class InterlisJvmBuild {
         }
         if (tests != null && module == null) throw new IllegalArgumentException("--tests requires --module");
         var expected=profile.equals("runtime-check")?java.util.Set.of("--application"):profile.equals("editor-check")?java.util.Set.of("--extension-dir","--reference-bundle"):profile.equals("clean")?java.util.Set.of("--scope"):List.of("host","release-check","gui-check").contains(profile)?java.util.Set.of("--profile"):profile.equals("wasm")?options.containsKey("--inputs-sha256")?java.util.Set.of("--profile","--inputs","--inputs-sha256"):java.util.Set.of("--profile","--inputs"):profile.equals("editor-bundle")&&options.containsKey("--request-id")?java.util.Set.of("--request-id"):java.util.Set.of();
+        if (profile.equals("compiler-bindist")) expected = java.util.Set.of("--inputs");
         if(!options.keySet().equals(expected))throw new IllegalArgumentException("Expected options for "+profile+": "+expected);
         if(!List.of("build","artifacts").contains(profile)&&(module!=null||tests!=null))throw new IllegalArgumentException("Module/test restrictions are only available for build/artifacts");
         if(profile.equals("artifacts")&&tests!=null)throw new IllegalArgumentException("artifacts never selects tests");

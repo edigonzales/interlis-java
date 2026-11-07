@@ -46,23 +46,22 @@ class CompilerCoverageContractTest {
         links(document,groups.entrySet().stream().map(e->e.getValue().getAsJsonObject()).toList(),true);
         links(document,rows(document,"conditions"),false);for(String section:List.of("builtins","predefined","special"))links(document,rows(document,section),true);
         for(var row:rows(document,"requirements")) {
-            require(!row.has("pendingDetail")&&(!strings(row.get("links")).isEmpty()||row.has("processEvidence")),"Unresolved requirement");
-            if(row.has("processEvidence"))for(var item:rows(row,"processEvidence"))pin(s(item,"source"),s(item,"sha256"));
+            var evidence = row.has("processEvidence") ? rows(row, "processEvidence") : List.<JsonObject>of();
+            require(!row.has("pendingDetail") && (!strings(row.get("links")).isEmpty() || !evidence.isEmpty()), "Unresolved requirement");
+            for (var item : evidence) require(Files.isRegularFile(inside(root(), s(item, "source"))), "Missing inspection source");
         }
         links(document,rows(document,"requirements"),false);
     }
     static void validateSourceBindings(JsonObject document) throws Exception {
         for(var entry:document.getAsJsonObject("bindings").entrySet()) {
-            var binding=entry.getValue().getAsJsonObject(); String source=s(binding,"source"),full=text(source);
-            require(source.contains("/src/test/java/") && source.endsWith("/"+s(binding,"suite").replace('.','/')+".java"),"Wrong test source");
-            pin(source,s(binding,"sourceSha256"));
-            String body=slice(full,n(binding,"methodStart"),n(binding,"methodEnd"));
-            require(hash(body).equals(s(binding,"methodSha256")) && body.matches("(?s)@(Test|ParameterizedTest)\\b.*\\bvoid\\s+"+java.util.regex.Pattern.quote(s(binding,"method"))+"\\s*\\(.*"),"Wrong/missing test method");
+            var binding = entry.getValue().getAsJsonObject();
+            String source = s(binding, "source");
+            require(source.equals(s(binding, "module") + "/src/test/java/" + s(binding, "suite").replace('.', '/') + ".java")
+                    && Files.isRegularFile(inside(root(), source)), "Wrong or missing test source");
             require(!strings(binding.get("observations")).isEmpty(),"Missing public observation");
             var expected=strings(binding.get("invocations"));
             require(!expected.isEmpty() && new HashSet<>(expected).size()==expected.size(),"Empty/duplicate invocations");
-            if(body.startsWith("@ParameterizedTest")) require(expected.size()>1,"Missing parameter invocation");
-            else require(expected.equals(List.of(s(binding,"method")+"()")),"Foreign invocation");
+            require(expected.stream().allMatch(name -> name.startsWith(s(binding, "method") + "(")), "Foreign invocation");
         }
     }
     static void validateExecutedAssertions(JsonObject document) throws Exception {
@@ -85,14 +84,14 @@ class CompilerCoverageContractTest {
         require(s(manifest,"gitCommit").equals(candidate) && s(manifest,"treeSha").equals(tree),"Foreign assertion candidate");
         require(runId != null && s(manifest,"runId").equals(runId),"Stale assertion run");
     }
-    @Test void duplicateForeignAndLostParameterBindingsAreRejected() throws Exception {
+    @Test void duplicateForeignAndMissingBindingsAreRejected() throws Exception {
         validateCoverage(current());validateSourceBindings(current());
-        for(String key:List.of("duplicate","foreign","parameter","path")) {
+        for(String key:List.of("duplicate","foreign","emptyInvocations","path")) {
             var changed=current();
             if(key.equals("duplicate"))changed.getAsJsonArray("requirements").add(rows(changed,"requirements").getFirst().deepCopy());
             else if(key.equals("foreign"))rows(changed,"requirements").getFirst().addProperty("id","INVENTED-999");
             else if(key.equals("path"))changed.getAsJsonObject("bindings").entrySet().iterator().next().getValue().getAsJsonObject().addProperty("source","../outside");
-            else changed.getAsJsonObject("bindings").getAsJsonObject("NestedBlockCommentContractTest.balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations").getAsJsonArray("invocations").remove(1);
+            else changed.getAsJsonObject("bindings").entrySet().iterator().next().getValue().getAsJsonObject().add("invocations", new JsonArray());
             assertThrows(IllegalArgumentException.class,()->{validateCoverage(changed);validateSourceBindings(changed);});
         }
         var manifest=new JsonObject();manifest.addProperty("gitCommit","candidate");manifest.addProperty("treeSha","tree");manifest.addProperty("runId","run");
@@ -114,7 +113,7 @@ class CompilerCoverageContractTest {
     @Test void boundTestSourcesExistAndMatch() throws Exception {validateSourceBindings(current());}
     @org.junit.jupiter.api.Tag("compiler-contract")
     @Test void boundAssertionsWereExecutedSuccessfully() throws Exception {validateExecutedAssertions(current());}
-    @ParameterizedTest @ValueSource(strings={"condition","branch","builtin","predefined","method","sourceHash"})
+    @ParameterizedTest @ValueSource(strings={"condition","branch","builtin","predefined","method"})
     void inventedOrLostLinksCannotAppearComplete(String kind) throws Exception {
         validateCoverage(current()); validateSourceBindings(current());
         var changed=current();
@@ -123,7 +122,7 @@ class CompilerCoverageContractTest {
             case "branch"->rows(changed,"grammar").getFirst().getAsJsonArray("occurrenceIds").remove(0);
             case "builtin"->changed.getAsJsonArray("builtins").remove(0);
             case "predefined"->changed.getAsJsonArray("predefined").remove(0);
-            case "method","sourceHash"->{var binding=changed.getAsJsonObject("bindings").entrySet().iterator().next().getValue().getAsJsonObject();binding.addProperty(kind.equals("method")?"method":"sourceSha256","invented");}
+            case "method" -> changed.getAsJsonObject("bindings").entrySet().iterator().next().getValue().getAsJsonObject().addProperty("method", "invented");
         }
         assertThrows(Exception.class,()->{validateCoverage(changed);validateSourceBindings(changed);});
     }

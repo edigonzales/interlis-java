@@ -250,7 +250,7 @@
       "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile"
       ],
@@ -264,7 +264,7 @@
       "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
         "ViewFormationSemanticsContractTest.abstractClassWithConcreteClassInConcreteTopicCompiles",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile"
@@ -279,7 +279,7 @@
       "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
         "ViewFormationSemanticsContractTest.abstractClassWithConcreteClassInConcreteTopicCompiles",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile"
@@ -374,7 +374,7 @@
       "links": [
         "NoOidReferenceContractTest.referenceRestrictionsRemainBoundNavigableAndUsableInPaths",
         "NoOidReferenceContractTest.externalAndAnyClassAreIndependentOfStableIdentity",
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes"
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids"
       ]
     },
     {
@@ -773,7 +773,7 @@
       "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
       "links": [
         "OidRuleContractTest.classOidRuleRemainsVisible",
-        "NoOidReferenceContractTest.onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity",
+        "NoOidReferenceContractTest.oidInheritanceAndExtendedTopicTargetsAreUsed",
         "OidFollowupAbstractFormatContractTest.noOidAvailabilityAndConcretizationAreVersioned",
         "PredefinedOidIdentityContractTest.predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance"
       ]
@@ -786,7 +786,7 @@
       "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
       "links": [
         "OidRuleContractTest.classOidRuleRemainsVisible",
-        "NoOidReferenceContractTest.onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity",
+        "NoOidReferenceContractTest.oidInheritanceAndExtendedTopicTargetsAreUsed",
         "OidFollowupAbstractFormatContractTest.noOidAvailabilityAndConcretizationAreVersioned",
         "PredefinedOidIdentityContractTest.predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance"
       ]
@@ -2135,7 +2135,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile"
@@ -2151,7 +2151,7 @@
       "links": [
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "StructureValueContractTest.collectionOverridesCanAddOrderAndNarrowRootsButCannotRemoveOrderOrWidenRoots",
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile"
       ],
       "resolution": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht."
@@ -2163,7 +2163,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile"
@@ -2177,7 +2177,7 @@
       "disposition": "COMPILER_REQUIRED",
       "scope": "2.3-Verbot wird gemäss ausdrücklicher Nutzerentscheidung30.10.2026 wieili2c kompatibel behandelt;2.4 hat das ausdrückliche Verbot nicht.",
       "links": [
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile"
@@ -2297,7 +2297,7 @@
       "links": [
         "NoOidReferenceContractTest.referenceRestrictionsRemainBoundNavigableAndUsableInPaths",
         "NoOidReferenceContractTest.externalAndAnyClassAreIndependentOfStableIdentity",
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes"
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids"
       ]
     },
     {
@@ -2908,7 +2908,7 @@
       "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
       "links": [
         "OidRuleContractTest.classOidRuleRemainsVisible",
-        "NoOidReferenceContractTest.onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity",
+        "NoOidReferenceContractTest.oidInheritanceAndExtendedTopicTargetsAreUsed",
         "OidFollowupAbstractFormatContractTest.noOidAvailabilityAndConcretizationAreVersioned",
         "PredefinedOidIdentityContractTest.predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance"
       ]
@@ -2921,7 +2921,7 @@
       "scope": "Compilerteil des exakten Absatzclusters; konkrete Methoden unten.",
       "links": [
         "OidRuleContractTest.classOidRuleRemainsVisible",
-        "NoOidReferenceContractTest.onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity",
+        "NoOidReferenceContractTest.oidInheritanceAndExtendedTopicTargetsAreUsed",
         "OidFollowupAbstractFormatContractTest.noOidAvailabilityAndConcretizationAreVersioned",
         "PredefinedOidIdentityContractTest.predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance"
       ]
@@ -4392,16 +4392,13 @@
       "processEvidence": [
         {
           "source": "pom.xml",
-          "sha256": "f6486fe39006340ee10fbc3a3d57f85ff8af574ec23966c248fb7f32a98f456a",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         },
         {
-          "source": "gradle/wrapper/gradle-wrapper.properties",
-          "sha256": "1b2244203df033c3b5a87e0e42ed92239584cd310803c4982c5b0e6f2454028f"
+          "source": "gradle/wrapper/gradle-wrapper.properties"
         },
         {
           "source": "interlis-compiler/pom.xml",
-          "sha256": "3d78843e7e398628660a354c0e7593c9de4033078337118ef2643e7fa7930898",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         }
       ],
@@ -4786,12 +4783,10 @@
       "scope": "Kein Benchmark-/Gleichheitsnachweis vor Optimierungsaktivierung in diesem Lauf.",
       "processEvidence": [
         {
-          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/CompilationOrchestrator.java",
-          "sha256": "f52ce6a1e8cae402a65b3e27c3258a05958a9317277d84d96f3ec12b32995c46"
+          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/CompilationOrchestrator.java"
         },
         {
-          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/CompilationRun.java",
-          "sha256": "e9da1945fde8e05f12ddac290f77aab4294c11097bd929c9c51602abc6eb9138"
+          "source": "interlis-compiler/src/main/java/guru/interlis/compiler/internal/CompilationRun.java"
         }
       ],
       "resolution": "Keine feingranulare semantische Memoisierung aktiviert: die Pipeline baut den Graph stets vollständig neu; Syntax-/Identitätsreuse und Hostcache sind getrennt. Benchmarkbedingung vor einer künftigen semantischen Optimierung bleibt bestehen."
@@ -4971,17 +4966,14 @@
       "processEvidence": [
         {
           "source": "interlis-compiler/pom.xml",
-          "sha256": "3d78843e7e398628660a354c0e7593c9de4033078337118ef2643e7fa7930898",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         },
         {
           "source": "interlis-model/pom.xml",
-          "sha256": "93abe9040e868028bc58ee15fb12225f7ef63be38541abe48ec629b77ff76a1e",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         },
         {
           "source": "build/interlis/HostVerificationProfiles.java",
-          "sha256": "fed39ef6b0901dfd56fe69a5dfc9b0196d6969087ccd52b538e4f14de8551008",
           "reason": "Auftrag B Reviewkorrektur: portable Layoutproduktion, einheitliche echte CLI-Versionsbytes und kontrollierter Consumer-Lockumfang; ursprüngliche Assertions bleiben unverändert."
         }
       ],
@@ -5030,17 +5022,14 @@
       "scope": "Gepinnte P3-Fixtures mit getrenntem stdout/stderr/Exitcode sind nur teilweise assertiert.",
       "processEvidence": [
         {
-          "source": "testdata/verification/reference-fixtures.properties",
-          "sha256": "27dd6884d90f90a0de39709936fccfb1f593478597f149bdcd5270f85ab2c442"
+          "source": "testdata/verification/reference-fixtures.properties"
         },
         {
           "source": "interlis-verification/src/main/java/guru/interlis/verification/ReferenceProcesses.java",
-          "sha256": "b58085de539edb7b8cb94f95e9738dfc774de5ed67fb5c663b66cfb61a842b33",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         },
         {
           "source": "interlis-verification/src/main/java/guru/interlis/verification/SdkProcesses.java",
-          "sha256": "08a6b0580ffafdbe9a4ec09072538e9630cb5dd1ac87dee6806051a0749b1649",
           "reason": "Auftrag B Reviewkorrektur: portable Layoutproduktion, einheitliche echte CLI-Versionsbytes und kontrollierter Consumer-Lockumfang; ursprüngliche Assertions bleiben unverändert."
         }
       ],
@@ -5058,12 +5047,10 @@
       "processEvidence": [
         {
           "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspProcessTest.java",
-          "sha256": "2c0d9abb2485430a76b78cbd4691c514a1f0fb9d3b30b185949f2d7216c0387c",
           "reason": "Auftrag B: tatsächlicher Jenesis-/JPMS- und expliziter Host-/Reportbesitz; fachliche Compilerassertionen und historische Originalpins bleiben unverändert."
         },
         {
           "source": "interlis-lsp/src/main/java/guru/interlis/lsp/InterlisLanguageServer.java",
-          "sha256": "1afa7396bca7f9dc55d268131c9d0277e5a5fba587ba7cb01847bb8dcca2400a",
           "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
         }
       ],
@@ -5145,20 +5132,16 @@
       "processEvidence": [
         {
           "source": "docs/usage/sdk.md",
-          "sha256": "4207805f8f6c2e5ba73a30f4e6633b954afc7675703030afc6d143ce50db3c29",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
-          "source": "docs/contracts/sources-and-syntax.md",
-          "sha256": "272da3d4216d7feee13718e444af6c9fb703a87a489b320c4bcba71ae190dfce"
+          "source": "docs/contracts/sources-and-syntax.md"
         },
         {
-          "source": "docs/contracts/compiler-and-model.md",
-          "sha256": "c353b7197cc5cb40d12ff38264afe8ea46fa7bc8936130c02385ce9e802ed753"
+          "source": "docs/contracts/compiler-and-model.md"
         },
         {
           "source": "docs/contracts/workspace-and-lsp.md",
-          "sha256": "85c3b8723334fb634a3eff0808fe346f77e0092caec37f5933f6e9fcccd90530",
           "reason": "Current base API/build documentation drift or verification task integration; no new semantic acceptance"
         }
       ],
@@ -5197,17 +5180,14 @@
       "processEvidence": [
         {
           "source": "docs/usage/sdk.md",
-          "sha256": "4207805f8f6c2e5ba73a30f4e6633b954afc7675703030afc6d143ce50db3c29",
           "reason": "Auftrag B: aktuelle dokumentierte JPMS-/Builderzuordnung; historische Originalbindung und fachliche Assertions unverändert."
         },
         {
           "source": "docs/contracts/bridge-protocol.md",
-          "sha256": "384b4dd40f79da9b0d8dc3ce76f9a0f2f9e78fba8e1283cdce3701f5c4df8bbf",
           "reason": "Redaktioneller Reviewhinweis O-01: bestehende Jenesis-/Backend-Einstiege statt entfernter Gradle-Roottasknamen; Sprach-/Bridge-/Abnahmeverträge unverändert."
         },
         {
           "source": "docs/contracts/requirements.md",
-          "sha256": "4a049a378365699cb3f0ba992fc245ca4c5ba079d3093c2067c3bd0a5f6bc954",
           "reason": "Auftrag B: JVM-POM-/Profilbesitz und explizite Jenesis-Reportpfade; fachliche Assertion-/Compilerverträge bleiben erhalten. Historischer Originaleintrag unverändert."
         }
       ],
@@ -9098,7 +9078,7 @@
     "3.5.3": {
       "id": "3.5.3",
       "links": [
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "InheritanceFoundationContractTest.extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
         "StructureValueContractTest.anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
         "AssociationStrengthContractTest.version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile",
@@ -9128,7 +9108,7 @@
         "NoOidReferenceContractTest.externalAndAnyClassAreIndependentOfStableIdentity",
         "ImportedDomainTypeContractTest.mandatoryAliasHasTheSamePublicTypeBeforeAndAfterFileReordering",
         "DomainRestrictionContractTest.numericExtensionUsesTheSameBoundsAndPrecisionRuleAsPublicQueriesAndAttributeOverrides",
-        "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
+        "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids",
         "StructureValueContractTest.requiredWildcardsAndUnavailableConcreteStructuresNeedExplicitAbstractAttributes"
       ],
       "conditionIds": [
@@ -9210,7 +9190,7 @@
         "LanguageProfileContractTest.multicoordIsRejectedInIli23AndAcceptedInIli24",
         "GenericContextContractTest.contextMappingsAndDeferredStateRetainOrderedIdentitiesAndReferences",
         "OidRuleContractTest.classOidRuleRemainsVisible",
-        "NoOidReferenceContractTest.onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity",
+        "NoOidReferenceContractTest.oidInheritanceAndExtendedTopicTargetsAreUsed",
         "OidFollowupAbstractFormatContractTest.noOidAvailabilityAndConcretizationAreVersioned",
         "PredefinedOidIdentityContractTest.predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance",
         "ClassValueTypeContractTest.classValueTypeIsModeled",
@@ -9404,7 +9384,7 @@
       "id": "3.8.9",
       "links": [
         "OidRuleContractTest.classOidRuleRemainsVisible",
-        "NoOidReferenceContractTest.onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity",
+        "NoOidReferenceContractTest.oidInheritanceAndExtendedTopicTargetsAreUsed",
         "OidFollowupAbstractFormatContractTest.noOidAvailabilityAndConcretizationAreVersioned",
         "PredefinedOidIdentityContractTest.predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance"
       ],
@@ -11251,10 +11231,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "nameLengthAndInvalidCharactersAgreeForSyntaxAndRename",
-      "methodStart": 5396,
-      "methodEnd": 6036,
-      "methodSha256": "faa1fb80e0f62e422fe91084236da846f68513934078e2cc7e3419a0a667b039",
-      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "invalid characters rejected in syntax and rename",
         "invalid characters"
@@ -11269,10 +11245,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/TextLiteralContractTest.java",
       "suite": "guru.interlis.compiler.TextLiteralContractTest",
       "method": "stringEscapesAndLineBoundariesAreLexicalContracts",
-      "methodStart": 1692,
-      "methodEnd": 5330,
-      "methodSha256": "7f8766ff53f3853ff84b0df2bac0e900bd29b3ab5b35c4d088c0dab1dce163df",
-      "sourceSha256": "da0044c6d0068d816ef30b907db811c216b929e87e52a8ed89f9f17864f62b3f",
       "observations": [
         "CRLF and escapes kept",
         "quote/backslash/unicode escapes and line boundaries",
@@ -11290,10 +11262,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "preservesTokensAndIsIdempotentAcrossVersionsAndLineEndings",
-      "methodStart": 7093,
-      "methodEnd": 8907,
-      "methodSha256": "8dc556733e62d7e5146a7910533ebf9aae7d77a1f26013e543de592e241e0c71",
-      "sourceSha256": "b7ecde12db53ccea21607cb2186e8f49b90276861be701b0a291f7d97a5206c1",
       "observations": [
         "LF/CRLF token preservation",
         "CRLF/LF",
@@ -11311,10 +11279,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "nameAlphabetAndLengthBoundariesKeepExactSourceIdentityAndRename",
-      "methodStart": 6041,
-      "methodEnd": 9753,
-      "methodSha256": "af358f19f42a59dbca14f4bd511f528f240adcbb41d1803b5efede58d44aee05",
-      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "255 length, alphabet, case, rename",
         "identifier alphabet",
@@ -11330,10 +11294,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "completeReservedTablesRejectIdentifiersAndPermitMixedCaseNames",
-      "methodStart": 1652,
-      "methodEnd": 2539,
-      "methodSha256": "fb21a37250cd0c44da681b14778fd0e7e22045866ef722b98c053dfc754b19ad",
-      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "reserved words and mixed case",
         "full 2.3 reserved table",
@@ -11351,10 +11311,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FragmentSyntaxContractTest.java",
       "suite": "guru.interlis.compiler.FragmentSyntaxContractTest",
       "method": "interpretedStringPathsKeepEscapeSpansInTheOriginalRevision",
-      "methodStart": 3605,
-      "methodEnd": 4599,
-      "methodSha256": "05a22593eeac9b18438f1693c8efde2e12d670c5d5c0251377d1fa8eb7c47570",
-      "sourceSha256": "f4690e354bc3d73d7934adb5d9d82447a63db34d0c23d46edd1880b9fc2e5ffb",
       "observations": [
         "decoded path escapes keep original UTF-16 spans",
         "decoded escapes"
@@ -11369,10 +11325,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericConstantBindingContractTest.java",
       "suite": "guru.interlis.compiler.NumericConstantBindingContractTest",
       "method": "leadingZerosAndSignedIntegersKeepTheirValueAndOriginalLexeme",
-      "methodStart": 1912,
-      "methodEnd": 3348,
-      "methodSha256": "bd600be22140f29952e9eb2817651764556859b419bbaa6a7c76c814c156a901",
-      "sourceSha256": "8611db570b7414aa33288b3100448bf637dc08ce6aeb9675092fd24f5442be8f",
       "observations": [
         "leading zeros and signed integers",
         "integers"
@@ -11387,10 +11339,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ScaledBoundaryContractTest.java",
       "suite": "guru.interlis.compiler.ScaledBoundaryContractTest",
       "method": "scaledZeroSignsAndEqualExponentsKeepTheirDeclaredPrecisionAndValues",
-      "methodStart": 1418,
-      "methodEnd": 2596,
-      "methodSha256": "a94a1006b7e9d47eea5e4463f1135a7cecebcc69d5d39215e8207e9178960a5d",
-      "sourceSha256": "cb914c66a88dca555f554af42cd29e6cbe7804ba272a8b711a8e956060934e88",
       "observations": [
         "scaled decimals and exponents",
         "scaling/exponents",
@@ -11407,10 +11355,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModifierContractTest.java",
       "suite": "guru.interlis.compiler.ModifierContractTest",
       "method": "propertyListsOnlyAcceptModifiersPermittedForTheDeclarationContext",
-      "methodStart": 2427,
-      "methodEnd": 3973,
-      "methodSha256": "9ee9f720c5e77d68805734c8d4f76416152b3d89ea5bac0c6635d10d0f724fc4",
-      "sourceSha256": "abb9c557215a5ea4c33a6cacd4a58affa5caf6fb6a651d8753df1c822dbd551f",
       "observations": [
         "invalid property in context is rejected but valid modifiers retained",
         "property lists/context",
@@ -11426,10 +11370,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SourceMetadataContractTest.java",
       "suite": "guru.interlis.compiler.SourceMetadataContractTest",
       "method": "documentationAndExplanationsArePublicAndAppearInHover",
-      "methodStart": 4192,
-      "methodEnd": 5643,
-      "methodSha256": "401c1fff5c0eb28a7a1c33ec9f7294e7f925691cdf8744ccfb0ee81139d4814c",
-      "sourceSha256": "d0efd946408de05f3b71abcf2f661984a07deacc7dde7ac6072c007f9693afe4",
       "observations": [
         "documentation and // explanations",
         "explanations"
@@ -11444,10 +11384,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SourceMetadataContractTest.java",
       "suite": "guru.interlis.compiler.SourceMetadataContractTest",
       "method": "explanationEndsAtNextDoubleSlashAndTrailingTokenRemainsSource",
-      "methodStart": 5648,
-      "methodEnd": 7242,
-      "methodSha256": "f7895a5e52ae72d0fab380d54999b7cf7805fa8a49842af93a0d85476a295e6b",
-      "sourceSha256": "d0efd946408de05f3b71abcf2f661984a07deacc7dde7ac6072c007f9693afe4",
       "observations": [
         "explanation delimiter",
         "delimiter"
@@ -11462,10 +11398,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "new24WordsAreOrdinary23NamesAndRemainReservedIn24",
-      "methodStart": 2544,
-      "methodEnd": 3329,
-      "methodSha256": "30e792b8b9e8c5d87b9edcc62568e38a1a437f98bbdf5feaafa9a30ca5986fe1",
-      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "versioned reserved words",
         "new 2.4 words"
@@ -11480,10 +11412,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalRecoveryContractTest.java",
       "suite": "guru.interlis.compiler.LexicalRecoveryContractTest",
       "method": "lineAndBlockCommentsFollowTheirDelimitersWithoutConsumingFollowingSource",
-      "methodStart": 875,
-      "methodEnd": 3670,
-      "methodSha256": "93385ae388bcf73342214ded8036bf6bdfd5f3d1f9b61c72fce48f26de104f01",
-      "sourceSha256": "b36cf80f3979b9668e1a848a4f7485990457f34e3f4beec9e35333c4cbe3ce14",
       "observations": [
         "both comment forms",
         "!! line comment ends at newline",
@@ -11500,10 +11428,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NestedBlockCommentContractTest.java",
       "suite": "guru.interlis.compiler.NestedBlockCommentContractTest",
       "method": "balancedCommentDelimitersPreserveTriviaAndFollowingDeclarations",
-      "methodStart": 1922,
-      "methodEnd": 4783,
-      "methodSha256": "d4b9fa72ee9d5e37c225eae87dc676f87f82b70a402b7cbc4adad2e14f230de7",
-      "sourceSha256": "20258e206b0331c7a7fd5af4c6c587e167aaf53fd0b8dcfc4b24f30662044359",
       "observations": [
         "nested comments preserved",
         "nested comments",
@@ -11520,10 +11444,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalRecoveryContractTest.java",
       "suite": "guru.interlis.compiler.LexicalRecoveryContractTest",
       "method": "nestedBlockCommentsArePreservedAndSimpleUnterminatedCommentsAreRejected",
-      "methodStart": 3675,
-      "methodEnd": 5603,
-      "methodSha256": "13301b64e30a0e034e3669dcd8bca01f49e53040bac637e3c9ce5991670e6927",
-      "sourceSha256": "b36cf80f3979b9668e1a848a4f7485990457f34e3f4beec9e35333c4cbe3ce14",
       "observations": [
         "nested and unterminated block comments",
         "block/nested"
@@ -11538,10 +11458,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NestedBlockCommentContractTest.java",
       "suite": "guru.interlis.compiler.NestedBlockCommentContractTest",
       "method": "unfinishedCommentsHaveOriginalSyntaxErrorsInBothParseModes",
-      "methodStart": 4789,
-      "methodEnd": 7515,
-      "methodSha256": "2fae5ba27f3f35477dbae1719c7f7e0db32d30b03346acfa4ff5e52fbf8b48f6",
-      "sourceSha256": "20258e206b0331c7a7fd5af4c6c587e167aaf53fd0b8dcfc4b24f30662044359",
       "observations": [
         "unterminated outer/inner comment",
         "unterminated"
@@ -11557,10 +11473,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxContractTest.java",
       "suite": "guru.interlis.compiler.SyntaxContractTest",
       "method": "rejectsTrailingContentAndUnsupportedVersion",
-      "methodStart": 1910,
-      "methodEnd": 2547,
-      "methodSha256": "93c39bdc9aeb56d9adc171548336ec30d4b194f926e1c4d505d6885d7308dad8",
-      "sourceSha256": "b4de6a4afe429fd78766df6f926ae0a79365e7b9de4b3a16bf9ba10314b14e83",
       "observations": [
         "INTERLIS2Def version header and trailing content",
         "version header/trailing",
@@ -11581,10 +11493,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/VersionScopeTest.java",
       "suite": "guru.interlis.compiler.VersionScopeTest",
       "method": "interlis23ModelCompiles",
-      "methodStart": 445,
-      "methodEnd": 963,
-      "methodSha256": "a891597f524e22ddf23425752b73c91b39e17346c32b61a782926c8642e5a146",
-      "sourceSha256": "ae1f0d344218e54d7fdab1b2cf05e5a1792e6b47312736d5e74e8e825601a898",
       "observations": [
         "2.3/2.4 header scope",
         "2.4 scope",
@@ -11602,10 +11510,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelHeaderContractTest.java",
       "suite": "guru.interlis.compiler.ModelHeaderContractTest",
       "method": "explicitOptionsRetainDecodedValuesOriginalRangesAndPublicOrigins",
-      "methodStart": 1944,
-      "methodEnd": 3213,
-      "methodSha256": "46a88d9685ed6c615b044ad925ec2df221911c63cfc62c2e53e1d557f2c64a40",
-      "sourceSha256": "a44613e774c8790816a885a7c3e03b5087c3f9b9b326dda6a4b9803484e33c63",
       "observations": [
         "header options",
         "NOINCREMENTALTRANSFER/options"
@@ -11620,10 +11524,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/InheritanceFoundationContractTest.java",
       "suite": "guru.interlis.compiler.InheritanceFoundationContractTest",
       "method": "effectivePathsRunFromTheActualDeclaringOwnerThroughEveryIntermediateOwner",
-      "methodStart": 3388,
-      "methodEnd": 5476,
-      "methodSha256": "fbdddeaf5a07f00f25be4db687df604bc44f5d0449dd9e8bde64b7d216445740",
-      "sourceSha256": "2d747ce8389af0f03e29ea84db5ef34d5a920eee3fb05979f44757ef79940f89",
       "observations": [
         "inheritance paths",
         "inheritance"
@@ -11638,10 +11538,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/InheritanceFoundationContractTest.java",
       "suite": "guru.interlis.compiler.InheritanceFoundationContractTest",
       "method": "cyclicTopicClassAndStructureInheritanceCannotProduceACompiledSchema",
-      "methodStart": 15812,
-      "methodEnd": 16611,
-      "methodSha256": "3ee69af3613124f9cc34162f3f415caf483c6ceb87a4c30928e6a29ca6419675",
-      "sourceSha256": "2d747ce8389af0f03e29ea84db5ef34d5a920eee3fb05979f44757ef79940f89",
       "observations": [
         "cycles",
         "inheritance cycle"
@@ -11658,10 +11554,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SharedExtensionContractTest.java",
       "suite": "guru.interlis.compiler.SharedExtensionContractTest",
       "method": "textDomainRestrictionsAndPublicQueriesAgree",
-      "methodStart": 1786,
-      "methodEnd": 2684,
-      "methodSha256": "4b954c80398deb7cb0932c697f7db12387f0f9c8b04d4cc1a1b8929514c896f5",
-      "sourceSha256": "0c4988df6d0e7b2bfa203742dc13495b9b23041010885da82eba9105e07b6eef",
       "observations": [
         "domain extension",
         "EXTENDS"
@@ -11676,10 +11568,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModifierContractTest.java",
       "suite": "guru.interlis.compiler.ModifierContractTest",
       "method": "abstractAndExtendedModifiersRemainVisibleOnSymbols",
-      "methodStart": 673,
-      "methodEnd": 2421,
-      "methodSha256": "3623042dc83204382580dc4fcfbd3cd57d29d0c527a8d383a90086ec1d39705a",
-      "sourceSha256": "abb9c557215a5ea4c33a6cacd4a58affa5caf6fb6a651d8753df1c822dbd551f",
       "observations": [
         "ABSTRACT/EXTENDED"
       ],
@@ -11693,10 +11581,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelKindContractTest.java",
       "suite": "guru.interlis.compiler.ModelKindContractTest",
       "method": "typeModelsRejectObjectAndRuntimeDeclarationsButKeepTypeFamilies",
-      "methodStart": 2161,
-      "methodEnd": 3374,
-      "methodSha256": "caf21c922a5535f2a360badb09395e47e20cbfd26ff5fd2deebf8fc4be12d94a",
-      "sourceSha256": "98b14e9e5944a0af0486805ea179ea7a35a441cfec453acf3ddc2f8e481b635d",
       "observations": [
         "TYPE MODEL content",
         "TYPE MODEL"
@@ -11711,10 +11595,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageFoundationContractTest.java",
       "suite": "guru.interlis.compiler.LanguageFoundationContractTest",
       "method": "approvedTypeModelsAcceptStructuresAndAbstractClassesButRejectTopics",
-      "methodStart": 7847,
-      "methodEnd": 9055,
-      "methodSha256": "7261d34ec4ddc5a8464e5603a2d188821353f13c18b6953b17b9687e228f94d2",
-      "sourceSha256": "134464734e04949f59391c1dd5fcea1e14d34b8fd7b0297b5a2fffa39fea0022",
       "observations": [
         "approved TYPE MODEL profile"
       ],
@@ -11728,10 +11608,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelKindContractTest.java",
       "suite": "guru.interlis.compiler.ModelKindContractTest",
       "method": "symbologyContractedRequirementIsVersionedWhileAdvisoryFamiliesStayAdvisory",
-      "methodStart": 7822,
-      "methodEnd": 8661,
-      "methodSha256": "8a6ead9af3a30d57c350f913c11075c90a5af286d900fc0261c9abe3da5d9586",
-      "sourceSha256": "98b14e9e5944a0af0486805ea179ea7a35a441cfec453acf3ddc2f8e481b635d",
       "observations": [
         "SYMBOLOGY/CONTRACTED"
       ],
@@ -11745,10 +11621,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelHeaderContractTest.java",
       "suite": "guru.interlis.compiler.ModelHeaderContractTest",
       "method": "contractedIsStructurallyMeaningfulOnlyIn23",
-      "methodStart": 7102,
-      "methodEnd": 7640,
-      "methodSha256": "0f6a034900e1a957ad2041439b07609b5cfb89d76d67e4aec9151db5f6563c4c",
-      "sourceSha256": "a44613e774c8790816a885a7c3e03b5087c3f9b9b326dda6a4b9803484e33c63",
       "observations": [
         "CONTRACTED only meaningful in 2.3",
         "CONTRACTED"
@@ -11763,10 +11635,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedNameBindingContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedNameBindingContractTest",
       "method": "qualifiedNamesNeedNoImportAndBareNamesNeedExplicitUnqualifiedInterlis",
-      "methodStart": 3521,
-      "methodEnd": 4489,
-      "methodSha256": "7aceaa3f145f04c437f46c7b45f89ed36c315f5a7ff53852dedf54ac970b1bd0",
-      "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
       "observations": [
         "IMPORTS/UNQUALIFIED",
         "qualification"
@@ -11781,10 +11649,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewFormationSemanticsContractTest.java",
       "suite": "guru.interlis.compiler.ViewFormationSemanticsContractTest",
       "method": "abstractClassWithoutAbstractTopicOrConcreteClassIsRejected",
-      "methodStart": 1434,
-      "methodEnd": 1864,
-      "methodSha256": "4a42acd5d9762f4fc0ae471e324176e0bf06e46e391f3490764d71a34e6eacdc",
-      "sourceSha256": "98fbe0433dd75e0f0dcafa79d9fe1ebc24a4b960f90653b3a92bcf77e574d92b",
       "observations": [
         "ABSTRACT topic rule",
         "ABSTRACT",
@@ -11800,10 +11664,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/TopicDependencyContractTest.java",
       "suite": "guru.interlis.compiler.TopicDependencyContractTest",
       "method": "sourceTopicInheritanceRetainsDependenciesButNotTransitively",
-      "methodStart": 3843,
-      "methodEnd": 4506,
-      "methodSha256": "f818e2c3f6196fa66a78f7d93a6d1a994da75cb0164c9aca6313c4b57523090f",
-      "sourceSha256": "508e922213d4584e8c1abfb5cbe3def696a58620e1b723fc906e0c4f51397755",
       "observations": [
         "topic inheritance/dependencies",
         "DEPENDS ON/cycles",
@@ -11819,10 +11679,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/OidRuleContractTest.java",
       "suite": "guru.interlis.compiler.OidRuleContractTest",
       "method": "basketOidRuleRemainsVisibleOnTopic",
-      "methodStart": 511,
-      "methodEnd": 1781,
-      "methodSha256": "39ea69a51e0fe8dcb6fc136d779ebfac360c5428dd54ba05c4a542b84f919c59",
-      "sourceSha256": "cbbddc855110903be854e18655323c7578ad011278a52abc42c04d79eb89889d",
       "observations": [
         "BASKET OID declaration"
       ],
@@ -11836,10 +11692,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/OidRuleContractTest.java",
       "suite": "guru.interlis.compiler.OidRuleContractTest",
       "method": "classOidRuleRemainsVisible",
-      "methodStart": 1787,
-      "methodEnd": 3067,
-      "methodSha256": "3eb648fe586e149307856325bc9239c42261e78ce579a72e46209c66965d1c82",
-      "sourceSha256": "cbbddc855110903be854e18655323c7578ad011278a52abc42c04d79eb89889d",
       "observations": [
         "topic/class OID rules",
         "OID AS"
@@ -11854,10 +11706,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/InheritanceFoundationContractTest.java",
       "suite": "guru.interlis.compiler.InheritanceFoundationContractTest",
       "method": "extendedTopicClassesKeepDistinctBindingsInheritedPropertiesAndOidProvenance",
-      "methodStart": 16616,
-      "methodEnd": 18694,
-      "methodSha256": "ab0dfa6e141948cf37e13c6f7f285820e9ecd72c1d4ab664f362cf8c99a0bd99",
-      "sourceSha256": "2d747ce8389af0f03e29ea84db5ef34d5a920eee3fb05979f44757ef79940f89",
       "observations": [
         "class inheritance",
         "class/topic inheritance",
@@ -11870,23 +11718,16 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "NoOidReferenceContractTest.classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes": {
+    "NoOidReferenceContractTest.rolesAndAttributesAcceptClassesWithoutStableObjectOids": {
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NoOidReferenceContractTest.java",
       "suite": "guru.interlis.compiler.NoOidReferenceContractTest",
-      "method": "classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes",
-      "methodStart": 2268,
-      "methodEnd": 3011,
-      "methodSha256": "8bdd62d19b67610b5de5237739ac7d73c4f6b60b424776b58b8428de7169bb15",
-      "sourceSha256": "a883d97ba18f8158ca088c43bf5e5702ccea47bc07a41ca82d3f80b140a7abb4",
+      "method": "rolesAndAttributesAcceptClassesWithoutStableObjectOids",
       "observations": [
-        "OID/NO OID",
-        "OID/NO OID class rules",
-        "reference in class vs structure",
-        "implicit NO OID/reference ban",
-        "reference target OID"
+        "Roles and reference attributes accept class targets with or without stable OIDs",
+        "NO OID and INTERLIS.NOOID remain distinct in the bound model"
       ],
       "invocations": [
-        "classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes()"
+        "rolesAndAttributesAcceptClassesWithoutStableObjectOids()"
       ],
       "module": "interlis-compiler",
       "requirementIds": []
@@ -11895,10 +11736,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructureValueContractTest.java",
       "suite": "guru.interlis.compiler.StructureValueContractTest",
       "method": "anyStructureAndOrderedRestrictionsAreBoundForScalarAndCollectionAttributes",
-      "methodStart": 1985,
-      "methodEnd": 3499,
-      "methodSha256": "41a5bcc7e66e3c3d7d4d1637e256b10371e59566485cf53a76c1521f3c6c6464",
-      "sourceSha256": "96cf2c2fd36e6510bf287f6a548a2b32ce8de21b4496bd2adfa9bdd6ca20a6a9",
       "observations": [
         "structure semantics",
         "restricted structures",
@@ -11921,10 +11758,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewFormationSemanticsContractTest.java",
       "suite": "guru.interlis.compiler.ViewFormationSemanticsContractTest",
       "method": "abstractClassWithConcreteClassInConcreteTopicCompiles",
-      "methodStart": 955,
-      "methodEnd": 1428,
-      "methodSha256": "6f1d92d57ba614f353d288eac27d413a77f86164c1159c932065566fa725f296",
-      "sourceSha256": "98fbe0433dd75e0f0dcafa79d9fe1ebc24a4b960f90653b3a92bcf77e574d92b",
       "observations": [
         "concrete class existence"
       ],
@@ -11938,10 +11771,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/DuplicateNameContractTest.java",
       "suite": "guru.interlis.compiler.DuplicateNameContractTest",
       "method": "classAndDomainWithSameNameAreRejected",
-      "methodStart": 1169,
-      "methodEnd": 1553,
-      "methodSha256": "14cb9c757081aae0ef0c8717c16babf2422daba57cbb850807df03f28e7fc2a8",
-      "sourceSha256": "45e995e70e71a68329f06303e81bef0dfc78c95b5f9e8eb89273808733c86eb7",
       "observations": [
         "duplicate namespace",
         "namespace",
@@ -11959,10 +11788,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ConstraintNameContractTest.java",
       "suite": "guru.interlis.compiler.ConstraintNameContractTest",
       "method": "localConstraintNamesAreUniqueAcrossAllViewableFamilies",
-      "methodStart": 2243,
-      "methodEnd": 2680,
-      "methodSha256": "8cf9d8273157dcfb44efc1b34c81fa2509dcb20d579ca1c761395ca4c7c26ec2",
-      "sourceSha256": "e87523e415a52cd87a0c8d1655b2522fd62bee2cae441e0d6a6adc500f470fb6",
       "observations": [
         "constraint namespace",
         "constraint names"
@@ -11977,10 +11802,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ParameterClassFunctionContractTest.java",
       "suite": "guru.interlis.compiler.ParameterClassFunctionContractTest",
       "method": "parameterNamespacesBoundTypesAndLanguageReferencesAgree",
-      "methodStart": 2747,
-      "methodEnd": 4940,
-      "methodSha256": "505f7c54876bca93a41473029824c32849aa405c6d71cc030df0b99cd5956d2a",
-      "sourceSha256": "74fff30cb957a5e5f445d2baf85db703e050f47eaa1c908f33553b4411115cf9",
       "observations": [
         "parameter vs type namespace",
         "parameter namespace"
@@ -11995,10 +11816,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AttributeModifierContractTest.java",
       "suite": "guru.interlis.compiler.AttributeModifierContractTest",
       "method": "abstractAttributeModifierRemainsVisible",
-      "methodStart": 602,
-      "methodEnd": 2047,
-      "methodSha256": "7e9e63e1703f15c3646f3828da360f21ba4a539ad91a640d3d2e5f76259f8af5",
-      "sourceSha256": "d3bc7577735dbdb7b0ec3e7996e4865486cdc165221cf4096f9ddb87a545cb67",
       "observations": [
         "ABSTRACT attribute"
       ],
@@ -12012,10 +11829,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericSubdivisionContractTest.java",
       "suite": "guru.interlis.compiler.NumericSubdivisionContractTest",
       "method": "subdivisionsRequireAnActualNumericIntegerPredecessorAndNonnegativeRange",
-      "methodStart": 5285,
-      "methodEnd": 5951,
-      "methodSha256": "21fc344cb88c286620a05c904706e6194f14c398c74c9d7577c7d078ccd3629d",
-      "sourceSha256": "abbe2f47d9ce25f69e045d7d767b17b3f78a2b636493afe50ad99214c9ad76e4",
       "observations": [
         "SUBDIVISION"
       ],
@@ -12029,10 +11842,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NoOidReferenceContractTest.java",
       "suite": "guru.interlis.compiler.NoOidReferenceContractTest",
       "method": "externalAndAnyClassAreIndependentOfStableIdentity",
-      "methodStart": 8112,
-      "methodEnd": 9165,
-      "methodSha256": "790258e3b32ee22c83c54d58a6b833e5ecf27a1c73088bf21cf959721f23c3f6",
-      "sourceSha256": "a883d97ba18f8158ca088c43bf5e5702ccea47bc07a41ca82d3f80b140a7abb4",
       "observations": [
         "REFERENCE TO/EXTERNAL/ANYCLASS",
         "EXTERNAL/ANYCLASS",
@@ -12048,10 +11857,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NoOidReferenceContractTest.java",
       "suite": "guru.interlis.compiler.NoOidReferenceContractTest",
       "method": "restrictionsSelectAllowedRootsAndEveryRoleAlternativeIsChecked",
-      "methodStart": 3974,
-      "methodEnd": 4802,
-      "methodSha256": "e42d70577dfc9a4070e3a28473efd9e733af54375c1f7b9a44690dfe19c72e1b",
-      "sourceSha256": "a883d97ba18f8158ca088c43bf5e5702ccea47bc07a41ca82d3f80b140a7abb4",
       "observations": [
         "restriction targets"
       ],
@@ -12065,10 +11870,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/MandatoryOverrideTypeContractTest.java",
       "suite": "guru.interlis.compiler.MandatoryOverrideTypeContractTest",
       "method": "anExplicitTypeMustNotBeMistakenForMandatoryOnly",
-      "methodStart": 8145,
-      "methodEnd": 8590,
-      "methodSha256": "a0553f35ce0b261fcb7544b41a1f4008386e0fda4b28762683ca2662595b713e",
-      "sourceSha256": "e8017b4c1d8e37571c46997bb442ee624bc560437566b467f36b165fd93c265a",
       "observations": [
         "MANDATORY-only override"
       ],
@@ -12082,10 +11883,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ImportedDomainTypeContractTest.java",
       "suite": "guru.interlis.compiler.ImportedDomainTypeContractTest",
       "method": "mandatoryAliasHasTheSamePublicTypeBeforeAndAfterFileReordering",
-      "methodStart": 3261,
-      "methodEnd": 4847,
-      "methodSha256": "867cf9b473c1066a87f16a3033550ffc577cd1828f1adbefe7232117ecd10501",
-      "sourceSha256": "ccd7720479b6a3620bd7551b4324ad1f6d35af5ca5c760563b71036a63fa0215",
       "observations": [
         "domain reference as attribute type",
         "domain refs"
@@ -12100,10 +11897,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/DomainRestrictionContractTest.java",
       "suite": "guru.interlis.compiler.DomainRestrictionContractTest",
       "method": "numericExtensionUsesTheSameBoundsAndPrecisionRuleAsPublicQueriesAndAttributeOverrides",
-      "methodStart": 3513,
-      "methodEnd": 5283,
-      "methodSha256": "61b1a9cae66ca08dc09db15a0655b837815bf441cc1e93bbb247636ac5a33977",
-      "sourceSha256": "74341c5137d2b25c162b5bc27410c87061f627004d63cf28283b17225c1758ee",
       "observations": [
         "domain range typing",
         "ranges"
@@ -12118,10 +11911,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NoOidReferenceContractTest.java",
       "suite": "guru.interlis.compiler.NoOidReferenceContractTest",
       "method": "referenceRestrictionsRemainBoundNavigableAndUsableInPaths",
-      "methodStart": 4808,
-      "methodEnd": 6057,
-      "methodSha256": "b0d10531f6117a9c67cd138769009db3a5352b25d95962559d3c8cef612f6833",
-      "sourceSha256": "a883d97ba18f8158ca088c43bf5e5702ccea47bc07a41ca82d3f80b140a7abb4",
       "observations": [
         "reference restrictions and paths",
         "reference attrs",
@@ -12137,10 +11926,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CollectionTypeContractTest.java",
       "suite": "guru.interlis.compiler.CollectionTypeContractTest",
       "method": "listOfTextBuildsExactCollectionDescriptor",
-      "methodStart": 874,
-      "methodEnd": 2946,
-      "methodSha256": "3c7e37779f36a4a655f3578b3b69c4ea50e06c8ddbf87a246151bb9dcf51bed5",
-      "sourceSha256": "6be0fc5fe8dff58a5c188458ef74a583d3e7a0c5354eb203ea1d77e113d34495",
       "observations": [
         "LIST/BAG descriptor",
         "LIST/BAG",
@@ -12156,10 +11941,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NamedCollectionElementContractTest.java",
       "suite": "guru.interlis.compiler.NamedCollectionElementContractTest",
       "method": "structuresRestrictionsAndExistingFunctionConsumersKeepTheirBindings",
-      "methodStart": 5419,
-      "methodEnd": 7250,
-      "methodSha256": "b27aec94bfb641bf2888a0fbfa42e2e1a8cd533060cc449dc1cb71070fa007eb",
-      "sourceSha256": "b4276717e1601c4a3d6b2a17a8ed7f113158da0db38701f664194b5a43184785",
       "observations": [
         "restricted structure elements"
       ],
@@ -12173,10 +11954,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationRulesContractTest.java",
       "suite": "guru.interlis.compiler.AssociationRulesContractTest",
       "method": "associationWithoutRolesIsRejected",
-      "methodStart": 1976,
-      "methodEnd": 2580,
-      "methodSha256": "cde4fc0e54aebec927783d222ea85622358bf3ecd9b7e1ba96b358e89b458698",
-      "sourceSha256": "505cb103ddafd83ca19454a371e8e8b9a377ad8fcf41eb6b41dbdd77541f0ece",
       "observations": [
         "at least two roles",
         "roles"
@@ -12191,10 +11968,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RoleTargetInheritanceContractTest.java",
       "suite": "guru.interlis.compiler.RoleTargetInheritanceContractTest",
       "method": "alternativesRestrictionsTypesAndReferenceRangesAreRetained",
-      "methodStart": 3146,
-      "methodEnd": 5374,
-      "methodSha256": "cdced6add98110976009d4b13b544b0e4f488ffbbd545d4a08b0a1b9035f536a",
-      "sourceSha256": "f2799fb257f3698f3ba100e3a0c93e3cbc1b90903402c0cece451200d8ba4f09",
       "observations": [
         "OR/RESTRICTION alternatives",
         "OR/RESTRICTION"
@@ -12209,10 +11982,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationAccessContractTest.java",
       "suite": "guru.interlis.compiler.AssociationAccessContractTest",
       "method": "inheritsAccessThroughClassIdentityAndHiding",
-      "methodStart": 13507,
-      "methodEnd": 14602,
-      "methodSha256": "d8413ee754f79f4180bf5e09c92e89b342a3f074a9fda60701f571095a959d1c",
-      "sourceSha256": "060c27be97e6a43c4e8d29fe1372a09ca5b7be135dc8cc1c776396e8abb17409",
       "observations": [
         "access/hiding"
       ],
@@ -12226,10 +11995,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NoOidReferenceContractTest.java",
       "suite": "guru.interlis.compiler.NoOidReferenceContractTest",
       "method": "associationTargetsRequireOwnIdentityInBothVersions",
-      "methodStart": 6706,
-      "methodEnd": 7584,
-      "methodSha256": "d344549505ff51d2df3cccbe229ee6b0726ff2b9a10b631d27d26877a171d423",
-      "sourceSha256": "a883d97ba18f8158ca088c43bf5e5702ccea47bc07a41ca82d3f80b140a7abb4",
       "observations": [
         "association as target needs OID",
         "association target OID"
@@ -12244,10 +12009,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationRulesContractTest.java",
       "suite": "guru.interlis.compiler.AssociationRulesContractTest",
       "method": "roleWithoutCardinalityUsesUnboundedDefault",
-      "methodStart": 715,
-      "methodEnd": 1970,
-      "methodSha256": "fb59dae5238f7cb48f30cf49e510e7ff5e6b1b385eba3d468fa9702ca112ad24",
-      "sourceSha256": "505cb103ddafd83ca19454a371e8e8b9a377ad8fcf41eb6b41dbdd77541f0ece",
       "observations": [
         "default {0..*}",
         "default cardinality"
@@ -12262,10 +12023,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RoleTargetInheritanceContractTest.java",
       "suite": "guru.interlis.compiler.RoleTargetInheritanceContractTest",
       "method": "associationMultiplicityIsInheritedAndRemainsAvailableInTheSchema",
-      "methodStart": 6526,
-      "methodEnd": 7710,
-      "methodSha256": "8f9ff2ce9e220ef3f6d29c94179225a7c9ed6db2d77b77f691a8905eaad64bfb",
-      "sourceSha256": "f2799fb257f3698f3ba100e3a0c93e3cbc1b90903402c0cece451200d8ba4f09",
       "observations": [
         "cardinality inheritance"
       ],
@@ -12279,10 +12036,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationAccessContractTest.java",
       "suite": "guru.interlis.compiler.AssociationAccessContractTest",
       "method": "distinguishesClassAccessFromDirectAssociationRoleAndRetainsCardinality",
-      "methodStart": 5490,
-      "methodEnd": 7563,
-      "methodSha256": "84e74f92f89184862928d1243338e853d1418002ef91bc557ad76a7941ea69e8",
-      "sourceSha256": "060c27be97e6a43c4e8d29fe1372a09ca5b7be135dc8cc1c776396e8abb17409",
       "observations": [
         "role vs association access",
         "access"
@@ -12297,10 +12050,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/QualifiedAssociationPathContractTest.java",
       "suite": "guru.interlis.compiler.QualifiedAssociationPathContractTest",
       "method": "outgoingQualificationBindsAssociationAndSourceRoleWithExactRanges",
-      "methodStart": 3728,
-      "methodEnd": 5794,
-      "methodSha256": "8ec133da98ae4e94d99b1e8f5c514cc581ce041fd333c06ebf31dba515348900",
-      "sourceSha256": "f0dd42c529ecca0c0aab2120396e60f92ae99278087dc0103c13cbed8f402a19",
       "observations": [
         "qualified access"
       ],
@@ -12314,10 +12063,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/QualifiedAssociationPathContractTest.java",
       "suite": "guru.interlis.compiler.QualifiedAssociationPathContractTest",
       "method": "qualifiedAccessCannotBypassHidingOrTopicVisibility",
-      "methodStart": 7656,
-      "methodEnd": 8408,
-      "methodSha256": "3443fe1b1be6dc2cab706da4bf823190d48e09d7a8fe31badf53e3a994a53ede",
-      "sourceSha256": "f0dd42c529ecca0c0aab2120396e60f92ae99278087dc0103c13cbed8f402a19",
       "observations": [
         "visibility"
       ],
@@ -12331,10 +12076,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/TypeFamilyContractTest.java",
       "suite": "guru.interlis.compiler.TypeFamilyContractTest",
       "method": "oidBlackboxAndAlignmentTypesAreModeled",
-      "methodStart": 595,
-      "methodEnd": 2195,
-      "methodSha256": "6c55ea0f399f9d6d310bc234f4a8ad84df03c04e6602b341b46d596ec66d18b4",
-      "sourceSha256": "61c0151db75a4217d8604115a813878ca29b9738d4d2881abbf62d9dc5250820",
       "observations": [
         "base type families",
         "alignment type",
@@ -12352,10 +12093,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ImportedDomainTypeContractTest.java",
       "suite": "guru.interlis.compiler.ImportedDomainTypeContractTest",
       "method": "singleElementEnumsAndComposedUnitsKeepTheirDeclaredKind",
-      "methodStart": 9726,
-      "methodEnd": 10434,
-      "methodSha256": "8271241480a10446afd2a5dbbaa52162592a4681a39f5c6a9936ae63bb6e02ab",
-      "sourceSha256": "ccd7720479b6a3620bd7551b4324ad1f6d35af5ca5c760563b71036a63fa0215",
       "observations": [
         "domain references",
         "domain refs"
@@ -12370,10 +12107,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericConstantBindingContractTest.java",
       "suite": "guru.interlis.compiler.NumericConstantBindingContractTest",
       "method": "explicitUnitsHaveActualTargetsAndExactNumbersInBothVersions",
-      "methodStart": 739,
-      "methodEnd": 1907,
-      "methodSha256": "cb4de37bcb30258b2946acb456712900ecd0a08bae9b5a9ebbdce8db26615bc7",
-      "sourceSha256": "8611db570b7414aa33288b3100448bf637dc08ce6aeb9675092fd24f5442be8f",
       "observations": [
         "constants",
         "Exact numeric constants"
@@ -12388,10 +12121,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/TextLiteralContractTest.java",
       "suite": "guru.interlis.compiler.TextLiteralContractTest",
       "method": "typedLiteralsUseNormativeLengthWithoutChangingDecodedTextOrSourceRanges",
-      "methodStart": 5335,
-      "methodEnd": 7257,
-      "methodSha256": "d66d62632f3c620ecfd3c67fdf4d5ceec1c29d1bc11e03eec069ef8a9e28691d",
-      "sourceSha256": "da0044c6d0068d816ef30b907db811c216b929e87e52a8ed89f9f17864f62b3f",
       "observations": [
         "TEXT/MTEXT length and decoded content",
         "TEXT/MTEXT"
@@ -12406,10 +12135,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/internal/TextLengthsTest.java",
       "suite": "guru.interlis.compiler.internal.TextLengthsTest",
       "method": "canonicalLengthCountsStartersAndPreservesCompatibilityCharacters",
-      "methodStart": 156,
-      "methodEnd": 1036,
-      "methodSha256": "67a93cc2596bf1d94febd8eed17678e1e3b4a73b18ea9da321cf93fc7249c245",
-      "sourceSha256": "7ba296236405c047d3e676ec901075f67bf2c4e022668336d72118bce6e894d8",
       "observations": [
         "canonical Unicode length",
         "Unicode/canonical length for table characters",
@@ -12426,10 +12151,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/TextLiteralContractTest.java",
       "suite": "guru.interlis.compiler.TextLiteralContractTest",
       "method": "zeroDeclarationWidthsAndTextControlCharactersAreSourceErrors",
-      "methodStart": 7262,
-      "methodEnd": 8895,
-      "methodSha256": "e2eb876b053391e51556b3f619d7721c32606799c2adf10197eef806e2e568d4",
-      "sourceSha256": "da0044c6d0068d816ef30b907db811c216b929e87e52a8ed89f9f17864f62b3f",
       "observations": [
         "TEXT*0 and control characters",
         "control chars"
@@ -12444,10 +12165,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExistenceValueFamiliesContractTest.java",
       "suite": "guru.interlis.compiler.ExistenceValueFamiliesContractTest",
       "method": "inheritedEnumerationRetainsOrderOriginFinalityAndLeafSemantics",
-      "methodStart": 2064,
-      "methodEnd": 3805,
-      "methodSha256": "d32171f96b61e51d59ed091ab6c02c0afcd2c238e9231192b9be19f8e647ba26",
-      "sourceSha256": "6a1e9851e4240bdf2daa86792c5b0d225ecd3b57b7bb24a5029722236abcae1c",
       "observations": [
         "tree/order/FINAL"
       ],
@@ -12461,10 +12178,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExistenceValueFamiliesContractTest.java",
       "suite": "guru.interlis.compiler.ExistenceValueFamiliesContractTest",
       "method": "enumerationExtensionRejectsClosedListsCyclesAndRepeatedLeaves",
-      "methodStart": 3811,
-      "methodEnd": 4686,
-      "methodSha256": "26dd6802f7fa158532eb603cfde61f441bf6c1669f7a5a43fb4d34e8bb6f6376",
-      "sourceSha256": "6a1e9851e4240bdf2daa86792c5b0d225ecd3b57b7bb24a5029722236abcae1c",
       "observations": [
         "extension rules",
         "extension/cycles"
@@ -12479,10 +12192,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
       "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "sameNamedEnumElementsKeepTheirDomainTarget",
-      "methodStart": 5385,
-      "methodEnd": 6748,
-      "methodSha256": "fc41b348e3681f1285ec3baec8ca8dbae59c1fd499ca92b80aab77f998e777c3",
-      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "enum constants"
       ],
@@ -12496,10 +12205,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/DuplicateNameContractTest.java",
       "suite": "guru.interlis.compiler.DuplicateNameContractTest",
       "method": "duplicateEnumerationValueIsRejected",
-      "methodStart": 418,
-      "methodEnd": 754,
-      "methodSha256": "cfab824d15b2de9e65c8b905433eef6dd6565e3c6f4b8c2b2ccf532cf0817e48",
-      "sourceSha256": "45e995e70e71a68329f06303e81bef0dfc78c95b5f9e8eb89273808733c86eb7",
       "observations": [
         "duplicate values",
         "duplicates"
@@ -12514,10 +12219,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedBindingContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedBindingContractTest",
       "method": "predefinedDomainsRetainTypesFinalityOriginAndNavigationTargets",
-      "methodStart": 4089,
-      "methodEnd": 6890,
-      "methodSha256": "6d965e0e0923a43432b88bb21131905bf03b94453243fa4bf958c4857d5a4a25",
-      "sourceSha256": "d393008f1c2ad03e9a49e4e3728c3acd3a8d59e4055d65d06263337cc7b70af0",
       "observations": [
         "HALIGNMENT/VALIGNMENT predefined domains",
         "HALIGNMENT/VALIGNMENT",
@@ -12533,10 +12234,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumerationConstantContractTest.java",
       "suite": "guru.interlis.compiler.EnumerationConstantContractTest",
       "method": "logicalEnumerationConstantIsBoolean",
-      "methodStart": 424,
-      "methodEnd": 1347,
-      "methodSha256": "6004f893692967174e5d78d37e6acf706a80f2e1ef5006fd89825fdb9ac15597",
-      "sourceSha256": "eaf348d5f118af69be68cc15c7b7161fd634fb99a6ab18c3f1db9af2c4f1a3cf",
       "observations": [
         "#true/#false boolean",
         "boolean constants"
@@ -12551,10 +12248,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FunctionContractTest.java",
       "suite": "guru.interlis.compiler.FunctionContractTest",
       "method": "standardFunctionsHaveExplicitCaseSensitiveSignatures",
-      "methodStart": 5083,
-      "methodEnd": 6889,
-      "methodSha256": "ad4e60ef20c6ebc7b857e8ce312783fe0c4333a36267cf418f700c420bd89fac",
-      "sourceSha256": "2157297e64cc436c5ead97c4bbcd6bacc050ab2bdff889ee6c601390d8f0febd",
       "observations": [
         "boolean function contexts"
       ],
@@ -12568,10 +12261,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericSubdivisionContractTest.java",
       "suite": "guru.interlis.compiler.NumericSubdivisionContractTest",
       "method": "standardClockKeepsItsFlagsPrecisionUnitTargetsAndFormattedConsumers",
-      "methodStart": 3051,
-      "methodEnd": 5280,
-      "methodSha256": "d2ce99d918bc70afc338ff0901deead37a7859b7b65ec477b9b34a5701a3e481",
-      "sourceSha256": "abbe2f47d9ce25f69e045d7d767b17b3f78a2b636493afe50ad99214c9ad76e4",
       "observations": [
         "numeric range/precision/unit",
         "base units/time",
@@ -12588,10 +12277,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericAbstractionContractTest.java",
       "suite": "guru.interlis.compiler.NumericAbstractionContractTest",
       "method": "abstractUnitsAreAllowedOnlyWhileTheNumericRangeRemainsAbstract",
-      "methodStart": 3377,
-      "methodEnd": 4230,
-      "methodSha256": "231173390ea2fb4166f7b7c9e3295671e57c0c3feda8fb93e702f9cdfb5b84ce",
-      "sourceSha256": "a8e884b28f18014526036964fce52f45d4afde40aaf36d39b85fee401675793d",
       "observations": [
         "abstract NUMERIC",
         "NUMERIC abstract"
@@ -12606,10 +12291,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SharedExtensionContractTest.java",
       "suite": "guru.interlis.compiler.SharedExtensionContractTest",
       "method": "numericDirectionIsInheritedAndCannotBeChanged",
-      "methodStart": 5244,
-      "methodEnd": 5825,
-      "methodSha256": "06e7fc33168a8fe472802d4e3502d2a52efc0a36f40d54d014839e54488aefe3",
-      "sourceSha256": "0c4988df6d0e7b2bfa203742dc13495b9b23041010885da82eba9105e07b6eef",
       "observations": [
         "CIRCULAR/direction"
       ],
@@ -12623,10 +12304,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormattedTypeContractTest.java",
       "suite": "guru.interlis.compiler.FormattedTypeContractTest",
       "method": "builtInFormatIsModeledWithBounds",
-      "methodStart": 521,
-      "methodEnd": 1950,
-      "methodSha256": "00a765a6439f8606150b90cbadcb6f9f6ae1f4a72df4580015304f5a184a7ee4",
-      "sourceSha256": "984565dca7c183915fbf19b8cc9a956b89c177c2ecc650989b32b2a1cf716f31",
       "observations": [
         "FORMAT base/bounds",
         "FORMAT"
@@ -12641,10 +12318,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormattedRelationContractTest.java",
       "suite": "guru.interlis.compiler.FormattedRelationContractTest",
       "method": "boundDomainsHaveTheSameAssignmentAndExtensionRulesInCompilerAndQueries",
-      "methodStart": 2396,
-      "methodEnd": 3132,
-      "methodSha256": "e504ec9df64c4ad1c90b6a6cf679fa36446744497e6b1e0eb2506c97eeca2f18",
-      "sourceSha256": "f54e338988d83d08a39a8422ef29d74062a08e30e4798f78402a51ebb3363b36",
       "observations": [
         "formatted relation",
         "format relations"
@@ -12659,10 +12332,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatPrecisionOidBindingContractTest.java",
       "suite": "guru.interlis.compiler.FormatPrecisionOidBindingContractTest",
       "method": "fixedPrecisionPaddingAndExactLargeValues",
-      "methodStart": 1856,
-      "methodEnd": 2630,
-      "methodSha256": "34e31ecb7fd2eb587aa97f9bc8926b6e2a3101abafeb1451ad74888a04ffbead",
-      "sourceSha256": "aa08368f63026077615210f000f3a3c771c8aeece813636b72d656d995066081",
       "observations": [
         "precision"
       ],
@@ -12676,10 +12345,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedTemporalContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedTemporalContractTest",
       "method": "predefinedFormatsExposeStructuresAttributesInheritanceAndReferences",
-      "methodStart": 4907,
-      "methodEnd": 7932,
-      "methodSha256": "5ca9f34c6b240db754a67cb9c816bcb525b71f1539264796a1c843efb4697674",
-      "sourceSha256": "bbf53479317ee85c53d902a76dd3139d1b7a3960e73d4388add1396a97aa629d",
       "observations": [
         "predefined date/time structures",
         "GregorianDate structures",
@@ -12697,10 +12362,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/TemporalTypeContractTest.java",
       "suite": "guru.interlis.compiler.TemporalTypeContractTest",
       "method": "dateTimeKeywordsUseTheBoundPredefinedFormats",
-      "methodStart": 561,
-      "methodEnd": 1975,
-      "methodSha256": "c0c44e6aaa51b92f0fba3ab6d57b5f898ea93c59eebe6c30c431d6f05e9ddcfd",
-      "sourceSha256": "ebca6872c4bc0d021f2e506e7e734440116f5ad22fe7b43fcc7a3b4ff767359e",
       "observations": [
         "DATE/TIME keywords",
         "DATE/TIME"
@@ -12715,10 +12376,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedTemporalContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedTemporalContractTest",
       "method": "timeWidthsAndSecondPrecisionComeFromTheDeclarations",
-      "methodStart": 4207,
-      "methodEnd": 4901,
-      "methodSha256": "63b6da81e39b4f5dcde88b5b95c70b50e50955ec99b47f9ab73860473ac5484e",
-      "sourceSha256": "bbf53479317ee85c53d902a76dd3139d1b7a3960e73d4388add1396a97aa629d",
       "observations": [
         "GregorianDateTime subdivisions"
       ],
@@ -12732,10 +12389,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SharedExtensionContractTest.java",
       "suite": "guru.interlis.compiler.SharedExtensionContractTest",
       "method": "coordinatesCanAddDimensionsAndInheritEstablishedPropertiesBeforeExpressions",
-      "methodStart": 2689,
-      "methodEnd": 4052,
-      "methodSha256": "c430c0e14f041543b9bb563b2f15b0b04a5ac1733712cebd04d7e8c4e9e7d10e",
-      "sourceSha256": "0c4988df6d0e7b2bfa203742dc13495b9b23041010885da82eba9105e07b6eef",
       "observations": [
         "COORD dimensions/extension",
         "COORD"
@@ -12750,10 +12403,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/MetadataBindingContractTest.java",
       "suite": "guru.interlis.compiler.MetadataBindingContractTest",
       "method": "axesKeepUnitsMetadataIdentityOneBasedAxisAndRotation",
-      "methodStart": 3305,
-      "methodEnd": 4605,
-      "methodSha256": "f7e92df9fde8bfa343d0b02ab5f7ed4f4eec9c8bd2fef8373f6853fbef57d987",
-      "sourceSha256": "ed8aae97316d7f875cdbd2963309bee81a6eccdbfb502a355f761f52681935a7",
       "observations": [
         "rotation/axes/units",
         "Unit parameter on axes/coords",
@@ -12770,10 +12419,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryRulesContractTest.java",
       "suite": "guru.interlis.compiler.GeometryRulesContractTest",
       "method": "cartesianVerticesRejectAngularUnitsIn24",
-      "methodStart": 12075,
-      "methodEnd": 12420,
-      "methodSha256": "18adb1efbe5054572928123ddc8856a30dde804cf395698b1978903c40ff6cc1",
-      "sourceSha256": "4dfc6f97b91579b657e7fc1bc523ad1f3f30739c75f6c19f3044143675f06649",
       "observations": [
         "vertex units"
       ],
@@ -12783,20 +12428,16 @@
       "module": "interlis-compiler",
       "requirementIds": []
     },
-    "NoOidReferenceContractTest.onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity": {
+    "NoOidReferenceContractTest.oidInheritanceAndExtendedTopicTargetsAreUsed": {
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NoOidReferenceContractTest.java",
       "suite": "guru.interlis.compiler.NoOidReferenceContractTest",
-      "method": "onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity",
-      "methodStart": 3017,
-      "methodEnd": 3580,
-      "methodSha256": "fde881675ef7ed30064544f621f75efb34047f0e986508b47d7aba69625128d4",
-      "sourceSha256": "a883d97ba18f8158ca088c43bf5e5702ccea47bc07a41ca82d3f80b140a7abb4",
+      "method": "oidInheritanceAndExtendedTopicTargetsAreUsed",
       "observations": [
-        "NO OID/effective OID",
-        "NO OID"
+        "Inherited OID rules bind extended-topic targets",
+        "An explicit NO OID cannot override an inherited OID rule"
       ],
       "invocations": [
-        "onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity()"
+        "oidInheritanceAndExtendedTopicTargetsAreUsed()"
       ],
       "module": "interlis-compiler",
       "requirementIds": []
@@ -12805,10 +12446,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/OidFollowupAbstractFormatContractTest.java",
       "suite": "guru.interlis.compiler.OidFollowupAbstractFormatContractTest",
       "method": "noOidAvailabilityAndConcretizationAreVersioned",
-      "methodStart": 1720,
-      "methodEnd": 2432,
-      "methodSha256": "38b8085a71cab7bc79df348a749a707e84a2350f93274301a4ac9a9e6d5d9466",
-      "sourceSha256": "4b821331d62411ad98c06c420f844ab86302d898a764a8a4b161f7609378ed39",
       "observations": [
         "ANY/NO OID concretization",
         "concretization"
@@ -12823,10 +12460,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedOidIdentityContractTest.java",
       "suite": "guru.interlis.compiler.PredefinedOidIdentityContractTest",
       "method": "predefinedOidDomainsExposeCanonicalQueriesOriginsAndVersionedInheritance",
-      "methodStart": 4515,
-      "methodEnd": 5633,
-      "methodSha256": "de0fa1e22214a29a49e731fae3f76b6f1048f399f4f7c247868fed0d08eb639b",
-      "sourceSha256": "741e842b4f06fb4d4e3b192572c9a8ecd38c00ab15ae613437f924f2d1165cb3",
       "observations": [
         "UUIDOID/standards",
         "UUIDOID",
@@ -12842,10 +12475,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "contextualBlackboxXmlAndVersionedRefsysKeepTheirOwnMeaning",
-      "methodStart": 3334,
-      "methodEnd": 4024,
-      "methodSha256": "2e518b1772ee12a02e0260cd9294bada86209e3cfa8309c687e7de29c47af7b9",
-      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "XML/BINARY blackbox"
       ],
@@ -12859,10 +12488,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ClassValueTypeContractTest.java",
       "suite": "guru.interlis.compiler.ClassValueTypeContractTest",
       "method": "classValueTypeIsModeled",
-      "methodStart": 1441,
-      "methodEnd": 2501,
-      "methodSha256": "a4a62edb1af3b077d7addb42f9dff2f20f5f2ec3b817dad49ee027251e91a148",
-      "sourceSha256": "e72772f480b49487811aed15f7091655acef17e25c52a38dde43e3e3132a0578",
       "observations": [
         "CLASS/STRUCTURE value type",
         "CLASS value"
@@ -12877,10 +12502,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ParameterClassFunctionContractTest.java",
       "suite": "guru.interlis.compiler.ParameterClassFunctionContractTest",
       "method": "attributePathArgumentsAndConstantsKeepTheirBindingsInCompiledSchema",
-      "methodStart": 14189,
-      "methodEnd": 16107,
-      "methodSha256": "00b23bdd2946445c637d10f628fd41694e7805e60d54a110c750c164416102d0",
-      "sourceSha256": "74fff30cb957a5e5f445d2baf85db703e050f47eaa1c908f33553b4411115cf9",
       "observations": [
         "attribute path constants",
         "attribute paths"
@@ -12895,10 +12516,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryRulesContractTest.java",
       "suite": "guru.interlis.compiler.GeometryRulesContractTest",
       "method": "concreteDefinitionsRequireFormsAndVerticesButAbstractDefinitionsMayDeferThem",
-      "methodStart": 2266,
-      "methodEnd": 3074,
-      "methodSha256": "04fb2ebb4ac8eacf24bb0f22f02900c2bd125e745d16f1ebe086f5bf00b4f246",
-      "sourceSha256": "4dfc6f97b91579b657e7fc1bc523ad1f3f30739c75f6c19f3044143675f06649",
       "observations": [
         "forms/vertex",
         "SURFACE definition",
@@ -12914,10 +12531,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryRulesContractTest.java",
       "suite": "guru.interlis.compiler.GeometryRulesContractTest",
       "method": "positiveToleranceHasNoFixedMinimumAnd24RetainsDeclaredPrecision",
-      "methodStart": 3721,
-      "methodEnd": 4670,
-      "methodSha256": "26e3d40070f6d8cec6da5871b1848bd567df55e7b6d0bf55f8bc6d9df95813f8",
-      "sourceSha256": "4dfc6f97b91579b657e7fc1bc523ad1f3f30739c75f6c19f3044143675f06649",
       "observations": [
         "tolerance >0 and precision",
         "tolerance"
@@ -12932,10 +12545,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LineFormBindingContractTest.java",
       "suite": "guru.interlis.compiler.LineFormBindingContractTest",
       "method": "geometryRetainsDirectionLineAttributesAndExactTolerance",
-      "methodStart": 5496,
-      "methodEnd": 6719,
-      "methodSha256": "b1c106139d34f6c07242e8c8cb29e87563ce9b6bbfea1798a3fca9b06d9e9e2c",
-      "sourceSha256": "08128ad07026e5496121c232e5294971f6ae1ad9a456631b3efb25a75e969771",
       "observations": [
         "direction/line attrs",
         "direction/attrs"
@@ -12950,10 +12559,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryTypeContractTest.java",
       "suite": "guru.interlis.compiler.GeometryTypeContractTest",
       "method": "multipolylineKeepsLineFormAndVertexDomain",
-      "methodStart": 560,
-      "methodEnd": 2181,
-      "methodSha256": "fee9f656d63c0175c66fee96d7e8eb8fa267a51851391807e908bb164c7977ed",
-      "sourceSha256": "3e33fb85d6d5d1365b2eb9b432690fcc5811f05fe07993926316285e046f0041",
       "observations": [
         "MULTIPOLYLINE"
       ],
@@ -12967,10 +12572,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LineFormBindingContractTest.java",
       "suite": "guru.interlis.compiler.LineFormBindingContractTest",
       "method": "customFormsExposeSegmentInheritanceMembersAndSourceReferences",
-      "methodStart": 2323,
-      "methodEnd": 4145,
-      "methodSha256": "978561ed4920347db0fea497f0769d244df0413730885ea937a1c157b3f4d790",
-      "sourceSha256": "08128ad07026e5496121c232e5294971f6ae1ad9a456631b3efb25a75e969771",
       "observations": [
         "StraightSegment/ArcSegment predefined structures",
         "custom line forms",
@@ -12987,10 +12588,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryInspectionContractTest.java",
       "suite": "guru.interlis.compiler.GeometryInspectionContractTest",
       "method": "customSegmentsPreserveMembersConstraintsAndCanonicalIdentity",
-      "methodStart": 6440,
-      "methodEnd": 8508,
-      "methodSha256": "75b7d79e9c5cef8143e1066ca33c88948d977d6fae7daa354e2a6e1dd0abf54f",
-      "sourceSha256": "56ca5e15e98711f706d44115e649472ca75475945505e0fdfa32a015144807ee",
       "observations": [
         "segment structures",
         "segments",
@@ -13006,10 +12603,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryRulesContractTest.java",
       "suite": "guru.interlis.compiler.GeometryRulesContractTest",
       "method": "surfaceToleranceIsExplicitIn23AndSymbolicIn24",
-      "methodStart": 3080,
-      "methodEnd": 3715,
-      "methodSha256": "bfd6e70d696da4fc2d5423e68b7bdbd2edc0588a34db3eeae98df716a566d137",
-      "sourceSha256": "4dfc6f97b91579b657e7fc1bc523ad1f3f30739c75f6c19f3044143675f06649",
       "observations": [
         "SURFACE tolerance",
         "2.3 explicit/inherited tolerance requirement differs from 2.4 symbolic default"
@@ -13024,10 +12617,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryInspectionContractTest.java",
       "suite": "guru.interlis.compiler.GeometryInspectionContractTest",
       "method": "areaContextsAreBoundAndAllOfRemainsAnExplicitLanguageError",
-      "methodStart": 5319,
-      "methodEnd": 6434,
-      "methodSha256": "26201e1e44ff61c9c7b627f9950beebce1cbba4c037255e6d090683df372814b",
-      "sourceSha256": "56ca5e15e98711f706d44115e649472ca75475945505e0fdfa32a015144807ee",
       "observations": [
         "AREA inspection",
         "AREA"
@@ -13042,10 +12631,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryRulesContractTest.java",
       "suite": "guru.interlis.compiler.GeometryRulesContractTest",
       "method": "extensionAndAssignmentUseDifferentToleranceRulesAndRejectWrongFamilies",
-      "methodStart": 7047,
-      "methodEnd": 8265,
-      "methodSha256": "c854679ac3fe75b2955f36d68f3e64c03cd1ed3865e8b4f7b8a57447df3c5b59",
-      "sourceSha256": "4dfc6f97b91579b657e7fc1bc523ad1f3f30739c75f6c19f3044143675f06649",
       "observations": [
         "AREA/SURFACE extension",
         "surface/area extension",
@@ -13062,10 +12647,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/UnitTypeContractTest.java",
       "suite": "guru.interlis.compiler.UnitTypeContractTest",
       "method": "unitDeclarationBindsNumericRange",
-      "methodStart": 637,
-      "methodEnd": 2444,
-      "methodSha256": "83de340992d4f9894dc7c9fd8a3920c72278c0cc29911e2dfb98d00d14ad1046",
-      "sourceSha256": "4a201bbee24d274b3051b89c5d129904c1bd7ea6b5f3175d187cd91f20869b43",
       "observations": [
         "unit declaration",
         "unit"
@@ -13080,10 +12661,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ComposedUnitContractTest.java",
       "suite": "guru.interlis.compiler.ComposedUnitContractTest",
       "method": "builtinUnitsAndTheirBasesHaveRealIdentities",
-      "methodStart": 6175,
-      "methodEnd": 6750,
-      "methodSha256": "3a5780c5c3db730055978a1cc1c4fce9531e73bae2da3687b7186ebbc5f31d3c",
-      "sourceSha256": "4a6c1f60d1f9caf8bc63ae30cae67bc705498b99088e19721d7d2ec6b940eff9",
       "observations": [
         "predefined units",
         "INTERLIS base units",
@@ -13101,10 +12678,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericUnitConversionContractTest.java",
       "suite": "guru.interlis.compiler.NumericUnitConversionContractTest",
       "method": "conversionOperandsRetainExactValuesOperatorsPrecisionAndRanges",
-      "methodStart": 6533,
-      "methodEnd": 9413,
-      "methodSha256": "1e344e38a43b642ca3aee3e3bc1837537b18d0840eb00f9da0939087330d69d4",
-      "sourceSha256": "83ffbed45da6a8d99ac06586537d43fe398ab68ddd7b24d20525f815a8de7415",
       "observations": [
         "derived unit factors",
         "derived factors"
@@ -13119,10 +12692,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ComposedUnitContractTest.java",
       "suite": "guru.interlis.compiler.ComposedUnitContractTest",
       "method": "derivedComponentsRequireConcreteTargetsAndRespectTheirAbstractAncestors",
-      "methodStart": 5116,
-      "methodEnd": 5586,
-      "methodSha256": "0ad0147f125c792efa5c7cf0dbf2268cb28cc8038bcbf213fdbd76fbdb511afa",
-      "sourceSha256": "4a6c1f60d1f9caf8bc63ae30cae67bc705498b99088e19721d7d2ec6b940eff9",
       "observations": [
         "derived units"
       ],
@@ -13136,10 +12705,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ComposedUnitContractTest.java",
       "suite": "guru.interlis.compiler.ComposedUnitContractTest",
       "method": "importedComponentsAreBoundInOrderAndUsedByNumericTypes",
-      "methodStart": 2470,
-      "methodEnd": 3847,
-      "methodSha256": "aa799cc6773f549dc73057753b051d4ef55cbddc94ca0da0b31d098684e0fec5",
-      "sourceSha256": "4a6c1f60d1f9caf8bc63ae30cae67bc705498b99088e19721d7d2ec6b940eff9",
       "observations": [
         "composed unit components",
         "composition"
@@ -13154,10 +12719,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ComposedUnitContractTest.java",
       "suite": "guru.interlis.compiler.ComposedUnitContractTest",
       "method": "extensionsPreserveCompositionAndSpecializeEachComponent",
-      "methodStart": 4340,
-      "methodEnd": 5111,
-      "methodSha256": "595bb6e839a8678fdfaf0d10998114ff080ba69de37c734c0723be3fc08965e1",
-      "sourceSha256": "4a6c1f60d1f9caf8bc63ae30cae67bc705498b99088e19721d7d2ec6b940eff9",
       "observations": [
         "composition extension",
         "extension"
@@ -13172,10 +12733,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/MetadataBindingContractTest.java",
       "suite": "guru.interlis.compiler.MetadataBindingContractTest",
       "method": "basketsKeepTopicsBasesOrderedObjectsAndClassBindings",
-      "methodStart": 2057,
-      "methodEnd": 3299,
-      "methodSha256": "136f9239a8ae1964add197156f60822fdc7e73a89c014f2494987b667ed971e5",
-      "sourceSha256": "ed8aae97316d7f875cdbd2963309bee81a6eccdbfb502a355f761f52681935a7",
       "observations": [
         "metaobject/basket",
         "basket/metaobject"
@@ -13190,10 +12747,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicBindingContractTest.java",
       "suite": "guru.interlis.compiler.GraphicBindingContractTest",
       "method": "graphicsExposeBasisClausesBoundParametersAndPaths",
-      "methodStart": 4195,
-      "methodEnd": 6039,
-      "methodSha256": "1f551fb1bd5d3e0229754340ff7740a407a4b16bf103a09d8ee6042bbebe921e",
-      "sourceSha256": "788770e210325f93a625eb6407ae03a1000580b318347a648a894e49804b495a",
       "observations": [
         "graphic metaobjects",
         "GRAPHIC BASED ON/rules",
@@ -13211,10 +12764,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/MetadataBindingContractTest.java",
       "suite": "guru.interlis.compiler.MetadataBindingContractTest",
       "method": "unitParameterOverridesAreTypedAndEnforced",
-      "methodStart": 6362,
-      "methodEnd": 7462,
-      "methodSha256": "c5bd3e51e133fb844b7e2fbccec87ab5c5f851901efcbac23cb3b377c03ec915",
-      "sourceSha256": "ed8aae97316d7f875cdbd2963309bee81a6eccdbfb502a355f761f52681935a7",
       "observations": [
         "parameter override",
         "parameter"
@@ -13229,10 +12778,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicBindingContractTest.java",
       "suite": "guru.interlis.compiler.GraphicBindingContractTest",
       "method": "signatureParametersRetainExplicitMetadataTargetsAndOverrides",
-      "methodStart": 6045,
-      "methodEnd": 7371,
-      "methodSha256": "854dca62f1f796b1ea477755696cdf1e0b7553300f04bc965622a3a2dd850933",
-      "sourceSha256": "788770e210325f93a625eb6407ae03a1000580b318347a648a894e49804b495a",
       "observations": [
         "signature parameters",
         "free signature parameters",
@@ -13249,10 +12794,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicResponsibilityContractTest.java",
       "suite": "guru.interlis.compiler.GraphicResponsibilityContractTest",
       "method": "exactOriginalsRetainDeclaredSignatureAndBoundObjectAndParameters",
-      "methodStart": 1971,
-      "methodEnd": 4893,
-      "methodSha256": "efd73f5a4213a13ff99a7a9463d13e2beccf65c921f2776f1c708ae403a3333f",
-      "sourceSha256": "d63c37173e0c8d3d1af8e57c283e03a4cc32ee2c51ef0866651bcd0627ddc4d3",
       "observations": [
         "parameter responsibility",
         "responsibility"
@@ -13267,10 +12808,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CoordinateReferenceSystemContractTest.java",
       "suite": "guru.interlis.compiler.CoordinateReferenceSystemContractTest",
       "method": "referenceSystemIsPreserved",
-      "methodStart": 534,
-      "methodEnd": 1830,
-      "methodSha256": "77fc5c34b2ee9fc87aec55b9c7470cc9f517d7db363c0ad245193c39e4ab6e87",
-      "sourceSha256": "8bcbfb105f972093a66c354374a6d6b5591c6697342e035414abb26d13b2d390",
       "observations": [
         "EPSG/REFSYS",
         "EPSG"
@@ -13285,10 +12822,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/MetadataBindingContractTest.java",
       "suite": "guru.interlis.compiler.MetadataBindingContractTest",
       "method": "predefinedMetadataHasNameConstraintAndTypedUnitAndAxisMembers",
-      "methodStart": 5275,
-      "methodEnd": 6356,
-      "methodSha256": "b42b3dff9a5b1b2951dac41fe9219146a8ae935bfd6ccbb270619ae35fcb1ab1",
-      "sourceSha256": "ed8aae97316d7f875cdbd2963309bee81a6eccdbfb502a355f761f52681935a7",
       "observations": [
         "REFSYSTEM classes",
         "COORDSYSTEM/SCALSYSTEM",
@@ -13305,10 +12838,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ParameterClassFunctionContractTest.java",
       "suite": "guru.interlis.compiler.ParameterClassFunctionContractTest",
       "method": "runtimeParametersHaveVersionedContractAndScopeRules",
-      "methodStart": 4946,
-      "methodEnd": 5913,
-      "methodSha256": "df797130270506e67de75859efd9a8c84c2f7b91e275448788c5f48cbf82a130",
-      "sourceSha256": "74fff30cb957a5e5f445d2baf85db703e050f47eaa1c908f33553b4411115cf9",
       "observations": [
         "PARAMETER in CONTRACTED 2.3 and free 2.4",
         "PARAMETER 2.3/2.4"
@@ -13323,10 +12852,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ConstraintPathBindingContractTest.java",
       "suite": "guru.interlis.compiler.ConstraintPathBindingContractTest",
       "method": "globalKeysAndWhereAreBoundInOrderWithSourceReferences",
-      "methodStart": 2492,
-      "methodEnd": 4720,
-      "methodSha256": "eb98780813bdba723ff61114852dccc064d281c4e8dd15a2e1af86a5e1adaec1",
-      "sourceSha256": "aebee2f0d94e1ae305ea9aa2a77fd43cfd0861231f4488ec11b2b0490a46c9b2",
       "observations": [
         "UNIQUE/WHERE"
       ],
@@ -13340,10 +12865,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ConstraintPathBindingContractTest.java",
       "suite": "guru.interlis.compiler.ConstraintPathBindingContractTest",
       "method": "localPrefixAndFieldsAreFullyBoundWithoutEmptySuccess",
-      "methodStart": 4726,
-      "methodEnd": 6627,
-      "methodSha256": "51983c39aacff4067a44f1121ac157c4aa69f594c77e4c082bf6220467db3c46",
-      "sourceSha256": "aebee2f0d94e1ae305ea9aa2a77fd43cfd0861231f4488ec11b2b0490a46c9b2",
       "observations": [
         "LOCAL UNIQUE",
         "LOCAL"
@@ -13358,10 +12879,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ConstraintPathBindingContractTest.java",
       "suite": "guru.interlis.compiler.ConstraintPathBindingContractTest",
       "method": "existenceRetainsEveryAlternativeAndUsesItsOwnObjectScope",
-      "methodStart": 7678,
-      "methodEnd": 9116,
-      "methodSha256": "8a2573ace52f003cca60739bba0e5747640f63afc8138130169231c7b35ac83e",
-      "sourceSha256": "aebee2f0d94e1ae305ea9aa2a77fd43cfd0861231f4488ec11b2b0490a46c9b2",
       "observations": [
         "EXISTENCE"
       ],
@@ -13375,10 +12892,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExternalConstraintContractTest.java",
       "suite": "guru.interlis.compiler.ExternalConstraintContractTest",
       "method": "externalConstraintKeepsTarget",
-      "methodStart": 527,
-      "methodEnd": 1843,
-      "methodSha256": "5ad3fd27a96287fb94cf8cf0d823a27cf94d35057b6be3dbad2ca0768c96511e",
-      "sourceSha256": "24b7c4569ad927abf9a5faae40bd0c62cbaf85ffd4bbd24e5cf1694a8342f44b",
       "observations": [
         "external constraint"
       ],
@@ -13392,10 +12905,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SetConditionContextContractTest.java",
       "suite": "guru.interlis.compiler.SetConditionContextContractTest",
       "method": "whereRetainsIndividualValuesAndPublicReferencesWhileTheBodyUsesTheSet",
-      "methodStart": 3134,
-      "methodEnd": 4522,
-      "methodSha256": "b137ddb4baaaa2660661e1b7f3dc9c15ed25a808b0adf81abd9d9cbb358ee469",
-      "sourceSha256": "0a0f3856e39d265b45d29394f10d7eca81dc40b2a1f122af104d050d7acbde6f",
       "observations": [
         "SET/WHERE"
       ],
@@ -13409,10 +12918,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructuredTranslationContractTest.java",
       "suite": "guru.interlis.compiler.StructuredTranslationContractTest",
       "method": "plausibilityRetainsExactThresholdOperatorAndOriginalPercentageRange",
-      "methodStart": 8149,
-      "methodEnd": 9513,
-      "methodSha256": "aa0df067c42a61f28099e1b2675bc6d23f764c0718dc9cd28307b2fb7568ab23",
-      "sourceSha256": "9da3eb1736dc6254a18382fb3fd1663997d131cc7e302395ecb31af40ecf0a54",
       "observations": [
         "plausibility 2.4",
         "plausibility"
@@ -13427,10 +12932,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExpressionConstraintContractTest.java",
       "suite": "guru.interlis.compiler.ExpressionConstraintContractTest",
       "method": "builtinFunctionAndImplicationCompile",
-      "methodStart": 1137,
-      "methodEnd": 1695,
-      "methodSha256": "50e430150ef9c65b5ea26d908b24445b2aaaacc3b7450e5baedb93b255f0a960",
-      "sourceSha256": "62abbb89e625a5e87f4806f4783237e4fc52da07f85b36e4a8be967d6579e6df",
       "observations": [
         "logical expression boolean/implication",
         "logical expression",
@@ -13446,10 +12947,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
       "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "everyRelationSpellingRetainsItsOperatorAndOriginalRange",
-      "methodStart": 398,
-      "methodEnd": 1421,
-      "methodSha256": "109e9f2736df3c702c67e82e96be7b4395571d62ce9c7893ef5235dd67c7cf26",
-      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "relation operators",
         "relations"
@@ -13464,10 +12961,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
       "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "booleanAndCoordinateOperatorsUseThePublicRule",
-      "methodStart": 3867,
-      "methodEnd": 4778,
-      "methodSha256": "8fba19026f29f4f4811c4d60d027f63563f1d1ad78e08a731820532822dfecd4",
-      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "boolean/geometry operators",
         "operators"
@@ -13482,10 +12975,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ConstraintPathBindingContractTest.java",
       "suite": "guru.interlis.compiler.ConstraintPathBindingContractTest",
       "method": "listSelectionPreservesTypesReferencesAndNestedContinuation",
-      "methodStart": 15220,
-      "methodEnd": 17992,
-      "methodSha256": "751df7b91290aaa258b951264ccd479ff8189167fab90ce62c9b64a6cf175d8e",
-      "sourceSha256": "aebee2f0d94e1ae305ea9aa2a77fd43cfd0861231f4488ec11b2b0490a46c9b2",
       "observations": [
         "path/index operators",
         "indices/paths"
@@ -13500,10 +12989,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ObjectFunctionContractTest.java",
       "suite": "guru.interlis.compiler.ObjectFunctionContractTest",
       "method": "thisAfterAnObjectStepKeepsThatObjectInsteadOfResettingThePath",
-      "methodStart": 9501,
-      "methodEnd": 10364,
-      "methodSha256": "3cac4da692cedf1733e4a2022e5ca5daed2e6c411f0ef897662c7e2ef8571460",
-      "sourceSha256": "c755e34942591e5629ea62b38436e6d8402021ee45e57643af126d21a01b35e7",
       "observations": [
         "THIS/path context",
         "THIS"
@@ -13518,10 +13003,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FunctionContractTest.java",
       "suite": "guru.interlis.compiler.FunctionContractTest",
       "method": "functionSignatureIsModeled",
-      "methodStart": 517,
-      "methodEnd": 1927,
-      "methodSha256": "bf294eac6e6f620363a6d14d5fb34218bdfd4e08040a0b0b162680ef7800a5c9",
-      "sourceSha256": "2157297e64cc436c5ead97c4bbcd6bacc050ab2bdff889ee6c601390d8f0febd",
       "observations": [
         "FUNCTION signature/explanation",
         "signature"
@@ -13536,10 +13017,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FunctionContractTest.java",
       "suite": "guru.interlis.compiler.FunctionContractTest",
       "method": "contractedIsRequiredOnlyIn23",
-      "methodStart": 4031,
-      "methodEnd": 4440,
-      "methodSha256": "d0f990e7c771ac12c4426a8d5210e288a47e6b13c18252b0f481663b1e75f4e0",
-      "sourceSha256": "2157297e64cc436c5ead97c4bbcd6bacc050ab2bdff889ee6c601390d8f0febd",
       "observations": [
         "FUNCTION only in contract 2.3",
         "contract"
@@ -13554,10 +13031,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/BuiltinSignatureFoundationContractTest.java",
       "suite": "guru.interlis.compiler.BuiltinSignatureFoundationContractTest",
       "method": "allAvailableBuiltinsKeepTheirRealSignaturesAndBoundCallsInCompiledSchema",
-      "methodStart": 3466,
-      "methodEnd": 7419,
-      "methodSha256": "93a036e20825283ff1103a702e5f67ebb6eb1f8ddbd58164205990031e48c72f",
-      "sourceSha256": "1ea00e82e20758e0fb1702f2278d64a94fb41e31992c1f2318ddb8f66f1713fa",
       "observations": [
         "all 2.3 builtins signatures",
         "all 2.3 builtin signatures",
@@ -13578,10 +13051,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AreaFunctionContractTest.java",
       "suite": "guru.interlis.compiler.AreaFunctionContractTest",
       "method": "attributeFunctionsBindDirectAndNestedSurfaceOwnersAndPublicSignatures",
-      "methodStart": 2299,
-      "methodEnd": 3281,
-      "methodSha256": "8278c2c94a44dede1437a41a10d88419d30b377d5d0c04e908cdc8408f21942a",
-      "sourceSha256": "bc3e310200f4ede6887a3dfb622cb5ff7748a63ef87a4375649ed4da449b0f9f",
       "observations": [
         "areAreas/areAreas2/3",
         "areAreas family",
@@ -13597,10 +13066,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewContractTest.java",
       "suite": "guru.interlis.compiler.ViewContractTest",
       "method": "projectionPublishesBoundFormationAndMembers",
-      "methodStart": 1732,
-      "methodEnd": 3407,
-      "methodSha256": "b89415e48f2ee5a99af7e999a14aa5e9dc2f18cb902685d7993c62e47dc9ebb5",
-      "sourceSha256": "0b926b765046c46a805964802bab1eafe354debcdf293a0080e53669d1b95dd0",
       "observations": [
         "PROJECTION",
         "valid view publishes schema"
@@ -13617,10 +13082,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewBindingContractTest.java",
       "suite": "guru.interlis.compiler.ViewBindingContractTest",
       "method": "joinsAndUnionsKeepAllBasesAndCheckMandatoryValues",
-      "methodStart": 6602,
-      "methodEnd": 7923,
-      "methodSha256": "c719b15cce340b14c691a7ea03d88ecdf9a866236a2a72403a8b43f44c80fe3b",
-      "sourceSha256": "82bfa52c97fd1e4567ea84c7ff44a9625334ad9ee24c6d65dbf0a493a411e7da",
       "observations": [
         "JOIN/UNION"
       ],
@@ -13634,10 +13095,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewBindingContractTest.java",
       "suite": "guru.interlis.compiler.ViewBindingContractTest",
       "method": "aggregationExposesItsBagWithoutMakingItATransferMember",
-      "methodStart": 7928,
-      "methodEnd": 8950,
-      "methodSha256": "0d30bf6a88eb787645a450c3ba7c0363844ef5bb12eee470a214ab6d1ee04d40",
-      "sourceSha256": "82bfa52c97fd1e4567ea84c7ff44a9625334ad9ee24c6d65dbf0a493a411e7da",
       "observations": [
         "AGGREGATION"
       ],
@@ -13651,10 +13108,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryInspectionContractTest.java",
       "suite": "guru.interlis.compiler.GeometryInspectionContractTest",
       "method": "lineInspectionExposesContextualHierarchyAndActualStartConstraint",
-      "methodStart": 1663,
-      "methodEnd": 3768,
-      "methodSha256": "1066bdf98e72576a28ef08ef8c109292fedbfae2f4c3d567ca5134b91dc8765b",
-      "sourceSha256": "56ca5e15e98711f706d44115e649472ca75475945505e0fdfa32a015144807ee",
       "observations": [
         "INSPECTION"
       ],
@@ -13668,10 +13121,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewFoundationContractTest.java",
       "suite": "guru.interlis.compiler.ViewFoundationContractTest",
       "method": "inheritedAreaInspectionsCannotBypassTheAllOfProhibition",
-      "methodStart": 3386,
-      "methodEnd": 4416,
-      "methodSha256": "db5fba3bf1c365c23b7bd8658f4d75340fc217c7874297cebfb9ec618a52b03f",
-      "sourceSha256": "a6a480ae6fe4f2257523b0ba9f875eb6494b5c3153da70a64cfc0b33e075ece7",
       "observations": [
         "AREA/ALL OF"
       ],
@@ -13685,10 +13134,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicBindingContractTest.java",
       "suite": "guru.interlis.compiler.GraphicBindingContractTest",
       "method": "conditionsTargetsAssignmentsAndDependenciesHaveSpecificErrors",
-      "methodStart": 7377,
-      "methodEnd": 8482,
-      "methodSha256": "85a5e91eaf08b86c9e0868e845bf2b0b3dc9b049c62f57792c1c52708360ff8a",
-      "sourceSha256": "788770e210325f93a625eb6407ae03a1000580b318347a648a894e49804b495a",
       "observations": [
         "WHERE/assignments"
       ],
@@ -13702,10 +13147,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicResponsibilityContractTest.java",
       "suite": "guru.interlis.compiler.GraphicResponsibilityContractTest",
       "method": "conditionalAndAccordingSignAlternativesRetainTheirOwnBoundObjects",
-      "methodStart": 8916,
-      "methodEnd": 10028,
-      "methodSha256": "32286433f80bdd645db23879ace2f961c61715e84d3f7b59cfc188629df9ad03",
-      "sourceSha256": "d63c37173e0c8d3d1af8e57c283e03a4cc32ee2c51ef0866651bcd0627ddc4d3",
       "observations": [
         "ACCORDING/WHEN IN",
         "conditions"
@@ -13720,10 +13161,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicBindingContractTest.java",
       "suite": "guru.interlis.compiler.GraphicBindingContractTest",
       "method": "graphicAndDrawingInheritanceKeepEffectiveOrderAndBaseIdentity",
-      "methodStart": 9528,
-      "methodEnd": 10627,
-      "methodSha256": "41fa2c65d9b37bb6ade145917e8ca5254bd3a8a6583ad6efc4088e92584b09bd",
-      "sourceSha256": "788770e210325f93a625eb6407ae03a1000580b318347a648a894e49804b495a",
       "observations": [
         "graphic inheritance",
         "inheritance"
@@ -13738,10 +13175,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/internal/antlr/VersionScannerTest.java",
       "suite": "guru.interlis.compiler.internal.antlr.VersionScannerTest",
       "method": "detectsUnsupportedVersion",
-      "methodStart": 299,
-      "methodEnd": 643,
-      "methodSha256": "d0144b8e0caaefca0ad99a7ad118cbd2453b122e35d3abb398c20fa59323a077",
-      "sourceSha256": "6e8d10d2064bc62fdc6fdcca32239ef41a9402abdffbee0f0e49a10aaa5a56a7",
       "observations": [
         "unsupported version",
         "unsupported version detected"
@@ -13758,10 +13191,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/InheritanceFoundationContractTest.java",
       "suite": "guru.interlis.compiler.InheritanceFoundationContractTest",
       "method": "finalImportedClassesAndStructuresAreRejectedInBothCanonicalSourceOrders",
-      "methodStart": 6064,
-      "methodEnd": 6602,
-      "methodSha256": "e18d4a9c547ba090f5b771dc4c1633d8da88485d05718bce191a31d146cc1c8b",
-      "sourceSha256": "2d747ce8389af0f03e29ea84db5ef34d5a920eee3fb05979f44757ef79940f89",
       "observations": [
         "FINAL"
       ],
@@ -13775,10 +13204,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GenericContextContractTest.java",
       "suite": "guru.interlis.compiler.GenericContextContractTest",
       "method": "contextMappingsAndDeferredStateRetainOrderedIdentitiesAndReferences",
-      "methodStart": 3110,
-      "methodEnd": 4527,
-      "methodSha256": "75a55e0918e7467d7ec338c36578545adcc0cbbf546066094a986921a251279d",
-      "sourceSha256": "97198f5e7dd1872b77d1437975f077f489eee86e820a289c9cdba073f203dfa3",
       "observations": [
         "GENERIC/DEFERRED",
         "CONTEXT/GENERIC"
@@ -13793,10 +13218,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructureValueContractTest.java",
       "suite": "guru.interlis.compiler.StructureValueContractTest",
       "method": "collectionOverridesCanAddOrderAndNarrowRootsButCannotRemoveOrderOrWidenRoots",
-      "methodStart": 7824,
-      "methodEnd": 9662,
-      "methodSha256": "76df67c71c27fe3b8baa0fd135eb0e67254b6099bf27e8af30c7d2fd64d741e7",
-      "sourceSha256": "96cf2c2fd36e6510bf287f6a548a2b32ce8de21b4496bd2adfa9bdd6ca20a6a9",
       "observations": [
         "structure/class"
       ],
@@ -13810,10 +13231,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericSubdivisionContractTest.java",
       "suite": "guru.interlis.compiler.NumericSubdivisionContractTest",
       "method": "continuousSubdivisionsRequireCircularityAndTheCorrectConversionPeriod",
-      "methodStart": 5956,
-      "methodEnd": 7080,
-      "methodSha256": "b8708b540c6392ace828185486e0d976c35b723dfcdfa6ce7529ddc67b22fd11",
-      "sourceSha256": "abbe2f47d9ce25f69e045d7d767b17b3f78a2b636493afe50ad99214c9ad76e4",
       "observations": [
         "CONTINUOUS subdivision"
       ],
@@ -13827,10 +13244,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructureValueContractTest.java",
       "suite": "guru.interlis.compiler.StructureValueContractTest",
       "method": "requiredWildcardsAndUnavailableConcreteStructuresNeedExplicitAbstractAttributes",
-      "methodStart": 6527,
-      "methodEnd": 7819,
-      "methodSha256": "82ef37279eef8e2a50b2bcc84fa15aa2f0cceaa26cad9e0be7c9f906120db757",
-      "sourceSha256": "96cf2c2fd36e6510bf287f6a548a2b32ce8de21b4496bd2adfa9bdd6ca20a6a9",
       "observations": [
         "abstract structure requirement"
       ],
@@ -13844,10 +13257,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RoleTargetInheritanceContractTest.java",
       "suite": "guru.interlis.compiler.RoleTargetInheritanceContractTest",
       "method": "hidingNarrowsOnlyTheAccessFromTheAffectedParticipant",
-      "methodStart": 7716,
-      "methodEnd": 8969,
-      "methodSha256": "1decb6e8659d784deea181a7e840591098ab6a35d70143192cb9e644b162bcdf",
-      "sourceSha256": "f2799fb257f3698f3ba100e3a0c93e3cbc1b90903402c0cece451200d8ba4f09",
       "observations": [
         "HIDING"
       ],
@@ -13861,10 +13270,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageProfileContractTest.java",
       "suite": "guru.interlis.compiler.LanguageProfileContractTest",
       "method": "multicoordIsRejectedInIli23AndAcceptedInIli24",
-      "methodStart": 1711,
-      "methodEnd": 2227,
-      "methodSha256": "caf91565d3e0f5f6fe700258461553713bba6e484cdef86db1b2077337997081",
-      "sourceSha256": "73bf7e1b8e87ced8b2571dd98fc71c83e5ef3ca7c9fb72cebc6a47e260fc77d6",
       "observations": [
         "MULTICOORD"
       ],
@@ -13878,10 +13283,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GeometryRulesContractTest.java",
       "suite": "guru.interlis.compiler.GeometryRulesContractTest",
       "method": "lineAxesHaveUniformPrecisionIn24",
-      "methodStart": 4676,
-      "methodEnd": 4896,
-      "methodSha256": "228f83598036bada64a86dc209f8aade5f99534b98896feee9498169f85b38b0",
-      "sourceSha256": "4dfc6f97b91579b657e7fc1bc523ad1f3f30739c75f6c19f3044143675f06649",
       "observations": [
         "precision"
       ],
@@ -13895,10 +13296,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EnumAndOperatorContractTest.java",
       "suite": "guru.interlis.compiler.EnumAndOperatorContractTest",
       "method": "enumFunctionsRejectWrongFamiliesUnrelatedEnumsAndInvalidNodes",
-      "methodStart": 8863,
-      "methodEnd": 9598,
-      "methodSha256": "b01a2e6b8f251f1a0ca3a980210334ff2b0621d35e42c02652ac618272c91d4e",
-      "sourceSha256": "1811cce5511d3ab46fef96cfa6b740eaecb4018c673c56ae13f6e7a3daee7634",
       "observations": [
         "enum functions"
       ],
@@ -13912,10 +13309,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ViewFoundationContractTest.java",
       "suite": "guru.interlis.compiler.ViewFoundationContractTest",
       "method": "allOfIn24CopiesAssociationRolesInOrderAndPreservesSingleParticipantTargets",
-      "methodStart": 5984,
-      "methodEnd": 8260,
-      "methodSha256": "39c997090ca2226dac73a5ce61e4d8ab90ff5c537129530063e1af50e3edfd55",
-      "sourceSha256": "a6a480ae6fe4f2257523b0ba9f875eb6494b5c3153da70a64cfc0b33e075ece7",
       "observations": [
         "ALL OF 2.4"
       ],
@@ -13929,10 +13322,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GraphicBindingContractTest.java",
       "suite": "guru.interlis.compiler.GraphicBindingContractTest",
       "method": "accordingRetainsOrderedEnumRangesAndValues",
-      "methodStart": 8488,
-      "methodEnd": 9522,
-      "methodSha256": "eb1f39df471fb8464da8cd63f36dad3415b2e1557b0fe1f955721fc8d16f9024",
-      "sourceSha256": "788770e210325f93a625eb6407ae03a1000580b318347a648a894e49804b495a",
       "observations": [
         "ACCORDING/WHEN IN"
       ],
@@ -13946,10 +13335,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationStrengthContractTest.java",
       "suite": "guru.interlis.compiler.AssociationStrengthContractTest",
       "method": "aggregationRequiresExactlyTwoEffectiveRoles",
-      "methodStart": 1628,
-      "methodEnd": 2318,
-      "methodSha256": "2f273c7a2874b3855e9387b984e5a74e8d263197acac56c2240ca3bd942b7636",
-      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "Typed two-role aggregation and exact AGGREGATION_ARITY rejection"
       ],
@@ -13963,10 +13348,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationStrengthContractTest.java",
       "suite": "guru.interlis.compiler.AssociationStrengthContractTest",
       "method": "orderedRolesKeepTheirEffectiveOrderAndCannotBecomeUnordered",
-      "methodStart": 2323,
-      "methodEnd": 3524,
-      "methodSha256": "a9411b086f567ee9de7bce4a3e29c4989bbbe165496a3da40012731c0116e6bb",
-      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "ORDERED value, public effective order and ROLE_ORDER_EXTENSION rejection"
       ],
@@ -13980,10 +13361,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationStrengthContractTest.java",
       "suite": "guru.interlis.compiler.AssociationStrengthContractTest",
       "method": "associationStrengthMayIncreaseButCannotWeakenOrHaveTwoWholeRoles",
-      "methodStart": 3529,
-      "methodEnd": 4381,
-      "methodSha256": "0e12d6ae0d15a628e6e11acdc2e3927d537b2096fb47e1ce119154b44e772560",
-      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "Public COMPOSITION plus weakening, multiple whole roles and bad composition cardinality"
       ],
@@ -13997,10 +13374,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/AssociationStrengthContractTest.java",
       "suite": "guru.interlis.compiler.AssociationStrengthContractTest",
       "method": "version23ModelLevelTargetsRetainTheApprovedCompatibilityProfile",
-      "methodStart": 4386,
-      "methodEnd": 6377,
-      "methodSha256": "852f86af0a0acdf632eb6c5c488dfc7f0146ac28b18fdf93e29aac2982f16e27",
-      "sourceSha256": "0cd20e6cdaa7b61b0036eb549922d23465da8c73d91516255f1cf8c08b18ab4c",
       "observations": [
         "Approved model-level role target and exact model/topic target identity"
       ],
@@ -14014,10 +13387,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
       "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "enumerationOrderingCircularityAndClosedSubtreesArePublicAndEnforced",
-      "methodStart": 1950,
-      "methodEnd": 3110,
-      "methodSha256": "295a9b86de5ead6d30fd93055af4ab1dd05a473049859ee9169e3abb874aae6a",
-      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "Ordered/circular flags, inherited preorder and exact circular/finality errors"
       ],
@@ -14031,10 +13400,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
       "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "publicExpressionTreePreservesComparisonAndBooleanPrecedence",
-      "methodStart": 3115,
-      "methodEnd": 4604,
-      "methodSha256": "7c1d9010a902d776fc7c1a6c284654e366e83d7469af669d2eea89143b6a1ecf",
-      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "Actual BinaryExpression OR/AND/EQ tree, boolean type and exact range"
       ],
@@ -14048,10 +13413,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
       "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "acceptedAndRejectedWhitespaceAreExplicitInBothLanguageProfiles",
-      "methodStart": 6033,
-      "methodEnd": 7280,
-      "methodSha256": "0c8ffc2eacfd493ad8d65ca93850942ed1aa8e674897a67ee8100d969911c439",
-      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "Five accepted whitespace spellings and FF/VT/NBSP rejected",
         "Actual whitespace profile"
@@ -14066,10 +13427,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
       "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "everyPinnedAppendixCharacterSurvivesSourceSyntaxAndDecodedLiteral",
-      "methodStart": 4609,
-      "methodEnd": 6028,
-      "methodSha256": "c8f9f5a1e05c8fe10fe4461ccfadf1d9c2183f4dfe63c9627dbe05380bee3800",
-      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "All131/162 pinned table characters retained in SourceText and decoded public LiteralExpression"
       ],
@@ -14083,10 +13440,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageSurfaceContractTest.java",
       "suite": "guru.interlis.compiler.LanguageSurfaceContractTest",
       "method": "everyPredefinedUnitKeepsItsVersionedDesignationCanonicalOwnerAndBase",
-      "methodStart": 7285,
-      "methodEnd": 9522,
-      "methodSha256": "26e5be487c306312e41be6869d9b6e7dd7e09249ebcb9199ff1a0bc4117d972c",
-      "sourceSha256": "6471e21a0e634d9c71f50ef246df0af577ff40f966a2f12643ce0907308fd0ae",
       "observations": [
         "All26 units, canonical owner, SI bases and versioned kg designation",
         "All26 concrete public units with versioned labels, canonical owners and bases"
@@ -14101,10 +13454,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/DomainRestrictionContractTest.java",
       "suite": "guru.interlis.compiler.DomainRestrictionContractTest",
       "method": "mandatoryDomainsRetainTypesAndRequiredValueFlagsInPublicModelAndAttributes",
-      "methodStart": 1442,
-      "methodEnd": 3017,
-      "methodSha256": "936ba983c6e98b76e898f6081009150eb137b36241a07054c5751b3b3f38d419",
-      "sourceSha256": "74341c5137d2b25c162b5bc27410c87061f627004d63cf28283b17225c1758ee",
       "observations": [
         "Actual domain type, mandatory value flag and inherited attribute state",
         "DomainRef targets, concrete text type and actual AttributeSymbol.mandatory flags"
@@ -14119,10 +13468,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/DomainRestrictionContractTest.java",
       "suite": "guru.interlis.compiler.DomainRestrictionContractTest",
       "method": "mandatoryWithoutABaseIsASourceErrorAndDoesNotBecomeAnImplementationGap",
-      "methodStart": 3022,
-      "methodEnd": 3508,
-      "methodSha256": "dc664eb54518fac0f1de400f463812cce471cbd58b3302cc337ed2c31d1c1622",
-      "sourceSha256": "74341c5137d2b25c162b5bc27410c87061f627004d63cf28283b17225c1758ee",
       "observations": [
         "Exact rejection of MANDATORY-only domain without base"
       ],
@@ -14136,10 +13481,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericAbstractionContractTest.java",
       "suite": "guru.interlis.compiler.NumericAbstractionContractTest",
       "method": "incompleteNumericAndCoordinateDomainsRequireAnExplicitAbstractDeclaration",
-      "methodStart": 1482,
-      "methodEnd": 2082,
-      "methodSha256": "27746eb7ec783c745fd22479ff973adaad287f0623d23f4e19bb76895f72e2c3",
-      "sourceSha256": "a8e884b28f18014526036964fce52f45d4afde40aaf36d39b85fee401675793d",
       "observations": [
         "Missing ABSTRACT on incomplete numeric/coordinate definition is a source error"
       ],
@@ -14153,10 +13494,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExpressionConstraintContractTest.java",
       "suite": "guru.interlis.compiler.ExpressionConstraintContractTest",
       "method": "domainConstraintsAreBoundToTheirOwnTypeAndRemainInDeclarationOrder",
-      "methodStart": 7361,
-      "methodEnd": 9708,
-      "methodSha256": "2444872feb365eded1974bdce0e763739e37c685b77a2e0fc09c1a72239ed1b5",
-      "sourceSha256": "62abbb89e625a5e87f4806f4783237e4fc52da07f85b36e4a8be967d6579e6df",
       "observations": [
         "All named domain constraints retain owner/type/order and source errors"
       ],
@@ -14170,10 +13507,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ScopeNamespaceContractTest.java",
       "suite": "guru.interlis.compiler.ScopeNamespaceContractTest",
       "method": "duplicateTypeNamesAreRejectedInEveryDeclaredScopeEvenWithoutAnyUse",
-      "methodStart": 852,
-      "methodEnd": 1848,
-      "methodSha256": "97ef2c61ef7e0f9c5ae4e35542d9adaeb8235e8b6f7c4cc1b76319441495adee",
-      "sourceSha256": "10e7c53da334db1ac996961cb3187ffeaaed0641e975251d329dc47c4c0cabaa",
       "observations": [
         "Unused duplicate structures and cross-kind type names at model/topic levels are source errors"
       ],
@@ -14187,10 +13520,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ScopeNamespaceContractTest.java",
       "suite": "guru.interlis.compiler.ScopeNamespaceContractTest",
       "method": "localTypesCannotShadowOuterTypesOrUnmarkedInheritedTypes",
-      "methodStart": 3922,
-      "methodEnd": 4901,
-      "methodSha256": "6ed67a835c0471656273f1e9e01771ecc86060de4974851378c2c9c248097a1c",
-      "sourceSha256": "10e7c53da334db1ac996961cb3187ffeaaed0641e975251d329dc47c4c0cabaa",
       "observations": [
         "Approved strict outer and inherited type-name collisions give SOURCE_ERRORS"
       ],
@@ -14204,10 +13533,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ScopeNamespaceContractTest.java",
       "suite": "guru.interlis.compiler.ScopeNamespaceContractTest",
       "method": "qualifiedOuterReferencesAndExplicitInheritedExtensionsKeepTheirActualTargets",
-      "methodStart": 4906,
-      "methodEnd": 6495,
-      "methodSha256": "ebfd8a5d811b3256614b7798d34cf0ca84081038812b6a54ba1d47fcc0f66e9c",
-      "sourceSha256": "10e7c53da334db1ac996961cb3187ffeaaed0641e975251d329dc47c4c0cabaa",
       "observations": [
         "Qualified domain target and valid EXTENDED structure base/member order"
       ],
@@ -14221,10 +13546,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelIssuerContractTest.java",
       "suite": "guru.interlis.compiler.ModelIssuerContractTest",
       "method": "absoluteAndRelativeReferencesPreserveTheirExactPublicIssuer",
-      "methodStart": 795,
-      "methodEnd": 1411,
-      "methodSha256": "020b9a681eef254d5e9ea910717e0c05f894c77c76c729805591b04b7acc17fe",
-      "sourceSha256": "dc29ab740b9993614d299ad9456111c8d83434dca83926b5735a3b6ded0f3cec",
       "observations": [
         "URI references including relative and1023-character boundary retain exact public issuer"
       ],
@@ -14238,10 +13559,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelIssuerContractTest.java",
       "suite": "guru.interlis.compiler.ModelIssuerContractTest",
       "method": "invalidSyntaxNonAsciiAndOverlengthAreSourceRejections",
-      "methodStart": 1416,
-      "methodEnd": 2155,
-      "methodSha256": "35672a0c4aeace66ea1db0b96f0834896713c3179e2bd3a34a27e6706691667b",
-      "sourceSha256": "dc29ab740b9993614d299ad9456111c8d83434dca83926b5735a3b6ded0f3cec",
       "observations": [
         "Malformed syntax, non-ASCII and1024-character boundary reject through public gate"
       ],
@@ -14255,10 +13572,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/MandatoryOverrideTypeContractTest.java",
       "suite": "guru.interlis.compiler.MandatoryOverrideTypeContractTest",
       "method": "referenceContinuationUsesInheritedTypeBeforeConstraintBinding",
-      "methodStart": 2519,
-      "methodEnd": 4215,
-      "methodSha256": "d8afaed474be07a0adde2f71bbb0f2111f077345e64c70875f6760d81b65677d",
-      "sourceSha256": "e8017b4c1d8e37571c46997bb442ee624bc560437566b467f36b165fd93c265a",
       "observations": [
         "MANDATORY without an explicit type retains the actual inherited ReferenceType and bound attribute paths"
       ],
@@ -14272,10 +13585,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NamedCollectionElementContractTest.java",
       "suite": "guru.interlis.compiler.NamedCollectionElementContractTest",
       "method": "namedScalarsKeepDomainReferencesAndResolvedElementTypesInBothCollectionKinds",
-      "methodStart": 2492,
-      "methodEnd": 5414,
-      "methodSha256": "c18b5dacbac0c8c4bef3493173671686ede1fd4dcaa243eeba9d8b4fd80af56a",
-      "sourceSha256": "b4276717e1601c4a3d6b2a17a8ed7f113158da0db38701f664194b5a43184785",
       "observations": [
         "BAG and LIST, exact cardinality, canonical DomainReferenceType elements and resolved scalar types"
       ],
@@ -14289,10 +13598,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/StructureValueContractTest.java",
       "suite": "guru.interlis.compiler.StructureValueContractTest",
       "method": "unrelatedMissingAndWrongKindRestrictionsAreSourceErrors",
-      "methodStart": 3504,
-      "methodEnd": 4142,
-      "methodSha256": "242e189672665d36973c2fa0f5a175b37ba9a6ea9406d423c6a3e173636543fd",
-      "sourceSha256": "96cf2c2fd36e6510bf287f6a548a2b32ce8de21b4496bd2adfa9bdd6ca20a6a9",
       "observations": [
         "Wrong-kind, missing and unrelated restrictions give ordinary SOURCE_ERRORS"
       ],
@@ -14306,10 +13611,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/QueryOwnershipTest.java",
       "suite": "guru.interlis.compiler.QueryOwnershipTest",
       "method": "oldRefIsRejectedByNewSnapshotAndGraphIsReadOnly",
-      "methodStart": 1119,
-      "methodEnd": 2837,
-      "methodSha256": "14a872f22ebe6e33971e0f853ddeb58dcb15e2f2ba11cf894798b0f33e7ae994",
-      "sourceSha256": "aeb8539ce9bbbc0848faf7ce8cc0d634fa70932a06e838960dee6428db29efb0",
       "observations": [
         "old SymbolRef in new snapshot throws SnapshotMismatchException",
         "published graph read-only",
@@ -14335,10 +13636,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ImportBindingContractTest.java",
       "suite": "guru.interlis.compiler.ImportBindingContractTest",
       "method": "staleTargetRevisionIsRejected",
-      "methodStart": 1370,
-      "methodEnd": 3302,
-      "methodSha256": "7b51c30054c1ece8793f6f76fb510ca5d56c923ab36e91b08becd0888228b96f",
-      "sourceSha256": "9acdbcac370c561e096de378a808c6309294f5827e23c7e21b5d08f2ebd4558c",
       "observations": [
         "stale target revision rejected"
       ],
@@ -14354,10 +13651,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SourceMetadataContractTest.java",
       "suite": "guru.interlis.compiler.SourceMetadataContractTest",
       "method": "annotationsBindToActualDeclarationKindsAndPreserveTheirExactOrigin",
-      "methodStart": 1407,
-      "methodEnd": 3297,
-      "methodSha256": "5d42f24aa486af2761ad66341e4702784d60ba5cc9b8739cb3aaf9465d422d1f",
-      "sourceSha256": "d0efd946408de05f3b71abcf2f661984a07deacc7dde7ac6072c007f9693afe4",
       "observations": [
         "revision-bound origin ranges"
       ],
@@ -14373,10 +13666,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/source/SourceTextTest.java",
       "suite": "guru.interlis.source.SourceTextTest",
       "method": "sliceRejectsForeignRevisionAndInvalidOffsets",
-      "methodStart": 2002,
-      "methodEnd": 2680,
-      "methodSha256": "64aab11b7bfcd144d725e3f4f84cfff3f9e64d1e8bf2fde6d5b279d825f68223",
-      "sourceSha256": "e60fc34933654070a5cdd179a2d393c54190604fd00978e8f4f072ab2c98f824",
       "observations": [
         "foreign revision rejected",
         "cross-revision failure"
@@ -14394,10 +13683,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CanonicalSourceOrderTest.java",
       "suite": "guru.interlis.compiler.CanonicalSourceOrderTest",
       "method": "sourceMapOrderDoesNotChangeSnapshotOrDiagnostics",
-      "methodStart": 1470,
-      "methodEnd": 2845,
-      "methodSha256": "ddcd11652ba4dad80c6eab6ced74fb114c1576b609e45716a3ea4b5a2686590a",
-      "sourceSha256": "6e5895b97be1ba0e02b2833da61b62d6942f5f78d333e4ee340ced3976d92e49",
       "observations": [
         "source map order does not change snapshot/diagnostics",
         "map order"
@@ -14415,10 +13700,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/QueryOwnershipTest.java",
       "suite": "guru.interlis.compiler.QueryOwnershipTest",
       "method": "sourceInsertionOrderDoesNotChangeSemanticResult",
-      "methodStart": 2843,
-      "methodEnd": 4463,
-      "methodSha256": "3937823215d6af56f7d080d66147633fbb6f0348bf715468f793c5584fc6039e",
-      "sourceSha256": "aeb8539ce9bbbc0848faf7ce8cc0d634fa70932a06e838960dee6428db29efb0",
       "observations": [
         "insertion order does not change semantic result",
         "insertion order"
@@ -14437,10 +13718,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FingerprintContractTest.java",
       "suite": "guru.interlis.compiler.FingerprintContractTest",
       "method": "sameSemanticInputHasSameSnapshotIdAndChangedContentChangesIt",
-      "methodStart": 875,
-      "methodEnd": 1409,
-      "methodSha256": "3231ed019bf10b3863cc221565e913c5e607a4e73b19ca8873b2e83254f87cf2",
-      "sourceSha256": "1166723a53cc71ddb305fe53c89b31aa8ab0b2f184ab8eea85499c2879612cee",
       "observations": [
         "same content same snapshot, changed content changes it"
       ],
@@ -14456,10 +13733,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/source/SourceTextTest.java",
       "suite": "guru.interlis.source.SourceTextTest",
       "method": "contentFingerprintIsStableAndExact",
-      "methodStart": 2686,
-      "methodEnd": 3428,
-      "methodSha256": "e53b40312223bd25f9d4bcd7aad813a6f6b35b666705d95df299d0e60252f955",
-      "sourceSha256": "e60fc34933654070a5cdd179a2d393c54190604fd00978e8f4f072ab2c98f824",
       "observations": [
         "stable content fingerprint",
         "Algorithm SHA-256/UTF-16BE, unmodified source text and exact equality"
@@ -14478,10 +13751,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CompilerEngineTest.java",
       "suite": "guru.interlis.compiler.CompilerEngineTest",
       "method": "trailingContentRejectsCompilation",
-      "methodStart": 12672,
-      "methodEnd": 13561,
-      "methodSha256": "d5e4fff0fc6cc78f468b924e386195375685e7a95315a6aaa403b9da9ad3653d",
-      "sourceSha256": "5ce6ed2d366adbb89382d797282164c3a9d8fdffa8b24f5c14c04c0443ff0067",
       "observations": [
         "trailing content rejected"
       ],
@@ -14497,10 +13766,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FragmentSyntaxContractTest.java",
       "suite": "guru.interlis.compiler.FragmentSyntaxContractTest",
       "method": "missingFragmentTokensPointToTheFragmentEnd",
-      "methodStart": 2261,
-      "methodEnd": 2933,
-      "methodSha256": "1bd42be7337da870d20a2c8a2bc0d71ae855dfe488040d1e24b66d20bc0c0a87",
-      "sourceSha256": "f4690e354bc3d73d7934adb5d9d82447a63db34d0c23d46edd1880b9fc2e5ffb",
       "observations": [
         "missing fragment token points to fragment end"
       ],
@@ -14516,10 +13781,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FragmentSyntaxContractTest.java",
       "suite": "guru.interlis.compiler.FragmentSyntaxContractTest",
       "method": "pathsRetainAbsoluteUtf16OffsetsAfterUnicodeAndCrLfPrefixes",
-      "methodStart": 334,
-      "methodEnd": 1456,
-      "methodSha256": "65a2eec7e76c74dcd4cf2a246e19de03840aae9fdd4b2a253f93684f708bd70f",
-      "sourceSha256": "f4690e354bc3d73d7934adb5d9d82447a63db34d0c23d46edd1880b9fc2e5ffb",
       "observations": [
         "absolute UTF-16 offsets"
       ],
@@ -14535,10 +13796,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ArchitectureBoundaryTest.java",
       "suite": "guru.interlis.compiler.ArchitectureBoundaryTest",
       "method": "publicModelAndCompilerApiDoNotLeakForbiddenTypes",
-      "methodStart": 903,
-      "methodEnd": 2454,
-      "methodSha256": "0b16844eb2f3cdf8ef4394fc74e6df87181db15323999b41c56b501304a8352c",
-      "sourceSha256": "fd206c8be0ce548e5725bb0ecb7ecd21e5a3b71419dae8d9ab120a210138299f",
       "observations": [
         "no ANTLR/forbidden types in public API",
         "no filesystem/HTTP types in compiler/model API",
@@ -14565,10 +13822,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxContractTest.java",
       "suite": "guru.interlis.compiler.SyntaxContractTest",
       "method": "editorRecoveryKeepsFollowingDeclarations",
-      "methodStart": 2553,
-      "methodEnd": 3051,
-      "methodSha256": "2b8e0a29e5e0d52be9c599f1457c227e4059b37356532eba06eadfaa2499ba24",
-      "sourceSha256": "b4de6a4afe429fd78766df6f926ae0a79365e7b9de4b3a16bf9ba10314b14e83",
       "observations": [
         "error nodes + following declarations",
         "following declaration survives missing type"
@@ -14586,10 +13839,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxProfileSafetyTest.java",
       "suite": "guru.interlis.compiler.SyntaxProfileSafetyTest",
       "method": "syntaxRecoveryDoesNotHideInvalidFunctionArguments",
-      "methodStart": 5219,
-      "methodEnd": 6254,
-      "methodSha256": "958e1ac5d2dc6a1a0aac53c54e212551251432487a799aa651276496aeaea598",
-      "sourceSha256": "58900d9ec9345011940bdba2e5f97323caa890e2b616497a1557f7a1237a49fa",
       "observations": [
         "recovery does not hide invalid arguments",
         "no internal failure for user error"
@@ -14607,10 +13856,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceIsolationTest.java",
       "suite": "guru.interlis.workspace.WorkspaceIsolationTest",
       "method": "parallelWorkspacesKeepIndependentRevisionsAndAnalyses",
-      "methodStart": 681,
-      "methodEnd": 2307,
-      "methodSha256": "0733b59e30a3c2b09dec8bde28a191c2c1c72d4e3d9864a15a860d3f0934841c",
-      "sourceSha256": "ccaf299bf804c718aee54d03f4ef71d37dbb9b96d7b236f04fb9bf672faa6f67",
       "observations": [
         "parallel sessions",
         "independent workspaces/engines",
@@ -14632,10 +13877,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SnapshotOwnershipTest.java",
       "suite": "guru.interlis.compiler.SnapshotOwnershipTest",
       "method": "mutatingCallerCollectionsDoesNotChangeCompilation",
-      "methodStart": 937,
-      "methodEnd": 2001,
-      "methodSha256": "78632e269d3298db85908b94a326e531ace21975547567d8c48835fe10fba9c2",
-      "sourceSha256": "d5bafa57dba739bb58c8210581a683ed5917982c5b43352429e0bb194748812d",
       "observations": [
         "caller collection mutation does not change result"
       ],
@@ -14651,10 +13892,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SemanticOverlayContractTest.java",
       "suite": "guru.interlis.compiler.SemanticOverlayContractTest",
       "method": "contentFingerprintsAreUnambiguousAndDeeplyImmutable",
-      "methodStart": 5722,
-      "methodEnd": 6514,
-      "methodSha256": "002e62ee86e8d387ffc4379e6ec27b3e2300518bdd8777e2480d517584a85380",
-      "sourceSha256": "607221dea32daf424c4ffc91d265f78b1e7eb25d7bee5c1a9644be54927bdf9f",
       "observations": [
         "deep immutability"
       ],
@@ -14670,10 +13907,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/OutcomeContractTest.java",
       "suite": "guru.interlis.compiler.OutcomeContractTest",
       "method": "successRejectionAndCancellationRemainDistinct",
-      "methodStart": 986,
-      "methodEnd": 2229,
-      "methodSha256": "9fde264f8ce200dd68db94abb26219ebe4f33dea52e2c71024fd45ec4e228e09",
-      "sourceSha256": "c88a2cc27a362d691b30780e8abf7e4e0d4ea16058600db0f4999cc730ae165b",
       "observations": [
         "only success has schema",
         "Rejected vs Cancelled",
@@ -14695,10 +13928,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ApiInvariantTest.java",
       "suite": "guru.interlis.compiler.ApiInvariantTest",
       "method": "analysisSnapshotRejectsMismatchedGraphSnapshot",
-      "methodStart": 1348,
-      "methodEnd": 2294,
-      "methodSha256": "2caaa1661a949c344b0ad40bb9f3be77861bd3fd7736b465e6f254cd0d6d1c0a",
-      "sourceSha256": "7a082340ef9ab3086b8d7d10a964e21862a4c41a14d47e69f92ed165d12396e0",
       "observations": [
         "mismatched snapshot rejected",
         "mismatched snapshot"
@@ -14716,10 +13945,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CompiledSchemaSelectionTest.java",
       "suite": "guru.interlis.compiler.CompiledSchemaSelectionTest",
       "method": "unrelatedBrokenModelStaysOutsideTheCompiledClosure",
-      "methodStart": 1882,
-      "methodEnd": 3781,
-      "methodSha256": "ae95b33e94387569d982317c2c48ccb24bbdc9f21832e41e7672d2d24b553445",
-      "sourceSha256": "acf6f80aa088c418770c732e3cc1350e2339b6701fc47140f8ad0605e6a8aa03",
       "observations": [
         "closure isolation",
         "selection"
@@ -14738,10 +13963,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SemanticOverlayContractTest.java",
       "suite": "guru.interlis.compiler.SemanticOverlayContractTest",
       "method": "overlayOnlyEditsMatchFreshAnalysisAndDoNotMutatePublishedSnapshots",
-      "methodStart": 6519,
-      "methodEnd": 7823,
-      "methodSha256": "5f0fa8b0e22392478699eb1728260971aeecb2c339da99b046b46c1a7cc6bbe4",
-      "sourceSha256": "607221dea32daf424c4ffc91d265f78b1e7eb25d7bee5c1a9644be54927bdf9f",
       "observations": [
         "immutable published snapshots",
         "overlay isolation",
@@ -14763,10 +13984,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CrossModelSemanticClosureContractTest.java",
       "suite": "guru.interlis.compiler.CrossModelSemanticClosureContractTest",
       "method": "abstractLineCoordFieldsAndExternalParametersStayLegalAndCanonical",
-      "methodStart": 4100,
-      "methodEnd": 5412,
-      "methodSha256": "282c74dedf5927da39d16de0d3bf78514818a1d360d78d617b64586f355e28a5",
-      "sourceSha256": "f51a42e193f044448e22e5b884d7bc2cf17f8476abf41f18eda814bd367b1468",
       "observations": [
         "view not rejected for missing exporter"
       ],
@@ -14782,10 +13999,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CompilerEngineTest.java",
       "suite": "guru.interlis.compiler.CompilerEngineTest",
       "method": "unrelatedBrokenModelDoesNotBlock",
-      "methodStart": 11131,
-      "methodEnd": 12666,
-      "methodSha256": "81d3e05cb42baaf86494c93847bdcdbe503a3c01ebd3ae495fa9046a9196c34a",
-      "sourceSha256": "5ce6ed2d366adbb89382d797282164c3a9d8fdffa8b24f5c14c04c0443ff0067",
       "observations": [
         "broken unrelated model does not block",
         "two roots, one invalid"
@@ -14803,10 +14016,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CompiledSchemaSelectionTest.java",
       "suite": "guru.interlis.compiler.CompiledSchemaSelectionTest",
       "method": "unrelatedSemanticErrorInSameFileDoesNotBlockSelectedModel",
-      "methodStart": 3952,
-      "methodEnd": 5245,
-      "methodSha256": "1d22a9c16709e761f1ba98725b3097191705495f6fdd1f674b99b40ece9f54e4",
-      "sourceSha256": "acf6f80aa088c418770c732e3cc1350e2339b6701fc47140f8ad0605e6a8aa03",
       "observations": [
         "same-file unrelated error does not block"
       ],
@@ -14822,10 +14031,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GenericContextContractTest.java",
       "suite": "guru.interlis.compiler.GenericContextContractTest",
       "method": "concreteAndAbstractBindingsAreDifferentFromInvalidDeferral",
-      "methodStart": 4533,
-      "methodEnd": 5649,
-      "methodSha256": "d82dc2e0586ab5b94c74a2a33de97adf7074ec70194cae8414ef02e867bbbb1e",
-      "sourceSha256": "97198f5e7dd1872b77d1437975f077f489eee86e820a289c9cdba073f203dfa3",
       "observations": [
         "concrete/abstract/deferred distinct"
       ],
@@ -14841,10 +14046,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EngineContractTest.java",
       "suite": "guru.interlis.compiler.EngineContractTest",
       "method": "reuseIsOptionalAndFreshSemanticsMatch",
-      "methodStart": 4082,
-      "methodEnd": 5095,
-      "methodSha256": "4240c37bf497de4f82037902f0294b3403d9f9fe1daf1fbd7b8f95d50deccfc2",
-      "sourceSha256": "cb8e50c3e8bc64f063bb35bec360bb009961f91dc9ae062c6754a12bb9bdce0b",
       "observations": [
         "fresh/reuse same symbols and diagnostics",
         "two engines",
@@ -14867,10 +14068,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/OriginalViewReuseTest.java",
       "suite": "guru.interlis.compiler.OriginalViewReuseTest",
       "method": "originalGraphsAndQueriesSurviveUnchangedCommentAndInvalidEdits",
-      "methodStart": 591,
-      "methodEnd": 5688,
-      "methodSha256": "36e5a389754ed4f0237faaf64ea7f136ee5064e1511888201fa6d3a5e5e6763d",
-      "sourceSha256": "5f97097b2dac52c58323ae61c82d1017f83dd0c441736021180e7dd2761b6e8d",
       "observations": [
         "edit sequence fresh/reuse",
         "fresh vs reuse across edits",
@@ -14894,10 +14091,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ImportedTranslationContractTest.java",
       "suite": "guru.interlis.compiler.ImportedTranslationContractTest",
       "method": "translationCyclesHaveNoCanonicalIdentity",
-      "methodStart": 5712,
-      "methodEnd": 6193,
-      "methodSha256": "5c5ceded48879fa7a3565f81a5a322d767d17dab76f655939ef7be7821bb0d30",
-      "sourceSha256": "9adae834d3e47d3c4bc63bd5a0a0af9a93a72ef97d581930dc56cb350e7bebc2",
       "observations": [
         "translation cycle"
       ],
@@ -14913,10 +14106,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelHeaderContractTest.java",
       "suite": "guru.interlis.compiler.ModelHeaderContractTest",
       "method": "editsOfOnlyOptionsAgreeFreshAndReusedAndRecover",
-      "methodStart": 9645,
-      "methodEnd": 10488,
-      "methodSha256": "d981579020f5a041e40c4c1908a3a86a41c93fd635370b0d1ff1c4baeb7b6df1",
-      "sourceSha256": "a44613e774c8790816a885a7c3e03b5087c3f9b9b326dda6a4b9803484e33c63",
       "observations": [
         "option edits invalidate",
         "option edits"
@@ -14934,10 +14123,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/GenericContextContractTest.java",
       "suite": "guru.interlis.compiler.GenericContextContractTest",
       "method": "importsAreOrderIndependentAndFreshAnalysisMatchesReuse",
-      "methodStart": 9511,
-      "methodEnd": 11775,
-      "methodSha256": "d2908994bdbbb722066feb4a7cc78c80ef0d8b2e1c38908ba1b8988003f42bfb",
-      "sourceSha256": "97198f5e7dd1872b77d1437975f077f489eee86e820a289c9cdba073f203dfa3",
       "observations": [
         "import edits"
       ],
@@ -14953,10 +14138,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FunctionContextContractTest.java",
       "suite": "guru.interlis.compiler.FunctionContextContractTest",
       "method": "attributeRelationsKeepValueErrorsSeparateFromARequiredCallContext",
-      "methodStart": 744,
-      "methodEnd": 2112,
-      "methodSha256": "b511324f0adb461d1dafdb902ef41e26c46f0c5242f9ecd6113f2519df203d3d",
-      "sourceSha256": "4926084221394f370b3a13b2e1e1750224dce3d0a6d448c50d0cbfe80aca28ae",
       "observations": [
         "NotAnalyzed PENDING for call context"
       ],
@@ -14972,10 +14153,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/OverlayWorkspaceContractTest.java",
       "suite": "guru.interlis.workspace.OverlayWorkspaceContractTest",
       "method": "overlayOnlyChangesInvalidateCapturesWhileCachePolicyDoesNotChangeSemantics",
-      "methodStart": 3301,
-      "methodEnd": 5134,
-      "methodSha256": "dcded09a703a25bfa5d9298f6bba32746c53f3164924746c5c2ddcb0cd34202e",
-      "sourceSha256": "22add65ba6c9ef87c099fbe63cc85316c522f8d819f9f6888976452eb2349f62",
       "observations": [
         "overlay cache invalidation",
         "overlay invalidation",
@@ -14995,10 +14172,6 @@
       "source": "interlis-wasm-bridge/src/test/java/guru/interlis/bridge/BridgeDispatcherTest.java",
       "suite": "guru.interlis.bridge.BridgeDispatcherTest",
       "method": "protocolRoundTripFromOpenToDiagram",
-      "methodStart": 1227,
-      "methodEnd": 3752,
-      "methodSha256": "5e817839a11c2880b812d3f4a3bd65f29ce92289812272dfa075ddbca8f18077",
-      "sourceSha256": "090ef49e894a7448b7d00c41f9fc054968d5e2763fcaa00ac57f3400900559b4",
       "observations": [
         "bridge/session same model"
       ],
@@ -15014,10 +14187,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceTest.java",
       "suite": "guru.interlis.workspace.WorkspaceTest",
       "method": "compileFixAndIncrementalEquality",
-      "methodStart": 1861,
-      "methodEnd": 3881,
-      "methodSha256": "a6c9ad1890a07cb69adc58a587dfa0fa921a6a958792f757d7f37d8b65762df9",
-      "sourceSha256": "ba8b2cdfc481f04a0a3b21cdb52244b796a0858c1c0edb57eb57a52d2f7cd414",
       "observations": [
         "JVM workspace",
         "no-op/fix/reuse",
@@ -15037,10 +14206,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceTest.java",
       "suite": "guru.interlis.workspace.WorkspaceTest",
       "method": "batchConflictLeavesWorkspaceUnchanged",
-      "methodStart": 7047,
-      "methodEnd": 8102,
-      "methodSha256": "fac32d8ba2da48513cf64f3581fb615392aff5b7ecee616c5cec71d9199d220a",
-      "sourceSha256": "ba8b2cdfc481f04a0a3b21cdb52244b796a0858c1c0edb57eb57a52d2f7cd414",
       "observations": [
         "conflict leaves workspace unchanged",
         "one conflict prevents partial batch"
@@ -15058,10 +14223,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceTest.java",
       "suite": "guru.interlis.workspace.WorkspaceTest",
       "method": "staleDetachedAnalysisIsNotCommitted",
-      "methodStart": 5082,
-      "methodEnd": 6172,
-      "methodSha256": "048632f3a92bb1eb94e3cacd96476caaaad3d4f6798ba54ef05b9875a602c274",
-      "sourceSha256": "ba8b2cdfc481f04a0a3b21cdb52244b796a0858c1c0edb57eb57a52d2f7cd414",
       "observations": [
         "stale analysis not committed",
         "late analysis not committed",
@@ -15081,10 +14242,6 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspFeatureTest.java",
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "oldDocumentVersionsAreIgnoredAndClosingRestoresDiskText",
-      "methodStart": 13627,
-      "methodEnd": 15083,
-      "methodSha256": "0213a5722db90db83a72c5faa28a18cd4de238a81d2687ea8ad81152b74d51ef",
-      "sourceSha256": "4af4a08233828553d26611abdbb5a8172917e3e79d081a01ed72af12278e5bcf",
       "observations": [
         "close/reopen restores disk text"
       ],
@@ -15100,10 +14257,6 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspServerTest.java",
       "suite": "guru.interlis.lsp.LspServerTest",
       "method": "openChangeDiagnosticsAndQueries",
-      "methodStart": 2328,
-      "methodEnd": 4754,
-      "methodSha256": "8369ffc29869072ca4601329097e586227df287b497c0bc0f9f2e9d8534de33e",
-      "sourceSha256": "b95a279ebe5e5d6239bf0f9cbe36800b10663bd59c0679d06e8ce46dc45d7bed",
       "observations": [
         "editor diagnostics/queries",
         "LSP diagnostics",
@@ -15123,10 +14276,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceTest.java",
       "suite": "guru.interlis.workspace.WorkspaceTest",
       "method": "missingImportAppearsLaterWithoutEdit",
-      "methodStart": 3887,
-      "methodEnd": 5076,
-      "methodSha256": "0af23bc19b26009f5258dfdd7eb528eca1e36294f9c3bb3f668d5391d920772f",
-      "sourceSha256": "ba8b2cdfc481f04a0a3b21cdb52244b796a0858c1c0edb57eb57a52d2f7cd414",
       "observations": [
         "later model appears without edit",
         "changed import stand triggers new analysis"
@@ -15144,10 +14293,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceTest.java",
       "suite": "guru.interlis.workspace.WorkspaceTest",
       "method": "missingTranslationOriginalCanBeAddedWithoutEditingTheTranslation",
-      "methodStart": 14246,
-      "methodEnd": 15451,
-      "methodSha256": "f074841c83d6dbcf798945c805ca2d6712e2404633b874f6a722bacf86d058b0",
-      "sourceSha256": "ba8b2cdfc481f04a0a3b21cdb52244b796a0858c1c0edb57eb57a52d2f7cd414",
       "observations": [
         "translation original added without edit"
       ],
@@ -15163,10 +14308,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RenameSafetyTest.java",
       "suite": "guru.interlis.compiler.RenameSafetyTest",
       "method": "renameDoesNotTouchSameNameInAnotherTopicOrComments",
-      "methodStart": 2070,
-      "methodEnd": 3536,
-      "methodSha256": "9a572bf56288e7be0e3d73a820f034e8431d8f5c467ce7d38ccbee43d1593762",
-      "sourceSha256": "3b33a305c74e33484a0645e4ef5bf515525f067794758af6a6611f0b9e0e2032",
       "observations": [
         "rename isolation"
       ],
@@ -15182,10 +14323,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/CancelledAnalysisTest.java",
       "suite": "guru.interlis.compiler.CancelledAnalysisTest",
       "method": "cancelledAnalysisTerminatesWithoutSchema",
-      "methodStart": 521,
-      "methodEnd": 1386,
-      "methodSha256": "071cde2c5543646819b0ba0b5e779488ad8c414207a46ca5f17a0bfa08a113cc",
-      "sourceSha256": "713562ae26c7765754d617b34b397544ed8665166d5a39514e1d3fe0792cb8b9",
       "observations": [
         "cancellation no schema"
       ],
@@ -15201,10 +14338,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EngineContractTest.java",
       "suite": "guru.interlis.compiler.EngineContractTest",
       "method": "cancellationIsTypedAndNeverProducesSchema",
-      "methodStart": 1847,
-      "methodEnd": 2684,
-      "methodSha256": "b88ff62a4b71a73a8c80846de3699b4147824d9ab589853dcf8b4c9eb4ed807e",
-      "sourceSha256": "cb8e50c3e8bc64f063bb35bec360bb009961f91dc9ae062c6754a12bb9bdce0b",
       "observations": [
         "typed cancellation",
         "cancellation event"
@@ -15222,10 +14355,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/OverlayWorkspaceContractTest.java",
       "suite": "guru.interlis.workspace.OverlayWorkspaceContractTest",
       "method": "anOverlayRoundTripRestoresContentIdentityWithoutReusingOldResults",
-      "methodStart": 5139,
-      "methodEnd": 6677,
-      "methodSha256": "1902312a0dfe4ff639ebbee181d61642226f7068780243b9e42bacd04837cef2",
-      "sourceSha256": "22add65ba6c9ef87c099fbe63cc85316c522f8d819f9f6888976452eb2349f62",
       "observations": [
         "overlay content identity"
       ],
@@ -15241,10 +14370,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/ResolutionBoundaryContractTest.java",
       "suite": "guru.interlis.workspace.ResolutionBoundaryContractTest",
       "method": "analysisWithOtherRootSelectionCannotBeAcceptedIntoACapture",
-      "methodStart": 5867,
-      "methodEnd": 7022,
-      "methodSha256": "9019be935487691d60b37dd82fa4a3750875470cfcdca72f4c6998f122e74ad9",
-      "sourceSha256": "f7234ba28b7c2b453568ecf1c84172820437ad43a5442659fc5a4d23226c1afb",
       "observations": [
         "stale capture rejected"
       ],
@@ -15260,10 +14385,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/diagnostics/DiagnosticCatalogTest.java",
       "suite": "guru.interlis.diagnostics.DiagnosticCatalogTest",
       "method": "initialCatalogIsStableAndUnique",
-      "methodStart": 1533,
-      "methodEnd": 2021,
-      "methodSha256": "550d323c3e41edd265e9caa2f917ea66308f8bdef5141d4b746a6eb2c866186d",
-      "sourceSha256": "9a07e27316638a09bcec53e43f9cbe99e16342f72ee1b18953422931ad0631e2",
       "observations": [
         "codes stable",
         "catalog stable/unique",
@@ -15283,10 +14404,6 @@
       "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "jsonOutputIsMachineReadable",
-      "methodStart": 7586,
-      "methodEnd": 7890,
-      "methodSha256": "e8e52fb35fe714d3b4eb665fb96aed19e0a9e6681244b5f17d3cf6a30efb9de3",
-      "sourceSha256": "ec35c21aabd5d4a586bf7625e13330c61a4dbf5a5c31b75a288495c7faff95d1",
       "observations": [
         "CLI JSON diagnostics",
         "JSON diagnostic shape",
@@ -15306,10 +14423,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/diagnostics/DiagnosticPresentationTest.java",
       "suite": "guru.interlis.diagnostics.DiagnosticPresentationTest",
       "method": "dependentSuppressionUsesExplicitCauseIdsNotText",
-      "methodStart": 283,
-      "methodEnd": 1369,
-      "methodSha256": "838601f02926ca81fced3920755e5bad22ae09acbe35081f9097803a4adc68ed",
-      "sourceSha256": "1c8569ae062392d9b78080071bc12fd170d35eaf009cd1cacfda3c7941d43ca0",
       "observations": [
         "cause ids not text",
         "Explicit diagnostic cause ids drive suppression, unrelated same text retained"
@@ -15327,10 +14440,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/internal/DiagnosticOrderTest.java",
       "suite": "guru.interlis.compiler.internal.DiagnosticOrderTest",
       "method": "canonicalOrderIsIndependentOfEmissionOrder",
-      "methodStart": 650,
-      "methodEnd": 1400,
-      "methodSha256": "c803fa790cb10c258bc8163e53a8d42df5b2fabc8cc3829b13d68e59222aae10",
-      "sourceSha256": "976ad2abf1d5b40d9354df27e3b0d0f187a93afe9c33b9eb5bc0f14f0f78bf7c",
       "observations": [
         "stable order",
         "ordered ranges",
@@ -15352,10 +14461,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/source/SourceTextTest.java",
       "suite": "guru.interlis.source.SourceTextTest",
       "method": "crlfAndSupplementaryCharactersUseUtf16Offsets",
-      "methodStart": 340,
-      "methodEnd": 1261,
-      "methodSha256": "cd34f9be232edd0a488a5c2ca714d20ac0365781b19d1c76104d679ca2ae22da",
-      "sourceSha256": "e60fc34933654070a5cdd179a2d393c54190604fd00978e8f4f072ab2c98f824",
       "observations": [
         "CRLF/emoji offsets"
       ],
@@ -15371,10 +14476,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/diagnostics/DiagnosticPresentationTest.java",
       "suite": "guru.interlis.diagnostics.DiagnosticPresentationTest",
       "method": "fullListRemainsAvailableWhenPolicyDoesNotSuppress",
-      "methodStart": 1375,
-      "methodEnd": 1992,
-      "methodSha256": "2afb30eb79b363ae8080377f91a60ea9cf694e76dfe16fbdb0fac8928f7a03fa",
-      "sourceSha256": "1c8569ae062392d9b78080071bc12fd170d35eaf009cd1cacfda3c7941d43ca0",
       "observations": [
         "suppressed follow-ups do not hide failure"
       ],
@@ -15390,10 +14491,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxProfileSafetyTest.java",
       "suite": "guru.interlis.compiler.SyntaxProfileSafetyTest",
       "method": "repeatedPropertiesAreVisibleWarningsRatherThanHiddenSetDeduplication",
-      "methodStart": 3140,
-      "methodEnd": 4562,
-      "methodSha256": "cef0ef5db553578d4ec58a9795091cec745f6ad94b1948f3fe202cb49b25a3f3",
-      "sourceSha256": "58900d9ec9345011940bdba2e5f97323caa890e2b616497a1557f7a1237a49fa",
       "observations": [
         "warning vs error",
         "Warning rejection produces only WARNINGS_REJECTED; allowed-warning compile succeeds"
@@ -15410,10 +14507,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ImportDiagnosticContractTest.java",
       "suite": "guru.interlis.compiler.ImportDiagnosticContractTest",
       "method": "missingImportProducesResolverDiagnosticAndNoSchema",
-      "methodStart": 563,
-      "methodEnd": 1956,
-      "methodSha256": "8bd4804f50d56416c048833485a395e81002f02986523c68b0fb3a778176f601",
-      "sourceSha256": "7af1302685b90d7f1e23686537f7a52048960d33e8d74294d487e052947a8580",
       "observations": [
         "missing import"
       ],
@@ -15429,10 +14522,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ExpressionConstraintContractTest.java",
       "suite": "guru.interlis.compiler.ExpressionConstraintContractTest",
       "method": "externalConstraintCannotBindAnUnrelatedSameNamedClassOrMissingTarget",
-      "methodStart": 9714,
-      "methodEnd": 10867,
-      "methodSha256": "9a410ac5f9d2275a163c9a21db5f43771a4954562b5a24334397b2d242a1218c",
-      "sourceSha256": "62abbb89e625a5e87f4806f4783237e4fc52da07f85b36e4a8be967d6579e6df",
       "observations": [
         "independent literal remains visible"
       ],
@@ -15448,10 +14537,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericLiteralBudgetContractTest.java",
       "suite": "guru.interlis.compiler.NumericLiteralBudgetContractTest",
       "method": "oversizedThresholdsRangesAndConstantsUseTheExistingBudgetOutcome",
-      "methodStart": 542,
-      "methodEnd": 1399,
-      "methodSha256": "46275f2d4aa03f79142a0bf9f47b2cc3b4167ea6569c14872740b9780223335d",
-      "sourceSha256": "d2a7d6fc992684accb49a5b96d8845db474b09dcda26f6df9cc1a202038c4f7b",
       "observations": [
         "controlled budget"
       ],
@@ -15467,10 +14552,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EngineContractTest.java",
       "suite": "guru.interlis.compiler.EngineContractTest",
       "method": "resourceLimitIsCancellationAndNotAFalseNegativeModel",
-      "methodStart": 2690,
-      "methodEnd": 3389,
-      "methodSha256": "830e5f75cf9a1948ba709d17660ce6eb1cf949c5144b22fb08cb2bb7eb5f0e43",
-      "sourceSha256": "cb8e50c3e8bc64f063bb35bec360bb009961f91dc9ae062c6754a12bb9bdce0b",
       "observations": [
         "RESOURCE_LIMIT typed"
       ],
@@ -15486,10 +14567,6 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspFeatureTest.java",
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "renameIsRejectedWhenSourceChangedAfterAnalysis",
-      "methodStart": 10659,
-      "methodEnd": 11935,
-      "methodSha256": "16dbba9ec80f4d7349782d4f99fa57d59ff35bffc2534704f309acba258b4f5d",
-      "sourceSha256": "4af4a08233828553d26611abdbb5a8172917e3e79d081a01ed72af12278e5bcf",
       "observations": [
         "changed document rejected"
       ],
@@ -15505,10 +14582,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RunEventContractTest.java",
       "suite": "guru.interlis.compiler.RunEventContractTest",
       "method": "oneOrderedTerminalEventAndIndependentObservers",
-      "methodStart": 1114,
-      "methodEnd": 2417,
-      "methodSha256": "05c78027dd1a3fd66173bec770a639606e3bf6bea3019737d5ba593c736a7ec7",
-      "sourceSha256": "34962dc3de2001078d031a38c2e9737ade263982e39aa416754c37ce49af7fe6",
       "observations": [
         "ordered terminal event",
         "Typed event headers, ordered sequences and isolated observers"
@@ -15526,10 +14599,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/RunEventContractTest.java",
       "suite": "guru.interlis.compiler.RunEventContractTest",
       "method": "throwingObserverStillGetsExactlyOneTerminalAttempt",
-      "methodStart": 2423,
-      "methodEnd": 3193,
-      "methodSha256": "20aa0f2e633e6cd0325dfd85ce5eb7befa9897021b9fbe6dba57261a3220f3d3",
-      "sourceSha256": "34962dc3de2001078d031a38c2e9737ade263982e39aa416754c37ce49af7fe6",
       "observations": [
         "observer error terminal attempt"
       ],
@@ -15545,10 +14614,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EngineContractTest.java",
       "suite": "guru.interlis.compiler.EngineContractTest",
       "method": "failingObserverDoesNotChangeFactualResult",
-      "methodStart": 3395,
-      "methodEnd": 4076,
-      "methodSha256": "b1fc135166303690e534058fde2e63fe7a7530a398516de07e876093e4ae18bf",
-      "sourceSha256": "cb8e50c3e8bc64f063bb35bec360bb009961f91dc9ae062c6754a12bb9bdce0b",
       "observations": [
         "throwing observer does not change result"
       ],
@@ -15564,10 +14629,6 @@
       "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "checkPositiveAndNegativeModels",
-      "methodStart": 2215,
-      "methodEnd": 2876,
-      "methodSha256": "e9f0777a6cf390fc3968b6f6ae00bd5575902d9a71721f252ab31f0c0fdeca99",
-      "sourceSha256": "ec35c21aabd5d4a586bf7625e13330c61a4dbf5a5c31b75a288495c7faff95d1",
       "observations": [
         "CLI stdout/exit",
         "CLI outcome"
@@ -15585,10 +14646,6 @@
       "source": "interlis-lsp/src/test/java/guru/interlis/lsp/LspFeatureTest.java",
       "suite": "guru.interlis.lsp.LspFeatureTest",
       "method": "configurationAndWatchedFilesRefreshAreAccepted",
-      "methodStart": 11941,
-      "methodEnd": 13621,
-      "methodSha256": "e4154d9f3a5b4d7f3187108fb6e9f04d3a522b9a9ad7c4e14bc15f920062bc59",
-      "sourceSha256": "4af4a08233828553d26611abdbb5a8172917e3e79d081a01ed72af12278e5bcf",
       "observations": [
         "operations"
       ],
@@ -15604,10 +14661,6 @@
       "source": "interlis-repository/src/test/java/guru/interlis/repository/RepositoryIndexReaderTest.java",
       "suite": "guru.interlis.repository.RepositoryIndexReaderTest",
       "method": "rejectsMissingMetadataAndMalformedXml",
-      "methodStart": 4514,
-      "methodEnd": 5203,
-      "methodSha256": "1be1caa4a1aac061ac07d156b5a9c9ea50946eb455d567f0730980f59109a13b",
-      "sourceSha256": "35bf31175944228f2e754cf03c1d09e4d7775acf310b9688fba9684247cd498e",
       "observations": [
         "resolver diagnostics"
       ],
@@ -15623,10 +14676,6 @@
       "source": "interlis-repository/src/test/java/guru/interlis/repository/HttpSourceLoaderTest.java",
       "suite": "guru.interlis.repository.HttpSourceLoaderTest",
       "method": "mapsAccessEncodingSizeAndOffline",
-      "methodStart": 1926,
-      "methodEnd": 3575,
-      "methodSha256": "c324e5c2f0e0a1123221b62841bc66a37d5e0d57eff1820104513bca35394dfd",
-      "sourceSha256": "27126f727a9326813f76240b48e0e7ddc8b4a5bd1dc9e431eff79fd11a3d8fb9",
       "observations": [
         "host errors"
       ],
@@ -15642,10 +14691,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/execution/BoundedObservationQueueTest.java",
       "suite": "guru.interlis.execution.BoundedObservationQueueTest",
       "method": "loadTestKeepsBoundAndCountsDiscards",
-      "methodStart": 590,
-      "methodEnd": 1171,
-      "methodSha256": "90f91f78a67f321f1a11d7e917d5405705f38680ee1245bf36253d3ff3642073",
-      "sourceSha256": "28fbf1457bac1fdfd5af6f1061fb9a26ca17a25a98e4feaa619d13a6f03b9f37",
       "observations": [
         "bounded queue/discard count"
       ],
@@ -15661,10 +14706,6 @@
       "source": "interlis-model/src/test/java/guru/interlis/execution/BoundedObservationQueueTest.java",
       "suite": "guru.interlis.execution.BoundedObservationQueueTest",
       "method": "drainPreservesOrder",
-      "methodStart": 1177,
-      "methodEnd": 1483,
-      "methodSha256": "bca99fd2d737972fc4e6b480b539a7e17ce60e141d585016c21755327d22c1a8",
-      "sourceSha256": "28fbf1457bac1fdfd5af6f1061fb9a26ca17a25a98e4feaa619d13a6f03b9f37",
       "observations": [
         "order"
       ],
@@ -15680,10 +14721,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PublicSdkConstructionTest.java",
       "suite": "guru.interlis.compiler.PublicSdkConstructionTest",
       "method": "minimalPublicApiCompile",
-      "methodStart": 495,
-      "methodEnd": 1365,
-      "methodSha256": "40615db66304776bb7e8cae791a5b1731c181127fe22d78a966c986586383940",
-      "sourceSha256": "4659304f746deed1f5e6554d746cb6dd9b02104501d33d6ab8fadaf47d52ba1f",
       "observations": [
         "public API compiles",
         "public SDK construction"
@@ -15701,10 +14738,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ApiInvariantTest.java",
       "suite": "guru.interlis.compiler.ApiInvariantTest",
       "method": "requestsRejectEmptyRootsAndMismatchedSourceKeys",
-      "methodStart": 916,
-      "methodEnd": 1342,
-      "methodSha256": "f3c8bd81acf812dc3b69dfddc888b49a7fc2bbc5931f8ddb6b31769c59da9ee7",
-      "sourceSha256": "7a082340ef9ab3086b8d7d10a964e21862a4c41a14d47e69f92ed165d12396e0",
       "observations": [
         "constructor invariants"
       ],
@@ -15720,10 +14753,6 @@
       "source": "interlis-wasm-bridge/src/test/java/guru/interlis/bridge/BridgeDispatcherTest.java",
       "suite": "guru.interlis.bridge.BridgeDispatcherTest",
       "method": "missingModelsAndInvalidProtocolAreTyped",
-      "methodStart": 3758,
-      "methodEnd": 5207,
-      "methodSha256": "864394157559103aa7fc0b74149e3169808f0db085bba339ca82da3d79540915",
-      "sourceSha256": "090ef49e894a7448b7d00c41f9fc054968d5e2763fcaa00ac57f3400900559b4",
       "observations": [
         "bridge outcome"
       ],
@@ -15739,10 +14768,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/ModelSelectorContractTest.java",
       "suite": "guru.interlis.compiler.ModelSelectorContractTest",
       "method": "byNameWithVersionAndSourceHintSelectsOneModel",
-      "methodStart": 1392,
-      "methodEnd": 1938,
-      "methodSha256": "d719492fe46b1d961be6d4b989a815ea9d38f9ebd874bf6bbd99317fd946858f",
-      "sourceSha256": "cd23731d24d2de734cc9c35ca78f407b551501c6efde7dd0a9b9fe6e50b2c442",
       "observations": [
         "model selector"
       ],
@@ -15758,10 +14783,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "formattingIsIdempotentAndCanUseLf",
-      "methodStart": 5297,
-      "methodEnd": 5744,
-      "methodSha256": "4318b52d58a675a377967e986bb061aa2d1a767c16c0af5e82aa377fbdab2721",
-      "sourceSha256": "b7ecde12db53ccea21607cb2186e8f49b90276861be701b0a291f7d97a5206c1",
       "observations": [
         "idempotent, LF",
         "API formatting"
@@ -15779,10 +14800,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "formatsIndentationAndPreservesCommentsAndUnicode",
-      "methodStart": 4542,
-      "methodEnd": 5291,
-      "methodSha256": "5eaf1b8a49a18121705185a2ad2942f8bcc199daf8a806b94e01de19c39469eb",
-      "sourceSha256": "b7ecde12db53ccea21607cb2186e8f49b90276861be701b0a291f7d97a5206c1",
       "observations": [
         "comments/Unicode preserved"
       ],
@@ -15798,10 +14815,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FormatterContractTest.java",
       "suite": "guru.interlis.compiler.FormatterContractTest",
       "method": "multilineAndInterleavedCommentsKeepTheirTextAndPosition",
-      "methodStart": 6100,
-      "methodEnd": 7087,
-      "methodSha256": "bf855b04fcd6b46aa83c61bafa768deb08b6af7e960c17b4c1571c2571a288f4",
-      "sourceSha256": "b7ecde12db53ccea21607cb2186e8f49b90276861be701b0a291f7d97a5206c1",
       "observations": [
         "multiline comments"
       ],
@@ -15817,10 +14830,6 @@
       "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "formatWritesStdoutChecksAndWritesAtomically",
-      "methodStart": 3645,
-      "methodEnd": 4914,
-      "methodSha256": "505fa7fe23f32d207adad6aeb34228accb98c0dbfbb4eba4576e74cc15fd293f",
-      "sourceSha256": "ec35c21aabd5d4a586bf7625e13330c61a4dbf5a5c31b75a288495c7faff95d1",
       "observations": [
         "stdout/--check/--write/exit",
         "atomic write"
@@ -15838,10 +14847,6 @@
       "source": "interlis-compiler-cli/src/test/java/guru/interlis/cli/CliApplicationTest.java",
       "suite": "guru.interlis.cli.CliApplicationTest",
       "method": "formatDoesNotWriteInvalidSource",
-      "methodStart": 7172,
-      "methodEnd": 7580,
-      "methodSha256": "0733edbf6996589a75702e98a0f3d24b179fe01debda2dfae95091d447b4a234",
-      "sourceSha256": "ec35c21aabd5d4a586bf7625e13330c61a4dbf5a5c31b75a288495c7faff95d1",
       "observations": [
         "invalid source leaves file unchanged"
       ],
@@ -15857,10 +14862,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LifecycleBoundaryContractTest.java",
       "suite": "guru.interlis.compiler.LifecycleBoundaryContractTest",
       "method": "repeatedMalformedSourcesAndDeeplyNestedValidSourcesTerminateWithExactOutcomeKinds",
-      "methodStart": 4635,
-      "methodEnd": 6134,
-      "methodSha256": "474608da456f61e0ab6ea10131939ad815dff54d1621c8573f2e27e8eb22bff0",
-      "sourceSha256": "e92a79f0c1757a77bcc1ce0dbc9e81a286aa194197f057e0ec65b251aefe38c9",
       "observations": [
         "Repeated malformed inputs rejected and deep valid source resource-cancelled with successful next run"
       ],
@@ -15878,10 +14879,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LifecycleBoundaryContractTest.java",
       "suite": "guru.interlis.compiler.LifecycleBoundaryContractTest",
       "method": "syntaxNodeRecoveryAndTokenBudgetsRemainResourceCancellationRatherThanLanguageErrors",
-      "methodStart": 10700,
-      "methodEnd": 13367,
-      "methodSha256": "92795d8c3008d014049f8be4e3e293595ed040b8c46dcb70bafffc374a87744d",
-      "sourceSha256": "e92a79f0c1757a77bcc1ce0dbc9e81a286aa194197f057e0ec65b251aefe38c9",
       "observations": [
         "Node/recovery/token limits and default fragment depth return explicit resource result"
       ],
@@ -15898,10 +14895,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LifecycleBoundaryContractTest.java",
       "suite": "guru.interlis.compiler.LifecycleBoundaryContractTest",
       "method": "cancellationAtEveryEmittedCompilerPhasePreservesInputsAndAllowsAFollowup",
-      "methodStart": 1442,
-      "methodEnd": 3987,
-      "methodSha256": "4f79afb42417a2b01c87018b20f931d505f744d18aa68c2863d948da2b17344e",
-      "sourceSha256": "e92a79f0c1757a77bcc1ce0dbc9e81a286aa194197f057e0ec65b251aefe38c9",
       "observations": [
         "All four actually emitted compiler phases cancelled; one finish and successful fresh-equivalent followup"
       ],
@@ -15919,10 +14912,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LifecycleBoundaryContractTest.java",
       "suite": "guru.interlis.compiler.LifecycleBoundaryContractTest",
       "method": "internalFailuresAreTypedAndNeitherEventsNorSafeDiagnosticsExposeSecretInputs",
-      "methodStart": 6139,
-      "methodEnd": 7452,
-      "methodSha256": "18ac4151365d11ad21b0b92c7bad38ce91dc0677966c5d6c97ab08a7be142311",
-      "sourceSha256": "e92a79f0c1757a77bcc1ce0dbc9e81a286aa194197f057e0ec65b251aefe38c9",
       "observations": [
         "Injected internal exception gives Failed/FailureId; marked secret absent from events and safe diagnostics"
       ],
@@ -15939,10 +14928,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/IdentityReuseContractTest.java",
       "suite": "guru.interlis.compiler.IdentityReuseContractTest",
       "method": "duplicateDeclarationsAndTheirChildrenNeverAcquireInventedContinuity",
-      "methodStart": 1302,
-      "methodEnd": 2573,
-      "methodSha256": "7c985c39430ed6e8353150e757abd807a5903c20490d75753e9a6fac3bcd1337",
-      "sourceSha256": "b8b7600b0ea658c9a5fffaeaf7409d567834505ed77ee7ffc139f21cb7085527",
       "observations": [
         "Duplicate declarations and children do not reuse ambiguous ids"
       ],
@@ -15960,10 +14945,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/IdentityReuseContractTest.java",
       "suite": "guru.interlis.compiler.IdentityReuseContractTest",
       "method": "allUniqueEnumElementsRetainTheirIdentitiesAcrossCommentsAndUnrelatedInsertions",
-      "methodStart": 2578,
-      "methodEnd": 3250,
-      "methodSha256": "5c6580ff0510bc904277c96bcf1a1a5fef0d9d3c876e1c314dc6d0529e69747e",
-      "sourceSha256": "b8b7600b0ea658c9a5fffaeaf7409d567834505ed77ee7ffc139f21cb7085527",
       "observations": [
         "All three enum elements and unchanged class/member ids survive insertion"
       ],
@@ -15981,10 +14962,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/IdentityReuseContractTest.java",
       "suite": "guru.interlis.compiler.IdentityReuseContractTest",
       "method": "deletionRecreationAndMovingToAnotherOwnerAllocateNewIdentities",
-      "methodStart": 3255,
-      "methodEnd": 4043,
-      "methodSha256": "1e20883e634a7e3296909bd9a25ecfb07f8105e86b2e3dd374607b9c0a89aa36",
-      "sourceSha256": "b8b7600b0ea658c9a5fffaeaf7409d567834505ed77ee7ffc139f21cb7085527",
       "observations": [
         "Removed/recreated and moved declarations get new ids while root stays stable"
       ],
@@ -16000,10 +14977,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceConcurrencyAndSnapshotIsolationTest.java",
       "suite": "guru.interlis.workspace.WorkspaceConcurrencyAndSnapshotIsolationTest",
       "method": "parallelConsumersWithDifferentOverlaysCannotMutateACommonInputOrPublishedGraph",
-      "methodStart": 3497,
-      "methodEnd": 5450,
-      "methodSha256": "6c24582beae8053a427c904ff61cebacb9aa23486e21ecaecf4ddd26c0e16cd6",
-      "sourceSha256": "4eefbb8ac518ca45e01a3f0ab932182114883ad64055eae448fd62ee329420f6",
       "observations": [
         "Actual parallel compilations with shared immutable sources and distinct overlay values"
       ],
@@ -16021,10 +14994,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceConcurrencyAndSnapshotIsolationTest.java",
       "suite": "guru.interlis.workspace.WorkspaceConcurrencyAndSnapshotIsolationTest",
       "method": "lateDetachedAnalysisCannotPoisonNextReuseOrHeldSnapshotsAfterEviction",
-      "methodStart": 1121,
-      "methodEnd": 3492,
-      "methodSha256": "afa9f45e2c003f40a97794b7bed213e350ac25e2307dab2eb291a47c8e7865f1",
-      "sourceSha256": "4eefbb8ac518ca45e01a3f0ab932182114883ad64055eae448fd62ee329420f6",
       "observations": [
         "Late worker result rejected, new analysis/reuse correct, zero cache eviction and held old graphs remain valid"
       ],
@@ -16045,10 +15014,6 @@
       "source": "interlis-workspace/src/test/java/guru/interlis/workspace/WorkspaceTest.java",
       "suite": "guru.interlis.workspace.WorkspaceTest",
       "method": "syntaxIsSharedWithResolverAndBoundedAfterAcceptance",
-      "methodStart": 9980,
-      "methodEnd": 11895,
-      "methodSha256": "e6956a8f2ff1ee288cface26a84164d6f8b201963b788a900f8632618ba634ee",
-      "sourceSha256": "ba8b2cdfc481f04a0a3b21cdb52244b796a0858c1c0edb57eb57a52d2f7cd414",
       "observations": [
         "Actual parse/reuse counters and zero cache limits with eviction count"
       ],
@@ -16066,10 +15031,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/EditorPartialStateContractTest.java",
       "suite": "guru.interlis.compiler.EditorPartialStateContractTest",
       "method": "missingAttributeTypeKeepsNeighborDefinitionCompletionAndExactPublicType",
-      "methodStart": 443,
-      "methodEnd": 2619,
-      "methodSha256": "cd9253175df30e61aa5992205fd910aa9e6e14ebf171fc9464b0a2c43cf62340",
-      "sourceSha256": "ab927ce857188a259e655b647c8be483ec81f19605b7662b55b725548dde2dea",
       "observations": [
         "Broken attribute plus exact neighbor type, actual definition/completion and rejected compile"
       ],
@@ -16086,10 +15047,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/DomainRestrictionContractTest.java",
       "suite": "guru.interlis.compiler.DomainRestrictionContractTest",
       "method": "queriesKeepInvalidAndPendingTypeStatesInsteadOfTreatingThemAsKnownTypes",
-      "methodStart": 7577,
-      "methodEnd": 9621,
-      "methodSha256": "efb58fa86887be9f919581cf5632e2ca8edecae14c368686c42e7585fb2413c1",
-      "sourceSha256": "74341c5137d2b25c162b5bc27410c87061f627004d63cf28283b17225c1758ee",
       "observations": [
         "Invalid types differ from all typed NotAnalyzed reasons"
       ],
@@ -16105,10 +15062,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageFoundationContractTest.java",
       "suite": "guru.interlis.compiler.LanguageFoundationContractTest",
       "method": "ordinaryGeometryStructuresExposeTheNormativeMembersAndConstraint",
-      "methodStart": 1591,
-      "methodEnd": 4999,
-      "methodSha256": "b9605b8ce9a2233f1df1c2631eea94e511d60bce3b5c5fe75c56bb36da3e6bdf",
-      "sourceSha256": "134464734e04949f59391c1dd5fcea1e14d34b8fd7b0297b5a2fffa39fea0022",
       "observations": [
         "Actual public graph/member/type/constraint values in JVM",
         "Actual geometry structures/members and StartSegment constraint"
@@ -16127,10 +15080,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "regeneratedLexerAndParserShareTheirTokenVocabulary",
-      "methodStart": 9758,
-      "methodEnd": 10144,
-      "methodSha256": "149ce148674c39500402b1ac295350c52a3cf1f4b399cfad4174419ebb939fb5",
-      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "Generated lexer/parser token vocabulary equality"
       ],
@@ -16144,10 +15093,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/SyntaxProfileSafetyTest.java",
       "suite": "guru.interlis.compiler.SyntaxProfileSafetyTest",
       "method": "completeDocumentsConsumeAllTokensAfterTheirModels",
-      "methodStart": 377,
-      "methodEnd": 1301,
-      "methodSha256": "2868b1347378f9086dc3457dbb48293a5a8739f823dd2bc2dd9719da1b136712",
-      "sourceSha256": "58900d9ec9345011940bdba2e5f97323caa890e2b616497a1557f7a1237a49fa",
       "observations": [
         "Whole input EOF, exact trailing diagnostic and schema gate"
       ],
@@ -16161,10 +15106,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/BuiltinSignatureFoundationContractTest.java",
       "suite": "guru.interlis.compiler.BuiltinSignatureFoundationContractTest",
       "method": "everyBuiltinRejectsExtraArgumentsWithoutAnInternalFailureOrAnInventedSchema",
-      "methodStart": 7424,
-      "methodEnd": 8318,
-      "methodSha256": "ec5399ded42d7a18d8655440bcf1d76ea902a56bbcf17a1a79101775fb5a4192",
-      "sourceSha256": "1ea00e82e20758e0fb1702f2278d64a94fb41e31992c1f2318ddb8f66f1713fa",
       "observations": [
         "Every builtin arity violation is a source rejection"
       ],
@@ -16178,10 +15119,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LexicalProfileContractTest.java",
       "suite": "guru.interlis.compiler.LexicalProfileContractTest",
       "method": "booleanOriginsFollowEachOwnerInMixedLanguageClosuresAndReuse",
-      "methodStart": 10149,
-      "methodEnd": 11622,
-      "methodSha256": "f47baa7de7cd814253aff9ccc6eef5e9c1c1e5b1a7c61938e11ee329c3392875",
-      "sourceSha256": "032f1c5bb8cc9a6dead450e85322e140eaeb7801e06b0f32395e1cc4e5b9391e",
       "observations": [
         "Boolean value origins and language-specific identities"
       ],
@@ -16195,10 +15132,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/LanguageFoundationContractTest.java",
       "suite": "guru.interlis.compiler.LanguageFoundationContractTest",
       "method": "predefinedModelAndExplicitImportsExposeTheVersionedCanonicalOwner",
-      "methodStart": 14389,
-      "methodEnd": 16046,
-      "methodSha256": "406ce7ef098be34d2be99908b25bd49f80772e7f31d3f8907c0a35d7781bc003",
-      "sourceSha256": "134464734e04949f59391c1dd5fcea1e14d34b8fd7b0297b5a2fffa39fea0022",
       "observations": [
         "Canonical versioned INTERLIS owner and explicit imports"
       ],
@@ -16212,10 +15145,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/FunctionAndMetadataContractTest.java",
       "suite": "guru.interlis.compiler.FunctionAndMetadataContractTest",
       "method": "predefinedClassHasTwoMandatoryNamesAndTwoIndependentBoundUniqueKeys",
-      "methodStart": 9767,
-      "methodEnd": 13214,
-      "methodSha256": "3d1e0ad9f760be4cab4919ecb79af71e90bdd32e53a4cf5f0ac987ab80ee18f6",
-      "sourceSha256": "fb72ad627c5e01668cd299b9069ef070e501c511f55fffcebc82d3ed8475fee5",
       "observations": [
         "Actual mandatory NAME fields, ordered uniqueness constraints and bound paths"
       ],
@@ -16229,10 +15158,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/UndefinedFunctionContractTest.java",
       "suite": "guru.interlis.compiler.UndefinedFunctionContractTest",
       "method": "undefinedAndEmptyTextHaveSharedTypeAssignmentRulesAndVersionedOrigins",
-      "methodStart": 1422,
-      "methodEnd": 2999,
-      "methodSha256": "a14ca92a632ae2f7b324d5fb58228b6116b87063ff136c2a4d8e87f3931f22cb",
-      "sourceSha256": "e343fc10017994c273780e6c1ad0e7a26ab5f642533b43e0a68684f3f54c1a44",
       "observations": [
         "UNDEFINED typed value"
       ],
@@ -16246,10 +15171,6 @@
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/NumericConstantBindingContractTest.java",
       "suite": "guru.interlis.compiler.NumericConstantBindingContractTest",
       "method": "transcendentalConstantsKeepSymbolicValuesAndUnitsWithoutFakeExactDecimals",
-      "methodStart": 3353,
-      "methodEnd": 4411,
-      "methodSha256": "d9f22b120838743c8f9a41f822868456a966679373dc47376627092a9960ff1c",
-      "sourceSha256": "8611db570b7414aa33288b3100448bf637dc08ce6aeb9675092fd24f5442be8f",
       "observations": [
         "PI/LNBASE are exact symbolic constants without fabricated decimal values"
       ],
@@ -16261,12 +15182,8 @@
     },
     "PredefinedBindingContractTest.qualifiedTextAndBooleanDomainsUseCanonicalPredefinedBindingsInBothLanguages": {
       "source": "interlis-compiler/src/test/java/guru/interlis/compiler/PredefinedBindingContractTest.java",
-      "sourceSha256": "d393008f1c2ad03e9a49e4e3728c3acd3a8d59e4055d65d06263337cc7b70af0",
       "suite": "guru.interlis.compiler.PredefinedBindingContractTest",
       "method": "qualifiedTextAndBooleanDomainsUseCanonicalPredefinedBindingsInBothLanguages",
-      "methodStart": 2142,
-      "methodEnd": 4083,
-      "methodSha256": "ca9e78369ddfc5ac2976705fdef0719f57c098c7ab88556290fce56eacd1d3a3",
       "observations": [
         "Public compile gate accepts qualified INTERLIS.URI, INTERLIS.NAME and INTERLIS.BOOLEAN in both language versions.",
         "Canonical predefined domain identity, finality, exact text kind/length and BooleanType are exposed through the published graph and language queries."
@@ -16286,10 +15203,6 @@
         "ILI-SEM-0001",
         "definition("
       ],
-      "sourceSha256": "403f6ac68222204ca6e49d0f04d16b26d613686167429e0b7ecafda030ee7748",
-      "methodStart": 1298,
-      "methodEnd": 4528,
-      "methodSha256": "6cfe9628660e86117cb380bac9905687abdcec3f2d3a26249abd6bf549f88235",
       "invocations": [
         "exactCaseControlsIdentityBindingAndPublicNavigation()"
       ],
@@ -16305,10 +15218,6 @@
         "LanguageQueries.create().symbolAt",
         "function.returnType()"
       ],
-      "sourceSha256": "98b14e9e5944a0af0486805ea179ea7a35a441cfec453acf3ddc2f8e481b635d",
-      "methodStart": 5646,
-      "methodEnd": 7817,
-      "methodSha256": "556bf073c88b15c2d1bec9b5aa81937ad34b1c32e231d1ef4b4f7c2d485f6124",
       "invocations": [
         "typeModelPermittedFamiliesExposePublicSymbolsAndQueries()"
       ],
@@ -16323,10 +15232,6 @@
         "model.translation().orElseThrow().correspondences()",
         "assertEquals(\"Zeitpunkt\",graph.symbol(link.translated()).orElseThrow().name().value())"
       ],
-      "sourceSha256": "9da3eb1736dc6254a18382fb3fd1663997d131cc7e302395ecb31af40ecf0a54",
-      "methodStart": 1905,
-      "methodEnd": 2648,
-      "methodSha256": "2c200829d2343cd8daddfe5081171bac01ca97cebb534f05f7813e92e8ef6843",
       "invocations": [
         "versionedIdentifiersAndDocumentaryParameterNamesNeedNoNameHeuristics()"
       ],
@@ -16342,10 +15247,6 @@
         "correspondences()",
         "B1=BOOLEAN"
       ],
-      "sourceSha256": "9da3eb1736dc6254a18382fb3fd1663997d131cc7e302395ecb31af40ecf0a54",
-      "methodStart": 2653,
-      "methodEnd": 3626,
-      "methodSha256": "9dc130f3a269ef17d32694591b278a7e6981362244b9182eff015efd129bff14",
       "invocations": [
         "translationCorrespondencesPreserveStructuralMemberOrder()"
       ],
@@ -16362,10 +15263,6 @@
         "INTERLIS.len",
         "targetFunction()"
       ],
-      "sourceSha256": "ebe95aa4dd3985ee46c9ecc23171f4e610e226c2c3b417a225f08dabe3544bc5",
-      "methodStart": 11210,
-      "methodEnd": 13110,
-      "methodSha256": "25583fd145a7d1cab99c363e445cb27c5cda95c66f2f2afe7f028d2c9f020fe3",
       "invocations": [
         "unknownQualifiedTargetsFailAndBareLenBindsTheActualCallTarget()"
       ],
@@ -16378,7 +15275,6 @@
     "testdata/reference/norms/grammar-inventory.json": "982bd191d22bb8e026a15ed2879c784b3936fab908d75dee4cec180428676d2e",
     "testdata/reference/norms/builtin-inventory.json": "be9dc5e65b20c15163ebaf42829961bb632105f88d57d6c2f4ead7175ba2451b",
     "testdata/verification/predefined-catalogue.json": "ea279974005f7dace7922099e8ea8ea499bb96ddcac9a9c5eeacb19721911e85",
-    "testdata/compiler/character-sets/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e",
-    "docs/contracts/requirements.md": "4a049a378365699cb3f0ba992fc245ca4c5ba079d3093c2067c3bd0a5f6bc954"
+    "testdata/compiler/character-sets/appendix-characters.properties": "c054fef59a89eb2b4434a217eea05b837a2f6e125a4b4fbf3cbf5af346dfa54e"
   }
 }
