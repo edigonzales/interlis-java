@@ -100,48 +100,83 @@ final class InterlisWorkspaceService implements WorkspaceService {
         };
     }
 
+    InterlisTextDocumentService.FileReload beginFileReload(String requestedUri, long request) {
+        return documents.beginFileReload(requestedUri, request, canonical -> {
+            String address = LspFileIdentityRegistry.path(requestedUri).orElseThrow().toUri().toString();
+            if (fileRequests.getOrDefault(address, 0L) > request) return false;
+            if (fileRequests.merge(canonical, request, Math::max) != request) return false;
+            fileRequests.put(address, request);
+            return true;
+        });
+    }
+
+    /** The result may identify an alias of a different dispatch key. Claim its actual source too. */
+    boolean claimFileRequest(String dispatchedUri, String resolvedUri, long request) {
+        return fileRequests.getOrDefault(dispatchedUri, 0L) == request
+                && fileRequests.merge(resolvedUri, request, Math::max) == request;
+    }
+
     private void reloadFile(String requestedUri) {
-        if(requestedUri==null) return;
-        String uri=documents.canonicalUri(requestedUri);
-        if(uri==null || !uri.startsWith("file:") || documents.isOpen(uri)) return;
-        long request=nextFileRequest.incrementAndGet(); fileRequests.put(uri,request);
-        var known=documents.fileSources();
-        var contents=documents.fileContents();
-        var aliases=documents.fileAliases(uri);
-        documents.beginExternal(uri,request);
+        long request = nextFileRequest.incrementAndGet();
+        var capture = beginFileReload(requestedUri, request);
+        if (capture == null) return;
+        String uri = capture.canonicalUri();
+        String address = LspFileIdentityRegistry.path(requestedUri).orElseThrow().toUri().toString();
+        var capturedRoots = roots;
         requestIo(token -> {
-            var loaded=files.read(requestedUri,roots,token);
-            if(loaded.isEmpty()) for(String alias:aliases) {
-                loaded=files.read(alias,roots,token); if(loaded.isPresent()) break;
+            var loaded = files.read(requestedUri, capturedRoots, token);
+            boolean requestedMissing = loaded.isEmpty();
+            var previous = capture.closedFiles().get(uri);
+            if (requestedMissing) {
+                for (String alias : capture.aliases()) {
+                    var candidate = files.read(alias, capturedRoots, token);
+                    if (candidate.isPresent() && survivingAddress(previous, candidate.orElseThrow())) {
+                        loaded = candidate;
+                        break;
+                    }
+                }
             }
-            // Prefer the explicit surviving primary for edits. If it was removed,
-            // retain the Core identity but use the surviving physical address.
-            if(loaded.isPresent() && !aliases.isEmpty() && files.sameFile(loaded.orElseThrow(),aliases.getFirst(),token))
-                loaded=files.read(aliases.getFirst(),roots,token);
-            token.throwIfCancellationRequested();
-            var openAlias=loaded.flatMap(file -> known.entrySet().stream().filter(entry -> files.sameFile(file,entry.getValue(),token)).map(Map.Entry::getKey).findFirst());
-            if(openAlias.isEmpty() && loaded.isPresent()) {
-                var identity=loaded.orElseThrow().fileKey();
-                openAlias=identity.flatMap(key -> contents.entrySet().stream().filter(entry -> entry.getValue().fileKey().map(key::equals).orElse(false))
+            var known = capture.knownSources();
+            var verified = loaded.flatMap(file -> known.entrySet().stream()
+                    .filter(entry -> files.sameFile(file, entry.getValue(), token)).map(Map.Entry::getKey).findFirst());
+            if (verified.isEmpty() && loaded.isPresent()) {
+                var file = loaded.orElseThrow();
+                verified = file.fileKey().flatMap(key -> capture.closedFiles().entrySet().stream()
+                        .filter(entry -> entry.getValue().fileKey().map(key::equals).orElse(false))
                         .map(entry -> new SourceId(entry.getKey())).findFirst());
-                // On a keyless provider a registered surviving address still
-                // carries its established Core identity after primary removal.
-                if(openAlias.isEmpty() && known.containsKey(new SourceId(uri)) && aliases.contains(requestedUri)
-                        && files.read(known.get(new SourceId(uri)),roots,token).isEmpty()) openAlias=java.util.Optional.of(new SourceId(uri));
+                // A provider without a key can retain a previously proved alias after its primary disappears.
+                var source = new SourceId(uri);
+                if (verified.isEmpty() && file.fileKey().isEmpty() && known.containsKey(source)
+                        && capture.aliases().contains(file.path().toUri().toString())
+                        && files.read(known.get(source), capturedRoots, token).isEmpty()) verified = java.util.Optional.of(source);
             }
-            if(openAlias.isPresent() && loaded.isPresent()) {
-                String primary=known.get(openAlias.orElseThrow());
-                if(primary!=null && files.sameFile(loaded.orElseThrow(),primary,token)) loaded=files.read(primary,roots,token);
+            if (verified.isPresent() && loaded.isPresent()) {
+                String primary = known.get(verified.orElseThrow());
+                var observed = loaded.orElseThrow();
+                if (primary != null && LspFileIdentityRegistry.path(primary).filter(observed.path()::equals).isEmpty()
+                        && files.sameFile(observed, primary, token)) {
+                    var preferred = files.read(primary, capturedRoots, token);
+                    if (preferred.isPresent() && files.sameFile(observed, primary, token)) loaded = preferred;
+                }
             }
-            if(openAlias.isEmpty()) openAlias=java.util.Optional.of(new SourceId(known.containsKey(new SourceId(requestedUri))?requestedUri:
-                    loaded.isEmpty()?uri:loaded.orElseThrow().path().toUri().toString()));
-            documents.applyExternal(uri,request,loaded,openAlias,() -> !token.isCancellationRequested() && fileRequests.getOrDefault(uri,0L)==request);
+            token.throwIfCancellationRequested();
+            documents.applyExternal(uri, requestedUri, request, loaded, verified, requestedMissing,
+                    resolved -> !token.isCancellationRequested() && fileRequests.getOrDefault(address, 0L) == request
+                            && claimFileRequest(uri, resolved, request));
             return null;
         }).exceptionally(failure -> {
-            try { documents.externalFailed(uri,request,failure); } catch(RuntimeException closed) { }
+            try { documents.externalFailed(uri, request, failure); } catch(RuntimeException closed) { }
             documents.operation("External source refresh failed; "
-                +(failure instanceof org.eclipse.lsp4j.jsonrpc.ResponseErrorException expected?expected.getResponseError().getMessage():"internal file error")); return null;
+                    +(failure instanceof org.eclipse.lsp4j.jsonrpc.ResponseErrorException expected
+                    ?expected.getResponseError().getMessage():"internal file error"));
+            return null;
         });
+    }
+
+    private static boolean survivingAddress(ProjectSourceLoader.FileContent previous, ProjectSourceLoader.FileContent candidate) {
+        return previous == null || previous.path().equals(candidate.path())
+                || previous.fileKey().isEmpty() || candidate.fileKey().isEmpty()
+                || previous.fileKey().equals(candidate.fileKey());
     }
 
     @Override
@@ -153,10 +188,7 @@ final class InterlisWorkspaceService implements WorkspaceService {
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
         if(!documents.notificationReady()) return;
-        for (var event : params.getChanges()) {
-            if(documents.isOpen(event.getUri())) continue;
-            reloadFile(event.getUri());
-        }
+        for (var event : params.getChanges()) reloadFile(event.getUri());
     }
 
     @Override

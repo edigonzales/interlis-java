@@ -16,6 +16,7 @@ final class ProjectSourceLoader {
     private static final Set<String> EXCLUDED=Set.of(".git",".gradle","build","node_modules");
     record FileContent(Path path,Path realPath,Optional<Object> fileKey,LoadedSource loaded,boolean editable,List<Path> roots,boolean symbolicLink) {
         FileContent { roots=List.copyOf(roots); }
+        FileIdentity identity() { return new FileIdentity(path, realPath, fileKey); }
     }
     record Project(List<Path> roots,List<FileContent> files,Map<Path,Path> primaryPaths) {
         Project { roots=List.copyOf(roots); files=List.copyOf(files); primaryPaths=Map.copyOf(primaryPaths); }
@@ -106,6 +107,7 @@ final class ProjectSourceLoader {
             token.throwIfCancellationRequested();
             var current=read(original.path().toUri().toString(),original.roots(),token);
             if(current.isEmpty() || !current.get().realPath().equals(original.realPath())
+                    || !current.get().fileKey().equals(original.fileKey())
                     || !current.get().loaded().byteSha256().equals(original.loaded().byteSha256()))
                 throw error(ResponseErrorCode.ContentModified,"CONTENT_MODIFIED: closed source changed on disk");
             if(!current.get().editable()) throw error(ResponseErrorCode.RequestFailed,"closed source is not editable");

@@ -7,9 +7,11 @@ import guru.interlis.diagnostics.Severity;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.compiler.CompilationRequest;
 import guru.interlis.compiler.ModelSelector;
+import guru.interlis.source.SourceId;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,20 +24,10 @@ final class RequestDiagnosticSelector {
 
     /** Retains original values/order. Unlocated input/configuration problems are conservative globals. */
     static List<Diagnostic> select(List<Diagnostic> all, Closure closure, RootSelection roots,
-                                   CompilationRequest request,
+                                   Set<SourceId> syntaxSources,
                                    CancellationToken cancellation) {
         Set<DiagnosticId> explicit = new HashSet<>(roots.diagnostics());
         explicit.addAll(closure.diagnostics());
-        var syntaxSources = new HashSet<>(closure.sources());
-        // Explicit source requests still exist when parser recovery yields no model.
-        // Names without a source association must never guess a file from its basename.
-        for (var selector : request.roots()) {
-            cancellation.throwIfCancellationRequested();
-            switch (selector) {
-                case ModelSelector.BySource source -> syntaxSources.add(source.source());
-                case ModelSelector.ByName name -> name.sourceHint().ifPresent(syntaxSources::add);
-            }
-        }
         var selected = new ArrayList<Diagnostic>();
         for (Diagnostic diagnostic : all) {
             cancellation.throwIfCancellationRequested();
@@ -50,5 +42,19 @@ final class RequestDiagnosticSelector {
             if (relevant) selected.add(diagnostic);
         }
         return List.copyOf(selected);
+    }
+
+    /** Keeps closure order followed by explicitly associated sources in request order. */
+    static Set<SourceId> syntaxSources(Closure closure, CompilationRequest request, CancellationToken cancellation) {
+        var sources = new LinkedHashSet<>(closure.sources());
+        // An explicit source remains requested even if parser recovery yields no model.
+        for (var selector : request.roots()) {
+            cancellation.throwIfCancellationRequested();
+            switch (selector) {
+                case ModelSelector.BySource source -> sources.add(source.source());
+                case ModelSelector.ByName name -> name.sourceHint().ifPresent(sources::add);
+            }
+        }
+        return sources;
     }
 }
