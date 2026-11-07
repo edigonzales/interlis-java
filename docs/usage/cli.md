@@ -18,8 +18,11 @@ target/jenesis-jvm/delivery/compiler/bin/interlis-compiler check \
 `check` und `compile` prüfen die angeforderte Closure. Mit `--root` bleiben
 zusätzliche lokale Dateien als mögliche Eingaben verfügbar. `analyze`
 liefert den Analysestand und kann bei fachlichen Fehlern eine partielle
-Sicht mit Diagnosen ausgeben. `diagram` verwendet `--format json` oder
-`--format mermaid`. `version --json` unterscheidet Projekt-, API-, Protokoll-,
+Sicht mit Diagnosen ausgeben. `diagram` unterstützt `--format mermaid`
+(Standard), `--format plantuml` und `--format json`. Mermaid stellt geeignete
+binäre Assoziationen als Kanten mit Rollen und Kardinalitäten an beiden Enden
+dar. Assoziationen mit eigenen Attributen oder mehr als zwei Rollen erscheinen
+weiterhin als Knoten. `version --json` unterscheidet Projekt-, API-, Protokoll-,
 Diagnosekatalog-, Format- und Diagrammversion. Lokale Importdateien sind
 explizit anzugeben. Der CLI-Host sucht keine Verzeichnisse nach Modellen ab.
 

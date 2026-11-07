@@ -20,6 +20,7 @@ import guru.interlis.format.FormatOutcome;
 import guru.interlis.format.ModelFormatter;
 import guru.interlis.format.ModelFormatters;
 import guru.interlis.model.VersionManifest;
+import guru.interlis.projection.AssociationPresentation;
 import guru.interlis.projection.DiagramDocument;
 import guru.interlis.projection.DiagramInput;
 import guru.interlis.projection.DiagramJsonCodec;
@@ -429,8 +430,11 @@ public final class DefaultCompilerCli implements CliApplication {
             String output = diagram ? "diagram requires a checked schema" : summary(outcome);
             if (outcome instanceof CompilationOutcome.Succeeded succeeded) {
                 if (diagram) {
+                    var presentation = parsed.format().equals("mermaid")
+                            ? AssociationPresentation.COMPACT_BINARY : AssociationPresentation.ENTITY;
                     var projection = DiagramProjectors.create().project(new DiagramInput.FromSchema(succeeded.schema()),
-                            DiagramOptions.defaults(new DiagramSelection(List.of(succeeded.schema().rootModels().getFirst()))), token);
+                            DiagramOptions.defaults(new DiagramSelection(List.of(succeeded.schema().rootModels().getFirst())),
+                                    presentation), token);
                     if (projection instanceof DiagramProjectionOutcome.Rejected rejected)
                         return result(CliTermination.OPERATIONAL_FAILURE, List.of(), rejected.reasons().toString());
                     DiagramDocument document = ((DiagramProjectionOutcome.Produced) projection).document();

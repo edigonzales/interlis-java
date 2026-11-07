@@ -299,8 +299,12 @@ zugeordnet. Der neutrale interaktive Default zeigt eigene und geerbte Member.
 
 COMPACT_BINARY wird im reinen Java-Projektor aus bereits gebundenen Symbolen
 gebildet. Genau zwei eindeutige Rollen ohne eigene Attribute/Constraints,
-Vererbungs-/Ableitungsbezüge, zusätzliche Rollenflags/Restriktionen oder besondere
-Linkkardinalität dürfen eine ASSOCIATION-Kante ersetzen. Andere eingehende
+Vererbungs-/Ableitungsbezüge, geordnete, versteckende oder abgeleitete Rollen,
+Zielrestriktionen oder besondere Linkkardinalität dürfen eine ASSOCIATION-Kante
+ersetzen. Das Rollenmerkmal `EXTERNAL` steht der Reduktion bei eindeutig
+aufgelöstem Ziel nicht im Weg. Es bleibt im semantischen Modell erhalten.
+Beide Diagrammdarstellungen zeigen das Ziel ohne separate Markierung des
+Rollenmerkmals. Andere eingehende
 Bezüge auf den Assoziationsknoten verhindern die Reduktion. Alle übrigen
 Assoziationen bleiben vollständige Entitäten; dies ist kein unimplementierter
 Optionsfallback und macht eine vollständige Projektion nicht PARTIAL.

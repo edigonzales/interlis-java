@@ -65,12 +65,23 @@ public record DiagramOptions(DiagramSelection selection, DiagramScope scope,
      * @return the result
      */
     public static DiagramOptions defaults(DiagramSelection selection) {
+        return defaults(selection, AssociationPresentation.ENTITY);
+    }
+
+    /**
+     * Creates default options with the requested association presentation.
+     *
+     * @param selection non-null diagram selection
+     * @param associationPresentation non-null presentation for associations
+     * @return immutable diagram options
+     */
+    public static DiagramOptions defaults(DiagramSelection selection, AssociationPresentation associationPresentation) {
         return new DiagramOptions(selection, DiagramScope.SELECTED,
                 Set.of(DiagramNodeKind.CLASS, DiagramNodeKind.STRUCTURE,
                         DiagramNodeKind.ASSOCIATION, DiagramNodeKind.DOMAIN, DiagramNodeKind.LINE_FORM, DiagramNodeKind.METADATA_BASKET, DiagramNodeKind.METAOBJECT, DiagramNodeKind.GRAPHIC, DiagramNodeKind.DRAWING_RULE,
                         DiagramNodeKind.VIEW),
                 InheritedMembers.SHOW_WITH_ORIGIN, true, true, true, true,
-                LabelPolicy.CANONICAL, AssociationPresentation.ENTITY,
+                LabelPolicy.CANONICAL, associationPresentation,
                 ProjectionBudget.defaults());
     }
 

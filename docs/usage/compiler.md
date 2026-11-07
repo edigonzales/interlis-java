@@ -111,7 +111,9 @@ stdout bei Exitcode `0`. stderr ist leer.
 
 Für einen Überblick über Klassen und ihre Beziehungen verwende `diagram`.
 Mit `--format mermaid` erhältst du Diagrammtext, den eine Markdown-Ansicht
-mit Mermaid-Unterstützung wie unten darstellt.
+mit Mermaid-Unterstützung wie unten darstellt. Die binäre Assoziation
+`OwnerLink` erscheint als Linie mit Rollennamen und Kardinalitäten an den
+beiden Enden.
 
 ```sh
 "$compiler" diagram --format mermaid --root Survey \
@@ -128,21 +130,16 @@ classDiagram
     ownerName : TEXT*40
     constraint@268 : MandatoryConstraint
   }
-  class N2["OwnerLink"] {
-    building #123;0..1#125;
-    ownerRole #123;1..1#125;
+  class N2["Count"] {
   }
-  class N3["Count"] {
+  class N3["Label"] {
   }
-  class N4["Label"] {
+  class N4["BaseBuilding"] {
   }
-  class N5["BaseBuilding"] {
-  }
-  N1 --> N3 : height
-  N1 --> N4 : label
-  N1 --|> N5
-  N2 --> N1 : building
-  N2 --> N5 : ownerRole
+  N1 --> N2 : height
+  N1 --> N3 : label
+  N1 --|> N4
+  N1 "building 0..1" -- "ownerRole 1" N4 : OwnerLink
 ```
 
 ## 5. Modelle aus einem Repository laden

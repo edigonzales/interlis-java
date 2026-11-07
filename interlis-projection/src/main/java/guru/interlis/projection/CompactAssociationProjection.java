@@ -26,7 +26,7 @@ final class CompactAssociationProjection {
                 var candidate=graph.symbol(roleId).orElse(null);
                 if(!(candidate instanceof RoleSymbol role)||role.targets().size()!=1
                         ||!role.targets().getFirst().restrictions().isEmpty()||role.targetRoots().size()!=1
-                        ||role.ordered()||role.external()||role.hiding()||role.derivation().isPresent())break;
+                        ||role.ordered()||role.hiding()||role.derivation().isPresent())break;
                 var matches=edges.stream().filter(edge->edge.kind()==DiagramEdge.EdgeKind.ASSOCIATION_ROLE
                         &&edge.source().elementId().equals(node.id())&&edge.origin().map(ref->ref.symbol().equals(roleId)).orElse(false)).toList();
                 if(matches.size()!=1)break;

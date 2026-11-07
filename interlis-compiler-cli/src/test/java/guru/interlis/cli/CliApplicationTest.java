@@ -77,6 +77,10 @@ class CliApplicationTest {
         assertEquals(0, run.result().exitCode(), run.err());
         assertTrue(run.out().contains("classDiagram"));
         assertTrue(run.out().contains("Building"));
+        assertTrue(run.out().contains("class N1[\"Building\"]"));
+        assertTrue(run.out().contains("class N4[\"BaseBuilding\"]"));
+        assertTrue(run.out().contains("N1 \"building 0..1\" -- \"ownerRole 1\" N4 : OwnerLink"));
+        assertFalse(run.out().contains("[\"OwnerLink\"]"));
     }
 
     @Test
