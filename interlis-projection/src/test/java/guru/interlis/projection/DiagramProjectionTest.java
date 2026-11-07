@@ -227,6 +227,8 @@ class DiagramProjectionTest {
         assertEquals(mermaid, new MermaidRenderer().render(document));
         assertTrue(mermaid.startsWith("classDiagram"));
         assertTrue(mermaid.contains("Derived"));
+        assertTrue(mermaid.contains("label : TEXT*20 #123;inherited#125;"), mermaid);
+        assertTrue(mermaid.contains("fromRole #123;0..1#125;"), mermaid);
         String plantUml = new PlantUmlRenderer().render(document);
         assertTrue(plantUml.startsWith("@startuml"));
         Map<String, String> names = GraphTextFormatter.safeNames(document);

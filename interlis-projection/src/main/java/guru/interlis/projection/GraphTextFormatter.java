@@ -29,7 +29,7 @@ final class GraphTextFormatter {
 
     static String mermaidEscape(String value) {
         return value.replace("\"", "#quot;").replace("\n", " ")
-                .replace("\r", " ").replace("{", "&#123;").replace("}", "&#125;");
+                .replace("\r", " ").replace("{", "#123;").replace("}", "#125;");
     }
 
     static String endLabel(DiagramEdgeEnd end) {

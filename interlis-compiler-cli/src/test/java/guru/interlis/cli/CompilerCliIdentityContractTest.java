@@ -52,18 +52,21 @@ class CompilerCliIdentityContractTest {
         assertTrue(result.out.contains("interlis-compiler")); assertTrue(result.err.isEmpty());
         assertFalse(result.out.contains("ili2c")); assertNoCompiler(result.events);
         if (List.of("help", "-h", "--help").contains(arg)) {
-            String diagram = result.out.lines().filter(line -> line.startsWith("diagram ")).findFirst().orElseThrow();
-            assertFalse(diagram.contains("--json"), diagram);
-            assertTrue(diagram.contains("--format VALUE"), diagram);
+            assertTrue(result.out.contains("Diagram output (diagram)"));
+            assertTrue(result.out.contains("--format mermaid|plantuml|json"));
             assertTrue(result.out.contains("interlis-compiler diagram --format json"));
-            for (String command : List.of("check", "compile", "analyze"))
-                assertTrue(result.out.lines().anyMatch(line -> line.startsWith(command + " ") && line.contains("--json")));
+            assertTrue(result.out.contains("JSON output (check, compile, analyze, version)"));
+            assertEquals(1, result.out.lines().filter(line -> line.stripLeading().startsWith("--json ")).count());
+            assertTrue(result.out.contains("--model-pin NAME VERSION SOURCE SHA256"));
+            assertTrue(result.out.contains("--source-pin SOURCE SHA256"));
         }
     }
     private void usage(String... args) {
         var result = run(args); assertEquals(2, result.result.exitCode(), result.err);
         assertEquals(CliTermination.USAGE_ERROR, result.result.termination());
         assertTrue(result.out.isEmpty()); assertTrue(result.err.contains("interlis-compiler check <File.ili>"));
+        assertTrue(result.err.contains("interlis-compiler --help"));
+        if (args.length == 0) assertEquals("missing command", result.err.lines().findFirst().orElseThrow());
         assertNoCompiler(result.events);
     }
     private void assertNoCompiler(List<RunEvent> events) {

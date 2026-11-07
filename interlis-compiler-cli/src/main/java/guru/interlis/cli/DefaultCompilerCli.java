@@ -169,33 +169,95 @@ public final class DefaultCompilerCli implements CliApplication {
     private CliExecutionResult help(List<String> arguments, CliEnvironment environment) {
         parseCommand(arguments);
         var help = new StringBuilder("interlis-compiler ")
-                .append(VersionManifest.current().toolVersion()).append("\n");
-        for (String command : List.of("help", "version", "capabilities", "check", "compile", "analyze", "diagram", "format")) {
-            var specification = CommandSpec.standard(command);
-            help.append(command);
-            for (var option : specification.options()) {
-                // Recognized only to give invalid diagram invocations the --format json hint.
-                if (command.equals("diagram") && option.name().equals("--json")) continue;
-                help.append(" [").append(option.name());
-                for (int count = 0; count < option.valueCount(); count++) help.append(" VALUE");
-                help.append(option.repeatable() ? "]..." : "]");
-            }
-            if (specification.acceptsFiles()) help.append(" [--] [files...]");
-            help.append('\n');
-        }
-        help.append("Diagram JSON: interlis-compiler diagram --format json [options] [files...].\n");
-        help.append("Formatter width: --max-line-width 40..240 (default "
-                + FormatOptions.DEFAULT_MAX_LINE_WIDTH + ").\n");
-        help.append("Diagnostic color: --color=auto|always|never or --color MODE (default: auto).\n");
-        help.append("Diagnostic language: --diagnostic-language de|en (default: en).\n");
-        help.append("Auto colors only terminal stderr; nonempty NO_COLOR or TERM=dumb disables auto. Windows auto is plain.\n");
-        help.append("Color affects text diagnostics only; JSON and artifact outputs remain plain.\n");
-        help.append("check/compile/analyze/diagram share repository options; repositories require ilimodels.xml and have no implicit defaults.\n");
-        help.append("Diagnostics default to one line; --verbose adds source frames, related locations, hints and repository cache access messages.\n");
-        help.append("Verbose source frames: at most 3 lines / 160 columns; uncertain Unicode widths show UTF-16 offsets without a caret.\n");
+                .append(VersionManifest.current().toolVersion()).append("\n\n");
+        help.append("""
+                Usage: interlis-compiler <command> [options]
+                       interlis-compiler <command> [options] [--] [files...]  (model commands)
+
+                Commands
+                  check         Validate models and their imports.
+                  compile       Compile models and require a valid schema.
+                  analyze       Report analysis, including partial results on model errors.
+                  diagram       Generate a class diagram.
+                  format        Format or check local model files.
+                  version       Show version information.
+                  capabilities  List supported features as JSON.
+                  help          Show this help.
+
+                Examples
+                  interlis-compiler check model.ili
+                  interlis-compiler diagram --format json model.ili
+                """);
+        var modelOptions = CommandSpec.standard("check").options();
+        appendHelpOptions(help, "Model selection (check, compile, analyze, diagram)", modelOptions, "--root");
+        appendHelpOptions(help, "Repositories and locks (check, compile, analyze, diagram)", modelOptions,
+                "--repository", "--model-pin", "--source-pin", "--read-lock", "--write-lock");
+        help.append("  Repositories require ilimodels.xml. No repositories are configured by default.\n");
+        appendHelpOptions(help, "Network and cache (check, compile, analyze, diagram)", modelOptions,
+                "--connect-timeout", "--read-timeout", "--request-timeout", "--proxy", "--proxyPort",
+                "--no-proxy", "--cache", "--no-cache", "--offline");
+        appendHelpOptions(help, "Configuration (check, compile, analyze, diagram)", modelOptions,
+                "--config", "--explain-config", "--warnings");
+        appendHelpOptions(help, "Text diagnostics (check, compile, analyze, diagram, format)", modelOptions,
+                "--verbose", "--diagnostic-language", "--color");
+        help.append("  Auto color applies only to interactive stderr. NO_COLOR, TERM=dumb, and Windows disable it.\n");
+        appendHelpOptions(help, "JSON output (check, compile, analyze, version)", modelOptions, "--json");
+        appendHelpOptions(help, "Diagram output (diagram)", CommandSpec.standard("diagram").options(), "--format");
+        appendHelpOptions(help, "Formatting (format)", CommandSpec.standard("format").options(),
+                "--check", "--write", "--indent", "--line-ending", "--max-line-width");
         environment.out().print(help);
         return result(CliTermination.SUCCESS, List.of(), help.toString());
     }
+
+    private static void appendHelpOptions(StringBuilder help, String heading,
+                                          List<CommandSpec.Option> options, String... names) {
+        help.append('\n').append(heading).append('\n');
+        for (String name : names) {
+            var option = options.stream().filter(candidate -> candidate.name().equals(name)).findFirst().orElseThrow();
+            var detail = switch (option.name()) {
+                case "--root" -> new HelpOption("MODEL", "Start with this model and follow its imports.");
+                case "--repository" -> new HelpOption("DIR_OR_URI", "Look up models in this repository.");
+                case "--model-pin" -> new HelpOption("NAME VERSION SOURCE SHA256",
+                        "Require an exact model version, source URI, and content hash.");
+                case "--source-pin" -> new HelpOption("SOURCE SHA256", "Verify the bytes at a model or index URI.");
+                case "--read-lock" -> new HelpOption("FILE", "Replay a saved repository resolution.");
+                case "--write-lock" -> new HelpOption("FILE", "Save the repository resolution for a later run.");
+                case "--connect-timeout" -> new HelpOption("SECONDS", "Limit the time to connect.");
+                case "--read-timeout" -> new HelpOption("SECONDS", "Limit how long a read can remain idle.");
+                case "--request-timeout" -> new HelpOption("SECONDS|off", "Limit the total request time.");
+                case "--proxy" -> new HelpOption("HOST", "Use an explicit HTTP proxy.");
+                case "--proxyPort" -> new HelpOption("PORT", "Set the HTTP proxy port.");
+                case "--no-proxy" -> new HelpOption("", "Connect directly.");
+                case "--cache" -> new HelpOption("DIR", "Store repository content in this directory.");
+                case "--no-cache" -> new HelpOption("", "Disable the repository cache.");
+                case "--offline" -> new HelpOption("", "Use verified cached repository content only.");
+                case "--config" -> new HelpOption("FILE", "Read settings from a Java properties file.");
+                case "--explain-config" -> new HelpOption("", "Show effective settings and where they came from.");
+                case "--warnings" -> new HelpOption("allow|reject", "Choose whether warnings fail validation.");
+                case "--verbose" -> new HelpOption("", "Show source excerpts, hints, and repository activity.");
+                case "--diagnostic-language" -> new HelpOption("de|en", "Choose the diagnostic language (default: en).");
+                case "--color" -> new HelpOption("auto|always|never", "Color text diagnostics (default: auto).");
+                case "--json" -> new HelpOption("", "Write the result as JSON.");
+                case "--format" -> new HelpOption("mermaid|plantuml|json", "Choose the diagram format (default: mermaid).");
+                case "--check" -> new HelpOption("", "Report whether the files need formatting.");
+                case "--write" -> new HelpOption("", "Replace the files with formatted text.");
+                case "--indent" -> new HelpOption("SPACES", "Set indentation (0..16, default: 2).");
+                case "--line-ending" -> new HelpOption("lf|crlf", "Choose the output line ending.");
+                case "--max-line-width" -> new HelpOption("COLUMNS", "Set the target width (40..240, default: "
+                        + FormatOptions.DEFAULT_MAX_LINE_WIDTH + ").");
+                default -> throw new IllegalArgumentException("No help for " + option.name());
+            };
+            var signature = new StringBuilder(option.name());
+            var arguments = detail.arguments().isEmpty() ? List.<String>of() : List.of(detail.arguments().split(" "));
+            for (int index = 0; index < option.valueCount(); index++) {
+                signature.append(' ').append(arguments.get(index));
+            }
+            help.append("  %-40s %s%s\n".formatted(signature, detail.description(),
+                    option.repeatable() ? " Repeatable." : ""));
+        }
+    }
+
+    private record HelpOption(String arguments, String description) { }
 
     private CliExecutionResult version(List<String> arguments, CliEnvironment environment) {
         VersionManifest manifest = VersionManifest.current();
@@ -659,15 +721,12 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private CliExecutionResult usage(CliEnvironment environment, String message) {
-        environment.err().println("usage: interlis-compiler "
-                + "<version|capabilities|check|compile|analyze|diagram|format> [options] [files]");
-        environment.err().println("check/compile/analyze/diagram: --repository DIR_OR_URI --root MODEL [--model-pin NAME VERSION SOURCE SHA256]");
-        environment.err().println("               [--connect-timeout SECONDS] [--read-timeout SECONDS] [--request-timeout SECONDS|off]");
-        environment.err().println("               [--proxy HOST [--proxyPort PORT] | --no-proxy]");
-        environment.err().println("               [--source-pin SOURCE SHA256] [--read-lock FILE] [--write-lock FILE] [--cache DIR | --no-cache] [--offline]");
-        environment.err().println("Text diagnostics: [--verbose] [--diagnostic-language de|en] [--color auto|always|never]");
-        environment.err().println("Example: interlis-compiler check <File.ili>");
         environment.err().println(guru.interlis.diagnostics.DiagnosticMessageFormatter.safeText(message));
+        environment.err().print("""
+                Usage: interlis-compiler <command> [options] [files...]
+                Example: interlis-compiler check <File.ili>
+                Run interlis-compiler --help for commands and options.
+                """);
         return result(CliTermination.USAGE_ERROR, List.of(), message);
     }
 

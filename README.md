@@ -21,8 +21,8 @@ Unter Windows heisst der Launcher `interlis-compiler.bat`. Der JVM-Build
 verwendet Jenesis 0.18.1. Node.js 24.22.0 und der Gradle-Wrapper werden für
 die portablen Backends benötigt.
 
-- [CLI](docs/usage/cli.md), [Java SDK](docs/usage/sdk.md), [LSP](docs/usage/lsp.md),
-  [Desktop](docs/usage/desktop.md) und [Browser](docs/usage/browser.md)
+- [Compiler-Anleitung](docs/usage/compiler.md), [CLI-Referenz](docs/usage/cli.md),
+  [Java SDK](docs/usage/sdk.md), [LSP](docs/usage/lsp.md), [Desktop](docs/usage/desktop.md) und [Browser](docs/usage/browser.md)
 - [Build](docs/development/build.md), [Tests](docs/development/testing.md) und
   [Freigabeprüfung](docs/development/release.md)
 - [Architektur](docs/architecture.md) und [Anforderungsregister](docs/contracts/requirements.md)

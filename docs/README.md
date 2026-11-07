@@ -1,6 +1,7 @@
 # Produktdokumentation
 
-- Bedienung und Einbettung über [CLI](usage/cli.md), [SDK](usage/sdk.md),
+- [Compiler-Anleitung](usage/compiler.md) und [CLI-Referenz](usage/cli.md).
+- Bedienung und Einbettung über [SDK](usage/sdk.md),
   [LSP](usage/lsp.md), [Desktop](usage/desktop.md) und [Browser](usage/browser.md).
 - [Architektur](architecture.md) und [Anforderungsregister](contracts/requirements.md).
 - Fachverträge für [Quellen und Syntax](contracts/sources-and-syntax.md),
