@@ -39,6 +39,7 @@ public record CommandSpec(String command, List<Option> options, boolean acceptsF
                 options.add(new Option("--root", 1, true));
                 if (command.equals("diagram")) options.add(new Option("--format", 1, false));
                 options.add(new Option("--repository", 1, true));
+                options.add(new Option("--repositories", 1, true));
                 options.add(new Option("--model-pin", 4, true));
                 options.add(new Option("--source-pin", 2, true));
                 for (String name : List.of("--read-lock", "--write-lock", "--cache", "--config", "--warnings", "--connect-timeout", "--read-timeout", "--request-timeout", "--proxy", "--proxyPort"))

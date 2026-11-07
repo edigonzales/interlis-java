@@ -36,7 +36,15 @@ public final class DefaultCommandLineParser implements CommandLineParser {
                 }
                 if (arg.equals("--color") && option.valueCount() == 1 && !Set.of("auto", "always", "never").contains(values.getFirst()))
                     return new CliParseOutcome.InvalidCommandLine("--color must be auto, always or never");
-                options.computeIfAbsent(arg, ignored -> new ArrayList<>()).add(values);
+                if (arg.equals("--repositories") && definitions.containsKey("--repository")) {
+                    for (String entry : values.getFirst().split(";", -1)) {
+                        if (entry.isBlank())
+                            return new CliParseOutcome.InvalidCommandLine("--repositories contains an empty entry");
+                        options.computeIfAbsent("--repository", ignored -> new ArrayList<>()).add(List.of(entry.strip()));
+                    }
+                } else {
+                    options.computeIfAbsent(arg, ignored -> new ArrayList<>()).add(values);
+                }
             } else {
                 if (!specification.acceptsFiles())
                     return new CliParseOutcome.InvalidCommandLine(specification.command() + " accepts no files");

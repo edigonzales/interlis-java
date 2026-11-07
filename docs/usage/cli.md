@@ -23,8 +23,7 @@ Sicht mit Diagnosen ausgeben. `diagram` unterstützt `--format mermaid`
 binäre Assoziationen als Kanten mit Rollen und Kardinalitäten an beiden Enden
 dar. Assoziationen mit eigenen Attributen oder mehr als zwei Rollen erscheinen
 weiterhin als Knoten. `version --json` unterscheidet Projekt-, API-, Protokoll-,
-Diagnosekatalog-, Format- und Diagrammversion. Lokale Importdateien sind
-explizit anzugeben. Der CLI-Host sucht keine Verzeichnisse nach Modellen ab.
+Diagnosekatalog-, Format- und Diagrammversion.
 
 Exitcodes sind 0 für den erfolgreichen Befehl, 1 für fachliche Ablehnung,
 2 für Bedienfehler, 3 für interne oder operationale Fehler und 4 für Abbruch.
@@ -51,11 +50,22 @@ fest. JSON, Format-/Diagramm-stdout und Ausgabedateien bleiben farbfrei.
 
 ## Repositories und Locks
 
-`check`, `compile`, `analyze` und `diagram` verwenden die gleichen expliziten
-Repositoryoptionen. `--repository DIR_OR_URI` ist wiederholbar. Jedes
-Repository braucht einen `ilimodels.xml`-Index. Eine Repositorywurzel kann
-mit `--root` ohne lokale Datei ausgewählt werden. Der Host verwendet keine
-Defaultrepositories. Zur Auswahl und Reproduktion dienen `--model-pin`,
+Bei `check`, `compile`, `analyze` und `diagram` sucht der CLI-Host fehlende
+Modelle standardmässig zuerst in den Verzeichnissen der angegebenen
+`.ili`-Dateien. Die Suche erfasst benachbarte `.ili`-Dateien ohne Index
+und steigt nicht in Unterverzeichnisse ab. Für weiterhin fehlende Modelle
+folgt `https://models.interlis.ch/`. Ein Aufruf mit vollständig lokal
+aufgelösten Modellen benötigt keinen Netzwerkzugriff. Mit `--offline`
+verwendet der HTTP-Fallback nur verifizierte Cacheinhalte.
+
+Eine explizite Repositoryliste ersetzt diese Standards. `--repository`
+ist wiederholbar. `--repositories "aaa.xml;bbb.xml"` fügt mehrere Einträge
+in der angegebenen Reihenfolge ein und lässt sich mit `--repository`
+kombinieren. Jeder Eintrag ist ein Verzeichnis oder eine Basis-URL mit
+`ilimodels.xml` oder ein direkter Pfad beziehungsweise eine URL zu einem
+XML-Modellindex. Relative Modelldateien beziehen sich auf das Verzeichnis
+des Indexes. Mit `--root` kann ein Modell auch ohne lokale Datei
+ausgewählt werden. Zur Auswahl und Reproduktion dienen `--model-pin`,
 `--source-pin`, `--read-lock` und `--write-lock`. Weitere Optionen sind
 `--cache`, `--no-cache`, `--offline`, `--warnings allow|reject`,
 `--config FILE` und `--explain-config`.
@@ -67,7 +77,10 @@ JSON aus und redigiert Zugangsdaten und Queries. Lokale Pfade beziehen sich
 auf das Arbeitsverzeichnis. Die [Repositoryregeln](../contracts/repositories.md)
 beschreiben Indexauswahl, Cachefristen, Offlinebetrieb, Netzwerk und Locks.
 
-Ein Lock dokumentiert die tatsächlich aufgelösten Quellen. `check` und
+Ein Lock dokumentiert die tatsächlich aufgelösten Quellen. Beim erneuten
+Lesen eines Locks für die Standardsuche müssen darin erfasste benachbarte
+Modelldateien weiterhin an ihrem gespeicherten Pfad verfügbar sein.
+`check` und
 `compile` schreiben ihn nach erfolgreicher Kompilierung, `diagram` nach
 erfolgreicher Projektion und `analyze` nach abgeschlossener Analyse
 einschliesslich fachlicher Diagnosen. Ausgabekollisionen mit Eingabe- oder

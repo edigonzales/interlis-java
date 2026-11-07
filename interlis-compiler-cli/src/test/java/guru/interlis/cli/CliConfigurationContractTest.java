@@ -19,7 +19,9 @@ class CliConfigurationContractTest {
         Files.writeString(directory.resolve("settings.properties"), "root=Missing\nwarnings=reject\n");
         Files.writeString(directory.resolve("model.ili"),
                 "INTERLIS 2.4; MODEL F AT \"https://example.org\" VERSION \"1\" = END F.");
-        var rejected = run("check", "--config", "settings.properties", "model.ili");
+        Files.writeString(directory.resolve("index.xml"),
+                "<TRANSFER>" + RepositoryCliContractTest.entry("1", "dep.ili") + "</TRANSFER>");
+        var rejected = run("check", "--config", "settings.properties", "--repository", "index.xml", "model.ili");
         assertEquals(CliTermination.INPUT_UNRESOLVED, rejected.result.termination(), rejected.err);
         var accepted = run("check", "--config", "settings.properties", "--root", "F", "model.ili");
         assertEquals(CliTermination.SUCCESS, accepted.result.termination(), accepted.err);

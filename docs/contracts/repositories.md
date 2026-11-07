@@ -299,10 +299,15 @@ der grosse unveränderte geo.admin.ch-Index ist verlustfrei gzip-komprimiert.
 ## CLI-Verbraucher der Repository-Closure
 
 RES-001/004/007–009/011: `check`, `compile`, `analyze` und `diagram` beschaffen
-benannte Roots und transitive Imports über dieselbe explizite Hostvorbereitung
+benannte Roots und transitive Imports über dieselbe Hostvorbereitung
 mit RepositoryClosureService. Der CLI-Options-/Konfigurations- und Lockvertrag
 steht in [CLI-Vertrag](../usage/cli.md). `format` benötigt nur Syntax und führt keine Beschaffung
-aus. Weder Compilerkern noch CLI besitzen implizite Defaultrepositories.
+aus. Der CLI-Host sucht ohne explizite Repositoryliste zuerst in den
+Verzeichnissen der übergebenen Modelldateien und verwendet anschliessend
+das zentrale HTTPS-Repository für noch offene Modellanfragen. Die lokale
+Suche arbeitet ohne Index und ohne Rekursion. Lokal entdeckte, aufgelöste
+Modelle werden im Lock mit Quellenidentität und Digest erfasst.
+Der Compilerkern erhält die aufgelösten Quellen vom Host.
 `SemanticRepositoryCommandsTest` prüft lokale und HTTP-Closures, explizite
 Quellen, mehrere Repositories, Pins, Locks, Offlinebetrieb, Fehler und Abbruch.
 
@@ -312,7 +317,9 @@ Quellen, mehrere Repositories, Pins, Locks, Offlinebetrieb, Fehler und Abbruch.
 RES-001–009/011/012: Die Beschaffung MUSS ohne Lock standardmässig dem
 Profil `ili2c-5.6.9` folgen. Referenzstand und Originalquellen mit Prüfsummen:
 Referenzmanifest.
-Die CLI aktiviert keine impliziten Standardrepositories.
+Direkte Indexangaben mit derselben Basis werden in ihrer konfigurierten
+Reihenfolge anhand der Index-URI unterschieden. Repositoryverknüpfungen
+werden weiterhin anhand der Basis-URI besucht.
 
 Je Modellabfrage werden zuerst sämtliche konfigurierten Repositories in ihrer
 Reihenfolge besucht. Danach folgen die Elternketten in einer FIFO-Warteschlange,

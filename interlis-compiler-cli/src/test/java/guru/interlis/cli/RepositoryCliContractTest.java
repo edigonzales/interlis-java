@@ -57,9 +57,74 @@ class RepositoryCliContractTest {
         assertEquals(CliTermination.USAGE_ERROR,run("check","--repository",repo.toString(),"--root","Dep","--write-lock",repo.resolve("ilimodels.xml").toString()).result().termination());
         assertEquals(index,Files.readString(repo.resolve("ilimodels.xml")));
     }
+    @Test void listSearchesDistinctIndexesInTheSameDirectoryAndReplaysTheSelectedIndex() throws Exception {
+        Files.writeString(directory.resolve("first.xml"), "<TRANSFER>" + entry("1", "one.ili") + "</TRANSFER>");
+        Files.writeString(directory.resolve("second [index].xml"), "<TRANSFER>" + entry("2", "two.ili") + "</TRANSFER>");
+        Files.writeString(directory.resolve("one.ili"), model("1"));
+        Files.writeString(directory.resolve("two.ili"), model("2"));
+        Files.writeString(directory.resolve("root.ili"),
+                "INTERLIS 2.4; MODEL Root AT \"x\" VERSION \"1\" = IMPORTS Dep; END Root.");
+        Files.writeString(directory.resolve("settings.properties"), "repository=absent\n");
+        var result = run("check", "--config", "settings.properties", "--repositories", "first.xml;second [index].xml",
+                "root.ili", "--model-pin", "Dep", "2", directory.resolve("two.ili").toUri().toString(),
+                ContentDigest.sha256(Files.readAllBytes(directory.resolve("two.ili"))).value(),
+                "--cache", "cache", "--write-lock", "closure.xml");
+        assertEquals(CliTermination.SUCCESS, result.result().termination(), result.result().output());
+        var lock = new ResolutionLockCodec().decode(Files.readString(directory.resolve("closure.xml")));
+        assertEquals("2", lock.models().get("Dep").getFirst().modelVersion());
+        var indexId = new guru.interlis.source.SourceId(directory.resolve("second [index].xml").toUri().toString());
+        assertTrue(lock.indexes().containsKey(indexId));
+        assertEquals(CliTermination.SUCCESS, run("check", "--repositories", "second [index].xml",
+                "root.ili", "--cache", "cache", "--offline", "--read-lock", "closure.xml").result().termination());
+
+        var mixed = run("check", "--repository", "second [index].xml", "--repositories", "first.xml", "--root", "Dep");
+        assertEquals("2", mixed.result().resolutionLock().orElseThrow().models().get("Dep").getFirst().modelVersion());
+        assertEquals(CliTermination.USAGE_ERROR, run("check", "--repositories", "first.xml;;second [index].xml",
+                "--root", "Dep").result().termination());
+    }
+
+    @Test void defaultLookupPrefersNeighboursThenUsesTheVerifiedHttpsCache() throws Exception {
+        Files.writeString(directory.resolve("root.ili"),
+                "INTERLIS 2.4; MODEL Root AT \"x\" VERSION \"1\" = IMPORTS Dep; END Root.");
+        Path neighbour = directory.resolve("different-filename.ili");
+        Files.writeString(neighbour, model("1"));
+        Path cache = directory.resolve("cache");
+        cache(cache, "https://models.interlis.ch/ilimodels.xml", "<TRANSFER>" + entry("2", "remote.ili") + "</TRANSFER>");
+        cache(cache, "https://models.interlis.ch/remote.ili", model("2"));
+
+        var local = run("check", "root.ili", "--offline", "--cache", "cache", "--write-lock", "local.xml");
+        assertEquals(CliTermination.SUCCESS, local.result().termination(), local.result().output());
+        assertTrue(local.result().repositorySteps().isEmpty());
+        assertEquals(neighbour.toUri().toString(),
+                local.result().resolutionLock().orElseThrow().models().get("Dep").getFirst().source().value());
+        assertEquals(CliTermination.SUCCESS, run("check", "root.ili", "--offline", "--no-cache",
+                "--read-lock", "local.xml").result().termination());
+
+        Path nested = Files.createDirectory(directory.resolve("nested"));
+        Files.move(neighbour, nested.resolve(neighbour.getFileName()));
+        var remote = run("check", "root.ili", "--offline", "--cache", "cache");
+        assertEquals(CliTermination.SUCCESS, remote.result().termination(), remote.result().output());
+        assertEquals("https://models.interlis.ch/remote.ili",
+                remote.result().resolutionLock().orElseThrow().models().get("Dep").getFirst().source().value());
+        assertEquals("https://models.interlis.ch/", remote.result().repositorySteps().getFirst().repository().toString());
+    }
+
+    static void cache(Path root, String uri, String content) throws IOException {
+        var bytes = content.getBytes(StandardCharsets.UTF_8);
+        var digest = ContentDigest.sha256(bytes);
+        var source = new guru.interlis.source.SourceId(uri);
+        new DirectoryContentStore(root).put(new VerifiedContent(source, digest, bytes));
+        var metadata = Files.createDirectories(root.resolve("metadata-v2"));
+        String name = ContentDigest.sha256(uri.getBytes(StandardCharsets.UTF_8)).value() + ".xml";
+        Files.writeString(metadata.resolve(name), """
+                <interlis-cache version="2" source="%s" response-source="%s" sha256="%s" downloaded-at="2026-01-01T00:00:00Z"/>
+                """.formatted(uri, uri, digest.value()));
+    }
+
     @Test void malformedRepositoryOptionsAndLockAreUsageErrors() throws Exception {
         assertEquals(CliTermination.USAGE_ERROR,run("check","--model-pin","Dep").result().termination());
-        assertEquals(CliTermination.USAGE_ERROR,run("check","--offline","--root","Dep").result().termination());
+        assertEquals(CliTermination.OPERATIONAL_FAILURE,
+                run("check","--offline","--no-cache","--root","Dep").result().termination());
         assertEquals(CliTermination.USAGE_ERROR,run("format","--repository",directory.toString()).result().termination());
         var repo=repository(false);Files.writeString(directory.resolve("invalid.xml"),"<invalid/>");
         assertEquals(CliTermination.USAGE_ERROR,run("check","--repository",repo.toString(),"--root","Dep","--read-lock","invalid.xml").result().termination());

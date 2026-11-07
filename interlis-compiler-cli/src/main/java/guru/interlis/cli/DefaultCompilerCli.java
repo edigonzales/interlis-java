@@ -192,8 +192,8 @@ public final class DefaultCompilerCli implements CliApplication {
         var modelOptions = CommandSpec.standard("check").options();
         appendHelpOptions(help, "Model selection (check, compile, analyze, diagram)", modelOptions, "--root");
         appendHelpOptions(help, "Repositories and locks (check, compile, analyze, diagram)", modelOptions,
-                "--repository", "--model-pin", "--source-pin", "--read-lock", "--write-lock");
-        help.append("  Repositories require ilimodels.xml. No repositories are configured by default.\n");
+                "--repository", "--repositories", "--model-pin", "--source-pin", "--read-lock", "--write-lock");
+        help.append("  Defaults: source directories, then https://models.interlis.ch/.\n");
         appendHelpOptions(help, "Network and cache (check, compile, analyze, diagram)", modelOptions,
                 "--connect-timeout", "--read-timeout", "--request-timeout", "--proxy", "--proxyPort",
                 "--no-proxy", "--cache", "--no-cache", "--offline");
@@ -201,6 +201,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 "--config", "--explain-config", "--warnings");
         appendHelpOptions(help, "Text diagnostics (check, compile, analyze, diagram, format)", modelOptions,
                 "--verbose", "--diagnostic-language", "--color");
+        help.append("  Also accepted: --color=auto|always|never.\n");
         help.append("  Auto color applies only to interactive stderr. NO_COLOR, TERM=dumb, and Windows disable it.\n");
         appendHelpOptions(help, "JSON output (check, compile, analyze, version)", modelOptions, "--json");
         appendHelpOptions(help, "Diagram output (diagram)", CommandSpec.standard("diagram").options(), "--format");
@@ -217,7 +218,8 @@ public final class DefaultCompilerCli implements CliApplication {
             var option = options.stream().filter(candidate -> candidate.name().equals(name)).findFirst().orElseThrow();
             var detail = switch (option.name()) {
                 case "--root" -> new HelpOption("MODEL", "Start with this model and follow its imports.");
-                case "--repository" -> new HelpOption("DIR_OR_URI", "Look up models in this repository.");
+                case "--repository" -> new HelpOption("DIR_OR_URI_OR_XML", "Look up models in this repository.");
+                case "--repositories" -> new HelpOption("ENTRIES", "Look up models in a semicolon-separated list of repositories.");
                 case "--model-pin" -> new HelpOption("NAME VERSION SOURCE SHA256",
                         "Require an exact model version, source URI, and content hash.");
                 case "--source-pin" -> new HelpOption("SOURCE SHA256", "Verify the bytes at a model or index URI.");
@@ -341,13 +343,14 @@ public final class DefaultCompilerCli implements CliApplication {
             List<ModelSelector> roots = roots(parsed.roots(), loaded.sources());
             invocation.rootCount = roots.size();
             PreparedRepositoryUpdate update = null;
-            if (!parsed.repositories().isEmpty()) {
-                var sources = new ArrayList<RepositorySource>();
-                for (String value : parsed.repositories()) {
-                    String base = sourceUri(value, environment);
-                    if (!base.endsWith("/")) base += "/";
-                    sources.add(new RepositorySource(new RepositoryBase(java.net.URI.create(base)), new SourceLocator(base + "ilimodels.xml")));
-                }
+            boolean useDefaults = configuration.origins().get("--repository") == ConfigurationLoader.Origin.PROFILE_DEFAULT;
+            var sources = parsed.repositories().stream().map(value -> repositorySource(value, environment)).toList();
+            var sourcePins = new LinkedHashMap<>(parsed.sourcePins());
+            boolean pendingModels = useDefaults && workspace.capture(
+                    new AnalysisRequest(workspace.currentRevision(), roots), token).resolution().pendingFetches()
+                    .stream().anyMatch(request -> !request.modelName().isEmpty());
+            if (!useDefaults || pendingModels || parsed.readLock().isPresent() || parsed.writeLock().isPresent()
+                    || !parsed.modelPins().isEmpty() || !sourcePins.isEmpty()) {
                 if (parsed.writeLock().isPresent()) {
                     String target = hostPath(parsed.writeLock().orElseThrow(), environment).toUri().toString();
                     if (loaded.sources().keySet().stream().anyMatch(id -> id.value().equals(target))
@@ -369,6 +372,10 @@ public final class DefaultCompilerCli implements CliApplication {
                     } catch (java.io.IOException unavailable) { return result(CliTermination.OPERATIONAL_FAILURE, List.of(), "lock could not be read"); }
                     catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid resolution lock"); }
                 }
+                if (pendingModels && !loaded.sources().isEmpty()) {
+                    new LocalModelDiscovery(environment).addNeighbours(workspace, loaded.sources().keySet(),
+                            lock, sourcePins, token);
+                }
                 var cacheConfiguration = parsed.cache().map(path -> RepositoryCacheConfiguration.at(hostPath(path, environment)))
                         .orElseGet(RepositoryCacheConfiguration::disabled);
                 var access = HostRepositories.createObserved(environment.workingDirectory(), cacheConfiguration, observation -> {
@@ -385,7 +392,7 @@ public final class DefaultCompilerCli implements CliApplication {
                 }, RepositoryNetworkOptions.proxy(configuration.command()));
                 var outcome = access.closureService()
                         .resolve(workspace, new AnalysisRequest(workspace.currentRevision(), roots),
-                                new RepositoryResolveOptions(config, parsed.modelPins(), parsed.sourcePins(), lock), observation -> {
+                                new RepositoryResolveOptions(config, parsed.modelPins(), sourcePins, lock), observation -> {
                                     if (invocation.command.has("--verbose") && !parsed.json()) {
                                         new RepositoryResolutionRenderer().render(observation, invocation.language, invocation.ansiEnabled)
                                                 .ifPresent(environment.err()::println);
@@ -406,6 +413,14 @@ public final class DefaultCompilerCli implements CliApplication {
                     case RepositoryResolutionOutcome.Rejected rejected -> {
                         invocation.repositorySteps=rejected.steps();
                         var problem = rejected.problems().getFirst();
+                        if (useDefaults && lock.isEmpty() && parsed.writeLock().isEmpty()
+                                && parsed.modelPins().isEmpty() && parsed.sourcePins().isEmpty()
+                                && problem.reason() == RepositoryProblem.Reason.NOT_FOUND
+                                && rejected.steps().stream().noneMatch(step -> step.kind() == RepositorySearchStep.Kind.SELECTED)) {
+                            // The workspace already has all available sources. Let the compiler
+                            // report the missing input together with independent source diagnostics.
+                            break;
+                        }
                         String output = "resolution rejected";
                         print(parsed.json(), environment, rejected.diagnostics(), output, rejected.sources(), invocation);
                         return result(problem.reason() == RepositoryProblem.Reason.LOAD_FAILURE || problem.reason() == RepositoryProblem.Reason.INDEX_FAILURE
@@ -486,13 +501,24 @@ public final class DefaultCompilerCli implements CliApplication {
         Path path = value.startsWith("file:") ? Path.of(java.net.URI.create(value)) : Path.of(value);
         return (path.isAbsolute() ? path : environment.workingDirectory().resolve(path)).toAbsolutePath().normalize();
     }
-    private static String sourceUri(String value, CliEnvironment environment) {
+    private static RepositorySource repositorySource(String value, CliEnvironment environment) {
         try {
-            var uri = java.net.URI.create(value);
-            if (uri.isAbsolute()) return "file".equalsIgnoreCase(uri.getScheme())
-                    ? Path.of(uri).toAbsolutePath().normalize().toUri().toString() : uri.toString();
-        } catch (IllegalArgumentException ignored) { /* a local path may contain spaces */ }
-        return hostPath(value, environment).toUri().toString();
+            var uri = value.matches("(?i)(?:https?|file):.*")
+                    ? java.net.URI.create(value.replace(" ", "%20"))
+                    : hostPath(value, environment).toUri();
+            if ("file".equalsIgnoreCase(uri.getScheme())) {
+                uri = Path.of(uri).toAbsolutePath().normalize().toUri();
+            }
+            if (uri.getPath() != null && uri.getPath().toLowerCase(java.util.Locale.ROOT).endsWith(".xml")) {
+                return new RepositorySource(new RepositoryBase(uri.resolve(".")), new SourceLocator(uri.toString()));
+            }
+            String directory = uri.toString();
+            if (!directory.endsWith("/")) directory += "/";
+            return new RepositorySource(new RepositoryBase(java.net.URI.create(directory)),
+                    new SourceLocator(directory + "ilimodels.xml"));
+        } catch (IllegalArgumentException invalid) {
+            throw new CliUsageException("invalid repository location");
+        }
     }
 
     private CliExecutionResult format(CliEnvironment environment,
@@ -658,13 +684,11 @@ public final class DefaultCompilerCli implements CliApplication {
                     throw new CliUsageException("duplicate source pin");
             } catch (IllegalArgumentException invalid) { throw new CliUsageException("invalid source pin"); }
         }
-        boolean hostOptions = command.has("--repository") || command.has("--offline")
-                || command.has("--read-lock") || command.has("--write-lock")
-                || !modelPins.isEmpty() || !sourcePins.isEmpty();
-        if (hostOptions && !command.has("--repository")) throw new CliUsageException("repository options require --repository");
+        var repositories = command.values("--repository");
+        if (repositories.stream().anyMatch(String::isBlank)) throw new CliUsageException("empty repository location");
         return new ParsedArguments(command.files(), command.values("--root"), command.has("--json"),
-                command.value("--format").orElse("mermaid"), command.values("--repository"),
-                command.has("--offline"), Map.copyOf(modelPins), Map.copyOf(sourcePins),
+                command.value("--format").orElse("mermaid"), repositories,
+                Map.copyOf(modelPins), Map.copyOf(sourcePins),
                 command.value("--read-lock"), command.value("--write-lock"), command.value("--cache"));
     }
 
@@ -742,7 +766,7 @@ public final class DefaultCompilerCli implements CliApplication {
     }
 
     private record ParsedArguments(List<String> files, List<String> roots, boolean json, String format,
-                                   List<String> repositories, boolean offline, Map<String, ModelPin> modelPins,
+                                   List<String> repositories, Map<String, ModelPin> modelPins,
                                    Map<SourceId, ContentDigest> sourcePins, Optional<String> readLock,
                                    Optional<String> writeLock, Optional<String> cache) {
     }

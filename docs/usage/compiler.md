@@ -145,9 +145,11 @@ classDiagram
 ## 5. Modelle aus einem Repository laden
 
 Wenn viele Projekte dieselben Modelle importieren, kannst du die Dateien in
-einem gemeinsamen Repository ablegen. Dessen Index `ilimodels.xml` sagt dem
-Compiler, in welcher Datei ein Modell liegt. `--repository` gibt den Ordner
-oder die Adresse des Repositorys an. Zusammen mit `--root Survey` kann der
+einem gemeinsamen Repository ablegen. Ohne explizite Repositoryliste
+sucht die CLI fehlende Modelle zuerst neben den angegebenen Modelldateien
+und danach im zentralen INTERLIS-Repository. Der Index `ilimodels.xml` eines
+Repositorys ordnet Modellnamen ihren Dateien zu. Mit `--repository` lässt sich
+ein Repository explizit auswählen. Zusammen mit `--root Survey` kann der
 Compiler `Survey` und dessen Import `Base` selbst im Index finden.
 
 Das Beispiel kopiert die beiden Dateien in ein temporäres Verzeichnis.

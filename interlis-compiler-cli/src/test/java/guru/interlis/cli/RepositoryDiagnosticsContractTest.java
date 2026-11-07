@@ -52,11 +52,13 @@ class RepositoryDiagnosticsContractTest {
     }
     @Test void missingImportDependentsAreHiddenOnlyInTextAndIndependentNamesRemainVisible() throws Exception {
         Files.writeString(directory.resolve("root.ili"),model("Root","IMPORTS Missing; STRUCTURE P=p:Missing.Point; q:Other; END P;"));
-        var out=run("check","root.ili");
+        RepositoryCliContractTest.cache(directory.resolve("cache"), "https://models.interlis.ch/ilimodels.xml",
+                "<TRANSFER>" + entry("Base", "1", "Base.ili") + "</TRANSFER>");
+        var out=run("check","root.ili","--offline","--cache","cache");
         var dependent=out.result.diagnostics().stream().filter(d->d.code().value().equals("ILI-SEM-0001")&&d.arguments().toString().contains("Missing.Point")).findFirst().orElseThrow();
         assertTrue(dependent.causeId().isPresent());assertTrue(dependent.dependsOn().contains(dependent.causeId().orElseThrow()));
         assertFalse(out.err.contains("'Missing.Point'"));assertTrue(out.err.contains("'Other'"));
-        var json=run("check","--json","root.ili");assertTrue(json.out.contains("Missing.Point"));assertTrue(json.out.contains("causeId"));
+        var json=run("check","--json","root.ili","--offline","--cache","cache");assertTrue(json.out.contains("Missing.Point"));assertTrue(json.out.contains("causeId"));
     }
     @Test void duplicateStartWarningsReachTheGateWhileAnalyzeRetainsItsAnalysisContract() throws Exception {
         var repo=repository(entry("Dep","1","Dep.ili")+entry("Dep","2","Other.ili"));Files.writeString(repo.resolve("Dep.ili"),model("Dep","DOMAIN D=TEXT;"));

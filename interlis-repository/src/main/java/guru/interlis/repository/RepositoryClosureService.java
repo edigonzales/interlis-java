@@ -420,7 +420,7 @@ public final class RepositoryClosureService {
                     ContentDigest.sha256(text.text().getBytes(StandardCharsets.UTF_8)));
             var sourcePin = sourcePins.get(location.source());
             if (sourcePin != null && !sourcePin.equals(pin.digest())) reject(RepositoryProblem.Reason.PIN_MISMATCH, pin.modelName());
-            if (!remote && !pins.containsKey(location.modelName())) continue;
+            if (!remote && sourcePin == null && !pins.containsKey(location.modelName())) continue;
             var expected = pins.get(pin.modelName());
             if (expected != null && !expected.equals(pin)) reject(RepositoryProblem.Reason.PIN_MISMATCH, pin.modelName());
             if (remote && lock.isPresent() && !lock.orElseThrow().models().getOrDefault(pin.modelName(), List.of()).contains(pin))

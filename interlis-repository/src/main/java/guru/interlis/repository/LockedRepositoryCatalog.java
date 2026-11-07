@@ -18,7 +18,8 @@ final class LockedRepositoryCatalog {
             URI location=URI.create(input.value());
             var base=config.sources().stream().filter(s->s.indexLocator().location().equals(input.value())).map(RepositorySource::base)
                     .findFirst().orElse(new RepositoryBase(location.resolve(".")));
-            if(location.getPath().endsWith("/ilisite.xml")) {
+            if (location.getPath().endsWith("/ilisite.xml")
+                    && config.sources().stream().noneMatch(s -> s.indexLocator().location().equals(input.value()))) {
                 new RepositorySiteReader().read(new IndexPayload(loaded.text()),base);
             } else {
                 var index=new RepositoryIndexReader().read(new IndexPayload(loaded.text()),base);

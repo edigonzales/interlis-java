@@ -34,7 +34,7 @@ class CompilerCliIdentityContractTest {
         Files.writeString(directory.resolve("Root.ili"), "INTERLIS 2.4; MODEL Root AT \"x\" VERSION \"1\" = IMPORTS Base; DOMAIN Name EXTENDS Base.Name = TEXT*10; END Root.");
         Files.writeString(directory.resolve("Unrelated.ili"), "broken neighbour");
         assertEquals(0, run("check", "Root.ili", "Base.ili").result.exitCode());
-        assertEquals(CliTermination.INPUT_UNRESOLVED, run("check", "Root.ili").result.termination());
+        assertEquals(0, run("check", "Root.ili", "--offline", "--no-cache").result.exitCode());
         assertEquals(0, run("check", "Base.ili").result.exitCode());
     }
     @Test void optionEndPreservesUnicodeAndLeadingMinus() throws IOException {

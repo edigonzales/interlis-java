@@ -18,7 +18,7 @@ final class RepositorySearch {
     private int warningCount;
     private long work;
     private boolean indexFailures;
-    private final Map<URI,Optional<RepositoryIndex>> indexes=new LinkedHashMap<>();
+    private final Map<SourceLocator,Optional<RepositoryIndex>> indexes=new LinkedHashMap<>();
     private final Map<URI,RepositorySiteReader.Site> sites=new LinkedHashMap<>();
     private final Map<SourceId,SourceLoadException.Reason> unavailable=new LinkedHashMap<>();
     private final Set<SourceId> indexSources=new LinkedHashSet<>();
@@ -59,10 +59,15 @@ final class RepositorySearch {
     private URI base(URI uri) { String s=SourceUris.canonicalFile(uri.toString().trim());return URI.create(s.endsWith("/")?s:s+"/"); }
     Optional<ModelCandidate> find(ModelSelector.ByName query,Optional<LanguageVersion> language) {
         var visited=new HashSet<URI>();var parents=new ArrayDeque<URI>();var children=new ArrayDeque<URI>();
-        var roots=config.sources().stream().map(s->base(s.base().uri())).toList();
-        for(var root:roots) {
-            if(!visited.add(root))continue;
-            var found=visit(query,language,root);if(found.isPresent())return found;
+        var roots=new LinkedHashSet<URI>();
+        var explicitIndexes=new HashSet<SourceLocator>();
+        for (var source : config.sources()) {
+            var root=base(source.base().uri());
+            roots.add(root);
+            visited.add(root);
+            var locator=new SourceLocator(SourceUris.canonicalFile(source.indexLocator().location()));
+            if (!explicitIndexes.add(locator)) continue;
+            var found=visit(query,language,root,locator);if(found.isPresent())return found;
         }
         for(var root:roots) { var site=site(root,query.modelName());parents.addAll(site.parents());children.addAll(site.subsidiaries()); }
         var found=parents(query,language,visited,parents);if(found.isPresent())return found;
@@ -83,8 +88,12 @@ final class RepositorySearch {
         return Optional.empty();
     }
     private Optional<ModelCandidate> visit(ModelSelector.ByName query,Optional<LanguageVersion> language,URI uri) {
+        return visit(query, language, uri, new SourceLocator(SourceUris.canonicalFile(uri.resolve("ilimodels.xml").toString())));
+    }
+
+    private Optional<ModelCandidate> visit(ModelSelector.ByName query,Optional<LanguageVersion> language,URI uri,SourceLocator locator) {
         note(query.modelName(),uri,LOOKUP,language.map(l -> l==LanguageVersion.ILI23 ? "INTERLIS 2.3" : "INTERLIS 2.4").orElse("INTERLIS 2.4/2.3")+query.modelVersion().map(v -> " version="+v).orElse("")+query.sourceHint().map(id -> " source="+RepositorySearchStep.safeUri(id.value())).orElse(""));
-        var index=index(uri,query.modelName());if(index.isEmpty())return Optional.empty();
+        var index=index(uri,locator,query.modelName());if(index.isEmpty())return Optional.empty();
         var languages=language.map(l->List.of(l==LanguageVersion.ILI23?"ili2_3":"ili2_4")).orElse(List.of("ili2_4","ili2_3"));
         for(String schema:languages) {
             var matching=new ArrayList<RepositoryModelMetadata>();
@@ -106,8 +115,8 @@ final class RepositorySearch {
             } else chosen=latest(query.modelName(),uri,matching);
             if(chosen==null)continue;
             note(query.modelName(),uri,SELECTED,chosen.version()+" "+RepositorySearchStep.safeUri(chosen.location().toString()));
-            int rank=ranks.computeIfAbsent(uri,k->ranks.size());
-            return Optional.of(new ModelCandidate(chosen,new RepositoryBase(uri),uri.resolve("ilimodels.xml"),rank));
+            int rank=ranks.computeIfAbsent(URI.create(locator.location()),k->ranks.size());
+            return Optional.of(new ModelCandidate(chosen,new RepositoryBase(uri),URI.create(locator.location()),rank));
         }
         return Optional.empty();
     }
@@ -133,9 +142,8 @@ final class RepositorySearch {
         if(!remaining.isEmpty())note(model,uri,BROKEN_CHAIN,current.version()+"; "+String.join(", ",remaining.stream().map(RepositoryModelMetadata::version).toList()));
         return current;
     }
-    private Optional<RepositoryIndex> index(URI uri,String model) {
-        return indexes.computeIfAbsent(uri,key->{
-            var locator=config.sources().stream().filter(s->base(s.base().uri()).equals(uri)).map(RepositorySource::indexLocator).findFirst().orElse(new SourceLocator(SourceUris.canonicalFile(uri.resolve("ilimodels.xml").toString())));
+    private Optional<RepositoryIndex> index(URI uri,SourceLocator locator,String model) {
+        return indexes.computeIfAbsent(locator,key->{
             indexSources.add(new SourceId(locator.location()));
             try { var loaded=loader.load(locator,config.fetchPolicy(),RepositoryCacheRequest.metadata(),token);return Optional.of(new RepositoryIndexReader().read(new IndexPayload(loaded.text()),new RepositoryBase(uri))); }
             catch(SourceLoadException failure) { unavailable.put(new SourceId(locator.location()),failure.reason());note(model,uri,REPOSITORY_UNAVAILABLE,failure.reason().name()); }

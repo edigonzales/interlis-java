@@ -62,8 +62,10 @@ class CliApplicationTest {
     }
 
     @Test
-    void missingImportIsReportedAsMissingInput() {
-        Run run = run("check", "--root", "Survey",
+    void missingImportIsReportedAsMissingInput() throws Exception {
+        Path index = tempDir.resolve("index.xml");
+        Files.writeString(index, "<TRANSFER>" + RepositoryCliContractTest.entry("1", "dep.ili") + "</TRANSFER>");
+        Run run = run("check", "--root", "Survey", "--repository", index.toString(), "--no-cache",
                 TESTDATA.resolve("models/survey24.ili").toString());
         assertEquals(1, run.result().exitCode());
         assertTrue(run.err().contains("missing") || run.err().contains("ILI-RES"));

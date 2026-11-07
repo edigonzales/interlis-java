@@ -10,6 +10,7 @@ import java.util.*;
 
 /** Explicit UTF-8 properties configuration: CLI overrides file, then profile defaults. */
 public final class ConfigurationLoader {
+    private static final String DEFAULT_REPOSITORY = "https://models.interlis.ch/";
     /** Setting provenance, without retaining configuration text or credentials. */
     public enum Origin { CLI, CONFIGURATION_FILE, PROFILE_DEFAULT }
 
@@ -94,6 +95,10 @@ public final class ConfigurationLoader {
                     options.put("--cache",List.of(List.of(environment.workingDirectory().resolve(path).toAbsolutePath().normalize().toString())));
                 } catch(IllegalArgumentException invalid) { throw new CliUsageException("invalid cache directory"); }
             }
+        }
+        if (!options.containsKey("--repository")) {
+            options.put("--repository", List.of(List.of(DEFAULT_REPOSITORY)));
+            origins.put("--repository", Origin.PROFILE_DEFAULT);
         }
         RepositoryNetworkOptions.normalize(options, origins);
         return new ResolvedConfiguration(new ParsedCommand(command.command(), options, command.files()), origins);
