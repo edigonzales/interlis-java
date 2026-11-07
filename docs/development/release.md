@@ -6,6 +6,25 @@ internen Freigabenachweis. Eine Veröffentlichung braucht einen eigenen
 Auftrag. Fehlende, veraltete, fremde, geänderte und übersprungene
 Pflichtbelege halten das Gate geschlossen.
 
+## Vertragsversionen
+
+Vergleiche im Freigabereview die öffentlichen Verträge mit der letzten
+veröffentlichten Version. Prüfe und dokumentiere die Versionsentscheidung
+für jede betroffene Fläche separat.
+
+- Öffentliche Java-SDK-API
+- Diagnosekatalog
+- Bridge-Protokoll
+- Unterstützte INTERLIS-Sprachprofile
+- Quelltextformatierung
+- Diagrammschema
+
+Erhöhe bei einem inkompatiblen Bruch die betroffene Vertragsversion im
+selben PR und aktualisiere Verbraucher, Vertragstests und Dokumentation.
+Begründe bei kompatiblen Änderungen die Versionsentscheidung. Die Tests
+prüfen die Übereinstimmung der veröffentlichten Versionsangaben. Das Review
+bewertet die Kompatibilität anhand der Verträge und ihrer Verbraucher.
+
 ## Plattformen und Ablauf
 
 Ein Push auf `main` publiziert nach erfolgreichen Plattformprüfungen ein

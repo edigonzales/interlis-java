@@ -31,6 +31,10 @@
   Javadoc beschreibt relevante Nullfreiheit, Mutabilität, Reihenfolge,
   Revisionen, Einheiten und Fehlerzustände. Aktualisiere Verbraucher, Tests
   und Vertragsdokumente gemeinsam, wenn sich öffentliche Verträge ändern.
+- Halte bei Änderungen öffentlicher Verträge im PR fest, welche veröffentlichte
+  Vertragsversion betroffen ist. Erhöhe sie bei einem inkompatiblen Bruch im
+  selben PR. Begründe bei kompatiblen Änderungen die Versionsentscheidung.
+  Die Prüfliste steht in der [Freigabeprüfung](docs/development/release.md#vertragsversionen).
 - Wähle die kleinsten [aussagekräftigen Prüfungen](docs/development/testing.md).
   Führe breite Korpus-, Browser-, Plattform- und Benchmarkläufe aus, wenn
   eine betroffene Abnahme sie fordert. Unabhängige Reviews prüfen Originalbelege
