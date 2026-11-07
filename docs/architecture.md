@@ -102,6 +102,13 @@ einzige Entscheidung über die gültige Schemasicht.
 4. Der Host verwirft veraltete Ergebnisse vor Übernahme oder Veröffentlichung.
    Darstellung und Layout bleiben vom Compiler getrennt.
 
+Im LSP-Host verwaltet `LspDocumentRegistry` die akzeptierten Dokumentstände
+und `LspFileIdentityRegistry` die vom Dateisystem bestätigten Identitäten.
+`LspInputReadiness` ordnet Dokumentoperationen und Anfragen während laufender
+Dateiaufnahmen. `AnalysisScheduler` serialisiert Zustandsänderungen auf der
+Owner-Queue und führt Compilerarbeit auf unveränderlichen Captures ausserhalb
+der Queue aus. Diagnosen werden aus einer akzeptierten Quellsicht veröffentlicht.
+
 Laufbeobachtung und Abbruch gelten pro Operation. Ein interner Fehler erzeugt
 einen eigenen Ergebniszustand. Projektoren weisen ihre Fähigkeiten explizit
 aus und melden ununterstützte Elemente, bevor Daten verloren gehen. Reine
