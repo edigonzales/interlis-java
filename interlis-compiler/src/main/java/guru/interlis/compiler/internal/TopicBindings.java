@@ -2,7 +2,6 @@ package guru.interlis.compiler.internal;
 
 import guru.interlis.model.AssociationSymbol;
 import guru.interlis.model.AttributeSymbol;
-import guru.interlis.model.ClassSymbol;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.EffectiveMember;
 import guru.interlis.model.ReferenceType;
@@ -174,13 +173,11 @@ final class TopicBindings {
                         if (target == null || index.byId(target.id()).isEmpty()) continue; // ANYCLASS/unresolved: no invented OID.
                         validateReferenceScope(site, topic, target.id(), external,
                                 declaration instanceof RoleSymbol ? "ROLE_EXTERNAL" : "REFERENCE_EXTERNAL");
-                        boolean objectOid = target.header().oidRules().stream().anyMatch(r -> !r.basket() && oid.oidState(r) != 0);
-                        if (target instanceof ClassSymbol && owner.language() == guru.interlis.model.LanguageVersion.ILI24 && !objectOid)
-                            diagnostics.emitRule(site, "reference target " + target.name().value() + " has NO OID in INTERLIS 2.4", "REFERENCE_TARGET_NO_OID");
                         if (target instanceof AssociationSymbol) {
                             boolean identified = target.header().oidRules().isEmpty()
                                     ? inheritance.get().baseChain(target.id()).stream().map(index::byId).flatMap(Optional::stream)
-                                        .anyMatch(d -> d.modifiers().contains(guru.interlis.model.Modifier.OID)) : objectOid;
+                                        .anyMatch(d -> d.modifiers().contains(guru.interlis.model.Modifier.OID))
+                                    : target.header().oidRules().stream().anyMatch(r -> !r.basket() && oid.oidState(r) != 0);
                             if (!identified) diagnostics.emitRule(site, "association target " + target.name().value() + " requires its own OID", "REFERENCE_ASSOCIATION_OID");
                         }
                     }

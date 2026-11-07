@@ -4,3 +4,6 @@ frontend/diagram-ui/test/fixtures/interactive.ili -text whitespace=cr-at-eol
 build/interlis/templates/*.bat -text whitespace=cr-at-eol
 # Preserve the IANA registry source bytes and its CRLF line endings.
 testdata/reference/character-sets/character-sets-2026-10-02.csv -text whitespace=cr-at-eol,-blank-at-eol
+# Preserve the published INTERLIS 2.4 regression model bytes.
+testdata/conformance/no-oid/CoordSys.ili -text whitespace=cr-at-eol,-blank-at-eol
+testdata/conformance/no-oid/roads/*.ili -text whitespace=cr-at-eol,-blank-at-eol

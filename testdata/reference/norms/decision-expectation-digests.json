@@ -10,7 +10,6 @@
     "ili23.Topics23Test.topics_ExplicitTopicOidDefinition": "56e35e58523c3286d0e1ae4b29f872457ef38ec0bd6438e27e0f68a23092d0bf",
     "ili23.ViewableGetAttributesAndRoles2Test.baseClass": "db2759a4dc472ad2aa5e3f79263bc0fcaed57e3999014c111a10f862db00d02a",
     "ili23.Association23Test.association_AssociationAsTarget": "d8650d1b016835dd60710caddb7c8a1db752d1db571bb9503212800f0e799cb7",
-    "ili24.Attribute24Test.attributeRef_RefAttrInClass": "84f1ff9c140d7449db33f5a7c2906b5b8356ab6fd87a9c18604470588627e9c7",
     "ili23.Assoc23Test.assocComplete": "2663e2fc1f05ee965282781f71a81cfce244553e8abcb8ebf2dfd8557a5c0d01",
     "ili23.Role23Test.roleComplete": "303137a82a0e3ff0576c1c9220b87295d6a7e6bdcf22591fcb612b287de95de7",
     "ili23.Expressions23Test.expressions_ParentPathElement": "4cb780aa8e1ce89fc266a01d96d920d41fa7a9d090aedb1148bbb3b1b0a1214d",
@@ -19,7 +18,6 @@
     "ili23.Models23Test.models_DomainAndRuntimeParam_SameName": "2d555644469e057ff5d33677c8c045b20a70f1b496080c703461ed7d28264d8c",
     "ili23.RuntimeParameter23Test.runtimeParameterComplete": "dccb4fd33dbf0984547b28b6318922d20c6e23bc9614ac91616e577ec8dd732b",
     "ili23.Expressions23Test.expressions_ThisAreaThatArea": "0149a05f4548d02b7f0037de945fe977ac0651239bcc908fd627d8d6a04c0c0a",
-    "ili24.Refhb24Test.roadsExgm2ien": "d9c24248186082320e53f888db1ac6f569cbcb7c552e1901d129188382eeb414",
     "ili23.LineType23Test.overlapTooSmallFail": "39a776ceef0155699f073f788e5cc46970eeb76250dee7247ae6c20f9886252b",
     "ili23.Attribute23Test.attributeComplete": "97f5999ea42685ce97f9232395139afd4257610485271b045a74de232efac771"
   }

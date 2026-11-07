@@ -855,20 +855,21 @@ Topic-Vererbungsweg bleiben davon ausgenommen. Namensreferenzen erhalten die geb
 Primär- und Einschränkungsziele für Navigation/Rename. Pfade verwenden diese
 Menge und ihren gemeinsamen Kontext statt des ersten Listenelements.
 
-In 2.4 dürfen Referenzattribute und Rollen keine Klassen mit effektivem
-explizitem oder implizitem NO OID zum Ziel haben (Referenz 3.5.3); die Regel
-gilt unabhängig von EXTERNAL. In 2.3 wird dieses zusätzliche Verbot nicht
-angewandt (2.5.3). Massgeblich sind die Sprache der referenzierenden Verwendung
-und die gebundenen effektiven Objekt-OID-Regeln des Ziels. Eine Basket-OID
-oder die OID der referenzierenden Klasse/Assoziation ersetzt keine Ziel-OID.
+Referenzattribute und Rollen dürfen Klassen mit effektivem explizitem oder
+implizitem NO OID zum Ziel haben, auch über Behältergrenzen hinweg. Der
+Compiler bewahrt die effektiven OID-Regeln und entscheidet unabhängig von
+der Transferart. Im FULL-Transfer können transferweit eindeutige TIDs die
+Zielobjekte identifizieren. Die Transfergemeinschaft legt fest, ob sie
+stabile OIDs verwendet und inkrementelle Transfers unterstützt. Die
+OID-Anforderungen für INITIAL und UPDATE werden beim konkreten Transfer
+geprüft. Für 2.4 gilt [Normentscheidung 23](norm-decisions.md#decision-23).
 Restriktionen ersetzen die zugelassene Basismenge; alle OR-Alternativen und
 Restriktionswurzeln werden geprüft, einschliesslich Vererbung und lokalem
 EXTENDED-Kontext. Eine Assoziation als Referenzziel benötigt in beiden
 Versionen eine eigene Identität (Referenz 2.7.1/3.7.1), aus OID AS oder der
 OID-Eigenschaft; ihre Rollenidentifikation allein genügt nicht.
-Uneingeschränktes ANYCLASS bezeichnet eine offene polymorphe Zielmenge und
-ist keine konkrete Klasse mit implizitem NO OID. Der Compiler erfindet dafür
-weder eine OID noch zählt er zufällig vorhandene Klassen als geschlossene
+Uneingeschränktes ANYCLASS bezeichnet eine offene polymorphe Zielmenge.
+Der Compiler zählt dafür zufällig vorhandene Klassen nicht als geschlossene
 Menge auf. Die Zulässigkeit konkreter Transferreferenzen ist Aufgabe der
 späteren Datenvalidierung; explizite Restriktionen werden bereits statisch
 geprüft. Fehler verhindern ein gültiges Schema der betroffenen Closure.

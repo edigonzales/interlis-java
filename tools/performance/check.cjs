@@ -7,7 +7,7 @@ function evaluate({assessment,budgets,manifestSha256,sourceFingerprint,reports,e
  assert(typeof productCommit==='string'&&productCommit.length>0,'missing source commit');
  assert(machine&&machine.os===budgets.referenceMachine.os&&machine.arch===budgets.referenceMachine.arch&&machine.cpu===budgets.referenceMachine.cpu&&machine.logicalCpus===budgets.referenceMachine.logicalCpus&&machine.memoryBytes===budgets.referenceMachine.memoryBytes,'wrong reference hardware');
  assert(assessment.manifestSha256===manifestSha256&&assessment.roots.length===347,'missing/stale assessment');
- assert(equal(assessment.summary,{roots:347,succeeded:262,rejected:85})&&assessment.roots.filter(r=>r.outcome==='succeeded').length===262&&assessment.roots.filter(r=>r.outcome==='rejected').length===85,'changed assessed corpus profile');
+ assert(equal(assessment.summary,{roots:347,succeeded:274,rejected:73})&&assessment.roots.filter(r=>r.outcome==='succeeded').length===274&&assessment.roots.filter(r=>r.outcome==='rejected').length===73,'changed assessed corpus profile');
  const ruleIds=new Set(assessment.rules.map(r=>r.id));for(const row of assessment.roots)assert(row.outcome==='succeeded'?row.assessedRules.length===0:row.assessedRules.length>0&&row.assessedRules.every(r=>ruleIds.has(r))&&row.diagnostics.length>0,'unassessed negative expectation');
  assert(budgets.corpus.roots===347&&budgets.corpus.files===366&&budgets.corpus.allowedSkips===0,'changed corpus budget profile');
  assert(reports.length===6&&equal(reports.map(r=>r.target).sort(),['chromium','firefox','jvm','safari','wasm','webkit']),'missing required runtime');

@@ -170,8 +170,8 @@ class GraphicBindingContractTest {
         }
     }
 
-    @Test void handBookControlPublishesAllGraphicsAndInspections() throws Exception {
-        var folder=java.nio.file.Path.of("../testdata/conformance/normative/roadsExgm2ien");
+    @Test void handBookOriginalPublishesAllGraphicsAndInspections() throws Exception {
+        var folder=java.nio.file.Path.of("../testdata/conformance/no-oid/roads");
         Map<guru.interlis.source.SourceId,guru.interlis.source.SourceText> sources=new LinkedHashMap<>();
         try(var files=java.nio.file.Files.list(folder)) {
             for(var path:files.sorted().toList()) { var source=CompilerTestSupport.source("memory:/"+path.getFileName(),java.nio.file.Files.readString(path));sources.put(source.id(),source); }
@@ -180,6 +180,7 @@ class GraphicBindingContractTest {
         var success=assertInstanceOf(CompilationOutcome.Succeeded.class,result,()->result instanceof CompilationOutcome.Rejected r?r.analysis().diagnostics().toString():result.toString());
         var graph=success.schema().semanticGraph();assertEquals(5,graph.symbols().stream().filter(GraphicSymbol.class::isInstance).count());
         assertEquals(10,graph.symbols().stream().filter(DrawingRuleSymbol.class::isInstance).count());
+        NoOidReferenceContractTest.assertRoleTargets(graph, "StreetAxisAssoc", List.of("Street", "StreetAxis"));
         assertTrue(graph.expressions().stream().anyMatch(e->e instanceof PathExpression p && p.path().steps().stream().anyMatch(PathStep.AssociationAccessStep.class::isInstance)));
     }
 }

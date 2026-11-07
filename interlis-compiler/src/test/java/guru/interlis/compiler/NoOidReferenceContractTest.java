@@ -4,6 +4,10 @@ import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.*;
 import guru.interlis.model.query.TypeRelations;
 import guru.interlis.compiler.query.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,25 +40,50 @@ class NoOidReferenceContractTest {
                 + "ASSOCIATION Link = target -- " + target + "; owner -- Owner; END Link; END T;";
     }
 
-    @Test void classNoOidReferenceBanIsSpecificTo24AndAppliesToRolesAndAttributes() {
-        for(String oid:List.of("","NO OID;")) for(String version:List.of("2.3","2.4")) {
-            for(String body:List.of(reference(oid,"A"),roles(oid,"A"))) {
-                if(version.equals("2.3")) ok(version,body); else bad(version,body,"REFERENCE_TARGET_NO_OID");
-            }
-        }
-        for(String version:List.of("2.3","2.4")) {
-            ok(version,reference("OID AS INTERLIS.UUIDOID;","A"));
-            ok(version,roles("OID AS INTERLIS.UUIDOID;","A"));
-        }
-        bad("2.4",reference("OID AS INTERLIS.NOOID;","A"),"REFERENCE_TARGET_NO_OID");
-        bad("2.4",roles("OID AS INTERLIS.NOOID;","A"),"REFERENCE_TARGET_NO_OID");
+    @Test void originalCoordSysBindsAssociationRolesWithoutObjectOids() throws Exception {
+        var path = Path.of("../testdata/conformance/no-oid/CoordSys.ili");
+        byte[] bytes = Files.readAllBytes(path);
+        assertEquals("b6ee5e9c9a74f9d75d5223cdf3f8313f1ae850d00b356ca682b3e8868f4237b2",
+                HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)));
+        var source = CompilerTestSupport.source("memory:/CoordSys.ili", new String(bytes, StandardCharsets.UTF_8));
+        var request = CompilerTestSupport.request(List.of("CoordSys"), Map.of(source.id(), source), List.of(),
+                CompilerOptions.defaults());
+        var result = CompilerEngines.create().compile(request, CancellationToken.none());
+        var graph = assertInstanceOf(CompilationOutcome.Succeeded.class, result, result::toString)
+                .schema().semanticGraph();
+        assertRoleTargets(graph, "HeightEllips", List.of("GeoHeight", "Ellipsoid"));
     }
 
-    @Test void onlyEffectiveObjectOidCountsNotBasketOrSourceIdentity() {
-        ok("2.4",reference("","A").replace("TOPIC T =","TOPIC T = OID AS INTERLIS.UUIDOID;"));
-        bad("2.4",reference("","A").replace("TOPIC T =","TOPIC T = BASKET OID AS INTERLIS.UUIDOID;"),"REFERENCE_TARGET_NO_OID");
-        bad("2.4",reference("NO OID;","A").replace("TOPIC T =","TOPIC T = OID AS INTERLIS.UUIDOID;"),"REFERENCE_TARGET_NO_OID");
-        bad("2.4",roles("","A").replace("ASSOCIATION Link =","ASSOCIATION Link = OID AS INTERLIS.UUIDOID;"),"REFERENCE_TARGET_NO_OID");
+    static void assertRoleTargets(SemanticGraph graph, String name, List<String> targets) {
+        var association = (AssociationSymbol) named(graph, name);
+        var classes = association.roles().stream()
+                .map(id -> (RoleSymbol) graph.symbol(id).orElseThrow())
+                .map(role -> (ClassSymbol) graph.symbol(role.targetRoots().getFirst()).orElseThrow())
+                .toList();
+        assertEquals(targets, classes.stream().map(target -> target.name().value()).toList());
+        assertTrue(classes.stream().allMatch(target -> target.header().oidRules().isEmpty()));
+    }
+
+    @Test void rolesAndAttributesAcceptClassesWithoutStableObjectOids() {
+        for (String version : List.of("2.3", "2.4")) {
+            for (String oid : List.of("", "NO OID;", "OID AS INTERLIS.UUIDOID;")) {
+                ok(version, reference(oid, "A"));
+                ok(version, roles(oid, "A"));
+            }
+        }
+        for (String oid : List.of("", "NO OID;", "OID AS INTERLIS.NOOID;")) {
+            var graph = ok("2.4", reference(oid, "A")).schema().semanticGraph();
+            var rules = named(graph, "A").header().oidRules();
+            if (oid.isEmpty()) {
+                assertTrue(rules.isEmpty());
+            } else {
+                assertEquals(1, rules.size());
+                var domain = rules.getFirst().domain();
+                if (oid.equals("NO OID;")) assertTrue(domain.isEmpty());
+                else assertEquals("INTERLIS.NOOID", graph.symbol(domain.orElseThrow()).orElseThrow().name().value());
+            }
+            ok("2.4", roles(oid, "A"));
+        }
     }
 
     private static final String SETS="TOPIC T (ABSTRACT) = CLASS Root = NO OID; END Root; "
@@ -63,10 +92,10 @@ class NoOidReferenceContractTest {
             + "CLASS Other = NO OID; END Other; CLASS Owner = OID AS INTERLIS.UUIDOID; END Owner; ";
     @Test void restrictionsSelectAllowedRootsAndEveryRoleAlternativeIsChecked() {
         ok("2.4",SETS+"ASSOCIATION Link = a -- Root RESTRICTION (Stable); b -- Owner; END Link; END T;");
-        bad("2.4",SETS+"ASSOCIATION Link = a -- Stable OR Other; b -- Owner; END Link; END T;","REFERENCE_TARGET_NO_OID");
-        bad("2.4",SETS+"ASSOCIATION Link = a -- ANYCLASS RESTRICTION (Stable; Other); b -- Owner; END Link; END T;","REFERENCE_TARGET_NO_OID");
+        ok("2.4",SETS+"ASSOCIATION Link = a -- Stable OR Other; b -- Owner; END Link; END T;");
+        ok("2.4",SETS+"ASSOCIATION Link = a -- ANYCLASS RESTRICTION (Stable; Other); b -- Owner; END Link; END T;");
         ok("2.4",SETS+"STRUCTURE S = r: REFERENCE TO ANYCLASS RESTRICTION (Concrete); END S; END T;");
-        bad("2.4",SETS+"STRUCTURE S = r: REFERENCE TO ANYCLASS RESTRICTION (Concrete; Other); END S; END T;","REFERENCE_TARGET_NO_OID");
+        ok("2.4",SETS+"STRUCTURE S = r: REFERENCE TO ANYCLASS RESTRICTION (Concrete; Other); END S; END T;");
         bad("2.4",SETS+"STRUCTURE S = r: REFERENCE TO Concrete RESTRICTION (Owner); END S; END T;","REFERENCE_TARGET_RESTRICTION");
     }
 
@@ -91,7 +120,7 @@ class NoOidReferenceContractTest {
                 + "TOPIC U EXTENDS T = CLASS A (EXTENDED) = OID AS INTERLIS.UUIDOID; END A; "
                 + "STRUCTURE S = value: REFERENCE TO A; END S; END U;";
         ok("2.4",body);
-        bad("2.4",body.replace("OID AS INTERLIS.UUIDOID; END A;","NO OID; END A;"),"REFERENCE_TARGET_NO_OID");
+        bad("2.4", body.replace("OID AS INTERLIS.UUIDOID; END A;", "NO OID; END A;"), "OID_OVERRIDE");
         ok("2.3",reference("NO OID;","A"));
     }
 
@@ -110,12 +139,12 @@ class NoOidReferenceContractTest {
         }
     }
 
-    @Test void collectionsAndInheritedReferenceAttributesDoNotBypassOidChecks() {
-        bad("2.4",reference("NO OID;","A").replace("value: REFERENCE", "value: BAG OF REFERENCE"),"REFERENCE_TARGET_NO_OID");
+    @Test void collectionsAndInheritedReferenceAttributesAcceptNoOid() {
+        ok("2.4",reference("NO OID;","A").replace("value: REFERENCE", "value: BAG OF REFERENCE"));
         String body="TOPIC T = CLASS A = OID AS INTERLIS.UUIDOID; END A; "
                 + "STRUCTURE S = value: REFERENCE TO A; END S; STRUCTURE Child EXTENDS S = END Child; END T;";
         ok("2.4",body);
-        bad("2.4",body.replace("OID AS INTERLIS.UUIDOID;","NO OID;"),"REFERENCE_TARGET_NO_OID");
+        ok("2.4",body.replace("OID AS INTERLIS.UUIDOID;","NO OID;"));
     }
 
     @Test void externalAndAnyClassAreIndependentOfStableIdentity() {
@@ -125,14 +154,27 @@ class NoOidReferenceContractTest {
             String external = reference("NO OID;", "(EXTERNAL) A");
             String externalRole = roles("NO OID;", "A").replace("target --", "target (EXTERNAL) --");
             for (String body : List.of(external, externalRole)) {
-                if (version.equals("2.3")) ok(version, body);
-                else bad(version, body, "REFERENCE_TARGET_NO_OID");
+                ok(version, body);
             }
             String association = "TOPIC T = OID AS INTERLIS.UUIDOID; CLASS A = END A; CLASS B = END B; "
                     + "ASSOCIATION Link = NO OID; a -- A; b -- B; END Link; "
                     + "ASSOCIATION Meta = value -- Link; other -- A; END Meta; END T;";
             bad(version, association, "REFERENCE_ASSOCIATION_OID");
             ok(version, association.replace("NO OID;", "OID AS INTERLIS.UUIDOID;"));
+        }
+    }
+
+    @Test void crossTopicRolesAndAttributesWithoutOidStillNeedScopeDeclarations() {
+        String topics = "TOPIC Base = CLASS A = NO OID; END A; END Base; TOPIC T = DEPENDS ON Base; ";
+        String attribute = topics + "STRUCTURE S = r: REFERENCE TO (EXTERNAL) Base.A; END S; END T;";
+        String association = topics + "CLASS B = END B; ASSOCIATION Link = "
+                + "target (EXTERNAL) -- Base.A; owner -- B; END Link; END T;";
+        ok("2.4", attribute);
+        ok("2.4", association);
+        bad("2.4", attribute.replace("(EXTERNAL) ", ""), "REFERENCE_EXTERNAL");
+        bad("2.4", association.replace("(EXTERNAL) ", ""), "ROLE_EXTERNAL");
+        for (String body : List.of(attribute, association)) {
+            bad("2.4", body.replace("DEPENDS ON Base; ", ""), "REFERENCE_DEPENDS_ON");
         }
     }
 
@@ -149,7 +191,7 @@ class NoOidReferenceContractTest {
         }
     }
 
-    @Test void mixedModelVersionsUseTheReferencingLanguageAndBoundTargetIdentity() {
+    @Test void mixedModelVersionsAllowReferencesToClassesWithoutOid() {
         for (String sourceVersion : List.of("2.3", "2.4")) {
             for (String targetVersion : List.of("2.3", "2.4")) {
                 var target = CompilerTestSupport.source("memory:/target.ili", model(targetVersion,
@@ -158,8 +200,8 @@ class NoOidReferenceContractTest {
                         "IMPORTS Base; TOPIC T = DEPENDS ON Base.T; STRUCTURE S = r: REFERENCE TO (EXTERNAL) Base.T.A; END S; END T;"));
                 var result = CompilerEngines.create().compile(CompilerTestSupport.request(List.of("F"),
                         Map.of(source.id(), source, target.id(), target), List.of(CompilerTestSupport.binding(CompilerTestSupport.parse(source), "Base", target, CompilerTestSupport.parse(target))), CompilerOptions.defaults()), CancellationToken.none());
-                if (sourceVersion.equals("2.3")) assertInstanceOf(CompilationOutcome.Succeeded.class, result, () -> sourceVersion + " -> " + targetVersion + " " + ((CompilationOutcome.Rejected)result).analysis().diagnostics());
-                else assertTrue(assertInstanceOf(CompilationOutcome.Rejected.class, result).analysis().diagnostics().toString().contains("REFERENCE_TARGET_NO_OID"));
+                assertInstanceOf(CompilationOutcome.Succeeded.class, result,
+                        () -> sourceVersion + " -> " + targetVersion + " " + result);
             }
         }
     }

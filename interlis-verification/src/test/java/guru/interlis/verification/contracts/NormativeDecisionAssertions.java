@@ -31,7 +31,7 @@ final class NormativeDecisionAssertions {
 
     static void decisionSources(JsonObject packet,JsonObject expected,JsonObject historical) {
         var digests=historical.getAsJsonObject("caseDigests");
-        require(digests.size()==19&&rows(expected,"cases").size()==21
+        require(digests.size()==17&&rows(expected,"cases").size()==19
                 &&ids(rows(packet,"cases"),"testId").equals(digests.keySet()),"Decision packet coverage differs");
         for(String key:List.of("schemaVersion","suiteCommit","suiteSha256"))require(expected.get(key).equals(historical.get(key)),"Suite identity changed");
         for(var entry:digests.entrySet()) {

@@ -22,6 +22,6 @@
   },
   "normativeDecisionPacket": {
     "path": "normative-decisions.json",
-    "sha256": "53bfcd7aee2273fc461af8af8ef4129582e18f1c81a13ebb8568de626d6a05b0"
+    "sha256": "dca1b79d8e822e047316143ed4a4167ae61fb30bcb2145276b226881e3f65eb3"
   }
 }

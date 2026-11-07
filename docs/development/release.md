@@ -41,8 +41,8 @@ Run und prüft das Preflight vor den lokalen Aggregaten.
 - JVM- und Vertragstests mit originalen Reports und ohne Skips, echte
   installierte CLI-/SDK-Prozesse, korrekte Modulgrenzen und Farb-/Streamtests.
 - Vollständige externe Conformance samt begründeten, gebundenen
-  Erwartungsabweichungen. Der Checker erwartet 593 Fälle mit 577 PASS,
-  16 XFAIL und 21 normativen Bewertungen.
+  Erwartungsabweichungen. Der Checker erwartet 593 Fälle mit 579 PASS,
+  14 XFAIL und 19 normativen Bewertungen.
 - TeaVM-JavaScript, TeaVM-WasmGC, GraalVM Web Image und die tatsächlichen
   Browserläufe in Chromium, Firefox und Playwright-WebKit. Echtes Safari
   bleibt ein eigener Pflichtnachweis. Der Checker bindet Transport-,
