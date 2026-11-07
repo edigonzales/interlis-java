@@ -109,7 +109,7 @@ final class NameResolver {
         return new Resolution(Status.AMBIGUOUS, Optional.empty(), ordered);
     }
 
-    /** Indexed lexical declarations only; predefined values remain owned by GraphBuilder. */
+    /** Indexed lexical declarations only; predefined values remain owned by the predefined binders. */
     Resolution resolveLocal(SymbolId owner, NameSyntax name, Set<SymbolKind> expected) {
         if(name.segments().size()!=1)return new Resolution(Status.UNRESOLVED,Optional.empty(),List.of());
         String simple=name.segments().getFirst().text();

@@ -59,6 +59,37 @@ Namen dienen der Sprachsemantik und ersetzen keine dauerhafte Identität.
 Fachliche Reihenfolgen liegen in geordneten Werten. Maps dienen als Indizes.
 Ein veröffentlichter Snapshot bleibt nach Schliessen des Workspace lesbar.
 
+## Aufbau des semantischen Graphen
+
+`GraphBuilder` komponiert die lauflokalen Fachbinder und ruft sie in einer
+festen Reihenfolge auf. Der Deklarationsindex enthält die Eingaben für die
+Namensauflösung und den bedarfsweisen Aufbau. Die Deklarationsbindung
+liefert bereits vorhandene Symbole und baut weitere Deklarationen bei
+Bedarf auf. Die Typbindung kann einen Domänen- oder Attributtyp
+reservieren und auflösen, bevor die zugehörigen Constraints gebunden
+werden. Rekursionsmengen und fachliche Memos gehören den jeweiligen
+Bindern.
+
+`SemanticBuildState` speichert den entstehenden Graphen. Seine lesende
+Sicht ist intern und lauflokal. Typisierte Schreiboperationen unterscheiden
+die Definition und Vervollständigung von Symbolen, Typ- und
+Ausdrucksdaten sowie Basiskanten und effektive Member. Die Fachbinder
+erhalten die zu ihrer Aufgabe passenden Schreiboperationen. Referenzen
+verwenden eine gemeinsame Registrierung und Sequenz. Geordnete
+Zwischenstände erhalten die ursprüngliche Reihenfolge und Herkunft.
+
+Namensbindung, Typbindung, Ausdrücke, Objektpfade, Constraints,
+Vererbung und Übersetzung haben eigene Zuständigkeiten. Benannte
+Kollaboratoren und Rückaufrufe verbinden die bedarfsweisen Operationen
+in einem Lauf. Ein Arbeitsbudget zählt auch bereits verbrauchte
+Overlayarbeit. Die Diagnostik schreibt in den laufgebundenen Collector.
+
+Die Übersetzungsbindung prüft und ergänzt die gebundenen Paare bis zum
+Abschluss. Nach Transfernamespace und Predefined-Abschluss friert der
+Speicher den Graphen ein. Die Coverage wird für den Lauf ermittelt.
+`CompilationGate` verwendet Analyse, Diagnostik und Closure für die
+einzige Entscheidung über die gültige Schemasicht.
+
 ## Lauf und Hostgrenzen
 
 1. Der Host erfasst Quellen und Konfiguration und beschafft fehlende
@@ -70,6 +101,13 @@ Ein veröffentlichter Snapshot bleibt nach Schliessen des Workspace lesbar.
    typisierten Ausgang. Das Gate entscheidet über die Schemasicht.
 4. Der Host verwirft veraltete Ergebnisse vor Übernahme oder Veröffentlichung.
    Darstellung und Layout bleiben vom Compiler getrennt.
+
+Im LSP-Host verwaltet `LspDocumentRegistry` die akzeptierten Dokumentstände
+und `LspFileIdentityRegistry` die vom Dateisystem bestätigten Identitäten.
+`LspInputReadiness` ordnet Dokumentoperationen und Anfragen während laufender
+Dateiaufnahmen. `AnalysisScheduler` serialisiert Zustandsänderungen auf der
+Owner-Queue und führt Compilerarbeit auf unveränderlichen Captures ausserhalb
+der Queue aus. Diagnosen werden aus einer akzeptierten Quellsicht veröffentlicht.
 
 Laufbeobachtung und Abbruch gelten pro Operation. Ein interner Fehler erzeugt
 einen eigenen Ergebniszustand. Projektoren weisen ihre Fähigkeiten explizit

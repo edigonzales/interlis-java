@@ -5,8 +5,9 @@
   [Verträge](docs/README.md) und [Modulgrenzen](docs/architecture.md).
   Veröffentlichungen und Arbeiten an Produktionssystemen brauchen einen
   konkreten Auftrag.
-- Nutze [Jenesis 0.18.1 mit Java 25](docs/development/build.md) für alle elf
-  JVM-Module. POMs definieren Koordinaten und Abhängigkeiten. Der Gradle-Wrapper
+- Nutze [Jenesis 0.18.1 mit Java 25](docs/development/build.md) für alle
+  [registrierten JVM-Module](build/interlis/JvmBuildInputs.java). POMs definieren
+  Koordinaten und Abhängigkeiten. Der Gradle-Wrapper
   baut die beiden Wasm-Backends mit explizitem geprüftem ConsumerSnapshot.
   `build/jenesis/`, `build/interlis/`, `build/InterlisJvmBuild.java` und der
   Upstreampin sind Quellen. Verwende die gezielten Clean-Sichten.

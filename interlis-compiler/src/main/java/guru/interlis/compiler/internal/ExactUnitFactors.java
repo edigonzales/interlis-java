@@ -8,16 +8,22 @@ import java.util.*;
 
 /** Exact factor comparisons, without evaluating FUNCTION explanations or rounding named constants. */
 final class ExactUnitFactors {
+    private final SemanticGraphRead state;
+    private final SemanticWork work;
     enum Result { MATCH, MISMATCH, UNKNOWN }
-    private final GraphBuilder graph;
     private final Map<SymbolId,Integer> ranks=new HashMap<>();
-    ExactUnitFactors(GraphBuilder graph) {this.graph=graph;}
+
+    ExactUnitFactors(SemanticGraphRead state,
+                     SemanticWork work) {
+        this.state = state;
+        this.work = work;
+    }
 
     Result compare(SymbolId coarse,SymbolId fine,BigDecimal period) {
         var relation=TypeCompatibility.unitRelation(coarse,fine,this::unit);
         if(relation.isEmpty())return Result.UNKNOWN; // Existing unit diagnostics own invalid dependencies.
         if(relation.orElseThrow().decision()==RelationDecision.DISALLOWED)
-            return TypeCompatibility.definitelyDifferentUnitDimensions(coarse,fine,this::unit,graph::checkWork)?Result.MISMATCH:Result.UNKNOWN;
+            return TypeCompatibility.definitelyDifferentUnitDimensions(coarse,fine,this::unit,work::checkpoint)?Result.MISMATCH:Result.UNKNOWN;
         if(coarse.equals(fine))return period.compareTo(BigDecimal.ONE)==0?Result.MATCH:Result.MISMATCH;
         if(!rank(coarse)||!rank(fine))return Result.UNKNOWN;
         var queue=new PriorityQueue<SymbolId>(Comparator.<SymbolId>comparingInt(ranks::get).reversed().thenComparing(SymbolId::value));
@@ -27,14 +33,14 @@ final class ExactUnitFactors {
         var constants=new EnumMap<UnitSymbol.ConstantKind,BigInteger>(UnitSymbol.ConstantKind.class);
         enqueue(terms,queue,coarse,BigInteger.ONE);enqueue(terms,queue,fine,BigInteger.ONE.negate());
         while(!queue.isEmpty()) {
-            graph.checkWork();var id=queue.remove();var power=terms.remove(id);if(power==null)continue;
+            work.checkpoint();var id=queue.remove();var power=terms.remove(id);if(power==null)continue;
             var unit=unit(id);if(unit==null)return Result.UNKNOWN;
             if(unit.conversionFunction().isPresent()||unit.derivedFrom().isEmpty()&&unit.components().isEmpty()) {
                 add(roots,id,power);continue;
             }
             if(unit.derivedFrom().isPresent()) {
                 for(var factor:unit.conversionFactors()) {
-                    graph.checkWork();var signed=factor.operator()==UnitSymbol.Operator.MULTIPLY?power:power.negate();
+                    work.checkpoint();var signed=factor.operator()==UnitSymbol.Operator.MULTIPLY?power:power.negate();
                     if(factor.kind()==UnitSymbol.ConstantKind.DECIMAL) {
                         var number=factor.decimal().orElseThrow().exactValue();
                         if(number.signum()==0)return Result.UNKNOWN;
@@ -43,7 +49,7 @@ final class ExactUnitFactors {
                 }
                 enqueue(terms,queue,unit.derivedFrom().orElseThrow(),power);
             } else for(var component:unit.components()) {
-                graph.checkWork();enqueue(terms,queue,component.unit(),component.operator()==UnitSymbol.Operator.MULTIPLY?power:power.negate());
+                work.checkpoint();enqueue(terms,queue,component.unit(),component.operator()==UnitSymbol.Operator.MULTIPLY?power:power.negate());
             }
         }
         // A common opaque base cancels before its definition is inspected.
@@ -58,12 +64,12 @@ final class ExactUnitFactors {
         add(numbers,period,BigInteger.ONE.negate());
         Fraction result=new Fraction(BigInteger.ONE,BigInteger.ONE);
         for(var number:numbers.entrySet()) {
-            graph.checkWork();result=result.multiply(decimal(number.getKey()).power(number.getValue()));
+            work.checkpoint();result=result.multiply(decimal(number.getKey()).power(number.getValue()));
         }
         return result.numerator.equals(result.denominator)?Result.MATCH:Result.MISMATCH;
     }
 
-    private UnitSymbol unit(SymbolId id) {graph.checkWork();return graph.symbols.get(id) instanceof UnitSymbol unit?unit:null;}
+    private UnitSymbol unit(SymbolId id) {work.checkpoint();return state.symbol(id) instanceof UnitSymbol unit?unit:null;}
     private static List<SymbolId> dependencies(UnitSymbol unit) {
         if(unit.conversionFunction().isPresent())return List.of();
         if(unit.derivedFrom().isPresent())return List.of(unit.derivedFrom().orElseThrow());
@@ -73,14 +79,14 @@ final class ExactUnitFactors {
         record Visit(SymbolId id,boolean exit) { }
         var pending=new ArrayDeque<Visit>();var active=new HashSet<SymbolId>();pending.push(new Visit(root,false));
         while(!pending.isEmpty()) {
-            graph.checkWork();var visit=pending.pop();if(ranks.containsKey(visit.id()))continue;
+            work.checkpoint();var visit=pending.pop();if(ranks.containsKey(visit.id()))continue;
             var unit=unit(visit.id());if(unit==null)return false;var dependencies=dependencies(unit);
             if(!visit.exit()) {
                 if(!active.add(visit.id()))return false;
                 pending.push(new Visit(visit.id(),true));
                 for(var dependency:dependencies)if(!ranks.containsKey(dependency))pending.push(new Visit(dependency,false));
             } else {
-                int rank=0;for(var dependency:dependencies) {graph.checkWork();rank=Math.max(rank,ranks.get(dependency)+1);}
+                int rank=0;for(var dependency:dependencies) {work.checkpoint();rank=Math.max(rank,ranks.get(dependency)+1);}
                 ranks.put(visit.id(),rank);active.remove(visit.id());
             }
         }
@@ -94,24 +100,24 @@ final class ExactUnitFactors {
         add(terms,id,power);if(terms.containsKey(id))queue.add(id);
     }
     private Fraction decimal(BigDecimal value) {
-        graph.checkWork();int scale=value.scale();
+        work.checkpoint();int scale=value.scale();
         chargeBits(4L*Math.abs((long)scale));
         var ten=BigInteger.TEN.pow(Math.abs(scale));
         return scale>=0?new Fraction(value.unscaledValue(),ten):new Fraction(product(value.unscaledValue(),ten),BigInteger.ONE);
     }
     private BigInteger gcd(BigInteger left,BigInteger right) {
-        graph.checkWork();if(left.abs().equals(right.abs()))return left.abs();
+        work.checkpoint();if(left.abs().equals(right.abs()))return left.abs();
         if(left.abs().equals(BigInteger.ONE)||right.abs().equals(BigInteger.ONE))return BigInteger.ONE;
         charge(left.bitLength(),right.bitLength());return left.gcd(right);
     }
     private BigInteger product(BigInteger left,BigInteger right) {
-        graph.checkWork();charge(left.bitLength(),right.bitLength());return left.multiply(right);
+        work.checkpoint();charge(left.bitLength(),right.bitLength());return left.multiply(right);
     }
     private void charge(long leftBits,long rightBits) {
         long work=1+leftBits*rightBits/4096;
-        for(long i=0;i<work;i++)graph.checkWork();
+        for(long i=0;i<work;i++)this.work.checkpoint();
     }
-    private void chargeBits(long bits) {for(long i=0;i<1+bits/64;i++)graph.checkWork();}
+    private void chargeBits(long bits) {for(long i=0;i<1+bits/64;i++)work.checkpoint();}
     private final class Fraction {
         final BigInteger numerator,denominator;
         Fraction(BigInteger numerator,BigInteger denominator) {
@@ -125,12 +131,12 @@ final class ExactUnitFactors {
                     product(denominator.divide(second),other.denominator.divide(first)));
         }
         Fraction power(BigInteger power) {
-            graph.checkWork();Fraction base=this;
+            work.checkpoint();Fraction base=this;
             if(power.signum()<0) {base=new Fraction(denominator,numerator);power=power.negate();}
             if(base.numerator.equals(base.denominator))return base;
             Fraction result=new Fraction(BigInteger.ONE,BigInteger.ONE);
             while(power.signum()!=0) {
-                graph.checkWork();if(power.testBit(0))result=result.multiply(base);
+                work.checkpoint();if(power.testBit(0))result=result.multiply(base);
                 power=power.shiftRight(1);if(power.signum()!=0)base=base.multiply(base);
             }
             return result;

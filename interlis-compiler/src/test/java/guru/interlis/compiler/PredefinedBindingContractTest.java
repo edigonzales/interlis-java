@@ -1,8 +1,10 @@
 package guru.interlis.compiler;
 
 import guru.interlis.compiler.query.LanguageQueries;
+import guru.interlis.diagnostics.DiagnosticArgument;
 import guru.interlis.execution.CancellationToken;
 import guru.interlis.model.*;
+import guru.interlis.model.query.QueryResult;
 import guru.interlis.model.query.TypeRelations;
 import guru.interlis.source.*;
 import java.util.*;
@@ -140,25 +142,114 @@ class PredefinedBindingContractTest {
     }
 
     @Test void ambiguousImportedFunctionsKeepTheirBindingCauseAndQualifiedControls() {
-        for (var version : List.of("2.3", "2.4")) for (boolean qualified : List.of(false, true)) {
+        for (var version : List.of("2.3", "2.4")) for (String name : List.of("f", "Base.f", "missing", "Wrong.f")) {
             var base = source("memory:/base.ili", model(version, "FUNCTION f(v:NUMERIC):BOOLEAN;")
                     .replace("MODEL F", "MODEL Base").replace("END F.", "END Base."));
             var other = source("memory:/other.ili", base.text().replace("MODEL Base", "MODEL Other").replace("END Base.", "END Other."));
             var use = source("memory:/use.ili", model(version, "IMPORTS UNQUALIFIED Base, UNQUALIFIED Other; "
-                    + "TOPIC T=CLASS C=MANDATORY CONSTRAINT " + (qualified ? "Base.f" : "f") + "(1); END C; END T;"));
+                    + "TOPIC T=CLASS C=MANDATORY CONSTRAINT " + name + "(1); END C; END T;"));
             var request = request(List.of("F"), Map.of(base.id(), base, other.id(), other, use.id(), use),
                     List.of(binding(parse(use), "Base", base, parse(base)), binding(parse(use), "Other", other, parse(other))), CompilerOptions.defaults());
             var result = CompilerEngines.create().compile(request, TOKEN);
-            if (qualified) assertInstanceOf(CompilationOutcome.Succeeded.class, result);
-            else {
-                var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, result);
-                assertEquals(Set.of(RejectionReason.SOURCE_ERRORS), rejected.rejection().reasons());
-                assertEquals(List.of("ILI-SEM-0002"), rejected.analysis().diagnostics().stream().map(d -> d.code().value()).toList());
-                var cause = rejected.analysis().diagnostics().getFirst().id();
-                assertTrue(rejected.analysis().semanticGraph().types().stream().filter(ErrorType.class::isInstance)
-                        .map(ErrorType.class::cast).anyMatch(type -> type.diagnosticIds().contains(cause)));
+            int start = use.text().indexOf(name + "(1)");
+            var range = use.range(start, start + name.length());
+            var cursor = use.range(range.endOffset() - 1, range.endOffset() - 1);
+            var queries = LanguageQueries.create();
+            if (name.equals("Base.f")) {
+                var analysis = assertInstanceOf(CompilationOutcome.Succeeded.class, result).analysis();
+                var target = analysis.queries().findQualifiedName(QualifiedName.of("Base", "f")).getFirst();
+                var reference = expressionReferenceAt(analysis, range);
+                assertEquals(new BindingResolution.BoundTarget(target.symbol()), reference.resolution());
+                assertEquals(Optional.of(target.symbol()), reference.segments().getLast().target());
+                assertEquals(target, queries.definition(analysis, cursor, TOKEN).known().orElseThrow().symbol());
+                continue;
+            }
+            var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, result);
+            var analysis = rejected.analysis();
+            boolean ambiguous = name.equals("f");
+            var reason = ambiguous ? UnresolvedReason.AMBIGUOUS_NAME : UnresolvedReason.NAME_NOT_FOUND;
+            var candidates = ambiguous ? List.of("Base", "Other").stream()
+                    .map(m -> analysis.queries().findQualifiedName(QualifiedName.of(m, "f")).getFirst().symbol())
+                    .sorted(Comparator.comparing(SymbolId::value)).toList() : List.<SymbolId>of();
+            var reference = expressionReferenceAt(analysis, range);
+            var unresolved = assertInstanceOf(BindingResolution.UnresolvedTarget.class, reference.resolution());
+            assertEquals(reason, unresolved.reason());
+            assertEquals(candidates, unresolved.candidates());
+            assertEquals(List.of(name.split("\\.")), reference.segments().stream().map(s -> use.slice(s.range())).toList());
+            assertTrue(reference.segments().stream().allMatch(segment -> segment.target().isEmpty()));
+            if (ambiguous) assertThrows(UnsupportedOperationException.class, () -> unresolved.candidates().clear());
+
+            assertEquals(Set.of(RejectionReason.SOURCE_ERRORS), rejected.rejection().reasons());
+            assertEquals(List.of(ambiguous ? "ILI-SEM-0002" : "ILI-SEM-0001"),
+                    analysis.diagnostics().stream().map(d -> d.code().value()).toList());
+            var diagnostic = analysis.diagnostics().getFirst();
+            assertEquals(Optional.of(range), diagnostic.primaryRange());
+            assertEquals(new DiagnosticArgument.IdentifierArgument("name", name), diagnostic.arguments().getFirst());
+            if (ambiguous) assertEquals(new DiagnosticArgument.IdentifierListArgument("candidates",
+                    candidates.stream().map(SymbolId::value).toList()), diagnostic.arguments().getLast());
+            assertTrue(analysis.semanticGraph().types().stream().filter(ErrorType.class::isInstance)
+                    .map(ErrorType.class::cast).anyMatch(type -> type.diagnosticIds().contains(diagnostic.id())));
+
+            var candidateRefs = candidates.stream().map(id -> new SymbolRef(analysis.snapshotId(), id)).toList();
+            assertEquals(new QueryResult.Unresolved<>(reason, candidateRefs), queries.symbolAt(analysis, cursor, TOKEN));
+            assertTrue(queries.definition(analysis, cursor, TOKEN).known().isEmpty());
+            assertTrue(queries.hover(analysis, cursor, TOKEN).known().isEmpty());
+            assertFalse(queries.prepareRename(analysis, cursor, TOKEN).allowed());
+            for (var candidate : candidateRefs) {
+                assertFalse(analysis.queries().referencesTo(candidate).contains(reference));
             }
         }
+    }
+
+    private static NameReference expressionReferenceAt(AnalysisSnapshot analysis, SourceRange range) {
+        var references = analysis.semanticGraph().references().stream()
+                .filter(r -> r.usage() == ReferenceUsage.EXPRESSION && r.range().equals(range)).toList();
+        assertEquals(1, references.size());
+        return references.getFirst();
+    }
+
+    @Test void importedTopicBasesRespectTheImportVisibility() {
+        for (var version : List.of("2.3", "2.4")) for (var baseName : List.of("Shared", "Missing", "Wrong.Shared", "Base.Shared")) {
+            assertTopicBase(version, baseName, true);
+        }
+        for (var version : List.of("2.3", "2.4")) {
+            assertTopicBase(version, "Shared", false);
+            assertTopicBase(version, "Base.Shared", false);
+        }
+    }
+
+    private static void assertTopicBase(String version, String name, boolean unqualified) {
+        var base = source("memory:/base.ili", model(version, "TOPIC Shared=END Shared;")
+                .replace("MODEL F", "MODEL Base").replace("END F.", "END Base."));
+        var other = source("memory:/other.ili", base.text()
+                .replace("MODEL Base", "MODEL Other").replace("END Base.", "END Other."));
+        var imports = unqualified ? "IMPORTS UNQUALIFIED Base, UNQUALIFIED Other;" : "IMPORTS Base, Other;";
+        var use = source("memory:/use.ili", model(version, imports
+                + "TOPIC Derived EXTENDS " + name + "=END Derived;"));
+        var request = request(List.of("F"), Map.of(base.id(), base, other.id(), other, use.id(), use),
+                List.of(binding(parse(use), "Base", base, parse(base)), binding(parse(use), "Other", other, parse(other))),
+                CompilerOptions.defaults());
+        var result = CompilerEngines.create().compile(request, TOKEN);
+        if (name.equals("Base.Shared")) {
+            var success = assertInstanceOf(CompilationOutcome.Succeeded.class, result);
+            var ref = success.analysis().semanticGraph().references().stream()
+                    .filter(r -> r.usage() == ReferenceUsage.BASE_TYPE).findFirst().orElseThrow();
+            var baseTopic = success.analysis().queries().findQualifiedName(QualifiedName.of("Base", "Shared")).getFirst();
+            assertEquals(new BindingResolution.BoundTarget(baseTopic.symbol()), ref.resolution());
+            return;
+        }
+        var rejected = assertInstanceOf(CompilationOutcome.Rejected.class, result);
+        assertEquals(Set.of(RejectionReason.SOURCE_ERRORS), rejected.rejection().reasons());
+        var reference = rejected.analysis().semanticGraph().references().stream()
+                .filter(ref -> ref.usage() == ReferenceUsage.BASE_TYPE).findFirst().orElseThrow();
+        var resolution = assertInstanceOf(BindingResolution.UnresolvedTarget.class, reference.resolution());
+        boolean ambiguous = unqualified && name.equals("Shared");
+        assertEquals(ambiguous ? UnresolvedReason.AMBIGUOUS_NAME : UnresolvedReason.NAME_NOT_FOUND, resolution.reason());
+        assertEquals(ambiguous ? 2 : 0, resolution.candidates().size());
+        assertEquals(name, use.slice(reference.range()));
+        String code = ambiguous ? "ILI-SEM-0002" : "ILI-SEM-0001";
+        assertTrue(rejected.analysis().diagnostics().stream().anyMatch(d -> d.code().value().equals(code)
+                && d.primaryRange().equals(Optional.of(reference.range()))));
     }
 
     @Test void validInvalidValidEditsKeepFreshAndReusedModelsEquivalent() {

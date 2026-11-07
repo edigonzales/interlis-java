@@ -1,6 +1,7 @@
 package guru.interlis.compiler.internal;
 
 import guru.interlis.model.SymbolId;
+import guru.interlis.source.SourceId;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,6 +35,15 @@ final class IndexedDeclarations {
 
     List<ModelEntry> models() {
         return models;
+    }
+
+    Optional<SymbolId> findModelId(String name, int offset, SourceId source) {
+        return models.stream()
+                .filter(e -> e.model().sourceId().equals(source))
+                .filter(e -> e.model().name().equals(name))
+                .filter(e -> e.model().declarationOffset() == offset)
+                .map(ModelEntry::id)
+                .findFirst();
     }
 
     Optional<DeclInfo> byId(SymbolId id) {

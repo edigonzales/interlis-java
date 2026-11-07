@@ -1,6 +1,7 @@
 package guru.interlis.lsp;
 
 import guru.interlis.compiler.CompilerEngines;
+import guru.interlis.execution.CancellationToken;
 import guru.interlis.source.*;
 import guru.interlis.workspace.*;
 import org.eclipse.lsp4j.*;
@@ -62,6 +63,35 @@ class ProjectRenameConsistencyTest {
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
     }
 
+    @Test void aRenameWaitingForDiskVerificationIsCancelledWhenItsBufferChanges() throws Exception {
+        Path folder = project(), root = folder.resolve("Root.ili");
+        var server = open(folder, true, null, null);
+        var verification = new CompletableFuture<Void>();
+        var verifying = new CountDownLatch(1);
+        try {
+            ready(server, root);
+            server.textDocumentsForTest().fileServices(uri -> { }, (files, token) -> {
+                verifying.countDown();
+                return verification;
+            }, (uri, known) -> CompletableFuture.failedFuture(new AssertionError("unexpected identity lookup")));
+
+            String uri = root.toUri().toString();
+            var result = server.getTextDocumentService().rename(new RenameParams(new TextDocumentIdentifier(uri), cursor(), "Renamed"));
+            assertTrue(verifying.await(5, TimeUnit.SECONDS));
+            server.getTextDocumentService().didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(uri, 6),
+                    List.of(new TextDocumentContentChangeEvent(ROOT + "\n!! newer buffer"))));
+
+            var failure = assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS));
+            assertEquals(ResponseErrorCode.ContentModified.getValue(),
+                    assertInstanceOf(ResponseErrorException.class, failure.getCause()).getResponseError().getCode());
+            assertThrows(CancellationException.class, () -> verification.get(5, TimeUnit.SECONDS));
+            ready(server, root);
+        } finally {
+            verification.cancel(false);
+            server.shutdown().get(5, TimeUnit.SECONDS);
+        }
+    }
+
     @Test void aKnownSourceOutsideTheEditableProjectCannotReceiveAPartialRename() throws Exception {
         Path folder=project(),base=folder.resolve("Base.ili"),root=folder.resolve("Root.ili");
         Files.delete(base);
@@ -116,6 +146,35 @@ class ProjectRenameConsistencyTest {
             assertEquals(5,fixed.getVersion()); assertTrue(fixed.getDiagnostics().isEmpty(),fixed.toString());
             assertTrue(server.workspaceForTest().source(new SourceId(base.toUri().toString())).orElseThrow().revision().value()>original.value());
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void removingTheLastClosedFileClearsItsDiagnosticsWithoutAnotherAnalysis() throws Exception {
+        Path folder = Files.createDirectory(temporary.resolve("last-file"));
+        Path file = Files.writeString(folder.resolve("Broken.ili"),
+                "INTERLIS 2.4; MODEL Broken AT \"x\" VERSION \"1\" = DOMAIN D = Missing; END Broken.");
+        String uri = file.toUri().toString();
+        var publications = new LinkedBlockingQueue<PublishDiagnosticsParams>();
+        var server = new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
+        server.textDocumentsForTest().sink(publications::add);
+        var initialize = new InitializeParams();
+        initialize.setWorkspaceFolders(List.of(new WorkspaceFolder(folder.toUri().toString(), "Project")));
+        server.initialize(initialize).get(5, TimeUnit.SECONDS);
+        try {
+            var first = publications.poll(5, TimeUnit.SECONDS);
+            assertNotNull(first);
+            assertEquals(uri, first.getUri());
+            assertNull(first.getVersion());
+            assertFalse(first.getDiagnostics().isEmpty());
+
+            Files.delete(file);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(uri, FileChangeType.Deleted))));
+            var clear = publications.poll(5, TimeUnit.SECONDS);
+            assertNotNull(clear);
+            assertEquals(uri, clear.getUri());
+            assertNull(clear.getVersion());
+            assertTrue(clear.getDiagnostics().isEmpty());
+            assertTrue(server.workspaceForTest().state().sourceRevisions().isEmpty());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
     }
 
     @Test void watcherAliasesReferToTheExistingPhysicalSourceAndKeepOpenClientAuthority() throws Exception {
@@ -193,6 +252,115 @@ class ProjectRenameConsistencyTest {
             ready(server,root); assertEquals(BASE,server.workspaceForTest().source(new SourceId(base.toUri().toString())).orElseThrow().text());
             assertEquals(2,rename(server,root).getDocumentChanges().size());
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void anOlderWatcherResultThroughAnUnknownHardlinkCannotReplaceTheNewerPrimary() throws Exception {
+        Path folder = project(), base = folder.resolve("Base.ili"), root = folder.resolve("Root.ili");
+        var server = open(folder, true, null, null);
+        try {
+            ready(server, root);
+            Path link = Files.createLink(folder.resolve("HardBase.ili"), base);
+            String primaryUri = base.toUri().toString(), aliasUri = link.toUri().toString();
+            var primary = new SourceId(primaryUri);
+            var loader = new ProjectSourceLoader();
+            var documents = server.textDocumentsForTest();
+            var workspaceService = (InterlisWorkspaceService) server.getWorkspaceService();
+
+            var aliasRequest = workspaceService.beginFileReload(aliasUri, 100);
+            assertEquals(aliasUri, aliasRequest.canonicalUri());
+            String oldText = BASE + "\n!! older watcher read";
+            Files.writeString(base, oldText);
+            var older = loader.read(aliasUri, List.of(folder.toRealPath()), CancellationToken.none()).orElseThrow();
+            assertEquals(oldText, older.loaded().text());
+            assertTrue(loader.sameFile(older, primaryUri, CancellationToken.none()));
+
+            var primaryRequest = workspaceService.beginFileReload(primaryUri, 101);
+            assertEquals(primaryUri, primaryRequest.canonicalUri());
+            String newText = BASE + "\n!! newer watcher read";
+            Files.writeString(base, newText);
+            var newer = loader.read(primaryUri, List.of(folder.toRealPath()), CancellationToken.none());
+            documents.applyExternal(primaryUri, primaryUri, 101, newer, Optional.of(primary), false,
+                    resolved -> workspaceService.claimFileRequest(primaryUri, resolved, 101));
+            documents.applyExternal(aliasUri, aliasUri, 100, Optional.of(older), Optional.of(primary), false,
+                    resolved -> workspaceService.claimFileRequest(aliasUri, resolved, 100));
+
+            ready(server, root);
+            assertEquals(newText, server.workspaceForTest().source(primary).orElseThrow().text());
+            assertEquals(2, server.workspaceForTest().state().sourceRevisions().size());
+            assertEquals(2, rename(server, root).getDocumentChanges().size());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
+    @Test void aFileFailureDoesNotPoisonASupersedingRefreshWhileAnotherFileIsPending() throws Exception {
+        Path folder = project(), root = folder.resolve("Root.ili");
+        var server = open(folder, true, null, null);
+        try {
+            ready(server, root);
+            String replaced = folder.resolve("Replaced.ili").toUri().toString();
+            String pending = folder.resolve("Pending.ili").toUri().toString();
+            var documents = server.textDocumentsForTest();
+            var workspaceService = (InterlisWorkspaceService) server.getWorkspaceService();
+            assertNotNull(workspaceService.beginFileReload(replaced, 100));
+            assertNotNull(workspaceService.beginFileReload(pending, 101));
+            documents.externalFailed(replaced, 100, LspFailures.error(ResponseErrorCode.RequestFailed, "prior file read failed"));
+            assertNotNull(workspaceService.beginFileReload(replaced, 102));
+            var outline = server.getTextDocumentService().documentSymbol(new DocumentSymbolParams(new TextDocumentIdentifier(root.toUri().toString())));
+            assertFalse(outline.isDone());
+
+            documents.applyExternal(pending, pending, 101, Optional.empty(), Optional.empty(), true,
+                    resolved -> workspaceService.claimFileRequest(pending, resolved, 101));
+            documents.applyExternal(replaced, replaced, 102, Optional.empty(), Optional.empty(), true,
+                    resolved -> workspaceService.claimFileRequest(replaced, resolved, 102));
+            assertFalse(outline.get(5, TimeUnit.SECONDS).isEmpty());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
+    @Test void closingAStandaloneFileAfterPrimaryDeletionRetainsItsSurvivingHardlink() throws Exception {
+        Path base = Files.writeString(temporary.resolve("Base.ili"), BASE);
+        Path link = Files.createLink(temporary.resolve("HardBase.ili"), base);
+        String primaryUri = base.toUri().toString();
+        var primary = new SourceId(primaryUri);
+        var server = new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
+        server.initialize(new InitializeParams()).get(5, TimeUnit.SECONDS);
+        try {
+            var textDocuments = server.getTextDocumentService();
+            String openText = BASE + "\n!! unsaved primary";
+            textDocuments.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(primaryUri, "interlis", 1, openText)));
+            textDocuments.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(link.toUri().toString(), "interlis", 1, BASE)));
+            ready(server, base);
+            var workspace = server.workspaceForTest();
+            assertEquals(Set.of(primary), workspace.state().sourceRevisions().keySet());
+            assertEquals(openText, workspace.source(primary).orElseThrow().text());
+
+            Files.delete(base);
+            textDocuments.didClose(new DidCloseTextDocumentParams(new TextDocumentIdentifier(primaryUri)));
+            var result = server.getWorkspaceService().executeCommand(new ExecuteCommandParams("interlis.compile", List.of())).get(5, TimeUnit.SECONDS);
+            assertEquals("succeeded", ((Map<?, ?>) result).get("outcome"));
+            assertEquals(Set.of(primary), workspace.state().sourceRevisions().keySet());
+            assertEquals(BASE, workspace.source(primary).orElseThrow().text());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
+    }
+
+    @Test void aDeletedHardlinkAddressCanOpenAsAnIndependentFile() throws Exception {
+        Path folder = project(), base = folder.resolve("Base.ili"), root = folder.resolve("Root.ili");
+        Path link = Files.createLink(folder.resolve("HardBase.ili"), base);
+        var server = open(folder, true, null, null);
+        try {
+            ready(server, root);
+            String uri = link.toUri().toString();
+            Files.delete(link);
+            server.getWorkspaceService().didChangeWatchedFiles(new DidChangeWatchedFilesParams(List.of(new FileEvent(uri, FileChangeType.Deleted))));
+            ready(server, root);
+
+            String distinct = BASE.replace("Base", "Distinct");
+            Files.writeString(link, distinct);
+            server.getTextDocumentService().didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri, "interlis", 1, distinct)));
+            ready(server, link);
+            assertEquals(distinct, server.workspaceForTest().source(new SourceId(uri)).orElseThrow().text());
+            assertEquals(BASE, server.workspaceForTest().source(new SourceId(base.toUri().toString())).orElseThrow().text());
+            assertEquals(3, server.workspaceForTest().state().sourceRevisions().size());
+            assertEquals(2, rename(server, root).getDocumentChanges().size());
+        } finally { server.shutdown().get(5, TimeUnit.SECONDS); }
     }
 
     @Test void oversizedProjectInputHasAControlledSourceLimitFailure() throws Exception {
@@ -311,6 +479,60 @@ class ProjectRenameConsistencyTest {
             assertEquals(updated,server.workspaceForTest().source(new SourceId(root.toUri().toString())).orElseThrow().text());
             var edit=rename(server,root); assertEquals(2,edit.getChanges().size());
         } finally { server.shutdown().get(5,TimeUnit.SECONDS); }
+    }
+
+    @Test void aFullReplacementCanRecoverAfterIdentityLookupRetriesAreExhausted() throws Exception {
+        Path folder = Files.createDirectory(temporary.resolve("known"));
+        Files.writeString(folder.resolve("Base.ili"), BASE);
+        String clientText = "INTERLIS 2.4; MODEL Client AT \"x\" VERSION \"1\" = END Client.";
+        Path client = Files.writeString(temporary.resolve("Client.ili"), clientText);
+        String uri = client.toUri().toString();
+        var document = new TextDocumentIdentifier(uri);
+        var token = CancellationToken.none();
+        var loader = new ProjectSourceLoader();
+        var roots = List.of(folder.toUri().toString());
+        var server = new InterlisLanguageServer(Workspaces.create(CompilerEngines.create(), WorkspaceConfiguration.defaults()));
+        server.initialize(new InitializeParams()).get(5, TimeUnit.SECONDS);
+        try {
+            var service = server.textDocumentsForTest();
+            service.installProject(loader.scan(roots, token), ignored -> true);
+            record Lookup(Map<SourceId, String> known, CompletableFuture<ProjectSourceLoader.IdentityMatch> answer) { }
+            var lookups = new LinkedBlockingQueue<Lookup>();
+            service.fileServices(ignored -> { }, (files, cancellation) -> CompletableFuture.completedFuture(null),
+                    (address, known) -> {
+                        var answer = new CompletableFuture<ProjectSourceLoader.IdentityMatch>();
+                        lookups.add(new Lookup(known, answer));
+                        return answer;
+                    });
+            service.didOpen(new DidOpenTextDocumentParams(new TextDocumentItem(uri, "interlis", 1, clientText)));
+            for (int i = 0; i < 4; i++) {
+                var lookup = lookups.poll(5, TimeUnit.SECONDS);
+                assertNotNull(lookup);
+                var match = loader.identify(uri, lookup.known(), token);
+                String name = "NewSource" + i;
+                Files.writeString(folder.resolve(name + ".ili"),
+                        "INTERLIS 2.4; MODEL " + name + " AT \"x\" VERSION \"1\" = END " + name + ".");
+                service.installProject(loader.scan(roots, token), ignored -> true);
+                lookup.answer().complete(match);
+            }
+            var failed = assertThrows(ExecutionException.class, () ->
+                    service.documentSymbol(new DocumentSymbolParams(document)).get(5, TimeUnit.SECONDS));
+            assertEquals(ResponseErrorCode.ContentModified.getValue(),
+                    assertInstanceOf(ResponseErrorException.class, failed.getCause()).getResponseError().getCode());
+            assertTrue(server.workspaceForTest().source(new SourceId(uri)).isEmpty());
+
+            String replacement = clientText + "\n!! client full replacement";
+            service.didChange(new DidChangeTextDocumentParams(new VersionedTextDocumentIdentifier(uri, 2),
+                    List.of(new TextDocumentContentChangeEvent(replacement))));
+            var recovery = lookups.poll(5, TimeUnit.SECONDS);
+            assertNotNull(recovery);
+            recovery.answer().complete(loader.identify(uri, recovery.known(), token));
+            var symbols = service.documentSymbol(new DocumentSymbolParams(document)).get(5, TimeUnit.SECONDS);
+            assertEquals(List.of("Client"), symbols.stream().map(symbol -> symbol.getRight().getName()).toList());
+            assertEquals(replacement, server.workspaceForTest().source(new SourceId(uri)).orElseThrow().text());
+        } finally {
+            server.shutdown().get(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test void primaryDeletionReportedThroughTheSurvivingAliasPreservesTheCoreIdentity() throws Exception {

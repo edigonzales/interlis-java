@@ -1,6 +1,7 @@
 package guru.interlis.compiler;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.compiler.query.LanguageQueries;
 import guru.interlis.model.*;
 import guru.interlis.model.query.TypeRelations;
 import java.util.List;
@@ -166,6 +167,12 @@ class AssociationAccessContractTest {
                 ASSOCIATION Second = a -- {1} A; owner2 -- {1} Owner; END Second;
                 CONSTRAINTS OF Owner"""));
         assertTrue(ambiguous.analysis().diagnostics().stream().anyMatch(d -> d.code().value().equals("ILI-SEM-0002")));
+        var ambiguousPath = ambiguous.analysis().semanticGraph().references().stream()
+                .filter(ref -> ref.resolution() instanceof BindingResolution.UnresolvedTarget unresolved
+                        && unresolved.reason() == UnresolvedReason.AMBIGUOUS_NAME).findFirst().orElseThrow();
+        var resolution = assertInstanceOf(BindingResolution.UnresolvedTarget.class, ambiguousPath.resolution());
+        assertEquals(2, resolution.candidates().size());
+        assertTrue(ambiguousPath.segments().stream().allMatch(segment -> segment.target().isEmpty()));
         rejects("2.4", base.replace("owner --", "owner (EXTERNAL) --"));
         succeeds("2.4", base.replace("a --", "a (EXTERNAL) --"));
         rejects("2.4", base.replace("a -- {1} A", "a -- {1} Wrong.A"));
@@ -180,6 +187,20 @@ class AssociationAccessContractTest {
                 CLASS B = END B;
                 ASSOCIATION Link = a -- {1} A; b -- {1} B; END Link; END T;
                 """);
+    }
+
+    @Test void aMissingRoleTargetDoesNotBecomeAnInventedDeclaration() {
+        var rejected = rejects("2.4", model("1", "single(a)")
+                .replace("a -- {1} A", "a -- {1} MissingClassWithLongName"));
+        var analysis = rejected.analysis();
+        var reference = analysis.semanticGraph().references().stream()
+                .filter(ref -> ref.usage() == ReferenceUsage.ROLE_TARGET
+                        && ref.segments().getFirst().text().equals("MissingClassWithLongName"))
+                .findFirst().orElseThrow();
+        var range = reference.range();
+        var cursor = new guru.interlis.source.SourceRange(range.source(), range.revision(),
+                range.startOffset(), range.startOffset());
+        assertTrue(LanguageQueries.create().symbolAt(analysis, cursor, CancellationToken.none()).known().isEmpty());
     }
 
     @Test void inheritsAccessThroughClassIdentityAndHiding() {
