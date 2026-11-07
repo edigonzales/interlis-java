@@ -34,7 +34,7 @@ public final class RepositoryResolutionRenderer {
                 boolean lookup = step.kind() == RepositorySearchStep.Kind.LOOKUP;
                 code = lookup ? "ILI-RES-0011" : "ILI-RES-0012";
                 key = lookup ? "diagnostic.resolution.lookup" : "diagnostic.resolution.selected";
-                arguments = List.of(new DiagnosticArgument.IdentifierArgument("model", step.modelName()),
+                arguments = List.of(new DiagnosticArgument.IdentifierArgument("model", delimitedLocation(step.modelName())),
                         new DiagnosticArgument.TextArgument(lookup ? "repository" : "detail",
                                 lookup ? delimitedLocation(step.repository().toString()) : selectedDetail(step.detail())));
             }

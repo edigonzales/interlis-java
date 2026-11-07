@@ -19,9 +19,9 @@ class RepositoryLogOrderTest {
             fixture.success(run);
             var lines = run.err().lines().filter(s -> s.startsWith("INFO ") && s.contains(" [ILI-RES-")).toList();
             assertEquals(4, lines.size(), run.err());
-            assertTrue(lines.get(0).equals("INFO Model lookup: Basis @ <" + base + "> [ILI-RES-0011]"), run.err());
+            assertTrue(lines.get(0).equals("INFO Model lookup: <Basis> @ <" + base + "> [ILI-RES-0011]"), run.err());
             assertTrue(lines.get(1).contains("[ILI-RES-0010]") && lines.get(1).contains(base + "ilimodels.xml"), run.err());
-            assertTrue(lines.get(2).equals("INFO Model selected: Basis 1 <" + base + "Basis.ili> [ILI-RES-0012]"), run.err());
+            assertTrue(lines.get(2).equals("INFO Model selected: <Basis> 1 <" + base + "Basis.ili> [ILI-RES-0012]"), run.err());
             assertTrue(lines.get(3).contains("[ILI-RES-0010]") && lines.get(3).contains(base + "Basis.ili"), run.err());
             assertFalse(run.err().contains("ILI-RES-0013") || run.err().contains("HTTP 304"), run.err());
             assertEquals(2, fixture.bodies.get(), "fresh application cache avoids all further transfers");
