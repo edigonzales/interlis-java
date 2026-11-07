@@ -24,7 +24,9 @@ const checksum = sha256(fs.readFileSync(file));
 assert(fs.readFileSync(path.join(bundle, 'SHA256SUMS'), 'utf8').trim() === checksum + '  ' + zip,
     'Compiler ZIP checksum mismatch');
 
-const deploy = spawnSync('mvn', ['-B', '-ntp', 'org.apache.maven.plugins:maven-deploy-plugin:3.1.4:deploy-file',
+// The native HTTP transport broke the connection while writing the ZIP to Reposilite.
+const transport = localRepository ? [] : ['-Dmaven.resolver.transport=wagon', '-Daether.connector.basic.threads=1'];
+const deploy = spawnSync('mvn', ['-B', '-ntp', ...transport, 'org.apache.maven.plugins:maven-deploy-plugin:3.1.4:deploy-file',
     '-DrepositoryId=compiler-snapshots', '-Durl=' + repository, '-Dfile=' + file,
     '-DgroupId=guru.interlis', '-DartifactId=' + artifactId, '-Dversion=' + version,
     '-Dpackaging=zip', '-DgeneratePom=true'], {stdio: 'inherit'});
