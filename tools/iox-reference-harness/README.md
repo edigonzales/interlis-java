@@ -71,6 +71,63 @@ Teilereignisse und einen strukturierten IOX-Fehler auf stderr geprüft.
 python3 -B tools/iox-reference-harness/test_run.py
 ```
 
+## Externe Validator-Testsuite für XTF 2.3
+
+Der [Fallkatalog](../../testdata/reference/suite-interlis/cases.json) erschliesst
+223 Originalfälle aus [suite-interlis](https://github.com/geostandards-ch/suite-interlis).
+Am Pin ist keine eigenständige Lizenzdatei verzeichnet. Lege den
+gepinnten Checkout ausserhalb des Produktrepositorys an.
+
+```sh
+git clone --no-checkout https://github.com/geostandards-ch/suite-interlis.git /tmp/suite-interlis
+git -C /tmp/suite-interlis checkout --detach f30711184d2374feacb81c5742382d35597164ca
+python3 -B tools/iox-reference-harness/suite_inventory.py --checkout /tmp/suite-interlis
+python3 -B tools/iox-reference-harness/test_suite_inventory.py
+```
+
+Die Inventarprüfung läuft offline. Sie prüft den Git-Pin, die SHA-256-Werte
+der XTF- und Modelldateien, die Java-Assertions und die referenzierten
+Ergebniszeilen der englischen Dokumentation. Die Pfade und Zeilen im Katalog
+beziehen sich auf den gepinnten Checkout. Die Normabschnitte beziehen sich
+standardmässig auf das [Referenzhandbuch 2.3 vom 13. April 2006](../../testdata/reference/norms/documents.json).
+Historische Annahmen und Skips gehören zu den jeweils ausgewiesenen
+Originalprofilen, darunter ilivalidator 1.11.14.
+
+`phases` ordnet einen Fall dem XTF-2.3-Format (P4.2), der Datenvalidierung
+(P4.4 und folgende) oder der Geometrie- und Topologieprüfung (G1 und
+folgende) zu. Bei mehreren Phasen braucht jede ihren eigenen Nachweis.
+Für P4.3 werden getrennte XTF-2.4-Fälle nach versionsspezifischer Prüfung
+benötigt. Ein erfolgreicher Inventarlauf bestätigt Quellen und Erwartungen.
+
+### Einzelne Originalfälle mit ilivalidator ausführen
+
+```sh
+python3 -B tools/iox-reference-harness/suite_run.py \
+  --checkout /tmp/suite-interlis --archive /absolute/ilivalidator-1.15.0.zip \
+  --case RXW.T02b --case RKo.T06c --output /tmp/suite-interlis-run
+python3 -B tools/iox-reference-harness/test_suite_result.py
+```
+
+Der Runner verlangt das lokale ZIP aus [dem bestehenden Lock](legacy-lock.json).
+Er prüft den Git-Pin und die Eingabehashes der ausgewählten Fälle. Pro Fall
+startet er ilivalidator 1.15.0 mit `-Xmx2g`, einem isolierten Arbeitsverzeichnis
+und ausschliesslich den geprüften lokalen Modellen. `--output` bezeichnet ein
+neues Verzeichnis ausserhalb des Produktrepositorys und des Suite-Checkouts.
+Dort stehen `report.json` und die gehashten Rohstreams je ausgeführtem Fall.
+Ohne `--output` wird ein temporäres Verzeichnis angelegt. Pro Aufruf sind bis
+zu zwölf IDs und pro Prozess bis zu 30 Sekunden vorgesehen.
+
+Der Bericht trennt die Upstream-Erwartung, den Normbezug, die tatsächliche
+Beobachtung und den Vergleich. Eine bestätigte Akzeptanz setzt beide
+Validierungspässe voraus. Bei einer erwarteten Ablehnung müssen der
+kontrollierte Prozessabschluss und die fallspezifische Diagnose
+übereinstimmen. Für weitere Negativfälle kann der Runner den Prozess
+beobachten, auch wenn die fachliche Ablehnung noch keinen Vergleichsmassstab
+für 1.15.0 hat. Bei `RHE.T01a` endet 1.15.0 beispielsweise bereits bei der
+Modellerkennung. Der JVM-Exit allein bestätigt die beabsichtigte
+Headerprüfung nicht. Der Runner liefert Exit 0, wenn alle ausgewählten
+Fälle `PASS` erreichen.
+
 ## Korpus und beobachteter Lauf
 
 Die [Fallliste](../../testdata/reference/iox/cases.json) registriert die
