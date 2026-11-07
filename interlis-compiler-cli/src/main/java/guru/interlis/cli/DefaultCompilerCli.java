@@ -198,15 +198,20 @@ public final class DefaultCompilerCli implements CliApplication {
 
     static String compilerVersionLine() {
         String version = "interlis-compiler " + VersionManifest.current().toolVersion();
+        String revision = buildRevision();
+        return revision == null ? version : version + " (git " + revision + ")";
+    }
+
+    private static String buildRevision() {
         try (var resource = DefaultCompilerCli.class.getResourceAsStream("build-revision.txt")) {
             if (resource != null) {
                 String revision = new String(resource.readNBytes(65), StandardCharsets.US_ASCII);
-                if (revision.matches("[0-9a-f]{40}|[0-9a-f]{64}")) return version + " (git " + revision + ")";
+                if (revision.matches("[0-9a-f]{40}|[0-9a-f]{64}")) return revision;
             }
         } catch (java.io.IOException unavailable) {
             // The build revision is optional presentation metadata.
         }
-        return version;
+        return null;
     }
 
     private CliExecutionResult help(List<String> arguments, CliEnvironment environment) {
@@ -310,6 +315,7 @@ public final class DefaultCompilerCli implements CliApplication {
         VersionManifest manifest = VersionManifest.current();
         if (arguments.size() > 1) {
             if (arguments.size() == 2 && arguments.get(1).equals("--json")) {
+                String revision = buildRevision();
                 String json = "{\"tool\":\"interlis-compiler\",\"version\":\""
                         + manifest.toolVersion() + "\",\"apiVersion\":\""
                         + manifest.apiVersion() + "\",\"diagnosticCatalogVersion\":\""
@@ -317,13 +323,14 @@ public final class DefaultCompilerCli implements CliApplication {
                         + manifest.protocolIdentifier() + "\",\"languageProfiles\":\""
                         + manifest.languageProfiles() + "\",\"formatVersion\":\""
                         + manifest.formatVersion() + "\",\"diagramSchemaVersion\":\""
-                        + manifest.diagramSchemaVersion() + "\"}";
+                        + manifest.diagramSchemaVersion() + "\""
+                        + (revision == null ? "" : ",\"gitCommit\":\"" + revision + "\"") + "}";
                 environment.out().println(json);
                 return result(CliTermination.SUCCESS, List.of(), json);
             }
             return usage(environment, "version accepts only --json");
         }
-        String output = "interlis-compiler " + manifest.toolVersion() + "\n"
+        String output = compilerVersionLine() + "\n"
                 + "api: " + manifest.apiVersion() + "\n"
                 + "diagnostics: " + manifest.diagnosticCatalogVersion() + "\n"
                 + "protocol: " + manifest.protocolIdentifier() + "\n"

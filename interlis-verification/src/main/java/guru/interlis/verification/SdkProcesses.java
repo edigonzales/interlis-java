@@ -19,12 +19,23 @@ public final class SdkProcesses {
         for(String field:List.of("api:","diagnostics:","protocol:","format:","diagram:"))require(version.stdout().contains(field),"Missing SDK version field: "+field);
         results.add(version);var versionJson=expect(root,List.of("version","--json"),0);results.add(versionJson);
         var manifest=JsonParser.parseString(versionJson.stdout()).getAsJsonObject();version(manifest);
+        String revision = ProfileFingerprint.commit(root);
+        require(manifest.has("gitCommit") && manifest.get("gitCommit").getAsJsonPrimitive().isString()
+                && s(manifest,"gitCommit").equals(revision), "SDK version JSON does not identify the built commit");
+        String versionLine = "interlis-compiler " + s(manifest,"version") + " (git " + revision + ")";
+        require(version.stdout().lines().findFirst().orElse("").equals(versionLine),
+                "SDK version text does not match version JSON");
         Path manifestFile=VerificationLayout.forInvocation(root).rootReport("sdk/version-manifest.json");
         Files.createDirectories(manifestFile.getParent());
         // The actual CLI byte stream is the single SDK version producer in both build profiles.
         Files.writeString(manifestFile,versionJson.stdout());
         var capabilities=expect(root,List.of("capabilities"),0);version(JsonParser.parseString(capabilities.stdout()).getAsJsonObject());results.add(capabilities);
-        results.add(expect(root,List.of("check",root.resolve("testdata/models/base24.ili").toString(),root.resolve("testdata/models/survey24.ili").toString()),0));
+        var check = expect(root,List.of("check","--verbose","--color=never",
+                root.resolve("testdata/models/base24.ili").toString(),
+                root.resolve("testdata/models/survey24.ili").toString()),0);
+        require(check.stderr().lines().findFirst().orElse("").equals("INFO " + versionLine),
+                "Verbose SDK check does not match the version command");
+        results.add(check);
         var negative=expect(root,List.of("check",root.resolve("testdata/models/broken24.ili").toString()),1);require(negative.stderr().contains("ILI-"),"Missing SDK diagnostic");results.add(negative);
         Path temporary=Files.createTempDirectory("interlis-sdk-");Path model=temporary.resolve("model.ili");
         try {

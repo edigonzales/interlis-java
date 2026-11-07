@@ -25,6 +25,14 @@ dar. Assoziationen mit eigenen Attributen oder mehr als zwei Rollen erscheinen
 weiterhin als Knoten. `version --json` unterscheidet Projekt-, API-, Protokoll-,
 Diagnosekatalog-, Format- und Diagrammversion.
 
+`version` zeigt in der ersten Zeile dieselbe Buildrevision wie
+`check --verbose`. In `version --json` und im daraus erzeugten
+SDK-Versionsmanifest steht sie im optionalen Stringfeld `gitCommit`.
+Der vollständige SHA bezeichnet `HEAD` zum Buildzeitpunkt. Lokale Änderungen
+sind darin nicht erfasst. Ohne gültige eingebettete Revision entfällt die
+Git-Angabe. Die Textausgabe nennt zur Fehlersuche auch die laufende JVM
+und die Parserherkunft.
+
 Exitcodes sind 0 für den erfolgreichen Befehl, 1 für fachliche Ablehnung,
 2 für Bedienfehler, 3 für interne oder operationale Fehler und 4 für Abbruch.
 In `format --check` bezeichnet 1 auch einen Formatierungsbedarf.
