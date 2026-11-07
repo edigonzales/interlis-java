@@ -1,14 +1,18 @@
 package guru.interlis.xtf23;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.BlackboxType;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.OidType;
+import guru.interlis.model.QualifiedName;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TextKind;
@@ -35,6 +39,7 @@ import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -423,14 +428,77 @@ public final class Xtf23Reader extends TransferReader {
             }
             case STRUCTURE_VALUE -> {
                 attributes(false);
-                var result = readStructure((StructureValueType) type, xml.nextTag());
+                var result = readStructure(((StructureValueType) type).targetRoots(), xml.nextTag());
                 require(END_ELEMENT, xml.nextTag(), tag);
                 yield result;
             }
             case COLLECTION -> readCollection((CollectionType) type, tag);
+            case BLACKBOX -> readBlackbox((BlackboxType) type, tag);
+            case OID -> readOid((OidType) type, tag);
+            case CLASS_VALUE -> new TransferValue.ClassName(readModelPath(false));
+            case ATTRIBUTE_PATH -> new TransferValue.AttributePath(readModelPath(true));
             case COORDINATE, GEOMETRY -> readGeometry(type, tag);
             default -> throw xml.error(UNSUPPORTED, "Unsupported XTF type " + type.kind() + " for " + tag);
         };
+    }
+
+    private TransferValue.Oid readOid(OidType type, String tag) throws XMLStreamException {
+        String value = identifier(required(attributes(false, "OID"), "OID"));
+        if (!Xtf23Lexemes.oidValue(type, value)) {
+            throw xml.error(INVALID_WIRE, "Invalid XTF OID value for " + type.oidKind());
+        }
+        require(END_ELEMENT, xml.nextTag(), tag);
+        return new TransferValue.Oid(value);
+    }
+
+    private QualifiedName readModelPath(boolean attribute) throws XMLStreamException {
+        attributes(false);
+        String value = xml.text();
+        if (value.length() > Xtf23Lexemes.MAX_MODEL_PATH_LENGTH) {
+            throw xml.error(LIMIT_EXCEEDED, "XTF model path exceeds the length limit");
+        }
+        var segments = List.of(value.split("\\.", -1));
+        if (!Xtf23Lexemes.modelPath(segments, attribute)) {
+            throw xml.error(INVALID_WIRE, "Invalid qualified XTF model path");
+        }
+        return new QualifiedName(segments);
+    }
+
+    private TransferValue readBlackbox(BlackboxType type, String tag) throws XMLStreamException {
+        attributes(false);
+        int token = xml.nextTag();
+        var value = switch (type.blackboxKind()) {
+            case BINARY -> {
+                require(START_ELEMENT, token, "BINBLBOX");
+                attributes(false);
+                String encoded = xml.text();
+                var compact = new StringBuilder(encoded.length());
+                for (int i = 0; i < encoded.length(); i++) {
+                    char c = encoded.charAt(i);
+                    if (c != ' ' && c != '\r' && c != '\n' && c != '\t') {
+                        compact.append(c);
+                    }
+                }
+                String base64 = compact.toString();
+                byte[] decoded;
+                try {
+                    decoded = Base64.getDecoder().decode(base64);
+                } catch (IllegalArgumentException failure) {
+                    throw xml.error(INVALID_WIRE, "Invalid XTF BINBLBOX Base64");
+                }
+                if (!Base64.getEncoder().encodeToString(decoded).equals(base64)) {
+                    throw xml.error(INVALID_WIRE, "Invalid padding or unused bits in XTF BINBLBOX Base64");
+                }
+                yield new TransferValue.Binary(decoded);
+            }
+            case XML -> {
+                require(START_ELEMENT, token, "XMLBLBOX");
+                attributes(false);
+                yield new TransferValue.XmlFragment(Xtf23XmlFragment.read(xml));
+            }
+        };
+        require(END_ELEMENT, xml.nextTag(), tag);
+        return value;
     }
 
     private TransferValue.Text readText(boolean multiline) throws XMLStreamException {
@@ -520,6 +588,15 @@ public final class Xtf23Reader extends TransferReader {
         attributes(false);
         token = xml.nextTag();
         rejectGeometryExtension(token);
+        Optional<TransferValue.Structured> lineAttributes = Optional.empty();
+        if (!curve.lineAttributeRoots().isEmpty()) {
+            require(START_ELEMENT, token, "LINEATTR");
+            attributes(false);
+            lineAttributes = Optional.of(readStructure(curve.lineAttributeRoots(), xml.nextTag()));
+            require(END_ELEMENT, xml.nextTag(), "LINEATTR");
+            token = xml.nextTag();
+            rejectGeometryExtension(token);
+        }
         var start = readCoordinate(token, curve.dimensions());
         var segments = new ArrayList<TransferGeometry.Segment>();
         token = xml.nextTag();
@@ -546,7 +623,7 @@ public final class Xtf23Reader extends TransferReader {
         if (segments.isEmpty()) {
             throw xml.error(INVALID_WIRE, "XTF POLYLINE requires at least one segment after its start position");
         }
-        return new TransferGeometry.Polyline(List.of(new TransferGeometry.CurvePart(start, segments)));
+        return new TransferGeometry.Polyline(List.of(new TransferGeometry.CurvePart(start, segments)), lineAttributes);
     }
 
     private TransferGeometry.Arc readArc(int dimensions) throws XMLStreamException {
@@ -598,16 +675,16 @@ public final class Xtf23Reader extends TransferReader {
     }
 
     private void rejectGeometryExtension(int token) {
-        if (is(START_ELEMENT, token, "CLIPPED") || is(START_ELEMENT, token, "LINEATTR")) {
+        if (is(START_ELEMENT, token, "CLIPPED")) {
             throw xml.error(UNSUPPORTED, "Unsupported XTF geometry element " + elementName(token));
         }
     }
 
-    private TransferValue.Structured readStructure(StructureValueType expected, int token) throws XMLStreamException {
+    private TransferValue.Structured readStructure(List<SymbolId> roots, int token) throws XMLStreamException {
         String tag = elementName(token);
         var descriptor = objects.get(tag);
         if (descriptor == null || descriptor.kind() != SymbolKind.STRUCTURE
-                || descriptor.modifiers().contains(Modifier.ABSTRACT) || !layout.matchesRoots(descriptor, expected.targetRoots())) {
+                || descriptor.modifiers().contains(Modifier.ABSTRACT) || !layout.matchesRoots(descriptor, roots)) {
             throw xml.error(INVALID_WIRE, "Unexpected concrete XTF structure " + tag);
         }
         attributes(false);
@@ -622,7 +699,7 @@ public final class Xtf23Reader extends TransferReader {
         var values = new ArrayList<TransferValue>();
         int token = xml.nextTag();
         while (!is(END_ELEMENT, token, tag)) {
-            values.add(readStructure(structure, token));
+            values.add(readStructure(structure.targetRoots(), token));
             token = xml.nextTag();
         }
         if (values.isEmpty()) {

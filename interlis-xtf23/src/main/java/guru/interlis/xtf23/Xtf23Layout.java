@@ -145,12 +145,9 @@ final class Xtf23Layout {
         return type.dimensions();
     }
 
-    record CurveEncoding(int dimensions, boolean straights, boolean arcs) { }
+    record CurveEncoding(int dimensions, boolean straights, boolean arcs, List<SymbolId> lineAttributeRoots) { }
 
     CurveEncoding curveEncoding(GeometryType type) {
-        if (type.lineAttributes().isPresent()) {
-            throw unsupported("XTF LINEATTR is unsupported");
-        }
         var domain = type.vertexDomain().flatMap(id -> plan.symbol(new SymbolRef(plan.snapshotId(), id)).known());
         if (domain.isEmpty() || !(domain.orElseThrow() instanceof DomainSymbol vertex)
                 || !(type(new TypeRef(plan.snapshotId(), vertex.typeId())) instanceof CoordinateType coordinate)) {
@@ -169,7 +166,7 @@ final class Xtf23Layout {
                 default -> throw unsupported("Unsupported XTF line form " + origin.key());
             }
         }
-        return new CurveEncoding(dimensions(coordinate), straights, arcs);
+        return new CurveEncoding(dimensions(coordinate), straights, arcs, type.lineAttributes().stream().toList());
     }
 
     private static Xtf23Exception unsupported(String message) {

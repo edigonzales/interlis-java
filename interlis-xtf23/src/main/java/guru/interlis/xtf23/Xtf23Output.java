@@ -9,6 +9,7 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 import static guru.interlis.xtf23.Xtf23Exception.Reason.*;
@@ -69,6 +70,19 @@ final class Xtf23Output {
             start = carriage + 1;
         }
         xml.writeCharacters(value.substring(start));
+    }
+
+    void fragment(String value) throws XMLStreamException {
+        checkCharacters(value);
+        String checked = Xtf23XmlFragment.validate(value, depth, output.cancellation);
+        // Finish the pending wrapper start tag before inserting checked XML events serialized as UTF-8.
+        xml.writeCharacters("");
+        xml.flush();
+        try {
+            output.write(checked.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException failure) {
+            throw new XMLStreamException(failure);
+        }
     }
 
     void endDocument() throws XMLStreamException {

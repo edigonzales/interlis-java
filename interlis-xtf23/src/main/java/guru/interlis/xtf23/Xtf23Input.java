@@ -11,7 +11,10 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayDeque;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 
 import static guru.interlis.xtf23.Xtf23Exception.Reason.*;
 import static javax.xml.stream.XMLStreamConstants.*;
@@ -23,11 +26,13 @@ final class Xtf23Input {
     static final int MAX_OBJECT_UNITS = 16 * MAX_TEXT;
     private static final int MAX_OBJECT_TOKENS = 1_000_000;
     static final int MAX_DEPTH = 128;
-    private static final int MAX_ATTRIBUTES = 64;
+    static final int MAX_ATTRIBUTES = 64;
     private static final int MAX_NAME = 1024;
 
     private final BorrowedInput input;
     private XMLStreamReader xml;
+    private int depth;
+    private final ArrayDeque<NamespaceScope> namespaces = new ArrayDeque<>();
     private int objectTokens = -1;
     private long objectUnits;
 
@@ -100,6 +105,9 @@ final class Xtf23Input {
                 for (int i = 0; i < xml.getAttributeCount(); i++) {
                     objectUnits -= xml.getAttributeValue(i).length();
                 }
+                for (int i = 0; i < xml.getNamespaceCount(); i++) {
+                    objectUnits -= Objects.toString(xml.getNamespaceURI(i), "").length();
+                }
             }
             case CHARACTERS, CDATA, SPACE, COMMENT -> objectUnits -= xml.getTextLength();
             case PROCESSING_INSTRUCTION -> objectUnits -= Objects.toString(xml.getPIData(), "").length();
@@ -113,13 +121,51 @@ final class Xtf23Input {
     int next() throws XMLStreamException {
         input.cancellation.throwIfCancellationRequested();
         input.remaining = MAX_TOKEN_BYTES;
+        if (xml.getEventType() == END_ELEMENT) {
+            if (!namespaces.isEmpty() && namespaces.peek().depth() == depth) {
+                namespaces.pop();
+            }
+            depth--;
+        }
         int token = xml.next();
         if (token == DTD || token == ENTITY_REFERENCE) {
             throw error(UNSAFE_XML, "DTD declarations and custom XML entities are forbidden");
         }
+        if (token == START_ELEMENT) {
+            depth++;
+            if (xml.getNamespaceCount() > MAX_ATTRIBUTES) {
+                throw error(LIMIT_EXCEEDED, "Too many namespace declarations on an XTF element");
+            }
+            if (xml.getNamespaceCount() > 0) {
+                var declarations = new TreeMap<String, String>();
+                for (int i = 0; i < xml.getNamespaceCount(); i++) {
+                    String uri = Objects.toString(xml.getNamespaceURI(i), "");
+                    if (uri.length() > MAX_TEXT) {
+                        throw error(LIMIT_EXCEEDED, "XTF namespace URI exceeds the text limit");
+                    }
+                    declarations.put(Objects.toString(xml.getNamespacePrefix(i), ""), uri);
+                }
+                namespaces.push(new NamespaceScope(depth, declarations));
+            }
+        }
         accountObjectToken(token);
         return token;
     }
+
+    Map<String, String> fragmentNamespaces(boolean root) {
+        if (!root) {
+            return !namespaces.isEmpty() && namespaces.peek().depth() == depth
+                    ? namespaces.peek().declarations() : Map.of();
+        }
+        var bindings = new TreeMap<String, String>();
+        bindings.put("", "");
+        for (var scope : namespaces.reversed()) {
+            bindings.putAll(scope.declarations());
+        }
+        return bindings;
+    }
+
+    private record NamespaceScope(int depth, Map<String, String> declarations) { }
 
     int nextTag() throws XMLStreamException {
         while (true) {
@@ -163,6 +209,7 @@ final class Xtf23Input {
                 throw translate(e);
             } finally {
                 xml = null;
+                namespaces.clear();
             }
         }
     }

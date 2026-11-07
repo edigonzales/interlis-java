@@ -1,14 +1,18 @@
 package guru.interlis.xtf23;
 
 import guru.interlis.execution.CancellationToken;
+import guru.interlis.model.BlackboxType;
 import guru.interlis.model.CollectionType;
 import guru.interlis.model.CoordinateType;
 import guru.interlis.model.GeometryType;
 import guru.interlis.model.LanguageVersion;
 import guru.interlis.model.ModelSymbol;
 import guru.interlis.model.Modifier;
+import guru.interlis.model.OidType;
+import guru.interlis.model.QualifiedName;
 import guru.interlis.model.ReferenceType;
 import guru.interlis.model.StructureValueType;
+import guru.interlis.model.SymbolId;
 import guru.interlis.model.SymbolKind;
 import guru.interlis.model.SymbolRef;
 import guru.interlis.model.TextKind;
@@ -25,6 +29,7 @@ import guru.interlis.transfer.TransferWriter;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.OutputStream;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -307,10 +312,50 @@ public final class Xtf23Writer extends TransferWriter {
             case ENUMERATION, ALIGNMENT -> writeEnumeration(requireValue(value, Enumeration.class));
             case NUMERIC -> xml.text(number(requireValue(value, NumberValue.class)));
             case REFERENCE -> writeReference(requireValue(value, Reference.class), ((ReferenceType) type).external(), false);
-            case STRUCTURE_VALUE -> writeStructure((StructureValueType) type, requireValue(value, Structured.class));
+            case STRUCTURE_VALUE -> writeStructure(((StructureValueType) type).targetRoots(), requireValue(value, Structured.class));
             case COLLECTION -> writeCollection((CollectionType) type, requireValue(value, Repeated.class));
+            case BLACKBOX -> writeBlackbox((BlackboxType) type, value);
+            case OID -> writeOid((OidType) type, requireValue(value, Oid.class));
+            case CLASS_VALUE -> writeModelPath(requireValue(value, ClassName.class).name(), false);
+            case ATTRIBUTE_PATH -> writeModelPath(requireValue(value, AttributePath.class).name(), true);
             case COORDINATE, GEOMETRY -> writeGeometry(type, value);
             default -> throw error(UNSUPPORTED, "Unsupported XTF type " + type.kind());
+        }
+    }
+
+    private void writeOid(OidType type, Oid value) throws XMLStreamException {
+        String lexeme = identifier(value.lexeme());
+        if (!Xtf23Lexemes.oidValue(type, lexeme)) {
+            throw error(INVALID_WIRE, "Invalid XTF OID value for " + type.oidKind());
+        }
+        xml.attribute("OID", lexeme);
+    }
+
+    private void writeModelPath(QualifiedName name, boolean attribute) throws XMLStreamException {
+        if (!Xtf23Lexemes.modelPath(name.segments(), attribute)) {
+            throw error(INVALID_WIRE, "Invalid qualified XTF model path");
+        }
+        String value = name.toString();
+        if (value.length() > Xtf23Lexemes.MAX_MODEL_PATH_LENGTH) {
+            throw error(LIMIT_EXCEEDED, "XTF model path exceeds the length limit");
+        }
+        xml.text(value);
+    }
+
+    private void writeBlackbox(BlackboxType type, TransferValue value) throws XMLStreamException {
+        switch (type.blackboxKind()) {
+            case BINARY -> {
+                var binary = requireValue(value, Binary.class);
+                if (binary.size() > Xtf23Input.MAX_TEXT / 4 * 3) {
+                    throw error(LIMIT_EXCEEDED, "XTF BINBLBOX exceeds the Base64 text limit");
+                }
+                textElement("BINBLBOX", Base64.getEncoder().encodeToString(binary.bytes()));
+            }
+            case XML -> {
+                xml.start("XMLBLBOX");
+                xml.fragment(requireValue(value, XmlFragment.class).xml());
+                xml.end();
+            }
         }
     }
 
@@ -347,10 +392,10 @@ public final class Xtf23Writer extends TransferWriter {
         return lexeme;
     }
 
-    private void writeStructure(StructureValueType expected, Structured value) throws XMLStreamException {
+    private void writeStructure(List<SymbolId> roots, Structured value) throws XMLStreamException {
         var descriptor = plan.object(value.type()).orElseThrow(() -> error(INVALID_WIRE, "Unknown XTF structure type"));
         if (descriptor.kind() != SymbolKind.STRUCTURE || descriptor.modifiers().contains(Modifier.ABSTRACT)
-                || !layout.matchesRoots(descriptor, expected.targetRoots())) {
+                || !layout.matchesRoots(descriptor, roots)) {
             throw error(INVALID_WIRE, "Unexpected concrete XTF structure " + descriptor.name().declared());
         }
         xml.start(descriptor.name().declared().toString());
@@ -369,7 +414,7 @@ public final class Xtf23Writer extends TransferWriter {
             throw error(UNSUPPORTED, "XTF 2.3 collections require structure values");
         }
         for (var value : collection.values()) {
-            writeStructure(structure, requireValue(value, Structured.class));
+            writeStructure(structure.targetRoots(), requireValue(value, Structured.class));
         }
     }
 
@@ -457,6 +502,12 @@ public final class Xtf23Writer extends TransferWriter {
     }
 
     private void writePolyline(Polyline line, Xtf23Layout.CurveEncoding curve) throws XMLStreamException {
+        if (curve.lineAttributeRoots().isEmpty() && line.lineAttributes().isPresent()) {
+            throw error(INVALID_WIRE, "XTF LINEATTR is not declared for this line");
+        }
+        if (!curve.lineAttributeRoots().isEmpty() && line.lineAttributes().isEmpty()) {
+            throw error(INVALID_WIRE, "XTF LINEATTR is required for this line");
+        }
         if (line.parts().size() != 1) {
             throw error(UNSUPPORTED, "XTF POLYLINE requires one unclipped sequence");
         }
@@ -465,6 +516,11 @@ public final class Xtf23Writer extends TransferWriter {
             throw error(INVALID_WIRE, "XTF POLYLINE requires at least one segment after its start position");
         }
         xml.start("POLYLINE");
+        if (line.lineAttributes().isPresent()) {
+            xml.start("LINEATTR");
+            writeStructure(curve.lineAttributeRoots(), line.lineAttributes().orElseThrow());
+            xml.end();
+        }
         writeCoordinate(part.start(), curve.dimensions());
         for (var segment : part.segments()) {
             switch (segment) {

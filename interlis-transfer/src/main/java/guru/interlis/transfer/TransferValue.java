@@ -1,11 +1,13 @@
 package guru.interlis.transfer;
 
 import guru.interlis.model.CollectionKind;
+import guru.interlis.model.QualifiedName;
 import guru.interlis.model.SnapshotMismatchException;
 import guru.interlis.model.SymbolRef;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +19,56 @@ import java.util.Optional;
  * omitting its slot. Values and collection entries are nonnull. */
 public sealed interface TransferValue permits TransferValue.Text, TransferValue.BooleanValue,
         TransferValue.Enumeration, TransferValue.NumberValue, TransferValue.Structured,
-        TransferValue.Repeated, TransferValue.Reference, TransferValue.Undefined, TransferGeometry {
+        TransferValue.Repeated, TransferValue.Reference, TransferValue.Binary, TransferValue.XmlFragment,
+        TransferValue.Oid, TransferValue.ClassName, TransferValue.AttributePath,
+        TransferValue.Undefined, TransferGeometry {
+
+    /** Binary payload with content equality. The constructor and accessor copy the bytes. */
+    record Binary(byte[] bytes) implements TransferValue {
+        public Binary {
+            bytes = bytes.clone();
+        }
+
+        @Override public byte[] bytes() { return bytes.clone(); }
+        /** Returns the payload length in bytes without copying it. */
+        public int size() { return bytes.length; }
+        @Override public boolean equals(Object other) {
+            return other instanceof Binary binary && Arrays.equals(bytes, binary.bytes);
+        }
+        @Override public int hashCode() { return Arrays.hashCode(bytes); }
+    }
+
+    /** Serialized XML fragment, possibly empty, with any necessary namespace declarations.
+     * Consumers must parse and validate it before emitting XML. */
+    record XmlFragment(String xml) implements TransferValue {
+        public XmlFragment {
+            Objects.requireNonNull(xml, "xml");
+        }
+    }
+
+    /** Exact identifier spelling of an attribute value, including any identifier space prefix. */
+    record Oid(String lexeme) implements TransferValue {
+        public Oid {
+            if (Objects.requireNonNull(lexeme, "lexeme").isBlank()) {
+                throw new IllegalArgumentException("An OID needs its lexical spelling");
+            }
+        }
+    }
+
+    /** Qualified declaration name in a CLASS or STRUCTURE slot.
+     * The slot's type determines the declaration family and any restrictions. */
+    record ClassName(QualifiedName name) implements TransferValue {
+        public ClassName {
+            Objects.requireNonNull(name, "name");
+        }
+    }
+
+    /** Qualified owner name followed by its attribute name. */
+    record AttributePath(QualifiedName name) implements TransferValue {
+        public AttributePath {
+            Objects.requireNonNull(name, "name");
+        }
+    }
 
     /** Exact text, including the empty string. */
     record Text(String value) implements TransferValue {

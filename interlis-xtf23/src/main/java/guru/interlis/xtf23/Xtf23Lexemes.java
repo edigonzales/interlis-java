@@ -1,9 +1,11 @@
 package guru.interlis.xtf23;
 
+import guru.interlis.model.OidType;
 import guru.interlis.transfer.TransferValue.NumberValue;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /** Lexical rules for XTF values, independent of model constraints. */
@@ -13,6 +15,7 @@ final class Xtf23Lexemes {
     private static final Pattern NAME = Pattern.compile("[A-Za-z][A-Za-z0-9_]*");
     private static final Pattern STRUCTURED_NUMBER = Pattern.compile("[+-]?[0-9]++(?::[0-9]++)++(?:\\.[0-9]++)?");
     static final int MAX_NUMERIC_LENGTH = 4096;
+    static final int MAX_MODEL_PATH_LENGTH = 4096;
     static final Pattern POSITION = Pattern.compile("[0-9]+");
 
     private Xtf23Lexemes() { }
@@ -28,6 +31,23 @@ final class Xtf23Lexemes {
 
     static boolean decimal(String value) {
         return DECIMAL.matcher(value).matches();
+    }
+
+    static boolean oidValue(OidType type, String identifier) {
+        int separator = identifier.indexOf(':');
+        String local = identifier.substring(separator + 1);
+        return switch (type.oidKind()) {
+            case ANY -> separator >= 0;
+            case NUMERIC -> decimal(local);
+            case TEXT -> local.charAt(0) < '0' || local.charAt(0) > '9';
+            case UUID -> true;
+        };
+    }
+
+    static boolean modelPath(List<String> segments, boolean attribute) {
+        int minimum = attribute ? 3 : 2;
+        return segments.size() >= minimum && segments.size() <= minimum + 1
+                && segments.stream().allMatch(part -> NAME.matcher(part).matches());
     }
 
     static NumberValue number(String value) {
