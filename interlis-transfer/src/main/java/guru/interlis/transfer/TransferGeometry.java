@@ -43,11 +43,20 @@ public sealed interface TransferGeometry extends TransferValue
     /**
      * A polyline with its parts in source order. All parts have the same dimension.
      * An empty list represents a supplied line with no parts, as in an empty extract.
+     *
+     * @param parts nonnull immutable sequence of curve parts
+     * @param lineAttributes nonnull optional model-bound structure for this line
      */
-    record Polyline(List<CurvePart> parts) implements TransferGeometry {
+    record Polyline(List<CurvePart> parts, Optional<TransferValue.Structured> lineAttributes) implements TransferGeometry {
         public Polyline {
             parts = List.copyOf(parts);
+            Objects.requireNonNull(lineAttributes, "lineAttributes");
             requireHomogeneousDimensions(parts, CurvePart::dimensions);
+        }
+
+        /** Creates a line without a line-attribute structure. */
+        public Polyline(List<CurvePart> parts) {
+            this(parts, Optional.empty());
         }
 
         private int dimensions() {

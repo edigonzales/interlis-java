@@ -39,7 +39,7 @@ public record TransferObject(TransferIdentity identity, TransferValue.Structured
     private static void requireSnapshot(TransferValue.Structured data) {
         var snapshot = data.type().snapshot();
         var seen = Collections.newSetFromMap(new IdentityHashMap<TransferValue, Boolean>());
-        var pending = new ArrayDeque<Iterator<TransferValue>>();
+        var pending = new ArrayDeque<Iterator<? extends TransferValue>>();
         pending.push(data.values().values().iterator());
         while (!pending.isEmpty()) {
             var fields = pending.peek();
@@ -59,6 +59,27 @@ public record TransferObject(TransferIdentity identity, TransferValue.Structured
                 case TransferValue.Repeated repeated -> {
                     if (seen.add(repeated)) {
                         pending.push(repeated.values().iterator());
+                    }
+                }
+                case TransferGeometry.Polyline line -> {
+                    if (seen.add(line)) {
+                        pending.push(line.lineAttributes().stream().iterator());
+                    }
+                }
+                case TransferGeometry.MultiPolyline multi -> {
+                    if (seen.add(multi)) {
+                        pending.push(multi.lines().iterator());
+                    }
+                }
+                case TransferGeometry.Surface surface -> {
+                    if (seen.add(surface)) {
+                        pending.push(surface.shell().lines().iterator());
+                        pending.push(surface.holes().stream().flatMap(ring -> ring.lines().stream()).iterator());
+                    }
+                }
+                case TransferGeometry.MultiSurface multi -> {
+                    if (seen.add(multi)) {
+                        pending.push(multi.surfaces().iterator());
                     }
                 }
                 default -> { }
