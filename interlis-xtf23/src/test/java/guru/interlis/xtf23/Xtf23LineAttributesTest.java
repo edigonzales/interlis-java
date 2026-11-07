@@ -36,8 +36,12 @@ class Xtf23LineAttributesTest {
                 MODEL Lines (en) AT "https://example.invalid/lines" VERSION "1" =
                   DOMAIN Point = COORD 0.00..100.00, 0.00..100.00;
                   TOPIC Data =
+                    STRUCTURE Details =
+                      note : TEXT*20;
+                    END Details;
                     STRUCTURE Marks =
                       label : MANDATORY TEXT*20;
+                      details : BAG {0..*} OF Details;
                     END Marks;
                     STRUCTURE Other =
                       label : MANDATORY TEXT*20;
@@ -54,7 +58,9 @@ class Xtf23LineAttributesTest {
 
     @Test
     void roundTripsAttributedSurfaceAndAreaPartitionsAndPlainPolyline() {
-        String east = line(marks("east"), point(0, 0), point(10, 0), point(10, 10));
+        String east = line(marks("east").replace("</Lines.Data.Marks>", """
+                <details><Lines.Data.Details><note>inside</note></Lines.Data.Details></details></Lines.Data.Marks>
+                """), point(0, 0), point(10, 0), point(10, 10));
         String west = line(marks("west"), point(10, 10), point(0, 10), point(0, 0));
         String inner = line(marks("hole"), point(2, 2), point(2, 4), point(4, 4), point(2, 2));
         String shape = "<shape><SURFACE><BOUNDARY>" + east + west + "</BOUNDARY><BOUNDARY>" + inner
@@ -70,6 +76,12 @@ class Xtf23LineAttributesTest {
                     .map(Xtf23LineAttributesTest::label).toList());
         }
         var surface = assertInstanceOf(Surface.class, field(object, "shape"));
+        var attributes = surface.shell().lines().getFirst().lineAttributes().orElseThrow();
+        var details = assertInstanceOf(TransferValue.Repeated.class,
+                attributes.value(slot(type("Marks"), "details")).orElseThrow());
+        var detail = assertInstanceOf(TransferValue.Structured.class, details.values().getFirst());
+        assertEquals(type("Details"), detail.type());
+        assertEquals(new TransferValue.Text("inside"), detail.value(slot(type("Details"), "note")).orElseThrow());
         assertEquals("hole", label(surface.holes().getFirst().lines().getFirst()));
         String wire = write(events);
         assertTrue(wire.contains("<POLYLINE><LINEATTR><Lines.Data.Marks><label>east</label>"));
